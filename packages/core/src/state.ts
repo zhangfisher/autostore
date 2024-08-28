@@ -40,11 +40,11 @@
  * 
  */
 
-import { get } from "http";
 import { ComputedObject } from "./computed/computedObject";
 import { isRaw } from "./utils/isRaw";
-import { isComputedDescriptor } from "./utils/isComputedDescriptor";
 import { createComputedDescriptor } from "./utils/createComputedDescriptor";
+import { ComputedObjects } from "./computed/computedObjects";
+import { computed } from './computed/computed';
 
 export type SignalOperates = 'get' | 'set' | 'delete'                   // 用于对象
                             | 'insert' | 'update' | 'remove'            // 用于数组
@@ -74,14 +74,16 @@ export class Stateable<T extends object> {
     private listeners: Map<number, SignalListener> = new Map();
     private nextListenerId: number = 0;
     private _options:Required<CreateStateableOptions>;
-
+    public computedObjects:ComputedObjects<T>  
     constructor(initialData: T,options?:CreateStateableOptions) {
         this._options = Object.assign({
             asyncNotice:false,
             delimiter:'.'
         },options);
-        this._data = this.createProxy(initialData, []);
+        this.computedObjects = new ComputedObjects(this)
+        this._data = this.createProxy(initialData, []);        
     }
+
     public get data() {return this._data;  }
 
 
@@ -98,7 +100,6 @@ export class Stateable<T extends object> {
             };
         }else if(name=='splice'){
             return (start: number, deleteCount: number, ...items: any[]) => {
-                const oldLength = array.length;
                 const deletedItems =deleteCount==0 ?  [] : array.slice(start, start + deleteCount);
                 const result = method.apply(array, [start, deleteCount, ...items]);                
                 if (deletedItems.length > 0) {
@@ -256,8 +257,6 @@ export class Stateable<T extends object> {
      * 当data中的成员是一个函数时，会自动创建一个计算属性对象
      * 
      * 
-     * 
-     * 
      */
     private createComputed(path:string[],value:Function,parentPath:string[],parent:object){
         const descriptor =  createComputedDescriptor(value.bind(this))   
@@ -267,7 +266,8 @@ export class Stateable<T extends object> {
             parentPath,
             parent,
             depends:[]            
-        },descriptor)        
+        },descriptor)                
+        this.collectDependencies(computedObj)
         return computedObj.value    
     }
 
@@ -277,28 +277,23 @@ export class Stateable<T extends object> {
      * 如果计算函数是一个同步函数，则可以通过运行函数来收集依赖
      * 
      */
-    private collectSyncDependencies(){
-        const dependencies:string[][] = []
-        const traverse = (obj: any, parentPath: string[]) => {
-            if (typeof obj !== 'object' || obj === null) {
-                return;
-            }
-            for (const key of Object.keys(obj)) {
-                const value = obj[key];
-                const path = [...parentPath, key];
-                if (typeof value === 'function') {
-                    // 通过运行函数来收集依赖
-                    this.runSyncFunction(value, path);
-                } else {
-                    traverse(value, path);
+    private collectDependencies(computedObj:ComputedObject){
+        if(!computedObj.async) return 
+        const dependencies:string[][] = []       
+        const listenerId = this.on((event)=>{
+            if(event.type === 'get'){
+                if(event.path.length === computedObj.path.length){
+                    const indexs = event.path.slice(0,computedObj.path.length)
+                    if(indexs.every((v,i)=>v===computedObj.path[i])){
+                        dependencies.push(indexs)
+                    }
                 }
             }
-        };
-        traverse(this._data, []);
-
+        })
+        // 第一次运行getter函数，收集依赖
+        computedObj.run()
+        this.off(listenerId)
     }
-
-
 
 }
 

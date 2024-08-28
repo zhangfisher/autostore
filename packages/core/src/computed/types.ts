@@ -16,43 +16,55 @@
  * 
  */
 import { COMPUTED_DESCRIPTOR_FLAG, SKIP_PROXY_FLAG } from "../consts"
+import { Dict } from "../types"
 
  
+export type ComputedDepends = (string | string[])[] 
+export type ComputedType = "computed" | "watch" 
+export type ComputedGetter<R,Scope=any> = (scopeDraft: Scope) => Exclude<R,Promise<any>>
+export type AsyncComputedGetter<R,Scope=any,P extends Dict = Dict> = (scopeDraft:Scope,options:Required<ComputedGetterOptions> & P) => Promise<R>
 
+export interface ComputedProgressbar{
+    value:(num:number)=>void
+    end:()=>void
+}
+export interface ComputedGetterOptions extends Record<string,any>{
+    /**
+     *  获取一个进度条，用来显示异步计算的进度 
+     * @param opts 
+     * @returns 
+     */
+    getProgressbar?:(opts?:{max?:number,min?:number,value?:number})=>ComputedProgressbar
+    /**
+     * 当计算函数启用超时时，可以指定一个cb，在超时后会调用此函数 
+     * @param cb 
+     * @returns 
+     */
+    onTimeout?:(cb:()=>void)=>void    
+    /**
+     * 
+     * 提供一个函数用来获取当前Scope的快照
+     * 传入的scope是一个经过Proxy处理的响应式对象，此方法可以对scope进行转换为普通对象   
+     */
+    getSnap?:<T=Dict>(scope:any)=>T  
+    /**
+     * 在执行计算函数时，如果传入AbortController.signal可以用来传递给异步计算函数，用来取消异步计算
+     * 例如：fetch(url,{signal:signal})
+     */
+    abortSignal:AbortSignal  
+    /**
+     * 用来取消操作正在执行的异步计算函数
+     * 异步函数可以通过此方法来取消异步计算
+     * 
+     * @returns 
+     */
+    cancel:()=>void
+    /**
+     * 额外的参数，用来传递给计算函数
+     */
+    extras?:any
+  }
 
-    // /**
-    //  * 收集依赖
-    //  */
-    // private collectDependencies(){
-    //     const dependencies:string[][] = []
-    //     const traverse = (obj: any, parentPath: string[]) => {
-    //         if (typeof obj !== 'object' || obj === null) {
-    //             return;
-    //         }
-    //         for (const key of Object.keys(obj)) {
-    //             const value = obj[key];
-    //             const path = [...parentPath, key];
-    //             if (typeof value === 'function') {
-    //                 // 通过运行函数来收集依赖
-    //                 this.runSyncFunction(value, path);
-    //             } else {
-    //                 traverse(value, path);
-    //             }
-    //         }
-    //     };
-    //     traverse(this._data, []);
-    // }
-    // private runSyncFunction(func: Function, path: string[]) {
-    //     // 在运行同步时，收集依赖
-    //     const listenerId =this.on(({ operate, path }) => {
-    //         if(operate==='get'){
-    //             dependencies.push(path)
-    //         }
-    //     }) 
-    //     func.call(this,this._data)
-    //     this.off(listenerId)
-    //     this.dependencies.set(path.join('.'),new Set(dependencies))
-    // }
 
 export interface ComputedOptions<Scope=any,Value=any> {
     // 计算函数的唯一标识，如果未指定，则自动生成一个唯一标识
@@ -62,7 +74,7 @@ export interface ComputedOptions<Scope=any,Value=any> {
     // 但是在返回Promise或者Babel转码等情况下，判断会失效时，需要手动指定async=true
     async?:boolean
     // 指定依赖，例如["key","a.b.c"]等形式
-    depends?:string[]
+    depends?: ComputedDepends
     /**
      * 指定超时时间，当计算函数执行超过指定时间后，会自动设置loading为false
      * 如果timeout是一个数组，则第一个值表示超时时间，第二个值表示超时期的倒计时间隔
@@ -153,10 +165,9 @@ export interface ComputedOptions<Scope=any,Value=any> {
 
 export type ComputedDescriptor<Scope=any,Value=any> = {    
     getter                    : (scope:Scope)=>Value
-    options?                  : ComputedOptions<Value>    
+    options?                  : ComputedOptions<Scope,Value>    
     __COMPUTED__              : 'sync' | 'async'
     [SKIP_PROXY_FLAG]         : true
-    [COMPUTED_DESCRIPTOR_FLAG]: true
 }
     
 export type RequiredComputedOptions<Scope=any,Value=any> = Required<ComputedOptions<Scope,Value>>

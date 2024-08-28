@@ -3,10 +3,9 @@
  * 
  * 
  */
-import { COMPUTED_DESCRIPTOR_FLAG, SKIP_PROXY_FLAG } from "../consts"
 import type { Stateable } from "../state"
 import { getVal } from "../utils"
-import { ComputedDescriptor, ComputedOptions, RequiredComputedOptions } from "./types"
+import { ComputedDescriptor, RequiredComputedOptions } from "./types"
 
  
 export type ComputedObjectContext<Scope=any,Value=any> = {
@@ -21,7 +20,7 @@ export class ComputedObject<Scope=any,Value=any>{
     descriptor:ComputedDescriptor<Scope,Value>
     constructor(public state:Stateable<any>,context:ComputedObjectContext<Scope,Value>,descriptor:ComputedDescriptor<Scope,Value>){
         this.descriptor = descriptor
-        this.context = context
+        this.context = context        
     } 
     get options(){ return this.descriptor.options as unknown as RequiredComputedOptions<Scope,Value> }
     get id(){return this.options.id }
