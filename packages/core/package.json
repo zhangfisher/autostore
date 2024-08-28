@@ -1,18 +1,26 @@
 {
-  "name": "flexsignals",
-  "version": "1.0.0",
+  "name": "stateable",
+  "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.ts",
+  "access": "public",
   "scripts": {
     "build": "tsup"
   },
+  "files": [
+    "readme.md"
+  ],
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.5.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.2.4",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  },
+  "dependencies": {
+    "flex-tools": "^1.4.7"
   }
 }
