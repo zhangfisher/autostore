@@ -1,1 +1,3 @@
-# stateify
+# autods
+
+Auto Reactive Data State Library

@@ -8,7 +8,7 @@
 
 export function isEq(a:any,b:any):boolean{
     if(a===b) return true
-    if(a==null || b==null) return false
+    if(a===null || b===null) return false
     if(typeof a !== typeof b) return false
     if(typeof a === 'object'){
         if(Array.isArray(a) && Array.isArray(b)){

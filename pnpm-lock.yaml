@@ -11,6 +11,9 @@ importers:
       '@types/node':
         specifier: ^22.5.0
         version: 22.5.0
+      oxlint:
+        specifier: ^0.9.1
+        version: 0.9.1
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@22.5.0)(typescript@5.5.4)
@@ -26,6 +29,9 @@ importers:
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
+      ts-mixer:
+        specifier: ^6.0.4
+        version: 6.0.4
     devDependencies:
       '@types/node':
         specifier: ^22.5.0
@@ -371,6 +377,50 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@oxlint/darwin-arm64@0.9.1':
+    resolution: {integrity: sha512-SzYTggt2eJqMhemijEv9AszSdc8Vv1OBQbmAZpDNPHmwlDzPKEopSrDURwt/Jq56FYsJC/jhzBzrJLXSK55i1A==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@oxlint/darwin-x64@0.9.1':
+    resolution: {integrity: sha512-IDgjpNdtt2XkEcWDIhFyZCkIIonqlBQf3jQ2L1voGQxQFwjl+cP9+hdpFp/m89qGO708MULeegCH+MGq28xWbg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@oxlint/linux-arm64-gnu@0.9.1':
+    resolution: {integrity: sha512-kEGN/CNdUB11So4c3OpTIJi0YvPgu5i9gvUcWX+CxEkeACRPj8dq7/Rm1FgfIqky6oYY5QjXDioZ+yKt+Xw1rQ==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@oxlint/linux-arm64-musl@0.9.1':
+    resolution: {integrity: sha512-US5UVB7JDwNuQa2+RZyWzEtgjEOA9wAvwUy8oUmgqomo02cpCrZo3wOQAvAckE5KxJCskr7T6pGW9eA8y3IhsQ==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@oxlint/linux-x64-gnu@0.9.1':
+    resolution: {integrity: sha512-w2Sz/WevEa6FxDjwwg9xbmpebDmLXO9YCvUUs5K4emKhzh05xEwuXrD2kJuQUdFapiHHQUMTQ5/iBF0NOPb9Uw==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@oxlint/linux-x64-musl@0.9.1':
+    resolution: {integrity: sha512-hSukTLTn+wKyJUbR3934bOmWNoDaJv4yJwumE6QqBQZWoFNyd3seiYJLPWD+7aMJx6nOnot8uqjnvYO1QZsccA==}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@oxlint/win32-arm64@0.9.1':
+    resolution: {integrity: sha512-9Y7RuvnulhZyxLdsDrGRaojxytzcBTGHpl7AxED41G/IXGPOs+dE1q2NFyHWB6Gfzi/MJZ6plXYIOKx/e/3t/g==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@oxlint/win32-x64@0.9.1':
+    resolution: {integrity: sha512-51wrzMDGFyCYZbhSczU9VS7EYe1N0tNlDfdne6VCKgpPPJX0+XLZHybgUFZNYVyf7/W5t1/gpyOTFErVYRP0pw==}
+    cpu: [x64]
+    os: [win32]
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -919,6 +969,11 @@ packages:
     resolution: {integrity: sha512-+IW9pACdk3XWmmTXG8m3upGUJst5XRGzxMRjXzAuJ1XnIFNvfhjjIuYkDvysnPQ7qzqVzLt78BCruntqRhWQbA==}
     engines: {node: '>= 0.8.0'}
 
+  oxlint@0.9.1:
+    resolution: {integrity: sha512-77v9YVkaVOWguxUttiJ31yfWkG/Yo7kIzY0CrKHxM6p0xiUqN0LVF4IVgjcE6vevyd9bBVphtOgJOJUq4To/+w==}
+    engines: {node: '>=14.*'}
+    hasBin: true
+
   package-json-from-dist@1.0.0:
     resolution: {integrity: sha512-dATvCeZN/8wQsGywez1mzHtTlP22H8OEfPrVMLNr4/eGa+ijtLn/6M5f0dY8UKNrC2O9UCU6SSoG3qRKnt7STw==}
 
@@ -1124,6 +1179,9 @@ packages:
 
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
+
+  ts-mixer@6.0.4:
+    resolution: {integrity: sha512-ufKpbmrugz5Aou4wcr5Wc1UUFWOLhq+Fm6qa6P0w0K5Qw2yhaUoiWszhCVuNQyNwrlGiscHOmqYoAox1PtvgjA==}
 
   ts-node@10.9.2:
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
@@ -1468,6 +1526,30 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.17.1
+
+  '@oxlint/darwin-arm64@0.9.1':
+    optional: true
+
+  '@oxlint/darwin-x64@0.9.1':
+    optional: true
+
+  '@oxlint/linux-arm64-gnu@0.9.1':
+    optional: true
+
+  '@oxlint/linux-arm64-musl@0.9.1':
+    optional: true
+
+  '@oxlint/linux-x64-gnu@0.9.1':
+    optional: true
+
+  '@oxlint/linux-x64-musl@0.9.1':
+    optional: true
+
+  '@oxlint/win32-arm64@0.9.1':
+    optional: true
+
+  '@oxlint/win32-x64@0.9.1':
+    optional: true
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -2001,6 +2083,17 @@ snapshots:
       type-check: 0.3.2
       word-wrap: 1.2.5
 
+  oxlint@0.9.1:
+    optionalDependencies:
+      '@oxlint/darwin-arm64': 0.9.1
+      '@oxlint/darwin-x64': 0.9.1
+      '@oxlint/linux-arm64-gnu': 0.9.1
+      '@oxlint/linux-arm64-musl': 0.9.1
+      '@oxlint/linux-x64-gnu': 0.9.1
+      '@oxlint/linux-x64-musl': 0.9.1
+      '@oxlint/win32-arm64': 0.9.1
+      '@oxlint/win32-x64': 0.9.1
+
   package-json-from-dist@1.0.0: {}
 
   param-case@2.1.1:
@@ -2171,6 +2264,8 @@ snapshots:
   tree-kill@1.2.2: {}
 
   ts-interface-checker@0.1.13: {}
+
+  ts-mixer@6.0.4: {}
 
   ts-node@10.9.2(@types/node@22.5.0)(typescript@5.5.4):
     dependencies:

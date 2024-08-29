@@ -1,6 +1,7 @@
-import { Stateable } from "../state"
+import { AutoStore } from "../store/store"
 import { Dict } from "../types"
-import { ComputedObject } from "./computedObject"
+import { ComputedObject, ComputedObjectContext } from "./computedObject"
+import { ComputedDescriptor } from "./types"
 
  
 
@@ -8,9 +9,19 @@ import { ComputedObject } from "./computedObject"
    /**
     * 
     */
-export class ComputedObjects<T extends Dict =  Dict> extends Map<string,ComputedObject<Dict,T>>{
-    constructor(public store:Stateable<any>){
+export class ComputedObjects<State extends Dict =  Dict> extends Map<string,ComputedObject<Dict,State>>{
+    constructor(public store:AutoStore<State>){
       super()
+    }
+    /**
+     * 创建一个新的计算对象
+     * 
+     * 
+     * 
+     */
+    new(context:ComputedObjectContext,descriptor:ComputedDescriptor<Dict,State>){
+      const obj = new ComputedObject(this.store,context,descriptor)
+      
     }
     // /**
     //  * 运行指定组的计算函数

@@ -1,0 +1,6 @@
+{
+    "rules": {
+        "eqeqeq": ["warn"]
+    },
+    "ignore": ["node_modules","dist","packages/**/__tests__/**/*"]
+}

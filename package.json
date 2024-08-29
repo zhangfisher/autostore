@@ -1,16 +1,17 @@
 {
-  "name": "xignals-workspace",
+  "name": "autods-workspace",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "oxcline lint"
+    "lint": "oxlint --fix -c=.oxlintrc.json"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.5.0",
+    "oxlint": "^0.9.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   }
