@@ -1,4 +1,4 @@
-import { STATE_EXTEND_DESCRIPTOR_FLAG } from "../consts";
+import { DYNAMIC_DESCRIPTOR_FLAG } from "../consts";
 
 export function isComputedDescriptor(obj:any){
     return typeof(obj) === 'object' 
@@ -6,5 +6,5 @@ export function isComputedDescriptor(obj:any){
         && ["async","sync"].includes(obj.__COMPUTED__)
         && obj.hasOwnProperty("getter")  && typeof(obj.getter) === 'function'
         && obj.hasOwnProperty("options") && typeof(obj.options) === 'object'
-        && obj.hasOwnProperty(STATE_EXTEND_DESCRIPTOR_FLAG)  
+        && obj.hasOwnProperty(DYNAMIC_DESCRIPTOR_FLAG)  
 }

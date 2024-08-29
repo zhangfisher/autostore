@@ -7,12 +7,10 @@
  * 
  * 
  */
-import { markRaw, getSnap,  } from 'helux';
-import type { IStore } from "../store/types";
 import { skipComputed,  joinValuePath, getError, getDepValues,getVal, setVal, getComputedId  } from "../utils";
 import { delay } from 'flex-tools/async/delay'; 
 import { OBJECT_PATH_DELIMITER } from '../consts';
-import { getComputedScope } from '../scope';
+import { getExtendScope } from '../scope';
 import {  AsyncComputedObject,  ComputedOptions, ComputedParams, ComputedProgressbar } from './types';
 import type  { ComputedDescriptorDefine, ComputedRunContext } from './types';
 import { IReactiveReadHookParams } from '../reactives/types';
@@ -74,7 +72,7 @@ async function executeComputedGetter<T extends Dict>(draft:any,computedRunContex
     const { timeout=0,retry=[0,0],selfReactiveable,onDone }  = computedOptions  
     const setState  = selfReactiveable ? selfReactiveable.setState.bind(selfReactiveable) : store.setState
     
-    const scopeDraft = getComputedScope(store,computedOptions,{draft,dependValues,valuePath,computedType:"Computed"} )  
+    const scopeDraft = getExtendScope(store,computedOptions,{draft,dependValues,valuePath,computedType:"Computed"} )  
      
     const [retryCount,retryInterval] = Array.isArray(retry) ? retry : [Number(retry),0]
   

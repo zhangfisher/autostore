@@ -1,4 +1,4 @@
-import { StateExtendContext, StateExtendDescriptor } from "../extend";
+import { DynamicValueContext, DynamicValueDescriptor } from "../extend";
 import type { AutoStore } from "../store/store";
 import { Dict } from "../types";
 import { isPathEq } from "../utils/isPathEq";
@@ -19,8 +19,12 @@ export class ComputedMixin<State extends Dict>{
      * 
      * 
      */
-    protected createComputed(this: AutoStore<State>,extendContext:StateExtendContext,descriptor:StateExtendDescriptor){
-        const computedObj = new ComputedObject(this,extendContext,descriptor as ComputedDescriptor)    
+    protected createComputed(this: AutoStore<State>,extendContext:DynamicValueContext,descriptor:DynamicValueDescriptor){
+        if(descriptor.options.async){
+        }else{
+            const computedObj = new SyncComputedObject(this,extendContext,descriptor as ComputedDescriptor)    
+        }
+        
         // 对同步计算属性启动自动依赖收集，即运行一次. (异步函数不能自动收集依赖 )
         if(!computedObj.async){
             this.collectDependencies(computedObj)

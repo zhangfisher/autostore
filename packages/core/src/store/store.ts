@@ -55,6 +55,7 @@ import { FlexEvent } from "flex-tools/events/flexEvent"
 import { assignObject } from "flex-tools/object/assignObject"
 import { StateOperateParams } from "./types";
 import type { Dict } from "../types";
+import { log } from "../utils/log";
 import { mix } from 'ts-mixer'
 import { getId } from "../utils/getId";
 import { ProxyMixin } from "../proxy/mixin"
@@ -130,12 +131,13 @@ export type AutoStoreOptions<State extends Dict> = {
     onCreateComputed?:(this:AutoStore<State>,computedObject:ComputedObject)=> void 
     /**
      * 在传递给计算函数的scope时调用
+     * 
      * 默认draft指向的是当前根对象，可以在此返回一个新的draft指向
      * 
      * 比如,return  draft.fields，代表计算函数的draft指向state.fields
      * 
      */
-    getRootContext?:()=>void//draft:any,options:{computedType:StateComputedType, valuePath:string[]}):any
+    getRootScope?:()=>void//draft:any,options:{computedType:StateComputedType, valuePath:string[]}):any
     
     /**
      * 当启用debug=true时用来输出日志信息
@@ -147,7 +149,7 @@ export type AutoStoreOptions<State extends Dict> = {
     log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
 }
 
-export interface AutoStore<State extends Dict> extends 
+export interface AutoStore<State extends Dict = Dict> extends 
     ProxyMixin<State>,
     WatchMixin<State>,
     ComputedMixin<State>,
@@ -178,8 +180,8 @@ export class AutoStore<State extends Dict>{
     get changesets(){return this._changesets}    
     get options(){return this._options}
 
-    protected log(...args:any[]){
-        if(this._options.debug) console.log(...args)
+    log(message:any,level?:'log' | 'error' | 'warn'){
+        if(this._options.debug) this.log(message,level)
     } 
 
     /**

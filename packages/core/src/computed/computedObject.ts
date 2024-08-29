@@ -3,7 +3,8 @@
  * 
  * 
  */
-import { StateExtendContext } from "../extend"
+import { DynamicValueContext } from "../extend"
+import { DynamicValueObject } from "../extend/valueObject"
 import type { AutoStore } from "../store/store"
 import { getVal } from "../utils"
 import { getComputedId } from "../utils/getComputedId"
@@ -11,10 +12,10 @@ import { ComputedDescriptor, RequiredComputedOptions } from "./types"
 
  
 
-export class ComputedObject<Scope=any,Value=any>{
-    context:StateExtendContext
+export class ComputedObject<Scope=any,Value=any> extends DynamicValueObject<Scope,Value>{
+    context:DynamicValueContext
     descriptor:Required<ComputedDescriptor<Scope,Value>>
-    constructor(public store:AutoStore<any>,context:StateExtendContext,descriptor:ComputedDescriptor<Scope,Value>){
+    constructor(public store:AutoStore<any>,context:DynamicValueContext,descriptor:ComputedDescriptor<Scope,Value>){
         this.descriptor = descriptor        
         this.context = context    
         this.options.id = getComputedId(context.path,this.options)
@@ -32,7 +33,7 @@ export class ComputedObject<Scope=any,Value=any>{
     get path(){ return this.context.path }
     get getter(){ return this.descriptor.getter}
     set getter(value){ this.descriptor.getter = value }
-
+    toString(){ return `ComputedObject<${this.path.join(".")}` }
     /**
      * 
      * 执行在Store中的onCreateComputed钩子中执行

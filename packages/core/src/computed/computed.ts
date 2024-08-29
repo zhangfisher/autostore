@@ -1,4 +1,4 @@
-import { SKIP_PROXY_FLAG, STATE_EXTEND_DESCRIPTOR_FLAG } from "../consts";
+import { SKIP_PROXY_FLAG, DYNAMIC_DESCRIPTOR_FLAG } from "../consts";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { normalizeDeps } from "../utils/normalizeDeps";
 import {
@@ -62,7 +62,7 @@ export function computed<R = any, Scope = any>(): any {
 	const descriptor: ComputedDescriptor<Scope, R> = {
 		type: "computed",
 		[SKIP_PROXY_FLAG]: true,
-		[STATE_EXTEND_DESCRIPTOR_FLAG]: true,
+		[DYNAMIC_DESCRIPTOR_FLAG]: true,
 		getter,
 		options: opts,
 	};

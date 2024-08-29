@@ -1,9 +1,9 @@
 /**
  * 同步计算
  */
-import { getComputedId, getVal, setVal  } from "../utils"; 
-import { ComputedDescriptorParams, ComputedGetter, ComputedOptions,  ComputedRunContext } from './types';
-import { getComputedScope } from '../scope';
+import {  getVal, setVal  } from "../utils"; 
+import { ComputedDescriptorParams, ComputedGetter, ComputedOptions,  ComputedRunContext, RuntimeComputedOptions } from './types';
+import { getExtendScope } from '../scope';
 import { IStore } from '../store/types';
 import { IReactiveReadHookParams } from "../reactives/types";
 import { ComputedObject } from "./computedObject";
@@ -17,25 +17,33 @@ import { Dict } from "../types";
  * 同步计算属性对象
  * 
  */
-export class ComputedObjectSync extends ComputedObject{
+export class SyncComputedObject extends ComputedObject{
   
   onInitial(){
       
   }
-  onComputed(params:ComputedOptions){
+  /**
+   * 
+   * 当计算属性的依赖发生变化时，重新计算计算属性的值
+   * 
+   * @param args  可以覆盖默认的配置参数
+   * @returns 
+   */
+  onComputed(options?:RuntimeComputedOptions){
+    
     if(!this.store.options.enableComputed || (!this.enable && options?.enable!==true)){
-      store.options.log(`Sync computed <${computedDesc}> is disabled`,'warn')
+      this.store.options.log(`Sync computed <${this.toString()}> is disabled`,'warn')
       return 
     }
 
-
-    store.options.log(`Run sync computed for : ${computedDesc}`); 
+    this.store.log(`Run sync computed for : ${this.toString()}`); 
 
     computedRunContext.dependValues = values
-    const finalComputedOptions = Object.assign({},computedOptions,options) as Required<ComputedOptions>
+    const finalComputedOptions = Object.assign({},this.options,options) as Required<ComputedOptions>
 
     // 1. 根据配置参数获取计算函数的上下文对象      
-    const scopeDraft = getComputedScope(store,finalComputedOptions,{draft,dependValues:values,valuePath,computedType:"Computed"} )  
+    const scope = getExtendScope(this.store,'computed',this.context,finalComputedOptions)  
+
 
     // 2. 执行getter函数
     let computedResult = computedOptions.initial;
@@ -77,7 +85,7 @@ function createComputed<T extends Dict>(computedRunContext:ComputedRunContext,co
         const finalComputedOptions = Object.assign({},computedOptions,options) as Required<ComputedOptions>
 
         // 1. 根据配置参数获取计算函数的上下文对象      
-        const scopeDraft = getComputedScope(store,finalComputedOptions,{draft,dependValues:values,valuePath,computedType:"Computed"} )  
+        const scopeDraft = getExtendScope(store,finalComputedOptions,{draft,dependValues:values,valuePath,computedType:"Computed"} )  
 
         // 2. 执行getter函数
         let computedResult = computedOptions.initial;

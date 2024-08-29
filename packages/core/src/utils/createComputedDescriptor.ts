@@ -1,5 +1,5 @@
 import { isAsyncFunction } from "./isAsyncFunction";
-import {   SKIP_PROXY_FLAG, STATE_EXTEND_DESCRIPTOR_FLAG } from "../consts";
+import {   SKIP_PROXY_FLAG, DYNAMIC_DESCRIPTOR_FLAG } from "../consts";
 import { isComputedDescriptor } from "./isComputedDescriptor";
 import { ComputedDescriptor } from "../computed/types";
 
@@ -17,7 +17,7 @@ export function createComputedDescriptor(value:any): ComputedDescriptor  | undef
     let descriptor : ComputedDescriptor | undefined
     if(isComputedDescriptor(value)){    
         value[SKIP_PROXY_FLAG] = true
-        value[STATE_EXTEND_DESCRIPTOR_FLAG] = true,
+        value[DYNAMIC_DESCRIPTOR_FLAG] = true,
         descriptor = value
     }else if(typeof value === 'function'){        
         // 只是简单的函数，没有任何配置参数
@@ -25,7 +25,7 @@ export function createComputedDescriptor(value:any): ComputedDescriptor  | undef
             type             : 'computed',
             getter           : value,
             [SKIP_PROXY_FLAG]: true,
-            [STATE_EXTEND_DESCRIPTOR_FLAG]: true,
+            [DYNAMIC_DESCRIPTOR_FLAG]: true,
             options          : {
                 async        : isAsyncFunction(value)
             }            
