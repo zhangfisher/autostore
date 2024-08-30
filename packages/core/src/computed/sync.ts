@@ -7,6 +7,7 @@ import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
 import { isPathMatched } from "../utils/isPathMatched";
 import { OBJECT_PATH_DELIMITER } from "../consts";
+import { StateOperateParams } from "../store/types";
  
 
 /**
@@ -15,6 +16,7 @@ import { OBJECT_PATH_DELIMITER } from "../consts";
  * 
  */
 export class SyncComputedObject<State> extends ComputedObject<State>{
+
   /**
    * 同步计算属性对象在初始化时，会通过运行来自动收集依赖
    */
@@ -76,27 +78,20 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
    * 
    */
   private collectDependencies(){
-      let dependencies:string[] = []       
+      let dependencies:string[][] = []       
       const watcher = this.store.watch((event)=>{      
-          dependencies.push(event.path.join(OBJECT_PATH_DELIMITER))
+          dependencies.push(event.path)
       },{operates:['get']})   
       // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
       this.run({initialize:true})   
       watcher.off()     
       // 去重一下
       dependencies= [...new Set(dependencies)]
-      this.subscribeDependencies(dependencies)
-  }
-  /**
-   * 订阅依赖变更事件
-   * 
-   */
-  private subscribeDependencies(dependencies:string[]){
-      this.store.changesets.on((event)=>{          
-              this.run()
-          
-      })
-
+      this.depends = dependencies      
+      this.subscribeDepends()
+  }  
+  protected onDependsChange(event: StateOperateParams): void {      
+      this.run()
   }
 }
  

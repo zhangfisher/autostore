@@ -39,6 +39,6 @@ export class ComputedObject<Value=any,Scope=any>
     run(){
         this.descriptor.getter
     }
-    toString(){ return `ComputedObject<${joinValuePath(this.path)}` }
+    toString(){ return `ComputedObject<${joinValuePath(this.path)}>` }
 
 }

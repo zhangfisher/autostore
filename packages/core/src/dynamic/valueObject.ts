@@ -14,12 +14,15 @@
  * 
  */
 
+import { FlexEvent } from "flex-tools";
+import { OBJECT_PATH_DELIMITER } from "../consts";
 import { AutoStore } from "../store/store" 
 import { getDependPaths } from "../utils/getDependPaths"; 
 import { getVal } from "../utils/getVal"
 import { joinValuePath } from "../utils/joinValuePath";
 import { LogLevel, LogMessageArgs } from "../utils/log";
 import { DynamicValueContext, DynamicValueDescriptor, DynamicValueOptions } from './types';
+import { StateOperateParams } from "../store/types";
 
 
 export class DynamicValueObject<
@@ -30,8 +33,9 @@ export class DynamicValueObject<
     private _parentPath:string[] = []
     private _options:Required<Options>
     private _getter:any
-    private _depends: string[][]| undefined
+    private _depends: string[][] | undefined
     private _id:string = ""
+    protected _subscribers:string[] = []            // 保存订阅者的ID
     /**
      *  构造函数。
      * 
@@ -62,13 +66,26 @@ export class DynamicValueObject<
     get getter(){ return this._getter}
     set getter(value){ this._getter= value  } 
     get depends(){return this._depends}
+    set depends(value){ this._depends=value}
     protected log(message:LogMessageArgs,level:LogLevel="log"){
         this.store.log(message,level)
     }
     toString(){ return `DynamicValueObject<${this._path.join(".")}` }
     protected onInitial(){
 
+    }     
+    protected onDependsChange(_:StateOperateParams){ 
+        throw new Error("Method not implemented.");
+    }
+
+    protected subscribeDepends(){
+        if(this._depends){
+            this._depends.forEach(depends=>{
+                this._subscribers.push(
+                    this.store.changesets.on(depends.join(OBJECT_PATH_DELIMITER),this.onDependsChange.bind(this)) as string   
+            )
+            })
+        }
     }    
-    
 
 }
