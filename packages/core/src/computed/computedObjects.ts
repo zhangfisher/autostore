@@ -1,26 +1,22 @@
 import { AutoStore } from "../store/store"
 import { Dict } from "../types"
-import { ComputedObject, ComputedObjectContext } from "./computedObject"
-import { ComputedDescriptor } from "./types"
+import { ComputedObject } from "./computedObject" 
 
  
-
-
-   /**
-    * 
-    */
+ 
 export class ComputedObjects<State extends Dict =  Dict> extends Map<string,ComputedObject<Dict,State>>{
     constructor(public store:AutoStore<State>){
       super()
     }
+
     /**
      * 创建一个新的计算对象
      * 
      * 
      * 
      */
-    new(context:ComputedObjectContext,descriptor:ComputedDescriptor<Dict,State>){
-      const obj = new ComputedObject(this.store,context,descriptor)
+    new( ){
+      // const obj = new ComputedObject(this.store,context,descriptor)
       
     }
     // /**

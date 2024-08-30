@@ -15,20 +15,20 @@
  * 
  * 
  */
-import { DynamicValueDescriptor, DynamicValueOptions } from "../extend/types"
+import { DynamicValueDescriptor, DynamicValueOptions } from "../dynamic/types"
 import { Dict } from "../types"
 
  
 export type ComputedDepends = (string | string[])[] 
-export type ComputedGetter<Returns,Scope=any> = (scope: Scope) => Exclude<Returns,Promise<any>>
-export type AsyncComputedGetter<Returns,Scope=any,P extends Dict = Dict> = (scope:Scope,options:Required<ComputedGetterOptions> & P) => Promise<Returns>
+export type ComputedGetter<Value,Scope=any> = (scope: Scope) => Exclude<Value,Promise<any>>
+export type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (scope:Scope,args:Required<AsyncComputedGetterArgs> & P) => Promise<Value>
 
 export interface ComputedProgressbar{
     value:(num:number)=>void
     end:()=>void
 }
 
-export interface ComputedGetterOptions{
+export interface AsyncComputedGetterArgs{
     /**
      *  获取一个进度条，用来显示异步计算的进度 
      * @param opts 
@@ -66,17 +66,9 @@ export interface ComputedGetterOptions{
   }
 
 
-export interface ComputedOptions<Scope=any,Value=any> extends DynamicValueOptions<Value> {     
-    /**
-     * 指定该计算属性的依赖
-     * 
-     * 在异步计算属性时需要手工指定依赖，因为无法自动分析依赖
-     * 同步计算时不需要指定依赖，因为可以自动分析依赖
-     * 
-     * 例如["key","a.b.c"]等形式
-     * 
-     */
-    depends?: ComputedDepends
+export interface ComputedOptions<Value=any,Scope=any> extends DynamicValueOptions<Value> {     
+
+ 
     /**
      * 
      * 计算函数的执行超时时间
@@ -137,25 +129,7 @@ export interface ComputedOptions<Scope=any,Value=any> extends DynamicValueOption
      * 当执行计算getter函数出错时的回调
      */
     onError?:(e:Error)=>void              
-    /**
-     * 为该计算函数指定一个分组名
-     * 
-     * 此属性用来将计算函数分组，比如一个store中具有相同group的计算函数
-     * 
-     * 然后就可以启用/关闭/运行指定分组的计算函数
-     * 
-     * 在表单中通过为所有validate指定统一的分组名称，这样就可以统一控制表单的验证是否计算
-     * 
-     * 
-     * store.computedObjects.get(["a","b"]).run() // 重新启动
-     * 
-     * 马上重新运行指定组的计算函数
-     * store.computedObjects.getGroup("a"]).run() // 运行组
-     * // 启用/禁用指定组的计算函数 =false 代表禁用计算 =true开启动计算
-     * store.computedObjects.enableGroup("b"]) 
-     * 
-     */
-    group?:string
+
     /**
      * 
      * 默认情况下，每一个计算属性均会创建一个computedObject对象实便并且保存到store.computedObjects中
@@ -170,15 +144,21 @@ export interface ComputedOptions<Scope=any,Value=any> extends DynamicValueOption
     onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,valuePath:string[],scope:Scope,result:any}):void
 };
     
+export type AllComputedGetter<Value,Scope> = ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
 
 export type ComputedDescriptor<Scope=any,Value=any> = DynamicValueDescriptor<
-    ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>,
+    AllComputedGetter<Value,Scope>,
     ComputedOptions<Scope,Value>
 >
-
     
 export type RequiredComputedOptions<Scope=any,Value=any> = Required<ComputedOptions<Scope,Value>>
  
 // 运行时计算属性配置参数，用来传递给计算函数覆盖默认的配置参数
-export type RuntimeComputedOptions = Pick<ComputedOptions,'enable' |'onDone' | 'scope' | 'abortSignal' | 'noReentry' | 'retry' | 'onError' | 'timeout'>
+export type RuntimeComputedOptions = Pick<ComputedOptions,
+    'enable' |'onDone' | 'scope' | 'abortSignal' 
+    | 'noReentry' | 'retry' | 'onError' | 'timeout'> &
+    {
+        initialize?:boolean             // 当第一次运行时传入
+        path?:string[]                   // 所依赖数据的路径        
+    }
 

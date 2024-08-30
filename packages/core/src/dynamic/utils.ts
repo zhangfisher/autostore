@@ -1,13 +1,13 @@
-import { isAsyncFunction } from "./isAsyncFunction";
+import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { SKIP_PROXY_FLAG, DYNAMIC_DESCRIPTOR_FLAG } from "../consts";
 import { ComputedDescriptor } from "../computed/types";
-import { isExtendDescriptor } from "./isExtendDescriptor";
-import { DynamicValueDescriptor } from '../extend/types';
+import { isValueDescriptor } from "../utils/isValueDescriptor";
+import { DynamicValueDescriptor } from './types';
 
 
-export function createExtendDescriptor(value:any): DynamicValueDescriptor  | undefined{
+export function createDynamicValueDescriptor(value:any): DynamicValueDescriptor  | undefined{
     let descriptor : ComputedDescriptor | undefined
-    if(isExtendDescriptor(value)){    
+    if(isValueDescriptor(value)){    
         value[SKIP_PROXY_FLAG] = true
         descriptor = value
     }else if(typeof value === 'function'){        

@@ -53,18 +53,20 @@
 import { ComputedObjects } from "../computed/computedObjects"; 
 import { FlexEvent } from "flex-tools/events/flexEvent"
 import { assignObject } from "flex-tools/object/assignObject"
-import { StateOperateParams } from "./types";
+import { StateOperateParams, StateOperates } from "./types";
 import type { Dict } from "../types";
-import { log } from "../utils/log";
-import { mix } from 'ts-mixer'
-import { getId } from "../utils/getId";
-import { ProxyMixin } from "../proxy/mixin"
-import { WatchMixin } from "../watch/mixin";
-import { ComputedMixin } from "../computed/mixin";
-import { EventMixin } from "../events/mixin";
-import { ExtendMixin } from "../extend/mixin";
-import { ComputedOptions } from "../computed/types";
+import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
+import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
+import { DynamicValueContext, DynamicValueDescriptor, DynamicValueScope, DynamicValueType } from "../dynamic";
+import { isRaw } from "../utils/isRaw";
+import { hookArrayMethods } from "./hookArray";
+import { SyncComputedObject } from "../computed/sync";
+import { ComputedDescriptor } from "../computed/types";
+import { Watcher, WatchListener, WatchOptions } from "../watch/types";
+import { createDynamicValueDescriptor } from "../dynamic/utils";
+import mitt, { Emitter } from "mitt";
+import { StoreEvents } from "../events/types";
 
 export type AutoStoreOptions<State extends Dict> = {
     /**
@@ -80,12 +82,18 @@ export type AutoStoreOptions<State extends Dict> = {
      * 
      */
     debug?:boolean 
+
     /**
-     *  是否马上执行计算函数
+     *  是否马上创建动态对象
+     * 
      * 
      * @description
-     *  默认情况下，计算函数仅在第一次读取时执行
-     *  如果immediate=true时，则在创建对象时马上创建计算对象
+     * 
+     * 默认情况下，计算函数仅在第一次读取时执行,
+     * 如果immediate=true时，则在创建Store时遍历对象触发对读操作从而马上创建计算对象
+     * 
+     * @default false
+     * 
     */
     immediate?: boolean 
     /**
@@ -129,16 +137,33 @@ export type AutoStoreOptions<State extends Dict> = {
      * @returns 
      */
     onCreateComputed?:(this:AutoStore<State>,computedObject:ComputedObject)=> void 
+    
     /**
-     * 在传递给计算函数的scope时调用
+     * 获取计算函数的根scope
      * 
-     * 默认draft指向的是当前根对象，可以在此返回一个新的draft指向
+     * @description
      * 
-     * 比如,return  draft.fields，代表计算函数的draft指向state.fields
+     * 计算函数在获取scope时调用，允许修改其根scope
+     * 
+     * 默认指向的是当前根对象，此处可以修改其指向
+     * 
+     * 比如,return  state.fields，代表计算函数的根指向state.fields
+     * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
      * 
      */
-    getRootScope?:()=>void//draft:any,options:{computedType:StateComputedType, valuePath:string[]}):any
-    
+    getRootScope?:(state:State,options:{dynamicType:DynamicValueType, valuePath:string[]}) => any
+
+    /**
+     * 
+     * 为所有动态值对象提供默认的scope参数
+     *    
+     * @description
+     * 默认情况下，所有computedObject,watchObject的scope参数均为CURRENT
+     * 可以通过此参数来为所有的computedObject,watchObject提供默认的scope参数
+     * 比如让所有的computedObject,watchObject的默认scope参数均为ROOT 
+     * 
+     */
+    scope?: DynamicValueScope
     /**
      * 当启用debug=true时用来输出日志信息
      * 
@@ -149,16 +174,8 @@ export type AutoStoreOptions<State extends Dict> = {
     log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
 }
 
-export interface AutoStore<State extends Dict = Dict> extends 
-    ProxyMixin<State>,
-    WatchMixin<State>,
-    ComputedMixin<State>,
-    EventMixin<State>,
-    ExtendMixin<State>
-{}
 
  
-@mix(ProxyMixin,WatchMixin,ComputedMixin,EventMixin)
 export class AutoStore<State extends Dict>{
     private _data: State;
     public computedObjects: ComputedObjects<State>  
@@ -169,42 +186,208 @@ export class AutoStore<State extends Dict>{
             id       : getId(),
             debug    : false,
             immediate: false,
-            log      : console.log
+            log,
+            enableComputed:true,
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects(this)
         this._data = this.createProxy(state, []);        
-
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
     get changesets(){return this._changesets}    
     get options(){return this._options}
+    log(message:LogMessageArgs,level?:LogLevel){if(this._options.debug) this.options.log(message,level)} 
 
-    log(message:any,level?:'log' | 'error' | 'warn'){
-        if(this._options.debug) this.log(message,level)
+    // *************   创建代理  **************/
+    private createProxy(target: any, parentPath: string[]): any {
+        if (typeof target !== 'object' || target === null) {
+            return target;
+        }
+        if(isRaw(target)) return target
+        return new Proxy(target, {
+            get: (obj, prop, receiver) => {
+                const value = Reflect.get(obj, prop, receiver);                
+                const path = [...parentPath, String(prop)];
+                if(!Object.hasOwn(obj,prop) || typeof value === 'function'){
+                    if(typeof value === 'function'){
+                        if(Array.isArray(obj)){
+                            return hookArrayMethods(this._notifyChange,obj,prop as string,value,parentPath); 
+                        }else if(!isRaw(value) && Object.hasOwn(obj,prop)){ 
+                            // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            return this.createDynamicValueObject(path,value,parentPath,obj) 
+                        }else{
+                            return value
+                        }
+                    }else{
+                        return value
+                    }                   
+                }                
+                this._notifyChange('get', path,[], value, undefined, parentPath, obj);
+                return this.createProxy(value, path);
+            },
+            set: (obj, prop, value, receiver) => {
+                const oldValue = obj[prop];
+                const path = [...parentPath, String(prop)];
+                const success = Reflect.set(obj, prop, value, receiver);
+                if (success) {
+                    if (Array.isArray(obj)) {
+                        if(prop === 'length'){
+                            if (value < oldValue) {
+                                this._notifyChange('remove', parentPath, [],oldValue,undefined,  parentPath, obj);
+                            }
+                        }else{
+                            this._notifyChange('update', parentPath, [Number(prop)], value, oldValue, parentPath, obj);
+                        }                        
+                    } else {
+                        this._notifyChange('set', path, [], value, oldValue, parentPath, obj); 
+                    }
+                }
+                return success;
+            },
+            deleteProperty: (obj, prop) => {
+                const value = obj[prop];
+                const path = [...parentPath, String(prop)];
+                const success = Reflect.deleteProperty(obj, prop);
+                if (success) {
+                    this._notifyChange('delete', path, [],value, undefined, parentPath, obj);
+                }
+                return success;
+            }
+        });
     } 
+    /**
+     * 
+     * 触发状态变化事件
+     * 
+     */
+    private _notifyChange(this: AutoStore<State>, type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any) {          
+        this.changesets.emit(path.join('.'),{
+            type, path,indexs, value, oldValue, parentPath, parent
+        })       
+    } 
+    // ************* Computed **************/
+    /**
+     * 
+     * 创建一个计算属性对象
+     * 
+     * 当data中的成员是一个函数时，会自动创建一个计算属性对象
+     * 
+     * 
+     */
+    private createComputed(valueContext:DynamicValueContext,descriptor:DynamicValueDescriptor){
+        if(descriptor.options.async){
+        }else{
+            const computedObj = new SyncComputedObject<State>(this,valueContext,descriptor as ComputedDescriptor)                
+            return computedObj.initial 
+        }       
+    }  
+    // ************* Watch **************/
+    /**
+     * 监视数据变化，并在变化时执行指定的监听器函数。
+     * 
+     * @example
+     * 
+     * - 侦听所有的数据变化
+     *  
+     * const unwatch = state.watch(({type,path,value,oldValue,parentPath,parent})=>{})
+     * 
+     * - 侦听指定路径的数据变化
+     * 
+     * const unwatch = state.watch("job.title",({type,path,value,oldValue,parentPath,parent})=>{})
+     * 
+     * - 侦听多个路径的数据变化
+     * 
+     * const unwatch = state.watch(["job.title","job.salary"],({type,path,value,oldValue,parentPath,parent})=>{})
+     * 
+     * - 侦听通配符路径的数据变化
+     * 
+     * const unwatch = state.watch("job.*",({type,path,value,oldValue,parentPath,parent})=>{})
+     * 
+     * 
+     * 
+     * @param {string|string[]} keyPaths - 要监视的数据路径，可以是单个字符串或字符串数组。
+     * @param {WatchListener} listener - 当监视的数据路径变化时执行的回调函数。
+     * @param {WatchOptions} [options] - 可选参数，用于配置监视行为。
+     * @returns {Watcher} - 返回一个表示监听器的数字标识符，用来取消监听。
+     */    
+    watch(listener:WatchListener,options?:WatchOptions):Watcher
+    watch(keyPaths:string | (string|string[])[],listener:WatchListener,options?:WatchOptions):Watcher
+    watch():Watcher{
+        const isWatchAll = typeof(arguments[0])==='function'
+        const listener = isWatchAll ? arguments[0] : arguments[1]
+
+        const createSubscribe =(operates:StateOperates[],filter:WatchOptions['filter'])=>(event:StateOperateParams)=>{
+            if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
+                if(!operates.includes(event.type)) return
+            }
+            if(typeof(filter)==='function' && !filter(event)) return
+            listener.call(this,event)                    
+        }        
+        if(isWatchAll){ // 侦听全部
+            const {once,operates,filter} = Object.assign({once:false,operates:[]},arguments[1])  as Required<WatchOptions>
+            const subscribeMethod = once ? this.changesets.once : this.changesets.on
+            return subscribeMethod.call(this.changesets,"**",createSubscribe(operates,filter),{objectify:true}) as Watcher
+        }else{ // 只侦听指定路径
+            const delimiter = this.changesets.delimiter as string
+            const keyPaths = arguments[0] as string | (string|string[])[]
+            const paths:string[] = Array.isArray(keyPaths) ? 
+                keyPaths.map(v=>typeof(v)==='string'? v:v.join(delimiter)) : [keyPaths]
+            const {once,operates,filter} = Object.assign({once:false,operates:[]},arguments[2])  as Required<WatchOptions>
+            const subscribeMethod = once ? this.changesets.once : this.changesets.on           
+            const subscribers:string[]=[]
+            const unSubscribe = ()=>{
+                subscribers.forEach(subscriber=>this.changesets.off(subscriber))
+            }
+            paths.forEach(path=>{
+                subscribers.push(subscribeMethod.call(this.changesets,path,createSubscribe(operates,filter)) as string)
+            })
+            return {off:unSubscribe}
+        }        
+    }
+
+    // ************* Dynamic **************
 
     /**
-     *  对状态中的函数进行扩展
-     *  
-     *  @description
      * 
-     *  创建State时，如果成员中是一个函数，则会调用此方法进行扩展
-     * 
-     *  -       
-     * 
-     * - computedObject
-     * - watch
+     * 创建动态值对象
      * 
      * @param path 
      * @param value 
      * @param parentPath 
      * @param parent 
-     */
-    protected installExtends(path:string[],value:Function,parentPath:string[],parent:any){
+     * @returns 
+     */    
 
+    private createDynamicValueObject(path:string[],value:any,parentPath:string[],parent:any){
+        const descriptor = createDynamicValueDescriptor(value)
+        const dynamicValueCtx = { path,value,parentPath,parent }
+        if(descriptor){
+            if(descriptor.type==='computed'){                
+                return this.createComputed(dynamicValueCtx,descriptor)
+            }
+
+        }else{
+            return value
+        }        
+    }
+    // **************** EventEmitter ***********
+    private _emitter:Emitter<StoreEvents> = mitt()
+    get on(){ return this._emitter.on.bind(this) }
+    get off(){ return this._emitter.off.bind(this) }
+    get emit(){ return this._emitter.emit.bind(this) }    
+    once<T extends keyof StoreEvents>(this:AutoStore<State>, event: T, handler: (payload:StoreEvents[T]) => void) {
+        const phandler =(payload:StoreEvents[T]) => {
+            try{
+                handler(payload)
+            }finally{            
+                this._emitter.off(event,phandler)
+            }
+        }
+        this._emitter.on(event,phandler)
     }
 }
+
+
 
 export function createStore<State extends Dict>(initial: State,options?:AutoStoreOptions<State>){
     return new AutoStore<State>(initial,options);

@@ -1,6 +1,7 @@
 import { expect,test,describe, beforeEach, afterEach } from "vitest"
-import { createStore, AutoStore, Watcher } from "../src";
+import { createStore, AutoStore } from "../src";
 import { deepClone } from "flex-tools/object/deepClone";
+import { Watcher } from "../src/watch/types";
 
 const data = {
     firstName: 'John',
@@ -25,10 +26,10 @@ const data = {
 
 
 describe("watch object", () => {
-    let state:AutoStore<typeof data>;
+    let store:AutoStore<typeof data>;
     let watcher:Watcher
     beforeEach(() => {
-        state = createStore(deepClone(data));
+        store = createStore(deepClone(data));
     })
     afterEach(() => {
         watcher.off();
@@ -36,12 +37,12 @@ describe("watch object", () => {
 
     test("read operate events", () => {
         const events:any[] = [];
-        watcher = state.watch((event) => {
+        watcher = store.watch((event) => {
             events.push(event);
         })
-        state.state.firstName;
-        state.state.address[0].city;
-        state.state.job.title;    
+        store.state.firstName;
+        store.state.address[0].city;
+        store.state.job.title;    
         expect(events).toStrictEqual([
             { type: 'get', path: ['firstName'], indexs:[],value: data.firstName,parent:data,parentPath:[],oldValue:undefined },
             { type: 'get', path: ['address'], indexs:[], value: data.address,parent:data,parentPath:[],oldValue:undefined },
@@ -53,31 +54,31 @@ describe("watch object", () => {
     })
     test("Write operage events",()=>{
         const events:any[] = [];
-        watcher = state.watch((event) => {            
+        watcher = store.watch((event) => {            
             events.push(event);
         },{operates:['set','update']})      
-        state.state.firstName = "Li";
-        state.state.address[0].city = "Shanghai";
-        state.state.job.title = "Frontend Engineer";
-        expect(events[0]).toStrictEqual({ type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:state.state,parentPath:[] ,oldValue: 'John'})
-        expect(events[1]).toStrictEqual({ type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:state.state.address[0],parentPath:["address",'0'],oldValue: 'New York' })
-        expect(events[2]).toStrictEqual({ type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:state.state.job,parentPath:["job"],oldValue: 'Software Engineer'})
+        store.state.firstName = "Li";
+        store.state.address[0].city = "Shanghai";
+        store.state.job.title = "Frontend Engineer";
+        expect(events[0]).toStrictEqual({ type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:store.state,parentPath:[] ,oldValue: 'John'})
+        expect(events[1]).toStrictEqual({ type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:store.state.address[0],parentPath:["address",'0'],oldValue: 'New York' })
+        expect(events[2]).toStrictEqual({ type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:store.state.job,parentPath:["job"],oldValue: 'Software Engineer'})
     })
     test("delete object items",()=>{
         const events:any[] = [];
-        watcher =  state.watch((event) => {
+        watcher =  store.watch((event) => {
             events.push(event);
         },{operates:['delete']})      
         // @ts-ignore
-        delete state.state.firstName;
+        delete store.state.firstName;
         // @ts-ignore
-        delete state.state.address[0].city;
+        delete store.state.address[0].city;
         // @ts-ignore
-        delete state.state.job.title;
+        delete store.state.job.title;
         // @ts-ignore
-        delete state.state.job;
-        expect(events[0]).toStrictEqual({ type: 'delete', path: ['firstName'], indexs:[], value: 'John',parent:state.state,parentPath:[] ,oldValue: undefined})
-        expect(events[1]).toStrictEqual({ type: 'delete', path: ['address', '0', 'city'], indexs:[], value:'New York',parent:state.state.address[0],parentPath:["address",'0'],oldValue: undefined})
+        delete store.state.job;
+        expect(events[0]).toStrictEqual({ type: 'delete', path: ['firstName'], indexs:[], value: 'John',parent:store.state,parentPath:[] ,oldValue: undefined})
+        expect(events[1]).toStrictEqual({ type: 'delete', path: ['address', '0', 'city'], indexs:[], value:'New York',parent:store.state.address[0],parentPath:["address",'0'],oldValue: undefined})
         expect(events[2]).toStrictEqual({ type: 'delete', path: ['job', 'title'], indexs:[], value: 'Software Engineer',parent:{company: 'Google',
             salary: 100000},parentPath:["job"],oldValue: undefined})
     })

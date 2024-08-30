@@ -1,6 +1,7 @@
 {
     "rules": {
-        "eqeqeq": ["warn"]
+        "eqeqeq": ["warn"],
+        "tab-width": ["warn", 4]
     },
     "ignore": ["node_modules","dist","packages/**/__tests__/**/*"]
 }
