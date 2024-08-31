@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "flex-tools": "^1.4.7",
-    "mitt": "^3.0.1"
+    "mitt": "^3.0.1",
+    "reflect-metadata": "^0.2.2"
   }
 }

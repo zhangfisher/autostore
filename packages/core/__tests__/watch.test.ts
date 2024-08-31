@@ -6,7 +6,6 @@ import { Watcher } from "../src/watch/types";
 const data = {
     firstName: 'John',
     lastName: 'Doe',
-    fullName: (data:any) => `${data.firstName} ${data.lastName}`,
     age: 30,
     address: [
         { city: 'New York', street: 'Wall Street' },

@@ -67,6 +67,9 @@ import { Watcher, WatchListener, WatchOptions } from "../watch/types";
 import { createDynamicValueDescriptor } from "../dynamic/utils";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
+import { getVal } from "../utils";
+import { OBJECT_PATH_DELIMITER } from "../consts";
+import { createReactiveObject } from "./reactive";
 
 export type AutoStoreOptions<State extends Dict> = {
     /**
@@ -175,12 +178,15 @@ export type AutoStoreOptions<State extends Dict> = {
 }
 
 
- 
+type StateNotifier = (type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any)=>void
+
 export class AutoStore<State extends Dict>{
     private _data: State;
     public computedObjects: ComputedObjects<State>  
     protected _changesets:FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    
     private _options: Required<AutoStoreOptions<State>>
+    private _batching = false           // 当执行批量更新时为true
+    private _peeping:boolean = false
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         this._options = assignObject({
             id       : getId(),
@@ -190,77 +196,23 @@ export class AutoStore<State extends Dict>{
             enableComputed:true,
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects(this)
-        this._data = this.createProxy(state, []);        
+        this._data = createReactiveObject(state,{
+            notify:this.notice.bind(this),
+            createDynamicValueObject:this.createDynamicValueObject.bind(this)
+        })
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
     get changesets(){return this._changesets}    
     get options(){return this._options}
     log(message:LogMessageArgs,level?:LogLevel){if(this._options.debug) this.options.log(message,level)} 
-
-    // *************   创建代理  **************/
-    private createProxy(target: any, parentPath: string[]): any {
-        if (typeof target !== 'object' || target === null) {
-            return target;
-        }
-        if(isRaw(target)) return target
-        return new Proxy(target, {
-            get: (obj, prop, receiver) => {
-                const value = Reflect.get(obj, prop, receiver);                
-                const path = [...parentPath, String(prop)];
-                if(!Object.hasOwn(obj,prop) || typeof value === 'function'){
-                    if(typeof value === 'function'){
-                        if(Array.isArray(obj)){
-                            return hookArrayMethods(this._notifyChange,obj,prop as string,value,parentPath); 
-                        }else if(!isRaw(value) && Object.hasOwn(obj,prop)){ 
-                            // 如果值是一个函数，则创建一个计算属性或Watch对象
-                            return this.createDynamicValueObject(path,value,parentPath,obj) 
-                        }else{
-                            return value
-                        }
-                    }else{
-                        return value
-                    }                   
-                }                
-                this._notifyChange('get', path,[], value, undefined, parentPath, obj);
-                return this.createProxy(value, path);
-            },
-            set: (obj, prop, value, receiver) => {
-                const oldValue = obj[prop];
-                const path = [...parentPath, String(prop)];
-                const success = Reflect.set(obj, prop, value, receiver);
-                if (success) {
-                    if (Array.isArray(obj)) {
-                        if(prop === 'length'){
-                            if (value < oldValue) {
-                                this._notifyChange('remove', parentPath, [],oldValue,undefined,  parentPath, obj);
-                            }
-                        }else{
-                            this._notifyChange('update', parentPath, [Number(prop)], value, oldValue, parentPath, obj);
-                        }                        
-                    } else {
-                        this._notifyChange('set', path, [], value, oldValue, parentPath, obj); 
-                    }
-                }
-                return success;
-            },
-            deleteProperty: (obj, prop) => {
-                const value = obj[prop];
-                const path = [...parentPath, String(prop)];
-                const success = Reflect.deleteProperty(obj, prop);
-                if (success) {
-                    this._notifyChange('delete', path, [],value, undefined, parentPath, obj);
-                }
-                return success;
-            }
-        });
-    } 
     /**
      * 
-     * 触发状态变化事件
+     * 当状态读写时调用此方法触发事件
      * 
      */
-    private _notifyChange(this: AutoStore<State>, type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any) {          
+    private notice(type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any) {          
+        if(this._peeping && type=='get') return    // 偷看时不触发事件
         this.changesets.emit(path.join('.'),{
             type, path,indexs, value, oldValue, parentPath, parent
         })       
@@ -385,10 +337,94 @@ export class AutoStore<State extends Dict>{
         }
         this._emitter.on(event,phandler)
     }
+
+    // **************** 普通方法 ***********
+
+    /**
+     * 
+     * 更新状态并且不触发事件
+     * 
+     * @description
+     * 
+     * 正常情况下可以通过store.state.xxx.xxx='xxxx'来更新状态，同时会触发事件
+     * 
+     * 而通过store.update(fn)来更新则不会触发更新事件
+     * 
+     * @example
+     * 
+     * - 只能是同步函数
+     * store.update((state)=>{
+     *      state.xxx.xxx='111'        
+     * })
+     * 
+     * 
+     * - 不支持异步函数
+     * store.update(async (state)=>{
+     *      state.xxx.xxx='111'        
+     *      await fetch('xxxx')
+     *      state.xxx.xxx='222'
+     * })
+     * 
+     * 
+     * @param fn   更新方法，在此方法内部进行更新操作
+     */
+    update(fn:(state:State)=>{}){
+        if(typeof(fn)==='function'){                        
+            this._batching=true
+            try{
+                fn(this.state)
+            }finally{
+                this._batching=false
+            }            
+        }else{
+            throw new Error("update method must provide a function argument")
+        }
+    }
+    /**
+     * 
+     * 读取指定路径的状态值并且不触发事件，即偷看
+     * 
+     * 
+     */
+    peep(path:string | string[]){
+        this._peeping=true
+        try{
+            return getVal(this.state,Array.isArray(path) ? path : path.split(OBJECT_PATH_DELIMITER))
+        }finally{
+            this._peeping =false
+        }         
+    }
+
 }
 
 
 
 export function createStore<State extends Dict>(initial: State,options?:AutoStoreOptions<State>){
     return new AutoStore<State>(initial,options);
+}
+
+/**
+ * 
+ * 创建一个虚拟对象，实现
+ * 
+ * 当在代理对象上进行任意键值的读取操作时，会触发回调函数
+ * 
+ * - 该对象具有任意的键值对，可以是任意的嵌套对象
+ * - 读取操作包括：get, set, delete, insert
+ * - 支持通过泛型State提供类型
+ * - 支持嵌套对象，包括数组成员的读写操作
+ * 
+ * const state = createShadowObject(({path,operate,value})=>{
+ *  
+ * })
+ * 
+ * state.a.b=1  触发 {path:["a","b"],operate:"set",value:1}
+ * state.orders[0].price=100 触发 {path:["orders",0,"price"],operate:"set",value:100}
+ * state.job.title 触发 {path:["job","title"],operate:"get"}
+ * - state嵌套成员不需要真实存在，只是触发读写操作回调
+ * 
+ */
+function createShadowObject<State extends object>(callback:(operates:{path:string[],operate:'set',value:any}[])=>void){
+
+
 }
