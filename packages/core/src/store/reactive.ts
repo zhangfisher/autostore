@@ -3,11 +3,19 @@
 import 'reflect-metadata';
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
-import { StateOperateParams, StateOperates } from './types'; 
+import { StateOperates } from './types'; 
+
+
+const __NOTIFY__ = Symbol('__NOTIFY__')
+
+export type ReactiveNotifyParams<T=any> = {
+    type:StateOperates, path: string[], indexs:number[] , value: T, oldValue: T, parentPath: string[], parent: any
+}
+
 
 
 type CreateReactiveObjectOptions = {
-  notify:(type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any)=>void
+  notify:(params:ReactiveNotifyParams)=>void
   createDynamicValueObject:(path:string[],value:Function,parentPath:string[],parent:any)=>any
 };
 
@@ -25,11 +33,12 @@ type CreateReactiveObjectOptions = {
  */
 export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): State {
     const { notify,createDynamicValueObject } = Object.assign({},options)
-    const notice = (receiver:any,type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any)=>{
-        const fn = receiver.__notify__ && typeof(receiver.__notify__ =='function') ? receiver.__notify__ : notify
-        fn(type,path,indexs,value,oldValue,parentPath,parent)
-    }
-    const createProxy = (target: any, parentPath: string[]): any =>{
+    
+    const notice = (scopeNotify:any,params:ReactiveNotifyParams)=>{
+        const fn = scopeNotify && typeof(scopeNotify=='function') ? scopeNotify : notify
+        fn(params)
+    }    
+    const createProxy = (target: any, parentPath: string[],scopeNotify:any): any =>{
         if (typeof target !== 'object' || target === null) {
             return target;
         }
@@ -37,11 +46,17 @@ export function createReactiveObject<State extends object>(state:State,options?:
         return new Proxy(target, {             
             get: (obj, prop, receiver) => {
                 const value = Reflect.get(obj, prop, receiver);                
+                if(prop === __NOTIFY__) return value
+                if(parentPath.length===0 && receiver[__NOTIFY__]  && typeof(receiver[__NOTIFY__])==='function'){
+                    scopeNotify = receiver[__NOTIFY__] 
+                }else{
+                    scopeNotify=null
+                }
                 const path = [...parentPath, String(prop)];
                 if(!Object.hasOwn(obj,prop) || typeof value === 'function'){
                     if(typeof value === 'function'){
                         if(Array.isArray(obj)){                            
-                            return hookArrayMethods((...args:any[])=>notice(receiver,...args),obj,prop as string,value,parentPath); 
+                            return hookArrayMethods((params:ReactiveNotifyParams)=>notice(scopeNotify,params),obj,prop as string,value,parentPath); 
                         }else if(!isRaw(value) && Object.hasOwn(obj,prop)){                          
                             return createDynamicValueObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
                         }else{
@@ -51,24 +66,32 @@ export function createReactiveObject<State extends object>(state:State,options?:
                         return value
                     }                   
                 }                
-                notice(receiver,'get', path,[], value, undefined, parentPath, obj);
-                return createProxy(value, path);
+                notice(scopeNotify,{type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});
+                const p =Object.create(createProxy(value, path,scopeNotify))
+                p[__NOTIFY__] = scopeNotify
+                return p // createProxy(value, path,scopeNotify);
             },
             set: (obj, prop, value, receiver) => {
                 const oldValue = obj[prop];
                 const path = [...parentPath, String(prop)];
-                const success = Reflect.set(obj, prop, value, receiver);
-                if (success) {
+                let success = Reflect.set(obj, prop, value, receiver);
+                if(prop === __NOTIFY__) return true
+                if(parentPath.length===0 && receiver[__NOTIFY__]  && typeof(receiver[__NOTIFY__])==='function'){
+                    scopeNotify = receiver[__NOTIFY__] 
+                }else{
+                    scopeNotify=null
+                }
+                if (success && prop!==__NOTIFY__) {
                     if (Array.isArray(obj)) {
                         if(prop === 'length'){
                             if (value < oldValue) {
-                                notify('remove', parentPath, [],oldValue,undefined,  parentPath, obj);
+                                notice(scopeNotify,{type:'remove',path: parentPath,indexs:[],oldValue,value:undefined,  parentPath,parent: obj});
                             }
                         }else{
-                            notice(receiver,'update', parentPath, [Number(prop)], value, oldValue, parentPath, obj);
+                            notice(scopeNotify,{type:'update',path: parentPath,indexs: [Number(prop)], value, oldValue, parentPath, parent:obj});
                         }                        
                     } else {
-                        notice(receiver,'set', path, [], value, oldValue, parentPath, obj); 
+                        notice(scopeNotify,{type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj}); 
                     }
                 }
                 return success;
@@ -77,14 +100,14 @@ export function createReactiveObject<State extends object>(state:State,options?:
                 const value = obj[prop];
                 const path = [...parentPath, String(prop)];
                 const success = Reflect.deleteProperty(obj, prop);
-                if (success) {
-                    notice(undefined,'delete', path, [],value, undefined, parentPath, obj);
+                if (success && prop!==__NOTIFY__) {
+                    notice(scopeNotify,{type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
                 }
                 return success;
             }
         })
     } 
-    return createProxy(state, []) as State
+    return createProxy(state, [],undefined) as State
 } 
 
 
@@ -115,9 +138,14 @@ export function createReactiveObject<State extends object>(state:State,options?:
  * @param state 
  * @param options 
  */
-export function createScopeObject<State extends object>(obj:State,callback:(type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any)=>void): State {
+export function createScopeObject<State extends object>(obj:State,callback:(params:ReactiveNotifyParams)=>void): State {
     const scopeObj = Object.create(obj)
-    scopeObj.__notify__ = callback
+    Object.defineProperty(scopeObj,__NOTIFY__,{
+        value:callback,
+        writable:false,
+        enumerable:false,
+        configurable:false
+    })  
     return scopeObj as State
 }
 

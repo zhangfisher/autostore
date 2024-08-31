@@ -7,7 +7,7 @@ export function hookArrayMethods(notifyChange:any, array: any[], name:string,met
             const result = method.apply(array, args);
             if (array.length > oldLength) {
                 const indexs = Array.from({length: array.length - oldLength}, (_, i) => i + oldLength);                 
-                notifyChange('insert',parentPath, indexs, args, undefined, parentPath, array);
+                notifyChange({type:'insert',path:parentPath, indexs, value:args,oldValue: undefined, parentPath,parent: array});
             }
             return result;
         };
@@ -17,11 +17,11 @@ export function hookArrayMethods(notifyChange:any, array: any[], name:string,met
             const result = method.apply(array, [start, deleteCount, ...items]);                
             if (deletedItems.length > 0) {
                 const deleteIndexs = Array.from({ length: deletedItems.length }, (_, i) => start + i);
-                notifyChange('remove',parentPath,deleteIndexs, deletedItems,undefined, parentPath, array);
+                notifyChange({type:'remove',path:parentPath,indexs:deleteIndexs, value:deletedItems,oldValue:undefined, parentPath,parent:array});
             }
             if (items.length > 0) {
                 const addIndexs = Array.from({ length: items.length }, (_, i) => start + i);
-                notifyChange('insert', parentPath,addIndexs, items, undefined, parentPath, array);
+                notifyChange({type:'insert', path: parentPath,indexs:addIndexs,value: items,oldValue:undefined, parentPath,parent: array});
             }
             return result;
         };
@@ -31,7 +31,7 @@ export function hookArrayMethods(notifyChange:any, array: any[], name:string,met
             const result = method.apply(array, args);
             if (array.length > oldLength) {
                 const indexs = Array.from({ length: array.length - oldLength }, (_, i) => i);
-                notifyChange('insert', parentPath,indexs, args, undefined, parentPath, array);
+                notifyChange({type:'insert',path:parentPath,indexs,value: args,oldValue:undefined, parentPath,parent: array});
             }
             return result;
         };

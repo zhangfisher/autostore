@@ -69,7 +69,7 @@ import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
 import { getVal } from "../utils";
 import { OBJECT_PATH_DELIMITER } from "../consts";
-import { createReactiveObject } from "./reactive";
+import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
 
 export type AutoStoreOptions<State extends Dict> = {
     /**
@@ -209,13 +209,11 @@ export class AutoStore<State extends Dict>{
     /**
      * 
      * 当状态读写时调用此方法触发事件
-     * 
+     * type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any
      */
-    private notice(type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any) {          
-        if(this._peeping && type=='get') return    // 偷看时不触发事件
-        this.changesets.emit(path.join('.'),{
-            type, path,indexs, value, oldValue, parentPath, parent
-        })       
+    private notice(params:ReactiveNotifyParams) {          
+        if(this._peeping && params.type=='get') return    // 偷看时不触发事件
+        this.changesets.emit(params.path.join('.'),params)       
     } 
     // ************* Computed **************/
     /**
