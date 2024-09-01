@@ -8,7 +8,7 @@ import { joinValuePath } from "../utils/joinValuePath";
 
  
 
-export class WatchObject<Value=any,Scope=any> extends DynamicValueObject<Value,Scope,ComputedOptions<Value,Scope>>{    
+export class WatchObject<Value=any,Scope=any> extends DynamicValueObject<Value,Scope>{    
     protected onInitial(){
       
     } 

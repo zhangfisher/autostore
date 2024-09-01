@@ -66,5 +66,5 @@ export function computed<R = any, Scope = any>(): any {
 		getter,
 		options: opts,
 	};
-	return descriptor;
+	return ()=>descriptor;
 }

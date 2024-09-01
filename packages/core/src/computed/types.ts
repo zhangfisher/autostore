@@ -15,7 +15,7 @@
  * 
  * 
  */
-import { DynamicValueDescriptor, DynamicValueOptions } from "../dynamic/types"
+import { DynamicValueDescriptor, DynamicValueOptions, DynamicValueScopeRef } from "../dynamic/types"
 import { StateOperateParams } from "../store/types"
 import { Dict } from "../types"
 
@@ -83,7 +83,8 @@ export interface ComputedGetterArgs{
 export type ComputedDepends = (string | string[])[] 
 export type ComputedGetter<Value,Scope=any> = (scope: Scope,args:Required<ComputedGetterArgs>) => Exclude<Value,Promise<any>>
 export type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (scope:Scope,args:Required<AsyncComputedGetterArgs> & P) => Promise<Value>
-
+ 
+    
 export interface ComputedOptions<Value=any,Scope=any> extends DynamicValueOptions<Value> {     
 
  
@@ -179,3 +180,5 @@ export type RuntimeComputedOptions = Pick<ComputedOptions,
         initialize?:boolean                     // 当第一次运行时传入   
         changed?:  StateOperateParams           // 变化的依赖信息
     } 
+
+export const ComputedScopeRef = DynamicValueScopeRef

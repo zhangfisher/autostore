@@ -38,7 +38,7 @@ describe("watch object", () => {
         const events:any[] = [];
         watcher = store.watch((event) => {
             events.push(event);
-        },{operates:"*"})
+        },{operates:['get']})
         store.state.firstName;
         store.state.address[0].city;
         store.state.job.title;    

@@ -30,8 +30,8 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
    */
   run(options?:RuntimeComputedOptions){        
     const { initialize = false,changed } = options ?? {}
-    // 1. 检查是否计算被禁用
-    if(!this.store.options.enableComputed || (!this.enable && options?.enable!==true) || options?.enable===false){
+    // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
+    if(!initialize && (!this.store.options.enableComputed || (!this.enable && options?.enable!==true) || options?.enable===false)){
       this.store.log(`Sync computed <${this.toString()}> is disabled`,'warn')
       return 
     }
@@ -46,7 +46,7 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
     // 3. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
-      computedResult = (this.getter).call(this.store,scope,{changed,initialize});
+      computedResult = (this.getter).call(this,scope,{changed,initialize});
       if(initialize){
         this.initial = computedResult
       }else{

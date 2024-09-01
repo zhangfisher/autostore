@@ -292,7 +292,7 @@ export class AutoStore<State extends Dict>{
             const keyPaths = arguments[0] as string | (string|string[])[]
             const paths:string[] = Array.isArray(keyPaths) ? 
                 keyPaths.map(v=>typeof(v)==='string'? v:v.join(delimiter)) : [keyPaths]
-            const {once,operates,filter} = Object.assign({once:false,operates:[]},arguments[2])  as Required<WatchOptions>
+            const {once,operates,filter} = Object.assign({once:false,operates:['set','delete','insert','remove','update']},arguments[2])  as Required<WatchOptions>
             const subscribeMethod = once ? this.changesets.once : this.changesets.on           
             const subscribers:string[]=[]
             const unSubscribe = ()=>{

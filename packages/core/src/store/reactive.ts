@@ -47,7 +47,7 @@ export function createReactiveObject<State extends object>(state:State,options?:
                         if(Array.isArray(obj)){                            
                             return hookArrayMethods(notify,obj,prop as string,value,parentPath); 
                         }else if(!isRaw(value) && Object.hasOwn(obj,prop)){                          
-                            return createDynamicValueObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            return createDynamicValueObject(path,value(),parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
                         }else{
                             return value
                         }
