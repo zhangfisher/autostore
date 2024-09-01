@@ -16,6 +16,7 @@
  * 
  */
 import { DynamicValueDescriptor, DynamicValueOptions } from "../dynamic/types"
+import { StateOperateParams } from "../store/types"
 import { Dict } from "../types"
 
  
@@ -158,7 +159,7 @@ export type RuntimeComputedOptions = Pick<ComputedOptions,
     'enable' |'onDone' | 'scope' | 'abortSignal' 
     | 'noReentry' | 'retry' | 'onError' | 'timeout'> &
     {
-        initialize?:boolean             // 当第一次运行时传入
-        path?:string[]                   // 所依赖数据的路径        
-    }
-
+        initialize?:boolean                     // 当第一次运行时传入
+        path?:string[]                          // 所依赖数据的路径      
+        context?:  StateOperateParams            // 计算函数的上下文
+    } 

@@ -5,8 +5,6 @@ import {  setVal  } from "../utils";
 import {  ComputedOptions,  RuntimeComputedOptions } from './types';
 import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
-import { isPathMatched } from "../utils/isPathMatched";
-import { OBJECT_PATH_DELIMITER } from "../consts";
 import { StateOperateParams } from "../store/types";
  
 
@@ -48,9 +46,9 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
     // 3. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
-      computedResult = (this.getter ).call(this.store,scope);
+      computedResult = (this.getter).call(this.store,scope);
       if(initialize){
-        this._initialValue = computedResult
+        this.initial = computedResult
       }else{
         setVal(this.store.state,this.path, computedResult);
       }      
@@ -90,8 +88,12 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
       this.depends = dependencies      
       this.subscribeDepends()
   }  
+  /**
+   * 当依赖发生变化时调用
+   * @param event
+   */
   protected onDependsChange(event: StateOperateParams): void {      
-      this.run()
+      this.run({context:event})
   }
 }
  

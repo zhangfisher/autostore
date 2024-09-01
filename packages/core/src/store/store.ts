@@ -59,15 +59,13 @@ import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
 import { DynamicValueContext, DynamicValueDescriptor, DynamicValueScope, DynamicValueType } from "../dynamic";
-import { isRaw } from "../utils/isRaw";
-import { hookArrayMethods } from "./hookArray";
 import { SyncComputedObject } from "../computed/sync";
 import { ComputedDescriptor } from "../computed/types";
 import { Watcher, WatchListener, WatchOptions } from "../watch/types";
 import { createDynamicValueDescriptor } from "../dynamic/utils";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
-import { getVal } from "../utils";
+import { getVal, setVal } from "../utils";
 import { OBJECT_PATH_DELIMITER } from "../consts";
 import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
 
@@ -213,6 +211,7 @@ export class AutoStore<State extends Dict>{
      */
     private notice(params:ReactiveNotifyParams) {          
         if(this._peeping && params.type=='get') return    // 偷看时不触发事件
+        if(this._batching) return
         this.changesets.emit(params.path.join('.'),params)       
     } 
     // ************* Computed **************/
@@ -225,11 +224,17 @@ export class AutoStore<State extends Dict>{
      * 
      */
     private createComputed(valueContext:DynamicValueContext,descriptor:DynamicValueDescriptor){
+        let computedObj:ComputedObject | undefined
         if(descriptor.options.async){
         }else{
-            const computedObj = new SyncComputedObject<State>(this,valueContext,descriptor as ComputedDescriptor)                
-            return computedObj.initial 
-        }       
+            computedObj = new SyncComputedObject<State>(this,valueContext,descriptor as ComputedDescriptor)         
+        }    
+        if(computedObj){
+            this.update((state)=>{
+                setVal(state,valueContext.path,computedObj.initial)
+            })      
+            return computedObj.initial  
+        }   
     }  
     // ************* Watch **************/
     /**
@@ -356,7 +361,7 @@ export class AutoStore<State extends Dict>{
      * })
      * 
      * 
-     * - 不支持异步函数
+     * -  不支持异步函数
      * store.update(async (state)=>{
      *      state.xxx.xxx='111'        
      *      await fetch('xxxx')
@@ -366,7 +371,7 @@ export class AutoStore<State extends Dict>{
      * 
      * @param fn   更新方法，在此方法内部进行更新操作
      */
-    update(fn:(state:State)=>{}){
+    update(fn:(state:State)=>void){
         if(typeof(fn)==='function'){                        
             this._batching=true
             try{

@@ -5,11 +5,10 @@
  */
 import { DynamicValueObject } from "../dynamic/valueObject"
 import { joinValuePath } from "../utils/joinValuePath";
-import {  ComputedOptions } from './types';
 
  
 
-export class ComputedObject<Value=any,Scope=any> extends DynamicValueObject<Value,Scope,ComputedOptions<Value,Scope>>{    
+export class WatchObject<Value=any,Scope=any> extends DynamicValueObject<Value,Scope,ComputedOptions<Value,Scope>>{    
     protected onInitial(){
       
     } 
@@ -20,8 +19,8 @@ export class ComputedObject<Value=any,Scope=any> extends DynamicValueObject<Valu
      * @description
      */
     run(){
-         
+        this.descriptor.getter
     }
-    toString(){ return `ComputedObject<${joinValuePath(this.path)}>` }
+    toString(){ return `WatchObject<${joinValuePath(this.path)}>` }
 
 }
