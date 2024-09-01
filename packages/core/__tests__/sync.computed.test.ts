@@ -15,26 +15,44 @@ const data = {
     ],
     job: {
         title: 'Software Engineer',
-        company: 'Google'
+        company: 'Google',
+        salary: 100000
     }
 }
 
 
-describe('sync computed', () => {
-
-    let store:AutoStore<typeof data>; 
-    beforeEach(() => {
-        store = createStore(deepClone(data));
-    })
-    afterEach(() => {
-         
-    })
+describe('sync computed', () => { 
 
     test('sync compute fullName value  ', () => {     
-        expect(store.state.fullName).toBe('zhang fisher')
-
+        const store = createStore({
+            user:{
+                firstName: 'zhang',
+                lastName: 'fisher',
+                fullName: (scope:any) => `${scope.firstName} ${scope.lastName}`
+            }            
+        });
+        expect(store.state.user.fullName).toBe('zhang fisher')
+        store.state.user.firstName = 'li'
+        expect(store.state.user.fullName).toBe('li fisher')        
     })
-
+    test('watch sync compute fullName value  ', () => {     
+        const store = createStore({
+            user:{
+                firstName: 'zhang',
+                lastName: 'fisher',
+                fullName: (scope:any) => `${scope.firstName} ${scope.lastName}`
+            }            
+        });
+        const oldvalues:any[] = []
+        const values:any[]=[]
+        store.watch("fullName",(event)=>{
+            values.push(event.value)
+            oldvalues.push(event.oldValue)
+        },{operates:['set']})
+        expect(store.state.user.fullName).toBe('zhang fisher')
+        store.state.user.firstName = 'li'
+        expect(store.state.user.fullName).toBe('li fisher')        
+    })
 
 
 })

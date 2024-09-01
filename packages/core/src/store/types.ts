@@ -1,5 +1,5 @@
 export type StateOperates = 'get' | 'set' | 'delete'                   // 用于对象
-                            | 'insert' | 'update' | 'remove'            // 用于数组
+                            | 'insert' | 'update' | 'remove'           // 用于数组 
 
 export type StateOperateParams<T=any,P=any> = {
     type      : StateOperates,

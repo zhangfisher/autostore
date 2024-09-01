@@ -29,7 +29,7 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
    * @returns 
    */
   run(options?:RuntimeComputedOptions){        
-    const { initialize = false } = options ?? {}
+    const { initialize = false,changed } = options ?? {}
     // 1. 检查是否计算被禁用
     if(!this.store.options.enableComputed || (!this.enable && options?.enable!==true) || options?.enable===false){
       this.store.log(`Sync computed <${this.toString()}> is disabled`,'warn')
@@ -46,7 +46,7 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
     // 3. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
-      computedResult = (this.getter).call(this.store,scope);
+      computedResult = (this.getter).call(this.store,scope,{changed,initialize});
       if(initialize){
         this.initial = computedResult
       }else{
@@ -82,9 +82,8 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
       },{operates:['get']})   
       // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
       this.run({initialize:true})   
-      watcher.off()     
-      // 去重一下
-      dependencies= [...new Set(dependencies)]
+      watcher.off()           
+      dependencies= [...new Set(dependencies)]// 去重一下
       this.depends = dependencies      
       this.subscribeDepends()
   }  
@@ -93,7 +92,7 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
    * @param event
    */
   protected onDependsChange(event: StateOperateParams): void {      
-      this.run({context:event})
+      this.run({changed:event})
   }
 }
  

@@ -233,6 +233,8 @@ export class AutoStore<State extends Dict>{
             this.update((state)=>{
                 setVal(state,valueContext.path,computedObj.initial)
             })      
+            this.computedObjects.set(computedObj.id,computedObj)
+            this.emit("computed:created",computedObj)
             return computedObj.initial  
         }   
     }  
@@ -268,18 +270,21 @@ export class AutoStore<State extends Dict>{
     watch(listener:WatchListener,options?:WatchOptions):Watcher
     watch(keyPaths:string | (string|string[])[],listener:WatchListener,options?:WatchOptions):Watcher
     watch():Watcher{
-        const isWatchAll = typeof(arguments[0])==='function'
+        const isWatchAll = typeof(arguments[0])==='function' 
         const listener = isWatchAll ? arguments[0] : arguments[1]
 
-        const createSubscribe =(operates:StateOperates[],filter:WatchOptions['filter'])=>(event:StateOperateParams)=>{
+        const createSubscribe = (operates:StateOperates[],filter:WatchOptions['filter'])=>(event:StateOperateParams)=>{
             if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
                 if(!operates.includes(event.type)) return
+            }else{  //  没定指定操作类型，默认只侦听除了get操作外的更新操作
+                if(event.type==='get') return
             }
             if(typeof(filter)==='function' && !filter(event)) return
             listener.call(this,event)                    
         }        
+
         if(isWatchAll){ // 侦听全部
-            const {once,operates,filter} = Object.assign({once:false,operates:[]},arguments[1])  as Required<WatchOptions>
+            const {once,operates,filter} = Object.assign({once:false,operates:['set','delete','insert','remove','update']},arguments[1])  as Required<WatchOptions>
             const subscribeMethod = once ? this.changesets.once : this.changesets.on
             return subscribeMethod.call(this.changesets,"**",createSubscribe(operates,filter),{objectify:true}) as Watcher
         }else{ // 只侦听指定路径

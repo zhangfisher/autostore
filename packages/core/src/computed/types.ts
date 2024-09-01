@@ -20,9 +20,6 @@ import { StateOperateParams } from "../store/types"
 import { Dict } from "../types"
 
  
-export type ComputedDepends = (string | string[])[] 
-export type ComputedGetter<Value,Scope=any> = (scope: Scope) => Exclude<Value,Promise<any>>
-export type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (scope:Scope,args:Required<AsyncComputedGetterArgs> & P) => Promise<Value>
 
 export interface ComputedProgressbar{
     value:(num:number)=>void
@@ -64,8 +61,28 @@ export interface AsyncComputedGetterArgs{
      * 额外的参数，用来传递给计算函数
      */
     extras?:any
-  }
+    /**
+     * 发生变化的依赖信息 
+     * 
+     */
+    changed?:StateOperateParams
+}
 
+/**
+ * 同步计算属性配置参数
+ */
+
+export interface ComputedGetterArgs{    
+    /**
+     * 发生变化的依赖信息 
+     * 
+     */
+    changed?:StateOperateParams
+}
+
+export type ComputedDepends = (string | string[])[] 
+export type ComputedGetter<Value,Scope=any> = (scope: Scope,args:Required<ComputedGetterArgs>) => Exclude<Value,Promise<any>>
+export type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (scope:Scope,args:Required<AsyncComputedGetterArgs> & P) => Promise<Value>
 
 export interface ComputedOptions<Value=any,Scope=any> extends DynamicValueOptions<Value> {     
 
@@ -159,7 +176,6 @@ export type RuntimeComputedOptions = Pick<ComputedOptions,
     'enable' |'onDone' | 'scope' | 'abortSignal' 
     | 'noReentry' | 'retry' | 'onError' | 'timeout'> &
     {
-        initialize?:boolean                     // 当第一次运行时传入
-        path?:string[]                          // 所依赖数据的路径      
-        context?:  StateOperateParams            // 计算函数的上下文
+        initialize?:boolean                     // 当第一次运行时传入   
+        changed?:  StateOperateParams           // 变化的依赖信息
     } 

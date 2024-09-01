@@ -88,8 +88,12 @@ export class DynamicValueObject<Value=any,Scope=any,Options extends DynamicValue
         if(this._depends){
             this._depends.forEach(depends=>{
                 this._subscribers.push(
-                    this.store.changesets.on(depends.join(OBJECT_PATH_DELIMITER),this.onDependsChange.bind(this)) as string   
-            )
+                    this.store.watch(
+                        depends.join(OBJECT_PATH_DELIMITER),
+                        this.onDependsChange.bind(this),
+                        {operates:['set','delete','insert','remove','update']}
+                    ) as string   
+                )
             })
         }
     }    
