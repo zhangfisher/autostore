@@ -27,16 +27,4 @@ export function forEachObject<T extends Dict>(obj:T,callback?:(params:{key:strin
     }
     _forEachObject(obj,[])
 }
-
-
-
-// forEachObject({
-//     a:1,
-//     b:{
-//         c:2
-//     },
-//     d:[3,4],
-//     e:5
-// },({value,key,parent,path})=>{
-//     console.log("key=",key," value=",value," path=",path," parent=",parent)
-// })
+ 

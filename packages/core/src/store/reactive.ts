@@ -4,6 +4,7 @@ import 'reflect-metadata';
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
 import { StateOperates } from './types'; 
+import { CyleDependError } from '../errors';
 
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -33,6 +34,8 @@ type CreateReactiveObjectOptions = {
  */
 export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): State {
     const { notify,createComputedObject } = Object.assign({},options)
+
+
     const createProxy = (target: any, parentPath: string[]): any =>{
         if (typeof target !== 'object' || target === null) {
             return target;
@@ -40,13 +43,14 @@ export function createReactiveObject<State extends object>(state:State,options?:
         if(isRaw(target)) return target
         return new Proxy(target, {             
             get: (obj, prop, receiver) => {
-                const value = Reflect.get(obj, prop, receiver);                
+                const value = Reflect.get(obj, prop, receiver);  
+                if(typeof(prop)!=='string') return value            
                 const path = [...parentPath, String(prop)];
                 if(!Object.hasOwn(obj,prop) || typeof value === 'function'){
                     if(typeof value === 'function'){
-                        if(Array.isArray(obj)){                            
+                        if(Array.isArray(obj)){           
                             return hookArrayMethods(notify,obj,prop as string,value,parentPath); 
-                        }else if(!isRaw(value) && Object.hasOwn(obj,prop)){                          
+                        }else if(!isRaw(value) && Object.hasOwn(obj,prop)){           
                             return createComputedObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
                         }else{
                             return value
@@ -56,7 +60,7 @@ export function createReactiveObject<State extends object>(state:State,options?:
                     }                   
                 }                
                 notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});
-                return createProxy(value, path);
+                return  createProxy(value, path); 
             },
             set: (obj, prop, value, receiver) => {
                 const oldValue = obj[prop];

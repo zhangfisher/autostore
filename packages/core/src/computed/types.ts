@@ -319,10 +319,30 @@ export type ComputedOptions<Value=any,Scope=any>= {
      * 当计算完成后的回调函数
      */
     onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,valuePath:string[],scope:Scope,result:any}):void
+    /**
+     * 额外的参数
+     */
+    extras:any
 }
 
+
+export type AsyncComputedResult<Result= any,ExtAttrs extends Dict = {}> ={
+    loading : boolean;
+    progress: number;                // 进度值    
+    timeout : number ;               // 超时时间，单位ms，当启用超时时进行倒计时
+    error   : any;
+    retry   : number                 // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试
+    result  : Result;                // 计算结果保存到此处
+    run     : (options?:RuntimeComputedOptions) => {};        // 重新执行任务
+    cancel  : ()=>void                                        // 中止正在执行的异步计算
+  } & ExtAttrs
+
+  
+
+
+
 export type SyncComputedOptions<Value=any,Scope=any> = Pick<ComputedOptions<Value,Scope>, 
-    'id' | 'enable' | 'onError' | 'onDone' | 'depends' | 'initial' | 'objectify' | 'group' | 'scope'>
+    'id' | 'enable' | 'onError' | 'onDone' | 'depends' | 'initial' | 'objectify' | 'group' | 'scope' | 'extras'>
 
 
 /**
@@ -345,3 +365,5 @@ export type ComputedDescriptorBuilder<Value=any,Scope=any,Options extends Dict =
     ():ComputedDescriptor<Value,Scope,Options>
     [COMPUTED_DESCRIPTOR_FLAG]     : true 
 }
+
+

@@ -2,11 +2,12 @@
  * 同步计算
  */
 import {  setVal  } from "../utils"; 
-import {  ComputedOptions,  RuntimeComputedOptions, SyncComputedOptions } from './types';
+import {  ComputedOptions, SyncComputedOptions, SyncRuntimeComputedOptions } from './types';
 import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
 import { StateOperateParams } from "../store/types";
-import { getDependPaths } from "../utils/getDependPaths";
+import { getDependPaths } from "../utils/getDependPaths"; 
+import { noRepeat } from "../utils/noRepeat";
  
 
 /**
@@ -30,10 +31,10 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
    * @param args  可以覆盖默认的配置参数
    * @returns 
    */
-  run(options?:RuntimeComputedOptions){        
+  run(options?:SyncRuntimeComputedOptions){        
     const { first = false,changed } = options ?? {}
     // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
-    if(!first && (!this.store.options.enableComputed || (!this.enable && options?.enable!==true) || options?.enable===false)){
+    if(!first && this.isDisable(options?.enable)){
       this.store.log(`Sync computed <${this.toString()}> is disabled`,'warn')
       return 
     }
@@ -42,10 +43,10 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
     // 2. 合成最终的配置参数
     const finalComputedOptions = Object.assign({},this.options,options) as Required<ComputedOptions>
 
-    // 2. 根据配置参数获取计算函数的上下文对象      
+    // 3. 根据配置参数获取计算函数的上下文对象      
     const scope = getValueScope<Value,Scope>(this as any,'computed',this.context,finalComputedOptions)  
 
-    // 3. 执行getter函数
+    // 4. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
       computedResult = (this.getter).call(this,scope,{changed,first});
@@ -57,6 +58,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       !first && this.store.emit("computed:done", { id:this.id,path:this.path,value:computedResult})
     } catch (e: any) {
       !first && this.store.emit("computed:error", { id: this.id, path: this.path, error: e });
+      throw e
     }    
   } 
   /**
@@ -80,7 +82,11 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
   private collectDependencies(){
       let dependencies:string[][] = []       
       const watcher = this.store.watch((event)=>{      
-          dependencies.push(event.path)
+          dependencies.push(event.path)            
+          // // 检查是否存在错误的循环依赖
+          // if(dependencies.some(dep=>isPathEq(dep,this.path))){
+          //   throw new CyleDependError(`Cycle depend found in ${this.toString()}`)
+          // }
       },{operates:['get']})   
       // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
       this.run({first:true})   
@@ -90,9 +96,11 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       if(this.options.depends){
         dependencies.push(...getDependPaths(this.path,this.options.depends))
       } 
-      this.depends = [...new Set(dependencies)]      // 去重一下
+      this.depends = noRepeat(dependencies)      // 去重一下     
       this.subscribeDepends()
   }  
+
+
   /**
    * 当依赖发生变化时调用
    * @param event

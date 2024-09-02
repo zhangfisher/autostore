@@ -8,6 +8,7 @@ import { OBJECT_PATH_DELIMITER } from "./consts";
 import { ComputedContext, ComputedOptions, ComputedScope, ComputedScopeRef, ComputedType} from "./computed/types";
 import { getValueByPath } from "./utils/getValueByPath";
 import { ComputedObject } from "./computed/computedObject";
+import { getFullValuePath } from "./utils/getFullValuePath";
  
 
 /**
@@ -77,8 +78,8 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
                     scope:scopeOption.slice(1)
                   })
               })          
-          }else{
-            scope = getValueByPath(rootDraft,scopeOption); 
+          }else{            
+            scope = getValueByPath(rootDraft,getFullValuePath(computedObject.path,scopeOption)); 
           } 
         }else if (Array.isArray(scopeOption)) {                   // 从根对象开始的完整路径
           scope = getValueByPath(rootDraft, scopeOption);

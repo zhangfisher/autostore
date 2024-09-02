@@ -59,7 +59,7 @@ import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
-import { ComputedContext, ComputedDescriptor, ComputedScopeRef, ComputedType } from "../computed/types";
+import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedScopeRef, ComputedType } from "../computed/types";
 import { Watcher, WatchListener, WatchOptions } from "../watch/types";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
@@ -67,6 +67,7 @@ import { getVal, setVal } from "../utils";
 import { OBJECT_PATH_DELIMITER } from "../consts";
 import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
 import { getComputedDescriptor } from "../computed/utils";
+import { forEachObject } from "../utils/forEachObject";
 
 export type AutoStoreOptions<State extends Dict> = {
     /**
@@ -163,7 +164,7 @@ export type AutoStoreOptions<State extends Dict> = {
      * 比如让所有的computedObject,watchObject的默认scope参数均为ROOT 
      * 
      */
-    scope?: ComputedScopeRef
+    scope?: ComputedScope
     /**
      * 当启用debug=true时用来输出日志信息
      * 
@@ -197,6 +198,8 @@ export class AutoStore<State extends Dict>{
             notify:this.notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
         })
+        // 马上遍历对象触发读操作，以便创建计算对象
+        if(this.options.immediate) forEachObject(this._data)
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
@@ -293,8 +296,9 @@ export class AutoStore<State extends Dict>{
     private createComputed(computedContext:ComputedContext,descriptor:ComputedDescriptor){
         let computedObj:ComputedObject | undefined
         if(descriptor.options.async){ // 异步计算
+            computedObj
         }else{ // 同步计算
-            computedObj = (new SyncComputedObject<State>(this, computedContext, descriptor as ComputedDescriptor)) as unknown as ComputedObject
+            computedObj = (new SyncComputedObject(this, computedContext, descriptor as ComputedDescriptor)) as unknown as ComputedObject
         }    
         if(computedObj){
             this.update((state)=>{

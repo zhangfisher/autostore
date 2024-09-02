@@ -9,7 +9,7 @@ import { StateOperateParams } from "../store/types";
 import { getDependPaths } from "../utils/getDependPaths";
 import { getVal } from "../utils/getVal";
 import { joinValuePath } from "../utils/joinValuePath";
-import {  ComputedContext, ComputedDescriptor, ComputedOptions } from './types';
+import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedOptions } from './types';
 
  
 
@@ -57,7 +57,16 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
     get depends(){return this._depends}
     set depends(value){ this._depends=value}     
     toString(){ return `ComputedObject<${joinValuePath(this._path)}>` }
-    
+ 
+    /**
+     * 检查计算函数是否被禁用
+     * 
+     * @param value 
+     * @returns {boolean} 
+     */
+    protected isDisable(value:boolean=true){
+       return !this.store.options.enableComputed || (!this.enable && value!==true) || value===false
+    }
     /**
      * 
      * 当动态值对象初始化时调用
@@ -71,8 +80,9 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
     * 
     * @description
     */
-    run(){
-        
+    run(options?:RuntimeComputedOptions){
+        options
+        throw new Error("Method not implemented.");
     }
     /**
      * 当依赖变化时调用
