@@ -69,11 +69,11 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		!first && this.store.log(() => `Run async computed for : ${this.toString()}`);
 
 		// 2. 合成最终的配置参数
-		const finalComputedOptions = options ? Object.assign(
+		const finalComputedOptions = (options ? Object.assign(
 			{},
 			this.options,
 			options
-		)  : this.options as Required<ComputedOptions>;
+		)  : this.options) as Required<RuntimeComputedOptions>;
 
 		// 3. 根据配置参数获取计算函数的上下文对象
 		const scope = getValueScope<Value, Scope>(
@@ -124,17 +124,42 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			},
 		};
 	}
-  private updateAsyncComputedResult(values: Partial<AsyncComputedResult>) {    
-      Object.entries(values).forEach(([key, value]) => {
-        setVal(this.store.state, [...this.path, key], value);
-      });    
-  }
+	private updateAsyncComputedResult(values: Partial<AsyncComputedResult>) {    
+		Object.entries(values).forEach(([key, value]) => {
+			setVal(this.store.state, [...this.path, key], value);
+		});    
+  	}
+	/**
+	 * 当计算属性操作完成时的回调函数
+	 * 
+	 * 此函数负责在计算属性操作完成后，根据操作的执行状态调用用户定义的回调函数
+	 * 它会传递操作的结果、错误状态、是否中止以及是否超时等信息给回调函数
+	 * 
+	 * @param options - 计算属性的运行时选项，被强制转换为Required类型，确保所有选项都是必需的
+	 * @param error - 如果操作过程中发生错误，该错误对象将被传递
+	 * @param abort - 一个布尔值，表示操作是否被中止
+	 * @param timeout - 一个布尔值，表示操作是否因超时而结束
+	 * @param scope - 操作执行的上下文或范围
+	 * @param result - 操作的结果，如果操作成功完成
+	 */
+	private onDoneCallback(options: Required<RuntimeComputedOptions>,error:Error,abort:boolean,timeout:boolean,scope:any,result:any) {
+		if(typeof(this.options.onDone)!=='function') return 
+		this.options.onDone.call(this, {
+			id:this.id,			
+			path:this.path,
+			result,
+			error,
+			abort,
+			timeout,
+			scope,
+		});
+	}
 	/**
 	 * 执行计算函数
 	 *
 	 */
 	private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
-		const { timeout = 0, retry = [0, 0], onDone } = options;
+		const { timeout = 0, retry = [0, 0] } = options;
 
 		const [retryCount, retryInterval] = Array.isArray(retry) ? retry : [Number(retry), 0];
 
@@ -162,7 +187,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			hasAbort = true;
 		});
 
-		let hasError = false
+		let hasError:any = false
 		let hasTimeout = false;
 		let computedResult: any;
 
@@ -241,8 +266,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				this.updateAsyncComputedResult(afterUpdated);
 			}
 			// 重试延迟
-			if (hasError) {
-				// 最后一次不延迟
+			if (hasError) {// 最后一次不延迟				
 				if (retryCount > 0 && retryInterval > 0 && i < retryCount) {
 					await delay(retryInterval);
 				}
@@ -250,49 +274,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		}
 		// 计算完成后触发事件
 		if (hasAbort || hasTimeout) {
-			this.store.emit("computed:cancel", {
-				path: this.path,
-				id:this.id,
-				reason: hasTimeout ? "timeout" : "abort",
-			});
-			setTimeout(() => {
-				onDone &&
-					onDone.call(this, {
-						id:this.id,
-						error: undefined,
-						abort: hasAbort,
-						timeout: hasTimeout,
-						scope,
-						valuePath:this.path,
-						result: computedResult,
-					});
-			}, 0);
+			this.store.emit("computed:cancel", { path: this.path, id:this.id, reason: hasTimeout ? "timeout" : "abort" });
 		} else if (hasError) {
 			this.store.emit("computed:error", { path: this.path, id:this.id, error: hasError });
-			setTimeout(() => {
-				onDone &&
-					onDone.call(this, {
-						id:this.id,
-						error: err,
-						abort: false,
-						timeout: false,
-						scope: scopeDraft,
-						valuePath,
-						result: computedResult,
-					});
-			}, 0);
 		} else {
-			this.store.emit("computed:done", { path: valuePath, id, value: computedResult });
-			onDone &&
-				onDone.call(store as unknown as IStore<any>, {
-					id,
-					error: undefined,
-					abort: false,
-					timeout: false,
-					scope: scopeDraft,
-					valuePath,
-					result: computedResult,
-				});
+			this.store.emit("computed:done", { path: this.path, id:this.id, value: computedResult });		
 		}
+		setTimeout(() => {
+			this.onDoneCallback(options,hasError,hasAbort,hasTimeout,scope,computedResult);
+		}, 0); 
 	}
 }

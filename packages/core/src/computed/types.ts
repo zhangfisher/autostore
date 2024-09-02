@@ -297,11 +297,7 @@ export type ComputedOptions<Value=any,Scope=any>= {
      * 可以在UI中通过AsyncComputedObject.retry来实时显示重试次数
      * 
      */
-    retry?:number | [number,number]
-    /**
-     * 当执行计算getter函数出错时的回调
-     */
-    onError?:(e:Error)=>void              
+    retry?:number | [number,number]  
 
     /**
      * 
@@ -316,13 +312,18 @@ export type ComputedOptions<Value=any,Scope=any>= {
      */
     objectify?:boolean 
     /**
-     * 当计算完成后的回调函数
-     */
-    onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,valuePath:string[],scope:Scope,result:any}):void
-    /**
      * 额外的参数
      */
     extras?:any
+    /**
+     * 当执行计算getter函数出错时的回调
+     */
+    onError?:(e:Error)=>void            
+    /**
+     * 当计算完成后的回调函数
+     */
+    onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[],scope:Scope,result:any}):void
+
 }
 
 
