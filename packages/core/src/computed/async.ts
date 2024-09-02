@@ -7,7 +7,7 @@
  *
  *
  */
-import { setVal,	markRaw} from "../utils";
+import { setVal, markRaw} from "../utils";
 import { delay } from "flex-tools/async/delay";
 import { getValueScope } from "../scope";
 import { ComputedOptions, ComputedProgressbar } from "./types";
@@ -69,11 +69,12 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		!first && this.store.log(() => `Run async computed for : ${this.toString()}`);
 
 		// 2. 合成最终的配置参数
-		const finalComputedOptions = Object.assign(
+		const finalComputedOptions = options ? Object.assign(
 			{},
 			this.options,
 			options
-		) as Required<ComputedOptions>;
+		)  : this.options as Required<ComputedOptions>;
+
 		// 3. 根据配置参数获取计算函数的上下文对象
 		const scope = getValueScope<Value, Scope>(
 			this as any,
@@ -81,8 +82,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			this.context,
 			finalComputedOptions
 		);
+		// 4. 检查是否有重入
 		const { noReentry } = finalComputedOptions;
-
 		if (noReentry && this._isComputedRunning) {
 			this.store.log(() => `Reentry async computed: ${this.toString()}`, "warn");
 			this.store.emit("computed:cancel", { path: this.path, id: this.id, reason: "reentry" });
@@ -132,7 +133,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * 执行计算函数
 	 *
 	 */
-	private async executeGetter(scope: any, options: Required<ComputedOptions>) {
+	private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
 		const { timeout = 0, retry = [0, 0], onDone } = options;
 
 		const [retryCount, retryInterval] = Array.isArray(retry) ? retry : [Number(retry), 0];
@@ -148,6 +149,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			abortSignal   : abortController.signal,
 			cancel        : abortController.abort,
 			extras        : options.extras,
+			changed       : options.changed,
 		};
 		let hasAbort = false; // 是否接收到可中止信号
 
@@ -159,8 +161,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		abortController.signal.addEventListener("abort", () => {
 			hasAbort = true;
 		});
-		let hasError = false,
-			err: any;
+
+		let hasError = false
 		let hasTimeout = false;
 		let computedResult: any;
 
@@ -219,9 +221,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 						timeout: 0,
 					});
 				}
-			} catch (e: any) {
-				err = e;
-				hasError = true;
+			} catch (e: any) { 
+				hasError = e;
 				if (!hasTimeout) {
 					Object.assign(afterUpdated, { error: getError(e).message, timeout: 0 });
 				}
@@ -250,28 +251,28 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		// 计算完成后触发事件
 		if (hasAbort || hasTimeout) {
 			this.store.emit("computed:cancel", {
-				path: valuePath,
-				id,
+				path: this.path,
+				id:this.id,
 				reason: hasTimeout ? "timeout" : "abort",
 			});
 			setTimeout(() => {
 				onDone &&
-					onDone.call(store as unknown as IStore<any>, {
-						id,
+					onDone.call(this, {
+						id:this.id,
 						error: undefined,
 						abort: hasAbort,
 						timeout: hasTimeout,
-						scope: scopeDraft,
-						valuePath,
+						scope,
+						valuePath:this.path,
 						result: computedResult,
 					});
 			}, 0);
 		} else if (hasError) {
-			this.store.emit("computed:error", { path: valuePath, id, error: err });
+			this.store.emit("computed:error", { path: this.path, id:this.id, error: hasError });
 			setTimeout(() => {
 				onDone &&
-					onDone.call(store, {
-						id,
+					onDone.call(this, {
+						id:this.id,
 						error: err,
 						abort: false,
 						timeout: false,

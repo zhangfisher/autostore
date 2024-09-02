@@ -38,6 +38,7 @@ export function computed<Value = any, Scope = any>(): any {
 		depends  : [],
 		immediate: "auto",    // 马上执行一次，异步计算函数，如果提供initial值，则不会马上执行
 		objectify: true,      // 保存对象
+		extras:undefined
 	};
 
 	if (arguments.length === 1) {

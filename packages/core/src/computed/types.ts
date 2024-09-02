@@ -322,7 +322,7 @@ export type ComputedOptions<Value=any,Scope=any>= {
     /**
      * 额外的参数
      */
-    extras:any
+    extras?:any
 }
 
 
