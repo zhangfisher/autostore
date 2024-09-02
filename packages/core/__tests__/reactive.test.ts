@@ -1,5 +1,4 @@
 import { expect,test,describe, beforeEach, afterEach } from "vitest" 
-import { createReactiveObject, createScopeObject } from "../src/store/reactive"; 
 
 describe("reactive",()=>{
 

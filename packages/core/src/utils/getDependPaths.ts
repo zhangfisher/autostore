@@ -7,7 +7,7 @@ import { getFullValuePath } from "./getFullValuePath";
  * 
  * 
  */
-export function getDependPaths(curPath:string[],deps:ComputedDepends | undefined):string[][] | undefined{
-    if(!deps) return 
+export function getDependPaths(curPath:string[],deps:ComputedDepends | undefined):string[][] {
+    if(!deps) return []
     return deps.map(dep=>getFullValuePath(curPath,dep))
 }

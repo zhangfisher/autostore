@@ -2,10 +2,11 @@
  * 同步计算
  */
 import {  setVal  } from "../utils"; 
-import {  ComputedOptions,  RuntimeComputedOptions } from './types';
+import {  ComputedOptions,  RuntimeComputedOptions, SyncComputedOptions } from './types';
 import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
 import { StateOperateParams } from "../store/types";
+import { getDependPaths } from "../utils/getDependPaths";
  
 
 /**
@@ -13,14 +14,15 @@ import { StateOperateParams } from "../store/types";
  * 同步计算属性对象
  * 
  */
-export class SyncComputedObject<State> extends ComputedObject<State>{
-
+export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Value,Scope,SyncComputedOptions<Value,Scope>>{
+  get async(){return false }
   /**
    * 同步计算属性对象在初始化时，会通过运行来自动收集依赖
    */
   protected onInitial(){
       this.collectDependencies()
   }
+  
   /**
    * 
    * 当计算属性的依赖发生变化时，重新计算计算属性的值
@@ -29,32 +31,32 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
    * @returns 
    */
   run(options?:RuntimeComputedOptions){        
-    const { initialize = false,changed } = options ?? {}
+    const { first = false,changed } = options ?? {}
     // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
-    if(!initialize && (!this.store.options.enableComputed || (!this.enable && options?.enable!==true) || options?.enable===false)){
+    if(!first && (!this.store.options.enableComputed || (!this.enable && options?.enable!==true) || options?.enable===false)){
       this.store.log(`Sync computed <${this.toString()}> is disabled`,'warn')
       return 
     }
-    !initialize && this.store.log(`Run sync computed for : ${this.toString()}`); 
+    !first && this.store.log(`Run sync computed for : ${this.toString()}`); 
  
     // 2. 合成最终的配置参数
     const finalComputedOptions = Object.assign({},this.options,options) as Required<ComputedOptions>
 
     // 2. 根据配置参数获取计算函数的上下文对象      
-    const scope = getValueScope(this,'computed',this.context,finalComputedOptions)  
+    const scope = getValueScope<Value,Scope>(this as any,'computed',this.context,finalComputedOptions)  
 
     // 3. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
-      computedResult = (this.getter).call(this,scope,{changed,initialize});
-      if(initialize){
+      computedResult = (this.getter).call(this,scope,{changed,first});
+      if(first){
         this.initial = computedResult
       }else{
         setVal(this.store.state,this.path, computedResult);
       }      
-      !initialize && this.store.emit("computed:done", { id:this.id,path:this.path,value:computedResult})
+      !first && this.store.emit("computed:done", { id:this.id,path:this.path,value:computedResult})
     } catch (e: any) {
-      !initialize && this.store.emit("computed:error", { id: this.id, path: this.path, error: e });
+      !first && this.store.emit("computed:error", { id: this.id, path: this.path, error: e });
     }    
   } 
   /**
@@ -81,10 +83,14 @@ export class SyncComputedObject<State> extends ComputedObject<State>{
           dependencies.push(event.path)
       },{operates:['get']})   
       // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
-      this.run({initialize:true})   
-      watcher.off()           
-      dependencies= [...new Set(dependencies)]// 去重一下
-      this.depends = dependencies      
+      this.run({first:true})   
+      // 依赖收集完成后就结束侦听
+      watcher.off() 
+      // 同步函数也可以额外指定依赖
+      if(this.options.depends){
+        dependencies.push(...getDependPaths(this.path,this.options.depends))
+      } 
+      this.depends = [...new Set(dependencies)]      // 去重一下
       this.subscribeDepends()
   }  
   /**

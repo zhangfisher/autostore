@@ -1,25 +1,25 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'; 
+import { describe, expect, test } from 'vitest'; 
 import { createStore } from '../src/store/store';
 import { computed } from '../src/computed/computed';
 import { ComputedScopeRef } from '../src/computed';
 
-const data = {
-    firstName: 'zhang',
-    lastName: 'fisher',
-    fullName: (scope:any) => `${scope.firstName} ${scope.lastName}`,
-    orders: [
-        {id: 1, price: 100, count: 2, total: (scope:any) => scope.price * scope.count},
-        {id: 2, price: 200, count: 3, total: (scope:any) => scope.price * scope.count},
-        {id: 3, price: 300, count: 4, total: (scope:any) => scope.price * scope.count},
-        {id: 4, price: 400, count: 5, total: (scope:any) => scope.price * scope.count},
-        {id: 5, price: 500, count: 6, total: (scope:any) => scope.price * scope.count},
-    ],
-    job: {
-        title: 'Software Engineer',
-        company: 'Google',
-        salary: 100000
-    }
-}
+// const data = {
+//     firstName: 'zhang',
+//     lastName: 'fisher',
+//     fullName: (scope:any) => `${scope.firstName} ${scope.lastName}`,
+//     orders: [
+//         {id: 1, price: 100, count: 2, total: (scope:any) => scope.price * scope.count},
+//         {id: 2, price: 200, count: 3, total: (scope:any) => scope.price * scope.count},
+//         {id: 3, price: 300, count: 4, total: (scope:any) => scope.price * scope.count},
+//         {id: 4, price: 400, count: 5, total: (scope:any) => scope.price * scope.count},
+//         {id: 5, price: 500, count: 6, total: (scope:any) => scope.price * scope.count},
+//     ],
+//     job: {
+//         title: 'Software Engineer',
+//         company: 'Google',
+//         salary: 100000
+//     }
+// }
 
 
 describe('sync computed', () => { 
@@ -61,6 +61,28 @@ describe('sync computed', () => {
         
     })
 
+    test('sync compute fullName value with extra depends ', async () => {
+        let count:number=0
+        const store = createStore({
+            user:{
+                firstName: 'zhang',
+                lastName: 'fisher',                
+                fullName: computed((scope:any) => `${scope.firstName} ${scope.lastName} ${count}`
+                                    ,{depends:["alias"]})
+            },
+            alias: "x",
+        });        
+        return new Promise<void>((resolve)=>{
+            store.watch("user.fullName",(event)=>{
+                expect(event.value).toBe("zhang fisher 1")
+                expect(store.state.user.fullName).toBe('zhang fisher 1')
+                resolve()
+            },{operates:['set']})            
+            expect(store.state.user.fullName).toBe('zhang fisher 0')
+            count++
+            store.state.alias="y"       // trigger user.fullName recompute, beacuse it is 
+        })
+    })
 
 })
 
@@ -113,23 +135,32 @@ describe('sync computed with scope', () => {
         expect(store.state.root.admin.user.fullName).toBe('li fisher')
     }) 
 
-
 })
 
 describe('sync computed with enable', () => {
     test('sync compute fullName value enable=false ', () => {     
+
         const store = createStore({
             user:{
                 firstName: 'zhang',
                 lastName: 'fisher',
-                fullName: computed((scope:any) => `${scope.firstName} ${scope.lastName}`,{
-                    enable:false,        // 由于禁用计算属性，所以不会计算fullName的值，因此也无法收集依赖
+                fullName: computed((scope:any) => {
+                    return `${scope.firstName} ${scope.lastName}` 
+                },{
+                    id:"x",
+                    enable:false,                            
                 })
             }            
         });
         expect(store.state.user.fullName).toBe('zhang fisher')
         store.state.user.firstName = 'li'
-        expect(store.state.user.fullName).toBe('zhang fisher')    
+        expect(store.state.user.fullName).toBe('zhang fisher')   // no computed
+        store.computedObjects.get("x")!.enable = true
+        store.state.user.firstName = "Wang"
+        expect(store.state.user.fullName).toBe('Wang fisher')   
+
+
+
     })
 
     test('disable all sync compute fullName', () => {     

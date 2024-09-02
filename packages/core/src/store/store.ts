@@ -58,16 +58,15 @@ import type { Dict } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
-import { DynamicValueContext, DynamicValueDescriptor, DynamicValueScope, DynamicValueType } from "../dynamic";
 import { SyncComputedObject } from "../computed/sync";
-import { ComputedDescriptor } from "../computed/types";
+import { ComputedContext, ComputedDescriptor, ComputedScopeRef, ComputedType } from "../computed/types";
 import { Watcher, WatchListener, WatchOptions } from "../watch/types";
-import { createDynamicValueDescriptor } from "../dynamic/utils";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
 import { getVal, setVal } from "../utils";
 import { OBJECT_PATH_DELIMITER } from "../consts";
 import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
+import { getComputedDescriptor } from "../computed/utils";
 
 export type AutoStoreOptions<State extends Dict> = {
     /**
@@ -152,7 +151,7 @@ export type AutoStoreOptions<State extends Dict> = {
      * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
      * 
      */
-    getRootScope?:(state:State,options:{dynamicType:DynamicValueType, valuePath:string[]}) => any
+    getRootScope?:(state:State,options:{computedType:ComputedType, valuePath:string[]}) => any
 
     /**
      * 
@@ -164,7 +163,7 @@ export type AutoStoreOptions<State extends Dict> = {
      * 比如让所有的computedObject,watchObject的默认scope参数均为ROOT 
      * 
      */
-    scope?: DynamicValueScope
+    scope?: ComputedScopeRef
     /**
      * 当启用debug=true时用来输出日志信息
      * 
@@ -176,7 +175,7 @@ export type AutoStoreOptions<State extends Dict> = {
 }
 
 
-type StateNotifier = (type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any)=>void
+// type StateNotifier = (type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any)=>void
 
 export class AutoStore<State extends Dict>{
     private _data: State;
@@ -195,8 +194,8 @@ export class AutoStore<State extends Dict>{
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects(this)
         this._data = createReactiveObject(state,{
-            notify:this.notice.bind(this),
-            createDynamicValueObject:this.createDynamicValueObject.bind(this)
+            notify:this.notify.bind(this),
+            createComputedObject:this.createComputedObject.bind(this)
         })
     }
     get id(){return this._options.id}
@@ -209,35 +208,12 @@ export class AutoStore<State extends Dict>{
      * 当状态读写时调用此方法触发事件
      * type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any
      */
-    private notice(params:ReactiveNotifyParams) {          
+    private notify(params:ReactiveNotifyParams) {          
         if(this._peeping && params.type=='get') return    // 偷看时不触发事件
         if(this._batching) return
         this.changesets.emit(params.path.join('.'),params)       
     } 
-    // ************* Computed **************/
-    /**
-     * 
-     * 创建一个计算属性对象
-     * 
-     * 当data中的成员是一个函数时，会自动创建一个计算属性对象
-     * 
-     * 
-     */
-    private createComputed(valueContext:DynamicValueContext,descriptor:DynamicValueDescriptor){
-        let computedObj:ComputedObject | undefined
-        if(descriptor.options.async){
-        }else{
-            computedObj = new SyncComputedObject<State>(this,valueContext,descriptor as ComputedDescriptor)         
-        }    
-        if(computedObj){
-            this.update((state)=>{
-                setVal(state,valueContext.path,computedObj.initial)
-            })      
-            this.computedObjects.set(computedObj.id,computedObj)
-            this.emit("computed:created",computedObj)
-            return computedObj.initial  
-        }   
-    }  
+
     // ************* Watch **************/
     /**
      * 监视数据变化，并在变化时执行指定的监听器函数。
@@ -305,8 +281,30 @@ export class AutoStore<State extends Dict>{
         }        
     }
 
-    // ************* Dynamic **************
-
+    // ************* Computed ************** 
+    /**
+     * 
+     * 创建一个计算属性对象
+     * 
+     * 当data中的成员是一个函数时，会自动创建一个计算属性对象
+     * 
+     * 
+     */
+    private createComputed(computedContext:ComputedContext,descriptor:ComputedDescriptor){
+        let computedObj:ComputedObject | undefined
+        if(descriptor.options.async){ // 异步计算
+        }else{ // 同步计算
+            computedObj = (new SyncComputedObject<State>(this, computedContext, descriptor as ComputedDescriptor)) as unknown as ComputedObject
+        }    
+        if(computedObj){
+            this.update((state)=>{
+                setVal(state,computedContext.path,computedObj.initial)
+            })      
+            this.computedObjects.set(computedObj.id,computedObj)
+            this.emit("computed:created",computedObj)
+            return computedObj.initial  
+        }   
+    }  
     /**
      * 
      * 创建动态值对象
@@ -318,12 +316,12 @@ export class AutoStore<State extends Dict>{
      * @returns 
      */    
 
-    private createDynamicValueObject(path:string[],value:any,parentPath:string[],parent:any){
-        const descriptor = createDynamicValueDescriptor(value)
-        const dynamicValueCtx = { path,value,parentPath,parent }
+    private createComputedObject(path:string[],value:any,parentPath:string[],parent:any){
+        const descriptor = getComputedDescriptor(value)
+        const computedCtx = { path,value,parentPath,parent }
         if(descriptor){
             if(descriptor.type==='computed'){                
-                return this.createComputed(dynamicValueCtx,descriptor)
+                return this.createComputed(computedCtx,descriptor)
             }
 
         }else{
@@ -402,7 +400,6 @@ export class AutoStore<State extends Dict>{
             this._peeping =false
         }         
     }
-
 }
 
 
@@ -410,29 +407,4 @@ export class AutoStore<State extends Dict>{
 export function createStore<State extends Dict>(initial: State,options?:AutoStoreOptions<State>){
     return new AutoStore<State>(initial,options);
 }
-
-/**
- * 
- * 创建一个虚拟对象，实现
- * 
- * 当在代理对象上进行任意键值的读取操作时，会触发回调函数
- * 
- * - 该对象具有任意的键值对，可以是任意的嵌套对象
- * - 读取操作包括：get, set, delete, insert
- * - 支持通过泛型State提供类型
- * - 支持嵌套对象，包括数组成员的读写操作
- * 
- * const state = createShadowObject(({path,operate,value})=>{
- *  
- * })
- * 
- * state.a.b=1  触发 {path:["a","b"],operate:"set",value:1}
- * state.orders[0].price=100 触发 {path:["orders",0,"price"],operate:"set",value:100}
- * state.job.title 触发 {path:["job","title"],operate:"get"}
- * - state嵌套成员不需要真实存在，只是触发读写操作回调
- * 
- */
-function createShadowObject<State extends object>(callback:(operates:{path:string[],operate:'set',value:any}[])=>void){
-
-
-}
+ 

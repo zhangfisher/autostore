@@ -16,7 +16,7 @@ export type ReactiveNotifyParams<T=any> = {
 
 type CreateReactiveObjectOptions = {
   notify:(params:ReactiveNotifyParams)=>void
-  createDynamicValueObject:(path:string[],value:Function,parentPath:string[],parent:any)=>any
+  createComputedObject:(path:string[],value:Function,parentPath:string[],parent:any)=>any
 };
 
 
@@ -32,7 +32,7 @@ type CreateReactiveObjectOptions = {
  * @returns {State} - 返回一个响应式对象。
  */
 export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): State {
-    const { notify,createDynamicValueObject } = Object.assign({},options)
+    const { notify,createComputedObject } = Object.assign({},options)
     const createProxy = (target: any, parentPath: string[]): any =>{
         if (typeof target !== 'object' || target === null) {
             return target;
@@ -47,7 +47,7 @@ export function createReactiveObject<State extends object>(state:State,options?:
                         if(Array.isArray(obj)){                            
                             return hookArrayMethods(notify,obj,prop as string,value,parentPath); 
                         }else if(!isRaw(value) && Object.hasOwn(obj,prop)){                          
-                            return createDynamicValueObject(path,value(),parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            return createComputedObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
                         }else{
                             return value
                         }
