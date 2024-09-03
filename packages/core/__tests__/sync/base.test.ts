@@ -10,7 +10,7 @@ describe("同步计算属性的基本特性",()=>{
             price:2,
             count:3,
             total:computed((scope)=>{
-                return scope.price * scope.count
+                return  scope.price * scope.count
             })
         })
         store.state.count = 4

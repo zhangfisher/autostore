@@ -25,7 +25,7 @@ import {
  *
  */
 export function computed<Value = any, Scope = any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>): ComputedDescriptorBuilder<Value,Scope>;
-export function computed<Value = any, Scope = any >(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>):ComputedDescriptorBuilder<Value,Scope>;
+export function computed<Value = any, Scope = any >(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>):Value;
 export function computed<Value = any, Scope = any>(): any {
   const getter = arguments[0];
 	if (typeof getter !== "function") throw new Error("computed getter must be a function");
@@ -72,5 +72,5 @@ export function computed<Value = any, Scope = any>(): any {
 	} 
 	descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG]=true
 
-	return descriptorBuilder as ComputedDescriptorBuilder<Value,Scope>
+	return descriptorBuilder 
 }

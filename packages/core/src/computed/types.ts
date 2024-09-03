@@ -19,6 +19,7 @@ import { StateOperateParams } from "../store/types"
 import { Dict } from "../types"
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts"
 import { ComputedObject } from "./computedObject"
+import { WatchDescriptor } from "../watch/types"
 
 export type ComputedType = 'watch' | 'computed'
 
@@ -118,7 +119,7 @@ export type SyncRuntimeComputedOptions = SyncComputedOptions & {
 } 
 
 
-export type Computed<T=any> = (...args: any) => T;                  // 同步计算函数
+export type Computed<T=any> = (...args: any) => Exclude<T,Promise<any>>;                   // 同步计算函数
 export type AsyncComputed<T=any> = (...args: any) => Promise<T>;    // 异步计算函数
 
  
@@ -366,5 +367,55 @@ export type ComputedDescriptorBuilder<Value=any,Scope=any,Options extends Dict =
     ():ComputedDescriptor<Value,Scope,Options>
     [COMPUTED_DESCRIPTOR_FLAG]     : true 
 }
+
+
+
+export type ComputedSyncReturns<T=any> = (...args: any) => Exclude<T,Promise<any>>;  
+
+ 
+
+/**
+ * 返回函数的返回值类型
+ * 支持返回()=>Promise<R>中的R类型 
+ */
+export type AsyncReturnType<T extends (...args: any) => any> = T extends (...args: any) => Promise<infer R> ? R : (
+    T extends (...args: any) => infer R ? R : any)
+ 
+
+export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedResult<X> : 
+    ( T extends WatchDescriptor<any,infer X> ? X :                                  
+        ( T extends Computed<infer X> ? X:                                              // 同步函数
+            (T extends AsyncComputed<infer X> ? AsyncComputedResult<X> :                // 异步函数
+                T
+            )
+        )                              
+    )
+    // export type PickComputedResult<T> = T extends  ComputedDescriptor<infer X> ? AsyncComputedResult<X> : 
+    // ( T extends WatchDescriptor<any,infer X> ? X :                                  
+    //     ( T extends ComputedSyncReturns<infer X> ? X:                               // 同步函数
+    //         (T extends AsyncComputed<infer X> ? AsyncComputedResult<X>:             // 异步函数
+    //             (T extends Computed<infer R> ? R : T) 
+    //         )
+    //     )                              
+    // ) 
+/**
+ 
+ 转换状态中的计算属性函数的类型
+ 将状态中的计算属性函数转换为计算属性函数的返回值类型
+ 如：ComputedState<{count:()=>1}> => {count:number}
+ 如：ComputedState<{count:async ()=>1}> => {count:number}
+
+*/
+export type ComputedState<T extends Record<string, any>> = {
+    [K in keyof T]: T[K] extends (...args:any) => any ? PickComputedResult<T[K]> : T[K] extends Record<string, any> ? ComputedState<T[K]> : T[K];
+};
+
+ 
+
+// 在ComputedState的基础上，排除了undefined的类型
+export type RequiredComputedState<T extends Record<string, any>> = {
+    [K in keyof T]-?: Exclude<T[K],undefined> extends (...args:any) => any ? PickComputedResult<Exclude<T[K],undefined>> : Required<T[K]>extends Record<string, any> ? ComputedState<Exclude<T[K],undefined> > : Exclude<T[K],undefined> ;
+};
+
 
 

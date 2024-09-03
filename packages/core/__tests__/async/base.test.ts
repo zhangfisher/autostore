@@ -7,7 +7,7 @@ describe("异步计算",()=>{
 
     test("默认异步计算",()=>{
         let count:number =0 
-        let results:number[] = []
+        let results:number[] = [] 
         return new Promise<void>((resolve)=>{
             const store = createStore({
                 price:2,

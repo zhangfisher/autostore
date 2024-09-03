@@ -59,7 +59,7 @@ import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
-import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedScopeRef, ComputedType } from "../computed/types";
+import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedScopeRef, ComputedState, ComputedType } from "../computed/types";
 import { Watcher, WatchListener, WatchOptions } from "../watch/types";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
@@ -179,7 +179,7 @@ export type AutoStoreOptions<State extends Dict> = {
 // type StateNotifier = (type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any)=>void
 
 export class AutoStore<State extends Dict>{
-    private _data: State;
+    private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
     protected _changesets:FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    
     private _options: Required<AutoStoreOptions<State>>
@@ -197,7 +197,7 @@ export class AutoStore<State extends Dict>{
         this._data = createReactiveObject(state,{
             notify:this.notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
-        })
+        })  
         // 马上遍历对象触发读操作，以便创建计算对象
         if(this.options.immediate) forEachObject(this._data)
     }

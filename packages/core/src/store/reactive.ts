@@ -5,6 +5,7 @@ import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
 import { StateOperates } from './types'; 
 import { CyleDependError } from '../errors';
+import { ComputedState } from '../computed/types';
 
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -32,7 +33,7 @@ type CreateReactiveObjectOptions = {
  * @param {CreateReactiveObjectOptions.createDynamicValueObject} [options.createDynamicValueObject] - 用于创建动态值对象的函数。
  * @returns {State} - 返回一个响应式对象。
  */
-export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): State {
+export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): ComputedState<State> {
     const { notify,createComputedObject } = Object.assign({},options)
 
     const isComputedCreating = new Map()
@@ -105,7 +106,7 @@ export function createReactiveObject<State extends object>(state:State,options?:
             }
         })
     } 
-    return createProxy(state, []) as State
+    return createProxy(state, []) as ComputedState<State>
 } 
 
 
