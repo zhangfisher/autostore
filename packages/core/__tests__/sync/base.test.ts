@@ -1,7 +1,6 @@
 import { test,expect, describe } from "vitest"
-import { createStore,computed,  ComputedObject } from "../.."
+import { createStore,computed,  ComputedObject } from "../.." 
 import { CyleDependError } from "../../src/errors"
-
  
 
 describe("同步计算属性的基本特性",()=>{
@@ -244,45 +243,88 @@ describe('同步计算函数的启用和禁用', () => {
         }
     })
 
-    // describe('同步计算函数中的循环依赖', () => {
+    describe('同步计算函数中的循环依赖', () => {
 
-    //     test("同步计算依赖了自己",async ()=>{            
-    //         try{
-    //             const store = createStore({
-    //                 price:2,
-    //                 count:3,
-    //                 total:computed((scope)=>{
-    //                     return scope.price * scope.total
-    //                 })
-    //             })
-    //             store.state.total  
-    //         }catch(e:any){
-    //             expect(e).toBeInstanceOf(CyleDependError)
-    //         }             
-    //     })  
-    //     test('存在循环依赖路径', () => {    
-    //         //  ┌───────────────↴ 
-    //         //  1<──2<──3<──4<──5 
-    //         try{                
-    //             const store = createStore({
-    //                 user:{
-    //                     firstName: 'zhang',
-    //                     lastName: 'fisher',
-    //                     fullName1: computed((scope:any) => `${scope.fullName5}`),
-    //                     fullName2: computed((scope:any) => `${scope.fullName1}*`),
-    //                     fullName3: computed((scope:any) => `${scope.fullName2}*`),
-    //                     fullName4: computed((scope:any) => `${scope.fullName3}*`),
-    //                     fullName5: computed((scope:any) => `${scope.fullName4}*`),
-    //                 }            
-    //             });           
-    //             store.state.user.fullName1 
-    //         }catch(e:any){
-    //             expect(e).toBeInstanceOf(CyleDependError)
-    //         }
-    //     })
+        test("同步计算依赖了自己",async ()=>{            
+            try{
+                const store = createStore({
+                    price:2,
+                    count:3,
+                    total:computed((scope)=>{
+                        return scope.price * scope.total
+                    })
+                })
+                store.state.total  
+            }catch(e:any){
+                expect(e).toBeInstanceOf(CyleDependError)
+            }             
+        })  
+        test('循环依赖路径中依赖了自己', () => {    
+            //  ┌───────────────↴ 
+            //  1<──2<──3<──4<──5 
+            try{                
+                const store = createStore({
+                    user:{
+                        firstName: 'zhang',
+                        lastName: 'fisher',
+                        fullName1: computed((scope:any) => `${scope.fullName5}`),
+                        fullName2: computed((scope:any) => `${scope.fullName1}*`),
+                        fullName3: computed((scope:any) => `${scope.fullName2}*`),
+                        fullName4: computed((scope:any) => `${scope.fullName3}*`),
+                        fullName5: computed((scope:any) => `${scope.fullName4}*`),
+                    }            
+                });           
+                store.state.user.fullName1 
+            }catch(e:any){
+                expect(e).toBeInstanceOf(CyleDependError)
+            }
+        })
 
-    
-    // })
+        test('所依赖的数据项存在循环依赖路径', () => {    
+            //      ↓───────────┐ 
+            //  1──>2──>3──>4──>5 
+            try{                
+                const store = createStore({
+                    user:{
+                        firstName: 'zhang',
+                        lastName: 'fisher',
+                        fullName1: computed((scope:any) => `${scope.fullName2}`),
+                        fullName2: computed((scope:any) => `${scope.fullName3}*`),
+                        fullName3: computed((scope:any) => `${scope.fullName4}*`),
+                        fullName4: computed((scope:any) => `${scope.fullName5}*`),
+                        fullName5: computed((scope:any) => `${scope.fullName2}*`),
+                    }            
+                });           
+                store.state.user.fullName1 
+            }catch(e:any){
+                expect(e).toBeInstanceOf(CyleDependError)
+            }
+        })
+        test('数组中存在交叉循环依赖路径', () => {    
+            try{                
+                const store = createStore({
+                    user:{
+                        firstName: 'zhang',
+                        lastName: 'fisher',
+                        orders:[
+                            {name:"order1",price:computed((orders:any[]) => {
+                                return orders[1].price+1
+                            },{scope:"PARENT"})},
+                            {name:"order2",price:computed((orders:any[]) => {
+                                return orders[0].price+1
+                            },{scope:"PARENT"})},
+                            {name:"order3"},
+                            {name:"order4"},
+                            {name:"order5"},
+                        ]
+                    }            
+                });           
+                store.state.user.orders[1].price  
+            }catch(e:any){
+                expect(e).toBeInstanceOf(CyleDependError)
+            }
+        })
+    })
     
 })
 

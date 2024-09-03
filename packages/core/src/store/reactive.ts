@@ -35,6 +35,7 @@ type CreateReactiveObjectOptions = {
 export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): State {
     const { notify,createComputedObject } = Object.assign({},options)
 
+    const isComputedCreating = new Map()
 
     const createProxy = (target: any, parentPath: string[]): any =>{
         if (typeof target !== 'object' || target === null) {
@@ -51,7 +52,18 @@ export function createReactiveObject<State extends object>(state:State,options?:
                         if(Array.isArray(obj)){           
                             return hookArrayMethods(notify,obj,prop as string,value,parentPath); 
                         }else if(!isRaw(value) && Object.hasOwn(obj,prop)){           
-                            return createComputedObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            const pathKey = path.join('.')                          
+                            try{  
+                                if(isComputedCreating.has(pathKey)){  // 如果已经创建过计算属性，则直接返回
+                                    const cylePaths = [...isComputedCreating.keys(),pathKey]
+                                    isComputedCreating.clear()
+                                    throw new CyleDependError(`The computed property "${pathKey}" has a circular dependency, steps: ${cylePaths.join(' <- ')}`)
+                                }
+                                isComputedCreating.set(pathKey,true)
+                                return createComputedObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            }finally{
+                                isComputedCreating.delete(pathKey)
+                            }                            
                         }else{
                             return value
                         }
