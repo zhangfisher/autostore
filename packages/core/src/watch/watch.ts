@@ -25,13 +25,10 @@ import { normalizedWatchFilter } from "./utils";
     const opts : WatchOptions<Result> = Object.assign({
         depends:normalizedWatchFilter(depends),
         enable:true
-    },options) e:\Work\Code\sources\speed-form\packages\reactive\src\watch\utils.ts
-    const descriptor =(() => {
-      return {
-        listener,
+    },options)  
+    return () => ({
+        type:"watch",
+        getter:listener,
         options: opts,
-      };
-    }) as WatchDescriptor<Value,Result>
-    descriptor.__COMPUTED__ = 'watch'
-    return descriptor        
+      })
 }

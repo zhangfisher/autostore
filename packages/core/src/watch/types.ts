@@ -1,4 +1,4 @@
-import type { FlexEventSubscriber } from "flex-tools/dist/events/flexEvent"
+import type { FlexEventSubscriber } from "flex-tools/events/flexEvent"
 import type { StateOperateParams, StateOperates } from "../store/types"
 import type { WatchObject } from "./watchObject"
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts"
@@ -21,8 +21,8 @@ export type WatchDependParams<T=any> =string | (string | string[])[] | WatchDepe
 export type WatchListenerArgs<Result=any> = {getSelfValue:()=>Result ,selfPath:string[] ,fromPath:string[],getCache:()=>Dict,state:any}
 
  
-export type WatchDescriptor<Value=any, Result=Value> = {
-    listener : (path:string[],value:Value,watchObject:WatchObject<any>)=>(Exclude<Result,Promise<any>> | undefined)
+export type WatchDescriptor<Value=any, Result=Value,Options extends Dict = Dict> = {
+    listener : (path:string[],value:Value,watchObject:WatchObject<Value>)=>(Exclude<Result,Promise<any>> | undefined)
     options  : WatchOptions<Result>;                  
   }
 

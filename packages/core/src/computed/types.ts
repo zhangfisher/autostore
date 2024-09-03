@@ -358,14 +358,14 @@ export type ComputedContext<Value=any> = {
 }
 
 export type ComputedDescriptor<Value=any,Scope=any,Options extends Dict = Dict> = {    
-    type                          : ComputedType      
-    getter                        :  ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
-    options                       : Options
+    getter : ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
+    options: Options
 }
 
 export type ComputedDescriptorBuilder<Value=any,Scope=any,Options extends Dict = Dict> = {
-    ():ComputedDescriptor<Value,Scope,Options>
+    ():ComputedDescriptor<Value,Scope,Options> 
     [COMPUTED_DESCRIPTOR_FLAG]     : true 
+    type                          : ComputedType              
 }
 
 
