@@ -1,5 +1,5 @@
 import { test,expect, describe,vi} from "vitest"
-import { createStore,computed } from "../../src"
+import { createStore,computed, ComputedObject } from "../../src"
 import { delay } from "flex-tools/async/delay"
  
 
@@ -55,8 +55,8 @@ describe("异步计算",()=>{
                     resolve()        
                 }                
             })   
-            store.state.count = 4)
-            store.state.count = 5)
+            store.state.count = 4
+            store.state.count = 5
         })
     })  
 
@@ -70,7 +70,7 @@ describe("异步计算",()=>{
                     return scope.price * scope.count
                 },['price','count'])
             } ) 
-            store.on("computed:created",(obj)=>{
+            store.on("computed:created",()=>{
                 expect("result" in store.state.total).toBe(true)
                 expect("error" in store.state.total).toBe(true)
                 expect("loading" in store.state.total).toBe(true)
@@ -125,16 +125,16 @@ describe("异步计算",()=>{
                 immediate:true,
                 enableComputed:false
             })
-            store.state.count = 4)
-            store.state.count = 5)                
-            store.state.count = 4)
-            store.state.count = 5)
-            store.enableComputed(true)                        
-            store.on("computed:done",({path})=>{ 
+            store.state.count = 4
+            store.state.count = 5             
+            store.state.count = 4
+            store.state.count = 5
+            store.computedObjects.enable = true
+            store.on("computed:done",()=>{ 
                 expect(count).toBe(1)
                 resolve()
             })
-            store.state.count = 100) 
+            store.state.count = 100
         })
     })
     test("单独控制计算属性的启用与停止计算",()=>{
@@ -161,7 +161,7 @@ describe("异步计算",()=>{
                 }               
                 
             })
-            store.state.count = 4)
+            store.state.count = 4
         })
     })
     test("通过计算属性对象手动执行计算函数",()=>{
@@ -203,7 +203,7 @@ describe("异步计算",()=>{
             store.state.total   // 创建计算属性时，会立即执行一次计算函数
             setTimeout(()=>{
                 expect(count).toBe(1)
-                store.state.count = 4)
+                store.state.count = 4
                 setTimeout(()=>{
                     expect(count).toBe(2)
                     resolve()

@@ -1,17 +1,18 @@
 import { setVal } from "../utils/setVal"
-import { WatchListener, WatchOptions, WatchDescriptorDefine } from './types';
+import { WatchListener, WatchOptions, WatchDescriptor } from './types';
 import { Dict } from "../types"
 import { getVal } from "../utils/getVal"
 import { OBJECT_PATH_DELIMITER } from "../consts"  
 import { isEq } from "../utils/isEq";
 import { AutoStore } from "../store/store";
+import { ComputedContext } from "../computed/types";
  
 
 export class WatchObject<T extends Dict> {
     private _cache?: Dict
     private _listener:WatchListener 
     private _options: Required<WatchOptions>
-    constructor(public store:AutoStore<T>,descriptor:WatchDescriptorDefine){        
+    constructor(public store:AutoStore<T>,public context:ComputedContext<Value>,descriptor:WatchDescriptor){        
         this._options = Object.assign({ 
             enable  : true,
             selfPath: [],

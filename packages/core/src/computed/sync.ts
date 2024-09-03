@@ -97,7 +97,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
         dependencies.push(...getDependPaths(this.path,this.options.depends))
       } 
       this.depends = noRepeat(dependencies)      // 去重一下     
-      this.subscribeDepends()
+      this.subscribe()
   }  
 
 

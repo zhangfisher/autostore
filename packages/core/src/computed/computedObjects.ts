@@ -1,3 +1,4 @@
+import { TimeoutError } from "../errors"
 import { AutoStore } from "../store/store"
 import { Dict } from "../types"
 import { ComputedObject } from "./computedObject" 
@@ -9,7 +10,10 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     constructor(public store:AutoStore<State>){
       super()
     }
-
+    get enable(){ return this.store.options.enableComputed }
+    set enable(value:boolean){
+      this.store.options.enableComputed = value
+    }
     /**
      * 创建一个新的计算对象
      * 
@@ -31,7 +35,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
      * @param param3 
      */
     async runGroup(group:string,runArgs?:RuntimeComputedOptions ,options?: { wait?:boolean,timeout?:number }){       
-      return await this.run((computedObject:ComputedObject<T>)=>computedObject.group==group,runArgs,options)
+      return await this.run((computedObject:ComputedObject)=>computedObject.group==group,runArgs,options)
     }
     /**
      * 运行指定id或满足条件的计算函数
@@ -44,17 +48,17 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
      * @param runArgs 传递给计算属性的run函数的参数
      * @param options 
      */
-    async run(filter:(computedObject:ComputedObject<T>)=>boolean,runArgs?:RuntimeComputedOptions,options?:{ wait?:boolean,timeout?:number }):Promise<any>
+    async run(filter:(computedObject:ComputedObject)=>boolean,runArgs?:RuntimeComputedOptions,options?:{ wait?:boolean,timeout?:number }):Promise<any>
     async run(id:string,runArgs?:RuntimeComputedOptions ,options?: { wait?:boolean,timeout?:number }):Promise<any>
     async run():Promise<any>{
       if(arguments.length==0){
         return Promise.all([...this.values()].map(computedObject=>computedObject.run()))
       }      
-      let filter:(computedObject:ComputedObject<T>)=>boolean
+      let filter:(computedObject:ComputedObject)=>boolean
       if(typeof(arguments[0])==='function'){
         filter = arguments[0] 
       }else if(typeof(arguments[0])==='string'){ // 运行指定的id
-        filter = (computedObject:ComputedObject<T>)=>computedObject.id==arguments[0]
+        filter = (computedObject:ComputedObject)=>computedObject.id==arguments[0]
       }            
       
       const computedRunArgs = Object.assign({},arguments[1]) as RuntimeComputedOptions
@@ -81,7 +85,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
           } 
         }      
         Promise.all(
-          [...this.values()].filter((obj:ComputedObject<T>)=>{
+          [...this.values()].filter((obj:ComputedObject)=>{
             if(filter(obj)){
               dones[obj.id] = false
               return true
@@ -101,23 +105,23 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
      * 启用或禁用计算
      * @param value 
      */
-    // async enableGroup(value:boolean){
-    //   for(let computedObject of this.values()){
-    //     computedObject.options.enable = value
-    //   }
-    // }
-    // /**
-    //  * 移除指定的计算对象
-    //  * 
-    //  * 注意：如果该计算对象是state的某个属性创建的，只会删除计算对象，不会删除state属性
-    //  * 
-    //  * @param id 
-    //  * @returns 
-    //  */
-    // delete(id: string){
-    //   //this.get(id)?.mutate.cancel()   // 取消订阅
-    //   return super.delete(id)
-    // }
+    async enableGroup(value:boolean){
+      for(let computedObject of this.values()){
+        computedObject.options.enable = value
+      }
+    }
+    /**
+     * 移除指定的计算对象
+     * 
+     * 注意：如果该计算对象是state的某个属性创建的，只会删除计算对象，不会删除state属性
+     * 
+     * @param id 
+     * @returns 
+     */
+    delete(id: string){
+      this.get(id)?.unsubscribe()
+      return super.delete(id)
+    }
     // /**
     //  * 创建一个新计算对象
     //  */

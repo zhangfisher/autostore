@@ -59,8 +59,8 @@ import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
-import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedScopeRef, ComputedState, ComputedType } from "../computed/types";
-import { Watcher, WatchListener, WatchOptions } from "../watch/types";
+import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedState, ComputedType } from "../computed/types";
+import { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
 import { getVal, setVal } from "../utils";
@@ -68,7 +68,8 @@ import { OBJECT_PATH_DELIMITER } from "../consts";
 import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
 import { getComputedDescriptor } from "../computed/utils";
 import { forEachObject } from "../utils/forEachObject";
-
+import { AsyncComputedObject } from "../computed/async";
+ 
 export type AutoStoreOptions<State extends Dict> = {
     /**
      * 提供一个id，用于标识当前store
@@ -175,9 +176,7 @@ export type AutoStoreOptions<State extends Dict> = {
     log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
 }
 
-
-// type StateNotifier = (type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any)=>void
-
+ 
 export class AutoStore<State extends Dict>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
@@ -193,7 +192,7 @@ export class AutoStore<State extends Dict>{
             log,
             enableComputed:true,
         },options) as Required<AutoStoreOptions<State>>        
-        this.computedObjects = new ComputedObjects(this)
+        this.computedObjects = new ComputedObjects<State>(this)
         this._data = createReactiveObject(state,{
             notify:this.notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
@@ -242,17 +241,17 @@ export class AutoStore<State extends Dict>{
      * 
      * 
      * @param {string|string[]} keyPaths - 要监视的数据路径，可以是单个字符串或字符串数组。
-     * @param {WatchListener} listener - 当监视的数据路径变化时执行的回调函数。
+     * @param {WatchListenerOptions} listener - 当监视的数据路径变化时执行的回调函数。
      * @param {WatchOptions} [options] - 可选参数，用于配置监视行为。
      * @returns {Watcher} - 返回一个表示监听器的数字标识符，用来取消监听。
      */    
-    watch(listener:WatchListener,options?:WatchOptions):Watcher
-    watch(keyPaths:string | (string|string[])[],listener:WatchListener,options?:WatchOptions):Watcher
+    watch(listener:WatchListener,options?:WatchListenerOptions):Watcher
+    watch(keyPaths:string | (string|string[])[],listener:WatchListener,options?:WatchListenerOptions):Watcher
     watch():Watcher{
         const isWatchAll = typeof(arguments[0])==='function' 
         const listener = isWatchAll ? arguments[0] : arguments[1]
 
-        const createSubscribe = (operates:StateOperates[],filter:WatchOptions['filter'])=>(event:StateOperateParams)=>{
+        const createSubscribe = (operates:StateOperates[],filter:WatchListenerOptions['filter'])=>(event:StateOperateParams)=>{
             if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
                 if(!operates.includes(event.type)) return
             }else{  //  没定指定操作类型，默认只侦听除了get操作外的更新操作
@@ -263,7 +262,7 @@ export class AutoStore<State extends Dict>{
         }        
 
         if(isWatchAll){ // 侦听全部
-            const {once,operates,filter} = Object.assign({once:false,operates:['set','delete','insert','remove','update']},arguments[1])  as Required<WatchOptions>
+            const {once,operates,filter} = Object.assign({once:false,operates:['set','delete','insert','remove','update']},arguments[1])  as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.changesets.once : this.changesets.on
             return subscribeMethod.call(this.changesets,"**",createSubscribe(operates,filter),{objectify:true}) as Watcher
         }else{ // 只侦听指定路径
@@ -271,7 +270,7 @@ export class AutoStore<State extends Dict>{
             const keyPaths = arguments[0] as string | (string|string[])[]
             const paths:string[] = Array.isArray(keyPaths) ? 
                 keyPaths.map(v=>typeof(v)==='string'? v:v.join(delimiter)) : [keyPaths]
-            const {once,operates,filter} = Object.assign({once:false,operates:['set','delete','insert','remove','update']},arguments[2])  as Required<WatchOptions>
+            const {once,operates,filter} = Object.assign({once:false,operates:['set','delete','insert','remove','update']},arguments[2])  as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.changesets.once : this.changesets.on           
             const subscribers:string[]=[]
             const unSubscribe = ()=>{
@@ -286,17 +285,14 @@ export class AutoStore<State extends Dict>{
 
     // ************* Computed ************** 
     /**
-     * 
-     * 创建一个计算属性对象
-     * 
-     * 当data中的成员是一个函数时，会自动创建一个计算属性对象
+     * @description 创建计算属性对象
      * 
      * 
      */
     private createComputed(computedContext:ComputedContext,descriptor:ComputedDescriptor){
         let computedObj:ComputedObject | undefined
         if(descriptor.options.async){ // 异步计算
-            computedObj
+            computedObj= (new AsyncComputedObject(this, computedContext, descriptor as ComputedDescriptor)) as unknown as ComputedObject
         }else{ // 同步计算
             computedObj = (new SyncComputedObject(this, computedContext, descriptor as ComputedDescriptor)) as unknown as ComputedObject
         }    
@@ -309,6 +305,19 @@ export class AutoStore<State extends Dict>{
             return computedObj.initial  
         }   
     }  
+
+    /**
+     * 创建侦听对象
+     * @param computedContext 
+     * @param descriptor 
+     */
+    private createWatch(computedContext:ComputedContext,descriptor:ComputedDescriptor){
+        const watchObj = createWatch(this,computedContext,descriptor)
+        this.computedObjects.set(watchObj.id,watchObj)
+        this.emit("watch:created",watchObj)
+        return watch
+    }
+
     /**
      * 
      * 创建动态值对象
@@ -326,8 +335,9 @@ export class AutoStore<State extends Dict>{
         if(descriptor){
             if(descriptor.type==='computed'){                
                 return this.createComputed(computedCtx,descriptor)
+            }else if(descriptor.type==='watch'){                
+                return this.createWatch(computedCtx,descriptor)
             }
-
         }else{
             return value
         }        
@@ -378,7 +388,7 @@ export class AutoStore<State extends Dict>{
      * 
      * @param fn   更新方法，在此方法内部进行更新操作
      */
-    update(fn:(state:State)=>void){
+    update(fn:(state:ComputedState<State>)=>void){
         if(typeof(fn)==='function'){                        
             this._batching=true
             try{

@@ -3,6 +3,7 @@
  * 
  * 
  */
+import { FlexEventListener } from "flex-tools";
 import { OBJECT_PATH_DELIMITER } from "../consts"; 
 import { AutoStore } from "../store/store";
 import { StateOperateParams } from "../store/types";
@@ -10,6 +11,7 @@ import { getDependPaths } from "../utils/getDependPaths";
 import { getVal } from "../utils/getVal";
 import { joinValuePath } from "../utils/joinValuePath";
 import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedOptions } from './types';
+import { Watcher } from "../watch/types";
 
  
 
@@ -21,7 +23,8 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
     private _depends: string[][] | undefined
     private _id:string = ""
     private _initialValue:Value | undefined
-    private _subscribers:string[] = []              // 保存订阅者的ID
+    private _subscribers:Watcher[] = []              // 保存订阅者的ID
+    private _subscribed:boolean = false
     /**
      *  构造函数。
      * 
@@ -91,19 +94,29 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
     protected onDependsChange(_:StateOperateParams){ 
         throw new Error("Method not implemented.");
     }
-    protected subscribeDepends(){
-        if(this._depends){
+    /**
+     * 订阅依赖的变化事件
+     * 不包括读取依赖的事件
+     */
+    subscribe(){
+        if(this._depends && !this._subscribed){
             this._depends.forEach(depends=>{
-                this._subscribers.push(
-                    this.store.watch(
+                this._subscribers.push(this.store.watch(
                         depends.join(OBJECT_PATH_DELIMITER),
                         this.onDependsChange.bind(this),
                         {operates:['set','delete','insert','remove','update']}
-                    ) as string   
-                )
+                    ))
             })
+            this._subscribed=true
         }
     }    
+    /**
+     * 取消订阅依赖的变化事件
+     */
+    unsubscribe(){
+        this._subscribers.forEach(subscriber=>subscriber.off())
+        this._subscribed=false
+    }
 
 
 }

@@ -143,8 +143,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * @param result - 操作的结果，如果操作成功完成
 	 */
 	private onDoneCallback(options: Required<RuntimeComputedOptions>,error:Error,abort:boolean,timeout:boolean,scope:any,result:any) {
-		if(typeof(this.options.onDone)!=='function') return 
-		this.options.onDone.call(this, {
+		if(typeof(options.onDone)!=='function') return 
+		options.onDone.call(this, {
 			id:this.id,			
 			path:this.path,
 			result,
