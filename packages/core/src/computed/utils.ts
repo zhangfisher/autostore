@@ -1,5 +1,6 @@
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
+import { WatchDescriptor } from "../watch/types";
 import { ComputedDescriptor } from "./types"; 
 
 
@@ -19,8 +20,8 @@ export function isComputedDescriptor(obj:any){
  * @param value 
  * @returns 
  */
-export function getComputedDescriptor(value:any): ComputedDescriptor  | undefined{
-    let descriptor : ComputedDescriptor | undefined
+export function getComputedDescriptor(value:any): ComputedDescriptor | WatchDescriptor | undefined{
+    let descriptor : WatchDescriptor | ComputedDescriptor | undefined
     if(isComputedDescriptorBuilder(value)){    
         descriptor = value()
     }else if(typeof value === 'function'){        
@@ -33,5 +34,5 @@ export function getComputedDescriptor(value:any): ComputedDescriptor  | undefine
             }            
         }
     }
-    return descriptor as ComputedDescriptor
+    return descriptor  
 }

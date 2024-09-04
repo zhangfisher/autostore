@@ -1,4 +1,5 @@
-import { WatchDependParams, WatchDescriptor, WatchListener, WatchOptions } from "./types";
+import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
+import { WatchDependParams, WatchDescriptor, WatchDescriptorBuilder, WatchGetter, WatchListener, WatchOptions } from "./types";
 import { normalizedWatchFilter } from "./utils";
 
  /* 
@@ -21,14 +22,18 @@ import { normalizedWatchFilter } from "./utils";
  * @param options 
  * @returns 
  */
- export function watch<Value =any,Result=Value>(listener:WatchListener<Value,Result>,depends?:WatchDependParams<Value>,options?:WatchOptions<Result>):WatchDescriptor<Value,Result>{
+ export function watch<Value =any,Result=Value>(getter:WatchGetter<Value,Result>,depends?:WatchDependParams<Value>,options?:WatchOptions<Result>):WatchDescriptorBuilder<Value,Result>{
     const opts : WatchOptions<Result> = Object.assign({
         depends:normalizedWatchFilter(depends),
         enable:true
     },options)  
-    return () => ({
-        type:"watch",
-        getter:listener,
-        options: opts,
-      })
+    const descriptorBuilder = () => {
+        return { 
+          getter,
+          options: opts,
+        }
+      }
+      descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG]     = true 
+
+    return descriptorBuilder as WatchDescriptorBuilder<Value, Result>;
 }

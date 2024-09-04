@@ -12,7 +12,7 @@ export class WatchObject<T extends Dict> {
     private _cache?: Dict
     private _listener:WatchListener 
     private _options: Required<WatchOptions>
-    constructor(public store:AutoStore<T>,public context:ComputedContext<Value>,descriptor:WatchDescriptor){        
+    constructor(public store:AutoStore<T>,public context:ComputedContext<any>,descriptor:WatchDescriptor){        
         this._options = Object.assign({ 
             enable  : true,
             selfPath: [],

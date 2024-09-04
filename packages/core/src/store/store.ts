@@ -311,7 +311,7 @@ export class AutoStore<State extends Dict>{
      * @param computedContext 
      * @param descriptor 
      */
-    private createWatch(computedContext:ComputedContext,descriptor:ComputedDescriptor){
+    private createWatch(computedContext:ComputedContext,descriptor:WatchDescriptor){
         // const watchObj = createWatch(this,computedContext,descriptor)
         // this.computedObjects.set(watchObj.id,watchObj)
         // this.emit("watch:created",watchObj)

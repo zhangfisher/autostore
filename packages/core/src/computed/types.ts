@@ -357,22 +357,18 @@ export type ComputedContext<Value=any> = {
     parent    : any
 }
 
-export type ComputedDescriptor<Value=any,Scope=any,Options extends Dict = Dict> = {    
+export type ComputedDescriptor<Value=any,Scope=any,Options extends Dict = Dict> = {      
+    type   : 'computed'          
     getter : ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
     options: Options
 }
 
 export type ComputedDescriptorBuilder<Value=any,Scope=any,Options extends Dict = Dict> = {
     ():ComputedDescriptor<Value,Scope,Options> 
-    [COMPUTED_DESCRIPTOR_FLAG]     : true 
-    type                          : ComputedType              
-}
-
-
+    [COMPUTED_DESCRIPTOR_FLAG]     : true      
+} 
 
 export type ComputedSyncReturns<T=any> = (...args: any) => Exclude<T,Promise<any>>;  
-
- 
 
 /**
  * 返回函数的返回值类型
@@ -383,7 +379,7 @@ export type AsyncReturnType<T extends (...args: any) => any> = T extends (...arg
  
 
 export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedResult<X> : 
-    ( T extends WatchDescriptor<any,infer X> ? X :                                  
+    ( T extends ComputedDescriptorBuilder<any,infer X> ? X :                                  
         ( T extends Computed<infer X> ? X:                                              // 同步函数
             (T extends AsyncComputed<infer X> ? AsyncComputedResult<X> :                // 异步函数
                 T

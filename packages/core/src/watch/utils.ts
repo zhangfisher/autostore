@@ -1,4 +1,4 @@
-import { OBJECT_PATH_DELIMITER } from "../consts";
+import { COMPUTED_DESCRIPTOR_FLAG, OBJECT_PATH_DELIMITER } from "../consts";
 import { joinValuePath } from "../utils/joinValuePath";
 import { WatchDepends,WatchDependParams } from "./types";
 
@@ -38,3 +38,13 @@ export function normalizedWatchFilter(on:WatchDependParams=[]): WatchDepends{
     }
 }
  
+export function isWatchDescriptorBuilder(value:any){
+    return typeof(value) === 'function' && value[COMPUTED_DESCRIPTOR_FLAG]===true
+}
+
+export function isWatchDescriptor(obj:any){
+    return typeof(obj) === 'object' 
+        && obj.hasOwnProperty("type") && typeof(obj.type) === 'string'
+        && obj.hasOwnProperty("getter")  && typeof(obj.getter) === 'function'
+        && obj.hasOwnProperty("options") && typeof(obj.options) === 'object'
+}
