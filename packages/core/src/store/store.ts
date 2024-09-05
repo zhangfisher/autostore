@@ -60,7 +60,7 @@ import { getId } from "../utils/getId";
 import { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedState, ComputedType } from "../computed/types";
-import { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
+import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
 import { getVal, setVal } from "../utils";
