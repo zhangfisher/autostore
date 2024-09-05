@@ -12,10 +12,13 @@ export type WatchListenerOptions = {
     filter?  : (event:StateOperateParams)=>boolean      // 过滤器
 }
 export type Watcher = FlexEventSubscriber
+
+
+
 export type WatchDepends<T=any> = (path:string[],value:T)=>boolean
+export type WatchDependParams<T=any> = string | (string | string[])[] | WatchDepends<T>
 
 
-export type WatchDependParams<T=any> =string | (string | string[])[] | WatchDepends<T>
 
 /**
  * selfPath=当前watch函数所在的位置

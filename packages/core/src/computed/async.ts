@@ -16,6 +16,7 @@ import { ComputedObject } from "./computedObject";
 import { Dict } from "../types";
 import { getSnap } from "../utils/getSnap";
 import { getError } from "../utils/getError";
+import { StateOperateParams } from "../store/types";
 
 
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
@@ -24,18 +25,20 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	ComputedOptions<Value, Scope>
 > {
 	private _isComputedRunning: boolean = false;
-	get async() {
-		return true;
-	}
+	get async() {return true}
+	get value(){ return (super.value as AsyncComputedResult).result as unknown as Value}           
+
 	/**
 	 *
 	 */
 	protected onInitial() {
 		this.initial = this.createAsyncComputedResult();
-		// 如果指定了immediate=true,是马上执行一次，否则只会在依赖发生变化时执行
-		if (this.options.immediate) {
-			this.run();
-		}
+		this.subscribe()
+		setTimeout(()=>{
+			if (this.options.immediate===true || (this.options.immediate==='auto' && this.options.initial===undefined)) {
+				this.run({first:true});
+			}
+		},0)
 	}
 
 	private createAsyncComputedResult() {
@@ -283,5 +286,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		setTimeout(() => {
 			this.onDoneCallback(options,hasError,hasAbort,hasTimeout,scope,computedResult);
 		}, 0); 
+	}
+	protected onDependsChange(params:StateOperateParams){ 
+		this.run({changed:params})		
 	}
 }

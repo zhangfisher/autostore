@@ -3,7 +3,6 @@
  * 
  * 
  */
-import { FlexEventListener } from "flex-tools";
 import { OBJECT_PATH_DELIMITER } from "../consts"; 
 import { AutoStore } from "../store/store";
 import { StateOperateParams } from "../store/types";
@@ -107,6 +106,7 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
                         {operates:['set','delete','insert','remove','update']}
                     ))
             })
+            this.store.log(()=>`ComputedObject<${this.toString()}> subscribed to ${this._depends!.map(depends=>depends.join(OBJECT_PATH_DELIMITER)).join(",")}`)
             this._subscribed=true
         }
     }    

@@ -5,7 +5,7 @@ import { ComputedDescriptor } from "./types";
 
 
 export function isComputedDescriptorBuilder(value:any){
-    return typeof(value) === 'function' && value[COMPUTED_DESCRIPTOR_FLAG]===true
+    return typeof(value) === 'function' && value[COMPUTED_DESCRIPTOR_FLAG] === true
 }
 
 export function isComputedDescriptor(obj:any){
@@ -24,13 +24,13 @@ export function getComputedDescriptor(value:any): ComputedDescriptor | WatchDesc
     let descriptor : WatchDescriptor | ComputedDescriptor | undefined
     if(isComputedDescriptorBuilder(value)){    
         descriptor = value()
-    }else if(typeof value === 'function'){        
-        // 只是简单的函数，没有任何配置参数，属性简化的计算属性，具有默认的属性
+    }else if(typeof value === 'function'){    
+        // 只是简单的函数，没有任何配置参数，属性简化的计算属性，具有默认的属性            
         descriptor = {
-            type             : 'computed',
-            getter           : value,
-            options          : {
-                async        : isAsyncFunction(value)
+            type     : 'computed',
+            getter   : value,
+            options  : {
+                async: isAsyncFunction(value)
             }            
         }
     }

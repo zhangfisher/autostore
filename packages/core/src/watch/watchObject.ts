@@ -1,16 +1,17 @@
 import { setVal } from "../utils/setVal"
-import { WatchListener, WatchOptions, WatchDescriptor } from './types';
+import { WatchListener, WatchOptions, WatchDescriptor, WatchGetter } from './types';
 import { Dict } from "../types"
 import { getVal } from "../utils/getVal"
 import { OBJECT_PATH_DELIMITER } from "../consts"  
 import { isEq } from "../utils/isEq";
 import { AutoStore } from "../store/store";
 import { ComputedContext } from "../computed/types";
+import { joinValuePath } from "../utils/joinValuePath";
  
 
 export class WatchObject<T extends Dict> {
     private _cache?: Dict
-    private _listener:WatchListener 
+    private _getter?:WatchGetter<T>
     private _options: Required<WatchOptions>
     constructor(public store:AutoStore<T>,public context:ComputedContext<any>,descriptor:WatchDescriptor){        
         this._options = Object.assign({ 
@@ -24,10 +25,8 @@ export class WatchObject<T extends Dict> {
             // 如果没有id则生成一个id
         if(!this._options.id){
             const selfPath = this._options.path
-            this._options.id = this._options.id || 
-                this._options.context ?  getRndId() : joinValuePath(selfPath) 
-        }
-        this._listener = descriptor.listener
+            this._options.id = this._options.id  ?? joinValuePath(selfPath) 
+        } 
     }
     get id(){ return this._options.id!}
     get options(){ return this._options}
@@ -44,12 +43,8 @@ export class WatchObject<T extends Dict> {
      * @returns 
      */
     get value(){
-        const ctx = this._options.context ?  this._options.context : this.store.state
-        return getVal(getSnap(ctx),this.path)
-    }    
-    private getName(){
-        return this._options.context ? this.id : this.path.join(OBJECT_PATH_DELIMITER)
-    }
+        return getVal(this.store.state,this.path)
+    }     
     /**
      * 返回输入的路径是否当前对象所依赖的路径
      * 
@@ -75,21 +70,16 @@ export class WatchObject<T extends Dict> {
     run(watchPath:string[],watchValue:any){   
         // 1. 检查是否启用
         if(!this.enable) {
-            this.store.options.log!(`WatchObject <${this.getName()}> is disabled`)
+            this.store.options.log!(`WatchObject <${this.toString()}> is disabled`)
             return 
         } 
         try{
             // 2.  执行监听函数
-            const result = this._listener.call(this,watchPath,watchValue,this as any)    
+            const result = this._getter?.call(this,watchPath,watchValue,this as any)    
             // 3. 将返回值回写到状态中
             if(result!==undefined){            
-                if(this._options.context ){
-                    this._options.context.setState((draft:any)=>{
-                        draft.value=result
-                    })
-                }else{ // 回写到原地                    
-                    setVal(this.store.state,this.path,result)
-                }            
+                // 回写到原地                    
+                setVal(this.store.state,this.path,result) 
             }    
         }catch{
 

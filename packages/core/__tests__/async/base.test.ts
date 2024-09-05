@@ -23,13 +23,12 @@ describe("异步计算",()=>{
                 results.push(store.state.total.result)
                 if(results.length===3){
                     expect(count).toBe(3)         
-                    expect(results).toEqual([6,8,10]) 
+                    expect(results).toEqual([6,8,20]) 
                     resolve()        
                 }                
             })   
             store.state.count = 4
-            store.state.count = 5          
-
+            store.state.price = 5 
         })
     })  
     test("从异步对象实例读取计算值",()=>{
