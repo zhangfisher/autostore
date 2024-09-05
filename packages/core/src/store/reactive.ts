@@ -44,15 +44,21 @@ export function createReactiveObject<State extends object>(state:State,options?:
         }
         if(isRaw(target)) return target
         return new Proxy(target, {             
-            get: (obj, prop, receiver) => {
-                const value = Reflect.get(obj, prop, receiver);  
-                if(typeof(prop)!=='string') return value            
-                const path = [...parentPath, String(prop)];
-                if(!Object.hasOwn(obj,prop) || typeof value === 'function'){
+            get: (obj, key, receiver) => {
+                const value = Reflect.get(obj, key, receiver);  
+                if(typeof(key)!=='string') return value             
+                const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
+                // 如果属性不可配置或只读，直接返回值
+                if (!descriptor?.configurable && !descriptor?.writable) {
+                    return value
+                }
+
+                const path = [...parentPath, String(key)];
+                if(!Object.hasOwn(obj,key) || typeof value === 'function'){
                     if(typeof value === 'function'){
                         if(Array.isArray(obj)){           
-                            return hookArrayMethods(notify,obj,prop as string,value,parentPath); 
-                        }else if(!isRaw(value) && Object.hasOwn(obj,prop)){           
+                            return hookArrayMethods(notify,obj,key as string,value,parentPath); 
+                        }else if(!isRaw(value) && Object.hasOwn(obj,key)){           
                             const pathKey = path.join('.')                          
                             try{  
                                 if(isComputedCreating.has(pathKey)){  // 如果已经创建过计算属性，则直接返回
