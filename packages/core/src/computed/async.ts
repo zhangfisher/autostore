@@ -43,10 +43,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			if (this.options.immediate===true || (this.options.immediate==='auto' && this.options.initial===undefined)) {
 				this.run({first:true});
 			}
-		},0)
-		
+		},0)		
 	}
-
 	private createAsyncComputedResult() {
 		return Object.assign({
 			loading: false,
@@ -63,6 +61,25 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			}),
 		});
 	}
+	/**
+	 * 
+	 * @param name 
+	 * @param values 
+	 */
+	private updateComputedResultItem(name:keyof AsyncComputedResult,value:any) {
+		if(this.attched){
+			updateObjectVal(this.store.state, [...this.path!, name], value);
+		}else{
+			(this.value as any)[name] = value
+		}
+	}	
+	private updateComputedResult(values: Partial<AsyncComputedResult>) {    
+		if(this.attched){
+			updateObjectVal(this.store.state, this.path!, values);
+		}else{
+			Object.assign(this.value as object,values)
+		}		
+  	}
 	/**
 	 *
 	 * 运行计算函数
@@ -121,21 +138,19 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		value?: number;
 	}): ComputedProgressbar {
 		const { max = 100, min = 0, value = 0 } = Object.assign({}, opts);
-		setVal(this.store.state, [...this.path, "progress"], value);
+		// setVal(this.store.state, [...this.path, "progress"], value);
+		this.updateComputedResultItem("progress", value);
 		return {
 			value:(num: number)=>{
 				if (num > max) num = max;
 				if (num < min) num = min;
-				setVal(this.store.state, [...this.path, "progress"], num);
+				this.updateComputedResultItem("progress", num);
 			},
 			end() {
 				this.value(max);
 			},
 		};
 	}
-	private updateAsyncComputedResult(values: Partial<AsyncComputedResult>) {    		
-		updateObjectVal(this.store.state, this.path, values);
-  	}
 	/**
 	 * 当计算属性操作完成时的回调函数
 	 * 
@@ -186,7 +201,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		let hasAbort = false; // 是否接收到可中止信号
 
 		// 配置可中止信号，以便可以取消计算
-		this.updateAsyncComputedResult({
+		this.updateComputedResult({
 			cancel: markRaw(() => abortController.abort())
 		});
 		// 侦听中止信号，以便在中止时能停止
@@ -208,7 +223,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				let [timeoutValue = 0, countdown = 0] = Array.isArray(timeout)
 					? timeout
 					: [timeout, 0];
-				this.updateAsyncComputedResult({
+				this.updateComputedResult({
 					loading : true,
 					error   : null,
 					retry   : i > 0 ? retryCount - i : 0,
@@ -226,7 +241,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 						if (typeof timeoutCallback === "function") timeoutCallback();
 						if (!hasError) {
 							clearInterval(countdownId);
-							this.updateAsyncComputedResult({
+							this.updateComputedResult({
 								loading: false,
 								error  : "TIMEOUT",
 								timeout: 0,
@@ -236,7 +251,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					// 启用设置倒计时:  比如timeout= 6*1000, countdown= 6
 					if (countdown > 1) {
 						countdownId = setInterval(() => {
-							this.updateAsyncComputedResult({
+							this.updateComputedResult({
 								timeout: countdown--,
 							});
 							if (countdown === 0) clearInterval(countdownId);
@@ -270,7 +285,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				if (!hasError && !hasTimeout) {
 					Object.assign(afterUpdated, { error: null });
 				}
-				this.updateAsyncComputedResult(afterUpdated);
+				this.updateComputedResult(afterUpdated);
 			}
 			// 重试延迟
 			if (hasError) {// 最后一次不延迟				

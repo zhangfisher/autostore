@@ -35,17 +35,18 @@ function getScopeOptions(valueObject:ComputedObject,computedScope?: ComputedScop
  * @param params 
  * @returns 
  */
-export function getValueScope<Value=any,Scope=any,Options extends ComputedOptions<Value,Scope>=ComputedOptions<Value,Scope>>(computedObject:ComputedObject<Value,Options>,computedType:ComputedType,valueContext:ComputedContext<Value>, computedOptions: Options) {
+export function getValueScope<Value=any,Scope=any,Options extends ComputedOptions<Value,Scope>=ComputedOptions<Value,Scope>>(computedObject:ComputedObject<Value,Options>,computedType:ComputedType,valueContext:ComputedContext<Value> | undefined, computedOptions: Options) {
 
   let rootDraft = computedObject.store.state;
   const storeOptions = computedObject.store.options
     // 1. 获取计算函数的根scope
   if (typeof storeOptions.getRootScope=== "function") {
-    const newDraft = storeOptions.getRootScope(computedObject,{computedType: computedType,valuePath:valueContext.path});
+    const newDraft = storeOptions.getRootScope(computedObject,{computedType: computedType,valuePath:valueContext?.path});
     if (newDraft !== undefined) {
       rootDraft = newDraft;
     }
   }    
+
   const {path:valuePath,parentPath} = valueContext
 
   // 2. 读取计scope参数获取计算函数的scope值

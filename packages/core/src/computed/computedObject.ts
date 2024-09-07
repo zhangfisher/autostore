@@ -12,12 +12,12 @@ import { joinValuePath } from "../utils/joinValuePath";
 import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedOptions } from './types';
 import { Watcher } from "../watch/types";
 import { StoreEvents } from "../events/types";
+import { setVal } from "../utils";
 
  
 
 export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<Value,Scope> = ComputedOptions<Value,Scope>>{    
-    private _path:string[] = []
-    private _parentPath:string[] = []
+    private _path?:string[] 
     private _options:Required<Options>
     private _getter:any
     private _depends: string[][] | undefined
@@ -25,6 +25,8 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
     private _initialValue:Value | undefined
     private _subscribers:Watcher[] = []              // 保存订阅者的ID
     private _subscribed:boolean = false
+    private _value:Value | undefined
+    private _attched:boolean = false                 // 是否已经附加到状态对象上
     /**
      *  构造函数。
      * 
@@ -32,9 +34,9 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
      * @param {ComputedContext} context - 动态值上下文，指该动态值所有的路径、值、父路径和父对象引用。
      * @param {ComputedDescriptor<Options>} descriptor - 动态值描述符，包含了动态值的元数据。
      */
-    constructor(public store:AutoStore<any>,public context:ComputedContext<Value>,public descriptor:ComputedDescriptor){
-        this._path       = context.path
-        this._parentPath = context.parentPath
+    constructor(public store:AutoStore<any>,public descriptor:ComputedDescriptor,public context?:ComputedContext<Value>){
+        this._attched    =  context!==undefined
+        this._path       = context?.path 
         this._getter     = descriptor.getter         
         this._options    = Object.assign({
             enable: true,
@@ -42,17 +44,17 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
             depends: []
         }, descriptor.options) as unknown as Required<Options>
         this._id         = this._options.id ?? joinValuePath(this._path)
-        this._depends    = getDependPaths(this._path,this._options.depends )
+        this._depends    = this._path && getDependPaths(this._path,this._options.depends )
         this._initialValue = this._options.initial 
         this.onInitial()   
     } 
     get options(){ return this._options   }
     get id(){return this._id }
+    get attched(){return this._attched }
     get enable(){ return this._options.enable as boolean }
     set enable(value:boolean){ this._options.enable = value }
     get group(){return this.options.group}
-    get value(){ return getVal(this.store.state,this._path) as unknown as Value}           
-    get initial(){ return this._initialValue}  
+    get initial(){ return this._initialValue}      
     set initial(value){ this._initialValue = value }  
     get path(){ return this._path }
     get getter(){ return this._getter}
@@ -60,7 +62,16 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
     get depends(){return this._depends}
     set depends(value){ this._depends=value}     
     toString(){ return `ComputedObject<${joinValuePath(this._path)}>` }
- 
+    get value(){ return (this._attched ? getVal(this.store.state,this._path) :  this._value) as unknown as Value}           
+    set value(value:Value){
+        if(this._attched){
+            this.store.update((state)=>{
+                setVal(state,this._path!, value)
+            })            
+        }else{
+            this._value = value
+        }
+    }           
     /**
      * 检查计算函数是否被禁用
      * 

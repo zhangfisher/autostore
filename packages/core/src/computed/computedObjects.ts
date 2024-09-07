@@ -47,15 +47,11 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     create<Value = any, Scope = any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>): AsyncComputedObject<Value,Scope>
     create<Value = any, Scope = any >(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope>
     create<Value = any, Scope = any>(): AsyncComputedObject<Value,Scope> | SyncComputedObject<Value,Scope> {
-      const argsArray = Array.from(arguments);
-      const descrioptorBuilder = computed(...argsArray)
-      const computedContext:ComputedContext = {
-        parentPath: [],
-        path      : [],
-        value     : undefined,
-        parent    : undefined        
-      }
-      const initialValue = this.store._createComputed(computedContext,descrioptorBuilder)
+      // @ts-ignore
+      const descrioptorBuilder = computed(...arguments)       
+      const computedObject = this.store._createComputed(descrioptorBuilder())
+      this.set(computedObject.id,computedObject)
+
              
     }
     /**

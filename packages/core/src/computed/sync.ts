@@ -8,7 +8,6 @@ import { ComputedObject } from "./computedObject";
 import { StateOperateParams } from "../store/types";
 import { getDependPaths } from "../utils/getDependPaths"; 
 import { noRepeat } from "../utils/noRepeat";
-import { StoreEvents } from "../events";
  
 
 /**
@@ -54,7 +53,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       if(first){
         this.initial = computedResult
       }else{
-        setVal(this.store.state,this.path, computedResult);
+        this.value = computedResult
       }      
       !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {

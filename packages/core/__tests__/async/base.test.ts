@@ -4,7 +4,7 @@ import { delay } from "flex-tools/async/delay"
 import { AsyncComputedObject } from "../../src/computed/async"
  
 
-describe("异步计算",()=>{
+describe("异步计算的基础功能",()=>{
 
     test("默认异步计算",()=>{
         let count:number =0 
@@ -322,7 +322,7 @@ describe("执行分组或满足条件的计算函数",()=>{
             },{    
                 immediate:true,               // 遍历对象，从而导致计算属性被读取而立刻创建
                 onComputedDone:({computedObject})=>{
-                    results.push(computedObject.path.join(","))                
+                    results.push(computedObject.path!.join(","))                
                     if(results.length===12){
                         expect(results).toStrictEqual([
                             "total1","total2","total3","total4","total5","total6",
@@ -365,7 +365,7 @@ describe("执行分组或满足条件的计算函数",()=>{
             },{    
                 immediate:true,               // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
                 onComputedDone:({computedObject})=>{
-                    results.push(computedObject.path.join(","))                
+                    results.push(computedObject.path!.join(","))                
                     if(results.length===3){
                         expect(results).toStrictEqual([
                             "total1","total3","total5",

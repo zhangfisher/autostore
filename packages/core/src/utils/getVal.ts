@@ -1,7 +1,8 @@
 import { getMapVal } from "./getMapVal";
 import { isMap } from "./isMap";
 
-export function getVal(obj: any, keyPath: string[]): any {
+export function getVal(obj: any, keyPath: string[] | undefined): any {
+    if(!keyPath) return obj
     if(keyPath.length === 0) return obj
     let val;
     let parent = obj;

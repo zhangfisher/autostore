@@ -323,7 +323,7 @@ export type ComputedOptions<Value=any,Scope=any>= {
     /**
      * 当计算完成后的回调函数
      */
-    onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[],scope:Scope,result:any}):void
+    onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,result:any}):void
 
 }
 

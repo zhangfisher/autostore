@@ -126,7 +126,7 @@ export type AutoStoreOptions<State extends Dict> = {
      * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
      * 
      */
-    getRootScope?:(state:State,options:{computedType:ComputedType, valuePath:string[]}) => any
+    getRootScope?:(state:State,options:{computedType:ComputedType, valuePath:string[] | undefined}) => any
 
     /**
      * 
@@ -320,25 +320,48 @@ export class AutoStore<State extends Dict>{
 
     // ************* Computed ************** 
     /**
+     * 
+     * 创建动态值对象
+     * 
+     * @param path 
+     * @param value 
+     * @param parentPath 
+     * @param parent 
+     * @returns 
+     */    
+
+    private createComputedObject(path:string[],value:any,parentPath:string[],parent:any){
+        const descriptor = getComputedDescriptor(value)
+        const computedCtx = { path,value,parentPath,parent }
+        if(descriptor){            
+            if(descriptor.type==='computed'){                
+                let computedObj =  this._createComputed(descriptor,computedCtx)
+                return computedObj?.initial
+            }else if(descriptor.type==='watch'){                
+                return this.createWatch(computedCtx,descriptor)
+            }
+        }else{
+            return value
+        }        
+    }
+    /**
      * @description 创建计算属性对象
      * 
      * 
      */
-    _createComputed(computedContext:ComputedContext,descriptor:ComputedDescriptor){
+    _createComputed(descriptor:ComputedDescriptor,computedContext?:ComputedContext){
         let computedObj:ComputedObject | undefined
         if(descriptor.options.async){ // 异步计算
-            computedObj= (new AsyncComputedObject(this, computedContext, descriptor as ComputedDescriptor)) as unknown as ComputedObject
+            computedObj= (new AsyncComputedObject(this, descriptor as ComputedDescriptor, computedContext)) as unknown as ComputedObject
         }else{ // 同步计算
-            computedObj = (new SyncComputedObject(this, computedContext, descriptor as ComputedDescriptor)) as unknown as ComputedObject
+            computedObj = (new SyncComputedObject(this, descriptor as ComputedDescriptor, computedContext)) as unknown as ComputedObject
         }    
         if(computedObj){
-            this.update((state)=>{
-                setVal(state,computedContext.path,computedObj.initial)
-            })      
+            computedObj.value = computedObj.initial               
             this.computedObjects.set(computedObj.id,computedObj)
             this.emit("computed:created",computedObj)
-            return computedObj.initial  
         }   
+        return computedObj  
     }  
 
     /**
@@ -355,30 +378,6 @@ export class AutoStore<State extends Dict>{
         // return watch
     }
 
-    /**
-     * 
-     * 创建动态值对象
-     * 
-     * @param path 
-     * @param value 
-     * @param parentPath 
-     * @param parent 
-     * @returns 
-     */    
-
-    private createComputedObject(path:string[],value:any,parentPath:string[],parent:any){
-        const descriptor = getComputedDescriptor(value)
-        const computedCtx = { path,value,parentPath,parent }
-        if(descriptor){
-            if(descriptor.type==='computed'){                
-                return this._createComputed(computedCtx,descriptor)
-            }else if(descriptor.type==='watch'){                
-                return this.createWatch(computedCtx,descriptor)
-            }
-        }else{
-            return value
-        }        
-    }
     // **************** EventEmitter ***********
     private _emitter:Emitter<StoreEvents> = mitt()
     get on(){ return this._emitter.on.bind(this) }
