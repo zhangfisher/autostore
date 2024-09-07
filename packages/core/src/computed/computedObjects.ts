@@ -29,17 +29,20 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
      * 
      * 差别在于
      * - 在状态对象中使用computed创建计算属性时，有计算上下文，因此可以为scope和depends指定相对依赖路径
-     * - 在computedObjects.create中，没有计算上下文，必须人为指定
+     * - 在computedObjects.create中，没有计算上下文
      * computedObjects.create(async ()=>{
      * 
      * },[],{
-     *    contex:{
-     *      path:['xxxx']
-     *    }
+     *  scope: 'CURRENT'  // 无效
+     *  scope: 'ROOT'    // 有效
+     *  scope: 'parent'  // 无效
+     *  scope: './xxx'   // 无效
+     *  scope: '/xxx'    // 有效
+     *  scope: '../../xxx' // 无效 
      * })
      * 
-     * 如果没有指定context，则不能使用相对路径，只能使用绝对路径
-     * 并且计算结果只会保存在计算对象中，不会更新到状态对象中 
+     * - 动态创建的计算对象的scope只能是根状态对象或者指定绝对路径,不能是相对路径
+     * 
      *
      * 
      * 
@@ -47,6 +50,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     create<Value = any, Scope = any >(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope>
     create<Value = any, Scope = any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>): AsyncComputedObject<Value,Scope>    
     create():any {
+
       // @ts-ignore
       const descrioptorBuilder = computed(...arguments)       
       return this.store._createComputed(descrioptorBuilder()) 

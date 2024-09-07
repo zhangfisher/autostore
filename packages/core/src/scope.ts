@@ -56,18 +56,18 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
 
     // 3. 根据配置参数获取计算函数的上下文对象
     try { 
-      if(hasContext && scopeOption === ComputedScopeRef.Current) {
+      if(scopeOption === ComputedScopeRef.Current) {
         scope = getValueByPath(rootDraft, parentPath);
-      }else if (hasContext && scopeOption === ComputedScopeRef.Parent) {
+      }else if (scopeOption === ComputedScopeRef.Parent) {
         scope = getValueByPath(rootDraft,valuePath!.slice(0, valuePath!.length - 2 < 0 ? 0 : valuePath!.length - 2));
-      }else if (hasContext && scopeOption === ComputedScopeRef.Root) {
+      }else if (scopeOption === ComputedScopeRef.Root) {
         scope = rootDraft;
       }else if (scopeOption === ComputedScopeRef.Depends) {        
         scope = computedObject.depends?.map(dep => getValueByPath(rootDraft, dep));
       }else{
        if (typeof scopeOption === "string") {       
           // 当scope是以@开头的字符串时，代表是一个路径指向，如：@./user，代表其scope是由user属性值指向的对象路径
-          if(hasContext && scopeOption.startsWith("@")){ // 
+          if(scopeOption.startsWith("@")){ // 
             scope = getValueScope(computedObject,computedType,valueContext,
                 { 
                   ...computedOptions,

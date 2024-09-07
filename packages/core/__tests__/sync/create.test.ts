@@ -27,7 +27,7 @@ describe("动态创建同步择计算属性",()=>{
             resolve()
         }) 
     })
-    test("动态创建的同步计算对象-默认没有保存计算对象引用",()=>{
+    test("动态创建的同步计算对象-默认保存计算对象引用",()=>{
         return new Promise<void>(resolve=>{
             const store = createStore({
                 price:2,
@@ -36,24 +36,24 @@ describe("动态创建同步择计算属性",()=>{
             const obj = store.computedObjects.create<number>((scope:any)=>{
                 return scope.price * scope.count
             })
-            expect(obj.value).toBe(6)             
-            expect(store.computedObjects.size).toBe(0)  
-            expect(store.computedObjects.has(obj.id)).toBe(false)
-            resolve()
-        }) 
-    })
-    test("动态创建的同步计算对象，指定保存计算对象引用",()=>{
-        return new Promise<void>(resolve=>{
-            const store = createStore({
-                price:2,
-                count:3
-            })
-            const obj = store.computedObjects.create<number>((scope:any)=>{
-                return scope.price * scope.count
-            },{id:"x",objectify:true})
             expect(obj.value).toBe(6)             
             expect(store.computedObjects.size).toBe(1)  
             expect(store.computedObjects.has(obj.id)).toBe(true)
+            resolve()
+        }) 
+    })
+    test("动态创建的同步计算对象，不保存计算对象引用",()=>{
+        return new Promise<void>(resolve=>{
+            const store = createStore({
+                price:2,
+                count:3
+            })
+            const obj = store.computedObjects.create<number>((scope:any)=>{
+                return scope.price * scope.count
+            },{id:"x",objectify:false})
+            expect(obj.value).toBe(6)             
+            expect(store.computedObjects.size).toBe(0)  
+            expect(store.computedObjects.has(obj.id)).toBe(false)
             resolve()
         }) 
     })
@@ -68,9 +68,16 @@ describe("动态创建同步择计算属性",()=>{
                 return scope.price * scope.count
             })
             expect(obj.value).toBe(6)    
+            store.computedObjects.delete(obj.id)
+            expect(store.computedObjects.size).toBe(0)
+            expect(obj.attched).toBe(false)
+            store.state.count = 4
+            expect(obj.value).toBe(6) // 当对象被删除后，不再计算
             resolve()
         }) 
     })
+
+
     test("动态计算属性依赖变化时自动更新",()=>{
         return new Promise<void>(resolve=>{
             const store = createStore({
