@@ -62,11 +62,6 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       throw e
     }    
   } 
-  private emitComputedEvent(event:keyof StoreEvents,args:any){
-    setTimeout(()=>{
-      this.store.emit(event,args)
-    },0)
-  }
   /**
    * 自动收集同步依赖
    * 

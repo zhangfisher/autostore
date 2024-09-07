@@ -11,6 +11,7 @@ import { getVal } from "../utils/getVal";
 import { joinValuePath } from "../utils/joinValuePath";
 import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedOptions } from './types';
 import { Watcher } from "../watch/types";
+import { StoreEvents } from "../events/types";
 
  
 
@@ -116,6 +117,12 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
     unsubscribe(){
         this._subscribers.forEach(subscriber=>subscriber.off())
         this._subscribed=false
+    }
+    
+    protected emitComputedEvent(event:keyof StoreEvents,args:any){
+        setTimeout(()=>{
+            this.store.emit(event,args)
+        },0)
     }
 
 

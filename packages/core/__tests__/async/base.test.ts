@@ -1,6 +1,7 @@
 import { test,expect, describe,vi} from "vitest"
 import { createStore,computed, ComputedObject } from "../../src"
 import { delay } from "flex-tools/async/delay"
+import { AsyncComputedObject } from "../../src/computed/async"
  
 
 describe("异步计算",()=>{
@@ -17,52 +18,88 @@ describe("异步计算",()=>{
                     return scope.price * scope.count
                 },['price','count'])
             },{    
-                immediate:true               // 遍历对象，从而导致计算属性被读取而立刻创建
-            }) 
-            store.on("computed:done",()=>{
-                results.push(store.state.total.result)
-                if(results.length===3){
-                    expect(count).toBe(3)         
-                    expect(results).toEqual([6,8,20]) 
-                    resolve()        
-                }                
-            })   
-            store.on("computed:created",()=>{
-                store.state.count = 4
-                store.state.price = 5 
-            })       
-            store.state.total
+                immediate:true,               // 遍历对象，从而导致计算属性被读取而立刻创建
+                onComputedDone:()=>{  // 计算完成时触发
+                    results.push(store.state.total.result)
+                    if(results.length===2){
+                        expect(count).toBe(2)         
+                        expect(results).toEqual([8,8]) 
+                        resolve()        
+                    }         
+                }
+            })          
+            store.state.count = 4
         })
     })  
 
     test("从异步对象实例读取计算值",()=>{
-        let count:number =0 
-        let results:number[] = []
         return new Promise<void>((resolve)=>{
             const store = createStore({
                 price:2,
                 count:3,
-                total:computed(async (scope)=>{
-                    count++
+                total:computed(async (scope)=>{ 
                     return scope.price * scope.count
                 },['price','count'],{id:"x"})
             },{    
-                immediate:true             
-            }) 
-            const cobj = store.computedObjects.get("x")!
-            store.on("computed:done",()=>{     
-                results.push(cobj.value.result)
-                if(results.length===3){
-                    expect(count).toBe(3)         
-                    expect(results).toEqual([6,8,10]) // ?
+                immediate:true,
+                onComputedDone:()=>{     
+                    const cobj = store.computedObjects.get("x")!
+                    expect(cobj.value.result).toBe(6)
                     resolve()        
-                }                
-            })   
-            store.state.count = 4
-            store.state.count = 5
+                }              
+            })  
         })
     })  
-
+    test("当提供异步计算属性的默认值时不会触发初始计算",()=>{
+        let count:number =0
+        return new Promise<void>((resolve)=>{
+            const store = createStore({
+                price:2,
+                count:3,
+                total:computed(async (scope)=>{ 
+                    count++
+                    return scope.price * scope.count
+                },['price','count'],{
+                    id:"x",
+                    initial:6
+                })
+            },{    
+                immediate:true
+            })  
+            setTimeout(()=>{
+                const cobj = store.computedObjects.get("x")!
+                expect(cobj.value.result).toBe(6)
+                expect(count).toBe(0) // 提供转让 
+                resolve()        
+            },0)
+        })
+    })  
+    test("当提供异步计算属性的默认值并且显示指定immediate为true时总会触发初始计算",()=>{
+        let count:number =0
+        return new Promise<void>((resolve)=>{
+            const store = createStore({
+                price:2,
+                count:3,
+                total:computed(async (scope)=>{ 
+                    count++
+                    return scope.price * scope.count
+                },['price','count'],{
+                    id:"x",
+                    initial:6,
+                    immediate:true
+                })
+            },{    
+                immediate:true,
+                onComputedDone:()=>{
+                    const cobj = store.computedObjects.get("x")!
+                    expect(cobj.value.result).toBe(6)
+                    expect(count).toBe(1) // 提供转让 
+                    resolve()        
+                }
+            })  
+            expect(store.state.total.result).toBe(6)
+        })
+    })  
 
     test("异步计算生成异步计算数据对象",()=>{
         return new Promise<void>((resolve)=>{
@@ -90,26 +127,28 @@ describe("异步计算",()=>{
 
     test("创建计算对象实例",()=>{
         return new Promise<void>((resolve)=>{
-            let count:number =0 
             const store = createStore({
                 price:2,
                 count:3,
                 total:computed(async (scope)=>{
-                    count++
                     return scope.price * scope.count
                 },['price','count'],{id:'x'})
+            },{
+                onComputedCreated:(computedObject)=>{
+                    expect(store.computedObjects.has('x')).toBe(true)                   
+                    expect(computedObject.id).toBe("x")
+                    expect(computedObject).toBeInstanceOf(ComputedObject)                    
+                    const obj = store.computedObjects.get("x")!
+                    expect(computedObject).toBe(obj)
+                    expect(obj).toBeInstanceOf(ComputedObject)
+                    expect(obj.id).toBe("x")
+                    expect(obj.enable).toBe(true)
+                    expect(obj.depends).toEqual([["price"],["count"]])
+                    expect(obj.path).toEqual(['total'])
+                    resolve()
+                }
             })
-            store.on("computed:created",({id})=>{
-                expect(store.computedObjects.has('x')).toBe(true)                   
-                expect(id).toBe("x")
-                const obj = store.computedObjects.get("x")!
-                expect(obj).toBeInstanceOf(ComputedObject)
-                expect(obj.id).toBe("x")
-                expect(obj.enable).toBe(true)
-                expect(obj.depends).toEqual([["price"],["count"]])
-                expect(obj.path).toEqual(['total'])
-                resolve()
-            })
+            // 如果没有配置immediate:true,则需要读取一次计算属性，才会触发创建
             store.state.total
         })        
     }) 
@@ -123,25 +162,26 @@ describe("异步计算",()=>{
                 total:computed(async (scope)=>{
                     count++       
                     return scope.price * scope.count
-                },['price','count'],{id:'x'})
+                },['price','count'],{id:'x',initial:6})
             },{
                 immediate:true,
-                enableComputed:false
+                enableComputed:false,
+                onComputedDone:()=>{
+                    expect(count).toBe(1)
+                    resolve()
+                }
             })
             store.state.count = 4
             store.state.count = 5             
             store.state.count = 4
             store.state.count = 5
-            store.computedObjects.enable = true
-            store.on("computed:done",()=>{ 
-                expect(count).toBe(1)
-                resolve()
-            })
+            store.computedObjects.enable = true 
             store.state.count = 100
         })
     })
     test("单独控制计算属性的启用与停止计算",()=>{
         let count = 0
+        let paths:string[][] = [] 
         return new Promise<void>((resolve)=>{
             const store = createStore({
                 price:2,
@@ -151,19 +191,20 @@ describe("异步计算",()=>{
                 },['price','count'],{id:'x',enable:false,initial:100}),         // 默认禁用
                 total2:computed(async (scope)=>{                    
                     return scope.price * scope.count
-                },['price','count'],{id:'y'})
+                },['price','count'],{id:'y',initial:200})
             },{                                
-                immediate:true
-            })            
-            store.on("computed:done",({path})=>{ 
-                count++
-                if(count===2){
-                    expect(store.state.total1.result).toBe(100)
-                    expect(store.state.total2.result).toBe(8)
-                    resolve()
-                }               
-                
-            })
+                immediate:true,
+                onComputedDone:({path})=>{
+                    paths.push(path)
+                    count++
+                    if(count===2){
+                        expect(store.state.total1.result).toBe(8)
+                        expect(store.state.total2.result).toBe(8)
+                        expect(paths).toEqual([['total1'],['total2']])
+                        resolve()
+                    }  
+                }
+            })        
             store.state.count = 4
         })
     })
@@ -173,25 +214,23 @@ describe("异步计算",()=>{
             const store = createStore({
                 price:2,
                 count:3,
-                total:computed(async (scope)=>{
+                total:computed(async (scope,{extras})=>{
+                    if(extras!==undefined) expect(extras).toBe("hello")
                     return scope.price * scope.count
                 },['price','count'],{id:'x'}),         
             },{                                
-                immediate:true
-            })                        
-            store.on("computed:done",()=>{
-                count++
-                if(count===2){ // 第一次是创建时执行，第二次是手动执行
-                    resolve()
+                immediate:true,
+                onComputedDone:()=>{
+                    count++
+                    if(count===2){ // 第一次是创建时执行，第二次是手动执行
+                        resolve()
+                    }
                 }
-            })
-            store.computedObjects.get("x")!.run({
-                extras:1
-           })
+            })     
+            store.computedObjects.get("x")!.run({extras:"hello"})
         })        
     })    
-    test("异步计算属性的计算执行次数，初始化时执行一次",()=>{
-        let count = 0
+    test("异步计算属性的计算执行次数，初始化时执行一次",()=>{ 
         return new Promise<void>((resolve)=>{
             const store = createStore({
                 price:2,
@@ -199,19 +238,12 @@ describe("异步计算",()=>{
                 total:computed(async (scope)=>{
                     return scope.price * scope.count
                 },['price','count'],{id:'x'}),         
-            })                        
-            store.on("computed:done",()=>{
-                count++             
-            })
-            store.state.total   // 创建计算属性时，会立即执行一次计算函数
-            setTimeout(()=>{
-                expect(count).toBe(1)
-                store.state.count = 4
-                setTimeout(()=>{
-                    expect(count).toBe(2)
+            },{
+                onComputedDone:()=>{
                     resolve()
-                },10)
-            },10)
+                }
+            })         
+            store.state.total   // 创建计算属性时，会立即执行一次计算函数 
         })        
     })
 
@@ -223,9 +255,12 @@ describe("异步计算",()=>{
                 total:computed(async (scope)=>{
                     return scope.price * scope.count
                 },['price','count'],{id:'x',immediate:false}),         
-            },{immediate:true})                                    
-            store.on("computed:created",async ()=>{
-                await store.computedObjects.get("x")!.run()
+            },{
+                immediate:true
+
+            })    
+            const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject
+            asyncObj.run().then(()=>{
                 expect(store.state.total.result).toBe(6)
                 resolve()
             })
@@ -240,15 +275,18 @@ describe("异步计算",()=>{
                     expect(price).toBe(2)
                     return price * 100
                 },['price','count'],{id:'x',immediate:false}),         
-            },{immediate:true})                                    
-            store.on("computed:created",async ()=>{
-                await store.computedObjects.get("x")!.run({scope:"price"})
-                expect(store.state.total.result).toBe(200)
-                // 运行时修改的scope仅在本次运行中有效，不会影响到下次运行
+            },{
+                immediate:true
+            })                       
+            const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject
+            asyncObj.run({scope:"price"}).then(()=>{
+                //// 运行时修改的scope仅在本次运行中有效，不会影响到下次运行
                 // 默认的scope没有配置是undefined,指向的是当前对象,
+                expect(store.state.total.result).toBe(200)
                 expect(store.computedObjects.get("x")!.options.scope).toBe(undefined)
                 resolve()
             })
+
         })
     })
 
@@ -282,19 +320,18 @@ describe("执行分组或满足条件的计算函数",()=>{
                     return scope.price * scope.count
                 },['price','count'],{group:'c'})
             },{    
-                immediate:true               // 遍历对象，从而导致计算属性被读取而立刻创建
-            }) 
-            store.on("computed:done",(computedObj)=>{
-                results.push(computedObj.path.join(","))                
-                if(results.length===12){
-                    expect(results).toStrictEqual([
-                        "total1","total2","total3","total4","total5","total6",
-                        "total1","total2","total3","total4","total5","total6",
-                    ]) 
-                    resolve()        
+                immediate:true,               // 遍历对象，从而导致计算属性被读取而立刻创建
+                onComputedDone:({computedObject})=>{
+                    results.push(computedObject.path.join(","))                
+                    if(results.length===12){
+                        expect(results).toStrictEqual([
+                            "total1","total2","total3","total4","total5","total6",
+                            "total1","total2","total3","total4","total5","total6",
+                        ]) 
+                        resolve()        
+                    }
                 }
-            })     
-
+            })  
             // 手动控制运行分组a
             store.computedObjects.runGroup("a")
             store.computedObjects.runGroup("b")
@@ -326,17 +363,17 @@ describe("执行分组或满足条件的计算函数",()=>{
                     return scope.price * scope.count
                 },['price','count'],{id:'f',group:'c',initial:0})
             },{    
-                immediate:true               // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
-            }) 
-            store.on("computed:done",(computedObj)=>{
-                results.push(computedObj.path.join(","))                
-                if(results.length===3){
-                    expect(results).toStrictEqual([
-                        "total1","total3","total5",
-                    ]) 
-                    resolve()        
+                immediate:true,               // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
+                onComputedDone:({computedObject})=>{
+                    results.push(computedObject.path.join(","))                
+                    if(results.length===3){
+                        expect(results).toStrictEqual([
+                            "total1","total3","total5",
+                        ]) 
+                        resolve()        
+                    }
                 }
-            })     
+            })   
             store.computedObjects.run((obj)=>{
                 return ['a','c','e'].includes(obj.id)
             }) 
@@ -373,7 +410,7 @@ describe("执行分组或满足条件的计算函数",()=>{
                     return scope.price * scope.count
                 },['price','count'],{id:'f',group:'c',initial:0})
             },{    
-                immediate:true               // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
+                immediate:true,               // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
             })  
             store.computedObjects.run((obj)=>{
                 return ['a','c','e'].includes(obj.id)

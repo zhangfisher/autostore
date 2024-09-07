@@ -1,4 +1,3 @@
-import { getMapVal } from "./getMapVal";
 import { isMap } from "./isMap";
 
 /**

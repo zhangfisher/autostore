@@ -196,7 +196,7 @@ export type AutoStoreOptions<State extends Dict> = {
      * @param computedObject 
      * @returns 
      */
-    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort',computedObject:ComputedObject})=> void
+    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry',computedObject:ComputedObject<any>})=> void
 
 }
 
@@ -217,12 +217,13 @@ export class AutoStore<State extends Dict>{
             enableComputed:true,
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
+        this.subscribeCallbacks()
         this._data = createReactiveObject(state,{
             notify:this.notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
         })  
         // 马上遍历对象触发读操作，以便创建计算对象
-        if(this.options.immediate) forEachObject(this._data)
+        if(this.options.immediate) forEachObject(this._data)            
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
@@ -230,7 +231,7 @@ export class AutoStore<State extends Dict>{
     get options(){return this._options}
     log(message:LogMessageArgs,level?:LogLevel){if(this._options.debug) this.options.log(message,level)} 
 
-    private subscribeCallback(){
+    private subscribeCallbacks(){
         if(this._options.onComputedCreated) this.on("computed:created",this._options.onComputedCreated.bind(this))
         if(this._options.onComputedDone) this.on("computed:done",this._options.onComputedDone.bind(this))
         if(this._options.onComputedError) this.on("computed:error",this._options.onComputedError.bind(this))
