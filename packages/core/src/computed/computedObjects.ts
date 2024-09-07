@@ -50,7 +50,9 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     create<Value = any, Scope = any >(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope>
     create<Value = any, Scope = any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>): AsyncComputedObject<Value,Scope>    
     create():any {
-
+      if(arguments.length>=2 && Array.isArray(arguments[1])){ // 异步计算函数
+        
+      }
       // @ts-ignore
       const descrioptorBuilder = computed(...arguments)       
       return this.store._createComputed(descrioptorBuilder()) 

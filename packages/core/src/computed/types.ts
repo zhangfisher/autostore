@@ -130,6 +130,9 @@ export type AsyncComputed<T=any> = (...args: any) => Promise<T>;    // 异步计
  */
 export type ComputedScope  =  ComputedScopeRef | string | string[] | ((computedObject:ComputedObject)=>string | string[] | ComputedScopeRef)
 
+  
+
+
 /**
  * 计算属性的依赖路径
  * 
