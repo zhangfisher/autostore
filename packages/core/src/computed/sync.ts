@@ -8,6 +8,7 @@ import { ComputedObject } from "./computedObject";
 import { StateOperateParams } from "../store/types";
 import { getDependPaths } from "../utils/getDependPaths"; 
 import { noRepeat } from "../utils/noRepeat";
+import { StoreEvents } from "../events";
  
 
 /**
@@ -55,12 +56,17 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       }else{
         setVal(this.store.state,this.path, computedResult);
       }      
-      !first && this.store.emit("computed:done", { id:this.id,path:this.path,value:computedResult})
+      !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
-      !first && this.store.emit("computed:error", { id: this.id, path: this.path, error: e });
+      !first && this.emitComputedEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
       throw e
     }    
   } 
+  private emitComputedEvent(event:keyof StoreEvents,args:any){
+    setTimeout(()=>{
+      this.store.emit(event,args)
+    },0)
+  }
   /**
    * 自动收集同步依赖
    * 

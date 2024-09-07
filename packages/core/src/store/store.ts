@@ -112,33 +112,6 @@ export type AutoStoreOptions<State extends Dict> = {
       * 
     */
     enableComputed?:boolean
-    /**
-     * 
-     * 当创建计算属性时调用
-     * 
-     * @description
-     * 
-     * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
-     * 
-     * @example
-     * 
-     * createStore({...},{
-     *  onCreateComputed(computedObject){
-     *      const oldGetter = computedObject.getter
-     *      computedObject.getter = function(){
-     *          do something
-     *          return oldGetter.call(this,...arguments) 
-     *      }
-     *  }
-     * })
-     * 
-     * 
-     * @param keyPath 
-     * @param getter 
-     * @param options 
-     * @returns 
-     */
-    onCreateComputed?:(this:AutoStore<State>,computedObject:ComputedObject)=> void 
     
     /**
      * 获取计算函数的根scope
@@ -174,6 +147,57 @@ export type AutoStoreOptions<State extends Dict> = {
      * @returns 
      */
     log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
+    
+    /**
+     * 
+     * 当创建计算属性时调用
+     * 
+     * @description
+     * 
+     * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
+     * 
+     * @example
+     * 
+     * createStore({...},{
+     *  onCreateComputed(computedObject){
+     *      const oldGetter = computedObject.getter
+     *      computedObject.getter = function(){
+     *          do something
+     *          return oldGetter.call(this,...arguments) 
+     *      }
+     *  }
+     * })  
+     * @param this 
+     * @param computedObject 
+     * @returns 
+     */
+    onComputedCreated?:(this:AutoStore<State>,computedObject:ComputedObject)=> void
+    
+    /**
+     * 当每一次计算完成后调用
+     * @param this 
+     * @param computedObject 
+     * @returns 
+     */
+    onComputedDone?:(this:AutoStore<State>,args:{id:string,path:string[],value:any,computedObject:ComputedObject})=> void
+
+    /**
+     * 当计算出错时调用
+     * @param this 
+     * @param error 
+     * @param computedObject 
+     * @returns 
+     */    
+    onComputedError?:(this:AutoStore<State>,args:{id:string,path:string[],error:Error,computedObject:ComputedObject})=> void
+    /**
+     * 当每一次计算对象被取消时调用
+     * 仅在异步计算时有效
+     * @param this 
+     * @param computedObject 
+     * @returns 
+     */
+    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort',computedObject:ComputedObject})=> void
+
 }
 
  
@@ -205,6 +229,14 @@ export class AutoStore<State extends Dict>{
     get changesets(){return this._changesets}    
     get options(){return this._options}
     log(message:LogMessageArgs,level?:LogLevel){if(this._options.debug) this.options.log(message,level)} 
+
+    private subscribeCallback(){
+        if(this._options.onComputedCreated) this.on("computed:created",this._options.onComputedCreated.bind(this))
+        if(this._options.onComputedDone) this.on("computed:done",this._options.onComputedDone.bind(this))
+        if(this._options.onComputedError) this.on("computed:error",this._options.onComputedError.bind(this))
+
+    }
+
     /**
      * 
      * 当状态读写时调用此方法触发事件

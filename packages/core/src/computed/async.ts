@@ -17,6 +17,7 @@ import { Dict } from "../types";
 import { getSnap } from "../utils/getSnap";
 import { getError } from "../utils/getError";
 import { StateOperateParams } from "../store/types";
+import { updateObjectVal } from "../utils/updateObjectVal";
 
 
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
@@ -34,11 +35,17 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	protected onInitial() {
 		this.initial = this.createAsyncComputedResult();
 		this.subscribe()
+		// 为什么要延迟执行？
+		// 因为onInitial函数是在第一次读取时执行的同步操作，此时的依赖项还没有收集完毕，原始的计算函数还没有初始化
+		// 比如{ total:computed(async()=>{ return 1+2 }) }，在第一次读取total时，此时的computed函数还没有初始化
+		// 如果这时候执行run，则total的值还是一个function，而run执行时会将运行的数据更新到total.result，total.loading 等值，
+		// 由于total还没有初始化为{loading,result,....}对象，所以会出错
 		setTimeout(()=>{
 			if (this.options.immediate===true || (this.options.immediate==='auto' && this.options.initial===undefined)) {
 				this.run({first:true});
 			}
 		},0)
+		
 	}
 
 	private createAsyncComputedResult() {
@@ -127,10 +134,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			},
 		};
 	}
-	private updateAsyncComputedResult(values: Partial<AsyncComputedResult>) {    
-		Object.entries(values).forEach(([key, value]) => {
-			setVal(this.store.state, [...this.path, key], value);
-		});    
+	private updateAsyncComputedResult(values: Partial<AsyncComputedResult>) {    		
+		updateObjectVal(this.store.state, this.path, values);
   	}
 	/**
 	 * 当计算属性操作完成时的回调函数
@@ -205,10 +210,10 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					? timeout
 					: [timeout, 0];
 				this.updateAsyncComputedResult({
-					loading: true,
-					error: null,
-					retry: i > 0 ? retryCount - i : 0,
-					timeout: countdown > 1 ? countdown : timeoutValue,
+					loading : true,
+					error   : null,
+					retry   : i > 0 ? retryCount - i : 0,
+					timeout : countdown > 1 ? countdown : timeoutValue,
 					progress: 0,
 				});
 				// 如果有中止信号，则取消计算
@@ -224,7 +229,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 							clearInterval(countdownId);
 							this.updateAsyncComputedResult({
 								loading: false,
-								error: "TIMEOUT",
+								error  : "TIMEOUT",
 								timeout: 0,
 							});
 						}
@@ -277,11 +282,11 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		}
 		// 计算完成后触发事件
 		if (hasAbort || hasTimeout) {
-			this.store.emit("computed:cancel", { path: this.path, id:this.id, reason: hasTimeout ? "timeout" : "abort" });
+			this.store.emit("computed:cancel", { path: this.path, id:this.id, reason: hasTimeout ? "timeout" : "abort" ,computedObject:this});
 		} else if (hasError) {
-			this.store.emit("computed:error", { path: this.path, id:this.id, error: hasError });
+			this.store.emit("computed:error", { path: this.path, id:this.id, error: hasError,computedObject:this });
 		} else {
-			this.store.emit("computed:done", { path: this.path, id:this.id, value: computedResult });		
+			this.store.emit("computed:done", { path: this.path, id:this.id, value: computedResult,computedObject:this});		
 		}
 		setTimeout(() => {
 			this.onDoneCallback(options,hasError,hasAbort,hasTimeout,scope,computedResult);

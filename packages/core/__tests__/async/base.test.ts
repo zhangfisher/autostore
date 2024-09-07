@@ -27,10 +27,14 @@ describe("异步计算",()=>{
                     resolve()        
                 }                
             })   
-            store.state.count = 4
-            store.state.price = 5 
+            store.on("computed:created",()=>{
+                store.state.count = 4
+                store.state.price = 5 
+            })       
+            store.state.total
         })
     })  
+
     test("从异步对象实例读取计算值",()=>{
         let count:number =0 
         let results:number[] = []
