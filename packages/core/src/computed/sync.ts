@@ -83,17 +83,13 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       let dependencies:string[][] = []       
       const watcher = this.store.watch((event)=>{      
           dependencies.push(event.path)            
-          // // 检查是否存在错误的循环依赖
-          // if(dependencies.some(dep=>isPathEq(dep,this.path))){
-          //   throw new CyleDependError(`Cycle depend found in ${this.toString()}`)
-          // }
       },{operates:['get']})   
       // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
       this.run({first:true})   
       // 依赖收集完成后就结束侦听
       watcher.off() 
       // 同步函数也可以额外指定依赖
-      if(this.options.depends){
+      if(Array.isArray(this.options.depends) && this.options.depends.length>0){
         dependencies.push(...getDependPaths(this.path,this.options.depends))
       } 
       this.depends = noRepeat(dependencies)      // 去重一下     

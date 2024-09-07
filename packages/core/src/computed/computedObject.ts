@@ -65,20 +65,31 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
     get value(){ return (this._attched ? getVal(this.store.state,this._path) :  this._value) as unknown as Value}           
     set value(value:Value){
         if(this._attched){
-            this.store.update((state)=>{
-                setVal(state,this._path!, value)
-            })            
+            setVal(this.store.state,this._path!, value)    
         }else{
             this._value = value
         }
-    }           
+    }  
+    /**
+     * 更新计算属性的值，并且不会触发依赖的变化事件
+     * @param value 
+     */
+    silentUpdate(value:Value){
+        if(this._attched){
+            this.store.silentUpdate((state)=>{
+                setVal(state,this._path!, value)
+            })
+        }else{
+            this._value = value
+        }
+    }
     /**
      * 检查计算函数是否被禁用
      * 
      * @param value 
      * @returns {boolean} 
      */
-    protected isDisable(value:boolean=true){
+    protected isDisable(value:boolean | undefined){
        return !this.store.options.enableComputed || (!this.enable && value!==true) || value===false
     }
     /**

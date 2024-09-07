@@ -245,7 +245,7 @@ export class AutoStore<State extends Dict>{
     private notify(params:ReactiveNotifyParams) {          
         if(this._peeping && params.type=='get') return    // 偷看时不触发事件
         if(this._batching) return
-        this.changesets.emit(params.path.join('.'),params)       
+        this.changesets.emit(params.path.join(OBJECT_PATH_DELIMITER),params)       
     } 
 
     // ************* Watch **************/
@@ -356,8 +356,8 @@ export class AutoStore<State extends Dict>{
         }else{ // 同步计算
             computedObj = (new SyncComputedObject(this, descriptor as ComputedDescriptor, computedContext)) as unknown as ComputedObject
         }    
-        if(computedObj){
-            computedObj.value = computedObj.initial               
+        if(computedObj){            // 更新不会触发事件
+            computedObj.silentUpdate(computedObj.initial)
             this.computedObjects.set(computedObj.id,computedObj)
             this.emit("computed:created",computedObj)
         }   
@@ -424,7 +424,7 @@ export class AutoStore<State extends Dict>{
      * 
      * @param fn   更新方法，在此方法内部进行更新操作
      */
-    update(fn:(state:ComputedState<State>)=>void){
+    silentUpdate(fn:(state:ComputedState<State>)=>void){
         if(typeof(fn)==='function'){                        
             this._batching=true
             try{
