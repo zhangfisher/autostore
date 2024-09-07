@@ -1,8 +1,12 @@
+import { V } from "vitest/dist/chunks/environment.0M5R1SX_.js"
 import { TimeoutError } from "../errors"
 import { AutoStore } from "../store/store"
 import { Dict } from "../types"
+import { AsyncComputedObject } from "./async"
 import { ComputedObject } from "./computedObject" 
-import { RuntimeComputedOptions } from "./types"
+import { SyncComputedObject } from "./sync"
+import { AsyncComputedGetter, ComputedContext, ComputedDepends, ComputedGetter, ComputedOptions, RuntimeComputedOptions, SyncComputedOptions } from "./types"
+import { computed } from "./computed"
 
  
  
@@ -14,15 +18,45 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     set enable(value:boolean){
       this.store.options.enableComputed = value
     }
+
+
     /**
-     * 创建一个新的计算对象
+     * 动态创建一个新的计算对象
      * 
+     * @description
+     * 
+     * 如同在状态对象中使用computed创建计算属性一样，可以使用computedObjects.create动态创建一个计算对象 
+     * 
+     * 差别在于
+     * - 在状态对象中使用computed创建计算属性时，有计算上下文，因此可以为scope和depends指定相对依赖路径
+     * - 在computedObjects.create中，没有计算上下文，必须人为指定
+     * computedObjects.create(async ()=>{
+     * 
+     * },[],{
+     *    contex:{
+     *      path:['xxxx']
+     *    }
+     * })
+     * 
+     * 如果没有指定context，则不能使用相对路径，只能使用绝对路径
+     * 并且计算结果只会保存在计算对象中，不会更新到状态对象中 
+     *
      * 
      * 
      */
-    new( ){
-      // const obj = new ComputedObject(this.store,context,descriptor)
-      
+    create<Value = any, Scope = any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>): AsyncComputedObject<Value,Scope>
+    create<Value = any, Scope = any >(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope>
+    create<Value = any, Scope = any>(): AsyncComputedObject<Value,Scope> | SyncComputedObject<Value,Scope> {
+      const argsArray = Array.from(arguments);
+      const descrioptorBuilder = computed(...argsArray)
+      const computedContext:ComputedContext = {
+        parentPath: [],
+        path      : [],
+        value     : undefined,
+        parent    : undefined        
+      }
+      const initialValue = this.store._createComputed(computedContext,descrioptorBuilder)
+             
     }
     /**
      * 运行指定组的计算函数

@@ -235,7 +235,6 @@ export class AutoStore<State extends Dict>{
         if(this._options.onComputedCreated) this.on("computed:created",this._options.onComputedCreated.bind(this))
         if(this._options.onComputedDone) this.on("computed:done",this._options.onComputedDone.bind(this))
         if(this._options.onComputedError) this.on("computed:error",this._options.onComputedError.bind(this))
-
     }
 
     /**
@@ -257,20 +256,23 @@ export class AutoStore<State extends Dict>{
      * 
      * - 侦听所有的数据变化
      *  
-     * const unwatch = state.watch(({type,path,value,oldValue,parentPath,parent})=>{})
+     * const watcher = state.watch(({type,path,value,oldValue,parentPath,parent})=>{})
+     * watcher.off() 取消侦听
      * 
      * - 侦听指定路径的数据变化
      * 
-     * const unwatch = state.watch("job.title",({type,path,value,oldValue,parentPath,parent})=>{})
+     * const watcher = state.watch("job.title",({type,path,value,oldValue,parentPath,parent})=>{})
+     * watcher.off() 取消侦听
      * 
      * - 侦听多个路径的数据变化
      * 
-     * const unwatch = state.watch(["job.title","job.salary"],({type,path,value,oldValue,parentPath,parent})=>{})
+     * const watcher = state.watch(["job.title","job.salary"],({type,path,value,oldValue,parentPath,parent})=>{})
+     * watcher.off() 取消侦听
      * 
      * - 侦听通配符路径的数据变化
      * 
-     * const unwatch = state.watch("job.*",({type,path,value,oldValue,parentPath,parent})=>{})
-     * 
+     * const watcher = state.watch("job.*",({type,path,value,oldValue,parentPath,parent})=>{})
+     * watcher.off() 取消侦听
      * 
      * 
      * @param {string|string[]} keyPaths - 要监视的数据路径，可以是单个字符串或字符串数组。
@@ -322,7 +324,7 @@ export class AutoStore<State extends Dict>{
      * 
      * 
      */
-    private createComputed(computedContext:ComputedContext,descriptor:ComputedDescriptor){
+    _createComputed(computedContext:ComputedContext,descriptor:ComputedDescriptor){
         let computedObj:ComputedObject | undefined
         if(descriptor.options.async){ // 异步计算
             computedObj= (new AsyncComputedObject(this, computedContext, descriptor as ComputedDescriptor)) as unknown as ComputedObject
@@ -369,7 +371,7 @@ export class AutoStore<State extends Dict>{
         const computedCtx = { path,value,parentPath,parent }
         if(descriptor){
             if(descriptor.type==='computed'){                
-                return this.createComputed(computedCtx,descriptor)
+                return this._createComputed(computedCtx,descriptor)
             }else if(descriptor.type==='watch'){                
                 return this.createWatch(computedCtx,descriptor)
             }
