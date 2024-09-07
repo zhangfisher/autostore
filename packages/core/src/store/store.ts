@@ -358,7 +358,9 @@ export class AutoStore<State extends Dict>{
         }    
         if(computedObj){            // 更新不会触发事件
             computedObj.silentUpdate(computedObj.initial)
-            this.computedObjects.set(computedObj.id,computedObj)
+            if(computedObj.options.objectify){
+                this.computedObjects.set(computedObj.id,computedObj)
+            }            
             this.emit("computed:created",computedObj)
         }   
         return computedObj  

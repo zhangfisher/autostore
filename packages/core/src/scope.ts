@@ -46,8 +46,8 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
       rootDraft = newDraft;
     }
   }    
-
-  const {path:valuePath,parentPath} = valueContext
+  const hasContext:boolean = !!valueContext
+  const {path:valuePath,parentPath} = valueContext || {}
 
   // 2. 读取计scope参数获取计算函数的scope值
   const scopeOption = getScopeOptions(computedObject,computedOptions.scope, storeOptions.scope )
@@ -56,23 +56,23 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
 
     // 3. 根据配置参数获取计算函数的上下文对象
     try { 
-      if(scopeOption === ComputedScopeRef.Current) {
+      if(hasContext && scopeOption === ComputedScopeRef.Current) {
         scope = getValueByPath(rootDraft, parentPath);
-      }else if (scopeOption === ComputedScopeRef.Parent) {
-        scope = getValueByPath(rootDraft,valuePath.slice(0, valuePath.length - 2 < 0 ? 0 : valuePath.length - 2));
-      }else if (scopeOption === ComputedScopeRef.Root) {
+      }else if (hasContext && scopeOption === ComputedScopeRef.Parent) {
+        scope = getValueByPath(rootDraft,valuePath!.slice(0, valuePath!.length - 2 < 0 ? 0 : valuePath!.length - 2));
+      }else if (hasContext && scopeOption === ComputedScopeRef.Root) {
         scope = rootDraft;
       }else if (scopeOption === ComputedScopeRef.Depends) {        
         scope = computedObject.depends?.map(dep => getValueByPath(rootDraft, dep));
       }else{
        if (typeof scopeOption === "string") {       
           // 当scope是以@开头的字符串时，代表是一个路径指向，如：@./user，代表其scope是由user属性值指向的对象路径
-          if(scopeOption.startsWith("@")){ // 
+          if(hasContext && scopeOption.startsWith("@")){ // 
             scope = getValueScope(computedObject,computedType,valueContext,
                 { 
                   ...computedOptions,
                   scope:getValueScope(computedObject,computedType,{
-                    ...valueContext,
+                    ...valueContext!,
                     path:scopeOption.slice(1).split(OBJECT_PATH_DELIMITER)
                   },{
                     ...computedOptions,

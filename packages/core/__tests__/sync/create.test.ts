@@ -8,7 +8,7 @@
 
 
 import { test,expect, describe, beforeAll,vi } from "vitest"
-import { createStore,ComputedScopeRef,computed, IStore } from "../.."
+import { createStore,computed } from "../../src"
 
 
 
@@ -20,7 +20,7 @@ describe("动态创建同步择计算属性",()=>{
                 price:2,
                 count:3
             })
-            const obj = store._createComputed((scope:any)=>{
+            const obj = store.computedObjects.create((scope:any)=>{
                 return scope.price * scope.count
             })
             expect(obj.value).toBe(6)            
@@ -33,7 +33,7 @@ describe("动态创建同步择计算属性",()=>{
                 price:2,
                 count:3
             })
-            const obj = store._createComputed<number>((scope:any)=>{
+            const obj = store.computedObjects.create<number>((scope:any)=>{
                 return scope.price * scope.count
             })
             expect(obj.value).toBe(6)             
@@ -48,9 +48,9 @@ describe("动态创建同步择计算属性",()=>{
                 price:2,
                 count:3
             })
-            const obj = store._createComputed<number>((scope:any)=>{
+            const obj = store.computedObjects.create<number>((scope:any)=>{
                 return scope.price * scope.count
-            },{id:"x",save:true})
+            },{id:"x",objectify:true})
             expect(obj.value).toBe(6)             
             expect(store.computedObjects.size).toBe(1)  
             expect(store.computedObjects.has(obj.id)).toBe(true)
@@ -64,7 +64,7 @@ describe("动态创建同步择计算属性",()=>{
                 price:2,
                 count:3
             })
-            const obj = store._createComputed((scope:any)=>{
+            const obj = store.computedObjects.create((scope:any)=>{
                 return scope.price * scope.count
             })
             expect(obj.value).toBe(6)    
@@ -77,7 +77,7 @@ describe("动态创建同步择计算属性",()=>{
                 price:2,
                 count:3
             })
-            const obj = store._createComputed((scope:any)=>{
+            const obj = store.computedObjects.create((scope:any)=>{
                 return scope.price * scope.count
             })
             expect(obj.value).toBe(6)            
@@ -103,7 +103,7 @@ describe("动态创建异步计算属性",()=>{
                 expect(fn).not.toBeCalled()
                 resolve()
             })
-            const obj = store._createComputed(async ()=>{
+            const obj = store.computedObjects.create(async ()=>{
                 fn()
                 return 1
             },["price","count"],{
@@ -119,7 +119,7 @@ describe("动态创建异步计算属性",()=>{
                 price:2,
                 count:3
             })
-            const obj = store._createComputed<number>(async (scope:any)=>{
+            const obj = store.computedObjects.create<number>(async (scope:any)=>{
                 return scope.price * scope.count
             },["price","count"],{id:"x"})
             store.on("computed:created",()=>{                               
@@ -139,7 +139,7 @@ describe("动态创建异步计算属性",()=>{
                 expect(store.computedObjects.size).toBe(1)  
                 expect(store.computedObjects.has(obj.id)).toBe(true)
                 resolve()})
-            const obj = store._createComputed<number>(async (scope:any)=>{
+            const obj = store.computedObjects.create<number>(async (scope:any)=>{
                 return scope.price * scope.count
             },["price","count"],{id:"x",save:true})            
         }) 
@@ -154,7 +154,7 @@ describe("动态创建异步计算属性",()=>{
                 expect(obj.value.result).toBe(6)  
                 resolve()
             })
-            const obj = store._createComputed(async (scope:any)=>{
+            const obj = store.computedObjects.create(async (scope:any)=>{
                 return scope.price * scope.count
             },["price","count"]) 
             // store.setState((draft)=>draft.count = 4)
@@ -172,7 +172,7 @@ describe("动态创建异步计算属性",()=>{
                 expect(obj.value.result).toBe(6)
                 resolve()
             })
-            const obj = store._createComputed(async (scope:any)=>{
+            const obj = store.computedObjects.create(async (scope:any)=>{
                 return scope.price * scope.count
             },["price","count"])  
                 
@@ -193,7 +193,7 @@ describe("动态创建异步计算属性",()=>{
                     resolve()
                 }
             })
-            const obj = store._createComputed(async (scope:any)=>{
+            const obj = store.computedObjects.create(async (scope:any)=>{
                 return scope.price * scope.count
             },["price","count"])  
                 

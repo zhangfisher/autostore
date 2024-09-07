@@ -1,7 +1,7 @@
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { WatchDescriptor } from "../watch/types";
-import { ComputedDescriptor } from "./types"; 
+import { ComputedDescriptor, ComputedOptions } from "./types"; 
 
 
 export function isComputedDescriptorBuilder(value:any){
@@ -29,10 +29,22 @@ export function getComputedDescriptor(value:any): ComputedDescriptor | WatchDesc
         descriptor = {
             type     : 'computed',
             getter   : value,
-            options  : {
+            options  : Object.assign({},getDefaultComputedOptions(),{
                 async: isAsyncFunction(value)
-            }            
+            })            
         }
     }
     return descriptor  
+}
+
+export function getDefaultComputedOptions():ComputedOptions{
+    return {
+        objectify: true,
+        async    : false,
+		enable   : true,
+		timeout  : 0,
+		depends  : [],
+		immediate: "auto",    // 马上执行一次，异步计算函数，如果提供initial值，则不会马上执行
+		extras   : undefined
+    }
 }

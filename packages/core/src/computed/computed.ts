@@ -10,6 +10,7 @@ import {
 	ComputedOptions,
 	SyncComputedOptions
 } from "./types";
+import { getDefaultComputedOptions } from "./utils";
 
 /**
  * 用来封装状态的计算函数，使用计算函数的传入的是当前对象
@@ -31,16 +32,7 @@ export function computed<Value = any, Scope = any>(): any {
 	if (typeof getter !== "function") throw new Error("computed getter must be a function");
 	// 解析参数：同时支持同步和异步计算函数两种方式声明
 	let deps: ComputedDepends = [];
-	const opts: ComputedOptions  = {
-		async    : false,
-		enable   : true,
-		timeout  : 0,
-		depends  : [],
-		immediate: "auto",    // 马上执行一次，异步计算函数，如果提供initial值，则不会马上执行
-		objectify: true,      // 保存对象
-		extras:undefined
-	};
-
+	const opts: ComputedOptions  = Object.assign({},getDefaultComputedOptions())
 	if (arguments.length === 1) {
 		deps = [];
 	} else if (arguments.length === 2) {
