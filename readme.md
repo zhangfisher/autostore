@@ -6,9 +6,9 @@ Very easy and elegant state management library. It is based on proxy and provide
 
 ```ts
 
-import { createStore,$ } from 'autostore';
+import { createStore } from 'autostore';
 
-const store = createStore({
+const { watch, $, state } = createStore({
   firstName: 'zhang',
   lastName: 'fisher',
   fullName: (scope)=> { 
@@ -16,12 +16,12 @@ const store = createStore({
   }
 });
 
-store.watch('fullName', (value)=> {
+watch('fullName', (value)=> {
   console.log(value);
 });
 
 const Card = () => { 
-    return <div>$(store.state.fullName)</div>
+    return <div>$(state.fullName)</div>
 }
 
 ```
