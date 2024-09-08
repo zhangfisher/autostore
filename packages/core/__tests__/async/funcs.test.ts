@@ -147,12 +147,14 @@ describe("异步计算高级控制功能",()=>{
                     count++
                     throw new Error("error")
                 },['price','count'],{id:'x',retry:[5,100]})
-            },{immediate:true})  
-            store.on("computed:error",()=>{
-                expect(store.state.total.retry).toBe(0)                
-            })
-            store.watch((valuePath)=>{
-                if(valuePath.some(path=>path[0]==='total' && path[1]==='retry')){
+            },{
+                immediate:true,
+                onComputedError:()=>{
+                    expect(store.state.total.retry).toBe(0)                
+                }
+            })  
+            store.watch(['total'],({path})=>{
+                if(path.some(p=>p[0]==='total' && p[1]==='retry')){
                     retryValues.push(store.state.total.retry)
                 }
                 // 第一次运行出错，再重试5次，因此retry值为5,4,3,2,1,0
@@ -160,9 +162,9 @@ describe("异步计算高级控制功能",()=>{
                     expect(retryValues).toEqual([5,4,3,2,1,0])
                     resolve()
                 }
-            },['total'])  
-        })        
-    },0)
+            })    
+        })
+    })
 
 
 })
@@ -185,14 +187,14 @@ describe("异步计算属性的超时功能",()=>{
                     await delay(500)
                     return scope.price * scope.count
                 },['price','count'],{id:'x',timeout:100})
-            })  
-
-            store.on("computed:cancel",({reason})=>{
-                expect(reason).toBe("timeout")
-                expect(store.state.total.loading).toBe(false)
-                expect(store.state.total.error).toBe("TIMEOUT")
-                resolve()
-            })
+            },{
+                onComputedCancel:({reason})=>{
+                    expect(reason).toBe("timeout")
+                    expect(store.state.total.loading).toBe(false)
+                    expect(store.state.total.error).toBe("TIMEOUT")
+                    resolve()
+                }
+            })   
             store.state.total
         })
     })
@@ -209,10 +211,20 @@ describe("异步计算属性的超时功能",()=>{
                     await delay(10000)
                     return scope.price * scope.count
                 },['price','count'],{id:'x',timeout:[5*1000,5]})                
-            },{immediate:true})    
+            },{
+                immediate:true,
+                onComputedCancel:({reason})=>{
+                    expect(reason).toBe("timeout")
+                    expect(store.state.total.loading).toBe(false)
+                    expect(store.state.total.timeout).toBe(0)
+                    expect(store.state.total.error).toBe("TIMEOUT")
+                    resolve()
+                }
+
+            })    
             // timeouts
-            store.watch((valuePaths)=>{
-                if(valuePaths.some(path=>path[0]==='total' && path[1]==='timeout')){
+            store.watch(['total.timeout'],({path})=>{
+                if(path.some(p=>p[0]==='total' && p[1]==='timeout')){
                     timeouts.push(store.state.total.timeout)
                     // console.log("countdown=",timeouts)
                 }                    
@@ -227,17 +239,8 @@ describe("异步计算属性的超时功能",()=>{
                     vi.restoreAllMocks()
                 }
                 resolve()
-            },['total.timeout'])
-            store.on("computed:cancel",({reason})=>{
-                expect(reason).toBe("timeout")
-                expect(store.state.total.loading).toBe(false)
-                expect(store.state.total.timeout).toBe(0)
-                expect(store.state.total.error).toBe("TIMEOUT")
-                // resolve()
-            })    
-            vi.runAllTimers()  
-            
-            
+            }) 
+            vi.runAllTimers()              
         })
     },500000)
 })
