@@ -1,12 +1,14 @@
 /**
  *  判断是否是绝对依赖
+ * 
+ * 
  */
 
 import type { ComputedDepends } from "../computed";
 
 
-export function isAbsoluteDepends(depends: ComputedDepends) {
-    return depends.some(dep => {
+export function isAbsolutePath(depends: ComputedDepends) { 
+    return depends.some(dep => { 
         if(typeof(dep) === 'string') {
             if(dep.startsWith("./") || dep.startsWith("../") || dep.startsWith("@")) {
                 return false;

@@ -1,4 +1,5 @@
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
+import { InvalidComputedArgumentsError } from "../errors";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { normalizeDeps } from "../utils/normalizeDeps";
 import {
@@ -42,7 +43,7 @@ export function computed<Value = any, Scope = any>(): any {
 			Object.assign(opts, arguments[1]);
 			opts.depends = normalizeDeps(opts.depends);
 		} else {
-			throw new Error("invalid computed arguments");
+			throw new InvalidComputedArgumentsError();
 		}
 	} else if (arguments.length >= 3) {
 		deps = normalizeDeps(arguments[1]);

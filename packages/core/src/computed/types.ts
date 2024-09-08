@@ -18,8 +18,7 @@
 import { StateOperateParams } from "../store/types"
 import { Dict } from "../types"
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts"
-import { ComputedObject } from "./computedObject"
-import { WatchDescriptor } from "../watch/types"
+import { ComputedObject } from "./computedObject" 
 
 export type ComputedType = 'watch' | 'computed'
 
@@ -50,8 +49,8 @@ export interface ComputedGetterArgs{
 export type ComputedGetter<Value,Scope=any> = (scope: Scope,args:Required<ComputedGetterArgs>) => Exclude<Value,Promise<any>>
 
 export interface ComputedProgressbar{
-    value:(num:number)=>void
-    end:()=>void
+    value: (num:number)=>void
+    end  : ()=>void
 }
 
 export interface AsyncComputedGetterArgs{

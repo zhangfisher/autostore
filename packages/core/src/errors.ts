@@ -1,4 +1,9 @@
-export class AutoDsError extends Error{}
+export class AutoStoreError extends Error{}
  
-export class TimeoutError extends AutoDsError{}
-export class CyleDependError extends AutoDsError{}
+export class TimeoutError extends AutoStoreError{}
+export class CyleDependError extends AutoStoreError{}
+export class InvalidComputedArgumentsError extends AutoStoreError{}
+export class InvalidScopeError extends AutoStoreError{}
+export class InvalidDependsError extends AutoStoreError{}
+
+
