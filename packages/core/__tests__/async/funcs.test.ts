@@ -11,8 +11,9 @@
 
 
 import { test,expect, describe, beforeAll, vi, beforeEach, afterEach } from "vitest"
-import { createStore,ComputedScopeRef,computed, IStore } from "../.."
+import { createStore,ComputedScopeRef,computed } from "../.."
 import { delay } from "flex-tools/async/delay"
+import { AsyncComputedObject } from "../../src/computed/async"
 
 
 
@@ -31,22 +32,23 @@ describe("异步计算高级控制功能",()=>{
                     await delay(1000)
                     return scope.price * scope.count
                 },['price','count'],{ noReentry:true})
-            }) 
-            store.on("computed:cancel",()=>{
-                cancelCount++
-                if(cancelCount===9){
-                    expect(calcCount).toBe(1)
-                    resolve()        
+            },{
+                onComputedCancel:()=>{
+                    cancelCount++
+                    if(cancelCount===9){
+                        expect(calcCount).toBe(1)
+                        resolve()        
+                    }
+                },
+                onComputedCreated:()=>{
+                    // 连接执行多次依赖更新,但是由于noReentry=false,所以只会执行一次，其它的会被忽略
+                    setTimeout(()=>{
+                        for(let i=0;i<10;i++){
+                            store.state.count += i
+                        }
+                    })
                 }
             })   
-            store.on("computed:created",()=>{
-                // 连接执行多次依赖更新,但是由于noReentry=false,所以只会执行一次，其它的会被忽略
-                setTimeout(()=>{
-                    for(let i=0;i<10;i++){
-                        store.setState((draft)=>draft.count += i)
-                    }
-                })
-            })
             store.state.total
         })
     })
@@ -72,17 +74,18 @@ describe("异步计算高级控制功能",()=>{
                         
                     })	
                 },['price','count'],{id:'x'})
-            }) 
-            store.on("computed:cancel",({reason})=>{
-                expect(reason).toBe("abort")
-                expect(fn).toHaveBeenCalled()                
-                resolve()
-            })   
-            store.on("computed:created",()=>{
-                setTimeout(()=>{
-                   store.computedObjects.get("x")!.cancel()
-                })
-            })
+            },{
+                onComputedCancel:({reason})=>{
+                    expect(reason).toBe("abort")
+                    expect(fn).toHaveBeenCalled()                
+                    resolve()
+                },
+                onComputedCreated:()=>{
+                    setTimeout(()=>{
+                        (store.computedObjects.get("x") as AsyncComputedObject)!.value.cancel()
+                     })
+                }
+            })  
             store.state.total
         })
     })

@@ -7,8 +7,8 @@
 
 
 
-import { test,expect, describe, beforeAll,vi } from "vitest"
-import { createStore,computed } from "../../src"
+import { test,expect, describe, } from "vitest"
+import { createStore } from "../../src"
 
 
 describe("动态创建同步择计算属性",()=>{
@@ -103,7 +103,9 @@ describe("动态创建同步择计算属性",()=>{
             const obj = store.computedObjects.create((state:any)=>{
                 return state.price * state.count
             })
-            expect(obj.value).toBe(6)            
+            expect(obj.value).toBe(6)        
+            store.state.count = 4
+            expect(obj.value).toBe(8)    
             resolve()
         }) 
     })

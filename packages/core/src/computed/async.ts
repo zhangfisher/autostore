@@ -7,7 +7,7 @@
  *
  *
  */
-import { setVal, markRaw} from "../utils";
+import { markRaw} from "../utils";
 import { delay } from "flex-tools/async/delay";
 import { getValueScope } from "../scope";
 import { ComputedOptions, ComputedProgressbar } from "./types";
@@ -21,12 +21,12 @@ import { updateObjectVal } from "../utils/updateObjectVal";
 
 
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
-	Value,
-	Scope,
-	ComputedOptions<Value, Scope>
+	AsyncComputedResult<Value>,
+	Scope
 > {
 	private _isComputedRunning: boolean = false;
 	get async() {return true}       
+	get value() {return super.value as AsyncComputedResult}
 
 	/**
 	 *
@@ -102,7 +102,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		)  : this.options) as Required<RuntimeComputedOptions>;
 
 		// 3. 根据配置参数获取计算函数的上下文对象
-		const scope = getValueScope<Value, Scope>(
+		const scope = getValueScope<AsyncComputedResult<Value>, Scope>(
 			this as any,
 			"computed",
 			this.context,

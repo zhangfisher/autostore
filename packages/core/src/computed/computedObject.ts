@@ -13,12 +13,13 @@ import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedO
 import { Watcher } from "../watch/types";
 import { StoreEvents } from "../events/types";
 import { setVal } from "../utils";
+import { getId } from "../utils/getId";
 
  
 
-export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<Value,Scope> = ComputedOptions<Value,Scope>>{    
+export class ComputedObject<Value=any,Scope=any>{    
     private _path?:string[] 
-    private _options:Required<Options>
+    private _options:Required<ComputedOptions>
     private _getter:any
     private _depends: string[][] | undefined
     private _id:string = ""
@@ -42,9 +43,9 @@ export class ComputedObject<Value=any,Scope=any,Options extends ComputedOptions<
             enable: true,
             group: "",
             depends: []
-        }, descriptor.options) as unknown as Required<Options>
-        this._id         = this._options.id ?? joinValuePath(this._path)
-        this._depends    = this._path && getDependPaths(this._path,this._options.depends )
+        }, descriptor.options) as unknown as Required<ComputedOptions>
+        this._id         = this._options.id ?? this._path ? joinValuePath(this._path) : getId()
+        this._depends    = getDependPaths(this._path,this._options.depends )
         this._initialValue = this._options.initial 
         this.onInitial()   
     } 

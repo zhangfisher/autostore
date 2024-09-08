@@ -5,7 +5,7 @@
  * @returns 
  */
 export function joinValuePath(paths?:(string | string[])[]):string{
-    return (paths||['ROOT']).map((p)=>{
+    return (paths || ['ROOT']).map((p)=>{
         return Array.isArray(p) ? p.join(".") : p
     }).join('_')
 }

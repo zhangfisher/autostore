@@ -1,4 +1,4 @@
-import { test,expect, describe, beforeAll } from "vitest"
+import { test,expect, describe,} from "vitest"
 import { createStore,ComputedScopeRef,computed } from "../.."
  
 describe("异步计算函数的Scope指向",()=>{
@@ -13,7 +13,7 @@ describe("异步计算函数的Scope指向",()=>{
                         expect(scope.price).toBe(2)
                         expect(scope.count).toBe(3)
                         resolve()
-                    })
+                    },['price','count'])
                 }
             })
             store.state.order.total // 读取操作时创建计算属性
@@ -31,7 +31,7 @@ describe("异步计算函数的Scope指向",()=>{
                             expect(scope.order.count).toBe(3)
                             resolve()
                             return scope.order.price * scope.order.count
-                        }) 
+                        },['order.price','order.count']) 
                     }
                 },{
                     scope:()=>ComputedScopeRef.Root
@@ -53,7 +53,7 @@ describe("异步计算函数的Scope指向",()=>{
                                     expect(scope.order.count).toBe(3)
                                     resolve()
                                     return scope.order.price * scope.order.count
-                                }) 
+                                },['./price','./count']) 
                             }
                         }
                     }
@@ -104,7 +104,7 @@ describe("异步计算函数的Scope指向",()=>{
                                     expect(scope).toBe(1)
                                     resolve()
                                     return 0
-                                }) 
+                                },[]) 
                             }
                         },
                         a:1
@@ -129,7 +129,7 @@ describe("异步计算函数的Scope指向",()=>{
                                     expect(scope).toBe(2)
                                     resolve()
                                     return 0
-                                }) 
+                                },[]) 
                             }
                         },
                         a:1
@@ -153,7 +153,7 @@ describe("异步计算函数的Scope指向",()=>{
                                     expect(scope).toBe(100)
                                     resolve()
                                     return 0
-                                }) 
+                                },[]) 
                             },
                             x:100
                         },
@@ -178,7 +178,7 @@ describe("异步计算函数的Scope指向",()=>{
                                     expect(scope).toBe(1)
                                     resolve()
                                     return 0
-                                }) 
+                                },[]) 
                             },
                             x:100
                         },
@@ -203,14 +203,14 @@ describe("异步计算函数的Scope指向",()=>{
                                     expect(scope).toBe(3)
                                     resolve()
                                     return 0
-                                }) 
+                                },[]) 
                             }
                         }
                     }
                 },{
-                    scope:()=>["root","parent","order","count"],
-                    immediate:true
+                    scope:()=>["root","parent","order","count"] 
                 })             
+            store.state.root.parent.order.total // 读取操作时创建计算属性
         }) 
     })
 

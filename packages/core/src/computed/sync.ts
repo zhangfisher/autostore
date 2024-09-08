@@ -1,8 +1,7 @@
 /**
  * 同步计算
  */
-import {  setVal  } from "../utils"; 
-import {  ComputedOptions, SyncComputedOptions, SyncRuntimeComputedOptions } from './types';
+import {  ComputedOptions,  SyncRuntimeComputedOptions } from './types';
 import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
 import { StateOperateParams } from "../store/types";
@@ -15,7 +14,7 @@ import { noRepeat } from "../utils/noRepeat";
  * 同步计算属性对象
  * 
  */
-export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Value,Scope,SyncComputedOptions<Value,Scope>>{
+export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Value,Scope>{
   get async(){return false }
   /**
    * 同步计算属性对象在初始化时，会通过运行来自动收集依赖
