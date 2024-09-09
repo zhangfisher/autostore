@@ -10,8 +10,8 @@
  */
 
 
-import { test,expect, describe, beforeAll, vi, beforeEach, afterEach } from "vitest"
-import { createStore,ComputedScopeRef,computed } from "../.."
+import { test,expect, describe, beforeAll, vi } from "vitest"
+import { createStore,computed } from "../.."
 import { delay } from "flex-tools/async/delay"
 import { AsyncComputedObject } from "../../src/computed/async"
 
@@ -31,7 +31,9 @@ describe("异步计算高级控制功能",()=>{
                     calcCount++
                     await delay(1000)
                     return scope.price * scope.count
-                },['price','count'],{ noReentry:true})
+                },['price','count'],{ 
+                    noReentry:true
+                })
             },{
                 onComputedCancel:()=>{
                     cancelCount++
@@ -83,7 +85,7 @@ describe("异步计算高级控制功能",()=>{
                 onComputedCreated:()=>{
                     setTimeout(()=>{
                         (store.computedObjects.get("x") as AsyncComputedObject)!.value.cancel()
-                     })
+                    })
                 }
             })  
             store.state.total
@@ -136,8 +138,7 @@ describe("异步计算高级控制功能",()=>{
         })
     })
     test("当执行计算函数重试5次过程中读取retry值",()=>{
-        let count = 0
-        let times:number[] = []
+        let count = 0 
         let retryValues:(number|undefined)[] = []
         return new Promise<void>((resolve)=>{
             const store = createStore({
@@ -150,21 +151,20 @@ describe("异步计算高级控制功能",()=>{
             },{
                 immediate:true,
                 onComputedError:()=>{
-                    expect(store.state.total.retry).toBe(0)                
+                    expect(store.state.total.retry).toBe(0)     
+                    resolve()           
                 }
             })  
-            store.watch(['total'],({path})=>{
-                if(path.some(p=>p[0]==='total' && p[1]==='retry')){
-                    retryValues.push(store.state.total.retry)
-                }
+            store.watch(['total.retry'],({value})=>{
+                retryValues.push(store.state.total.retry)
                 // 第一次运行出错，再重试5次，因此retry值为5,4,3,2,1,0
-                if(retryValues.length===6){
-                    expect(retryValues).toEqual([5,4,3,2,1,0])
-                    resolve()
+                if(retryValues.length===7){
+                    expect(retryValues).toEqual([0,5,4,3,2,1,0])
+                    expect(count).toEqual(6) 
                 }
             })    
         })
-    })
+    },5000000)
 
 
 })

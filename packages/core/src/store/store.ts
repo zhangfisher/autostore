@@ -63,7 +63,7 @@ import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedState, Comp
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
-import { getVal, setVal } from "../utils";
+import { getVal } from "../utils";
 import { OBJECT_PATH_DELIMITER } from "../consts";
 import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
 import { getComputedDescriptor } from "../computed/utils";
@@ -196,7 +196,7 @@ export type AutoStoreOptions<State extends Dict> = {
      * @param computedObject 
      * @returns 
      */
-    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry',computedObject:ComputedObject<any>})=> void
+    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void
 
 }
 
@@ -235,6 +235,7 @@ export class AutoStore<State extends Dict>{
         if(this._options.onComputedCreated) this.on("computed:created",this._options.onComputedCreated.bind(this))
         if(this._options.onComputedDone) this.on("computed:done",this._options.onComputedDone.bind(this))
         if(this._options.onComputedError) this.on("computed:error",this._options.onComputedError.bind(this))
+        if(this._options.onComputedCancel) this.on("computed:cancel",this._options.onComputedCancel.bind(this))
     }
 
     /**

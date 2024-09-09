@@ -7,4 +7,4 @@ export type StoreEvents = {
     'computed:error'    : {id:string,path:string[],error:any,computedObject:ComputedObject}           // 当计算函数执行出错时
     'computed:cancel'   : {id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject}       // 当计算函数被取消时
 };
-
+ 

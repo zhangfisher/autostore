@@ -223,13 +223,16 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				let [timeoutValue = 0, countdown = 0] = Array.isArray(timeout)
 					? timeout
 					: [timeout, 0];
+
 				this.updateComputedResult({
 					loading : true,
 					error   : null,
-					retry   : i > 0 ? retryCount - i : 0,
+					retry   : i > 0 ? retryCount - i + 1 : 0,
 					timeout : countdown > 1 ? countdown : timeoutValue,
 					progress: 0,
 				});
+
+
 				// 如果有中止信号，则取消计算
 				if (hasAbort) {
 					throw new Error("Abort");
@@ -273,10 +276,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				if (!hasTimeout) {
 					Object.assign(afterUpdated, { error: getError(e).message, timeout: 0 });
 				}
-				/// 启用重试
-				if (retryCount > 0) {
-					Object.assign(afterUpdated, { retry: retryCount - i });
-				}
 			} finally {
 				clearTimeout(timerId);
 				clearInterval(countdownId);
@@ -284,6 +283,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				if (!hasError || i == retryCount) Object.assign(afterUpdated, { loading: false });
 				if (!hasError && !hasTimeout) {
 					Object.assign(afterUpdated, { error: null });
+				}
+				if(retryCount>0 && i===retryCount){
+					Object.assign(afterUpdated, { retry: 0 }); 
 				}
 				this.updateComputedResult(afterUpdated);
 			}

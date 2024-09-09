@@ -44,7 +44,7 @@ export class ComputedObject<Value=any,Scope=any>{
             group: "",
             depends: []
         }, descriptor.options) as unknown as Required<ComputedOptions>
-        this._id         = this._options.id ?? this._path ? joinValuePath(this._path) : getId()
+        this._id         = this._options.id || (this._path ? joinValuePath(this._path) : getId())
         this._depends    = getDependPaths(this._path,this._options.depends )
         this._initialValue = this._options.initial 
         this.onInitial()   
