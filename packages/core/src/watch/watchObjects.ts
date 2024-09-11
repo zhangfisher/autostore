@@ -1,65 +1,61 @@
-import { WatchDescriptorDefine } from './types';
 import { Dict } from "../types" 
 import { WatchObject } from "./watchObject";
 import { getVal } from "../utils";
 import { AutoStore } from '../store/store';
+import { WatchDependParams, Watcher, WatchGetter, WatchOptions } from "./types";
+import { watch } from "./watch";
 
-export class WatchObjects<State extends Dict> extends Map<string,WatchObject<T>>{
-    private _off?:()=>void
+export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
+    private _watcher:Watcher ={off:()=>{}}
     private _enable:boolean=true                            // 是否启用侦听器
     constructor(public store:AutoStore<State>){
         super()   
-        store.on("created",this.onStateCreated.bind(this))
-    }  
-    private onStateCreated(){ 
         this.createWacher() 
-    }
-    get enable(){
-        return this._enable
-    }
-    set enable(value:boolean){
-        this._enable = value
-    }      
+    }  
+    get enable(){return this._enable}
+    set enable(value:boolean){ this._enable = value  }      
     /**
      * 创建全局侦听器,
      * 此侦听器会侦听根对象，当对象所有的状态变化,会执行所有监听过滤函数，如果返回true，则执行对应的监听函数
      * 负责处理动态侦听
      */
     private createWacher(){
-        const unwatch = this.store.watch("**",(changedPaths)=>{
+        this._watcher = this.store.watch("**",({path})=>{
             if(!this._enable) return 
-            changedPaths.forEach((keyPath)=>{  
-                const watchValue = getVal(this.store.state,keyPath)
-                for(let watchObj of this.values()){
-                    if(watchObj.isDepends(keyPath,watchValue)){
-                        watchObj.run(keyPath,watchValue)
-                    }
-                    
-                }                
-            })
-        },[])
-        this._off = unwatch
+            const watchValue = getVal(this.store.state,path)
+            for(let watchObj of this.values()){
+                if(watchObj.isDepends(path,watchValue)){
+                    watchObj.run(path,watchValue)
+                }
+                
+            }                
+        })
     } 
     /**
      * 重置侦听器
      */
     reset(){
-        this._off && this._off()
+        this._watcher && this._watcher.off()
         this.createWacher()
     }
    
     /**
-     * 添加一个侦听器对象  
+     * 动态加一个侦听器对象  
+     * 
+     * @description
+     * 
+     * 动态创建一个侦听器对象，侦听器对象是一个函数，当侦听器侦听的路径发生变化时，侦听器会被调用
+     * 
      * @param selfPath              侦听函数所在的路径,用来接收侦听函数的返回值，当使用useWatch时
      * @param listener              侦听函数 
      * @param options               参数
      * @param watchTo               侦听结果写到处下载
      * @returns 
      */
-    add(descriptor:WatchDescriptorDefine){
-        const watchObject  = new WatchObject(this.store,descriptor)
-        this.set(watchObject.id,watchObject)
-        return watchObject
+    create<V=any,R=any>(getter:WatchGetter<V,R>,depends?:WatchDependParams<V>,options?:WatchOptions<R>) {      
+        const descrioptorBuilder = watch(getter,depends,options)     
+        const descrioptor = descrioptorBuilder() 
+        return this.store._createWatch(descrioptor)     
     }
     /**
      * 控制某个组的侦听器是否启用

@@ -1,9 +1,12 @@
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
-import { WatchDependParams, WatchDescriptor, WatchDescriptorBuilder, WatchGetter, WatchListener, WatchOptions } from "./types";
+import { WatchDependParams,  WatchDescriptorBuilder, WatchGetter,  WatchOptions } from "./types";
 import { normalizedWatchFilter } from "./utils";
 
  /* 
  *  watch函数用来声明一个监听函数，当监听的值发生变化时，会触发监听函数的执行
+ *  
+ *  @description
+ *  
  *  并将监听的返回值回写入所声明的位置状态中
  * 
  *  如:以下在validate属性中声明了一个监听函数，当侦听到表单中所有validate发生变化时，会触发监听函数的执行
@@ -24,8 +27,8 @@ import { normalizedWatchFilter } from "./utils";
  */
  export function watch<Value =any,Result=Value>(getter:WatchGetter<Value,Result>,depends?:WatchDependParams<Value>,options?:WatchOptions<Result>):WatchDescriptorBuilder<Value,Result>{
     const opts : WatchOptions<Result> = Object.assign({
-        depends:normalizedWatchFilter(depends),
-        enable:true
+        depends: normalizedWatchFilter(depends),
+        enable : true
     },options)  
     const descriptorBuilder = () => {
         return { 

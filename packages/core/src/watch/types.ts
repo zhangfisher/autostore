@@ -48,8 +48,7 @@ export interface WatchDescriptorBuilder<Value = any,Result=Value> {
 
 
 export interface WatchOptions<R=any>{ 
-    id?      : string                        // watch的id
-    path?    : string[],                     // 指的是watch()包装的所在的路径，如果使用useWatch则为[]
+    id?      : string                         
     depends? : WatchDepends                  // 依赖
     initial? : R,                            // 初始值
     group?   : string                        // 用来对表单内的watch进行分组，以便能按组进行enable或disable或其他操作

@@ -10,7 +10,7 @@
  */
 
 
-import { test,expect, describe, beforeAll, vi } from "vitest"
+import { test,expect, describe, vi } from "vitest"
 import { createStore,computed } from "../.."
 import { delay } from "flex-tools/async/delay"
 import { AsyncComputedObject } from "../../src/computed/async"
@@ -155,7 +155,7 @@ describe("异步计算高级控制功能",()=>{
                     resolve()           
                 }
             })  
-            store.watch(['total.retry'],({value})=>{
+            store.watch(['total.retry'],()=>{
                 retryValues.push(store.state.total.retry)
                 // 第一次运行出错，再重试5次，因此retry值为5,4,3,2,1,0
                 if(retryValues.length===7){
@@ -164,7 +164,7 @@ describe("异步计算高级控制功能",()=>{
                 }
             })    
         })
-    },5000000)
+    })
 
 
 })

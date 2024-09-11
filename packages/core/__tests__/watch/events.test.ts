@@ -1,7 +1,7 @@
 import { expect,test,describe, beforeEach, afterEach } from "vitest"
-import { createStore, AutoStore } from "../src";
+import { createStore, AutoStore } from "../../src";
 import { deepClone } from "flex-tools/object/deepClone";
-import { Watcher } from "../src/watch/types";
+import { Watcher } from "../../src/watch/types";
 
 const data = {
     firstName: 'John',

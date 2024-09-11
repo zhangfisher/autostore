@@ -69,7 +69,10 @@ import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
 import { getComputedDescriptor } from "../computed/utils";
 import { forEachObject } from "../utils/forEachObject";
 import { AsyncComputedObject } from "../computed/async";
- 
+import { WatchObjects } from "../watch/watchObjects"; 
+import { WatchObject } from "../watch/watchObject";
+
+
 export type AutoStoreOptions<State extends Dict> = {
     /**
      * 提供一个id，用于标识当前store
@@ -204,6 +207,8 @@ export type AutoStoreOptions<State extends Dict> = {
 export class AutoStore<State extends Dict>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
+    public watchObjects: WatchObjects<State>  
+
     protected _changesets:FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    
     private _options: Required<AutoStoreOptions<State>>
     private _batching = false           // 当执行批量更新时为true
@@ -217,11 +222,13 @@ export class AutoStore<State extends Dict>{
             enableComputed:true,
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
+        this.watchObjects  =  new WatchObjects<State>(this)
         this.subscribeCallbacks()
         this._data = createReactiveObject(state,{
             notify:this.notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
         })  
+        this.emit("created",this)
         // 马上遍历对象触发读操作，以便创建计算对象
         if(this.options.immediate) forEachObject(this._data)            
     }
@@ -372,13 +379,11 @@ export class AutoStore<State extends Dict>{
      * @param computedContext 
      * @param descriptor 
      */
-    private createWatch(computedContext:ComputedContext,descriptor:WatchDescriptor){
-        computedContext
-        descriptor
-        // const watchObj = createWatch(this,computedContext,descriptor)
-        // this.computedObjects.set(watchObj.id,watchObj)
-        // this.emit("watch:created",watchObj)
-        // return watch
+    _createWatch(descriptor:WatchDescriptor,computedContext?:ComputedContext){ 
+        const watchObj = new WatchObject(this,descriptor,computedContext)
+        this.watchObjects.set(watchObj.id,watchObj)
+        this.emit("watch:created",watchObj)
+        return watchObj
     }
 
     // **************** EventEmitter ***********
