@@ -48,10 +48,11 @@ export interface WatchDescriptorBuilder<Value = any,Result=Value> {
 
 
 export interface WatchOptions<R=any>{ 
-    id?      : string                         
-    depends? : WatchDepends                  // 依赖
-    initial? : R,                            // 初始值
-    group?   : string                        // 用来对表单内的watch进行分组，以便能按组进行enable或disable或其他操作
-    enable?  : boolean                       // 启用或禁用watch，默认为true
+    id?       : string                         
+    depends?  : WatchDepends                  // 依赖
+    initial?  : R,                            // 初始值
+    group?    : string                        // 用来对表单内的watch进行分组，以便能按组进行enable或disable或其他操作
+    enable?   : boolean                       // 启用或禁用watch，默认为true
+    objectify?: boolean
 }
  

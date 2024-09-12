@@ -27,16 +27,18 @@ import { normalizedWatchFilter } from "./utils";
  */
  export function watch<Value =any,Result=Value>(getter:WatchGetter<Value,Result>,depends?:WatchDependParams<Value>,options?:WatchOptions<Result>):WatchDescriptorBuilder<Value,Result>{
     const opts : WatchOptions<Result> = Object.assign({
-        depends: normalizedWatchFilter(depends),
-        enable : true
+        depends  : normalizedWatchFilter(depends),
+        enable   : true,
+        objectify: true
     },options)  
     const descriptorBuilder = () => {
         return { 
+          type:'watch', 
           getter,
           options: opts,
         }
-      }
-      descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG]     = true 
+    }
+    descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG]     = true 
 
     return descriptorBuilder as WatchDescriptorBuilder<Value, Result>;
 }

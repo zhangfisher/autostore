@@ -343,10 +343,11 @@ export class AutoStore<State extends Dict>{
         const computedCtx = { path,value,parentPath,parent }
         if(descriptor){            
             if(descriptor.type==='computed'){                
-                let computedObj =  this._createComputed(descriptor,computedCtx)
+                const computedObj =  this._createComputed(descriptor,computedCtx)
                 return computedObj?.initial
             }else if(descriptor.type==='watch'){                
-                return this.createWatch(computedCtx,descriptor)
+                const watchObj =  this._createWatch(descriptor,computedCtx)
+                return watchObj?.initial
             }
         }else{
             return value
@@ -381,7 +382,9 @@ export class AutoStore<State extends Dict>{
      */
     _createWatch(descriptor:WatchDescriptor,computedContext?:ComputedContext){ 
         const watchObj = new WatchObject(this,descriptor,computedContext)
-        this.watchObjects.set(watchObj.id,watchObj)
+        if(descriptor.options.objectify){
+            this.watchObjects.set(watchObj.id,watchObj)
+        }
         this.emit("watch:created",watchObj)
         return watchObj
     }

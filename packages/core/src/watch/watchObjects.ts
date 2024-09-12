@@ -22,10 +22,10 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
     private createWacher(){
         this._watcher = this.store.watch("**",({path})=>{
             if(!this._enable) return 
-            const watchValue = getVal(this.store.state,path)
+            const value = getVal(this.store.state,path)
             for(let watchObj of this.values()){
-                if(watchObj.isDepends(path,watchValue)){
-                    watchObj.run(path,watchValue)
+                if(watchObj.isDepends(path,value)){
+                    watchObj.run(path,value)
                 }
                 
             }                

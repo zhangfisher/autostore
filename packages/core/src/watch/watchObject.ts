@@ -7,27 +7,44 @@ import { AutoStore } from "../store/store";
 import { ComputedContext } from "../computed/types";
 import { joinValuePath } from "../utils/joinValuePath";
 import { getId } from "../utils/getId";
+import { StoreEvents } from "../events/types";
  
 
 export class WatchObject<Value=any,Result=any> {
     private _cache?: Dict
+    private _path?:string[] 
+
     private _id:string
     private _getter?:WatchGetter<Value,Result>
     private _options: Required<WatchOptions>
-    constructor(public store:AutoStore<any>,descriptor:WatchDescriptor,public context:ComputedContext<any>){        
+    private _value:Value | undefined
+    private _attched:boolean = false                 // 是否已经附加到状态对象上
+    private _initialValue:Value | undefined
+
+
+    constructor(public store:AutoStore<any>,descriptor:WatchDescriptor,public context?:ComputedContext<any>){ 
+        this._attched    =  context!==undefined
+        this._path       = context?.path 
+        this._getter     = descriptor.getter  
         this._options = Object.assign({ 
             enable  : true,            
             group   : undefined, 
             initial : undefined 
         },descriptor.options) as Required<WatchOptions>
         if(typeof(this._options.depends)!=='function') throw new Error("watch options.depends must be a function")        
-        this._id  = this._options.id || (this.context.path ? joinValuePath(this.context.path) : getId())
+        this._id  = this._options.id || (this._path ? joinValuePath(this._path) : getId())
+        this._initialValue = this._options.initial 
         this.onInitial()
     }
     get id(){ return this._id}
+    get attched(){return this._attched }
+
     get options(){ return this._options}
 
-    get path(){ return this.context.path}
+    get initial(){ return this._initialValue}      
+    set initial(value){ this._initialValue = value }  
+
+    get path(){ return this._path}
     get depends(){ return this._options.depends!}
     get enable(){ return this._options.enable!}
     set enable(value:boolean){ this._options.enable = value}
@@ -35,24 +52,32 @@ export class WatchObject<Value=any,Result=any> {
         if(!this._cache) this._cache = {}
         return this._cache!
     }
-    /**
-     * 返回当前watch处理后的,即listener的返回值
-     * @returns 
-     */
-    get value(){
-        return getVal(this.store.state,this.path)
-    }     
+    toString(){ return `WatchObject<${joinValuePath(this._path)}>` }
+
+    get value(){ return (this._attched ? getVal(this.store.state,this._path) :  this._value) as unknown as Value}           
+    set value(value:Value){
+        if(this._attched){
+            setVal(this.store.state,this._path!, value)    
+        }else{
+            this._value = value
+        }
+    }  
     private onInitial(){
         if(this._options.initial!==undefined){
-            this.store.silentUpdate(state=>{
-                setVal(state,this.path,this._options.initial)
-            })
+            if(this.attched){
+                this.store.silentUpdate(state=>{
+                    setVal(state,this.path!,this._options.initial)
+                })
+            }else{
+                this._value = this._options.initial
+            }
         }
+        
     }
     /**
-     * 返回输入的路径是否当前对象所依赖的路径
+     * 判断当前监听函数是否依赖于某个路径
      * 
-     * 如果路径是自身路径，则返回false
+     * 
      * 
      * @param watchedPath 
      * @param watchedValue 
@@ -81,14 +106,20 @@ export class WatchObject<Value=any,Result=any> {
             // 2.  执行监听函数
             const result = this._getter?.call(this,watchPath,watchValue,this as any)    
             // 3. 将返回值回写到状态中
-            if(result!==undefined){            
-                // 回写到原地                    
-                setVal(this.store.state,this.path,result) 
+            if(result!==undefined){                            
+                this.value = result                 
             }    
-        }catch{
-
+            this.emitWatchEvent("watch:done",this)
+        }catch(e){
+            this.emitWatchEvent("watch:error",this)
         }        
     }  
+    protected emitWatchEvent(event:keyof StoreEvents,args:any){
+        setTimeout(()=>{
+            this.store.emit(event,args)
+        },0)
+    }
+
 
 }
  

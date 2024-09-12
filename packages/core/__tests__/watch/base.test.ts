@@ -65,9 +65,7 @@ describe("静态声明watch",()=>{
 
     test("侦听count变化后更新total值",async ()=>{
         store.state.books.total // 注意：watch仅在第一次读取时创建
-        store.setState(draft=>{
-            draft.books.count = 11
-        }) 
+        store.state.books.count = 11 
         expect(store.state.books.total).toBe(100)
     })
 
@@ -87,9 +85,7 @@ describe("静态声明watch",()=>{
         for(let i = 0;i<10;i++){
             watchObj.options.enable = i%2==0            
             // 修改count值，导致total值变化
-            store.setState(draft=>{
-                draft.books.count++ 
-            }) 
+            store.state.books.count++ 
         }
         expect(store.state.books.total).toBe(1900)  // 1900
         expect(listener).toHaveBeenCalledTimes(5)        
@@ -121,12 +117,8 @@ describe("静态声明watch",()=>{
                     resolve()
                 }
             },["diary"])
-            store.setState(draft=>{
-                draft.a = 100
-            })
-            store.setState(draft=>{
-                draft.b = 200
-            })
+            store.state.a = 100 
+            store.state.b = 200 
         })        
     })
 })
