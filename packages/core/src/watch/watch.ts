@@ -25,7 +25,7 @@ import { normalizedWatchFilter } from "./utils";
  * @param options 
  * @returns 
  */
- export function watch<Value =any,Result=Value>(getter:WatchGetter<Value,Result>,depends?:WatchDependParams<Value>,options?:WatchOptions<Result>):WatchDescriptorBuilder<Value,Result>{
+ export function watch<Result=any,Value =any>(getter:WatchGetter<Value,Result>,depends?:WatchDependParams<Value>,options?:WatchOptions<Result>):WatchDescriptorBuilder<Value,Result>{
     const opts : WatchOptions<Result> = Object.assign({
         depends  : normalizedWatchFilter(depends),
         enable   : true,

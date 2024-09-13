@@ -17,22 +17,9 @@ export type Watcher = FlexEventSubscriber
 
 export type WatchDepends<T=any> = (path:string[],value:T)=>boolean
 export type WatchDependParams<T=any> = string | (string | string[])[] | WatchDepends<T>
+ 
 
-
-
-/**
- * selfPath=当前watch函数所在的位置
- * fromPath=watch函数侦听的位置，即发生变化的源路径
- */
-export type WatchGetterArgs<Result=any> = {
-  getSelfValue: ()=>Result ,
-  selfPath    : string[],
-  fromPath    : string[],
-  getCache    : ()=>Dict,
-  object      : WatchObject<any>
-}
-
-export type WatchGetter<Value=any, Result=Value> = (path:string[],value:Value,args:WatchGetterArgs)=>(Exclude<Result,Promise<any>> | undefined)
+export type WatchGetter<Value=any, Result=Value> = (path:string[],value:Value,obj:WatchObject<Value,Result>)=>(Exclude<Result,Promise<any>> | undefined)
 
 export type WatchDescriptor<Value=any, Result=Value> = {
     type   : 'watch',           

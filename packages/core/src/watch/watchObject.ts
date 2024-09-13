@@ -34,7 +34,7 @@ export class WatchObject<Value=any,Result=any> {
         if(typeof(this._options.depends)!=='function') throw new Error("watch options.depends must be a function")        
         this._id  = this._options.id || (this._path ? joinValuePath(this._path) : getId())
         this._initialValue = this._options.initial 
-        this.onInitial()
+        this.onInitial()            
     }
     get id(){ return this._id}
     get attched(){return this._attched }
@@ -90,6 +90,7 @@ export class WatchObject<Value=any,Result=any> {
 
     reset(){
         this._cache = {}
+        this.value = this.initial as Value
     } 
     /**
      * 运行侦听函数
@@ -105,13 +106,10 @@ export class WatchObject<Value=any,Result=any> {
         try{
             // 2.  执行监听函数
             const result = this._getter?.call(this,watchPath,watchValue,this as any)    
-            // 3. 将返回值回写到状态中
-            if(result!==undefined){                            
-                this.value = result                 
-            }    
-            this.emitWatchEvent("watch:done",this)
+            this.value = result as Value            
+            this.emitWatchEvent("watch:done",{value:result,watchObject:this})
         }catch(e){
-            this.emitWatchEvent("watch:error",this)
+            this.emitWatchEvent("watch:error",{error:e, watchObject:this})
         }        
     }  
     protected emitWatchEvent(event:keyof StoreEvents,args:any){
