@@ -2,7 +2,6 @@ import { test,expect, describe,vi } from "vitest"
 import { watch } from "../../src/watch/watch"
 import {  createStore } from "../../src"
 import { WatchObject } from "../../src/watch/watchObject"
-import exp from "constants"
   
 describe("watch功能测试",()=>{
 
@@ -15,7 +14,7 @@ describe("watch功能测试",()=>{
                     count:10,
                     total:watch(()=>{ 
                         return  100
-                    },[],{initial:1,group:'x'})
+                    },()=>true,{initial:1,group:'x'})
                     
                 }
             })
@@ -37,7 +36,7 @@ describe("watch功能测试",()=>{
                     count:10,
                     total:watch(()=>{ 
                         return  100
-                    },[],{initial:1,group:'x'})
+                    },()=>true,{initial:1,group:'x'})
                     
                 }
             })
@@ -51,7 +50,7 @@ describe("watch功能测试",()=>{
                     count:10,
                     total:watch(()=>{ 
                         return  100
-                    },[],{initial:1,group:'x'})                
+                    },()=>true,{initial:1,group:'x'})                
                 }
             },{
                 immediate:true
@@ -65,7 +64,7 @@ describe("watch功能测试",()=>{
                     count:10,
                     total:watch(({value})=>{ 
                         return  value+1
-                    },[],{initial:1,group:'x'})                
+                    },{initial:1,group:'x'})                
                 }
             },{
                 immediate:true
@@ -118,7 +117,7 @@ describe("watch功能测试",()=>{
                         expect(watchObj).toBeInstanceOf(WatchObject)                    
                         changed.push(path)
                         return value
-                    },[],{initial:0})
+                    },()=>true,{initial:0})
                 },{immediate:true})
 
                 store.watch("diary",({path})=>{
@@ -300,97 +299,31 @@ describe("watch功能测试",()=>{
             store.state.books.count = 3
             expect(watchObj).toBe(store.watchObjects.get('total'))
             expect(watchObj.value).toBe(3)                        
-        })
-        test("立刻创建监视字段total对象",async ()=>{
-            const store = createStore({
-                books:{            
-                    price:10,
-                    count:10,
-                    total:watch(()=>{ 
-                        return  100
-                    },()=>true,{initial:1,group:'x'})                
-                }
-            },{
-                immediate:true
-            })
-            expect(store.state.books.total).toBe(1)
-        })
-        test("侦听count变化后更新total值",async ()=>{
-            const store = createStore({
-                books:{            
-                    price:10,
-                    count:10,
-                    total:watch(({value})=>{ 
-                        return  value+1
-                    },()=>true,{initial:1,group:'x'})                
-                }
-            },{
-                immediate:true
-            })
-            expect(store.state.books.total).toBe(1)
-            store.state.books.count = 10
-            expect(store.state.books.total).toBe(11)
-        })
+        })  
 
-        test("通过enable控制total是否侦听",async ()=>{
+        test("通过enable控制动态对象total是否侦听",async ()=>{
             const listener = vi.fn() 
             const store = createStore({
                 books:{            
                     price:10,
-                    count:10,
-                    total:watch<number,number>(({value})=>{  
-                        listener()
-                        return value * 100 
-                    },(path:string[])=>{
-                        return path[path.length-1]=='count'
-                    },{              
-                        id:"total",  
-                        initial:1,
-                        group:'x', 
-                    })
+                    count:2                    
                 }
             })
-            // 注意：watch仅在第一次读取时创建，如果没有读一下，则不会创建watch对象
-            store.state.books.total   
+            const watchObj = store.watchObjects.create<number,number>(({value})=>{ 
+                listener()
+                return  value
+            },()=>true,{initial:1,id:'total',enable:false})
+            expect(watchObj.initial).toBe(1)
+            expect(watchObj.value).toBe(1)
+            expect(watchObj.attched).toBe(false)
+            store.state.books.count = 3
+            expect(watchObj).toBe(store.watchObjects.get('total'))
+            expect(watchObj.value).toBe(1)     
+            watchObj.enable = true             
+            store.state.books.count = 4
+            expect(watchObj.value).toBe(4)
+            expect(listener).toHaveBeenCalledTimes(1)
 
-            const watchObj = store.watchObjects.get('total')!
-            for(let i = 0;i<10;i++){
-                watchObj.options.enable = i%2==0            
-                // 修改count值，导致total值变化
-                store.state.books.count++ 
-            }
-            expect(store.state.books.total).toBe(1900)  // 1900
-            expect(listener).toHaveBeenCalledTimes(5)                
-
-        })
-        test("侦听所有变化", ()=>{
-            return new Promise<void>((resolve)=>{ 
-                const changed:string[][] = []
-                const paths:string[][] = []
-                const values:number[] = []
-
-                const store = createStore({
-                    a:1,b:2,
-                    diary:watch(({path,value},watchObj)=>{
-                        expect(watchObj).toBeInstanceOf(WatchObject)                    
-                        changed.push(path)
-                        return value
-                    },()=>true,{initial:0})
-                },{immediate:true})
-
-                store.watch("diary",({path})=>{
-                    paths.push(path)
-                    values.push(store.state.diary)                
-                    if(paths.length==2){
-                        expect(changed).toStrictEqual([['a'],['b']])
-                        expect(paths).toStrictEqual([['diary'],['diary']])
-                        expect(values).toStrictEqual([100,200])
-                        resolve()
-                    }
-                })
-                store.state.a = 100 
-                store.state.b = 200  
-            })        
         })
     })
 

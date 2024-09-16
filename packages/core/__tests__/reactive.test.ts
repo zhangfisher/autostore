@@ -1,4 +1,4 @@
-import { expect,test,describe, beforeEach, afterEach } from "vitest" 
+import { expect,test,describe } from "vitest" 
 import { createReactiveObject } from "../src/store/reactive"
 
 describe("响应式对象",()=>{

@@ -59,7 +59,7 @@ import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
-import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedState, ComputedType } from "../computed/types";
+import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedType } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
@@ -71,6 +71,7 @@ import { forEachObject } from "../utils/forEachObject";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects"; 
 import { WatchObject } from "../watch/watchObject";
+import type { ComputedState } from "../descriptor";
 
 
 export type AutoStoreOptions<State extends Dict> = {

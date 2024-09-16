@@ -1,7 +1,7 @@
 import type { FlexEventSubscriber } from "flex-tools/events/flexEvent"
 import type { StateOperateParams, StateOperates } from "../store/types"
 import type { WatchObject } from "./watchObject"
-import type { IDescriptor, IDescriptorBuilder, IDescriptorOptions } from "../descriptor"
+import type { IComputedDescriptor, IComputedDescriptorBuilder, IComputedDescriptorOptions } from "../descriptor"
 
 
 export type WatchListener<T=any,P=any> = (args:StateOperateParams<T,P>)=>void
@@ -18,9 +18,9 @@ export type WatchDepends<T=any> = (path:string[],value:T)=>boolean
 export type WatchDependParams<T=any> = string | (string | string[])[] | WatchDepends<T>
  
 
-export interface WatchOptions<Value=any,DependValue= any> extends IDescriptorOptions<Value,DependValue>{ 
-    async?:false             // watch只能是同步
-    depends?:WatchDepends<DependValue>
+export interface WatchOptions<Value=any,DependValue= any> extends IComputedDescriptorOptions<Value,DependValue>{ 
+    async?  : false                        // watch只能是同步  
+    depends?: WatchDepends<DependValue>    // 
 }
 
 export type WatchScope<Value=any> = {
@@ -33,7 +33,7 @@ export type WatchGetter<Value=any,DependValue= any> = (
     args:WatchObject<Value>
 )=>Exclude<any,Promise<any>> | undefined
 
-export type WatchDescriptor<Value=any, Scope extends WatchScope=WatchScope> = IDescriptor<
+export type WatchDescriptor<Value=any, Scope extends WatchScope=WatchScope> = IComputedDescriptor<
   'watch',
   Value,
   Scope,
@@ -45,8 +45,8 @@ export type WatchDescriptor<Value=any, Scope extends WatchScope=WatchScope> = ID
  * @template Value  监听函数的返回值类型
  * @template Scope 监听函数的第一个参数的类型
  */
-export type WatchDescriptorBuilder<Value = any,Scope extends WatchScope=WatchScope>
-  = IDescriptorBuilder<WatchDescriptor<Value,Scope>> 
+export type WatchDescriptorBuilder<Value = any>
+  = IComputedDescriptorBuilder<'watch',Value,WatchScope,WatchDescriptor<Value,WatchScope>> 
 
 
 

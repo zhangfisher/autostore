@@ -7,7 +7,8 @@
 import type { ComputedDepends } from "../computed";
 
 
-export function isAbsolutePath(depends: ComputedDepends) { 
+export function isAbsolutePath(depends: ComputedDepends | undefined) { 
+    if(!depends) return false;
     return depends.some(dep => { 
         if(typeof(dep) === 'string') {
             if(dep.startsWith("./") || dep.startsWith("../") || dep.startsWith("@")) {

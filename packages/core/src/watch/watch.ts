@@ -1,6 +1,6 @@
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
-import { WatchDependParams,  WatchDepends,  WatchDescriptorBuilder, WatchGetter,  WatchOptions } from "./types";
-import { normalizedWatchFilter } from "./utils";
+import { WatchDepends,  WatchDescriptorBuilder, WatchGetter,  WatchOptions } from "./types";
+import { normalizedWatchDepends } from "./utils";
 
  /* 
  *  watch函数用来声明一个监听函数，当监听的值发生变化时，会触发监听函数的执行
@@ -20,7 +20,7 @@ import { normalizedWatchFilter } from "./utils";
  *          return path[path.length-1]=='validate'
  *      }
  *    })
- * 
+ *  
  * 
  * @template Value  监听函数的返回值类型
  * @template DependValue 指发生变化的值类型，如watch的依赖的x的值是一个boolean，则当变化时，emitValue的类型就是boolean
@@ -28,9 +28,15 @@ import { normalizedWatchFilter } from "./utils";
  * @param options 
  * @returns 
  */
- export function watch<Value =any,DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDepends<DependValue>,options?:WatchOptions<Value,DependValue>):WatchDescriptorBuilder<Value>{
-    const opts : WatchOptions<Value> = Object.assign({
-        depends  : normalizedWatchFilter(depends),
+ export function watch<Value=any, DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDepends<DependValue>,options?:WatchOptions<Value,DependValue>):WatchDescriptorBuilder<Value>
+ export function watch<Value=any, DependValue=any>(getter:WatchGetter<Value,DependValue>,options?:WatchOptions<Value,DependValue>):WatchDescriptorBuilder<Value>
+ export function watch<Value =any>(){
+    const getter = arguments[0]
+    const depends = typeof(arguments[1])==='function' ? arguments[1] : ()=>true
+    const options = typeof(arguments[1])==='object' ? arguments[1] : arguments[2]
+
+    const opts : WatchOptions<Value> =   Object.assign({
+        depends  : normalizedWatchDepends(depends),
         enable   : true,
         objectify: true
     },options)  
@@ -41,7 +47,7 @@ import { normalizedWatchFilter } from "./utils";
           options: opts,
         }
     }
-    descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG]     = true 
+    descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG] = true 
 
     return descriptorBuilder as WatchDescriptorBuilder<Value>;
 }

@@ -1,5 +1,5 @@
 import { ComputedDepends } from "../computed/types"
-import { PATH_DELIMITER } from "../consts"
+import { PATH_DELIMITER } from "../consts" 
 
 /**
  * 
@@ -13,8 +13,9 @@ import { PATH_DELIMITER } from "../consts"
  * 
  * @param arg 返回 [[],[],[],"./ddd","../../xxxxx",[]]
  */
-export function normalizeDeps(arg: ComputedDepends | undefined):(string | string[])[]{
-    return (arg || []).map((dep: any) =>{
+export function normalizeDeps(arg: ComputedDepends | undefined): (string | string[])[]  {
+    if(!arg) return []
+    return arg.map((dep: any) =>{
         if(Array.isArray(dep)){
             return dep
         }else if(typeof(dep) === 'string'){

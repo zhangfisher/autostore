@@ -3,7 +3,7 @@ import { ComputedScopeRef, IStore, Dict } from "../types"
 import { sharex } from "helux"
 import { installWatch } from "./install"
 import { WatchDescriptorDefine,  WatchDependParams, WatchListener, WatchOptions } from "./types" 
-import { normalizedWatchFilter } from "./utils"
+import { normalizedWatchDepends } from "./utils"
 import { IReactiveReadHookParams } from "../reactives/types"
 /**
  * createWatch的hook版本 
@@ -28,7 +28,7 @@ export function createUseWatch<T extends Dict>(store:IStore<T>){
                     const descr = {
                         listener,
                         options: Object.assign({
-                            depends: normalizedWatchFilter(depends),
+                            depends: normalizedWatchDepends(depends),
                             context : sharex({value: 0 }),
                             selfPath: ['value'],
                             initial : 0,

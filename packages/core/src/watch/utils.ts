@@ -19,7 +19,7 @@ import { WatchDepends,WatchDependParams } from "./types";
  * @param on 
  * @returns 
  */
-export function normalizedWatchFilter(on:WatchDependParams=[]): WatchDepends{
+export function normalizedWatchDepends(on:WatchDependParams=[]): WatchDepends{
     if(typeof on === 'function'){
         return on
     }else if(typeof(on)==='string'){

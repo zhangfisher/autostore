@@ -17,9 +17,8 @@
  */
 import { StateOperateParams } from "../store/types"
 import { Dict } from "../types"
-import { COMPUTED_DESCRIPTOR_FLAG } from "../consts"
 import { ComputedObject } from "./computedObject" 
-import { WatchDescriptorBuilder } from "../watch/types"
+import { IComputedDescriptor, IComputedDescriptorBuilder, IComputedDescriptorOptions } from "../descriptor"
 
 export type ComputedType = 'watch' | 'computed'
 
@@ -104,8 +103,10 @@ export type RequiredComputedOptions<Value=any> = Required<ComputedOptions<Value>
  
 
 /**
- * 运行时计算属性配置参数，用来传递给计算对象的run方法的参数
  * 
+ * 运行时计算属性配置参数，用来传递给计算对象的run方法的参数 
+ * 
+ * 当调用计算属性对象的run方法时，可以传入此参数用来覆盖默认的配置参数
  * 
  */
 export type RuntimeComputedOptions = ComputedOptions & {
@@ -161,91 +162,9 @@ export type ComputedScope  =  ComputedScopeRef | string | string[] | ((computedO
  * 
  *  
  */
-export type ComputedDepends = (string | string[] | 'SELF'  | 'CURRENT' | 'ROOT' | 'PARENT' )[]  
+export type ComputedDepends = ('CURRENT' | 'ROOT' | 'PARENT' | string | string[] )[]  
 
-export type ComputedOptions<Value=any,Scope=any>= {
-     /**
-     * 计算函数的唯一标识，如果未指定，则自动生成一个唯一标识
-     */
-     id? : string                          
-     /**
-      * 计算属性的初始化值
-      */
-     initial? : Value
-     /**
-      * 计算属性的作用域
-      * 
-      * @description
-      * 
-      * 用来指定计算函数的第一个参数，即计算函数的作用范围
-      * 
-      * 默认值：current，指向的是计算属性所在对象
-      * 
-      */
-     scope? : ComputedScope
-     
-     /**
-      * 计算开关
-      * 当=false时不会执行计算，也就是不会执行计算函数
-      * 
-      */    
-     enable?:boolean        
-     /**
-      * 
-      * 是否是异步计算函数
-      * 
-      * 默认情况下，通过typeof(fn)=="async function"来判断是否是异步计算函数
-      * 但是在返回Promise或者Babel转码等情况下，判断会失效时，需要手动指定async=true
-      */
-     async?:boolean 
-
-    /**
-     * 指定该计算属性的依赖路径
-     * 
-     * @description
-     * 
-     * 支持绝对路径和相对路径
-     * 
-     * - 绝对路径：
-     * 
-     *   以/开头，代表绝对路径,
-     *    /字符是可选的，如果省略/字符，则默认为绝对路径
-     *   
-     *   如：/a.b.c 表示根对象的a.b.c属性
-     *   如：/a 表示根对象的a属性     * 
-     *   如  a.b.c 等效于 /a.b.c
-     * 
-     * - 相对路径：
-     *   以./或者../开头，代表相对路径
-     *  ./指的相对当前对象，../指的是父对象
-     * ../a.b.c表示父对象的a.b.c属性
-     * ../../a 表示父对象的父对象的a属性     
-     * 
-     * 
-     * 
-     * 注意：在异步计算属性时需要手工指定依赖，因为无法自动分析依赖
-     * 同步计算时不需要指定依赖，因为可以自动分析依赖
-     
-     * 
-    */
-    depends?: ComputedDepends
-    /**
-     * 为该计算函数指定一个分组名
-     * 
-     * @description
-     * 
-     * 此属性用来将计算函数分组，比如一个store中具有相同group的计算函数
-     * 然后就可以启用/关闭/运行指定分组的计算函数
-     * 在表单中通过为所有validate指定统一的分组名称，这样就可以统一控制表单的验证是否计算
-     * 
-     * store.computedObjects.get(["a","b"]).run() // 重新启动
-     * 马上重新运行指定组的计算函数
-     * store.computedObjects.getGroup("a"]).run() // 运行组     
-     * store.computedObjects.enableGroup("b"]) 
-     * 
-     */
-    group?:string
-
+export interface ComputedOptions<Value=any,Scope=any> extends IComputedDescriptorOptions<Value> {    
     /**
      * 
      * 计算函数的执行超时时间
@@ -302,19 +221,6 @@ export type ComputedOptions<Value=any,Scope=any>= {
      * 
      */
     retry?:number | [number,number]  
-
-    /**
-     * 
-     * 是否保存创建的computedObject对象
-     * 
-     * @description
-     * 
-     * 默认情况下，每一个计算属性均会创建一个computedObject对象实便并且保存到store.computedObjects中
-     * 
-     * 默认=true,=false则不会保存
-     * 
-     */
-    objectify?:boolean 
     /**
      * 额外的参数
      */
@@ -327,6 +233,11 @@ export type ComputedOptions<Value=any,Scope=any>= {
      * 当计算完成后的回调函数
      */
     onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,result:any}):void
+    /**
+     * 依赖的路径
+     * 可以是一个绝对路径，也可以是一个相对路径
+     */
+    depends?: ComputedDepends     
 
 }
 
@@ -360,16 +271,6 @@ export type ComputedContext<Value=any> = {
     parent    : any
 }
 
-export type ComputedDescriptor<Value=any,Scope=any,Options extends Dict = Dict> = {      
-    type   : 'computed'          
-    getter : ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
-    options: Options
-}
-
-export type ComputedDescriptorBuilder<Value=any,Scope=any,Options extends Dict = Dict> = {
-    ():ComputedDescriptor<Value,Scope,Options> 
-    [COMPUTED_DESCRIPTOR_FLAG]     : true      
-} 
 
 export type ComputedSyncReturns<T=any> = (...args: any) => Exclude<T,Promise<any>>;  
 
@@ -381,40 +282,59 @@ export type AsyncReturnType<T extends (...args: any) => any> = T extends (...arg
     T extends (...args: any) => infer R ? R : any)
  
 
-export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedResult<X> : 
-    ( T extends WatchDescriptorBuilder<infer X> ? X :                                  
-        ( T extends Computed<infer X> ? X:                                              // 同步函数
-            (T extends AsyncComputed<infer X> ? AsyncComputedResult<X> :                // 异步函数
-                T
-            )
-        )                              
-    )
-    // export type PickComputedResult<T> = T extends  ComputedDescriptor<infer X> ? AsyncComputedResult<X> : 
-    // ( T extends WatchDescriptor<any,infer X> ? X :                                  
-    //     ( T extends ComputedSyncReturns<infer X> ? X:                               // 同步函数
-    //         (T extends AsyncComputed<infer X> ? AsyncComputedResult<X>:             // 异步函数
-    //             (T extends Computed<infer R> ? R : T) 
-    //         )
-    //     )                              
-    // ) 
-/**
- 
- 转换状态中的计算属性函数的类型
- 将状态中的计算属性函数转换为计算属性函数的返回值类型
- 如：ComputedState<{count:()=>1}> => {count:number}
- 如：ComputedState<{count:async ()=>1}> => {count:number}
+// export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedResult<X> : 
+//     ( T extends WatchDescriptorBuilder<infer X> ? X :                                  
+//         ( T extends Computed<infer X> ? X:                                              // 同步函数
+//             (T extends AsyncComputed<infer X> ? AsyncComputedResult<X> :                // 异步函数
+//                 T
+//             )
+//         )                              
+//     ) 
 
-*/
-export type ComputedState<T extends Record<string, any>> = {
-    [K in keyof T]: T[K] extends (...args:any) => any ? PickComputedResult<T[K]> : T[K] extends Record<string, any> ? ComputedState<T[K]> : T[K];
-};
+
+// /**
+ 
+//  转换状态中的计算属性函数的类型
+//  将状态中的计算属性函数转换为计算属性函数的返回值类型
+//  如：ComputedState<{count:()=>1}> => {count:number}
+//  如：ComputedState<{count:async ()=>1}> => {count:number}
+
+// */
+// export type ComputedState<T extends Record<string, any>> = {
+//     [K in keyof T]: T[K] extends (...args:any) => any ? PickComputedResult<T[K]> : T[K] extends Record<string, any> ? ComputedState<T[K]> : T[K];
+// };
 
  
 
-// 在ComputedState的基础上，排除了undefined的类型
-export type RequiredComputedState<T extends Record<string, any>> = {
-    [K in keyof T]-?: Exclude<T[K],undefined> extends (...args:any) => any ? PickComputedResult<Exclude<T[K],undefined>> : Required<T[K]>extends Record<string, any> ? ComputedState<Exclude<T[K],undefined> > : Exclude<T[K],undefined> ;
-};
+// // 在ComputedState的基础上，排除了undefined的类型
+// export type RequiredComputedState<T extends Record<string, any>> = {
+//     [K in keyof T]-?: Exclude<T[K],undefined> extends (...args:any) => any ? PickComputedResult<Exclude<T[K],undefined>> : Required<T[K]>extends Record<string, any> ? ComputedState<Exclude<T[K],undefined> > : Exclude<T[K],undefined> ;
+// };
 
 
 
+
+
+export type ComputedDescriptor<Value=any,Scope=any> = IComputedDescriptor<      
+    'computed',         
+    Value,
+    Scope, 
+    ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>,
+    ComputedOptions
+>
+
+export type ComputedDescriptorBuilder<Value=any,Scope=any> 
+    = IComputedDescriptorBuilder<'computed',Value,Scope,ComputedDescriptor<Value,Scope>>
+
+
+
+// export type ComputedDescriptor<Value=any,Scope=any,Options extends Dict = Dict> = {      
+//     type   : 'computed'          
+//     getter : ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
+//     options: Options
+// }
+
+// export type ComputedDescriptorBuilder<Value=any,Scope=any,Options extends Dict = Dict> = {
+//     ():ComputedDescriptor<Value,Scope,Options> 
+//     [COMPUTED_DESCRIPTOR_FLAG]     : true      
+// } 
