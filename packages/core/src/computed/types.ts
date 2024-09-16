@@ -382,7 +382,7 @@ export type AsyncReturnType<T extends (...args: any) => any> = T extends (...arg
  
 
 export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedResult<X> : 
-    ( T extends WatchDescriptorBuilder<any,infer X> ? X :                                  
+    ( T extends WatchDescriptorBuilder<infer X> ? X :                                  
         ( T extends Computed<infer X> ? X:                                              // 同步函数
             (T extends AsyncComputed<infer X> ? AsyncComputedResult<X> :                // 异步函数
                 T

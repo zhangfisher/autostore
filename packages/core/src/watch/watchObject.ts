@@ -10,12 +10,12 @@ import { getId } from "../utils/getId";
 import { StoreEvents } from "../events/types";
  
 
-export class WatchObject<Value=any,Result=any> {
+export class WatchObject<Value=any> {
     private _cache?: Dict
     private _path?:string[] 
 
     private _id:string
-    private _getter?:WatchGetter<Value,Result>
+    private _getter?:WatchGetter<Value>
     private _options: Required<WatchOptions>
     private _value:Value | undefined
     private _attched:boolean = false                 // 是否已经附加到状态对象上
@@ -45,6 +45,7 @@ export class WatchObject<Value=any,Result=any> {
     set initial(value){ this._initialValue = value }  
 
     get path(){ return this._path}
+    get group(){ return this._options.group}
     get depends(){ return this._options.depends!}
     get enable(){ return this._options.enable!}
     set enable(value:boolean){ this._options.enable = value}
@@ -77,15 +78,13 @@ export class WatchObject<Value=any,Result=any> {
     /**
      * 判断当前监听函数是否依赖于某个路径
      * 
-     * 
-     * 
-     * @param watchedPath 
-     * @param watchedValue 
+     * @param dependPath 
+     * @param dependValue 
      * @returns 
      */
-    isDepends(watchedPath:string[],watchedValue:any){
-        if(isEq(watchedPath,this.path)) return false
-        return this.depends(watchedPath,watchedValue)
+    isDepends(dependPath:string[],dependValue:any){
+        if(isEq(dependPath,this.path)) return false
+        return this.depends(dependPath,dependValue)
     }
 
     reset(){
@@ -105,7 +104,11 @@ export class WatchObject<Value=any,Result=any> {
         } 
         try{
             // 2.  执行监听函数
-            const result = this._getter?.call(this,watchPath,watchValue,this as any)    
+            const result = this._getter?.call(this,
+                {   
+                    path:watchPath,
+                    value:watchValue
+                },this as any)    
             this.value = result as Value            
             this.emitWatchEvent("watch:done",{value:result,watchObject:this})
         }catch(e){

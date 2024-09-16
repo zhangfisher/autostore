@@ -1,5 +1,5 @@
 import { ComputedDepends } from "../computed/types"
-import { OBJECT_PATH_DELIMITER } from "../consts"
+import { PATH_DELIMITER } from "../consts"
 
 /**
  * 
@@ -21,7 +21,7 @@ export function normalizeDeps(arg: ComputedDepends | undefined):(string | string
             if(['/',"./","../"].some(c=>dep.startsWith(c))){
                 return dep
             }else{
-                return dep.includes(OBJECT_PATH_DELIMITER) ? dep.split(OBJECT_PATH_DELIMITER) : dep.split(".")
+                return dep.includes(PATH_DELIMITER) ? dep.split(PATH_DELIMITER) : dep.split(".")
             } 
         }else{
             return []

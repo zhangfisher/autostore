@@ -1,4 +1,4 @@
-import { COMPUTED_DESCRIPTOR_FLAG, OBJECT_PATH_DELIMITER } from "../consts";
+import { COMPUTED_DESCRIPTOR_FLAG, PATH_DELIMITER } from "../consts";
 import { joinValuePath } from "../utils/joinValuePath";
 import { WatchDepends,WatchDependParams } from "./types";
 
@@ -23,13 +23,13 @@ export function normalizedWatchFilter(on:WatchDependParams=[]): WatchDepends{
     if(typeof on === 'function'){
         return on
     }else if(typeof(on)==='string'){
-        return (path:string[])=>joinValuePath(path)== joinValuePath(on.split(OBJECT_PATH_DELIMITER))
+        return (path:string[])=>joinValuePath(path)== joinValuePath(on.split(PATH_DELIMITER))
     }else if(Array.isArray(on)){
         if(on.length===0) return ()=>true
         return (path:string[])=>{
             return on.map(item=>
                 typeof(item) === 'string' ? 
-                    item.split(OBJECT_PATH_DELIMITER) 
+                    item.split(PATH_DELIMITER) 
                     : (Array.isArray(item) ? item : [String(item)])
                 ).some(item=>joinValuePath(path)==joinValuePath(item))
         }
@@ -38,13 +38,14 @@ export function normalizedWatchFilter(on:WatchDependParams=[]): WatchDepends{
     }
 }
  
+
 export function isWatchDescriptorBuilder(value:any){
     return typeof(value) === 'function' && value[COMPUTED_DESCRIPTOR_FLAG]===true
 }
 
 export function isWatchDescriptor(obj:any){
     return typeof(obj) === 'object' 
-        && obj.hasOwnProperty("type") && typeof(obj.type) === 'string'
+        && obj.hasOwnProperty("type") && obj.type === 'watch'
         && obj.hasOwnProperty("getter")  && typeof(obj.getter) === 'function'
         && obj.hasOwnProperty("options") && typeof(obj.options) === 'object'
 }

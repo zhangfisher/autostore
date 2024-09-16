@@ -3,7 +3,7 @@
  * 
  * 
  */
-import { OBJECT_PATH_DELIMITER } from "../consts"; 
+import { PATH_DELIMITER } from "../consts"; 
 import { AutoStore } from "../store/store";
 import { StateOperateParams } from "../store/types";
 import { getDependPaths } from "../utils/getDependPaths";
@@ -125,12 +125,12 @@ export class ComputedObject<Value=any,Scope=any>{
         if(this._depends && !this._subscribed){
             this._depends.forEach(depends=>{
                 this._subscribers.push(this.store.watch(
-                        depends.join(OBJECT_PATH_DELIMITER),
+                        depends.join(PATH_DELIMITER),
                         this.onDependsChange.bind(this),
                         {operates:['set','delete','insert','remove','update']}
                     ))
             })
-            this.store.log(()=>`ComputedObject<${this.toString()}> subscribed to ${this._depends!.map(depends=>depends.join(OBJECT_PATH_DELIMITER)).join(",")}`)
+            this.store.log(()=>`ComputedObject<${this.toString()}> subscribed to ${this._depends!.map(depends=>depends.join(PATH_DELIMITER)).join(",")}`)
             this._subscribed=true
         }
     }    

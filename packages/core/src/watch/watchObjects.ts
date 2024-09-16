@@ -2,7 +2,7 @@ import { Dict } from "../types"
 import { WatchObject } from "./watchObject";
 import { getVal } from "../utils";
 import { AutoStore } from '../store/store';
-import { WatchDependParams, Watcher, WatchGetter, WatchOptions } from "./types";
+import { WatchDependParams, WatchDepends, Watcher, WatchGetter, WatchOptions } from "./types";
 import { watch } from "./watch";
 
 export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
@@ -52,7 +52,7 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
      * @param watchTo               侦听结果写到处下载
      * @returns 
      */
-    create<V=any,R=any>(getter:WatchGetter<V,R>,depends?:WatchDependParams<V>,options?:WatchOptions<R>) {      
+    create<Value=any,DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDepends<DependValue>,options?:WatchOptions<Value,DependValue>) {      
         const descrioptorBuilder = watch(getter,depends,options)     
         const descrioptor = descrioptorBuilder() 
         return this.store._createWatch(descrioptor)     

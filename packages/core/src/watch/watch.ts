@@ -1,5 +1,5 @@
 import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
-import { WatchDependParams,  WatchDescriptorBuilder, WatchGetter,  WatchOptions } from "./types";
+import { WatchDependParams,  WatchDepends,  WatchDescriptorBuilder, WatchGetter,  WatchOptions } from "./types";
 import { normalizedWatchFilter } from "./utils";
 
  /* 
@@ -21,12 +21,15 @@ import { normalizedWatchFilter } from "./utils";
  *      }
  *    })
  * 
+ * 
+ * @template Value  监听函数的返回值类型
+ * @template DependValue 指发生变化的值类型，如watch的依赖的x的值是一个boolean，则当变化时，emitValue的类型就是boolean
  * @param listener  监听函数,只能是同步函数
  * @param options 
  * @returns 
  */
- export function watch<Result=any,Value =any>(getter:WatchGetter<Value,Result>,depends?:WatchDependParams<Value>,options?:WatchOptions<Result>):WatchDescriptorBuilder<Value,Result>{
-    const opts : WatchOptions<Result> = Object.assign({
+ export function watch<Value =any,DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDepends<DependValue>,options?:WatchOptions<Value,DependValue>):WatchDescriptorBuilder<Value>{
+    const opts : WatchOptions<Value> = Object.assign({
         depends  : normalizedWatchFilter(depends),
         enable   : true,
         objectify: true
@@ -40,5 +43,5 @@ import { normalizedWatchFilter } from "./utils";
     }
     descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG]     = true 
 
-    return descriptorBuilder as WatchDescriptorBuilder<Value, Result>;
+    return descriptorBuilder as WatchDescriptorBuilder<Value>;
 }

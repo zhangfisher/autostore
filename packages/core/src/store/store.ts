@@ -64,7 +64,7 @@ import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from ".
 import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
 import { getVal } from "../utils";
-import { OBJECT_PATH_DELIMITER } from "../consts";
+import { PATH_DELIMITER } from "../consts";
 import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
 import { getComputedDescriptor } from "../computed/utils";
 import { forEachObject } from "../utils/forEachObject";
@@ -253,7 +253,7 @@ export class AutoStore<State extends Dict>{
     private notify(params:ReactiveNotifyParams) {          
         if(this._peeping && params.type=='get') return    // 偷看时不触发事件
         if(this._batching) return
-        this.changesets.emit(params.path.join(OBJECT_PATH_DELIMITER),params)       
+        this.changesets.emit(params.path.join(PATH_DELIMITER),params)       
     } 
 
     // ************* Watch **************/
@@ -456,7 +456,7 @@ export class AutoStore<State extends Dict>{
     peep(path:string | string[]){
         this._peeping=true
         try{
-            return getVal(this.state,Array.isArray(path) ? path : path.split(OBJECT_PATH_DELIMITER))
+            return getVal(this.state,Array.isArray(path) ? path : path.split(PATH_DELIMITER))
         }finally{
             this._peeping =false
         }         

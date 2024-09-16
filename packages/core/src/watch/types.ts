@@ -1,8 +1,7 @@
 import type { FlexEventSubscriber } from "flex-tools/events/flexEvent"
 import type { StateOperateParams, StateOperates } from "../store/types"
 import type { WatchObject } from "./watchObject"
-import { COMPUTED_DESCRIPTOR_FLAG } from "../consts"
-import { Dict } from "../types"
+import type { IDescriptor, IDescriptorBuilder, IDescriptorOptions } from "../descriptor"
 
 
 export type WatchListener<T=any,P=any> = (args:StateOperateParams<T,P>)=>void
@@ -19,27 +18,35 @@ export type WatchDepends<T=any> = (path:string[],value:T)=>boolean
 export type WatchDependParams<T=any> = string | (string | string[])[] | WatchDepends<T>
  
 
-export type WatchGetter<Value=any, Result=Value> = (path:string[],value:Value,obj:WatchObject<Value,Result>)=>(Exclude<Result,Promise<any>> | undefined)
-
-export type WatchDescriptor<Value=any, Result=Value> = {
-    type   : 'watch',           
-    getter : WatchGetter<Value,Result>;
-    options  : WatchOptions<Result>;                  
-  }
-
-export interface WatchDescriptorBuilder<Value = any,Result=Value> {
-  ():WatchDescriptor<Value,Result>; 
-  [COMPUTED_DESCRIPTOR_FLAG]     : true 
-} 
-
-
-
-export interface WatchOptions<R=any>{ 
-    id?       : string                         
-    depends?  : WatchDepends                  // 依赖
-    initial?  : R,                            // 初始值
-    group?    : string                        // 用来对表单内的watch进行分组，以便能按组进行enable或disable或其他操作
-    enable?   : boolean                       // 启用或禁用watch，默认为true
-    objectify?: boolean
+export interface WatchOptions<Value=any,DependValue= any> extends IDescriptorOptions<Value,DependValue>{ 
+    async?:false             // watch只能是同步
+    depends?:WatchDepends<DependValue>
 }
- 
+
+export type WatchScope<Value=any> = {
+  path : string[],
+  value: Value
+}
+
+export type WatchGetter<Value=any,DependValue= any> = (
+    scope:{path:string[],value:DependValue},
+    args:WatchObject<Value>
+)=>Exclude<any,Promise<any>> | undefined
+
+export type WatchDescriptor<Value=any, Scope extends WatchScope=WatchScope> = IDescriptor<
+  'watch',
+  Value,
+  Scope,
+  WatchGetter<Value,Scope>,
+  WatchOptions<Value>
+>
+
+/**
+ * @template Value  监听函数的返回值类型
+ * @template Scope 监听函数的第一个参数的类型
+ */
+export type WatchDescriptorBuilder<Value = any,Scope extends WatchScope=WatchScope>
+  = IDescriptorBuilder<WatchDescriptor<Value,Scope>> 
+
+
+

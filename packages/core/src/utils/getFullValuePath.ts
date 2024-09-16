@@ -1,4 +1,4 @@
-import { OBJECT_PATH_DELIMITER } from "../consts"
+import { PATH_DELIMITER } from "../consts"
 
 
 /**
@@ -45,14 +45,14 @@ export function getFullValuePath(curPath:string[] | undefined,path:'self' | 'roo
         return curPath.slice(0,-1)
     }else if(typeof(path) === 'string'){               
         if(curPath && path.startsWith('./')){               // 字符串支持相对路径语法，如"../" 或 "./" 或 "xxx"
-            return [...curPath.slice(0,-1),...path.slice(2).split(OBJECT_PATH_DELIMITER)]
+            return [...curPath.slice(0,-1),...path.slice(2).split(PATH_DELIMITER)]
         }else if(curPath && path.startsWith('../')){ // 父路径
             return getFullValuePath(curPath.slice(0,-1),path.slice(3),true)
         }else if(path.startsWith("/")){     // 绝对路径             
             path = path.replace(/^(\/)*/,"") 
-            return path.split(OBJECT_PATH_DELIMITER)
+            return path.split(PATH_DELIMITER)
         }else{ //  
-            return curPath && isRelPath ?  [...curPath.slice(0,-1),...path.split(OBJECT_PATH_DELIMITER)] : path.split(OBJECT_PATH_DELIMITER)
+            return curPath && isRelPath ?  [...curPath.slice(0,-1),...path.split(PATH_DELIMITER)] : path.split(PATH_DELIMITER)
         }
     }else if(Array.isArray(path)){
         return path

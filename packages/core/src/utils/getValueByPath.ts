@@ -1,7 +1,7 @@
-import { OBJECT_PATH_DELIMITER } from "../consts"
+import { PATH_DELIMITER } from "../consts"
 import { getVal } from "./getVal"
 
-export function getValueByPath(state:any,path?:string | string[] | ((state:any)=>string | string[]),delimiter=OBJECT_PATH_DELIMITER){
+export function getValueByPath(state:any,path?:string | string[] | ((state:any)=>string | string[]),delimiter=PATH_DELIMITER){
     let paths:string[] = []
     try{
         if(typeof(path)=== 'function'){

@@ -4,7 +4,7 @@
  *   
  * 
  */
-import { OBJECT_PATH_DELIMITER } from "./consts";
+import { PATH_DELIMITER } from "./consts";
 import { ComputedContext, ComputedOptions, ComputedScope, ComputedScopeRef, ComputedType} from "./computed/types";
 import { getValueByPath } from "./utils/getValueByPath";
 import { ComputedObject } from "./computed/computedObject";
@@ -73,7 +73,7 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
                   ...computedOptions,
                   scope:getValueScope(computedObject,computedType,{
                     ...valueContext!,
-                    path:scopeOption.slice(1).split(OBJECT_PATH_DELIMITER)
+                    path:scopeOption.slice(1).split(PATH_DELIMITER)
                   },{
                     ...computedOptions,
                     scope:scopeOption.slice(1)

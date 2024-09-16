@@ -2,6 +2,7 @@ import { test,expect, describe,vi } from "vitest"
 import { watch } from "../../src/watch/watch"
 import {  createStore } from "../../src"
 import { WatchObject } from "../../src/watch/watchObject"
+import exp from "constants"
   
 describe("watch功能测试",()=>{
 
@@ -62,7 +63,7 @@ describe("watch功能测试",()=>{
                 books:{            
                     price:10,
                     count:10,
-                    total:watch((path,value)=>{ 
+                    total:watch(({value})=>{ 
                         return  value+1
                     },[],{initial:1,group:'x'})                
                 }
@@ -80,7 +81,7 @@ describe("watch功能测试",()=>{
                 books:{            
                     price:10,
                     count:10,
-                    total:watch<number,number>((path,value)=>{  
+                    total:watch<number,number>(({value})=>{  
                         listener()
                         return value * 100 
                     },(path:string[])=>{
@@ -113,7 +114,7 @@ describe("watch功能测试",()=>{
 
                 const store = createStore({
                     a:1,b:2,
-                    diary:watch((path,value,watchObj)=>{
+                    diary:watch(({path,value},watchObj)=>{
                         expect(watchObj).toBeInstanceOf(WatchObject)                    
                         changed.push(path)
                         return value
@@ -151,7 +152,7 @@ describe("watch功能测试",()=>{
                     },b:{
                         value:2
                     },
-                    diary:watch<boolean,number>((path)=>{
+                    diary:watch<boolean,number>(({path})=>{
                         changed.push(path)
                         return true                    
                     },(path)=>path[path.length-1]=='value',{initial:false})
@@ -180,7 +181,7 @@ describe("watch功能测试",()=>{
                     },b:{
                         value:2
                     },
-                    diary:watch<boolean,number>((path)=>{
+                    diary:watch<boolean,number>(({path})=>{
                         changed.push(path)
                         return true                    
                     },(path)=>path[path.length-1]=='value',{initial:false,id:"x"})
@@ -223,7 +224,7 @@ describe("watch功能测试",()=>{
                     c:{
                         validate:true
                     },
-                    validate:watch<boolean,boolean>((path,value,watchObj)=>{   
+                    validate:watch<boolean,boolean>(({path,value},watchObj)=>{   
                         if(typeof(value) === 'boolean'){
                             const srcKey = path.join('.')
                             if(value){
@@ -258,4 +259,139 @@ describe("watch功能测试",()=>{
             })
         })
     })
+
+    describe("动态声明watch",()=>{
+        test("动态创建监视对象",async ()=>{
+            const store = createStore({
+                books:{            
+                    price:10,
+                    count:10                   
+                }
+            })
+            const watchObj = store.watchObjects.create<number,number>(()=>{                
+                return  100
+            },()=>true,{id:"w",initial:1,group:'x'})
+
+            expect(store.watchObjects.size).toBe(1)
+            expect(store.watchObjects.has('w')).toBeDefined()
+            expect(store.watchObjects.get('w')?.id).toBe('w')
+
+            expect(watchObj.id).toBe('w')
+            expect(watchObj.initial).toBe(1)
+            expect(watchObj.path).toBeUndefined()
+            expect(watchObj.group).toBe("x")
+            expect(watchObj.attched).toBe(false)
+
+        })
+        
+        test("动态监视字段total的计算",async ()=>{
+            const store = createStore({
+                books:{            
+                    price:10,
+                    count:2                    
+                }
+            })
+            const watchObj = store.watchObjects.create<number,number>(({value})=>{ 
+                return  value
+            },()=>true,{initial:1,id:'total'})
+            expect(watchObj.initial).toBe(1)
+            expect(watchObj.value).toBe(1)
+            expect(watchObj.attched).toBe(false)
+            store.state.books.count = 3
+            expect(watchObj).toBe(store.watchObjects.get('total'))
+            expect(watchObj.value).toBe(3)                        
+        })
+        test("立刻创建监视字段total对象",async ()=>{
+            const store = createStore({
+                books:{            
+                    price:10,
+                    count:10,
+                    total:watch(()=>{ 
+                        return  100
+                    },()=>true,{initial:1,group:'x'})                
+                }
+            },{
+                immediate:true
+            })
+            expect(store.state.books.total).toBe(1)
+        })
+        test("侦听count变化后更新total值",async ()=>{
+            const store = createStore({
+                books:{            
+                    price:10,
+                    count:10,
+                    total:watch(({value})=>{ 
+                        return  value+1
+                    },()=>true,{initial:1,group:'x'})                
+                }
+            },{
+                immediate:true
+            })
+            expect(store.state.books.total).toBe(1)
+            store.state.books.count = 10
+            expect(store.state.books.total).toBe(11)
+        })
+
+        test("通过enable控制total是否侦听",async ()=>{
+            const listener = vi.fn() 
+            const store = createStore({
+                books:{            
+                    price:10,
+                    count:10,
+                    total:watch<number,number>(({value})=>{  
+                        listener()
+                        return value * 100 
+                    },(path:string[])=>{
+                        return path[path.length-1]=='count'
+                    },{              
+                        id:"total",  
+                        initial:1,
+                        group:'x', 
+                    })
+                }
+            })
+            // 注意：watch仅在第一次读取时创建，如果没有读一下，则不会创建watch对象
+            store.state.books.total   
+
+            const watchObj = store.watchObjects.get('total')!
+            for(let i = 0;i<10;i++){
+                watchObj.options.enable = i%2==0            
+                // 修改count值，导致total值变化
+                store.state.books.count++ 
+            }
+            expect(store.state.books.total).toBe(1900)  // 1900
+            expect(listener).toHaveBeenCalledTimes(5)                
+
+        })
+        test("侦听所有变化", ()=>{
+            return new Promise<void>((resolve)=>{ 
+                const changed:string[][] = []
+                const paths:string[][] = []
+                const values:number[] = []
+
+                const store = createStore({
+                    a:1,b:2,
+                    diary:watch(({path,value},watchObj)=>{
+                        expect(watchObj).toBeInstanceOf(WatchObject)                    
+                        changed.push(path)
+                        return value
+                    },()=>true,{initial:0})
+                },{immediate:true})
+
+                store.watch("diary",({path})=>{
+                    paths.push(path)
+                    values.push(store.state.diary)                
+                    if(paths.length==2){
+                        expect(changed).toStrictEqual([['a'],['b']])
+                        expect(paths).toStrictEqual([['diary'],['diary']])
+                        expect(values).toStrictEqual([100,200])
+                        resolve()
+                    }
+                })
+                store.state.a = 100 
+                store.state.b = 200  
+            })        
+        })
+    })
+
 })    
