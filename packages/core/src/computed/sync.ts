@@ -14,7 +14,7 @@ import { noRepeat } from "../utils/noRepeat";
  * 同步计算属性对象
  * 
  */
-export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Value,Scope>{
+export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Value>{
   get async(){return false }
   /**
    * 同步计算属性对象在初始化时，会通过运行来自动收集依赖

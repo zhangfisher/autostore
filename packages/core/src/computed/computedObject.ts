@@ -17,7 +17,7 @@ import { getId } from "../utils/getId";
 
  
 
-export class ComputedObject<Value=any,Scope=any>{    
+export class ComputedObject<Value=any>{    
     private _path?:string[] 
     private _options:Required<ComputedOptions>
     private _getter:any

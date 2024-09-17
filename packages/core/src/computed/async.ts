@@ -10,7 +10,7 @@
 import { markRaw} from "../utils";
 import { delay } from "flex-tools/async/delay";
 import { getValueScope } from "../scope";
-import { ComputedOptions, ComputedProgressbar } from "./types";
+import { ComputedProgressbar } from "./types";
 import type { AsyncComputedGetterArgs, AsyncComputedResult, RuntimeComputedOptions } from "./types";
 import { ComputedObject } from "./computedObject";
 import { Dict } from "../types";
@@ -21,12 +21,11 @@ import { updateObjectVal } from "../utils/updateObjectVal";
 
 
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
-	AsyncComputedResult<Value>,
-	Scope
+	AsyncComputedResult<Value>
 > {
 	private _isComputedRunning: boolean = false;
 	get async() {return true}       
-	get value() {return super.value as AsyncComputedResult}
+	get value() {return super.value as AsyncComputedResult<Value>}
 
 	/**
 	 *

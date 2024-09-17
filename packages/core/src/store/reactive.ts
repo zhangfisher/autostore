@@ -5,8 +5,8 @@ import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
 import { StateOperates } from './types'; 
 import { CyleDependError } from '../errors';
-import { ComputedState } from '../computed/types';
-
+import { ComputedState } from '../descriptor';
+ 
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
 
@@ -49,7 +49,7 @@ export function createReactiveObject<State extends object>(state:State,options?:
                 if(typeof(key)!=='string') return value             
                 const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
                 // 如果属性不可配置或只读，直接返回值
-                if (!descriptor?.configurable && !descriptor?.writable) {
+                if (descriptor && !descriptor?.configurable && !descriptor?.writable) {
                     return value
                 }
 

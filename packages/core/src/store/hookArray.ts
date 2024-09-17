@@ -39,7 +39,7 @@ export function hookArrayMethods(notifyChange:any, array: any[], name:string,met
             const result = method.apply(array, args);
             if (array.length > oldLength) {
                 const addIndexs = Array.from({ length: array.length - oldLength }, (_, i) => i);
-                notifyChange({type:'insert',path:parentPath,addIndexs,value: args,oldValue:undefined, parentPath,parent: array});
+                notifyChange({type:'insert',path:parentPath,indexs:addIndexs,value: args,oldValue:undefined, parentPath,parent: array});
             }
             return result;
         };

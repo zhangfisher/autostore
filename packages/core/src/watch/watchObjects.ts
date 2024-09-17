@@ -2,7 +2,7 @@ import { Dict } from "../types"
 import { WatchObject } from "./watchObject";
 import { getVal } from "../utils";
 import { AutoStore } from '../store/store';
-import { WatchDependParams, WatchDepends, Watcher, WatchGetter, WatchOptions } from "./types";
+import {  WatchDepends, Watcher, WatchGetter, WatchOptions } from "./types";
 import { watch } from "./watch";
 
 export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
@@ -10,10 +10,15 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
     private _enable:boolean=true                            // 是否启用侦听器
     constructor(public store:AutoStore<State>){
         super()   
-        this.createWacher() 
     }  
     get enable(){return this._enable}
     set enable(value:boolean){ this._enable = value  }      
+    set(key:string,value:WatchObject){
+        if(super.size==0) {
+            this.createWacher() 
+        }        
+        return super.set(key,value)
+    }
     /**
      * 创建全局侦听器,
      * 此侦听器会侦听根对象，当对象所有的状态变化,会执行所有监听过滤函数，如果返回true，则执行对应的监听函数
@@ -55,7 +60,7 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
     create<Value=any,DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDepends<DependValue>,options?:WatchOptions<Value,DependValue>) {      
         const descrioptorBuilder = watch(getter,depends,options)     
         const descrioptor = descrioptorBuilder() 
-        return this.store._createWatch(descrioptor)     
+        return this.store._createWatch(descrioptor)  as WatchObject<Value>    
     }
     /**
      * 控制某个组的侦听器是否启用

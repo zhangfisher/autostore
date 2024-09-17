@@ -10,7 +10,7 @@ import { isAbsolutePath } from "../utils/isAbsolutePath"
 
  
  
-export class ComputedObjects<State extends Dict =  Dict> extends Map<string,ComputedObject<Dict,State>>{
+export class ComputedObjects<State extends Dict =  Dict> extends Map<string,ComputedObject<Dict>>{
     constructor(public store:AutoStore<State>){
       super()
     }
@@ -18,6 +18,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     set enable(value:boolean){
       this.store.options.enableComputed = value
     }
+
 
 
     /**

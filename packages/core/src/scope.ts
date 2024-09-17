@@ -46,7 +46,6 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
       rootDraft = newDraft;
     }
   }    
-  const hasContext:boolean = !!valueContext
   const {path:valuePath,parentPath} = valueContext || {}
 
   // 2. 读取计scope参数获取计算函数的scope值
