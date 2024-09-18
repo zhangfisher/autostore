@@ -71,6 +71,7 @@ export class ComputedObject<Value=any>{
             this._value = value
         }
     }  
+    
     /**
      * 更新计算属性的值，并且不会触发依赖的变化事件
      * @param value 

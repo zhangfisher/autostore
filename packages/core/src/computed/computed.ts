@@ -1,4 +1,4 @@
-import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
+import { COMPUTED_DESCRIPTOR_BUILDER_FLAG,COMPUTED_DESCRIPTOR_FLAG } from "../consts";
 import { InvalidComputedArgumentsError } from "../errors";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { normalizeDeps } from "../utils/normalizeDeps";
@@ -61,9 +61,10 @@ export function computed<Value = any, Scope = any>(): any {
 			type:'computed', 
 			getter,
 			options: opts,
+			[COMPUTED_DESCRIPTOR_FLAG]:true
 		} as  ComputedDescriptor<Value,Scope>		
 	} 
-	descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG]=true
+	descriptorBuilder[COMPUTED_DESCRIPTOR_BUILDER_FLAG]=true
 
 	return descriptorBuilder 
 }

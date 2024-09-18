@@ -309,15 +309,15 @@ export class AutoStore<State extends Dict>{
         }        
 
         if(isWatchAll){ // 侦听全部
-            const {once,operates,filter} = Object.assign({once:false,operates:['set','delete','insert','remove','update']},arguments[1])  as Required<WatchListenerOptions>
+            const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[1])  as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.changesets.once : this.changesets.on
             return subscribeMethod.call(this.changesets,"**",createSubscribe(operates,filter),{objectify:true}) as Watcher
         }else{ // 只侦听指定路径
             const delimiter = this.changesets.delimiter as string
             const keyPaths = arguments[0] as string | (string|string[])[]
             const paths:string[] = Array.isArray(keyPaths) ? 
-                keyPaths.map(v=>typeof(v)==='string'? v:v.join(delimiter)) : [keyPaths]
-            const {once,operates,filter} = Object.assign({once:false,operates:['set','delete','insert','remove','update']},arguments[2])  as Required<WatchListenerOptions>
+                keyPaths.map(v=>typeof(v)==='string'? v : v.join(delimiter)) : [keyPaths]
+            const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[2])  as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.changesets.once : this.changesets.on           
             const subscribers:string[]=[]
             const unSubscribe = ()=>{
@@ -369,8 +369,8 @@ export class AutoStore<State extends Dict>{
         }else{ // 同步计算
             computedObj = (new SyncComputedObject(this, descriptor as ComputedDescriptor, computedContext)) as unknown as ComputedObject
         }    
-        if(computedObj){            // 更新不会触发事件
-            computedObj.silentUpdate(computedObj.initial)
+        if(computedObj){            
+            computedObj.silentUpdate(computedObj.initial)               // 更新不会触发事件
             if(computedObj.options.objectify){
                 this.computedObjects.set(computedObj.id,computedObj)
             }            

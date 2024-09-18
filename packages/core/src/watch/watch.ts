@@ -1,4 +1,4 @@
-import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
+import { COMPUTED_DESCRIPTOR_BUILDER_FLAG } from "../consts";
 import { WatchDepends,  WatchDescriptorBuilder, WatchGetter,  WatchOptions } from "./types";
 import { normalizedWatchDepends } from "./utils";
 
@@ -47,7 +47,7 @@ import { normalizedWatchDepends } from "./utils";
           options: opts,
         }
     }
-    descriptorBuilder[COMPUTED_DESCRIPTOR_FLAG] = true 
+    descriptorBuilder[COMPUTED_DESCRIPTOR_BUILDER_FLAG] = true 
 
     return descriptorBuilder as WatchDescriptorBuilder<Value>;
 }

@@ -1,5 +1,5 @@
 import { AsyncComputed, AsyncComputedResult, Computed, ComputedDescriptorBuilder } from "./computed/types"
-import { COMPUTED_DESCRIPTOR_FLAG } from "./consts"  
+import { COMPUTED_DESCRIPTOR_BUILDER_FLAG } from "./consts"  
 import { WatchDescriptorBuilder } from "./watch/types"
 
 // 动态依赖
@@ -126,7 +126,7 @@ export interface IComputedDescriptorBuilder<
     Scope=any,
     descriptor extends IComputedDescriptor<Type,Value,Scope> = IComputedDescriptor<Type,Value,Scope>> {
     ():descriptor
-    [COMPUTED_DESCRIPTOR_FLAG] : true 
+    [COMPUTED_DESCRIPTOR_BUILDER_FLAG] : true 
 } 
 
 

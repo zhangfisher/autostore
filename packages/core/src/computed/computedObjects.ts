@@ -4,9 +4,10 @@ import { Dict } from "../types"
 import { AsyncComputedObject } from "./async"
 import { ComputedObject } from "./computedObject" 
 import { SyncComputedObject } from "./sync"
-import { AsyncComputedGetter, ComputedDepends, ComputedGetter, ComputedOptions, RuntimeComputedOptions, SyncComputedOptions } from "./types"
+import { AsyncComputedGetter, ComputedDepends, ComputedDescriptor, ComputedDescriptorBuilder, ComputedGetter, ComputedOptions, RuntimeComputedOptions, SyncComputedOptions } from "./types"
 import { computed } from "./computed"
 import { isAbsolutePath } from "../utils/isAbsolutePath"
+import { isComputedDescriptor } from "./utils"
 
  
  
@@ -49,10 +50,10 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
      */
     create<Value = any, Scope = any>(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope>
     create<Value = any, Scope = any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>): AsyncComputedObject<Value,Scope>    
+    create<Value = any, Scope = any>(descriptor:ComputedDescriptor<Value,Scope>): AsyncComputedObject<Value,Scope> | SyncComputedObject<Value,Scope>    
     create():any {
       // @ts-ignore
-      const descrioptorBuilder = computed(...arguments)     
-      const descrioptor = descrioptorBuilder()
+      const descrioptor = isComputedDescriptor(arguments[0]) ?  arguments[0] : computed(...arguments)()
       if(descrioptor.options.async){
           // 异步依赖是手工指定的，所以需要检查是否是绝对路径，不允许相对路径，因为没有计算上下文
           if(!isAbsolutePath(descrioptor.options.depends)){

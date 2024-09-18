@@ -1,11 +1,11 @@
-import { COMPUTED_DESCRIPTOR_FLAG } from "../consts";
+import { COMPUTED_DESCRIPTOR_BUILDER_FLAG } from "../consts";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { WatchDescriptor } from "../watch/types";
 import { ComputedDescriptor, ComputedOptions } from "./types"; 
 
 
 export function isComputedDescriptorBuilder(value:any){
-    return typeof(value) === 'function' && value[COMPUTED_DESCRIPTOR_FLAG] === true
+    return typeof(value) === 'function' && value[COMPUTED_DESCRIPTOR_BUILDER_FLAG] === true
 }
 
 export function isComputedDescriptor(obj:any){
