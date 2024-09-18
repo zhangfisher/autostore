@@ -1,0 +1,31 @@
+{
+  "name": "@speedform/demo-components",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "private": true,
+  "publishConfig": {
+    "main": "dist/index.ts",
+    "module": "dist/index.mjs"
+  },
+  "scripts": {
+    "build": "tsup"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "color": "^4.2.3",
+    "flexstyled": "^2.1.2",
+    "react-json-tree": "^0.18.0",
+    "react-loader-spinner": "^6.1.6"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "react": "^18.3.1",
+    "tsup": "^8.0.1"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  }
+}
