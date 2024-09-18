@@ -1,4 +1,6 @@
+import React,{ useEffect,useState } from "react"
 import { AutoStore, Dict } from 'autostore';
+import { PATH_DELIMITER } from "autostore/src/consts";
 export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     /**
      * 
@@ -25,8 +27,23 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
      * @param selector 
      * @returns 
      */
-    $(selector: any){
+    $(selector: string | ((state:State)=>any)){
 
+        const [deps,setDeps] = useState(()=>{
+            if(typeof(selector)==='function'){
+                return this.collectDeps(selector)
+            }else{
+                return [selector.split(PATH_DELIMITER)]
+            }
+        })
+        
+
+        useEffect(()=>{
+            const listener = this.watch(selector,()=>{
+            })
+            return ()=>listener.off()
+        },[selector])
+        
         return <>{}</>
     }
 }

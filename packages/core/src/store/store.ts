@@ -53,7 +53,7 @@
 import { ComputedObjects } from "../computed/computedObjects"; 
 import { FlexEvent } from "flex-tools/events/flexEvent"
 import { assignObject } from "flex-tools/object/assignObject"
-import { StateOperateParams, StateOperates } from "./types";
+import { StateOperateParams } from "./types";
 import type { Dict } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
@@ -72,6 +72,7 @@ import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects"; 
 import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../descriptor";
+import { noRepeat } from "../utils/noRepeat";
 
 
 export type AutoStoreOptions<State extends Dict> = {
@@ -295,11 +296,13 @@ export class AutoStore<State extends Dict>{
         const isWatchAll = typeof(arguments[0])==='function' 
         const listener = isWatchAll ? arguments[0] : arguments[1]
 
-        const createSubscribe = (operates:StateOperates[],filter:WatchListenerOptions['filter'])=>(event:StateOperateParams)=>{
+        const createSubscribe = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>(event:StateOperateParams)=>{
             if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
                 if(!operates.includes(event.type)) return
-            }else{  //  没定指定操作类型，默认只侦听除了get操作外的更新操作
-                if(event.type==='get') return
+            }else if(operates==='write'){
+                if(event.type==='get') return//  没定指定操作类型，默认只侦听除了get操作外的更新操作
+            }else if(operates ==='read'){
+                if(event.type!=='get') return
             }
             if(typeof(filter)==='function' && !filter(event)) return
             listener.call(this,event)                    
@@ -461,6 +464,40 @@ export class AutoStore<State extends Dict>{
         }finally{
             this._peeping =false
         }         
+    }
+    /**
+     * 执行同步函数，并且收集依赖
+     * 
+     * @example
+     * 
+     * - 执行函数，并且收集依赖，返回依赖路径
+     * const deps = store.collectDeps(()=>{
+     *      store.state.xxx.xxx
+     * })
+     * 
+     * - 只收集函数内部的read操作
+     * 
+     * const deps = store.collectDeps(()=>{
+     *     store.state.xxx.xxx
+     * },'read')
+     * 
+     * @param fn 
+     */
+    collectDeps(fn:Function,operates:WatchListenerOptions['operates'] = '*'):string[][]{
+        let dependencies:string[][] = []       
+        const watcher = this.watch((event)=>{      
+            dependencies.push(event.path)            
+        },{operates})   
+        // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
+        try{
+            fn()   
+            // 依赖收集完成后就结束侦听
+            watcher.off()  
+        }catch{
+        }finally{
+            watcher.off()
+        }
+        return noRepeat(dependencies)      // 去重 
     }
 }
 

@@ -24,8 +24,8 @@ importers:
   packages/core:
     dependencies:
       flex-tools:
-        specifier: ^1.4.7
-        version: 1.4.7
+        specifier: ^1.4.9
+        version: 1.4.9
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
@@ -54,6 +54,10 @@ importers:
       autostore:
         specifier: workspace:*
         version: link:../core
+    devDependencies:
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
 
 packages:
 
@@ -766,8 +770,8 @@ packages:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
 
-  flex-tools@1.4.7:
-    resolution: {integrity: sha512-FWpJrMRbn2145cAIjKd0bT+Q9Os8GqDre1pj+w7U+DBat6IWutBqsrogyBldK2EoZ3G7BrdNc8zt15YLDK9VkA==}
+  flex-tools@1.4.9:
+    resolution: {integrity: sha512-p/EDkun3JKixm4zOo49M7gOGnlKwP4WumRQ37T6pO0+4Ueof9Mq5BN1jby6TR+G2gyOH8PMDTrP6IL3T+6JSjQ==}
 
   foreground-child@3.3.0:
     resolution: {integrity: sha512-Ld2g8rrAyMYFXBhEqMz8ZAHBi4J4uS1i/CxGMDnjyFWddMXLVcDp051DZfu+t7+ab7Wv6SMqpWmyFIj5UbfFvg==}
@@ -884,6 +888,10 @@ packages:
 
   lodash.sortby@4.7.0:
     resolution: {integrity: sha512-HDWXG8isMntAyRF5vZ7xKuEvOhT4AhlRt/3czTSjvGUxjYCBVRQY48ViDHyfYz9VIoBkW4TMGQNapx+l3RUwdA==}
+
+  loose-envify@1.4.0:
+    resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
+    hasBin: true
 
   loupe@3.1.1:
     resolution: {integrity: sha512-edNu/8D5MKVfGVFRhFf8aAxiTM6Wumfz5XsaatSxlD3w4R1d/WEKUTydCdPGbl9K7QG/Ca3GnDV2sIKIpXRQcw==}
@@ -1052,6 +1060,10 @@ packages:
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
+
+  react@18.3.1:
+    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
+    engines: {node: '>=0.10.0'}
 
   readdirp@3.6.0:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
@@ -1903,7 +1915,7 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  flex-tools@1.4.7:
+  flex-tools@1.4.9:
     dependencies:
       art-template: 4.13.2
       glob: 10.4.5
@@ -2006,6 +2018,10 @@ snapshots:
   load-tsconfig@0.2.5: {}
 
   lodash.sortby@4.7.0: {}
+
+  loose-envify@1.4.0:
+    dependencies:
+      js-tokens: 3.0.2
 
   loupe@3.1.1:
     dependencies:
@@ -2144,6 +2160,10 @@ snapshots:
   punycode@2.3.1: {}
 
   queue-microtask@1.2.3: {}
+
+  react@18.3.1:
+    dependencies:
+      loose-envify: 1.4.0
 
   readdirp@3.6.0:
     dependencies:

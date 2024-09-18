@@ -21,7 +21,7 @@
     "vitest": "^2.0.5"
   },
   "dependencies": {
-    "flex-tools": "^1.4.7",
+    "flex-tools": "^1.4.9",
     "mitt": "^3.0.1",
     "reflect-metadata": "^0.2.2"
   }
