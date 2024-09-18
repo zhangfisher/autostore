@@ -72,9 +72,20 @@ export class ComputedObject<Value=any>{
         }
     }  
     /**
-     * 更新值
+     * 更新计算对象的结果值
+     * 
+     * @description
+     * 
+     * - 标量值
+     *  update(1)
+     * - 对象值
+     *  update({result:1})
+     * 
+     * 
+     * 
+     * 
      */
-    update(value:Value){
+    update(value:Value,options?:{silent?:boolean}){
         if(this._attched){
             this.store.silentUpdate((state)=>{
                 setVal(state,this._path!, value)

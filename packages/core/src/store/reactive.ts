@@ -1,6 +1,3 @@
-
-
-import 'reflect-metadata';
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
 import { StateOperates } from './types'; 
@@ -11,7 +8,8 @@ import { ComputedState } from '../descriptor';
 const __NOTIFY__ = Symbol('__NOTIFY__')
 
 export type ReactiveNotifyParams<T=any> = {
-    type:StateOperates, path: string[], indexs:number[] , value: T, oldValue: T, parentPath: string[], parent: any
+    type:StateOperates, path: string[], indexs:number[] , value: T, oldValue: T, parentPath: string[], parent: any,
+    operates?:StateOperates[]
 }
 
 

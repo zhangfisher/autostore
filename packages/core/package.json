@@ -14,11 +14,11 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^22.5.0",
+    "@types/node": "^22.5.5",
     "ts-node": "^10.9.2",
-    "tsup": "^8.2.4",
-    "typescript": "^5.5.4",
-    "vitest": "^2.0.5"
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
   },
   "dependencies": {
     "flex-tools": "^1.4.9",

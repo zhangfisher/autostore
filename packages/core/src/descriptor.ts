@@ -9,7 +9,7 @@ export type IComputedDepends<DependValue=any> = (string | string[] | 'SELF'  | '
                              | IComputedDependsFilter<DependValue>
 
 export type IComputedDescriptorScope = string | string[] | 'SELF'  | 'CURRENT' | 'ROOT' | 'PARENT'
- 
+
 
 export type IComputedDescriptorOptions<Value=any,DependValue=any> = {
      /**

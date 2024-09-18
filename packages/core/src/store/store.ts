@@ -65,7 +65,7 @@ import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
 import { getVal } from "../utils";
 import { PATH_DELIMITER } from "../consts";
-import { createReactiveObject, ReactiveNotifyParams } from "./reactive";
+import { createReactiveObject } from "./reactive";
 import { getComputedDescriptor } from "../computed/utils";
 import { forEachObject } from "../utils/forEachObject";
 import { AsyncComputedObject } from "../computed/async";
@@ -213,15 +213,17 @@ export class AutoStore<State extends Dict>{
 
     protected _changesets:FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    
     private _options: Required<AutoStoreOptions<State>>
-    private _batching = false           // 当执行批量更新时为true
+    private _silenting = false                          // 是否静默更新，不触发事件
+    private _batching = false                           // 是否批量更新中
+    private _batchOperates:StateOperateParams[] = []    // 暂存批量操作
     private _peeping:boolean = false
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         this._options = assignObject({
             id       : getId(),
             debug    : false,
-            immediate: false,
-            log,
+            immediate: false,            
             enableComputed:true,
+            log,
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
         this.watchObjects  =  new WatchObjects<State>(this)
@@ -252,9 +254,12 @@ export class AutoStore<State extends Dict>{
      * 当状态读写时调用此方法触发事件
      * type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any
      */
-    private notify(params:ReactiveNotifyParams) {          
+    private notify(params:StateOperateParams) {          
         if(this._peeping && params.type=='get') return    // 偷看时不触发事件
-        if(this._batching) return
+        if(this._silenting) return
+        if(this._batching){
+            this._batchOperates.push(params)
+        }
         this.changesets.emit(params.path.join(PATH_DELIMITER),params)       
     } 
 
@@ -358,8 +363,7 @@ export class AutoStore<State extends Dict>{
         }        
     }
     /**
-     * @description 创建计算属性对象
-     * 
+     * @description 创建计算属性对象 
      * 
      */
     _createComputed(descriptor:ComputedDescriptor,computedContext?:ComputedContext){
@@ -441,11 +445,88 @@ export class AutoStore<State extends Dict>{
      */
     silentUpdate(fn:(state:ComputedState<State>)=>void){
         if(typeof(fn)==='function'){                        
-            this._batching=true
+            this._silenting=true
             try{
                 fn(this.state)
             }finally{
-                this._batching=false
+                this._silenting=false
+            }            
+        }else{
+            throw new Error("update method must provide a function argument")
+        }
+    }
+    
+    /**
+     * 更新状态值
+     * 
+     * @description
+     * 
+     * 在指定函数内部更新状态值，更新完成后触发事件
+     * 
+     * 注意不支持批量异步更新，如
+     * 
+     * update(async (state)=>{  
+     *      state.a=1
+     *      await delay()
+     *      state.b=2
+     * })
+     * 
+     * 
+     * @throws {Error} 如果 `fn` 不是一个函数，则抛出错误
+     * 
+     * @example
+     * 
+     * - 更新状态，并且在更新后触发批量变更事件
+     * update((state)=>{
+     *  state.a=xxx
+     *  state.b=xxx
+     * })
+     * 
+     * 将函数执行后再一次性触发a,b的变更事件$batchUpdate事件
+     * 
+     * this.changesets.on('$batchUpdate',({
+     *      type, == 'batch'    批量更新事件
+     *      operates []         更新操作参数
+     * })=>{
+     * 
+     * 
+     * 
+     * @example
+     * - 更新状态，并且每一次更新均会触发变更事件
+     * update((state)=>{
+     *  state.xxx=xxx
+     * },{
+     *  batch:false       不批量更新
+     * })
+     * 
+     * @example
+     * - 静默更新，更新过程中不会触发变更事件
+     *   update((state)=>{
+     *      state.xxx=xxx
+     *   },{
+     *     silent:true
+     *   })
+     * 
+     * @param {function(ComputedState<State>): void} fn - 用于更新状态的函数
+     * @param {Object} [options] - 可选参数
+     * @param {boolean} [options.batch=true] - 是否批量更新，默认为 true，变更事件在更新完成后触发
+     * @param {boolean} [options.silent=false] - 是否静默更新，默认为 false
+     */
+    update(fn:(state:ComputedState<State>)=>void,options?:{batch?:boolean,silent?:boolean}){
+        const {batch=true,silent=false} = Object.assign({},options)
+        if(typeof(fn)==='function'){                        
+            if(silent) this._silenting=true
+            if(batch) this._batching = true
+            try{
+                fn(this.state)
+            }finally{
+                this._silenting = false
+                this._batching = false
+                if(this._batchOperates.length>0){
+                    this._batchOperates.forEach(operate=>this.notify(operate))
+                    this.notify({type:'batch',path:[],value:undefined,opertaes:this._batchOperates})
+                    this._batchOperates = []
+                }
             }            
         }else{
             throw new Error("update method must provide a function argument")
