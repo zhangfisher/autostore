@@ -71,10 +71,26 @@ export class ComputedObject<Value=any>{
             this._value = value
         }
     }  
-    
+    /**
+     * 更新值
+     */
+    update(value:Value){
+        if(this._attched){
+            this.store.silentUpdate((state)=>{
+                setVal(state,this._path!, value)
+            })
+        }else{
+            this._value = value
+        }
+    }
     /**
      * 更新计算属性的值，并且不会触发依赖的变化事件
+     * 
+     * 
+     * 
      * @param value 
+     * @param {boolean} silent - 是否静默更新，即不会触发依赖变化事件
+     * @param {boolean} silent - 如果value是一个object时采用合并更新方式
      */
     silentUpdate(value:Value){
         if(this._attched){
