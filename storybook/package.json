@@ -26,8 +26,10 @@
     "storybook": "^8.3.1"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "autostore-react":"workspace:*",
-    "components":"workspace:*"
+    "@mihkeleidast/storybook-addon-source": "^1.0.1",
+    "@storybook/addon-storysource": "^8.3.1",
+    "autostore-react": "workspace:*",
+    "components": "workspace:*",
+    "react": "^18.3.1"
   }
 }
