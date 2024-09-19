@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+<<<<<<< HEAD
   "type": "module",
+=======
+>>>>>>> 59ecaee6dae5ca5be262680d20cd884b310451b8
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "storybook": "storybook dev -p 6006 --no-open",
@@ -26,7 +29,11 @@
     "storybook": "^8.3.1"
   },
   "dependencies": {
+<<<<<<< HEAD
     "react": "^18.3.1",
     "autostore-react":"workspace:*"
+=======
+    "react": "^18.3.1"
+>>>>>>> 59ecaee6dae5ca5be262680d20cd884b310451b8
   }
 }
