@@ -1,6 +1,6 @@
 import React from 'react';
 import { createStore } from "autostore-react"
-import PropTypes from 'prop-types';
+import { Card, Button,ColorBlock } from "components"
  
 const { state,$ } = createStore({    
   root:{
@@ -11,13 +11,12 @@ const { state,$ } = createStore({
 
 
 /** Primary UI component for user interaction */
-export const Counter = () => {
-  
+export  const Counter = () => {  
   return (
-    <div>
-      <span>Count:{$('root.count')}</span>
-      <button onClick={()=>state.root.count++}>+1</button>
-    </div>
+    <Card title="显示状态值">
+      <ColorBlock>Count:{$('root.count')}</ColorBlock>
+      <Button onClick={()=>state.root.count++}>+1</Button>
+    </Card>
   );
 };
  

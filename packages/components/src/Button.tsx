@@ -1,5 +1,25 @@
 import React, { useEffect, useRef } from 'react'
 import { Loading } from './Loading'
+import { styled } from 'flexstyled'
+
+const ButtonStyle =styled<ButtonProps>({
+    padding      : "8px",
+    margin       : "4px",
+    cursor       : "pointer",
+    display      : (props)=>props.visible!==false ? 'flex' : 'none',
+    flexDirection: "row",
+    borderRadius : "6px",
+    alignItems   : "center",
+    border       : `1px solid #eee`,
+    background   : "#f1f1f1",
+    textAlign    : 'center',
+    userSelect   : "none",
+    "&           : hover":{
+        background:"#ddd"
+    }
+},{
+    className:"speed-button"
+})
 
 export type ButtonProps =React.PropsWithChildren<
     React.ButtonHTMLAttributes<any> 
@@ -24,20 +44,10 @@ export const Button:React.FC<ButtonProps> = (props)=>{
     return (
         <div
             ref={ref}
-            className='speed-button'
+            className={ButtonStyle.className}
+            style={ButtonStyle.getStyle(props)}
             onClick={onClick}
-         style={{
-            padding:"8px",
-            margin:"4px",
-            cursor:"pointer",
-            display: visible ? 'flex' : 'none',
-            flexDirection:"row",
-            borderRadius:"6px",
-            alignItems:"center",
-            border:`1px solid #bbb`,
-            background:"#eee",
-            textAlign:'center'
-        }}>
+        >
             {loading ? <Loading/> : null}
             <div 
                 style={{flexGrow:1,backgroundColor:'transparent'}}

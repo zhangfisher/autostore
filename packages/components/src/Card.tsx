@@ -19,20 +19,32 @@ export type CardProps = React.PropsWithChildren<{
 
 
 const CardStyle = styled<CardProps>({  
-  border       : `1px solid #ccc`,
-  background   : (props)=>props.enable ? "white" : 'gray',
+  border       : `1px solid #e1e1e1`,
+  background   : (props)=>props.enable!==false ? "white" : 'gray',
   margin       : "8px" ,
-  display      : (props)=>props.visible ? 'flex' : 'none',
+  display      : (props)=>props.visible!==false ? 'flex' : 'none',
   flexDirection: "column",        
+  borderRadius : "4px",
+  minWidth     : "320px",
+  minHeight    : "200px",
+  boxShadow    : "0 0 4px rgba(0,0,0,0.1)"
 },{className:"card"})
+
+const CardHeaderStyle = styled<CardProps>({  
+  display:"flex",
+  flexDirection:"row",
+  backgroundColor:"#f1f1f1",
+  padding:"6px",
+  lineHeight:"150%"
+},{className:"card-header"})
 
 export const Card:ReactFC<CardProps> = (props:CardProps)=>{
   const { title,enable=true,buttons=[] } = props 
   const children = Array.isArray(props.children) ? props.children : [props.children]
 
   return (
-    <div className={CardStyle.className}>
-      <div className="header"  style={{display:"flex",flexDirection:"row",backgroundColor:"#eee",padding:"6px",lineHeight:"150%"}}>
+    <div className={CardStyle.className} style={CardStyle.getStyle(props)}>
+      <div  className={CardHeaderStyle.className} style={CardHeaderStyle.getStyle(props)} >
           <span style={{flexGrow:1,color:enable ? "#222" : 'gray'}}>{title}</span>
           <span style={{}}>
             {buttons.map((btn,index)=>{

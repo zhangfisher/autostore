@@ -1,0 +1,29 @@
+# show the Counter component
+
+import { Counter } from './Counter'
+import { Meta, Controls } from '@storybook/blocks';
+import * as DefaultStories from './index.stories';
+
+<Counter />
+ 
+
+```ts 
+const { state,$ } = createStore({    
+  root:{
+    count: 1
+  }    
+})
+
+export  const Counter = () => {  
+  return (
+    <Card title="显示状态值">
+      <span>Count:{$('root.count')}</span>
+      <Button onClick={()=>state.root.count++}>+1</Button>
+    </Card>
+  );
+};
+ 
+```
+
+<Meta of={DefaultStories} /> 
+ 

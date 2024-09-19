@@ -1,5 +1,5 @@
 import React,{ useEffect,useState } from "react"
-import { AutoStore, Dict, getVal, ComputedObject, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions } from 'autostore';
+import { AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions } from 'autostore';
 import { PATH_DELIMITER } from "autostore/src/consts";
 import { ComputedState } from "autostore/src/descriptor"; 
 import { AsyncComponentRender, SyncComponentRender } from "./types";
@@ -88,14 +88,13 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
         // const depends = args.length>=3 && Array.isArray(args[2]) ? args[2] : []
         // const asyncOptions = args.length>=4 && typeof(args[3])==='object' ? args[3] : {}
         // const syncOptions = args.length>=3 && typeof(args[2])==='object' ? args[2] : {}
-        const store = this
-        const El:React.FC =  React.memo(()=>{
+         const El =  React.memo(()=>{
             // const [computedObj,setComputedObj] = useState<ComputedObject>()
 
             // 收集依赖的路径
             const [deps] = useState<string[][]>(()=>{
                 if(typeof(selector)==='function'){
-                    return store.collectDeps(selector)  
+                    return this.collectDeps(selector)  
                 }else if(typeof(selector)==='string'){
                     return [selector.split(PATH_DELIMITER)]  
                 }else{
@@ -106,9 +105,9 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
             // 当依赖变化时读取依赖目标的值
             const getValue = ()=>{
                 if(typeof(selector)==='function'){
-                    return selector(store.state)
+                    return selector(this.state)
                 }else{
-                    return getVal(store.state,selector.split(PATH_DELIMITER))
+                    return getVal(this.state,selector.split(PATH_DELIMITER))
                 } 
             }
     
@@ -121,7 +120,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     
                 // }
                 // 侦听依赖的变化，当依赖变化时，更新值
-                const watcher = store.watch(deps,()=>{
+                const watcher = this.watch(deps,()=>{
                     setValue(getValue())  
                 })
                 return ()=>watcher.off()
@@ -130,7 +129,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
             return <>
                 {value}
             </>
-        }  , () => true) as unknown as React.ReactNode;
+        }  , () => true)  
         return <El />; 
     }
 }
