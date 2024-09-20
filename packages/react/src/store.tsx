@@ -1,5 +1,5 @@
 import React,{ useEffect,useState } from "react"
-import { ComputedState,PATH_DELIMITER,AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions } from '@autostore/core';
+import { ComputedState,PATH_DELIMITER,AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions } from '@autostorejs/core';
 import { AsyncComponentRender, SyncComponentRender } from "./types";
 
 
@@ -14,7 +14,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
      * 
      * @example
      * 
-     * import { createStore } from "autostore-react" 
+     * import { createStore } from "@autostorejs/react" 
      * 
      * const { state, $ } = createStore({
      *      firstName:'zhang',

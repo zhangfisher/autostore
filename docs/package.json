@@ -11,7 +11,7 @@
     "build:watch": "father dev",
     "docs:build": "dumi build",
     "docs:preview": "dumi preview",
-    "prepare": "husky install && dumi setup",
+    "prepare": "dumi setup",
     "doctor": "father doctor",
     "lint": "npm run lint:es && npm run lint:css",
     "lint:css": "stylelint \"{src,test}/**/*.{css,less}\"",
@@ -63,7 +63,6 @@
     "dumi": "^2.3.0",
     "eslint": "^8.23.0",
     "father": "^4.1.0",
-    "husky": "^8.0.1",
     "lint-staged": "^13.0.3",
     "prettier": "^2.7.1",
     "prettier-plugin-organize-imports": "^3.0.0",
@@ -74,6 +73,7 @@
   },
   "dependencies": {
     "@autostorejs/core": "workspace:*",
-    "@autostorejs/react": "workspace:*"
+    "@autostorejs/react": "workspace:*",
+    "components": "workspace:*"
   }
 }

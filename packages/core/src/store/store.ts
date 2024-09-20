@@ -61,7 +61,6 @@ import { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedType } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
-import mitt, { Emitter } from "mitt";
 import { StoreEvents } from "../events/types";
 import { getVal } from "../utils";
 import { PATH_DELIMITER } from "../consts";
@@ -73,6 +72,7 @@ import { WatchObjects } from "../watch/watchObjects";
 import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../descriptor";
 import { noRepeat } from "../utils/noRepeat";
+import { EventEmitter } from "../events";
 
 
 export type AutoStoreOptions<State extends Dict> = {
@@ -206,18 +206,18 @@ export type AutoStoreOptions<State extends Dict> = {
 }
 
  
-export class AutoStore<State extends Dict>{
+export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
-    public watchObjects: WatchObjects<State>  
-
-    protected _changesets:FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    
+    public watchObjects: WatchObjects<State>      
+    protected _changesets:FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    // 依赖变更事件触发器
     private _options: Required<AutoStoreOptions<State>>
     private _silenting = false                          // 是否静默更新，不触发事件
     private _batching = false                           // 是否批量更新中
     private _batchOperates:StateOperateParams[] = []    // 暂存批量操作
     private _peeping:boolean = false
     constructor(state: State,options?:AutoStoreOptions<State>) { 
+        super()
         this._options = assignObject({
             id       : getId(),
             debug    : false,
@@ -396,23 +396,6 @@ export class AutoStore<State extends Dict>{
         this.emit("watch:created",watchObj)
         return watchObj
     }
-
-    // **************** EventEmitter ***********
-    private _emitter:Emitter<StoreEvents> = mitt()
-    get on(){ return this._emitter.on.bind(this) }
-    get off(){ return this._emitter.off.bind(this) }
-    get emit(){ return this._emitter.emit.bind(this) }    
-    once<T extends keyof StoreEvents>(this:AutoStore<State>, event: T, handler: (payload:StoreEvents[T]) => void) {
-        const phandler =(payload:StoreEvents[T]) => {
-            try{
-                handler(payload)
-            }finally{            
-                this._emitter.off(event,phandler)
-            }
-        }
-        this._emitter.on(event,phandler)
-    }
-
     // **************** 普通方法 ***********
 
     /**
@@ -444,16 +427,7 @@ export class AutoStore<State extends Dict>{
      * @param fn   更新方法，在此方法内部进行更新操作
      */
     silentUpdate(fn:(state:ComputedState<State>)=>void){
-        if(typeof(fn)==='function'){                        
-            this._silenting=true
-            try{
-                fn(this.state)
-            }finally{
-                this._silenting=false
-            }            
-        }else{
-            throw new Error("update method must provide a function argument")
-        }
+        this.update(fn,{silent:true})
     }
     
     /**
@@ -580,6 +554,19 @@ export class AutoStore<State extends Dict>{
         }
         return noRepeat(dependencies)      // 去重 
     }
+
+    /**
+     * 
+     * 当store销毁时调用，用来取消一些订阅
+     * 
+     */
+    destroy(){
+        this.offAll()
+        this._changesets.clear()
+        this.watchObjects.clear()
+        this.computedObjects.clear()        
+    }
+
 }
 
 

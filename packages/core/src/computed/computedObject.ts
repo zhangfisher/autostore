@@ -176,5 +176,31 @@ export class ComputedObject<Value=any>{
         },0)
     }
 
+    /**
+     * 订阅当前计算变化的事件
+     * @description
+     * 
+     * 当计算结果值发生变化时触发
+     * 
+     * @example
+     * 
+     * const computedObj = store.computedObject.get("xxx")
+     * computedObj.on((value)=>{
+     *      
+     * })
+     * 
+     */
+    on(listener:(value:Value)=>void){
+        // 如果计算对象挂载到状态对象上，则直接订阅状态对象的变化事件即可
+        if(this._attched){  
+            return this.store.watch(this._path!.join(PATH_DELIMITER),({value})=>{
+                listener.call(this,value as Value)
+            })
+        }else{
+            
+        }
+    }
+
+
 
 }
