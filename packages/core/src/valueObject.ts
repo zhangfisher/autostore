@@ -7,15 +7,13 @@
  */
 import { PATH_DELIMITER } from "./consts"; 
 import { AutoStore } from "./store/store";
-import { StateOperateParams } from "./store/types";
-import { getDependPaths } from "./utils/getDependPaths";
+import { StateOperateParams } from "./store/types"; 
 import { getVal } from "./utils/getVal";
 import { joinValuePath } from "./utils/joinValuePath";
 import { StoreEvents } from "./events/types";
 import { setVal } from "./utils/setVal";
 import { getId } from "./utils/getId"; 
-import mitt, { Emitter } from "mitt";
-import { EventEmitter } from "./events";
+import { EventEmitter } from "./events"; 
 
 
 
@@ -37,11 +35,9 @@ export class IValueObject<Value=any> extends EventEmitter<IValueEvents<Value>>{
     private _id:string = ""
     private _initial:Value | undefined
     private _value:Value | undefined
-    private _attched:boolean = false                  
-    private _enable:boolean = true
+    private _attched:boolean = false             
     private _getter:any
-    private _group:string | undefined = "" 
-    private _depends:any
+     private _depends:any
     private _options:Required<IValueObjectOptipons<Value>>
   
     /**
@@ -51,18 +47,15 @@ export class IValueObject<Value=any> extends EventEmitter<IValueEvents<Value>>{
      * @param {ComputedContext} context - 动态值上下文，指该动态值所有的路径、值、父路径和父对象引用。
      * @param {ComputedDescriptor<Options>} descriptor - 动态值描述符，包含了动态值的元数据。
      */
-    constructor(public store:AutoStore<any>,options?:IValueObjectOptipons<Value>){        
-        this._options = Object.assign({
-            id: getId(),
-            enable: true,
-            group: "",
-            initial:undefined,
-            path:undefined
+    constructor(public store:AutoStore<any>,getter?:Function,options?:IValueObjectOptipons<Value>){        
+        super()
+        this._options = Object.assign({ 
+            enable : true 
         },options) as Required<IValueObjectOptipons<Value>>
         this._path    = this._options.path 
-        this._attched = Array.isArray(this._path)
-        this._group   = this._options.group || ''
+        this._attched = Array.isArray(this._path) 
         this._initial = this._options.initial 
+        this._getter  = getter
         this._id      = this._options.id || (this._path ? joinValuePath(this._path) : getId())
     }
     get id(){return this._id }
@@ -85,6 +78,7 @@ export class IValueObject<Value=any> extends EventEmitter<IValueEvents<Value>>{
             setVal(this.store.state,this._path!, value)    
         }else{
             this._value = value
+            this.emit("change",value)
         }
     }   
     on<T extends keyof IValueEvents>(event: T,listener:(value:Value)=>void){ 
@@ -94,28 +88,17 @@ export class IValueObject<Value=any> extends EventEmitter<IValueEvents<Value>>{
                 listener.call(this,value as Value)
             })
         }else{
-            this.emitter!.on(event,listener)
-            return {
-                off:()=>this.emitter!.off(event,listener)
-            }
+            return super.on(event,listener)
         }        
     } 
-    once<T extends keyof IValueEvents>(event: T, listener: (payload:IValueEvents[T]) => void) {
-        const phandler =(payload:IValueEvents[T]) => {
-            try{
-                listener.call(this,payload)
-            }finally{            
-                this.emitter!.off(event,phandler)
-            }
-        }
-        if(this._attched){  
+    once<T extends keyof IValueEvents>(event: T, listener: (payload:IValueEvents[T]) => void) {        
+        if(this._attched){   
             return this.store.watch(this._path!.join(PATH_DELIMITER),({value})=>{
-                phandler.call(this,value as Value)
-            })
+                listener.call(this,value as Value)
+            },{once:true})
         }else{
-
+            return super.once(event,listener)
         }
-        this.emitter!.on(event,phandler)
     }
     /**
      * 更新计算对象的结果值

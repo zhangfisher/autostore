@@ -1,29 +1,30 @@
-import mitt, { Emitter, EventType, Handler } from "mitt";
+import mitt, { Emitter, EventType } from "mitt";
 
+export type EventListener<T> = (event:T)=>void
 
 export class EventEmitter<Events extends Record<EventType, unknown>>{    
     private _emitter:Emitter<Events> = mitt()
-    on(type: keyof Events, handler: Handler<Events[keyof Events]>){         
-        this._emitter.on(type,handler)
+    on<T extends keyof Events>(event: T, listener: EventListener<Events[T]>){         
+        this._emitter.on(event,listener)
         return {
-            off:()=>this._emitter.off(type,handler)
+            off:()=>this._emitter.off(event,listener)
         }
     }
-    once(type: keyof Events, handler: Handler<Events[keyof Events]>) {
-        const plistener =(event:Events[keyof Events]) => {
+    once<T extends keyof Events>(event: T, listener: EventListener<Events[T]>) {
+        const plistener =(e:Events[T]) => {
             try{
-                handler(event)
+                listener(e)
             }finally{            
-                this._emitter.off(type,plistener)
+                this._emitter.off(event,plistener)
             }
         }
-        return this.on(type,plistener)
+        return this.on(event,plistener)
     }
-    off(type: keyof Events, handler?: Handler<Events[keyof Events]> | undefined){ 
-        this._emitter.off<keyof Events>(type,handler) 
+    off<T extends keyof Events>(event: T, listener?: EventListener<Events[T]> | undefined){ 
+        this._emitter.off<T>(event,listener) 
     }
-    emit(type: keyof Events,event:Events[keyof Events]){ 
-        return this._emitter.emit(type,event)
+    emit<T extends keyof Events>(event:T,payload:Events[T]){ 
+        return this._emitter.emit(event,payload)
     }    
     offAll(){
         this._emitter.all.clear()
