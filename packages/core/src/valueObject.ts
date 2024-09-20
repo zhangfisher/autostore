@@ -37,7 +37,9 @@ export class IValueObject<Value=any> extends EventEmitter<IValueEvents<Value>>{
     private _value:Value | undefined
     private _attched:boolean = false             
     private _getter:any
-     private _depends:any
+    private _depends:any
+    private _silenting:boolean = false
+    private _batching:boolean = false
     private _options:Required<IValueObjectOptipons<Value>>
   
     /**
@@ -74,11 +76,16 @@ export class IValueObject<Value=any> extends EventEmitter<IValueEvents<Value>>{
         return (this._attched ? getVal(this.store.state,this._path) :  this._value) as unknown as Value
     }           
     set value(value:Value){
-        if(this._attched){
-            setVal(this.store.state,this._path!, value)    
+        if(this._attched){            
+            this.store.update((state)=>{
+                setVal(state,this._path!, value)    
+            },{
+                batch:this._batching,
+                silent:this._silenting
+            })
         }else{
             this._value = value
-            this.emit("change",value)
+            if(!this._silenting) this.emit("change",value)
         }
     }   
     on<T extends keyof IValueEvents>(event: T,listener:(value:Value)=>void){ 
@@ -120,18 +127,10 @@ export class IValueObject<Value=any> extends EventEmitter<IValueEvents<Value>>{
                 setVal(state,this._path!, value)
             },options)
         }else{
+
             this._value = value
         }
-    } 
-    /**
-     * 检查计算函数是否被禁用
-     * 
-     * @param value 
-     * @returns {boolean} 
-     */
-    protected isDisable(value:boolean | undefined){
-       return !this.store.options.enableComputed || (!this.enable && value!==true) || value===false
-    }
+    }  
     /**    
     /**
      * 当依赖变化时调用
@@ -139,12 +138,7 @@ export class IValueObject<Value=any> extends EventEmitter<IValueEvents<Value>>{
      */
     protected onDependsChange(_:StateOperateParams){ 
         throw new Error("Method not implemented.");
-    } 
-    protected emitComputedEvent(event:keyof StoreEvents,args:any){
-        setTimeout(()=>{
-            this.store.emit(event,args)
-        },0)
-    } 
+    }  
 
 
 }

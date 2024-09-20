@@ -429,7 +429,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     silentUpdate(fn:(state:ComputedState<State>)=>void){
         this.update(fn,{silent:true})
     }
-    
+    batchUpdate(fn:(state:ComputedState<State>)=>void){
+        this.update(fn,{batch:true})
+    }
     /**
      * 更新状态值
      * 
