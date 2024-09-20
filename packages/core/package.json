@@ -1,5 +1,5 @@
 {
-  "name": "autostore",
+  "name": "@autostorejs/core",
   "version": "0.0.1",
   "description": "",
   "main": "src/index.ts",

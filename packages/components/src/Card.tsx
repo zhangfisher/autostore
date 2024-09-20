@@ -24,7 +24,7 @@ const CardStyle = styled<CardProps>({
   margin       : "8px" ,
   display      : (props)=>props.visible!==false ? 'flex' : 'none',
   flexDirection: "column",        
-  borderRadius : "4px",
+  borderRadius : "6px",
   minWidth     : "320px",
   minHeight    : "200px",
   boxShadow    : "0 0 4px rgba(0,0,0,0.1)"
@@ -33,9 +33,10 @@ const CardStyle = styled<CardProps>({
 const CardHeaderStyle = styled<CardProps>({  
   display:"flex",
   flexDirection:"row",
-  backgroundColor:"#f1f1f1",
-  padding:"6px",
-  lineHeight:"150%"
+  backgroundColor:"#f5f5f5",
+  padding:"8px",
+  lineHeight:"200%",
+  color:"#555"
 },{className:"card-header"})
 
 export const Card:ReactFC<CardProps> = (props:CardProps)=>{

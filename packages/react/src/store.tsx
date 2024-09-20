@@ -1,7 +1,5 @@
 import React,{ useEffect,useState } from "react"
-import { AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions } from 'autostore';
-import { PATH_DELIMITER } from "autostore/src/consts";
-import { ComputedState } from "autostore/src/descriptor"; 
+import { ComputedState,PATH_DELIMITER,AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions } from '@autostore/core';
 import { AsyncComponentRender, SyncComponentRender } from "./types";
 
 

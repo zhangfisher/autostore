@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React  from 'react'
 import { Loading } from './Loading'
 import { styled } from 'flexstyled'
 
@@ -6,16 +6,23 @@ const ButtonStyle =styled<ButtonProps>({
     padding      : "8px",
     margin       : "4px",
     cursor       : "pointer",
-    display      : (props)=>props.visible!==false ? 'flex' : 'none',
+    display      : (props)=>props.visible!==false ? (props.block!==false ? 'inline-flex' : 'flex') : 'none',
     flexDirection: "row",
     borderRadius : "6px",
     alignItems   : "center",
-    border       : `1px solid #eee`,
-    background   : "#f1f1f1",
+    border       : `1px solid #eee`,    
+    background   : "#fafafa",
     textAlign    : 'center',
     userSelect   : "none",
-    "&           : hover":{
-        background:"#ddd"
+    color        : "#555",
+    "&:hover":{
+        background:"#2c7af0",
+        color:"white",
+        border:'none'
+    },
+    "&:active": {
+        transform: "scale(0.95)",
+        transition: "transform 0.1s"
     }
 },{
     className:"speed-button"
@@ -31,19 +38,14 @@ export type ButtonProps =React.PropsWithChildren<
         progress?:number
         error?:string
         cancel?:()=>any
+        block?:boolean              // 是否为块级元素
     }>
 
 export const Button:React.FC<ButtonProps> = (props)=>{
-    const { visible=true,loading,timeout=0,progress=0,cancel,onClick} =props 
-    const ref = useRef<HTMLDivElement>(null)
-    useEffect(()=>{
-        if(ref.current){
-            ref.current.style.display = visible ? 'flex' : 'none'
-        }    
-    })
+    const { loading,timeout=0,progress=0,cancel,onClick} =props 
+ 
     return (
-        <div
-            ref={ref}
+        <div 
             className={ButtonStyle.className}
             style={ButtonStyle.getStyle(props)}
             onClick={onClick}

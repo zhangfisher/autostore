@@ -1,5 +1,5 @@
 {
-  "name": "autostore-react",
+  "name": "@autostorejs/react",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "autostore": "workspace:*"
+    "@autostorejs/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.5.5",
