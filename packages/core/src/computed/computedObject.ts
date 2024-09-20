@@ -100,8 +100,7 @@ export class ComputedObject<Value=any>{
      * 
      * 
      * @param value 
-     * @param {boolean} silent - 是否静默更新，即不会触发依赖变化事件
-     * @param {boolean} silent - 如果value是一个object时采用合并更新方式
+     * @param {boolean} silent - 是否静默更新，即不会触发依赖变化事件 
      */
     silentUpdate(value:Value){
         if(this._attched){
