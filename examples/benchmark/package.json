@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "bench:multiDeps": "tsx src/tasks/multiDeps.ts"
   },

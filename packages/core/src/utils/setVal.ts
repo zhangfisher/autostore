@@ -14,4 +14,3 @@ export function setVal(obj: any, keyPath: string[], val: any) {
       parent = subVal; 
     });
 }
-

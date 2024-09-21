@@ -1,6 +1,6 @@
 import { test,expect, describe } from "vitest"
 import { createStore,computed,  ComputedObject } from "../.." 
-import { CyleDependError } from "../../src/errors"
+import { CyleDependError } from "../../src/errors" 
  
 
 describe("同步计算属性的基本特性",()=>{
@@ -16,7 +16,26 @@ describe("同步计算属性的基本特性",()=>{
         store.state.count = 4
         expect(store.state.total).toBe(8)
     })  
-    
+    test("sdsdsd",()=>{
+        const store = createStore({ 
+            a0: 50,
+            a1: (scope:any)=>{
+              return scope.a0 + 1
+            },
+            a2: (scope:any)=>scope.a1 + 1,
+            a3: (scope:any)=>scope.a2 + 1,
+            a4: (scope:any)=>scope.a3 + 1,
+            a5: (scope:any)=>scope.a4 + 1,
+            a6: (scope:any)=>scope.a5 + 1,
+            a7: (scope:any)=>scope.a6 + 1,
+            a8: (scope:any)=>scope.a7 + 1,
+            a9: (scope:any)=>scope.a8 + 1,
+            a10: (scope:any)=>scope.a9 + 1,
+        },{immediate:true});
+        for(let i = 1; i <= 1; i++){
+            store.state.a0 = i
+        }
+    })
 
     test('简单的同步计算,默认scope指向current', () => {     
         const store = createStore({

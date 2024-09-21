@@ -13,10 +13,7 @@ import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedO
 import { Watcher } from "../watch/types";
 import { StoreEvents } from "../events/types";
 import { setVal } from "../utils";
-import { getId } from "../utils/getId";
-
- 
-
+import { getId } from "../utils/getId"; 
 export class ComputedObject<Value=any>{    
     private _path?:string[] 
     private _options:Required<ComputedOptions>
@@ -66,7 +63,7 @@ export class ComputedObject<Value=any>{
     get value(){ return (this._attched ? getVal(this.store.state,this._path) :  this._value) as unknown as Value}           
     set value(value:Value){
         if(this._attched){ 
-            setVal(this.store.state,this._path!, value)    
+            setVal(this.store.state,this._path!, value)     
         }else{
             this._value = value
         }
@@ -150,13 +147,11 @@ export class ComputedObject<Value=any>{
      */
     subscribe(){
         if(this._depends && !this._subscribed){
-            this._depends.forEach(depends=>{
-                this._subscribers.push(this.store.watch(
-                        depends.join(PATH_DELIMITER),
-                        this.onDependsChange.bind(this),
-                        {operates:['set','delete','insert','remove','update']}
-                    ))
-            })
+            this._subscribers.push(this.store.watch(
+                this._depends!,
+                this.onDependsChange.bind(this),
+                {operates:'write'}
+            ))
             this.store.log(()=>`ComputedObject<${this.toString()}> subscribed to ${this._depends!.map(depends=>depends.join(PATH_DELIMITER)).join(",")}`)
             this._subscribed=true
         }

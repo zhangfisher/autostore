@@ -71,7 +71,7 @@ import { WatchObjects } from "../watch/watchObjects";
 import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../descriptor";
 import { noRepeat } from "../utils/noRepeat";
-import { EventEmitter } from "../events";
+import { EventEmitter, EventListener } from "../events";
 
 
 export type AutoStoreOptions<State extends Dict> = {
@@ -283,11 +283,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * const watcher = state.watch(["job.title","job.salary"],({type,path,value,oldValue,parentPath,parent})=>{})
      * watcher.off() 取消侦听
      * 
-     * - 侦听通配符路径的数据变化
-     * 
-     * const watcher = state.watch("job.*",({type,path,value,oldValue,parentPath,parent})=>{})
-     * watcher.off() 取消侦听
-     * 
      * 
      * @param {string|string[]} keyPaths - 要监视的数据路径，可以是单个字符串或字符串数组。
      * @param {WatchListenerOptions} listener - 当监视的数据路径变化时执行的回调函数。
@@ -300,37 +295,36 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const isWatchAll = typeof(arguments[0])==='function' 
         const listener = isWatchAll ? arguments[0] : arguments[1]
 
-        const createListener = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>(event:StateOperateParams)=>{
-            if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
-                if(!operates.includes(event.type)) return
-            }else if(operates==='write'){
-                if(event.type==='get') return//  没定指定操作类型，默认只侦听除了get操作外的更新操作
-            }else if(operates ==='read'){
-                if(event.type!=='get') return
-            }
-            if(typeof(filter)==='function' && !filter(event)) return
-            listener.call(this,event)                    
-        }        
+        const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
+            return (data:StateOperateParams)=>{            
+                if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
+                    if(!operates.includes(data.type)) return
+                }else if(operates==='write'){
+                    if(data.type==='get') return
+                }else if(operates ==='read'){
+                    if(data.type!=='get') return
+                }
+                if(typeof(filter)==='function' && !filter(data)) return
+                listener.call(this,data)              
+            }        
+        }
 
         if(isWatchAll){ // 侦听全部
-            const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[1])  as Required<WatchListenerOptions>
-            const subscribeMethod = once ? this.changesets.once : this.changesets.on
-            const listener = createListener(operates,filter)
-            return this.changesets.onAny.call(listener) as Watcher
+            const {operates,filter} = Object.assign({once:false,operates:'write'},arguments[1])  as Required<WatchListenerOptions>
+            const handler = createEventHandler(operates,filter)
+            return this.changesets.onAny(handler) 
         }else{ // 只侦听指定路径
             const keyPaths = arguments[0] as string | (string|string[])[]
             const paths:string[] = Array.isArray(keyPaths) ? 
                 keyPaths.map(v=>typeof(v)==='string'? v : v.join(PATH_DELIMITER)) : [keyPaths]
             const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[2])  as Required<WatchListenerOptions>
-            const subscribeMethod = once ? this.changesets.once : this.changesets.on           
-            const subscribers:string[]=[]
-            const unSubscribe = ()=>{
-                subscribers.forEach(subscriber=>this.changesets.off(subscriber))
-            }
-            paths.forEach(path=>{
-                subscribers.push(subscribeMethod.call(this.changesets,path,createListener(operates,filter)) as string)
+            const subscribeMethod = once ? this.changesets.once.bind(this.changesets) : this.changesets.on.bind(this.changesets)
+            const listeners:EventListener[]=[]
+            const handler = createEventHandler(operates,filter)
+            paths.forEach(path=>{                
+                listeners.push(subscribeMethod.call(this,path,handler as any))
             })
-            return {off:unSubscribe}
+            return {off:()=>listeners.forEach(subscriber=>subscriber.off())}
         }        
     }
 

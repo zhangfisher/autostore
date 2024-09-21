@@ -56,7 +56,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       }else{
         this.value = computedResult
       }  
-      !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
+      // // !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
       !first && this.emitComputedEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
       throw e
