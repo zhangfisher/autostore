@@ -63,4 +63,4 @@ templates/*/data
 templates/*/dist
 templates/*/node_modules
 
-*storybook.log
+.clinic
