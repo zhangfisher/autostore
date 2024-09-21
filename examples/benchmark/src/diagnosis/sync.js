@@ -1,4 +1,5 @@
-const { createStore } = require("@autostorejs/core/dist/index.cjs");
+import  { createStore } from "@autostorejs/core/dist/index.js"
+
 
 const store = createStore({ 
     a0: 50,
@@ -20,4 +21,4 @@ for(let i = 1; i <= 10000; i++){
 }
 
 
-console.log('end')
+console.log("end")
