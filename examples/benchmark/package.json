@@ -6,7 +6,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bench:multiDeps": "tsx src/tasks/multiDeps.ts"
+    "bench:multiDeps": "tsx src/tasks/multiDeps.ts",
+    "doctor": "clinic doctor -- node diagnosis/sync.js"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@autostorejs/core": "workspace:*",
+    "clinic": "^13.0.0",
     "helux": "^4.4.0",
     "tinybench": "^2.9.0"
   }

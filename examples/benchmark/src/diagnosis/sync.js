@@ -16,7 +16,7 @@ const store = createStore({
     a9: (scope)=>scope.a8 + 1,
     a10: (scope)=>scope.a9 + 1,
 },{immediate:true});
-for(let i = 1; i <= 10000; i++){
+for(let i = 1; i <= 1; i++){
     store.state.a0 = i
 }
 
