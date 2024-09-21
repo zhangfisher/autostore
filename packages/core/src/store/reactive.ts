@@ -72,9 +72,9 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
             let success = Reflect.set(obj, prop, value, receiver);
             if(prop === __NOTIFY__) return true  
             if (success && prop!==__NOTIFY__) {
-                setTimeout(()=>{
+                setImmediate(()=>{
                     notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});  
-                },0)                
+                })                
             }
             return success;
         },
@@ -83,7 +83,9 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
             const path = [...parentPath, String(prop)];
             const success = Reflect.deleteProperty(obj, prop);
             if (success && prop!==__NOTIFY__) {
-                notify({type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
+                setImmediate(()=>{
+                    notify({type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
+                })
             }
             return success;
         }
