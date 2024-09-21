@@ -4,7 +4,7 @@ import { derive, share } from 'helux';
 
 
 const bench = new Bench({ 
-   time: 1000
+   time: 1000, 
 });
 
 bench 
@@ -28,28 +28,28 @@ bench
         store.state.a0 = i
     }
   }) 
-  // .add('[Helux] 多重依赖链计算', () => {
-  //   const [count,setCount] = share({
-  //       count: 0
-  //     });
-  //     const a1 = derive(() => {
-  //       return count.count+1
-  //     });
-  //     const a2 = derive(() =>a1.val+1)
-  //     const a3 = derive(() =>a2.val+1)
-  //     const a4 = derive(() =>a3.val+1)
-  //     const a5 = derive(() =>a4.val+1)
-  //     const a6 = derive(() =>a5.val+1)
-  //     const a7 = derive(() =>a6.val+1)
-  //     const a8 = derive(() =>a7.val+1)
-  //     const a9 = derive(() =>a8.val+1)
-  //     const a10 = derive(() =>a9.val+1) 
-  //     for(let i = 1; i <= 10000; i++){
-  //         setCount(draft=>{
-  //             draft.count = i
-  //         })
-  //     }
-  // }) 
+  .add('[Helux] 多重依赖链计算', () => {
+    const [count,setCount] = share({
+        count: 0
+      });
+      const a1 = derive(() => {
+        return count.count+1
+      });
+      const a2 = derive(() =>a1.val+1)
+      const a3 = derive(() =>a2.val+1)
+      const a4 = derive(() =>a3.val+1)
+      const a5 = derive(() =>a4.val+1)
+      const a6 = derive(() =>a5.val+1)
+      const a7 = derive(() =>a6.val+1)
+      const a8 = derive(() =>a7.val+1)
+      const a9 = derive(() =>a8.val+1)
+      const a10 = derive(() =>a9.val+1) 
+      for(let i = 1; i <= 10000; i++){
+          setCount(draft=>{
+              draft.count = i
+          })
+      }
+  }) 
 await bench.warmup(); // make results more reliable, ref: https://github.com/tinylibs/tinybench/pull/50
 await bench.run();
 

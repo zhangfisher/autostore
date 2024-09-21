@@ -6,8 +6,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bench:multiDeps": "tsx src/tasks/multiDeps.ts",
-    "doctor": "clinic doctor -- node diagnosis/sync.js"
+    "bench": "tsx src/tasks/multiDeps.ts",
+    "clinic": "clinic bubbleprof -- node ./src/diagnosis/sync.js"
   },
   "keywords": [],
   "author": "",

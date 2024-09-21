@@ -18,12 +18,11 @@ type CreateReactiveObjectOptions = {
   notify:(params:ReactiveNotifyParams)=>void
   createComputedObject:(path:string[],value:Function,parentPath:string[],parent:any)=>any
 };
-
-
+ 
 
 function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,any>,isComputedCreating:Map<any,any>,options: CreateReactiveObjectOptions):any{
     const { notify,createComputedObject } = options
-    if (proxyCache.has(target)) {
+    if (proxyCache.has(target)) { 
         return proxyCache.get(target);
     }
     if (typeof target !== 'object' || target === null) {
@@ -31,7 +30,7 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
     }
     if(isRaw(target)) return target
     const proxyObj = new Proxy(target, {             
-        get: (obj, key, receiver) => {
+        get: (obj, key, receiver) => { 
             const value = Reflect.get(obj, key, receiver);  
             if(typeof(key)!=='string') return value             
             const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
@@ -64,26 +63,18 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
                     return value
                 }                   
             }                
-            notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});
+            notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});            
             return  createProxy(value, path,proxyCache,isComputedCreating,options); 
         },
         set: (obj, prop, value, receiver) => {
-            const oldValue = obj[prop];
+            const oldValue = Reflect.get(obj, prop, receiver);
             const path = [...parentPath, String(prop)];
             let success = Reflect.set(obj, prop, value, receiver);
             if(prop === __NOTIFY__) return true  
             if (success && prop!==__NOTIFY__) {
-                if (Array.isArray(obj)) {
-                    if(prop === 'length'){
-                        if (value < oldValue) {
-                            notify({type:'remove',path: parentPath,indexs:[],oldValue,value:undefined,  parentPath,parent: obj});
-                        }
-                    }else{
-                        notify({type:'update',path: parentPath,indexs: [Number(prop)], value, oldValue, parentPath, parent:obj});
-                    }                        
-                } else {
-                    notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj}); 
-                }
+                setTimeout(()=>{
+                    notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});  
+                },0)                
             }
             return success;
         },

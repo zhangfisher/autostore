@@ -44,8 +44,6 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
 
     // 3. 根据配置参数获取计算函数的上下文对象      
     const scope = getValueScope<Value,Scope>(this as any,'computed',this.context,finalComputedOptions)  
-    //return (this.getter).call(this,this.store.state,{changed,first});
-
     // 4. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
@@ -56,7 +54,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       }else{
         this.value = computedResult
       }  
-      // // !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
+      !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
       !first && this.emitComputedEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
       throw e
@@ -74,9 +72,6 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
    *    scope.user.firstName+scope.user.lastName
    * }
    * 以上会产生对user对象的读取,得到的依赖是['user.firstName','user.lastName','user']
-   * 
-   * 
-   * 
    * 
    * 
    */
