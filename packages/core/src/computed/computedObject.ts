@@ -65,7 +65,7 @@ export class ComputedObject<Value=any>{
     toString(){ return `ComputedObject<${joinValuePath(this._path)}>` }
     get value(){ return (this._attched ? getVal(this.store.state,this._path) :  this._value) as unknown as Value}           
     set value(value:Value){
-        if(this._attched){
+        if(this._attched){ 
             setVal(this.store.state,this._path!, value)    
         }else{
             this._value = value

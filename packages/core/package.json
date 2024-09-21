@@ -4,6 +4,7 @@
   "description": "",
   "main": "src/index.ts",
   "access": "public",
+  "type": "module",
   "scripts": {
     "build": "tsup"
   },

@@ -4,11 +4,12 @@ import type { WatchObject } from "./watchObject"
 import type { IComputedDescriptor, IComputedDescriptorBuilder, IComputedDescriptorOptions } from "../descriptor"
 
 
-export type WatchListener<T=any,P=any> = (args:StateOperateParams<T,P>)=>void
+export type WatchListener<T=any,P=any> = (data:StateOperateParams<T,P>)=>void
+
 export type WatchListenerOptions = {
     once?    : boolean                                  // 只侦听一次后自动移除
     operates?: '*' | 'read' | 'write' | StateOperates[]                    // 只侦听的操作类型
-    filter?  : (event:StateOperateParams)=>boolean      // 过滤器
+    filter?  : (args:StateOperateParams)=>boolean      // 过滤器
 }
 export type Watcher = FlexEventSubscriber
 

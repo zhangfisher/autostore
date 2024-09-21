@@ -38,22 +38,24 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       return 
     }
     !first && this.store.log(`Run sync computed for : ${this.toString()}`); 
- 
+
     // 2. 合成最终的配置参数
     const finalComputedOptions = Object.assign({},this.options,options) as Required<ComputedOptions>
 
     // 3. 根据配置参数获取计算函数的上下文对象      
     const scope = getValueScope<Value,Scope>(this as any,'computed',this.context,finalComputedOptions)  
+    //return (this.getter).call(this,this.store.state,{changed,first});
 
     // 4. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
       computedResult = (this.getter).call(this,scope,{changed,first});
+      // 将结果回写入store
       if(first){
         this.initial = computedResult
       }else{
         this.value = computedResult
-      }      
+      }  
       !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
       !first && this.emitComputedEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});

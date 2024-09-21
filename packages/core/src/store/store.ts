@@ -50,8 +50,7 @@
  * 
  */
  
-import { ComputedObjects } from "../computed/computedObjects"; 
-import { FlexEvent } from "flex-tools/events/flexEvent"
+import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
 import { StateOperateParams } from "./types";
 import type { Dict } from "../types";
@@ -210,7 +209,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
     public watchObjects: WatchObjects<State>      
-    protected _changesets:FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    // 依赖变更事件触发器
+    protected _changesets = new EventEmitter()  // FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    // 依赖变更事件触发器
     private _options: Required<AutoStoreOptions<State>>
     private _silenting = false                          // 是否静默更新，不触发事件
     private _batching = false                           // 是否批量更新中
@@ -301,7 +300,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const isWatchAll = typeof(arguments[0])==='function' 
         const listener = isWatchAll ? arguments[0] : arguments[1]
 
-        const createSubscribe = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>(event:StateOperateParams)=>{
+        const createListener = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>(event:StateOperateParams)=>{
             if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
                 if(!operates.includes(event.type)) return
             }else if(operates==='write'){
@@ -316,12 +315,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         if(isWatchAll){ // 侦听全部
             const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[1])  as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.changesets.once : this.changesets.on
-            return subscribeMethod.call(this.changesets,"**",createSubscribe(operates,filter),{objectify:true}) as Watcher
+            const listener = createListener(operates,filter)
+            return this.changesets.onAny.call(listener) as Watcher
         }else{ // 只侦听指定路径
-            const delimiter = this.changesets.delimiter as string
             const keyPaths = arguments[0] as string | (string|string[])[]
             const paths:string[] = Array.isArray(keyPaths) ? 
-                keyPaths.map(v=>typeof(v)==='string'? v : v.join(delimiter)) : [keyPaths]
+                keyPaths.map(v=>typeof(v)==='string'? v : v.join(PATH_DELIMITER)) : [keyPaths]
             const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[2])  as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.changesets.once : this.changesets.on           
             const subscribers:string[]=[]
@@ -329,7 +328,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 subscribers.forEach(subscriber=>this.changesets.off(subscriber))
             }
             paths.forEach(path=>{
-                subscribers.push(subscribeMethod.call(this.changesets,path,createSubscribe(operates,filter)) as string)
+                subscribers.push(subscribeMethod.call(this.changesets,path,createListener(operates,filter)) as string)
             })
             return {off:unSubscribe}
         }        
@@ -564,7 +563,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      */
     destroy(){
         this.offAll()
-        this._changesets.clear()
+        this._changesets.offAll()
         this.watchObjects.clear()
         this.computedObjects.clear()        
     }
