@@ -43,7 +43,9 @@ bench
       const a7 = derive(() =>a6.val+1)
       const a8 = derive(() =>a7.val+1)
       const a9 = derive(() =>a8.val+1)
-      const a10 = derive(() =>a9.val+1) 
+      const a10 = derive(() =>{
+        return a9.val+1
+     }) 
       for(let i = 1; i <= 10000; i++){
           setCount(draft=>{
               draft.count = i
