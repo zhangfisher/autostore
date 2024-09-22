@@ -52,158 +52,27 @@
  
 import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
-import { StateOperateParams } from "./types";
+import type { AutoStoreOptions, StateOperateParams } from "./types";
 import type { Dict } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
-import { ComputedContext, ComputedDescriptor, ComputedScope, ComputedType } from "../computed/types";
+import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
 import { getVal } from "../utils";
 import { PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
 import { getComputedDescriptor } from "../computed/utils";
-import { forEachObject } from "../utils/forEachObject";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects"; 
 import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../descriptor";
 import { noRepeat } from "../utils/noRepeat";
 import { EventEmitter, EventListener } from "../events";
-
-
-export type AutoStoreOptions<State extends Dict> = {
-    /**
-     * 提供一个id，用于标识当前store
-     */
-    id?:string
-
-    /**
-     * 是否启用调试模式
-     * @description
-     * 
-     * 调试模式下会在控制台输出一些日志信息
-     * 
-     */
-    debug?:boolean 
-
-    /**
-     *  是否马上创建动态对象
-     * 
-     * 
-     * @description
-     * 
-     * 默认情况下，计算函数仅在第一次读取时执行,
-     * 如果immediate=true时，则在创建Store时遍历对象触发对读操作从而马上创建计算对象
-     * 
-     * @default false
-     * 
-    */
-    immediate?: boolean 
-    /**
-      * 是否启用计算
-      * 
-      * @description
-      * 
-      * 当enableComputed=false时，会创建计算属性，但不会执行计算函数
-      * 可以通过enableComputed方法启用
-      * 
-      * 相当于全局计算总开关
-      * 
-      *       
-      * 
-    */
-    enableComputed?:boolean
-    
-    /**
-     * 获取计算函数的根scope
-     * 
-     * @description
-     * 
-     * 计算函数在获取scope时调用，允许修改其根scope
-     * 
-     * 默认指向的是当前根对象，此处可以修改其指向
-     * 
-     * 比如,return  state.fields，代表计算函数的根指向state.fields
-     * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
-     * 
-     */
-    getRootScope?:(state:State,options:{computedType:ComputedType, valuePath:string[] | undefined}) => any
-
-    /**
-     * 
-     * 为所有动态值对象提供默认的scope参数
-     *    
-     * @description
-     * 默认情况下，所有computedObject,watchObject的scope参数均为CURRENT
-     * 可以通过此参数来为所有的computedObject,watchObject提供默认的scope参数
-     * 比如让所有的computedObject,watchObject的默认scope参数均为ROOT 
-     * 
-     */
-    scope?: ComputedScope
-    /**
-     * 当启用debug=true时用来输出日志信息
-     * 
-     * @param message 
-     * @param level 
-     * @returns 
-     */
-    log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
-    
-    /**
-     * 
-     * 当创建计算属性时调用
-     * 
-     * @description
-     * 
-     * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
-     * 
-     * @example
-     * 
-     * createStore({...},{
-     *  onCreateComputed(computedObject){
-     *      const oldGetter = computedObject.getter
-     *      computedObject.getter = function(){
-     *          do something
-     *          return oldGetter.call(this,...arguments) 
-     *      }
-     *  }
-     * })  
-     * @param this 
-     * @param computedObject 
-     * @returns 
-     */
-    onComputedCreated?:(this:AutoStore<State>,computedObject:ComputedObject)=> void
-    
-    /**
-     * 当每一次计算完成后调用
-     * @param this 
-     * @param computedObject 
-     * @returns 
-     */
-    onComputedDone?:(this:AutoStore<State>,args:{id:string,path:string[],value:any,computedObject:ComputedObject})=> void
-
-    /**
-     * 当计算出错时调用
-     * @param this 
-     * @param error 
-     * @param computedObject 
-     * @returns 
-     */    
-    onComputedError?:(this:AutoStore<State>,args:{id:string,path:string[],error:Error,computedObject:ComputedObject})=> void
-    /**
-     * 当每一次计算对象被取消时调用
-     * 仅在异步计算时有效
-     * @param this 
-     * @param computedObject 
-     * @returns 
-     */
-    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void
-
-}
-
+import { DependencieManager } from "./dependencie";
+ 
  
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
@@ -215,6 +84,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _batching = false                           // 是否批量更新中
     private _batchOperates:StateOperateParams[] = []    // 暂存批量操作
     private _peeping:boolean = false
+    private _dependencieManager:DependencieManager
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
@@ -231,14 +101,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             notify:this.notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
         })  
-        this.emit("created",this)
-        // 马上遍历对象触发读操作，以便创建计算对象
-        if(this.options.immediate) forEachObject(this._data)            
+        this.emit("created",this)         
+        this._dependencieManager = new DependencieManager(this)
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
     get changesets(){return this._changesets}    
     get options(){return this._options}
+    get dependencies(){return this._dependencieManager}
     log(message:LogMessageArgs,level?:LogLevel){if(this._options.debug) this.options.log(message,level)} 
 
     private subscribeCallbacks(){
@@ -533,7 +403,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      * @param fn 
      */
-    collectDeps(fn:Function,operates:WatchListenerOptions['operates'] = '*'):string[][]{
+    collectDeps(fn: Function,operates:WatchListenerOptions['operates'] = '*'):string[][]{
         let dependencies:string[][] = []       
         const watcher = this.watch((event)=>{      
             dependencies.push(event.path)            

@@ -51,6 +51,7 @@ export class ComputedObject<Value=any>{
     get attched(){return this._attched }
     get enable(){ return this._options.enable as boolean }
     set enable(value:boolean){ this._options.enable = value }
+    get async(){return this._options.async}
     get group(){return this.options.group}
     get initial(){ return this._initialValue}      
     set initial(value){ this._initialValue = value }  
