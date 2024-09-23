@@ -51,14 +51,16 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       // 将结果回写入store
       if(first){
         this.initial = computedResult
-      }else{
-        this.value = computedResult
+      }else{ 
+        this.store.peep(()=>{
+          this.value = computedResult  
+        })
       }  
-      !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
+      /// !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
       !first && this.emitComputedEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
       throw e
-    }    
+    }
   } 
   /**
    * 自动收集同步依赖
@@ -89,7 +91,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
         dependencies.push(...getDependPaths(this.path,this.options.depends))
       } 
       this.depends = noRepeat(dependencies)      // 去重一下     
-      // this.subscribe()
+      this.subscribe()
   }  
 
 

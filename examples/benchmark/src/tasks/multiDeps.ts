@@ -5,6 +5,7 @@ import { derive, share } from 'helux';
 
 const bench = new Bench({ 
    time: 1000, 
+  //  iterations: 1,
 });
 
 bench 
@@ -23,9 +24,9 @@ bench
         a8: (scope:any)=>scope.a7 + 1,
         a9: (scope:any)=>scope.a8 + 1,
         a10: (scope:any)=>scope.a9 + 1,
-    },{immediate:true});
-    for(let i = 1; i <= 10000; i++){
-        store.state.a0 = i
+    });
+    for(let i = 1; i <= 1000; i++){
+      store.state.a0 = i
     }
   }) 
   .add('[Helux] 多重依赖链计算', () => {
@@ -46,10 +47,10 @@ bench
       const a10 = derive(() =>{
         return a9.val+1
      }) 
-      for(let i = 1; i <= 10000; i++){
+      for(let i = 1; i <= 1000; i++){
         setA0(draft=>{
               draft.value = i
-          })
+          }) 
       }
   }) 
 await bench.warmup(); // make results more reliable, ref: https://github.com/tinylibs/tinybench/pull/50

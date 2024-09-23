@@ -18,7 +18,7 @@ describe("异步依赖参数的各种配置形式",()=>{
                         return first + ' ' +last
                     },["user.firstName","user.lastName"],{
                         async:true,  
-                        scope:()=>ComputedScopeRef.Depends
+                        scope:ComputedScopeRef.Depends
                     })
                 }
             },{
@@ -40,7 +40,7 @@ describe("异步依赖参数的各种配置形式",()=>{
                         return first + ' ' + last
                     },[["user","firstName"],["user","lastName"]],{
                         async:true,  
-                        scope:()=>ComputedScopeRef.Depends
+                        scope:ComputedScopeRef.Depends
                     })
                 }
             },{
@@ -63,7 +63,7 @@ describe("异步依赖参数的各种配置形式",()=>{
                         return first + ' ' + last
                     },["./firstName","./lastName"],{
                         async:true,  
-                        scope:()=>ComputedScopeRef.Depends
+                        scope: ComputedScopeRef.Depends
                     }) 
                 }
             },{
@@ -92,7 +92,7 @@ describe("异步依赖参数的各种配置形式",()=>{
                                 return first + ' ' + last
                             },["../../a.user.firstName","../../a.user.lastName"],{
                                 async:true,  
-                                scope:()=>ComputedScopeRef.Depends
+                                scope:ComputedScopeRef.Depends
                             }) 
                         }
                     }                    

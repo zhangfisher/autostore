@@ -9,15 +9,30 @@
             "type": "node",
             "request": "launch",
             "args": [
-                "${relativeFile}"
+                "${file}"
             ],
             "runtimeArgs": [
                 "-r",
-                "ts-node/register"
+                "ts-node/esm"
             ],
             "cwd": "${workspaceRoot}",
             "protocol": "inspector",
             "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "Run with tsx",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "tsx",
+            "args": [
+                "${file}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "protocol": "inspector",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
         }
     ]
-}
+} 

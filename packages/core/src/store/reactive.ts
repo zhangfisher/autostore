@@ -2,8 +2,7 @@ import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
 import { StateOperates } from './types'; 
 import { CyleDependError } from '../errors';
-import { ComputedState } from '../descriptor';
-import { AutoStore } from './store';
+import { ComputedState } from '../descriptor'; 
  
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -21,8 +20,7 @@ type CreateReactiveObjectOptions = {
 };
  
 
-function createProxy(store:AutoStore<any>,target: any, parentPath: string[],proxyCache:WeakMap<any,any>,isComputedCreating:Map<any,any>,options: CreateReactiveObjectOptions):any{
-    const { notify,createComputedObject } = options
+function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,any>,isComputedCreating:Map<any,any>,options: CreateReactiveObjectOptions):any{
     if (proxyCache.has(target)) { 
         return proxyCache.get(target);
     }
@@ -34,16 +32,16 @@ function createProxy(store:AutoStore<any>,target: any, parentPath: string[],prox
         get: (obj, key, receiver) => { 
             const value = Reflect.get(obj, key, receiver);  
             if(typeof(key)!=='string') return value             
-            const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
-            // 如果属性不可配置或只读，直接返回值
-            if (descriptor && !descriptor?.configurable && !descriptor?.writable) {
-                return value
-            }
+            // const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
+            // // 如果属性不可配置或只读，直接返回值
+            // if (descriptor && !descriptor?.configurable && !descriptor?.writable) {
+            //     return value
+            // }
             const path = [...parentPath, String(key)];
-            if(!Object.hasOwn(obj,key) || typeof value === 'function'){
+            if(typeof value === 'function' || !Object.hasOwn(obj,key)){
                 if(typeof value === 'function'){
                     if(Array.isArray(obj)){           
-                        return hookArrayMethods(notify,obj,key as string,value,parentPath); 
+                        return hookArrayMethods(options.notify,obj,key as string,value,parentPath); 
                     }else if(!isRaw(value) && Object.hasOwn(obj,key)){           
                         const pathKey = path.join('.')                          
                         try{  
@@ -53,7 +51,7 @@ function createProxy(store:AutoStore<any>,target: any, parentPath: string[],prox
                                 throw new CyleDependError(`The computed property "${pathKey}" has a circular dependency, steps: ${cylePaths.join(' <- ')}`)
                             }
                             isComputedCreating.set(pathKey,true)
-                            return createComputedObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            return options.createComputedObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
                         }finally{
                             isComputedCreating.delete(pathKey)
                         }                            
@@ -64,16 +62,16 @@ function createProxy(store:AutoStore<any>,target: any, parentPath: string[],prox
                     return value
                 }                   
             }                
-            if(!store.silenting) notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});            
-            return  createProxy(store,value, path,proxyCache,isComputedCreating,options); 
+            options.notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});                        
+            return  createProxy(value, path,proxyCache,isComputedCreating,options); 
         },
         set: (obj, prop, value, receiver) => {
             const oldValue = Reflect.get(obj, prop, receiver);
             let success = Reflect.set(obj, prop, value, receiver);
             if(prop === __NOTIFY__) return true  
-            if (success && prop!==__NOTIFY__ && !store.silenting) {
+            if (success && prop!==__NOTIFY__) {
                 const path = [...parentPath, String(prop)];
-                notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});  
+                options.notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});                  
             }
             return success;
         },
@@ -81,8 +79,8 @@ function createProxy(store:AutoStore<any>,target: any, parentPath: string[],prox
             const value = obj[prop];
             const path = [...parentPath, String(prop)];
             const success = Reflect.deleteProperty(obj, prop);
-            if (success && prop!==__NOTIFY__ && !store.silenting) {
-                notify({type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
+            if (success && prop!==__NOTIFY__) {
+                options.notify({type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
             }
             return success;
         }
@@ -103,9 +101,9 @@ function createProxy(store:AutoStore<any>,target: any, parentPath: string[],prox
  * @param {CreateReactiveObjectOptions.createDynamicValueObject} [options.createDynamicValueObject] - 用于创建动态值对象的函数。
  * @returns {State} - 返回一个响应式对象。
  */
-export function createReactiveObject<State extends object>(store:AutoStore<State>,state:State,options?: CreateReactiveObjectOptions): ComputedState<State> {
+export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): ComputedState<State> {
     const isComputedCreating = new Map()
     const proxyCache = new WeakMap();
-    return createProxy(store,state, [],proxyCache,isComputedCreating,options!) as ComputedState<State>
+    return createProxy(state, [],proxyCache,isComputedCreating,options!) as ComputedState<State>
 } 
  

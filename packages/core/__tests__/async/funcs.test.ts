@@ -148,8 +148,7 @@ describe("异步计算高级控制功能",()=>{
                     count++
                     throw new Error("error")
                 },['price','count'],{id:'x',retry:[5,100]})
-            },{
-                immediate:true,
+            },{ 
                 onComputedError:()=>{
                     expect(store.state.total.retry).toBe(0)     
                     resolve()           
@@ -211,8 +210,7 @@ describe("异步计算属性的超时功能",()=>{
                     await delay(10000)
                     return scope.price * scope.count
                 },['price','count'],{id:'x',timeout:[5*1000,5]})                
-            },{
-                immediate:true,
+            },{ 
                 onComputedCancel:({reason})=>{
                     expect(reason).toBe("timeout")
                     expect(store.state.total.loading).toBe(false)

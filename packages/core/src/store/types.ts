@@ -41,12 +41,12 @@ export type AutoStoreOptions<State extends Dict> = {
      * @description
      * 
      * 默认情况下，计算函数仅在第一次读取时执行,
-     * 如果immediate=true时，则在创建Store时遍历对象触发对读操作从而马上创建计算对象
+     * 如果lazy=true时，则延迟创建计算对象
      * 
      * @default false
      * 
     */
-    immediate?: boolean 
+    lazy?: boolean 
     /**
       * 是否启用计算
       * 

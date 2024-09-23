@@ -85,8 +85,7 @@ describe("异步计算函数的Scope指向",()=>{
                         }
                     }
                 },{
-                    scope:()=>ComputedScopeRef.Depends,
-                    immediate:true
+                    scope:()=>ComputedScopeRef.Depends
                 })            
             store.state.root.parent.order.total // 读取操作时创建计算属性
         }) 

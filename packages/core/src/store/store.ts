@@ -61,7 +61,7 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { getVal } from "../utils";
+import { forEachObject, getVal } from "../utils";
 import { PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
 import { getComputedDescriptor } from "../computed/utils";
@@ -71,7 +71,6 @@ import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../descriptor";
 import { noRepeat } from "../utils/noRepeat";
 import { EventEmitter, EventListener } from "../events";
-import { DependencieManager } from "./dependencie";
  
  
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
@@ -84,31 +83,29 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _batching = false                           // 是否批量更新中
     private _batchOperates:StateOperateParams[] = []    // 暂存批量操作
     private _peeping:boolean = false
-    private _dependencieManager:DependencieManager
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
             id       : getId(),
             debug    : false,
-            immediate: false,            
+            lazy     : false,            
             enableComputed:true,
             log,
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
         this.watchObjects  =  new WatchObjects<State>(this)
         this.subscribeCallbacks()
-        this._data = createReactiveObject(this,state,{
+        this._data = createReactiveObject(state,{
             notify:this.notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
         })  
-        this.emit("created",this)         
-        this._dependencieManager = new DependencieManager(this)
+        this.emit("created",this)       
+        if(!this._options.lazy) forEachObject(this._data)
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
     get changesets(){return this._changesets}    
     get options(){return this._options}
-    get dependencies(){return this._dependencieManager}
     get silenting(){return this._silenting}
     get batching(){return this._batching}
     log(message:LogMessageArgs,level?:LogLevel){if(this._options.debug) this.options.log(message,level)} 
@@ -377,12 +374,22 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      * 读取指定路径的状态值并且不触发事件，即偷看
      * 
+     * @example
+     * 
+     * peep(["a","b"])
+     * peep("a.b")
+     * peep(state=>state.a.b)
      * 
      */
-    peep(path:string | string[]){
+    peep<Value=any>(getter:(state:State)=>Value):Value
+    peep<Value=any>(path:string | string[]):Value
+    peep(){
+        const getter = typeof(arguments[0])==='function' ? 
+            ()=>arguments[0](this.state) 
+            : ()=> getVal(this.state,Array.isArray(arguments[0]) ? arguments[0] : arguments[0].split(PATH_DELIMITER))
         this._peeping=true
         try{
-            return getVal(this.state,Array.isArray(path) ? path : path.split(PATH_DELIMITER))
+            return getter()
         }finally{
             this._peeping =false
         }         
