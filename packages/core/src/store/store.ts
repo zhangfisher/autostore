@@ -97,7 +97,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.computedObjects = new ComputedObjects<State>(this)
         this.watchObjects  =  new WatchObjects<State>(this)
         this.subscribeCallbacks()
-        this._data = createReactiveObject(state,{
+        this._data = createReactiveObject(this,state,{
             notify:this.notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
         })  
@@ -109,6 +109,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     get changesets(){return this._changesets}    
     get options(){return this._options}
     get dependencies(){return this._dependencieManager}
+    get silenting(){return this._silenting}
+    get batching(){return this._batching}
     log(message:LogMessageArgs,level?:LogLevel){if(this._options.debug) this.options.log(message,level)} 
 
     private subscribeCallbacks(){

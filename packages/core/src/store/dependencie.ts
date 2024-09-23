@@ -46,6 +46,7 @@
  * 
  */
 
+import { StateOperateParams } from ".";
 import { ComputedObject } from "../computed/computedObject";
 import { PATH_DELIMITER } from "../consts";
 import { forEachObject, isPathEq } from "../utils";
@@ -56,8 +57,17 @@ export class DependencieManager{
     private _chains:string[][]=[]                         // 保存依赖关系链
     constructor(public store:AutoStore<any>){
         this.createDeps()
+        this.store.watch(this.onUpdate.bind(this),{operates:'write'})
     }
     get chains(){ return this._chains }
+    /**
+     * 侦听变更事件
+     * @param state 
+     */
+    private onUpdate(params:StateOperateParams){ 
+        this.noticeChange(params)   
+    }
+
     private addDepends(depStart:string ,deps:string[][]){ 
         deps.forEach(dep=>{
             if(dep && dep.length>0){ 
@@ -87,7 +97,8 @@ export class DependencieManager{
      * @param oldValue 
      * @param newValue 
      */
-    noticeChange(path:string[] | string,newValue:any,oldValue:any){
+    private noticeChange(params:StateOperateParams){
+        const { path} = params
         const pathStr = Array.isArray(path) ? path.join(PATH_DELIMITER) : path
         
         const chains = this._chains.filter(chain=>chain.includes(pathStr))
@@ -105,21 +116,23 @@ export class DependencieManager{
                                     return acc
                                 },[] as string[][])
         const computedObjs:ComputedObject[] = []
-        chains.forEach(chain=>{
+        chains.forEach(chain=>{            
             // 找出computedObjects里面path==chain的对象
             for(let obj of this.store.computedObjects.values()){
                 if(obj.path){
-                    if(isPathEq(obj.path,chain)){
-                        computedObjs.push(obj)
-                    }
+                    chain.forEach((spath)=>{
+                        if(isPathEq(obj.path!,spath.split(PATH_DELIMITER))){
+                            computedObjs.push(obj)
+                        }
+                    })                    
                 }                
             }                        
         })
-
-        computedObjs.forEach(obj=>{
-            obj.run()
+        this.store.silentUpdate(()=>{
+            computedObjs.forEach(obj=>{
+                obj.run({changed:params})
+            })
         })
-        
     }
     /**
      * 遍历对象，会触发所有计算属性对象的创建,然后生成依赖关系链

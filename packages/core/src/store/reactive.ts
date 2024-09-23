@@ -3,6 +3,7 @@ import { hookArrayMethods } from './hookArray';
 import { StateOperates } from './types'; 
 import { CyleDependError } from '../errors';
 import { ComputedState } from '../descriptor';
+import { AutoStore } from './store';
  
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -20,7 +21,7 @@ type CreateReactiveObjectOptions = {
 };
  
 
-function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,any>,isComputedCreating:Map<any,any>,options: CreateReactiveObjectOptions):any{
+function createProxy(store:AutoStore<any>,target: any, parentPath: string[],proxyCache:WeakMap<any,any>,isComputedCreating:Map<any,any>,options: CreateReactiveObjectOptions):any{
     const { notify,createComputedObject } = options
     if (proxyCache.has(target)) { 
         return proxyCache.get(target);
@@ -63,18 +64,16 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
                     return value
                 }                   
             }                
-            notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});            
-            return  createProxy(value, path,proxyCache,isComputedCreating,options); 
+            if(!store.silenting) notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});            
+            return  createProxy(store,value, path,proxyCache,isComputedCreating,options); 
         },
         set: (obj, prop, value, receiver) => {
             const oldValue = Reflect.get(obj, prop, receiver);
-            const path = [...parentPath, String(prop)];
             let success = Reflect.set(obj, prop, value, receiver);
             if(prop === __NOTIFY__) return true  
-            if (success && prop!==__NOTIFY__) {
-                setImmediate(()=>{
-                    notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});  
-                })                
+            if (success && prop!==__NOTIFY__ && !store.silenting) {
+                const path = [...parentPath, String(prop)];
+                notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});  
             }
             return success;
         },
@@ -82,10 +81,8 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
             const value = obj[prop];
             const path = [...parentPath, String(prop)];
             const success = Reflect.deleteProperty(obj, prop);
-            if (success && prop!==__NOTIFY__) {
-                setImmediate(()=>{
-                    notify({type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
-                })
+            if (success && prop!==__NOTIFY__ && !store.silenting) {
+                notify({type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
             }
             return success;
         }
@@ -106,9 +103,9 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
  * @param {CreateReactiveObjectOptions.createDynamicValueObject} [options.createDynamicValueObject] - 用于创建动态值对象的函数。
  * @returns {State} - 返回一个响应式对象。
  */
-export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): ComputedState<State> {
+export function createReactiveObject<State extends object>(store:AutoStore<State>,state:State,options?: CreateReactiveObjectOptions): ComputedState<State> {
     const isComputedCreating = new Map()
     const proxyCache = new WeakMap();
-    return createProxy(state, [],proxyCache,isComputedCreating,options!) as ComputedState<State>
+    return createProxy(store,state, [],proxyCache,isComputedCreating,options!) as ComputedState<State>
 } 
  

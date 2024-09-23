@@ -29,11 +29,11 @@ bench
     }
   }) 
   .add('[Helux] 多重依赖链计算', () => {
-    const [count,setCount] = share({
-        count: 0
+    const [a0,setA0] = share({
+        value: 0
       });
       const a1 = derive(() => {
-        return count.count+1
+        return a0.value+1
       });
       const a2 = derive(() =>a1.val+1)
       const a3 = derive(() =>a2.val+1)
@@ -47,8 +47,8 @@ bench
         return a9.val+1
      }) 
       for(let i = 1; i <= 10000; i++){
-          setCount(draft=>{
-              draft.count = i
+        setA0(draft=>{
+              draft.value = i
           })
       }
   }) 
