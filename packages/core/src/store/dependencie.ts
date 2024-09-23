@@ -5,10 +5,10 @@
  * 
  * 工作原理
  * 
- * 依赖关系链图生成算法
+ * 依赖关系链生成算法
  * 
  * 1. a->b
- *   _chains.push([a,b])
+ *   _chains.push([b,a])
  * 2. b->c
  *   遍历_chains,如果有以b为结尾的,则将c插入到b后面
  *   [a,b,c]
@@ -19,18 +19,8 @@
  * 4. e->a,b
  *   相当于e->a,e->b
  * 
+ * 5. 当计算对象是动态生成的，而不是直接声明在state上，即attached=false,此时计算对象是没有path的，此时使用#id代替path
  *  
- * 
- *  如果计算对象path==undefined当动态计算对象时，由于没有attach在某个路径上，所有其path为undefined
- *  此种情况是无法生成依赖关系链的
- *  因此，针对没有attach的计算对象，则使用其id来作为path
- *  这样就一定会存在自己的依赖关系链，如["id",'a','b']
- * 
- *   obj = store.computedObjects.create((state)=>state.a+state.b)
- *   obj.path = undefined
- *   obj.depends = [['a'],['b']]
- *   obj.id==='m1'
- *   
  *   会生成
  *       ["#m1",'a']
  *       ["#m1",'b']
@@ -56,56 +46,92 @@
  * 
  */
 
+import { ComputedObject } from "../computed/computedObject";
 import { PATH_DELIMITER } from "../consts";
-import { forEachObject } from "../utils";
+import { forEachObject, isPathEq } from "../utils";
+import { mergeDepChains } from "../utils/mergeDepChains";
 import type { AutoStore } from "./store";
-
-
-
+ 
 export class DependencieManager{
     private _chains:string[][]=[]                         // 保存依赖关系链
     constructor(public store:AutoStore<any>){
-        this.collectDeps()
+        this.createDeps()
     }
-    private addDepends(depStart:string ,deps:string[][]){
-        const  chainIds:number[] = []
+    get chains(){ return this._chains }
+    private addDepends(depStart:string ,deps:string[][]){ 
         deps.forEach(dep=>{
-            if(dep.length>1){ 
-                const newChain = []
-                const newDep= dep.join(PATH_DELIMITER)
-                if(depStart.startsWith("#")){ // 如果path存在
-                }else{
-                    this._chains.forEach((chain)=>{
-                        const depLast = chain[chain.length-1]
-                        // 如果依赖的起始路径和当前路径相同，则将依赖插入到当前路径后面
-                        if(depLast === depStart){
-                            chain.push(newDep)
-                        }else{
-                            newChain.push([depStart,newDep])
-                        }
-                    }) 
+            if(dep && dep.length>0){ 
+                const newDep= dep.join(PATH_DELIMITER) 
+                if(this._chains.length===0){
+                    this._chains.push([newDep,depStart])
+                }else{                    
+                    const existdChains = this._chains.filter((chain)=>{                                                
+                        return newDep===chain[chain.length-1]// 如果依赖的起始路径和当前路径相同，则将依赖插入到当前路径后面
+                    })
+                    if(existdChains.length===0){
+                        this._chains.push([newDep,depStart])
+                    }else{
+                        existdChains.forEach(chain=>{                        
+                            chain.push(depStart)
+                        })
+                    }
                 }
             }
-        })
-        return chainIds
+        }) 
     }
     /**
-     * 遍历对象，会触发所有计算属性对象的创建
+     * 
+     * 当path指定的状态值变化时，调用本方法，通知所有依赖于path的计算属性对象重新执行
+     * 
+     * @param path 
+     * @param oldValue 
+     * @param newValue 
      */
-    private collectDeps(){        
-        // 1. 遍历对象会触发所有计算属性对象的创建
-        forEachObject(this.store.state)
-        // const listener = this.store.changesets.onAny((data:StateOperateParams)=>{
-        //     data
-        // })
-        // 2. 遍历计算属性对象
-        this.store.computedObjects.forEach(obj=>{
-            if(obj.async){
+    noticeChange(path:string[] | string,newValue:any,oldValue:any){
+        const pathStr = Array.isArray(path) ? path.join(PATH_DELIMITER) : path
+        
+        const chains = this._chains.filter(chain=>chain.includes(pathStr))
+                                .map(chain=>{
+                                    const index = chain.indexOf(pathStr)
+                                    return chain.slice(index)
+                                })                                
+                                .reduce((acc,chain)=>{                  // 对chains进行去重
+                                    if(acc.length===0){
+                                        acc.push(chain)
+                                    }else{
+                                        const exist = acc.find(c=>c.join('')===chain.join(''))
+                                        if(!exist) acc.push(chain)
+                                    }
+                                    return acc
+                                },[] as string[][])
+        const computedObjs:ComputedObject[] = []
+        chains.forEach(chain=>{
+            // 找出computedObjects里面path==chain的对象
+            for(let obj of this.store.computedObjects.values()){
+                if(obj.path){
+                    if(isPathEq(obj.path,chain)){
+                        computedObjs.push(obj)
+                    }
+                }                
+            }                        
+        })
 
-            }else{
-                const chainIds = this.addDepends(obj.path ? obj.path.join(PATH_DELIMITER) : `#${obj.id}` ,obj.depends!)
-            }
+        computedObjs.forEach(obj=>{
+            obj.run()
+        })
+        
+    }
+    /**
+     * 遍历对象，会触发所有计算属性对象的创建,然后生成依赖关系链
+     */
+    private createDeps(){        
+        // 1. 遍历对象会触发所有计算属性对象的创建
+        forEachObject(this.store.state) 
+        // 2. 遍历计算属性对象
+        this.store.computedObjects.forEach(obj=>{ 
+            this.addDepends(obj.path ? obj.path.join(PATH_DELIMITER) : `#${obj.id}` ,obj.depends!)       
         }) 
+        this._chains = mergeDepChains(this._chains)
     }
 
 }

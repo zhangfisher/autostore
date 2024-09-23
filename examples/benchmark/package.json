@@ -6,8 +6,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bench": "tsx src/tasks/multiDeps.ts",
-    "clinic": "clinic bubbleprof -- node ./src/diagnosis/sync.js"
+    "bench": "tsx src/tasks/multiDeps.ts"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +18,6 @@
   },
   "dependencies": {
     "@autostorejs/core": "workspace:*",
-    "clinic": "^13.0.0",
     "helux": "^4.4.0",
     "tinybench": "^2.9.0"
   }
