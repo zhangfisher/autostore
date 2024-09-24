@@ -5,7 +5,7 @@
  */
 import { PATH_DELIMITER } from "../consts"; 
 import { AutoStore } from "../store/store";
-import { StateOperateParams } from "../store/types";
+import { StateOperateParams, UpdateOptions } from "../store/types";
 import { getDependPaths } from "../utils/getDependPaths";
 import { getVal } from "../utils/getVal";
 import { joinValuePath } from "../utils/joinValuePath";
@@ -15,7 +15,7 @@ import { StoreEvents } from "../events/types";
 import { setVal } from "../utils";
 import { getId } from "../utils/getId"; 
 export class ComputedObject<Value=any>{    
-    private _path?:string[] 
+    private _path:string[] 
     private _options:Required<ComputedOptions>
     private _getter:any
     private _depends: string[][] | undefined
@@ -34,14 +34,15 @@ export class ComputedObject<Value=any>{
      */
     constructor(public store:AutoStore<any>,public descriptor:ComputedDescriptor,public context?:ComputedContext<Value>){
         this._attched    =  context!==undefined
-        this._path       = context?.path 
         this._getter     = descriptor.getter         
         this._options    = Object.assign({
             enable: true,
             group: "",
             depends: []
         }, descriptor.options) as unknown as Required<ComputedOptions>
-        this._id         = this._options.id || (this._path ? joinValuePath(this._path) : getId())
+        this._id         = this._options.id || (this._attched ? joinValuePath(context?.path) : getId())
+        this._path       = context?.path || [`#${this._id}`]
+        if(!this._path) this._path = [`#${this._id}`]
         this._depends    = getDependPaths(this._path,this._options.depends )
         this._initialValue = this._options.initial 
         this.onInitial()   
@@ -61,14 +62,24 @@ export class ComputedObject<Value=any>{
     get depends(){return this._depends}
     set depends(value){ this._depends=value}     
     toString(){ return `ComputedObject<${joinValuePath(this._path)}>` }
-    get value(){ return (this._attched ? getVal(this.store.state,this._path) :  this._value) as unknown as Value}           
+
+    get value(){ 
+        if(this._attched){
+            return getVal(this.store.state,this._path) 
+        }else{ 
+            this.store._notify({type:'get',path:this.path,value:this._value}) 
+            return this._value as unknown as Value
+        }
+    }           
     set value(value:Value){
         if(this._attched){ 
-            setVal(this.store.state,this._path!, value)     
-        }else{
-            this._value = value
+            setVal(this.store.state,this._path, value)     
+        }else{            
+            this._value = value          
+            this.store._notify({type:'set',path:this.path,value})
         }
     }  
+
     /**
      * 更新计算对象的结果值
      * 
@@ -77,20 +88,13 @@ export class ComputedObject<Value=any>{
      * - 标量值
      *  update(1)
      * - 对象值
-     *  update({result:1})
-     * 
-     * 
-     * 
+     *  update({result:1}) 
      * 
      */
-    update(value:Value,options?:{silent?:boolean}){
-        if(this._attched){
-            this.store.silentUpdate((state)=>{
-                setVal(state,this._path!, value)
-            })
-        }else{
-            this._value = value
-        }
+    update(value:Value,options?:UpdateOptions){        
+        this.store.update(()=>{
+            this.value = value
+        },options) 
     }
     /**
      * 更新计算属性的值，并且不会触发依赖的变化事件
@@ -101,13 +105,10 @@ export class ComputedObject<Value=any>{
      * @param {boolean} silent - 是否静默更新，即不会触发依赖变化事件 
      */
     silentUpdate(value:Value){
-        if(this._attched){
-            this.store.silentUpdate((state)=>{
-                setVal(state,this._path!, value)
-            })
-        }else{
-            this._value = value
-        }
+         this.update(value,{silent:true})
+    }
+    batchUpdate(value:Value){
+        this.update(value,{batch:true})
     }
     /**
      * 检查计算函数是否被禁用
@@ -143,13 +144,21 @@ export class ComputedObject<Value=any>{
         throw new Error("Method not implemented.");
     }
     /**
+     * 获取当前对象的依赖路径
+     * 
+     * @returns 
+     */
+    protected getDepends(){
+        return this._depends!
+    }
+    /**
      * 订阅依赖的变化事件
      * 不包括读取依赖的事件
      */
     subscribe(){
         if(this._depends && !this._subscribed){
             this._subscribers.push(this.store.watch(
-                this._depends!,
+                this.getDepends(),
                 this.onDependsChange.bind(this),
                 {operates:'write'}
             ))
@@ -166,13 +175,12 @@ export class ComputedObject<Value=any>{
     }
     
     protected emitComputedEvent(event:keyof StoreEvents,args:any){
-        setTimeout(()=>{
+        setImmediate(()=>{
             this.store.emit(event,args)
-        },0)
+        })
     }
-
     /**
-     * 订阅当前计算变化的事件
+     * 订阅当前计算对象值变化的事件
      * @description
      * 
      * 当计算结果值发生变化时触发

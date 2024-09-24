@@ -6,7 +6,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bench": "tsx src/tasks/multiDeps.ts"
+    "bench": "tsx src/tasks/sync-bench.ts",
+    "bench:async": "tsx src/tasks/async-bench.ts"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
   "dependencies": {
     "@autostorejs/core": "workspace:*",
     "helux": "^4.4.0",
+    "mobx": "^6.13.2",
     "tinybench": "^2.9.0"
   }
 }

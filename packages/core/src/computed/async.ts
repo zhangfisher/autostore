@@ -7,7 +7,7 @@
  *
  *
  */
-import { markRaw} from "../utils";
+import { isPathEq, markRaw} from "../utils";
 import { delay } from "flex-tools/async/delay";
 import { getValueScope } from "../scope";
 import { ComputedProgressbar } from "./types";
@@ -26,7 +26,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	private _isComputedRunning: boolean = false;
 	get async() {return true}       
 	get value() {return super.value as AsyncComputedResult<Value>}
-
+	set value(value:AsyncComputedResult<Value>) {
+		super.value = value
+	}
 	/**
 	 *
 	 */
@@ -231,7 +233,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					progress: 0,
 				});
 
-
 				// 如果有中止信号，则取消计算
 				if (hasAbort) {
 					throw new Error("Abort");
@@ -310,4 +311,50 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	protected onDependsChange(params:StateOperateParams){ 
 		this.run({changed:params})		
 	}
+	
+	/**
+	 * 由于所有异步计算属性均会被转换为一个AsyncComputedResult<{result,timeout,....}>的形式
+	 * 这样，当我们在指定一个依赖是异步属性时，就需要指定为xxxx.result才可以个侦听到变化
+	 * 
+	 * @example
+	 * const store = createStore({ 
+     *            a0: 1,
+     *            a1: computed(async (scope:any)=>{
+     *              return scope.a0 + 1
+     *            },["a0"],{initial:2}),
+     *            a2: computed(async (scope:any)=>{
+     *              return scope.a1.result + 1
+     *            },["a1.result"],{initial:3})
+     *        });
+	 * 
+	 *  以上a2依赖于a1，由于a1是一个异步对象，所以在写依赖时就必须写上["a1.result"]
+	 *  这就有点反直觉了。
+	 * 
+	 * 本函数在异步计算对象订阅变更事件时调用，用来返回字符串形式的依赖数组
+	 * 
+	 * 本函数的功能就是对所有依赖进行判断如果其是一个异步计算依赖，则自动添加.result，这样就可以如下方式来写依赖了
+	 * 
+	 * 	const store = createStore({ 
+     *            a0: 1,
+     *            a1: computed(async (scope:any)=>{
+     *              return scope.a0 + 1
+     *            },["a0"],{initial:2}),
+     *            a2: computed(async (scope:any)=>{
+     *              return scope.a1.result + 1
+     *            },["a1"],{initial:3})   
+     *        });
+	 * 
+	 */
+	protected getDepends(){
+        const depends = super.getDepends()
+		return depends.map((dep) => {
+			if(dep.length===0) return dep 
+			for(let obj of this.store.computedObjects.values()){
+				if (isPathEq(obj.path, dep)) {
+					return [`${dep}.result`]
+				}
+			} 
+			return dep
+		}) as unknown as string[][] 
+    }
 }

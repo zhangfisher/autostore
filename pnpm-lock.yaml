@@ -16,7 +16,7 @@ importers:
         version: 0.9.1
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.1))(@types/node@22.5.0)(typescript@5.5.4)
+        version: 10.9.2(@swc/core@1.7.26)(@types/node@22.5.0)(typescript@5.5.4)
       typescript:
         specifier: ^5.5.4
         version: 5.5.4
@@ -87,6 +87,9 @@ importers:
       helux:
         specifier: ^4.4.0
         version: 4.4.0(react@18.3.1)
+      mobx:
+        specifier: ^6.13.2
+        version: 6.13.2
       tinybench:
         specifier: ^2.9.0
         version: 2.9.0
@@ -96,7 +99,7 @@ importers:
         version: 22.5.5
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.1))(@types/node@22.5.5)(typescript@5.6.2)
+        version: 10.9.2(@swc/core@1.7.26)(@types/node@22.5.5)(typescript@5.6.2)
       tsx:
         specifier: ^4.19.1
         version: 4.19.1
@@ -179,7 +182,7 @@ importers:
         version: 18.3.1
       tsup:
         specifier: ^8.0.1
-        version: 8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.5))(@swc/core@1.7.26(@swc/helpers@0.5.1))(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2)
+        version: 8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.0))(@swc/core@1.7.26)(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2)
 
   packages/core:
     dependencies:
@@ -198,10 +201,10 @@ importers:
         version: 22.5.5
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.1))(@types/node@22.5.5)(typescript@5.6.2)
+        version: 10.9.2(@swc/core@1.7.26)(@types/node@22.5.5)(typescript@5.6.2)
       tsup:
         specifier: ^8.3.0
-        version: 8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.5))(@swc/core@1.7.26(@swc/helpers@0.5.1))(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2)
+        version: 8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.5))(@swc/core@1.7.26)(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2)
       typescript:
         specifier: ^5.6.2
         version: 5.6.2
@@ -226,7 +229,7 @@ importers:
         version: 18.3.1
       tsup:
         specifier: ^8.3.0
-        version: 8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.5))(@swc/core@1.7.26(@swc/helpers@0.5.1))(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2)
+        version: 8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.5))(@swc/core@1.7.26)(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2)
       typescript:
         specifier: ^5.6.2
         version: 5.6.2
@@ -5788,6 +5791,9 @@ packages:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
     hasBin: true
 
+  mobx@6.13.2:
+    resolution: {integrity: sha512-GIubI2qf+P6lG6rSEG0T2pg3jV9/0+O0ncF09+0umRe75+Cbnh1KNLM1GvbTY9RSc7QuU+LcPNZfxDY8B+3XRg==}
+
   move-concurrently@1.0.1:
     resolution: {integrity: sha512-hdrFxZOycD/g6A6SoI2bB5NA/5NEqD0569+S47WZhPvm46sD50ZHdYaFmnua5lndde9rCHGjmfK7Z8BuCt/PcQ==}
 
@@ -9450,6 +9456,15 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
+  '@microsoft/api-extractor-model@7.28.4(@types/node@22.5.0)':
+    dependencies:
+      '@microsoft/tsdoc': 0.14.2
+      '@microsoft/tsdoc-config': 0.16.2
+      '@rushstack/node-core-library': 3.63.0(@types/node@22.5.0)
+    transitivePeerDependencies:
+      - '@types/node'
+    optional: true
+
   '@microsoft/api-extractor-model@7.28.4(@types/node@22.5.5)':
     dependencies:
       '@microsoft/tsdoc': 0.14.2
@@ -9475,6 +9490,24 @@ snapshots:
       typescript: 5.3.3
     transitivePeerDependencies:
       - '@types/node'
+
+  '@microsoft/api-extractor@7.39.1(@types/node@22.5.0)':
+    dependencies:
+      '@microsoft/api-extractor-model': 7.28.4(@types/node@22.5.0)
+      '@microsoft/tsdoc': 0.14.2
+      '@microsoft/tsdoc-config': 0.16.2
+      '@rushstack/node-core-library': 3.63.0(@types/node@22.5.0)
+      '@rushstack/rig-package': 0.5.1
+      '@rushstack/ts-command-line': 4.17.1
+      colors: 1.2.5
+      lodash: 4.17.21
+      resolve: 1.22.8
+      semver: 7.5.4
+      source-map: 0.6.1
+      typescript: 5.3.3
+    transitivePeerDependencies:
+      - '@types/node'
+    optional: true
 
   '@microsoft/api-extractor@7.39.1(@types/node@22.5.5)':
     dependencies:
@@ -9714,6 +9747,19 @@ snapshots:
       z-schema: 5.0.5
     optionalDependencies:
       '@types/node': 20.5.1
+
+  '@rushstack/node-core-library@3.63.0(@types/node@22.5.0)':
+    dependencies:
+      colors: 1.2.5
+      fs-extra: 7.0.1
+      import-lazy: 4.0.0
+      jju: 1.4.0
+      resolve: 1.22.8
+      semver: 7.5.4
+      z-schema: 5.0.5
+    optionalDependencies:
+      '@types/node': 22.5.0
+    optional: true
 
   '@rushstack/node-core-library@3.63.0(@types/node@22.5.5)':
     dependencies:
@@ -14873,6 +14919,8 @@ snapshots:
     dependencies:
       minimist: 1.2.8
 
+  mobx@6.13.2: {}
+
   move-concurrently@1.0.1:
     dependencies:
       aproba: 1.2.0
@@ -17104,7 +17152,7 @@ snapshots:
     optionalDependencies:
       '@swc/core': 1.7.26(@swc/helpers@0.5.1)
 
-  ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.1))(@types/node@22.5.0)(typescript@5.5.4):
+  ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.5.0)(typescript@5.5.4):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.11
@@ -17124,7 +17172,7 @@ snapshots:
     optionalDependencies:
       '@swc/core': 1.7.26(@swc/helpers@0.5.1)
 
-  ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.1))(@types/node@22.5.5)(typescript@5.6.2):
+  ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.5.5)(typescript@5.6.2):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.11
@@ -17158,7 +17206,36 @@ snapshots:
 
   tslib@2.7.0: {}
 
-  tsup@8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.5))(@swc/core@1.7.26(@swc/helpers@0.5.1))(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2):
+  tsup@8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.0))(@swc/core@1.7.26)(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2):
+    dependencies:
+      bundle-require: 5.0.0(esbuild@0.23.1)
+      cac: 6.7.14
+      chokidar: 3.6.0
+      consola: 3.2.3
+      debug: 4.3.6
+      esbuild: 0.23.1
+      execa: 5.1.1
+      joycon: 3.1.1
+      picocolors: 1.0.1
+      postcss-load-config: 6.0.1(postcss@8.4.41)(tsx@4.19.1)
+      resolve-from: 5.0.0
+      rollup: 4.21.1
+      source-map: 0.8.0-beta.0
+      sucrase: 3.35.0
+      tinyglobby: 0.2.6
+      tree-kill: 1.2.2
+    optionalDependencies:
+      '@microsoft/api-extractor': 7.39.1(@types/node@22.5.0)
+      '@swc/core': 1.7.26(@swc/helpers@0.5.1)
+      postcss: 8.4.41
+      typescript: 5.6.2
+    transitivePeerDependencies:
+      - jiti
+      - supports-color
+      - tsx
+      - yaml
+
+  tsup@8.3.0(@microsoft/api-extractor@7.39.1(@types/node@22.5.5))(@swc/core@1.7.26)(postcss@8.4.41)(tsx@4.19.1)(typescript@5.6.2):
     dependencies:
       bundle-require: 5.0.0(esbuild@0.23.1)
       cac: 6.7.14

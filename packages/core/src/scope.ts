@@ -35,7 +35,7 @@ function getScopeOptions(valueObject:ComputedObject,computedScope?: ComputedScop
  * @param params 
  * @returns 
  */
-export function getValueScope<Value=any,Scope=any,Options extends ComputedOptions<Value,Scope>=ComputedOptions<Value,Scope>>(computedObject:ComputedObject<Value,Options>,computedType:ComputedType,valueContext:ComputedContext<Value> | undefined, computedOptions: Options) {
+export function getValueScope<Value=any,Scope=any,Options extends ComputedOptions<Value,Scope>=ComputedOptions<Value,Scope>>(computedObject:ComputedObject<Value>,computedType:ComputedType,valueContext:ComputedContext<Value> | undefined, computedOptions: Options) {
 
   let rootDraft = computedObject.store.state;
   const storeOptions = computedObject.store.options
@@ -62,7 +62,7 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
       }else if (scopeOption === ComputedScopeRef.Root) {
         scope = rootDraft;
       }else if (scopeOption === ComputedScopeRef.Depends) {        
-        scope = computedObject.depends?.map(dep => getValueByPath(rootDraft, dep));
+        scope = computedObject.depends?.map((dep:any) => getValueByPath(rootDraft, dep));
       }else{
        if (typeof scopeOption === "string") {       
           // 当scope是以@开头的字符串时，代表是一个路径指向，如：@./user，代表其scope是由user属性值指向的对象路径

@@ -5,21 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "ts-node",
-            "type": "node",
-            "request": "launch",
-            "args": [
-                "${file}"
-            ],
-            "runtimeArgs": [
-                "-r",
-                "ts-node/esm"
-            ],
-            "cwd": "${workspaceRoot}",
-            "protocol": "inspector",
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
             "name": "Run with tsx",
             "type": "node",
             "request": "launch",
@@ -33,6 +18,20 @@
             "skipFiles": [
                 "<node_internals>/**"
             ]
-        }
+        },{
+            "name": "ts-node",
+            "type": "node",
+            "request": "launch",
+            "args": [
+                "${file}"
+            ],
+            "runtimeArgs": [
+                "-r",
+                "ts-node/esm"
+            ],
+            "cwd": "${workspaceRoot}",
+            "protocol": "inspector",
+            "internalConsoleOptions": "openOnSessionStart"
+        }       
     ]
 } 

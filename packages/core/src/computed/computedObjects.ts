@@ -19,9 +19,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     set enable(value:boolean){
       this.store.options.enableComputed = value
     }
-
-
-
+     
     /**
      * 动态创建一个新的计算对象
      * 
@@ -166,14 +164,5 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
       this.get(id)?.unsubscribe()
       return super.delete(id)
     }
-    // /**
-    //  * 创建一个新计算对象
-    //  */
-    // get create():ReturnType<typeof computedObjectCreator<T>>{
-    //   if(!this._createComputed){
-    //     this._createComputed = computedObjectCreator<T>(this.store)
-    //   }
-    //   return this._createComputed
-    // }   
   }
    

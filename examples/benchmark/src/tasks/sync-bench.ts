@@ -1,15 +1,48 @@
 import { Bench } from 'tinybench';
 import { createStore } from "@autostorejs/core"
 import { derive, share } from 'helux';
+import { MobxStore } from './mobx.store';
 
 
 const bench = new Bench({ 
-   time: 1000, 
-  //  iterations: 1,
+  time: 1000, 
+  iterations: 1,
 });
 
-bench 
-  .add('[AutoStore] 多重依赖链计算', () => {
+bench   
+  // *********  基本的依赖计算  *********  
+  .add('[AutoStore] 简单的依赖计算', () => { 
+    const store = createStore({ 
+        a: 50,
+        b: (scope:any)=>{
+          return scope.a + 1
+        }
+    });
+    for(let i = 1; i <= 1000; i++){      
+      store.state.a = i
+    } 
+  }) 
+  .add('[Helux] 简单的依赖计算', () => { 
+    const [a,setA] = share({
+        value: 0
+      });
+      const b = derive(() => {
+        return a.value+1
+      }); 
+      for(let i = 1; i <= 1000; i++){
+        setA(draft=>{
+              draft.value = i
+          }) 
+      } 
+  }) 
+  .add('[Mobx] 简单的依赖计算', () => { 
+    const store = new MobxStore();
+    for (let i = 1; i <= 1000; i++) {
+      store.setA0(i); 
+    }
+  })     
+  // *********  多重依赖链计算  *********  
+  .add('[AutoStore] 多重依赖链计算', () => { 
     const store = createStore({ 
         a0: 50,
         a1: (scope:any)=>{
@@ -25,11 +58,11 @@ bench
         a9: (scope:any)=>scope.a8 + 1,
         a10: (scope:any)=>scope.a9 + 1,
     });
-    for(let i = 1; i <= 1000; i++){
+    for(let i = 1; i <= 1000; i++){      
       store.state.a0 = i
-    }
+    } 
   }) 
-  .add('[Helux] 多重依赖链计算', () => {
+  .add('[Helux] 多重依赖链计算', () => { 
     const [a0,setA0] = share({
         value: 0
       });
@@ -46,13 +79,13 @@ bench
       const a9 = derive(() =>a8.val+1)
       const a10 = derive(() =>{
         return a9.val+1
-     }) 
-      for(let i = 1; i <= 1000; i++){
-        setA0(draft=>{
-              draft.value = i
-          }) 
-      }
-  }) 
+    }) 
+    for(let i = 1; i <= 1000; i++){
+      setA0(draft=>{
+            draft.value = i
+        }) 
+    } 
+  })   
 await bench.warmup(); // make results more reliable, ref: https://github.com/tinylibs/tinybench/pull/50
 await bench.run();
 

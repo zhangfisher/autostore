@@ -52,7 +52,7 @@
  
 import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
-import type { AutoStoreOptions, StateOperateParams } from "./types";
+import type { AutoStoreOptions, StateOperateParams, UpdateOptions } from "./types";
 import type { Dict } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
@@ -70,14 +70,13 @@ import { WatchObjects } from "../watch/watchObjects";
 import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../descriptor";
 import { noRepeat } from "../utils/noRepeat";
-import { EventEmitter, EventListener } from "../events";
- 
+import { EventEmitter, EventListener } from "../events"; 
  
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
     public watchObjects: WatchObjects<State>      
-    protected _changesets = new EventEmitter()  // FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    // 依赖变更事件触发器
+    protected _changesets = new EventEmitter<Record<string,StateOperateParams>>()  // FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    // 依赖变更事件触发器
     private _options: Required<AutoStoreOptions<State>>
     private _silenting = false                          // 是否静默更新，不触发事件
     private _batching = false                           // 是否批量更新中
@@ -96,7 +95,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.watchObjects  =  new WatchObjects<State>(this)
         this.subscribeCallbacks()
         this._data = createReactiveObject(state,{
-            notify:this.notify.bind(this),
+            notify:this._notify.bind(this),
             createComputedObject:this.createComputedObject.bind(this)
         })  
         this.emit("created",this)       
@@ -108,7 +107,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     get options(){return this._options}
     get silenting(){return this._silenting}
     get batching(){return this._batching}
-    log(message:LogMessageArgs,level?:LogLevel){if(this._options.debug) this.options.log(message,level)} 
+    get peeping(){return this._peeping}
+    log(message:LogMessageArgs,level?:LogLevel){
+        if(this._options.debug){
+            this.options.log(message,level)
+        } 
+    }
 
     private subscribeCallbacks(){
         if(this._options.onComputedCreated) this.on("computed:created",this._options.onComputedCreated.bind(this))
@@ -120,9 +124,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     /**
      * 
      * 当状态读写时调用此方法触发事件
+     * 
+     * @description
+     * 
+     * 本方法是一个内部方法，用于在状态读写时触发事件，不推荐直接调用
+     * 
      * type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any
      */
-    private notify(params:StateOperateParams) {          
+    _notify(params:StateOperateParams) {          
         if(this._peeping && params.type=='get') return    // 偷看时不触发事件
         if(this._silenting) return
         if(this._batching){
@@ -166,12 +175,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
 
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
             return (data:StateOperateParams)=>{            
-                if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
-                    if(!operates.includes(data.type)) return
-                }else if(operates==='write'){
+                if(operates==='write'){
                     if(data.type==='get') return
                 }else if(operates ==='read'){
                     if(data.type!=='get') return
+                }else if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
+                    if(!operates.includes(data.type)) return
                 }
                 if(typeof(filter)==='function' && !filter(data)) return
                 listener.call(this,data)              
@@ -236,7 +245,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             computedObj = (new SyncComputedObject(this, descriptor as ComputedDescriptor, computedContext)) as unknown as ComputedObject
         }    
         if(computedObj){            
-            computedObj.silentUpdate(computedObj.initial)               // 更新不会触发事件
+            // 更新不会触发事件
+            computedObj.silentUpdate(computedObj.initial)               
             if(computedObj.options.objectify){
                 this.computedObjects.set(computedObj.id,computedObj)
             }            
@@ -345,25 +355,32 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      *     silent:true
      *   })
      * 
-     * @param {function(ComputedState<State>): void} fn - 用于更新状态的函数
+     * @param {function(ComputedState<State>): void} fn - 用于更新状态的函数,只能是同步函数
      * @param {Object} [options] - 可选参数
      * @param {boolean} [options.batch=true] - 是否批量更新，默认为 true，变更事件在更新完成后触发
      * @param {boolean} [options.silent=false] - 是否静默更新，默认为 false
      */
-    update(fn:(state:ComputedState<State>)=>void,options?:{batch?:boolean,silent?:boolean}){
-        const {batch=true,silent=false} = Object.assign({},options)
+    update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions){
+        const {batch=true,silent=false,peep=false} = Object.assign({},options)
         if(typeof(fn)==='function'){                        
             if(silent) this._silenting=true
             if(batch) this._batching = true
+            if(peep) this._peeping = true
             try{
                 fn(this.state)
+            }catch(e:any){
+                throw e
             }finally{
                 this._silenting = false
                 this._batching = false
+                this._peeping = false
                 if(this._batchOperates.length>0){
-                    this._batchOperates.forEach(operate=>this.notify(operate))
-                    this.notify({type:'batch',path:[],value:undefined,opertaes:this._batchOperates})
-                    this._batchOperates = []
+                    this._batchOperates.forEach(operate=>this._notify(operate))
+                    try{
+                        this._notify({type:'batch',path:[],value:undefined,opertaes:this._batchOperates})
+                    }finally{
+                        this._batchOperates = []
+                    }
                 }
             }            
         }else{

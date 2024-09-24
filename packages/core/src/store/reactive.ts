@@ -3,7 +3,7 @@ import { hookArrayMethods } from './hookArray';
 import { StateOperates } from './types'; 
 import { CyleDependError } from '../errors';
 import { ComputedState } from '../descriptor'; 
- 
+
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
 
@@ -21,22 +21,17 @@ type CreateReactiveObjectOptions = {
  
 
 function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,any>,isComputedCreating:Map<any,any>,options: CreateReactiveObjectOptions):any{
-    if (proxyCache.has(target)) { 
-        return proxyCache.get(target);
-    }
+    if(isRaw(target)) return target
     if (typeof target !== 'object' || target === null) {
         return target;
     }
-    if(isRaw(target)) return target
+    if (proxyCache.has(target)) { 
+        return proxyCache.get(target);
+    }    
     const proxyObj = new Proxy(target, {             
         get: (obj, key, receiver) => { 
             const value = Reflect.get(obj, key, receiver);  
             if(typeof(key)!=='string') return value             
-            // const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
-            // // 如果属性不可配置或只读，直接返回值
-            // if (descriptor && !descriptor?.configurable && !descriptor?.writable) {
-            //     return value
-            // }
             const path = [...parentPath, String(key)];
             if(typeof value === 'function' || !Object.hasOwn(obj,key)){
                 if(typeof value === 'function'){
@@ -69,7 +64,7 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
             const oldValue = Reflect.get(obj, prop, receiver);
             let success = Reflect.set(obj, prop, value, receiver);
             if(prop === __NOTIFY__) return true  
-            if (success && prop!==__NOTIFY__) {
+            if (success && prop!==__NOTIFY__ && value!==oldValue) {
                 const path = [...parentPath, String(prop)];
                 options.notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});                  
             }

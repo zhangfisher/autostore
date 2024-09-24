@@ -6,7 +6,9 @@
  * 
  */
 
-export function isPathEq(a:string[],b:string[]):boolean{
+export function isPathEq(a:string[] | undefined,b:string[] | undefined):boolean{
+    if(!a) return false
+    if(!b) return false
     if(a.length!==b.length) return false
     return a.every((item,index)=>item===b[index])
 }

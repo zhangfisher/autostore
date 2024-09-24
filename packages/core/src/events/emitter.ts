@@ -1,7 +1,8 @@
 import mitt, { Emitter, EventType } from "mitt";
 import { PATH_DELIMITER } from "../consts";
 
-export type EventHandler<T> = (data:T)=>void
+export type EventHandler<T> = (event:T)=>void
+export type AnyEventHandler<T extends Record<string, unknown>> = (event: T[keyof T], type: keyof T) => void;
 export type EventListener = { off:()=>void }
 
 const Delimiter = PATH_DELIMITER
@@ -51,67 +52,98 @@ export class EventEmitter<Events extends Record<EventType, unknown>>{
      * 
      * 支持简单的通配符订阅， *代表一个分割区间内的任意字符，**代表任意字符
      * 
-     * @param event 
+     * @param type 
      * @param handler 
      * @returns 
      */
-    on<T extends keyof Events>(event: T, handler: EventHandler<Events[T]>):EventListener{
-        if(String(event).includes('*')){  // 订阅时包含了通配符     
-            this._emitter.on('*',(type,data)=>{
-                if(isEventMatched(type as string,event as any)){
-                    handler(data as any)
+    on<T extends keyof Events>(type: T, handler: EventHandler<Events[T]>):EventListener{
+        if(String(type).includes('*')){  // 订阅时包含了通配符     
+            this._emitter.on('*',(type,event)=>{
+                if(isEventMatched(type as string,type as any)){
+                    handler(event as Events[T])
                 }
             })
         }else{
-            this._emitter.on(event,handler)
+            this._emitter.on(type,handler)
         }        
         return {
-            off:()=>this._emitter.off(event,handler)
+            off:()=>this._emitter.off(type,handler)
         }
     }
-    once<T extends keyof Events>(event: T, handler: EventHandler<Events[T]>) :EventListener{
+    once<T extends keyof Events>(type: T, handler: EventHandler<Events[T]>) :EventListener{
         const plistener =(data:Events[T]) => {
             try{
                 handler(data)
             }finally{            
-                this._emitter.off(event,plistener)
+                this._emitter.off(type,plistener)
             }
         }
-        return this.on(event,plistener)
+        return this.on(type,plistener)
     }
-    off<T extends keyof Events>(event: T, handler?: EventHandler<Events[T]> | undefined){ 
-        this._emitter.off<T>(event,handler) 
+    off<T extends keyof Events>(type: T, handler?: EventHandler<Events[T]> | undefined){ 
+        this._emitter.off<T>(type,handler) 
     }
-    emit<T extends keyof Events>(event:T,data:Events[T]){ 
-        return this._emitter.emit(event,data)
+    emit<T extends keyof Events>(type:T,event:Events[T]){ 
+        return this._emitter.emit(type,event)
     }    
     offAll(){
         this._emitter.all.clear()
     }
-    onAny(handler:EventHandler<any>){
-        const plistener = (_:any,data:any)=>{            
-            handler(data)
+    onAny(handler:AnyEventHandler<Events>){ 
+        const phandler = (type:any,event:any)=>{
+            handler(event,type)
         }
-        this._emitter.on('*',plistener)
+        this._emitter.on('*',phandler)
         return {
-            off:()=>this._emitter.off('*',plistener)
+            off:()=>this._emitter.off('*',phandler)
         }
     }
     /**
      * 等待某个事件触发
      * 
+     * @example
+     * 
+     * - 等待computed:done事件触发
+     * const event = await wait("computed:done")
+     * - 等待满足条件的事件触发
+     * const event = await wait((event)=>{
+     *    return false 继续等待
+     *    return other  返回不再等待
+     * })
+     * 
      * 可以指定超时时间
      */
-    async wait<T extends keyof Events>(event:T,timeout?:number){
-        return new Promise<Events[typeof event]>((resolve,reject)=>{
-            const { off } = this.once(event,(data)=>{
-                clearTimeout(timer)
-                resolve(data)
-            })
-            const timer = timeout && setTimeout(()=>{
-                off()
-                reject(new Error('timeout'))
-            },timeout)
+    wait<T extends keyof Events >(filter:(type:T,event:Events[T])=>boolean | undefined | void,timeout?:number):Promise<Events[T]>
+    wait<T extends keyof Events>(event:T,timeout?:number):Promise<Events[T]>
+    wait<T extends keyof Events>():Promise<Events[T]>{
+        const firstType = typeof(arguments[0]) 
+        const eventType = firstType==='string' ? firstType : undefined
+        const timeout = arguments[1] || 0
+        const filter = firstType==='function' ? firstType : undefined
+        let timeId:any 
+        return new Promise<any>((resolve,reject)=>{
+            let listener:EventListener 
+            if(eventType){
+                listener= this.once(eventType,(event)=>{
+                    clearTimeout(timeId)
+                    resolve(event)
+                })
+            }else if(typeof(filter)==='function'){
+                listener= this.onAny((event,type)=>{                    
+                    const r= (filter as any)(type,event)
+                    if(r!==false){
+                        listener.off()
+                        clearTimeout(timeId)                                                       
+                        resolve(event)
+                    }               
+                })
+            }            
+            if(timeout >0 ){
+                timeId = setTimeout(()=>{
+                    listener.off()
+                    reject(new Error('timeout'))
+                },timeout)
+            }            
         })
     }
 }

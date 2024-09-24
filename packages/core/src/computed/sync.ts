@@ -7,7 +7,7 @@ import { ComputedObject } from "./computedObject";
 import { StateOperateParams } from "../store/types";
 import { getDependPaths } from "../utils/getDependPaths"; 
 import { noRepeat } from "../utils/noRepeat";
- 
+
 
 /**
  * 
@@ -31,19 +31,24 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
    * @returns 
    */
   run(options?:SyncRuntimeComputedOptions){        
-    const { first = false,changed } = options ?? {}
+    const { first ,changed } = Object.assign({
+      first:false,
+      changed:undefined
+    },options)
     // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
     if(!first && this.isDisable(options?.enable)){
       this.store.log(`Sync computed <${this.toString()}> is disabled`,'warn')
       return 
     }
-    !first && this.store.log(`Run sync computed for : ${this.toString()}`); 
+
+    !first && this.store.log(()=>`Run sync computed for : ${this.toString()}`); 
 
     // 2. 合成最终的配置参数
-    const finalComputedOptions = Object.assign({},this.options,options) as Required<ComputedOptions>
+    const finalComputedOptions = (options ?  Object.assign({},this.options,options) : this.options ) as Required<ComputedOptions>
 
     // 3. 根据配置参数获取计算函数的上下文对象      
-    const scope = getValueScope<Value,Scope>(this as any,'computed',this.context,finalComputedOptions)  
+    const scope =  getValueScope<Value,Scope>(this as any,'computed',this.context,finalComputedOptions)  
+
     // 4. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
@@ -56,7 +61,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
           this.value = computedResult  
         })
       }  
-      /// !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
+      !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
       !first && this.emitComputedEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
       throw e
@@ -90,7 +95,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       if(Array.isArray(this.options.depends) && this.options.depends.length>0){
         dependencies.push(...getDependPaths(this.path,this.options.depends))
       } 
-      this.depends = noRepeat(dependencies)      // 去重一下     
+      this.depends = noRepeat(dependencies)       
       this.subscribe()
   }  
 

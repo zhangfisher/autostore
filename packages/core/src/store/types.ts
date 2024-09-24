@@ -148,3 +148,12 @@ export type AutoStoreOptions<State extends Dict> = {
     onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void
 
 }
+
+
+
+
+export type UpdateOptions = {
+    batch?:boolean,         // 执行批量更新操作，期间不会触发事件，等更新函数执行后再触发batch事件
+    silent?:boolean,        // 执行更新操作时，静默，不会触发任何事件
+    peep?:boolean           // 执行更新操作时，不会触发GET事件
+}
