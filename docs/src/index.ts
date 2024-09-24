@@ -1,1 +1,1 @@
-export { default as Foo } from './Foo';
+export * from './react/components';

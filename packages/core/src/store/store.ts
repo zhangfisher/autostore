@@ -71,6 +71,7 @@ import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../descriptor";
 import { noRepeat } from "../utils/noRepeat";
 import { EventEmitter, EventListener } from "../events"; 
+import { getSnap } from '../utils/getSnap';
  
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
@@ -368,8 +369,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             if(peep) this._peeping = true
             try{
                 fn(this.state)
-            }catch(e:any){
-                throw e
             }finally{
                 this._silenting = false
                 this._batching = false
@@ -457,7 +456,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.watchObjects.clear()
         this.computedObjects.clear()        
     }
-
+ 
 }
 
 

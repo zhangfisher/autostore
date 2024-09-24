@@ -1,7 +1,7 @@
 ---
 hero:
   title: AutoStore
-  description: AutoStore Reactive State Management Library
+  description: Reactive State Management Library
   actions:
     - text: Hello
       link: /

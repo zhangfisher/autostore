@@ -36,7 +36,7 @@ export interface WatchObject extends WatchOptions>{
 ## 使用示例
 
 ```tsx 
-import { createStore,computed,ComputedScopeRef,watch } from "@speedform/reactive" 
+import { createStore,computed,ComputedScopeRef,watch } from "@autostorejs/react" 
 import { useEffect,useState } from "react"
 import { ColorBlock,Divider } from "components"
 

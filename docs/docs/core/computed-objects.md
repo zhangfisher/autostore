@@ -16,7 +16,7 @@ demo:
 
 ```tsx
 
-import { createStore,computed } from '@speedform/reactive';
+import { createStore,computed } from '@autostorejs/react';
 import { Divider,ColorBlock } from "components"
 let count=0
 const state = {
@@ -93,9 +93,9 @@ export class ComputedObjects<T=Dict> extends Map<string,ComputedObject<T>>{
 当使用`computed`方法创建计算属性时，可以传入一个`group`参数，用来为计算属性分组，然后就可以通过`runGroup`方法，用来手动执行该分组计算函数。
 
 ```tsx 
-import { createStore,computed } from '@speedform/reactive';
+import { createStore,computed } from '@autostorejs/react';
 import { Divider,ColorBlock } from "components"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 
 let count=0
 const state = {
@@ -179,9 +179,9 @@ export default ()=>{
 
 
 ```tsx 
-import { createStore,computed } from '@speedform/reactive';
+import { createStore,computed } from '@autostorejs/react';
 import { Divider,ColorBlock } from "components"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 
 let count=0
 const state = {
@@ -267,9 +267,9 @@ export default ()=>{
 默认情况下，我们推荐使用`computed(getter,deps,options)`方法来创建计算属性,通过`store.computedObject.get("<路径>")`获取到`ComputedObject`实例，然后通过`ComputedObject`实例来读取和修改计算属性的参数。
 
 ```tsx
-import { createStore,computed } from '@speedform/reactive';
+import { createStore,computed } from '@autostorejs/react';
 import { Divider,ColorBlock } from "components"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 
 let count=0
 const state = {

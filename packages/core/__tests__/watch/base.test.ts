@@ -52,8 +52,6 @@ describe("watch功能测试",()=>{
                         return  100
                     },()=>true,{initial:1,group:'x'})                
                 }
-            },{
-                immediate:true
             })
             expect(store.state.books.total).toBe(1)
         })
@@ -66,8 +64,6 @@ describe("watch功能测试",()=>{
                         return  value+1
                     },{initial:1,group:'x'})                
                 }
-            },{
-                immediate:true
             })
             expect(store.state.books.total).toBe(1)
             store.state.books.count = 10
@@ -118,7 +114,7 @@ describe("watch功能测试",()=>{
                         changed.push(path)
                         return value
                     },()=>true,{initial:0})
-                },{immediate:true})
+                })
 
                 store.watch("diary",({path})=>{
                     paths.push(path)
@@ -238,7 +234,7 @@ describe("watch功能测试",()=>{
                     },
                     (path)=>path[path.length-1]=='validate', // 只侦听validate字段的值变化
                     {initial:true,id:"x"})
-                },{immediate:true}) 
+                }) 
 
                 // 初始值为true
                 expect(store.state.validate).toBe(true)

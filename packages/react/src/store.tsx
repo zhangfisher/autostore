@@ -86,6 +86,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
         // const depends = args.length>=3 && Array.isArray(args[2]) ? args[2] : []
         // const asyncOptions = args.length>=4 && typeof(args[3])==='object' ? args[3] : {}
         // const syncOptions = args.length>=3 && typeof(args[2])==='object' ? args[2] : {}
+        
          const El =  React.memo(()=>{
             // const [computedObj,setComputedObj] = useState<ComputedObject>()
 

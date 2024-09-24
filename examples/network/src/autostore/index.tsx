@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {  createStore } from "autostore"
+import {  createStore } from "@autostorejs/react"
 import { styled } from "flexstyled"
 
 const bookStyle = styled({
@@ -28,37 +28,11 @@ const store = createStore({
     }),
 })
 
-const BenchmarkTestComponent: React.FC = () => {
-    
-    const [renderTime, setRenderTime] = useState<number | null>(null);
-    const [memoryUsageBefore, setMemoryUsageBefore] = useState<number | null>(null);
-    const [memoryUsageAfter, setMemoryUsageAfter] = useState<number | null>(null);
+const BenchmarkTestComponent: React.FC = () => {    
 
-    useEffect(() => {
-        const memoryBefore = (performance as any).memory;
-        if (memoryBefore) {
-            setMemoryUsageBefore(memoryBefore.usedJSHeapSize);
-        }
-        const start = performance.now(); 
-        // 使用 requestAnimationFrame 确保测量的是渲染完成后的时间
-        requestAnimationFrame(() => {
-            const end = performance.now();
-            setRenderTime(end - start);
-
-            const memoryAfter = (performance as any).memory;
-            if (memoryAfter) {
-                setMemoryUsageAfter(memoryAfter.usedJSHeapSize);
-            }
-        });
-    }, []);
 
     return (
         <div>
-            <h1>Benchmark Test</h1>
-            {renderTime !== null && <p>Render Time: {renderTime.toFixed(2)} ms</p>}
-            {   memoryUsageBefore!== null && 
-                memoryUsageAfter !== null && 
-                <p>Memory Usage: {((memoryUsageAfter-memoryUsageBefore) / 1024 / 1024).toFixed(2)} MB</p>}
             <div style={{width:'800px'}}>
                 {store.state.books.map((book) => (
                     <div key={book.id} className={bookStyle.className}>

@@ -10,12 +10,12 @@ demo:
 
 ## 介绍
 
-细心的朋友可能发现，在上面的`createStore`中我们没有声明任何的计算属性，但这并不是不支持计算属性，而是`@speedform/reactive`提供了**独特的计算属性的声明方式**。`@speedform/reactive`提供的计算属性的声明方式是`SpeedForm`之所以能提供无以伦比用户开发体验的关键。
+细心的朋友可能发现，在上面的`createStore`中我们没有声明任何的计算属性，但这并不是不支持计算属性，而是`@autostorejs/react`提供了**独特的计算属性的声明方式**。`@autostorejs/react`提供的计算属性的声明方式是`SpeedForm`之所以能提供无以伦比用户开发体验的关键。
 
 ## 基本原理
 
 :::info
-**`@speedform/reactive`实现了最独特的移花接木式的计算属性实现方式**
+**`@autostorejs/react`实现了最独特的移花接木式的计算属性实现方式**
 :::
 
 ![](./computed.png)
@@ -26,13 +26,13 @@ demo:
 2. 调用`createStore`创建`Store`时，会根据`State`中的函数来创建`mutate`或`computed`(在`helux`中叫派生对象，在其他状态库中可能叫计算算属性)。
 3. 如此，当`State`中的数据变化时，会自动触发计算属性的重新计算，将计算结果赋值给`State`中的对应属性。在上图中，当`firstName`和`lastName`变化时，会自动触发`fullName(mutate)`的重新计算，将计算结果赋值给`user.fullName`属性。这样，当我们访问`state.fullName`时,就是一个字符串了，而不是一个函数了。
 
-**以上就是`@speedform/reactive`计算属性移花接木的过程原理,大家可以从下面示列中加深理解。**
+**以上就是`@autostorejs/react`计算属性移花接木的过程原理,大家可以从下面示列中加深理解。**
 
 ```tsx
 /**
  * defaultShowCode: true
  */
-import { createStore } from '@speedform/reactive'; 
+import { createStore } from '@autostorejs/react'; 
 import { Divider} from "components"
 
 const user = {
@@ -71,7 +71,7 @@ export default ()=>{
  **`计算作用域`指的是传递给计算函数的第一个参数**
 :::
 
-`@speedform/reactive`在创建`Store`时，支持配置`scope`参数来指定计算属性函数的第一个参数，如下：
+`@autostorejs/react`在创建`Store`时，支持配置`scope`参数来指定计算属性函数的第一个参数，如下：
 
 ```ts
 export enum ComputedScopeRef{
@@ -106,7 +106,7 @@ const store = createStore( {
  * title: ComputedScopeRef.Current
  * description: store.options.scope==ComputedScopeRef.Current,
  */
-import { createStore,ComputedScopeRef } from '@speedform/reactive'; 
+import { createStore,ComputedScopeRef } from '@autostorejs/react'; 
 const state = {
   user:{
     firstName:"Zhang",
@@ -132,14 +132,14 @@ export default ()=>{
 
 ### Root
 
-`@speedform/reactive`会将计算属函数的`scope`指向`ComputedScopeRef.Root`，即当前的`State`根对象，如下：
+`@autostorejs/react`会将计算属函数的`scope`指向`ComputedScopeRef.Root`，即当前的`State`根对象，如下：
 
 ```tsx 
 /**
  * title: ComputedScopeRef.Root
  * description: store.options.scope==ComputedScopeRef.Root,
  */
-import { createStore,ComputedScopeRef } from '@speedform/reactive'; 
+import { createStore,ComputedScopeRef } from '@autostorejs/react'; 
  
 const store = createStore({
   user:{
@@ -174,7 +174,7 @@ export default ()=>{
  * title: ComputedScopeRef.Parent
  * description: scope==ComputedScopeRef.Parent
  */
-import { createStore,ComputedScopeRef } from '@speedform/reactive'; 
+import { createStore,ComputedScopeRef } from '@autostorejs/react'; 
 const state = {
   user:{
     firstName:"Zhang",
@@ -208,7 +208,7 @@ export default ()=>{
  * title: <字符串>
  * description: store.options.scope==<字符串>
  */
-import { createStore } from '@speedform/reactive'; 
+import { createStore } from '@autostorejs/react'; 
 
 const state = {
   user:{
@@ -247,7 +247,7 @@ export default ()=>{
  * title: <字符串数组>
  * description: scope==<字符串数组>
  */
-import { createStore } from '@speedform/reactive'; 
+import { createStore } from '@autostorejs/react'; 
 
 const state = {
   user:{
@@ -291,7 +291,7 @@ export default ()=>{
  * title: <字符串数组>
  * description: scope==<字符串数组>
  */
-import { createStore,computed,ComputedScopeRef  } from '@speedform/reactive'; 
+import { createStore,computed,ComputedScopeRef  } from '@autostorejs/react'; 
 
 const state = {
   user:{

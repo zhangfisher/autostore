@@ -25,9 +25,9 @@ demo:
 异步计算属性使用`computed`进行声明，方式如下：
 
 ```tsx  
-import { createStore,computed,ComputedScopeRef,getSnap,$} from '@speedform/reactive';
+import { createStore,computed,ComputedScopeRef,$} from '@autostorejs/react';
 import { useRef,useEffect } from "react" 
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 
 const store = createStore({
   user:{
@@ -66,8 +66,8 @@ export default ()=>{
 **下面是一个更加完整的例子：**
 
 ```tsx 
-import { computed,createStore } from "@speedform/reactive"
-import { api } from "speedform-docs"
+import { computed,createStore } from "@autostorejs/react"
+import { api } from "autostore-docs"
  
 const store = createStore({
   user:{
@@ -232,7 +232,7 @@ export type ComputedDepends =Array<string | Array<string>>
 重点在于这个相对是相对谁，我们用一个例子来说明。
 
 ```tsx {10,11,20,21,32,33}
-import { createStore,computed,ComputedScopeRef } from "@speedform/reactive" 
+import { createStore,computed,ComputedScopeRef } from "@autostorejs/react" 
 
 const user = {
   user:{
@@ -472,9 +472,9 @@ store.state.user.fullName=={
 以下是一个异步计算加载状态的例子：
 
 ```tsx {25,26,27}
-import { createStore,computed,ComputedScopeRef,getSnap } from '@speedform/reactive';
+import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 import { Box} from "components"
 
 const state = {
@@ -523,9 +523,9 @@ export default ()=>{
 使用方法如下：
 
 ```tsx {25,26,27}
-import { createStore,computed,ComputedScopeRef,getSnap } from '@speedform/reactive';
+import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 import { Box} from "components"
 
  
@@ -593,9 +593,9 @@ export default ()=>{
 
 
 ```tsx {25,26,27}
-import { createStore,computed,ComputedScopeRef,getSnap } from '@speedform/reactive';
+import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 import { Box} from "components"
  
 const store = createStore({
@@ -664,9 +664,9 @@ export default ()=>{
 
 
 ```tsx  
-import { createStore,computed,ComputedScopeRef,getSnap } from '@speedform/reactive';
+import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 import { Box} from "components"
  
 const store = createStore({
@@ -730,9 +730,9 @@ export default ()=>{
 
 
 ```tsx  
-import { createStore,computed,ComputedScopeRef,getSnap } from '@speedform/reactive';
+import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 import { Box } from "components"
 let count = 0 
 const store = createStore( {
@@ -806,9 +806,9 @@ export default ()=>{
  
 ```tsx  
 
-import { createStore,computed,ComputedScopeRef,getSnap } from '@speedform/reactive';
+import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
-import { delay } from "speedform-docs"
+import { delay } from "autostore-docs"
 import { Box} from "components"
 
  
@@ -902,7 +902,7 @@ const order = {
 上述简单的异步声明方式等效于以下方式：
 
 ```tsx
-import { createStore,computed} from "@speedform/reactive"
+import { createStore,computed} from "@autostorejs/react"
 
 const store = createStore({
     bookName:"ZhangFisher",
@@ -937,7 +937,7 @@ export default ()=>{
 看看以下例子：
 
 ```tsx
-import { createStore} from "@speedform/reactive"
+import { createStore} from "@autostorejs/react"
 
 const store = createStore({
     bookName:"ZhangFisher",
