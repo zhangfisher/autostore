@@ -1,5 +1,5 @@
-import React,{ useEffect,useState } from "react"
-import { ComputedState,PATH_DELIMITER,AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions } from '@autostorejs/core';
+import React,{ useCallback, useEffect,useState } from "react"
+import { ComputedState,PATH_DELIMITER,AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions, setVal } from '@autostorejs/core';
 import { AsyncComponentRender, SyncComponentRender } from "./types";
 
 
@@ -145,7 +145,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     useDepends(selector:any):string[][]{
         const [deps] = useState(()=>{
             if(typeof(selector)==='function'){
-                return this.collectDeps(selector)  
+                return this.collectDeps(()=>selector(this.state))  
             }else if(typeof(selector)==='string'){
                 return [selector.split(PATH_DELIMITER)]  
             }else if(Array.isArray(selector)){
@@ -160,19 +160,25 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     /**
      * 返回当前状态
      * 
-     * @example
-     * [order,setOrder ] = useState()
+     * @example 
      * [price,setPrice ] = useState<number>("order.price")
      * [price,setPrice ] = useState<number>(['order','price'])
-     * [price,setPrice ] = useState<number>((state)=>state.order.price)
+     * 
+     * [fullName,setFullname ] = useState<number>((state)=>state.firstName+state.lastName,(value,state)=>{
+     *   const [ firstName,lastName ] = value.split(' ')
+     *   state.firstName = firstName
+     *   state.lastName = lastName
+     * })
      * 
      */
-    useState<V>(selector?: string):[V,React.Dispatch<React.SetStateAction<V>>]
-    useState<V>(selector: string[]):[V,React.Dispatch<React.SetStateAction<V>>]
-    useState<V>(selector: (state:ComputedState<State>)=>V):[V,React.Dispatch<React.SetStateAction<V>>]
-    useState<V>():[V,React.Dispatch<React.SetStateAction<V>>]{
+    useState<Value>(selector: string):[Value,React.Dispatch<React.SetStateAction<Value>>]
+    useState<Value>(selector: string[]):[Value,React.Dispatch<React.SetStateAction<Value>>]
+    useState<Value,SetValue>(getter: (state:ComputedState<State>)=>Value,setter?: (value:SetValue,state:ComputedState<State>)=>void
+    ):[Value,React.Dispatch<React.SetStateAction<Value>>]
+    useState<Value>(){
         const args = arguments    
-        const selector = args.length===1 && (typeof(args[0])==='string' || typeof(args[0])==='function') ? args[0] : undefined     
+        const selector = args.length>=1 && (Array.isArray(args[0]) || typeof(args[0])==='string' || typeof(args[0])==='function') ? args[0] : undefined     
+        const setter = args.length===2 && typeof(args[1])==='function' ? args[1] : undefined
         const [ value,setValue ] = useState(()=>this.getValue(selector))    
         const deps = this.useDepends(selector)
         useEffect(()=>{ 
@@ -181,9 +187,17 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
                 setValue(this.getValue(selector))  
             })
             return ()=>watcher.off()
-        },[deps])
-
-        return [ value,setValue ] 
+        },[deps])    
+        const updateValue = useCallback((value:React.SetStateAction<Value>)=>{
+            if(typeof(selector)==='string'){            
+                this.update(state=>setVal(state,selector.split(PATH_DELIMITER),value))
+            }else if(Array.isArray(selector)){
+                this.update(state=>setVal(state,selector,value))
+            }else if (typeof(selector)==='function'){                
+                setter && this.update(state=>setter(value,state))
+            }
+        },[selector])
+        return [ value,updateValue ] 
     }
 }
 

@@ -1,5 +1,5 @@
 import { test,expect, describe } from "vitest"
-import { createStore,computed } from "../"  
+import { createStore,computed, StateOperateParams } from "../"  
 
  
 describe("依赖关系管理",()=>{
@@ -91,5 +91,20 @@ describe("依赖关系管理",()=>{
         // ])
         store.state.sync.a = 2
     }) 
+    test("收集依赖项列表",()=>{
+        const store = createStore({ 
+            a:1,
+            b:2,
+            c:3
+        })
+        const deps = store.collectDeps(()=>{
+            store.state.a
+            store.state.b
+            store.state.c
+        })
+        expect(deps).toStrictEqual([["a"],["b"],["c"]])
+
+
+    })
 })
 

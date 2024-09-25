@@ -18,7 +18,7 @@ const ButtonStyle =styled<ButtonProps>({
     "&:hover":{
         background:"#2c7af0",
         color:"white",
-        border:'none'
+        borderColor:'#2c7af0'
     },
     "&:active": {
         transform: "scale(0.95)",

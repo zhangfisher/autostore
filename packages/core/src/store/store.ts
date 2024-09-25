@@ -175,11 +175,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
 
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
             return (data:StateOperateParams)=>{            
-                if(operates==='write'){
+                if(operates==='*'){
+                }else if(operates==='write'){
                     if(data.type==='get') return
                 }else if(operates ==='read'){
                     if(data.type!=='get') return
-                }else if(operates && Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
+                }else if(Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
                     if(!operates.includes(data.type)) return
                 }
                 if(typeof(filter)==='function' && !filter(data)) return
