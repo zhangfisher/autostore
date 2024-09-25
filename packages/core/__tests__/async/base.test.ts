@@ -19,6 +19,7 @@ describe("所有异步计算基础功能",()=>{
                         return scope.price * scope.count
                     },['price','count'])
                 },{                  // 遍历对象，从而导致计算属性被读取而立刻创建
+                    lazy:false,
                     onComputedDone:()=>{  // 计算完成时触发
                         results.push(store.state.total.result)
                         if(results.length===2){
@@ -41,6 +42,7 @@ describe("所有异步计算基础功能",()=>{
                         return scope.price * scope.count
                     },['price','count'],{id:"x"})
                 },{    
+                    lazy:false,
                     onComputedDone:()=>{     
                         const cobj = store.computedObjects.get("x")!
                         expect(cobj.value.result).toBe(6)
@@ -62,7 +64,7 @@ describe("所有异步计算基础功能",()=>{
                         id:"x",
                         initial:6
                     })
-                })  
+                },{lazy:false,})  
                 setTimeout(()=>{
                     const cobj = store.computedObjects.get("x")!
                     expect(cobj.value.result).toBe(6)
@@ -86,6 +88,7 @@ describe("所有异步计算基础功能",()=>{
                         immediate:true
                     })
                 },{    
+                    lazy:false,
                     onComputedDone:()=>{
                         const cobj = store.computedObjects.get("x")!
                         expect(cobj.value.result).toBe(6)
@@ -164,6 +167,7 @@ describe("所有异步计算基础功能",()=>{
                     },['price','count'],{id:'x',initial:6})
                 },{
                     enableComputed:false,
+                    lazy:false,
                     onComputedDone:()=>{
                         expect(count).toBe(1)
                         resolve()
@@ -189,6 +193,7 @@ describe("所有异步计算基础功能",()=>{
                         return scope.price * scope.count
                     },['price','count'],{id:'y',initial:200})
                 },{                 
+                    lazy:false,
                     onComputedDone:({path})=>{
                         expect(path).toStrictEqual(["total2"])
                         expect(store.state.total1.result).toBe(100)
@@ -209,7 +214,8 @@ describe("所有异步计算基础功能",()=>{
                         if(extras!==undefined) expect(extras).toBe("hello")
                         return scope.price * scope.count
                     },['price','count'],{id:'x'}),         
-                },{                   
+                },{             
+                    lazy:false,      
                     onComputedDone:()=>{
                         count++
                         if(count===2){ // 第一次是创建时执行，第二次是手动执行
@@ -229,6 +235,7 @@ describe("所有异步计算基础功能",()=>{
                         return scope.price * scope.count
                     },['price','count'],{id:'x'}),         
                 },{
+                    lazy:false,
                     onComputedDone:()=>{
                         resolve()
                     }
@@ -245,7 +252,7 @@ describe("所有异步计算基础功能",()=>{
                     total:computed(async (scope)=>{
                         return scope.price * scope.count
                     },['price','count'],{id:'x',immediate:false}),         
-                })    
+                },{lazy:false})    
                 const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject
                 asyncObj.run().then(()=>{
                     expect(store.state.total.result).toBe(6)
@@ -262,7 +269,7 @@ describe("所有异步计算基础功能",()=>{
                         expect(price).toBe(2)
                         return price * 100
                     },['price','count'],{id:'x',immediate:false}),         
-                })                       
+                },{lazy:false})                       
                 const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject
                 asyncObj.run({scope:"price"}).then(()=>{
                     //// 运行时修改的scope仅在本次运行中有效，不会影响到下次运行
@@ -305,6 +312,7 @@ describe("所有异步计算基础功能",()=>{
                         return scope.price * scope.count
                     },['price','count'],{group:'c'})
                 },{               // 遍历对象，从而导致计算属性被读取而立刻创建
+                    lazy:false,
                     onComputedDone:({computedObject})=>{
                         results.push(computedObject.path!.join(","))                
                         if(results.length===12){
@@ -347,6 +355,7 @@ describe("所有异步计算基础功能",()=>{
                         return scope.price * scope.count
                     },['price','count'],{id:'f',group:'c',initial:0})
                 },{                 // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
+                    lazy:false,
                     onComputedDone:({computedObject})=>{
                         results.push(computedObject.path!.join(","))                
                         if(results.length===3){
@@ -392,7 +401,7 @@ describe("所有异步计算基础功能",()=>{
                         await delay(5000)
                         return scope.price * scope.count
                     },['price','count'],{id:'f',group:'c',initial:0})
-                })  
+                },{lazy:false})  
                 store.computedObjects.run((obj)=>{
                     return ['a','c','e'].includes(obj.id)
                 },{},{timeout:200,wait:true}).catch((e)=>{

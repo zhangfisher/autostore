@@ -71,8 +71,7 @@ import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../descriptor";
 import { noRepeat } from "../utils/noRepeat";
 import { EventEmitter, EventListener } from "../events"; 
-import { getSnap } from '../utils/getSnap';
- 
+  
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  

@@ -58,8 +58,8 @@ export class EventEmitter<Events extends Record<EventType, unknown>>{
      */
     on<T extends keyof Events>(type: T, handler: EventHandler<Events[T]>):EventListener{
         if(String(type).includes('*')){  // 订阅时包含了通配符     
-            this._emitter.on('*',(type,event)=>{
-                if(isEventMatched(type as string,type as any)){
+            this._emitter.on('*',(eventtype,event)=>{
+                if(isEventMatched(eventtype as string,type as any)){
                     handler(event as Events[T])
                 }
             })

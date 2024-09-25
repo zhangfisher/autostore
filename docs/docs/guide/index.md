@@ -1,13 +1,13 @@
 ---
 title: 关于
 nav: 
-  title: 响应式
+  title: 指南
   order: 1
 ---
 
 ## 介绍
 
-`AutoStore`是一款基于Proxy技术的提供响应式状态系统。
+`AutoStore`是一款基于`Proxy`的响应式状态系统。
  
 
 

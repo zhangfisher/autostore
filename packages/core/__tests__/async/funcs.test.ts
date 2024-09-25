@@ -34,7 +34,7 @@ describe("异步计算高级控制功能",()=>{
                 },['price','count'],{ 
                     noReentry:true
                 })
-            },{
+            },{ 
                 onComputedCancel:()=>{
                     cancelCount++
                     if(cancelCount===9){
@@ -211,6 +211,7 @@ describe("异步计算属性的超时功能",()=>{
                     return scope.price * scope.count
                 },['price','count'],{id:'x',timeout:[5*1000,5]})                
             },{ 
+                lazy:false,
                 onComputedCancel:({reason})=>{
                     expect(reason).toBe("timeout")
                     expect(store.state.total.loading).toBe(false)

@@ -7,6 +7,8 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,options)
         this.$=this.$.bind(this)
+        this.useState=this.useState.bind(this)
+        this.useDepends = this.useDepends.bind(this)
     }
     /**
      * 
@@ -91,26 +93,9 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
             // const [computedObj,setComputedObj] = useState<ComputedObject>()
 
             // 收集依赖的路径
-            const [deps] = useState<string[][]>(()=>{
-                if(typeof(selector)==='function'){
-                    return this.collectDeps(selector)  
-                }else if(typeof(selector)==='string'){
-                    return [selector.split(PATH_DELIMITER)]  
-                }else{
-                    return []
-                }
-            })
+            const deps = this.useDepends(selector)
     
-            // 当依赖变化时读取依赖目标的值
-            const getValue = ()=>{
-                if(typeof(selector)==='function'){
-                    return selector(this.state)
-                }else{
-                    return getVal(this.state,selector.split(PATH_DELIMITER))
-                } 
-            }
-    
-            const [ value,setValue ] = useState(()=>getValue())
+            const [ value,setValue ] = useState(()=>this.getValue(selector))
     
             useEffect(()=>{
                 // if(computedObj instanceof ComputedObject){
@@ -120,7 +105,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
                 // }
                 // 侦听依赖的变化，当依赖变化时，更新值
                 const watcher = this.watch(deps,()=>{
-                    setValue(getValue())  
+                    setValue(this.getValue(selector))  
                 })
                 return ()=>watcher.off()
             },[deps])
@@ -130,6 +115,75 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
             </>
         }  , () => true)  
         return <El />; 
+    }
+           
+        // 当依赖变化时读取依赖目标的值
+    private getValue(selector:undefined | string[] | string | ((state:ComputedState<State>)=>any)){
+        if(!selector) return this.state
+        if(typeof(selector)==='function'){
+            return selector(this.state)
+        }else if(Array.isArray(selector)){
+            return getVal(this.state,selector)
+        }else{
+            return getVal(this.state,selector.split(PATH_DELIMITER))
+        } 
+    }
+    /**
+     * 
+     * 返回收集依赖的路径
+     * 
+     * @example
+     * 
+     * useDepends("order.price") == [["order","price"]]
+     * useDepends(["order","price"]) == [["order","price"]]
+     * useDepends((state)=>state.order.price* state.order.count)) == [["order","price"],["order","count"]]
+     * 
+     */
+    useDepends(selector: string):string[][]
+    useDepends(selector: string[]):string[][]
+    useDepends(selector: (state:ComputedState<State>)=>any):string[][]
+    useDepends(selector:any):string[][]{
+        const [deps] = useState(()=>{
+            if(typeof(selector)==='function'){
+                return this.collectDeps(selector)  
+            }else if(typeof(selector)==='string'){
+                return [selector.split(PATH_DELIMITER)]  
+            }else if(Array.isArray(selector)){
+                return [selector]  
+            }else{
+                return []
+            }
+        })
+        return deps        
+    }
+
+    /**
+     * 返回当前状态
+     * 
+     * @example
+     * [order,setOrder ] = useState()
+     * [price,setPrice ] = useState<number>("order.price")
+     * [price,setPrice ] = useState<number>(['order','price'])
+     * [price,setPrice ] = useState<number>((state)=>state.order.price)
+     * 
+     */
+    useState<V>(selector?: string):[V,React.Dispatch<React.SetStateAction<V>>]
+    useState<V>(selector: string[]):[V,React.Dispatch<React.SetStateAction<V>>]
+    useState<V>(selector: (state:ComputedState<State>)=>V):[V,React.Dispatch<React.SetStateAction<V>>]
+    useState<V>():[V,React.Dispatch<React.SetStateAction<V>>]{
+        const args = arguments    
+        const selector = args.length===1 && (typeof(args[0])==='string' || typeof(args[0])==='function') ? args[0] : undefined     
+        const [ value,setValue ] = useState(()=>this.getValue(selector))    
+        const deps = this.useDepends(selector)
+        useEffect(()=>{ 
+            // 侦听依赖的变化，当依赖变化时，更新值
+            const watcher = this.watch(deps,()=>{
+                setValue(this.getValue(selector))  
+            })
+            return ()=>watcher.off()
+        },[deps])
+
+        return [ value,setValue ] 
     }
 }
 

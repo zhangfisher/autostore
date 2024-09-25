@@ -23,7 +23,7 @@ describe("同步计算属性的基本特性",()=>{
                 lastName: 'fisher',
                 fullName: (scope:any) => `${scope.firstName} ${scope.lastName}`
             }            
-        });
+        },{lazy:false,});
         expect(store.state.user.fullName).toBe('zhang fisher')
         store.state.user.firstName = 'li'
         expect(store.state.user.fullName).toBe('li fisher')        
@@ -36,7 +36,7 @@ describe("同步计算属性的基本特性",()=>{
             total:(scope:any)=>{
                 return scope.price * scope.count
             }
-        })
+        },{lazy:false,})
         store.state.count = 4
         expect(store.state.total).toBe(8)
     })  
@@ -52,7 +52,7 @@ describe("同步计算属性的基本特性",()=>{
                         resolve()
                     })
                 }
-            })
+            },{lazy:false,})
             store.state.order.total // 读取操作时创建计算属性
         })        
     }) 
@@ -63,7 +63,7 @@ describe("同步计算属性的基本特性",()=>{
             total:computed<number>((scope)=>{
                 return scope.price * scope.count
             },{id:"a"})
-        })
+        },{lazy:false,})
         store.state.count = 4
         expect(store.state.total).toBe(8)
         expect(store.computedObjects.get("a")!.value).toBe(8)
@@ -82,7 +82,7 @@ describe("同步计算属性的基本特性",()=>{
                     }
                     return scope.price * scope.count
                 },{id:'x'}),         
-            })                                    
+            },{lazy:true})                                    
             store.on("computed:created",()=>{
                 store.computedObjects.get("x")!.run()
                 expect(store.state.total).toBe(6)
@@ -108,7 +108,7 @@ describe("同步计算属性的基本特性",()=>{
                         scope.price * scope.count
                     }
                 },{id:'x'}),         
-            })                                    
+            },{lazy:true})                                    
             store.on("computed:created",()=>{
                 setTimeout(()=>{
                     store.computedObjects.get("x")!.run({scope:"price"})
@@ -125,7 +125,7 @@ describe("同步计算属性的基本特性",()=>{
                 lastName: 'fisher',
                 fullName: (scope:any) => `${scope.firstName} ${scope.lastName}`
             }            
-        });
+        },{lazy:false,});
         const oldvalues:any[] = []
         const values:any[]=[]
         return new Promise<void>((resolve)=>{
@@ -153,7 +153,7 @@ describe("同步计算属性的基本特性",()=>{
                                     ,{depends:["alias"]})
             },
             alias: "x",
-        });        
+        },{lazy:false,});        
         return new Promise<void>((resolve)=>{
             store.watch("user.fullName",(event)=>{
                 expect(event.value).toBe("zhang fisher 1")
@@ -176,7 +176,7 @@ describe("同步计算属性的基本特性",()=>{
                 fullName4: computed((scope:any) => `${scope.fullName3}*`),
                 fullName5: computed((scope:any) => `${scope.fullName4}*`),
             }            
-        });        
+        },{lazy:false,});        
         expect(store.state.user.fullName1).toBe('zhang fisher')   
         expect(store.state.user.fullName2).toBe('zhang fisher*')   
         expect(store.state.user.fullName3).toBe('zhang fisher**')   
@@ -199,7 +199,7 @@ describe('同步计算函数的启用和禁用', () => {
                     enable:false,                            
                 })
             }            
-        });
+        },{lazy:false});
         expect(store.state.user.fullName).toBe('zhang fisher')
         store.state.user.firstName = 'li'
         expect(store.state.user.fullName).toBe('zhang fisher')   // no computed
@@ -221,7 +221,7 @@ describe('同步计算函数的启用和禁用', () => {
                 fullName5: computed((scope:any) => `${scope.firstName} ${scope.lastName}`),
                 fullName6: computed((scope:any) => `${scope.firstName} ${scope.lastName}`),
             }            
-        },{
+        },{ 
             enableComputed:false            // 禁用所有计算
         });
         // 禁用计算属性时，第一次运行不受影响，因此可以正常收集依赖
@@ -235,9 +235,9 @@ describe('同步计算函数的启用和禁用', () => {
         }
         // 启用计算属性，变更依赖时，会重新计算
         store.options.enableComputed = true
-        store.state.user.firstName = 'li'
+        store.state.user.firstName = 'wang'
         for(let i=1;i<=count;i++){
-            expect((store.state.user as any)[`fullName${i}`]).toBe('li fisher')   
+            expect((store.state.user as any)[`fullName${i}`]).toBe('wang fisher')   
         }
     })
 
@@ -251,7 +251,7 @@ describe('同步计算函数的启用和禁用', () => {
                     total:computed((scope)=>{
                         return scope.price * scope.total
                     })
-                })
+                },{lazy:false,})
                 store.state.total  
             }catch(e:any){
                 expect(e).toBeInstanceOf(CyleDependError)
@@ -271,7 +271,7 @@ describe('同步计算函数的启用和禁用', () => {
                         fullName4: computed((scope:any) => `${scope.fullName3}*`),
                         fullName5: computed((scope:any) => `${scope.fullName4}*`),
                     }            
-                });           
+                },{lazy:false});           
                 store.state.user.fullName1 
             }catch(e:any){
                 expect(e).toBeInstanceOf(CyleDependError)
@@ -292,7 +292,7 @@ describe('同步计算函数的启用和禁用', () => {
                         fullName4: computed((scope:any) => `${scope.fullName5}*`),
                         fullName5: computed((scope:any) => `${scope.fullName2}*`),
                     }            
-                });           
+                },{lazy:false,});           
                 store.state.user.fullName1 
             }catch(e:any){
                 expect(e).toBeInstanceOf(CyleDependError)
@@ -316,7 +316,7 @@ describe('同步计算函数的启用和禁用', () => {
                             {name:"order5"},
                         ]
                     }            
-                });           
+                },{lazy:false,});           
                 store.state.user.orders[1].price  
             }catch(e:any){
                 expect(e).toBeInstanceOf(CyleDependError)

@@ -22,6 +22,7 @@ describe("异步依赖参数的各种配置形式",()=>{
                     })
                 }
             },{
+                lazy:false,
                 onComputedDone:({value})=>{ 
                     expect(value).toEqual("zhang fisher")
                     resolve()
@@ -44,6 +45,7 @@ describe("异步依赖参数的各种配置形式",()=>{
                     })
                 }
             },{
+                lazy:false,
                 onComputedDone:({value})=>{ 
                     expect(value).toEqual("zhang fisher")
                     resolve()
@@ -67,6 +69,7 @@ describe("异步依赖参数的各种配置形式",()=>{
                     }) 
                 }
             },{
+                lazy:false,
                 onComputedDone:({value})=>{ 
                     expect(value).toEqual("zhang fisher")
                     resolve()
@@ -98,6 +101,7 @@ describe("异步依赖参数的各种配置形式",()=>{
                     }                    
                 },                
             },{
+                lazy:false,
                 onComputedDone:({value})=>{                    
                     expect(value).toEqual("zhang fisher")
                     resolve()              

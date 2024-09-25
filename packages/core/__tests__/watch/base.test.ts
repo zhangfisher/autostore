@@ -66,8 +66,8 @@ describe("watch功能测试",()=>{
                 }
             })
             expect(store.state.books.total).toBe(1)
-            store.state.books.count = 10
-            expect(store.state.books.total).toBe(11)
+            store.state.books.count = 11
+            expect(store.state.books.total).toBe(12)
         })
 
         test("通过enable控制total是否侦听",async ()=>{
@@ -108,7 +108,8 @@ describe("watch功能测试",()=>{
                 const values:number[] = []
 
                 const store = createStore({
-                    a:1,b:2,
+                    a:1,
+                    b:2,
                     diary:watch(({path,value},watchObj)=>{
                         expect(watchObj).toBeInstanceOf(WatchObject)                    
                         changed.push(path)
@@ -126,6 +127,7 @@ describe("watch功能测试",()=>{
                         resolve()
                     }
                 })
+                store.state.diary
                 store.state.a = 100 
                 store.state.b = 200  
             })        
@@ -151,7 +153,7 @@ describe("watch功能测试",()=>{
                         changed.push(path)
                         return true                    
                     },(path)=>path[path.length-1]=='value',{initial:false})
-                },{immediate:true})
+                },{lazy:false})
 
                 store.watch("diary",({path})=>{
                     paths.push(path)
@@ -180,7 +182,7 @@ describe("watch功能测试",()=>{
                         changed.push(path)
                         return true                    
                     },(path)=>path[path.length-1]=='value',{initial:false,id:"x"})
-                },{immediate:true})
+                },{lazy:false})
 
                 store.watch("diary",({path})=>{
                     paths.push(path)

@@ -19,7 +19,7 @@ describe("动态创建异步计算属性",()=>{
             const store = createStore({
                 price:2,
                 count:3
-            })
+            },{lazy:false,})
             const obj = store.computedObjects.create<number>(async (order:any)=>{
                 return order.price * order.count
             },["price","count"])
@@ -35,6 +35,7 @@ describe("动态创建异步计算属性",()=>{
                 price:2,
                 count:3
             },{
+                lazy:false,
                 onComputedCreated:()=>{
                     expect(store.computedObjects.size).toBe(1)  
                     expect(store.computedObjects.has('x')).toBe(true)
@@ -52,6 +53,7 @@ describe("动态创建异步计算属性",()=>{
                 price:2,
                 count:3
             },{
+                lazy:false,
                 onComputedCreated:()=>{
                     expect(store.computedObjects.size).toBe(0)  
                     expect(store.computedObjects.has('x')).toBe(false)
@@ -70,6 +72,7 @@ describe("动态创建异步计算属性",()=>{
                 price:2,
                 count:3
             },{
+                lazy:false,
                 onComputedDone:({value})=>{
                     expect(value).toBe(6)
                     expect(obj.value.result).toBe(6)
@@ -89,6 +92,7 @@ describe("动态创建异步计算属性",()=>{
                 price:2,
                 count:3
             },{ 
+                lazy:false,
                 onComputedDone:({value})=>{     
                     results.push(value)
                     if(results.length===2){

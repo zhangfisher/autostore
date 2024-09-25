@@ -75,6 +75,7 @@
     "@autostorejs/core": "workspace:*",
     "@autostorejs/react": "workspace:*",
     "components": "workspace:*",
-    "flex-tools": "^1.4.9"
+    "flex-tools": "^1.4.9",
+    "flexstyled": "^2.1.2"
   }
 }
