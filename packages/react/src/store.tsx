@@ -1,5 +1,5 @@
 import React,{ useCallback, useEffect,useState } from "react"
-import { ComputedState,PATH_DELIMITER,AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions, setVal } from '@autostorejs/core';
+import { ComputedState,PATH_DELIMITER,AutoStore, Dict, getVal, AsyncComputedGetter, ComputedGetter, SyncComputedOptions, ComputedDepends, ComputedOptions, AutoStoreOptions, setVal, AsyncComputedResult, normalizeDeps, isAsyncComputedResult, Watcher } from '@autostorejs/core';
 import { AsyncComponentRender, SyncComponentRender } from "./types";
 
 
@@ -17,6 +17,8 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
      * @example
      * 
      * import { createStore } from "@autostorejs/react" 
+import { AsyncComputedResult } from '../../core/src/computed/types';
+import { isAsyncComputedResult } from '../../core/src/utils/isAsyncComputedResult';
      * 
      * const { state, $ } = createStore({
      *      firstName:'zhang',
@@ -142,16 +144,20 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     useDepends(selector: string):string[][]
     useDepends(selector: string[]):string[][]
     useDepends(selector: (state:ComputedState<State>)=>any):string[][]
-    useDepends(selector:any):string[][]{
+    useDepends(selector:any,depArgs?:ComputedDepends):string[][]{
         const [deps] = useState(()=>{
-            if(typeof(selector)==='function'){
-                return this.collectDeps(()=>selector(this.state))  
-            }else if(typeof(selector)==='string'){
-                return [selector.split(PATH_DELIMITER)]  
-            }else if(Array.isArray(selector)){
-                return [selector]  
+            if(depArgs){
+                return normalizeDeps(depArgs).filter(dep=>Array.isArray(dep))
             }else{
-                return []
+                if(typeof(selector)==='function'){
+                    return this.collectDeps(()=>selector(this.state))  
+                }else if(typeof(selector)==='string'){
+                    return [selector.split(PATH_DELIMITER)]  
+                }else if(Array.isArray(selector)){
+                    return [selector]  
+                }else{
+                    return []
+                }
             }
         })
         return deps        
@@ -161,33 +167,68 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
      * 返回当前状态
      * 
      * @example 
-     * [price,setPrice ] = useState<number>("order.price")
-     * [price,setPrice ] = useState<number>(['order','price'])
+     * const [price,setPrice ] = useState<number>("order.price")
+     * const [price,setPrice ] = useState<number>(['order','price'])
      * 
-     * [fullName,setFullname ] = useState<number>((state)=>state.firstName+state.lastName,(value,state)=>{
+     * const [fullName,setFullname ] = useState<number>((state)=>state.firstName+state.lastName,(value,state)=>{
      *   const [ firstName,lastName ] = value.split(' ')
      *   state.firstName = firstName
      *   state.lastName = lastName
      * })
+     * 
+     * @example
+     * 
+     * 如果异步状态所引用的是一个异步计算属性
+     * const [ { result,loading,timeout, run, cancel,.....} ] = useState("book.orders")
+     * 
+     * 
+     * 
+     * 
+     * @example
+     * 
+     * - 动态创建的计算属性
+     * const { result,loading } = useState(async (scope,{})=>{
+     *      const books = await fetch(scope.url)
+     *      return books
+     * },[deps],options)
+     * 
+     * - 通过key获取异步计算属性
+     * 
+     * * const { result,loading } = useState("async.key")
      * 
      */
     useState<Value>(selector: string):[Value,React.Dispatch<React.SetStateAction<Value>>]
     useState<Value>(selector: string[]):[Value,React.Dispatch<React.SetStateAction<Value>>]
     useState<Value,SetValue>(getter: (state:ComputedState<State>)=>Value,setter?: (value:SetValue,state:ComputedState<State>)=>void
     ):[Value,React.Dispatch<React.SetStateAction<Value>>]
-    useState<Value>(){
+    useState<Value,Scope=any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>):AsyncComputedResult<Value>
+    useState<Value>():any{
         const args = arguments    
         const selector = args.length>=1 && (Array.isArray(args[0]) || typeof(args[0])==='string' || typeof(args[0])==='function') ? args[0] : undefined     
         const setter = args.length===2 && typeof(args[1])==='function' ? args[1] : undefined
+        const isAsync = args.length>=2 &&  typeof(args[0])==='function' && Array.isArray(args[1]) 
+        const getter = isAsync ? args[0] : undefined
+        const depends = isAsync ? args[1] : []
         const [ value,setValue ] = useState(()=>this.getValue(selector))    
+        
         const deps = this.useDepends(selector)
+
         useEffect(()=>{ 
-            // 侦听依赖的变化，当依赖变化时，更新值
-            const watcher = this.watch(deps,()=>{
+            let watcher:Watcher
+            // 如果是异步计算属性，则需要侦听所有异步对象,value是一个异步对象
+            if(typeof(selector)==='string' && isAsyncComputedResult(value)){ 
+                watcher = this.watch(`${selector}.*`,()=>{
+                    setValue(this.getValue(selector))  
+                })
+            }else{
+
+            }
+            watcher = this.watch(deps,()=>{
                 setValue(this.getValue(selector))  
             })
             return ()=>watcher.off()
         },[deps])    
+
         const updateValue = useCallback((value:React.SetStateAction<Value>)=>{
             if(typeof(selector)==='string'){            
                 this.update(state=>setVal(state,selector.split(PATH_DELIMITER),value))
@@ -201,6 +242,12 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     }
 }
 
+const store = new ReactAutoStore({a:1,b:async ()=>{return 2}})
+
+
+const { result,timeout } =  store.useState(async (scope)=>{
+    return 1
+},["a"])
 
 
 export function createStore<State extends Dict>(initial: State,options?:AutoStoreOptions<State>){

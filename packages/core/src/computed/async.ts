@@ -48,13 +48,13 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	}
 	private createAsyncComputedResult() {
 		return Object.assign({
-			loading: false,
-			timeout: 0,
-			retry: 0,
-			error: null,
-			result: this.options.initial,
+			loading : false,
+			timeout : 0,
+			retry   : 0,
+			error   : null,
+			result  : this.options.initial,
 			progress: 0,
-			run: markRaw((args: Dict) => {
+			run     : markRaw((args: Dict) => {
 				return this.store.computedObjects.run(this.id, Object.assign({}, args));
 			}),
 			cancel: markRaw(() => {

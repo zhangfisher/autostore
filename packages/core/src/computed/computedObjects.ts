@@ -8,6 +8,8 @@ import { AsyncComputedGetter, ComputedDepends, ComputedDescriptor,  ComputedGett
 import { computed } from "./computed"
 import { isAbsolutePath } from "../utils/isAbsolutePath"
 import { isComputedDescriptor } from "./utils"
+import { PATH_DELIMITER } from "../consts"
+import { isPathEq } from "../utils"
 
  
  
@@ -163,6 +165,25 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     delete(id: string){
       this.get(id)?.unsubscribe()
       return super.delete(id)
+    }
+    /**
+     * 返回指定路径的计算对象
+     * 
+     * @example
+     * 
+     * 
+     * const computedObjects = store.computedObjects.find(['a','b'])
+     * 
+     * @param path 
+     */
+    find(path:string | string[] | undefined):ComputedObject | undefined{
+      if(!path) return 
+      const spath = Array.isArray(path) ?  path : path.split(PATH_DELIMITER)
+      for(const obj of this.values()){
+        if(isPathEq(obj.path,spath)){
+          return obj
+        }
+      }
     }
   }
    

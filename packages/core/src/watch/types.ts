@@ -1,8 +1,7 @@
-import type { FlexEventSubscriber } from "flex-tools/events/flexEvent"
 import type { StateOperateParams, StateOperates } from "../store/types"
 import type { WatchObject } from "./watchObject"
 import type { IComputedDescriptor, IComputedDescriptorBuilder, IComputedDescriptorOptions } from "../descriptor"
-
+import type { EventListener } from "../events/emitter"
 
 export type WatchListener<T=any,P=any> = (data:StateOperateParams<T,P>)=>void
 
@@ -11,7 +10,7 @@ export type WatchListenerOptions = {
     operates?: '*' | 'read' | 'write' | StateOperates[]                    // 只侦听的操作类型
     filter?  : (args:StateOperateParams)=>boolean      // 过滤器
 }
-export type Watcher = FlexEventSubscriber
+export type Watcher = EventListener
 
 
 

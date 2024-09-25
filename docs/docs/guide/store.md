@@ -78,8 +78,10 @@ const { state, $, watch  } = store
 
 ### **更新阶段**
 
-1. 当`store.state.count=100`更新状态值时，该操作会被`Proxy`对象`set`方法拦截，计算出更新的状态值所有的路径`['count']`，然后在`store.changesets`触发`emit('count',<operateParams>)`方法，通知所有订阅者。
-2. 对应的`ComputedObject`订阅者收到通知后，会执行`计算函数Getter`，然后将执行结果保存到`store.state`中的原始路径上。
+1. 当`store.state.count=100`更新状态值时，该操作会被`Proxy`对象`set`方法拦截，计算出更新的状态值所有的路径`['count']`，
+2. 然后在`store.changesets`触发`emit('<状态路径>',<operateParams>)`方法，通知所有订阅者。
+3. 对应的`ComputedObject`订阅者收到通知后，会执行`计算函数Getter`，
+4. 最后将`计算函数Getter`的执行结果保存到`store.state`中的原始路径上。
  
 
 ## 配置
