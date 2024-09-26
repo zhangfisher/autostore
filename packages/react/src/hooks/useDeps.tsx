@@ -1,4 +1,4 @@
-import { normalizeDeps, PATH_DELIMITER, type ComputedDepends, type ComputedState, type Dict } from "@autostorejs/core"
+import { getVal, isAsyncComputedResult, normalizeDeps, PATH_DELIMITER, type ComputedDepends, type ComputedState, type Dict } from "@autostorejs/core"
 import type { ReactAutoStore } from "../store"
 import { useState } from "react"
 
@@ -19,6 +19,8 @@ export interface UseDepsType<State extends Dict>{
  * useDeps(["order","price"]) == [["order","price"]]
  * useDeps((state)=>state.order.price* state.order.count)) == [["order","price"],["order","count"]]
  * 
+ * useDeps("a.b")
+ * 
  */
 export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){ 
     return function(selector:any,depArgs?:ComputedDepends){
@@ -29,7 +31,7 @@ export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){
                 if(typeof(selector)==='function'){
                     return store.collectDeps(()=>selector(store.state))  
                 }else if(typeof(selector)==='string'){
-                    return [selector.split(PATH_DELIMITER)]  
+                    return [selector.split(PATH_DELIMITER)]   
                 }else if(Array.isArray(selector)){
                     return [selector]  
                 }else{
@@ -37,6 +39,6 @@ export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){
                 }
             }
         })
-        return deps        
+        return deps
     }
  } 

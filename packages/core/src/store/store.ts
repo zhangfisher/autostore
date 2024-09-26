@@ -460,8 +460,3 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
 }
 
 
-
-export function createStore<State extends Dict>(initial: State,options?:AutoStoreOptions<State>){
-    return new AutoStore<State>(initial,options);
-}
- 

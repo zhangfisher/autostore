@@ -49,7 +49,11 @@ export const ColorBlock: React.FC<ColorBlockProps> = React.memo(
 				}}
 			>
 				<span style={{ flexGrow: 1 }}>
-					{name ? <span style={{ padding: "4px" }}>{name}=</span> : ""}
+					{name ? (
+						<span style={{ padding: "4px",flexGrow:0,flexShrink:0,minWidth:'120px' }}>
+							{name}
+							<span style={{padding:'4px'}}>=</span>
+					</span>) : ""}			
 					<span style={{ padding: "4px" }}>
 						{String(value)}
 						{props.children}

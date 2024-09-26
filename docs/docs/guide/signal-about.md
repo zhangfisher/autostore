@@ -1,6 +1,6 @@
 ---
 group:
-  title: 信号
+  title: 信号组件
   order: 4 
 order: 0  
 demo:
@@ -164,3 +164,10 @@ export default () => {
 }
 
 ``` 
+
+
+:::waring{title=注意}
+
+创建`$`来创建信号组件时，`$`是`signal`的快捷名称。因此上面的`{$('age')}`等价于`{signal("age")}`。更多的`signal`的用法请参考[signal](/guide/signal-component)。
+
+:::

@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import React from "react";
 
 
-export interface CreateSignalComponent<State extends Dict>{
+export interface SignalComponentType<State extends Dict>{
     (selector: string):React.ReactNode
     (selector: (state:ComputedState<State>)=>any):React.ReactNode
     <Value=any, Scope=any>(render:AsyncComponentRender,getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>):React.ReactNode
@@ -33,66 +33,66 @@ export interface CreateSignalComponent<State extends Dict>{
  * @example
  * 
  * import { createStore } from "@autostorejs/react" 
-import { AsyncComputedResult } from '../../core/src/computed/types';
-import { isAsyncComputedResult } from '../../core/src/utils/isAsyncComputedResult';
-* 
-* const { state, $ } = createStore({
-*      firstName:'zhang',
-*      lastName:'san'
-*      fullName: (user)=>{
-*          return user.firstName + ' ' + user.lastName
-*      }
-* })
-* 
-* @example
-* 
-* 生成一个只包括指定路径值的ReactNode
-* 
-* $("firstName")
-* 
-* @example
-* 
-* 生成一个由多个计算状态组成的ReactNode,当依赖变化时自动更新
-* 
-* $((state)=>{
-*    return state.firstName+state.lastName
-* })
-* 
-* scope默认指向ROOT
-* 
-* @example
-* 
-*  同步计算组件， $(render,getter,options)
-*  
-*  getter是一个计算函数，当依赖变化时，重新执行getter来获取数据，然后作为props传递给render进行重新渲染
-* 
-*  当组件内部依赖的a,b变化时，自动重新渲染
-*   $((value)=>{
-*      return <div>{state.a + state.b}</div></div>
-*   },(scope)=>{
-*      return scope.a + scope.b
-*   },computedOptions)
-* 
-* 
-* @example
-* 
-*  异步计算组件
-*   
-*   当依赖变化时，重新执行getter来获取数据，然后重新渲染组件
-*   
-*   $(({loading,timeout,result,retry,.....})=>{
-*      return {loading ? <div>loading...</div> : <div>{result}</div>}
-*   },async (scope,options)=>{
-*     const books = await fetch(scope.url)
-*     return books
-*   },[依赖],{timeout:1000,retry:3})
-* 
-* 
-* </div>
-* 
-* 
-* @param selector  字符串或逊
-* @returns 
+ * import { AsyncComputedResult } from '../../core/src/computed/types';
+ * import { isAsyncComputedResult } from '../../core/src/utils/isAsyncComputedResult';
+ * 
+ * const { state, $ } = createStore({
+ *      firstName:'zhang',
+ *      lastName:'san'
+ *      fullName: (user)=>{
+ *          return user.firstName + ' ' + user.lastName
+ *    }
+ * })
+ * 
+ * @example
+ * 
+ * 生成一个只包括指定路径值的ReactNode
+ * 
+ * $("firstName")
+ * 
+ * @example
+ * 
+ * 生成一个由多个计算状态组成的ReactNode,当依赖变化时自动更新
+ * 
+ * $((state)=>{
+ *    return state.firstName+state.lastName
+ * })
+ * 
+ * scope默认指向ROOT
+ * 
+ * @example
+ * 
+ *  同步计算组件， $(render,getter,options)
+ *  
+ *   getter是一个计算函数，当依赖变化时，重新执行getter来获取数据，然后作为props传递给render进行重新渲染
+ * 
+ *  当组件内部依赖的a,b变化时，自动重新渲染
+ *   $((value)=>{
+ *      return <div>{state.a + state.b}</div></div>
+ *   },(scope)=>{
+ *      return scope.a + scope.b
+ *   },computedOptions)
+ * 
+ * 
+ * @example
+ * 
+ *  异步计算组件
+ *   
+ *   当依赖变化时，重新执行getter来获取数据，然后重新渲染组件
+ *   
+ *   $(({loading,timeout,result,retry,.....})=>{
+ *      return {loading ? <div>loading...</div> : <div>{result}</div>}
+ *   },async (scope,options)=>{
+ *     const books = await fetch(scope.url)
+ *     return books
+ *   },[依赖],{timeout:1000,retry:3})
+ * 
+ * 
+ * </div>
+ * 
+ * 
+ * @param selector  字符串或逊
+ * @returns 
 */
 export function createSignalComponent<State extends Dict>(store:ReactAutoStore<State>){
     return (function(){ 
@@ -113,10 +113,8 @@ export function createSignalComponent<State extends Dict>(store:ReactAutoStore<S
             const [ value,setValue ] = useState(()=>getValueBySelector(store,selector))
     
             useEffect(()=>{
-                // if(computedObj instanceof ComputedObject){
-                    
-                // }else{
-    
+                // if(computedObj instanceof ComputedObject){                    
+                // }else{    
                 // }
                 // 侦听依赖的变化，当依赖变化时，更新值
                 const watcher = store.watch(deps,()=>{
@@ -128,7 +126,7 @@ export function createSignalComponent<State extends Dict>(store:ReactAutoStore<S
             return <>
                 {value}
             </>
-        }  , () => true)  
+        }, ()=>true)  
         return <El />; 
-    }) as CreateSignalComponent<State>
+    }) as SignalComponentType<State>
 }
