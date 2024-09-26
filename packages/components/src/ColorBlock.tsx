@@ -55,7 +55,7 @@ export const ColorBlock: React.FC<ColorBlockProps> = React.memo(
 						{props.children}
 					</span>
 				</span>
-				<span style={{ fontSize: "8px" }}>{renderCount.current}</span>
+				<span title="Render Count" style={{ fontSize: "8px" }}>{renderCount.current}</span>
 			</div>
 		);
 	},

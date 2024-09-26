@@ -4,7 +4,7 @@ order: 2
 demo:
   tocDepth: 5
 group:
-  title: 基础
+  title: Store
   order: 1 
 
 toc: content
@@ -127,7 +127,8 @@ export default () => {
 ``` 
 
 :::warning{title=注意}
-此例中更新`Age`时并不会重新渲染整个组件,而只会渲染其`$('age')`，这就是信号组件的功能，其可以提供细粒度的更新渲染。
+此例中更新`Age`时并不会重新渲染整个组件,而只会渲染`$('age')`，这就是信号组件的功能，其可以提供细粒度的更新渲染。
+`$('age')`本质上返回的是一个经过`React.memo`包装的`ReactNode`。
 :::
 
 ## 小结

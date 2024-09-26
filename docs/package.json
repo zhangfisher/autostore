@@ -74,6 +74,7 @@
   "dependencies": {
     "@autostorejs/core": "workspace:*",
     "@autostorejs/react": "workspace:*",
+    "clsx": "^2.1.1",
     "components": "workspace:*",
     "flex-tools": "^1.4.9",
     "flexstyled": "^2.1.2"

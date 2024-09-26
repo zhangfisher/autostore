@@ -1,5 +1,5 @@
 import React from "react"
-import { AsyncComputedResult } from "autostore"
+import { AsyncComputedResult } from "@autostorejs/core"
 
  
 

@@ -6,6 +6,7 @@ order: 0
 title: 同步计算
 demo:
   tocDepth: 5
+toc: content
 ---
 
 

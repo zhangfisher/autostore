@@ -6,6 +6,7 @@ title: 入门
 order: 0  
 demo:
   tocDepth: 5
+toc: content
 ---
 
 ## 介绍

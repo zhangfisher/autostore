@@ -1,6 +1,6 @@
 ---
 group:
-  title: 基础
+  title: Store
   order: 1 
 title: Store
 order: 1  
@@ -12,8 +12,9 @@ toc: content
 
 
 使用`AutoStore`的起手式就是创建一个`Store`对象，`Store`对象是`AutoStore`的核心对象，所有的功能都是基于`Store`对象来实现的。
+ 
 
-## 创建
+## createStore
 
 `createStore`方法用来创建`AutoStore`对象。
 
@@ -51,38 +52,31 @@ const { state, $, watch  } = store
 - **监听状态数据变化**: `watch("count",callback)`方法用来监听状态数据的读写操作，当状态数据变化时会触发回调函数。
 - **信号组件**: `$('total')`用来创建`React`组件，该组件会在`total`状态数据变化时重新渲染，从而实现最细粒度的组件更新。
 
-## 工作原理
-
-使用`createStore`创建的是一个`AutoStore`类实例，其负责管理状态数据和收集依赖，并且在当状态值变化时会触发事件，从而触发组件重新渲染。`AutoStore`对象的基本工作原理结构如下：
-
-![](./store.drawio.png)
-
-### **准备阶段**
-
-1. 当创建`AutoStore`对象时，会创建一个`Proxy`对象，用来代理状态数据。
-2. 同时创建一个名称为`changesets`的`EventEmitter`（基于`mitt`封装）。
-3. 然后递归遍历状态数据时，会根据数据类型创建不同的对象（支持设置`lazy=true`，仅在读取时创建）：
-    - 如果是`{}`或`数组`则会创建一个`Proxy`对象，用来代理`{}`或`数组`的属性和方法，这样就可以实现支持任意嵌套的状态数据。
-    - 如果是`计算函数`则会创建一个`ComputedObject`对象，同时该`ComputedObject`对象会实例保存到`store.computedObjects`中。
-    - 如果是`监听函数`则会创建一个`WatchObject`对象实例保存到`store.watchObjects`中。
-4. 当创建`ComputedObject`对象实例时，会根据同步或异步的方式计算出初始值和收集依赖。
-    - 如果是同步计算函数，则会执行一次来自动收集依赖。
-    - 如果是异步计算函数，则需要手动指定依赖。
-  然后，根据依赖的目标路径，调用`store.changesets.on('依赖路径')`来订阅变更事件
-
-
-:::info{title=如何区分`计算函数`和`监听函数`}
-`计算函数`等同于`Vue`的`computed`，当所依赖的数据变化时执行，一般依赖是确定的。而`监听函数`等同于`Vue`的`watch`，用来监听状态数据的变化，可以监听动态范围的依赖变化。
-:::
-
-
-### **更新阶段**
-
-1. 当`store.state.count=100`更新状态值时，该操作会被`Proxy`对象`set`方法拦截，计算出更新的状态值所有的路径`['count']`，
-2. 然后在`store.changesets`触发`emit('<状态路径>',<operateParams>)`方法，通知所有订阅者。
-3. 对应的`ComputedObject`订阅者收到通知后，会执行`计算函数Getter`，
-4. 最后将`计算函数Getter`的执行结果保存到`store.state`中的原始路径上。
  
+## useStore
+
+一般使用`createStore`创建全局状态对象，如果需要在组件中使用，可以使用`useStore`来获创建。
+
+```tsx
+import { useStore } from '@autostorejs/react';
+import { Button,ColorBlock } from "components"
+ 
+
+export default () => {
+  const { state,$ } = useStore({
+    count:18
+  }) 
+
+  return <div>    
+      <ColorBlock name="Count">{$('count')}</ColorBlock>
+      <Button onClick={()=>state.count++}>Count++</Button>
+    </div>
+} 
+
+const { state, $, watch  } = store
+```
+
+
 
 ## 配置
 
@@ -220,3 +214,5 @@ export type AutoStoreOptions<State extends Dict> = {
 
 }
 ```
+
+

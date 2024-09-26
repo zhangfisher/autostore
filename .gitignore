@@ -64,3 +64,6 @@ templates/*/dist
 templates/*/node_modules
 
 .clinic
+
+
+docs/docs-dist

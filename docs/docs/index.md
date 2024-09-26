@@ -3,9 +3,10 @@ hero:
   title: AutoStore
   description: Reactive State Management Library
   actions:
-    - text: Hello
+    - text: 快速入门
       link: /
-    - text: World
+      primary: true
+    - text: Github
       link: /
 features:
   - title: Hello
@@ -19,3 +20,4 @@ features:
     description: Put ! description here
 ---
  
+

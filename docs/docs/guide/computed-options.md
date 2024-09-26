@@ -6,6 +6,7 @@ title: computed
 order: 3  
 demo:
   tocDepth: 5
+toc: content
 ---
 
 

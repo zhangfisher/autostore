@@ -6,6 +6,7 @@ title: 计算对象
 order: 4 
 demo:
   tocDepth: 5
+toc: content
 ---
 
 ## 介绍

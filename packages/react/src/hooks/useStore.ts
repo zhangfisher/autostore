@@ -24,7 +24,7 @@
 
 
 import { Dict } from "@autostorejs/core"
-import { ReactAutoStore } from "./store"    
+import { ReactAutoStore } from "../store"    
 import { useRef} from "react"
 
 export function useStore<State extends Dict>(define:State){

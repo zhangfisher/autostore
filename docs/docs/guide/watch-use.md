@@ -6,6 +6,7 @@ group:
 order: 5
 demo:
   tocDepth: 5
+toc: content
 ---
 
  
