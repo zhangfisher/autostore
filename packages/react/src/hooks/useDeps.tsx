@@ -3,10 +3,10 @@ import type { ReactAutoStore } from "../store"
 import { useState } from "react"
 
 export interface UseDepsType<State extends Dict>{
-    (selector: string):string[][]
-    (selector: string[]):string[][]
-    (selector: (state:ComputedState<State>)=>any):string[][]
-    (selector:any,depArgs?:ComputedDepends):string[][] 
+    (selector: string,extendAsync?:boolean):string[][]
+    (selector: string[],extendAsync?:boolean):string[][]
+    (selector: (state:ComputedState<State>)=>any,extendAsync?:boolean):string[][]
+    (selector:any,extendAsync?:boolean):string[][] 
  }
 
 /**
@@ -32,7 +32,7 @@ export interface UseDepsType<State extends Dict>{
  * 
  */
 export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){ 
-    return function(selector:any){
+    return function(selector:any,extendAsync?:boolean){
         const [deps] = useState(()=>{
             let deps:string[][] = [] 
             if(typeof(selector)==='function'){
@@ -45,13 +45,15 @@ export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){
                 deps = []
             } 
             // 判断是否是异步计算属性，如果是则需要自动添加value
-            deps.forEach(dep=>{
-                // 获取值,不触发GET事件,即偷看
-                let value =  store.peep(state=>getVal(state,dep))
-                if(isAsyncComputedValue(value)){
-                    dep.push("value")
-                }
-            })
+            if(extendAsync!==false){
+                deps.forEach(dep=>{
+                    // 获取值,不触发GET事件,即偷看
+                    let value =  store.peep(state=>getVal(state,dep))
+                    if(isAsyncComputedValue(value)){
+                        dep.push("value")
+                    }
+                })
+            }
             return deps 
         })
         

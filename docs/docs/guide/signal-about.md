@@ -31,53 +31,89 @@ toc: content
 
 由于`Virtual DOM`的特性，无论是`React`还是`Vue`，本质上都是在`Virtual DOM`上进行`diff`算法，然后再进行`patch`操作，差别就是`diff`算法的实现方式不同。
 
-当人们将`Virtual DOM`玩出花后，突然有人提出，引入`Virtual DOM`并不是高性能的必选项，本质上只需要按需细粒度更新就可以，跟是否使用`Virtual DOM`并没有必然关系。
+**但是无论怎么整， 在`Virtual DOM`的`diff`算法加持下，将`状态的变化`总是难以精准地与`DOM`对应匹配。**
 
-然后，就有了类似`Svelte`这样的框架，它不使用`Virtual DOM`，不需要`diff`算法，而是引入`signal`概念，可以在**信号触发时只更新变化的部分，真正的细粒度更新**。这一下子就把`React`和`Vue`之类的`Virtual DOM`玩家们给打蒙了，一时间`signal`成了前端开发的新宠。
+通俗说，就是当`state.xxx`更新时，不是直接找到使用`state.xxx`的`DOM`进行精准更新，而是通过`Virtual DOM`的`diff`算法比较算出需要更新的`DOM`元素，然后再进行`patch`操作。
 
+问题是，这种`diff`算法比较复杂，需要进行各处优化，对开发者也有一定的心智负担，比如在在大型`React`应用中对`React.memo`的使用,或者在`Vue`中的模板优化等等。
+
+因此框架的最核心的问题就是**能根据`状态的变化`快速找到依赖于该状态的`DOM`的进行重新渲染**，即所谓的`细粒度更新`。
+
+
+即然基于`Virtual DOM`的`diff`算法在解决细粒度更新方面存在问题，那么是否可以不进行`diff`算法，直接找到`state.xxx`对应的`DOM`进行更新呢？ 
+
+方法是有的，就是前端最红的`signal`的概念。
+
+事实上`signal`概念很早就有了，但是自出了`Svelte`这样的框架，它不使用`Virtual DOM`，不需要`diff`算法，而是引入`signal`概念，可以在**信号触发时只更新变化的部分，真正的细粒度更新**。并且性能也非常好。
+
+这一下子就把`React`和`Vue`之类的`Virtual DOM`玩家们给打蒙了，一时间`signal`成了前端开发的新宠。
 所有的前端框架均在`signal`靠拢，`Svelte`和`solidjs`成了`signal`的代表，`Vue Vapor`就是`Vue`的`signal`实现（还没有发布）。
 
 
 **那么什么是信号？**
 
-`signal` 是前端开发中管理和处理状态变化的重要工具。它可以帮助开发者更高效地创建响应式应用程序，并确保在状态变化时`UI`能够自动更新。不同的前端框架和库有不同的实现方式，但核心思想都是相同的。
+引用卡颂老师关于`signal`的一篇文章[Signal:更多前端框架的选择](https://juejin.cn/post/7203266679602151482?searchId=20240927133705309C92B350C93291DBBA)。
 
-以下是`solidjs`的`signal`的一个简单示例：
+卡颂老师说`signal的本质，是将对状态的引用以及对状态值的获取分离开。`
 
-```jsx | pure
- import { createSignal, onCleanup } from 'solid-js';
-function App() {
-  // 创建一个 signal，初始值为 0
-  const [count, setCount] = createSignal(0);
+大神就是大神，一句话就把`signal`的本质说清楚了。但是也把我等普通人给说懵逼了，这个概念逼格太高太抽象了，果然是大神啊。
 
-  // 创建一个清理函数，用于在组件卸载时取消订阅
-  onCleanup(() => {
-    console.log('组件卸载');
-  });
+下面我们按凡人的思维来理一理`signal`，构建一套`signal`机制的基本流程原理如下：
 
-  // 定义一个函数，用于增加 count 的值
-  const increment = () => {
-    setCount(count() + 1);
-  };
+- **第1步： 让状态数据可观察**
 
-  return (
-    <div>
-      <h1>计数器: {count()}</h1>
-      <button onClick={increment}>增加</button>
-    </div>
-  );
-}
-export default App;
-```
+让状态数据变成`响应式`或者`可观察`，办法就是使用`Proxy`或者`Object.defineProperty`等方法，将状态数据变成一个`可观察`对象，而不是一个普通的数据对象。
 
-**我们也可以自己实现一个简单的`signal`：**
+`可观察`对象的作用就是**拦截对状态的访问**，当状态发生读写变化时，就可以收集依赖信息。
+
+:::waring{title=注意}
+让数据可观察有多种方法，比如`mobx`就不是使用`Proxy`，而是使用`Class`的`get`属性来实现的。甚至你也可以用自己的一套`API`来实现。只不过现在普遍使用`Proxy`实现。核心原理就是要拦截对状态的访问，从而收集依赖信息。
+:::
+
+- **第2步：信号发布/订阅**
+
+由于可以通过**拦截对状态的访问**，因此，我们就可以知道什么时候读写状态了，那么我们就可以在读写状态时，发布一个`信号`，通知订阅者，状态发生了变化。
+
+因此，我们就需要一个`信号发布/订阅`的机制，来登记什么信号发生了变化，以及谁订阅了这个信号。
+
+您可以使用类似`mitt`、`EventEmitter`之类的库来构建`信号发布/订阅`，也可以自己写一个。
+ 
+`信号发布/订阅`最核心的事实上就是一个订阅表，记录了谁订阅了什么信号，在前端就是哪个DOM渲染函数，依赖于哪个信号（状态变化）。
+
+- **第2步：收集依赖**
+
+接下来我们编写`DOM`的渲染函数，如下：
 
 ```js | pure
-<h1>计数器: <span id="count">0</span></h1>
-<button id="increment">增加</button>
+  function render() {
+      element.textContent = countSignal.value.toString();
+  }
+```
 
-  <script>
-      class Signal<T> {
+在此渲染函数中：
+
+- 我们直接更新`DOM`元素，没有任何的`diff`算法，也没有任何的`Virtual DOM`。
+- 函数使用访问状态数据`count`来更新`DOM`元素，由于状态是可观察的，因此当执行`countSignal.value`时，我们就可以拦截到对`count`的访问，也就是说我们收集到了该`DOM`元素依赖于`count`状态数据。
+- 有了这个`DOM Render`和`状态数据`的依赖关系，我们就可以在`signal`的信号发布/订阅机制中登记这个依赖关系.
+ 
+:::info 
+收集依赖的作用就是建立渲染函数与状态之间的关系。
+:::
+
+- **第3步：注册渲染函数**
+
+最后我们将`render`函数注册到`signal`的订阅者列表中，当`count`状态数据发生变化时，我们就可以通知`render`函数，从而更新`DOM`元素。
+
+ 
+**简单示例**
+
+下面是一个简单的`signal`的示例，我们创建一个`signal`对象`countSignal`，并且创建一个`DOM`元素`countElement`，当`countSignal`发生变化时，我们更新`countElement`的`textContent`。
+
+
+:::code-group
+
+```js | pure
+        class Signal<T> {
           private _value: T;
           private _subscribers: Array<(value: T) => void> = [];
           constructor(initialValue: T) {
@@ -116,16 +152,24 @@ export default App;
       }
       countSignal.subscribe(render);
       incrementButton.addEventListener('click', increment);
-      render();
-  </script>
+      render(); 
 ```
+
+```html
+<h1>计数器: <span id="count">0</span></h1>
+<button id="increment">增加</button>
+```
+:::
 
 
 ## 信号组件
 
 **那么我们如何在`React`中使用`signal`呢？**
 
-本质上，`React`并不是一个`Signal`框架，其为渲染调度是基于`Virtual DOM`、`fiber`和`diff`算法的。
+从上面我们可以知道，`signal`驱动的前端框架是完全不需要`Virtual DOM`的。
+
+而本质上`React`并不是一个`Signal`框架，其渲染调度是基于`Virtual DOM`、`fiber`和`diff`算法的。
+
 因此，`React`并不支持`signal`的概念，除排未来`React`像`Vue`一样升级`Vue Vapor mode`进行重大升级，抛弃`Virtual DOM`，否则在`React`在中是不能真正使用如同`solidjs`和`Svelte`的`signal`概念的。
 
 但是无论是`Virtual DOM`还是`signal`，核心均是为了解决`细粒度更新`的问题，从而提高渲染问题。
@@ -133,9 +177,11 @@ export default App;
 因此，我们可以结合`React`的`React.memo`和`useMemo`等方法来模拟`signal`的概念，实现`细粒度更新`。
 
 这样我们就有了**信号组件**的概念，其本质上是使用`React.memo`包裹的`ReactNode`组件。
-- 该组件`diff`总是返回`true`,如`React.memo(()=>{.....},()=>true)`
+
+- 该组件`diff`总是返回`true`,如`React.memo(()=>{.....},()=>true)`，这用来隔离`DOM`渲染范围。
 - 然后在该组件内部会订阅所依赖的状态变化，当状态变化时重新渲染该组件。
 - 由于`diff`总是返回`true`，因此重新渲染就被约束在了该组件内部，不会引起连锁反应，从而实现了`细粒度更新`。
+
 
 以下是`AutoStore`中的`signal`的一个简单示例：
 
@@ -166,8 +212,30 @@ export default () => {
 ``` 
 
 
-:::waring{title=注意}
+:::warning{title=注意}
+- 信号组件仅仅是模拟`signal`实现了`细粒度更新`，其本质上是使用`React.memo`包裹的`ReactNode`组件。
+- 创建`$`来创建信号组件时，`$`是`signal`的快捷名称。因此上面的`{$('age')}`等价于`{signal("age")}`。
+- 更多的`信号组件`的用法请参考[signal](/guide/signal-component)。
+:::
 
-创建`$`来创建信号组件时，`$`是`signal`的快捷名称。因此上面的`{$('age')}`等价于`{signal("age")}`。更多的`signal`的用法请参考[signal](/guide/signal-component)。
 
+## 小结
+
+由于`React`沉重的历史包袱，在可以预见的未来，`React`应该不会支持真正意义上的`signal`。
+
+在卡颂老师`的[Signal:更多前端框架的选择](https://juejin.cn/post/7203266679602151482?searchId=20240927133705309C92B350C93291DBBA)中也提到，
+
+**React团队成员对此的观点是：**
+
+- 有可能引入类似`Signal`的原语
+- `Signal`性能确实好，但不太符合`React`的理念
+
+
+而`AutoStore`所支持的`信号组件`的概念，可以视为模拟`signal`或者类似`Signal`的原语，使得我们可以在`React`中实现`细粒度更新`，而不用再去纠结`React.memo`的使用。
+
+
+
+
+:::info
+自`React 19`开始,`React`官方推出`Compiler`，帮助用户解决`React.memo`的问题，减少用户的心智负担。但是其并不是为了解决细粒度更新的问题，而是优化提高`React`的性能。本人对`Compiler`的使用并不是很看好，有待进一步研究。
 :::

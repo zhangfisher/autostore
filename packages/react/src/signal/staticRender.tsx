@@ -46,7 +46,7 @@ import { getValueBySelector } from "../utils/getValueBySelector"
  * 
  * 
  */
-export function createSignalByPath<State extends Dict>(store:ReactAutoStore<State>,selector:string[] | ((state:ComputedState<State>)=>any)){
+export function createStaticRender<State extends Dict>(store:ReactAutoStore<State>,selector:string[] | ((state:ComputedState<State>)=>any)){
     return React.memo(()=>{
         // 收集依赖的路径
         const deps = store.useDeps(selector)

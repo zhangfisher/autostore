@@ -1,8 +1,8 @@
 import { AutoStore, Dict, AutoStoreOptions } from '@autostorejs/core';
 import { createUseState, UseStateType } from "./hooks/useState";
 import { createUseDeps, UseDepsType } from "./hooks/useDeps";
-import { SignalComponentType,createSignalComponent } from "./signal";
-
+import { createSignalComponent } from "./signal";
+import type { SignalComponentType } from "./signal/types";
 
 export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     useState:UseStateType<State>

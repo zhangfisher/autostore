@@ -132,6 +132,31 @@ describe("watch功能测试",()=>{
                 store.state.b = 200  
             })        
         })
+
+        test("通过通配符进行侦听", ()=>{
+            return new Promise<void>((resolve)=>{
+                const store = new AutoStore({
+                    books:{            
+                        a:1,
+                        b:2,
+                        c:3,
+                        d:4
+                    }
+                })
+                const paths:string[] = []
+                store.watch("books.*",({path})=>{
+                    paths.push(path.join('.'))
+                    if(paths.length==4){
+                        expect(paths).toStrictEqual(['books.a','books.b','books.c','books.d'])
+                        resolve()
+                    }   
+                })            
+                store.state.books.a = 11
+                store.state.books.b = 22
+                store.state.books.c = 33
+                store.state.books.d = 44            
+            })
+        })
     })
 
 
