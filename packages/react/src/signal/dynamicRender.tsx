@@ -30,22 +30,37 @@ import type  { SignalComponentComputedCreator, SignalComponentGetter, SignalComp
  * 
  * 
  */
-export function createDynamicRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,getterOrCreator:SignalComponentComputedCreator | SignalComponentGetter | string){
-    const selectPath:string | undefined = typeof(getterOrCreator)==='string' ? getterOrCreator : undefined
+export function createDynamicRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,builder:SignalComponentComputedCreator ){
+    
+    
 
     return React.memo(()=>{
 
-        // 收集依赖的路径
-        const deps = store.useDeps(selector)
+        const descriptor = builder()
+        // 创建一个计算对象
+        const [ computedObj,setComputedObj ] = useState(()=>{
+            if(descriptor.type==='computed'){
+                return store.computedObjects.create(descriptor as any)
+            }else if(descriptor.type==='watch'){
+                return store.watchObjects.create(descriptor as any)
+            }
+        }) 
+
+        
+ 
         
         
-        const [ value,setValue ] = useState(()=>getValueBySelector(store,selectPath,true)) 
+        const [ value,setValue ] = useState(()=>d) 
         
         
         useEffect(()=>{ 
-            const watcher = store.watch(deps,()=>{
-                setValue(getValueBySelector(store,selector,true))  
-            })
+            let watcher 
+            if(computedObj){
+                watcher = computedObj.watch(()=>{
+                    setValue(getValueBySelector(store,selector,true))  
+                })
+            }
+            
             return ()=>watcher.off()
         },[deps])
 

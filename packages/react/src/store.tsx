@@ -11,7 +11,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     signal:SignalComponentType<State>
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,options)
-        this.signal = this.$=createSignalComponent(this).bind(this)
+        this.signal = this.$ = createSignalComponent(this).bind(this)
         this.useState = createUseState(this).bind(this)
         this.useDeps = createUseDeps(this).bind(this)
     } 

@@ -1,7 +1,7 @@
 /**
  * 同步计算
  */
-import {  ComputedOptions,  SyncRuntimeComputedOptions } from './types';
+import { ComputedOptions,  SyncRuntimeComputedOptions } from './types';
 import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
 import { StateOperateParams } from "../store/types";
@@ -19,7 +19,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
   /**
    * 同步计算属性对象在初始化时，会通过运行来自动收集依赖
    */
-  protected onInitial(){
+  onInitial(){
       this.collectDependencies()
   }
   
@@ -61,9 +61,9 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
           this.value = computedResult  
         })
       }  
-      !first && this.emitComputedEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
+      !first && this.emitStoreEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
-      !first && this.emitComputedEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
+      !first && this.emitStoreEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
       throw e
     }
   } 

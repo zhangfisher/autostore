@@ -5,26 +5,18 @@
  */
 import { PATH_DELIMITER } from "../consts"; 
 import { AutoStore } from "../store/store";
-import { StateOperateParams, UpdateOptions } from "../store/types";
+import { StateOperateParams } from "../store/types";
 import { getDependPaths } from "../utils/getDependPaths";
-import { getVal } from "../utils/getVal";
 import { joinValuePath } from "../utils/joinValuePath";
 import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedOptions } from './types';
-import { Watcher } from "../watch/types";
-import { StoreEvents } from "../events/types";
-import { setVal } from "../utils";
-import { getId } from "../utils/getId"; 
-export class ComputedObject<Value=any>{    
-    private _path:string[] 
-    private _options:Required<ComputedOptions>
-    private _getter:any
-    private _depends: string[][] | undefined
-    private _id:string = ""
-    private _initialValue:Value | undefined
+import { Watcher } from "../watch/types"; 
+import { ComputedDescriptorObject } from "../descriptor/descriptorObject";
+
+
+export class ComputedObject<Value=any> extends ComputedDescriptorObject<Value,ComputedOptions<Value>>{     
     private _subscribers:Watcher[] = []              // 保存订阅者的ID
-    private _subscribed:boolean = false
-    private _value:Value | undefined
-    private _attched:boolean = false                 // 是否已经附加到状态对象上
+    private _subscribed:boolean = false 
+
     /**
      *  构造函数。
      * 
@@ -33,83 +25,18 @@ export class ComputedObject<Value=any>{
      * @param {ComputedDescriptor<Options>} descriptor - 动态值描述符，包含了动态值的元数据。
      */
     constructor(public store:AutoStore<any>,public descriptor:ComputedDescriptor,public context?:ComputedContext<Value>){
-        this._attched    =  context!==undefined
-        this._getter     = descriptor.getter         
-        this._options    = Object.assign({
-            enable: true,
-            group: "",
-            depends: []
-        }, descriptor.options) as unknown as Required<ComputedOptions>
-        this._id         = this._options.id || (this._attched ? joinValuePath(context?.path) : getId())
-        this._path       = context?.path || [`#${this._id}`]
-        if(!this._path) this._path = [`#${this._id}`]
-        this._depends    = getDependPaths(this._path,this._options.depends )
-        this._initialValue = this._options.initial 
-        this.onInitial()   
-    } 
-    get options(){ return this._options   }
-    get id(){return this._id }
-    get attched(){return this._attched }
-    get enable(){ return this._options.enable as boolean }
-    set enable(value:boolean){ this._options.enable = value }
-    get async(){return this._options.async}
-    get group(){return this.options.group}
-    get initial(){ return this._initialValue}      
-    set initial(value){ this._initialValue = value }  
-    get path(){ return this._path }
-    get getter(){ return this._getter}
-    set getter(value){ this._getter= value  } 
-    get depends(){return this._depends}
-    set depends(value){ this._depends=value}     
-    toString(){ return `ComputedObject<${joinValuePath(this._path)}>` }
+        super(store,descriptor,context) 
+        this.options.depends  = getDependPaths(this.path,this.options.depends ) 
+    }    
+    toString(){ return `ComputedObject<${joinValuePath(this.path)}>` } 
+    get depends(){
+        return super.depends as string[][] | undefined
+    }
 
-    get value(){ 
-        if(this._attched){
-            return getVal(this.store.state,this._path) 
-        }else{ 
-            this.store._notify({type:'get',path:this.path,value:this._value}) 
-            return this._value as unknown as Value
-        }
-    }           
-    set value(value:Value){
-        if(this._attched){ 
-            setVal(this.store.state,this._path, value)     
-        }else{            
-            this._value = value          
-            this.store._notify({type:'set',path:this.path,value})
-        }
-    }  
+    set depends(value:string[][] | undefined){
+        super.depends = value
+    }
 
-    /**
-     * 更新计算对象的结果值
-     * 
-     * @description
-     * 
-     * - 标量值
-     *  update(1)
-     * - 对象值
-     *  update({value:1}) 
-     * 
-     */
-    update(value:Value,options?:UpdateOptions){        
-        this.store.update(()=>{
-            this.value = value
-        },options) 
-    }
-    /**
-     * 更新计算属性的值，并且不会触发依赖的变化事件
-     * 
-     * 
-     * 
-     * @param value 
-     * @param {boolean} silent - 是否静默更新，即不会触发依赖变化事件 
-     */
-    silentUpdate(value:Value){
-         this.update(value,{silent:true})
-    }
-    batchUpdate(value:Value){
-        this.update(value,{batch:true})
-    }
     /**
      * 检查计算函数是否被禁用
      * 
@@ -118,15 +45,7 @@ export class ComputedObject<Value=any>{
      */
     protected isDisable(value:boolean | undefined){
        return !this.store.options.enableComputed || (!this.enable && value!==true) || value===false
-    }
-    /**
-     * 
-     * 当动态值对象初始化时调用
-     * 
-     */
-    protected onInitial(){
-
-    }     
+    } 
     /**
     *  手动触发计算属性getter函数的重新执行，重新计算计算属性的值
     * 
@@ -149,20 +68,20 @@ export class ComputedObject<Value=any>{
      * @returns 
      */
     protected getDepends(){
-        return this._depends!
+        return this.depends!
     }
     /**
      * 订阅依赖的变化事件
      * 不包括读取依赖的事件
      */
     subscribe(){
-        if(this._depends && !this._subscribed){
+        if(this.depends && !this._subscribed){
             this._subscribers.push(this.store.watch(
                 this.getDepends(),
                 this.onDependsChange.bind(this),
                 {operates:'write'}
             ))
-            this.store.log(()=>`ComputedObject<${this.toString()}> subscribed to ${this._depends!.map(depends=>depends.join(PATH_DELIMITER)).join(",")}`)
+            this.store.log(()=>`${this.toString()} subscribed to ${this.depends!.map(depends=>depends.join(PATH_DELIMITER)).join(",")}`)
             this._subscribed=true
         }
     }    
@@ -173,35 +92,6 @@ export class ComputedObject<Value=any>{
         this._subscribers.forEach(subscriber=>subscriber.off())
         this._subscribed=false
     }
-    
-    protected emitComputedEvent(event:keyof StoreEvents,args:any){
-        setImmediate(()=>{
-            this.store.emit(event,args)
-        })
-    }
-    /**
-     * 订阅当前计算对象值变化的事件
-     * @description
-     * 
-     * 当计算结果值发生变化时触发
-     * 
-     * @example
-     * 
-     * const computedObj = store.computedObject.get("xxx")
-     * computedObj.on((value)=>{
-     *      
-     * })
-     * 
-     */
-    on(listener:(value:Value)=>void){
-        return this.store.watch(this._path!.join(PATH_DELIMITER),({value})=>{
-            listener.call(this,value as Value)
-        })
-    }
-    once(listener:(value:Value)=>void){
-        return this.store.watch(this._path!.join(PATH_DELIMITER),({value})=>{
-            listener.call(this,value as Value)
-        },{once:true})
-    }
+     
 
 }

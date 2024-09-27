@@ -70,10 +70,7 @@ import type { SignalComponentType } from "./types"
  *   
  *   $(({loading,timeout,value,retry,.....})=>{
  *      return {loading ? <div>loading...</div> : <div>{result}</div>}
- *   },async (scope,options)=>{
- *     const books = await fetch(scope.url)
- *     return books
- *   },[依赖],{timeout:1000,retry:3})
+ *   },()=>computed(getter,depends,options))
  * 
  * 
  * </div>

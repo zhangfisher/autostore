@@ -21,9 +21,7 @@ import { updateObjectVal } from "../utils/updateObjectVal";
 import { ASYNC_COMPUTED_VALUE } from "../consts";
 
 
-export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
-	AsyncComputedValue<Value>
-> {
+export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<AsyncComputedValue<Value>> {
 	private _isComputedRunning: boolean = false;
 	get async() {return true}       
 	get value() {return super.value as AsyncComputedValue<Value>}
@@ -33,7 +31,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	/**
 	 *
 	 */
-	protected onInitial() {
+	onInitial() {
 		this.initial = this.createAsyncComputedValue();
 		this.subscribe()
 		// 为什么要延迟执行？
@@ -115,7 +113,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		const { noReentry } = finalComputedOptions;
 		if (noReentry && this._isComputedRunning) {
 			this.store.log(() => `Reentry async computed: ${this.toString()}`, "warn");
-			this.emitComputedEvent("computed:cancel", { path: this.path, id: this.id, reason: "reentry",computedObject:this });
+			this.emitStoreEvent("computed:cancel", { path: this.path, id: this.id, reason: "reentry",computedObject:this });
 			return;
 		}
 		this._isComputedRunning = true; // 即所依赖项的值
@@ -300,11 +298,11 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		}
 		// 计算完成后触发事件
 		if (hasAbort || hasTimeout) {
-			this.emitComputedEvent("computed:cancel", { path: this.path, id:this.id, reason: hasTimeout ? "timeout" : "abort" ,computedObject:this});
+			this.emitStoreEvent("computed:cancel", { path: this.path, id:this.id, reason: hasTimeout ? "timeout" : "abort" ,computedObject:this});
 		} else if (hasError) {
-			this.emitComputedEvent("computed:error", { path: this.path, id:this.id, error: hasError,computedObject:this });
+			this.emitStoreEvent("computed:error", { path: this.path, id:this.id, error: hasError,computedObject:this });
 		} else {
-			this.emitComputedEvent("computed:done", { path: this.path, id:this.id, value: computedResult,computedObject:this});		
+			this.emitStoreEvent("computed:done", { path: this.path, id:this.id, value: computedResult,computedObject:this});		
 		}
 		setTimeout(() => {
 			this.onDoneCallback(options,hasError,hasAbort,hasTimeout,scope,computedResult);
