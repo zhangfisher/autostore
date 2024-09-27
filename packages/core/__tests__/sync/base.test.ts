@@ -1,12 +1,12 @@
 import { test,expect, describe } from "vitest"
-import { createStore,computed,  ComputedObject } from "../.." 
+import { AutoStore,computed,  ComputedObject } from "../.." 
 import { CyleDependError } from "../../src/errors" 
  
 
 describe("同步计算属性的基本特性",()=>{
 
     test("默认同步计算",async ()=>{
-        const store = createStore({
+        const store = new AutoStore({
             price:2,
             count:3,
             total:computed((scope)=>{
@@ -17,7 +17,7 @@ describe("同步计算属性的基本特性",()=>{
         expect(store.state.total).toBe(8)
     })    
     test('简单的同步计算,默认scope指向current', () => {     
-        const store = createStore({
+        const store = new AutoStore({
             user:{
                 firstName: 'zhang',
                 lastName: 'fisher',
@@ -30,7 +30,7 @@ describe("同步计算属性的基本特性",()=>{
     })
     
     test("不使用computed函数的同步计算",async ()=>{
-        const store = createStore({
+        const store = new AutoStore({
             price:2,
             count:3,
             total:(scope:any)=>{
@@ -42,7 +42,7 @@ describe("同步计算属性的基本特性",()=>{
     })  
     test("默认this指向计算对象",()=>{
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                 order:{                
                     price:2,
                     count:3,
@@ -57,7 +57,7 @@ describe("同步计算属性的基本特性",()=>{
         })        
     }) 
     test("通过计算对象实例读取同步计算值",async ()=>{
-        const store = createStore({
+        const store = new AutoStore({
             price:2,
             count:3,
             total:computed<number>((scope)=>{
@@ -72,7 +72,7 @@ describe("同步计算属性的基本特性",()=>{
     test("手动执行同步计算属性的计算函数",()=>{
         return new Promise<void>((resolve)=>{
             const results:any[]=[]
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed((scope)=>{
@@ -96,7 +96,7 @@ describe("同步计算属性的基本特性",()=>{
             const results:any[]=[]
             // 同步计算在创建时会先执行一次用于自动收集依赖，此时的scope是默认指向的
             // 然后第二次是手动执行,此时的scope是通过run传入的。
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed((scope)=>{
@@ -119,7 +119,7 @@ describe("同步计算属性的基本特性",()=>{
         })
     })
     test('侦听同步计算属性的变更事件',async  () => {     
-        const store = createStore({
+        const store = new AutoStore({
             user:{
                 firstName: 'zhang',
                 lastName: 'fisher',
@@ -145,7 +145,7 @@ describe("同步计算属性的基本特性",()=>{
 
     test('提供额外的同步计算属性依赖', async () => {
         let count:number=0
-        const store = createStore({
+        const store = new AutoStore({
             user:{
                 firstName: 'zhang',
                 lastName: 'fisher',                
@@ -166,7 +166,7 @@ describe("同步计算属性的基本特性",()=>{
         })
     })
     test('计算属性依赖于另外一个计算属性', () => {     
-        const store = createStore({
+        const store = new AutoStore({
             user:{
                 firstName: 'zhang',
                 lastName: 'fisher',
@@ -188,7 +188,7 @@ describe("同步计算属性的基本特性",()=>{
 
 describe('同步计算函数的启用和禁用', () => {
     test('启用和禁用同步计算函数', () => {     
-        const store = createStore({
+        const store = new AutoStore({
             user:{
                 firstName: 'zhang',
                 lastName: 'fisher',
@@ -210,7 +210,7 @@ describe('同步计算函数的启用和禁用', () => {
 
     test('启用和禁用所有同步计算函数', () => {     
         const count = 6
-        const store = createStore({
+        const store = new AutoStore({
             user:{
                 firstName: 'zhang',
                 lastName: 'fisher',
@@ -245,7 +245,7 @@ describe('同步计算函数的启用和禁用', () => {
 
         test("同步计算依赖了自己",async ()=>{            
             try{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed((scope)=>{
@@ -261,7 +261,7 @@ describe('同步计算函数的启用和禁用', () => {
             //  ┌───────────────↴ 
             //  1<──2<──3<──4<──5 
             try{                
-                const store = createStore({
+                const store = new AutoStore({
                     user:{
                         firstName: 'zhang',
                         lastName: 'fisher',
@@ -282,7 +282,7 @@ describe('同步计算函数的启用和禁用', () => {
             //      ↓───────────┐ 
             //  1──>2──>3──>4──>5 
             try{                
-                const store = createStore({
+                const store = new AutoStore({
                     user:{
                         firstName: 'zhang',
                         lastName: 'fisher',
@@ -300,7 +300,7 @@ describe('同步计算函数的启用和禁用', () => {
         })
         test('数组中存在交叉循环依赖路径', () => {    
             try{                
-                const store = createStore({
+                const store = new AutoStore({
                     user:{
                         firstName: 'zhang',
                         lastName: 'fisher',

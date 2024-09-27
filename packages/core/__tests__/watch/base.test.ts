@@ -1,6 +1,6 @@
 import { test,expect, describe,vi } from "vitest"
 import { watch } from "../../src/watch/watch"
-import {  createStore } from "../../src"
+import { AutoStore } from "../../src"
 import { WatchObject } from "../../src/watch/watchObject"
   
 describe("watch功能测试",()=>{
@@ -8,7 +8,7 @@ describe("watch功能测试",()=>{
 
     describe("静态声明watch",()=>{
         test("创建监视对象",async ()=>{
-            const store = createStore({
+            const store = new AutoStore({
                 books:{            
                     price:10,
                     count:10,
@@ -30,7 +30,7 @@ describe("watch功能测试",()=>{
         })
         
         test("监视字段total的初始值为1",async ()=>{
-            const store = createStore({
+            const store = new AutoStore({
                 books:{            
                     price:10,
                     count:10,
@@ -44,7 +44,7 @@ describe("watch功能测试",()=>{
             expect(store.state.books.total).toBe(1)
         })
         test("立刻创建监视字段total对象",async ()=>{
-            const store = createStore({
+            const store = new AutoStore({
                 books:{            
                     price:10,
                     count:10,
@@ -56,7 +56,7 @@ describe("watch功能测试",()=>{
             expect(store.state.books.total).toBe(1)
         })
         test("侦听count变化后更新total值",async ()=>{
-            const store = createStore({
+            const store = new AutoStore({
                 books:{            
                     price:10,
                     count:10,
@@ -72,7 +72,7 @@ describe("watch功能测试",()=>{
 
         test("通过enable控制total是否侦听",async ()=>{
             const listener = vi.fn() 
-            const store = createStore({
+            const store = new AutoStore({
                 books:{            
                     price:10,
                     count:10,
@@ -107,7 +107,7 @@ describe("watch功能测试",()=>{
                 const paths:string[][] = []
                 const values:number[] = []
 
-                const store = createStore({
+                const store = new AutoStore({
                     a:1,
                     b:2,
                     diary:watch(({path,value},watchObj)=>{
@@ -143,7 +143,7 @@ describe("watch功能测试",()=>{
                 const paths:string[][] = []
                 const values:boolean[] = []
 
-                const store = createStore({
+                const store = new AutoStore({
                     a:{
                         value:1
                     },b:{
@@ -172,7 +172,7 @@ describe("watch功能测试",()=>{
                 const paths:string[][] = []
                 const values:boolean[] = []
 
-                const store = createStore({
+                const store = new AutoStore({
                     a:{
                         value:1
                     },b:{
@@ -211,7 +211,7 @@ describe("watch功能测试",()=>{
         // validate的逻辑是当所有的字段都通过验证时，返回true，否则返回false
             return new Promise<void>((resolve)=>{  
 
-                const store = createStore({
+                const store = new AutoStore({
                     a:{
                         validate:true
                     },
@@ -259,7 +259,7 @@ describe("watch功能测试",()=>{
 
     describe("动态声明watch",()=>{
         test("动态创建监视对象",async ()=>{
-            const store = createStore({
+            const store = new AutoStore({
                 books:{            
                     price:10,
                     count:10                   
@@ -282,7 +282,7 @@ describe("watch功能测试",()=>{
         })
         
         test("动态监视字段total的计算",async ()=>{
-            const store = createStore({
+            const store = new AutoStore({
                 books:{            
                     price:10,
                     count:2                    
@@ -301,7 +301,7 @@ describe("watch功能测试",()=>{
 
         test("通过enable控制动态对象total是否侦听",async ()=>{
             const listener = vi.fn() 
-            const store = createStore({
+            const store = new AutoStore({
                 books:{            
                     price:10,
                     count:2                    

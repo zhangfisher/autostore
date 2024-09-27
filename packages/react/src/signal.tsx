@@ -13,6 +13,7 @@ import { AsyncComponentRender, SyncComponentRender } from "./types";
 import { getValueBySelector } from "./utils/getValueBySelector";
 import { useEffect, useState } from "react";
 import React from "react";
+import { createSignalByPath } from "./signal/signalByPath";
 
 
 export interface SignalComponentType<State extends Dict>{
@@ -26,6 +27,8 @@ export interface SignalComponentType<State extends Dict>{
 
 
 
+
+
 /**
  * 
  * 创建一个响应式的组件，当数据发生变化时，组件会自动更新
@@ -34,7 +37,7 @@ export interface SignalComponentType<State extends Dict>{
  * 
  * import { createStore } from "@autostorejs/react" 
  * import { AsyncComputedResult } from '../../core/src/computed/types';
- * import { isAsyncComputedResult } from '../../core/src/utils/isAsyncComputedResult';
+ * import { isAsyncComputedValue } from '../../core/src/utils/isAsyncComputedValue';
  * 
  * const { state, $ } = createStore({
  *      firstName:'zhang',
@@ -103,30 +106,31 @@ export function createSignalComponent<State extends Dict>(store:ReactAutoStore<S
         // const depends = args.length>=3 && Array.isArray(args[2]) ? args[2] : []
         // const asyncOptions = args.length>=4 && typeof(args[3])==='object' ? args[3] : {}
         // const syncOptions = args.length>=3 && typeof(args[2])==='object' ? args[2] : {}
-        
-         const El =  React.memo(()=>{
-            // const [computedObj,setComputedObj] = useState<ComputedObject>()
+        const SignalCompoent = selector ? createSignalByPath(store,selector) : ()=><></> 
+
+        //  const El =  React.memo(()=>{
+        //     // const [computedObj,setComputedObj] = useState<ComputedObject>()
     
-            // 收集依赖的路径
-            const deps = store.useDeps(selector)
+        //     // 收集依赖的路径
+        //     const deps = store.useDeps(selector)
     
-            const [ value,setValue ] = useState(()=>getValueBySelector(store,selector))
+        //     const [ value,setValue ] = useState(()=>getValueBySelector(store,selector,true))
     
-            useEffect(()=>{
-                // if(computedObj instanceof ComputedObject){                    
-                // }else{    
-                // }
-                // 侦听依赖的变化，当依赖变化时，更新值
-                const watcher = store.watch(deps,()=>{
-                    setValue(getValueBySelector(store,selector))  
-                })
-                return ()=>watcher.off()
-            },[deps])
+        //     useEffect(()=>{
+        //         // if(computedObj instanceof ComputedObject){                    
+        //         // }else{    
+        //         // }
+        //         // 侦听依赖的变化，当依赖变化时，更新值
+        //         const watcher = store.watch(deps,()=>{
+        //             setValue(getValueBySelector(store,selector))  
+        //         })
+        //         return ()=>watcher.off()
+        //     },[deps])
     
-            return <>
-                {value}
-            </>
-        }, ()=>true)  
-        return <El />; 
+        //     return <>
+        //         {value}
+        //     </>
+        // }, ()=>true)  
+        return <SignalCompoent/>; 
     }) as SignalComponentType<State>
 }

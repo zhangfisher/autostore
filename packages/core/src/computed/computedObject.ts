@@ -88,7 +88,7 @@ export class ComputedObject<Value=any>{
      * - 标量值
      *  update(1)
      * - 对象值
-     *  update({result:1}) 
+     *  update({value:1}) 
      * 
      */
     update(value:Value,options?:UpdateOptions){        

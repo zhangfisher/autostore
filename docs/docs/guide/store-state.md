@@ -32,23 +32,30 @@ toc: content
 
 
 ```tsx
-import { createStore } from '@autostorejs/react';
+import { createStore,computed } from '@autostorejs/react';
 import { Button,ColorBlock } from "components"
 const { state,useState,$ } = createStore({
   firstName:"Zhang",
   lastName:"Fisher",
   age:18,
-  fullName:(user)=>user.firstName+user.lastName
+  fullName:(user)=>user.firstName+user.lastName,
+  salary:computed(async (user)=>{
+    return user.age * 10
+  },['age'])
 })
+
+globalThis.state = state
 
 export default () => {
   const [age,setAge] = useState('age') 
+  const [salary,setSalary] = useState('salary') 
   const [lastName,setLastName] = useState((state)=>state.lastName,(name,user)=>user.lastName=name) 
 
   return <div>    
       <ColorBlock>Fullname :{state.firstName}{' '}{lastName}</ColorBlock>
       <ColorBlock>Age :{age}</ColorBlock>
-      <Button onClick={()=>setAge(age+1)}>+Age</Button>
+      <ColorBlock>Salary: {$('salary')}</ColorBlock>
+      <Button onClick={()=>setAge(age+1)}>+Age</Button> 
       <Button onClick={()=>setLastName(lastName+'.')}>Change lastName</Button>
     </div>
 }
@@ -69,7 +76,7 @@ import { ColorBlock } from "components"
 import { Button } from "components"
 
  
-const store = createStore( {
+const { useState,state,$ } = createStore( {
   firstName:"Zhang",
   lastName:"Fisher",
   fullName:(state)=>state.firstName+state.lastName,
@@ -77,8 +84,8 @@ const store = createStore( {
 
 
 export default () => { 
-  const [firstName,setFirstName] = store.useState((state)=>state.firstName,(value,state)=>state.firstName=value)
-  const [fullName,setFullName] = store.useState<string,[string,string]>(
+  const [firstName,setFirstName] = useState((state)=>state.firstName,(value,state)=>state.firstName=value)
+  const [fullName,setFullName] = useState<string,[string,string]>(
       (state)=>state.fullName,       // getter
       ([first,last],state)=>{        // 可选,setter
         state.firstName=first

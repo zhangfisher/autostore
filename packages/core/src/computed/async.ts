@@ -11,55 +11,57 @@ import { isPathEq, markRaw} from "../utils";
 import { delay } from "flex-tools/async/delay";
 import { getValueScope } from "../scope";
 import { ComputedProgressbar } from "./types";
-import type { AsyncComputedGetterArgs, AsyncComputedResult, RuntimeComputedOptions } from "./types";
+import type { AsyncComputedGetterArgs, AsyncComputedValue, RuntimeComputedOptions } from "./types";
 import { ComputedObject } from "./computedObject";
 import { Dict } from "../types";
 import { getSnap } from "../utils/getSnap";
 import { getError } from "../utils/getError";
 import { StateOperateParams } from "../store/types";
 import { updateObjectVal } from "../utils/updateObjectVal";
+import { ASYNC_COMPUTED_VALUE } from "../consts";
 
 
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
-	AsyncComputedResult<Value>
+	AsyncComputedValue<Value>
 > {
 	private _isComputedRunning: boolean = false;
 	get async() {return true}       
-	get value() {return super.value as AsyncComputedResult<Value>}
-	set value(value:AsyncComputedResult<Value>) {
+	get value() {return super.value as AsyncComputedValue<Value>}
+	set value(value:AsyncComputedValue<Value>) {
 		super.value = value
 	}
 	/**
 	 *
 	 */
 	protected onInitial() {
-		this.initial = this.createAsyncComputedResult();
+		this.initial = this.createAsyncComputedValue();
 		this.subscribe()
 		// 为什么要延迟执行？
 		// 因为onInitial函数是在第一次读取时执行的同步操作，此时的依赖项还没有收集完毕，原始的计算函数还没有初始化
 		// 比如{ total:computed(async()=>{ return 1+2 }) }，在第一次读取total时，此时的computed函数还没有初始化
-		// 如果这时候执行run，则total的值还是一个function，而run执行时会将运行的数据更新到total.result，total.loading 等值，
-		// 由于total还没有初始化为{loading,result,....}对象，所以会出错
-		setTimeout(()=>{
+		// 如果这时候执行run，则total的值还是一个function，而run执行时会将运行的数据更新到total.value，total.loading 等值，
+		// 由于total还没有初始化为{loading,value,....}对象，所以会出错
+		setImmediate(()=>{
 			if (this.options.immediate===true || (this.options.immediate==='auto' && this.options.initial===undefined)) {
 				this.run({first:true});
 			}
-		},0)		
+		})		
 	}
-	private createAsyncComputedResult() {
+	private createAsyncComputedValue() {
 		return Object.assign({
+			[ASYNC_COMPUTED_VALUE]:true,
 			loading : false,
 			timeout : 0,
 			retry   : 0,
 			error   : null,
-			result  : this.options.initial,
+			value   : this.options.initial,
 			progress: 0,
 			run     : markRaw((args: Dict) => {
 				return this.store.computedObjects.run(this.id, Object.assign({}, args));
 			}),
 			cancel: markRaw(() => {
 				console.log("cancel");
-			}),
+			})
 		});
 	}
 	/**
@@ -67,14 +69,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * @param name 
 	 * @param values 
 	 */
-	private updateComputedResultItem(name:keyof AsyncComputedResult,value:any) {
+	private updateComputedValueItem(name:keyof AsyncComputedValue,value:any) {
 		if(this.attched){
 			updateObjectVal(this.store.state, [...this.path!, name], value);
 		}else{
 			(this.value as any)[name] = value
 		}
 	}	
-	private updateComputedResult(values: Partial<AsyncComputedResult>) {    
+	private updateComputedValue(values: Partial<AsyncComputedValue>) {    
 		if(this.attched){
 			updateObjectVal(this.store.state, this.path!, values);
 		}else{
@@ -103,7 +105,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		)  : this.options) as Required<RuntimeComputedOptions>;
 
 		// 3. 根据配置参数获取计算函数的上下文对象
-		const scope = getValueScope<AsyncComputedResult<Value>, Scope>(
+		const scope = getValueScope<AsyncComputedValue<Value>, Scope>(
 			this as any,
 			"computed",
 			this.context,
@@ -140,12 +142,12 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	}): ComputedProgressbar {
 		const { max = 100, min = 0, value = 0 } = Object.assign({}, opts);
 		// setVal(this.store.state, [...this.path, "progress"], value);
-		this.updateComputedResultItem("progress", value);
+		this.updateComputedValueItem("progress", value);
 		return {
 			value:(num: number)=>{
 				if (num > max) num = max;
 				if (num < min) num = min;
-				this.updateComputedResultItem("progress", num);
+				this.updateComputedValueItem("progress", num);
 			},
 			end() {
 				this.value(max);
@@ -163,14 +165,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * @param abort - 一个布尔值，表示操作是否被中止
 	 * @param timeout - 一个布尔值，表示操作是否因超时而结束
 	 * @param scope - 操作执行的上下文或范围
-	 * @param result - 操作的结果，如果操作成功完成
+	 * @param value - 操作的结果，如果操作成功完成
 	 */
-	private onDoneCallback(options: Required<RuntimeComputedOptions>,error:Error,abort:boolean,timeout:boolean,scope:any,result:any) {
+	private onDoneCallback(options: Required<RuntimeComputedOptions>,error:Error,abort:boolean,timeout:boolean,scope:any,value:any) {
 		if(typeof(options.onDone)!=='function') return 
 		options.onDone.call(this, {
 			id:this.id,			
 			path:this.path,
-			result,
+			value,
 			error,
 			abort,
 			timeout,
@@ -202,7 +204,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		let hasAbort = false; // 是否接收到可中止信号
 
 		// 配置可中止信号，以便可以取消计算
-		this.updateComputedResult({
+		this.updateComputedValue({
 			cancel: markRaw(() => abortController.abort())
 		});
 		// 侦听中止信号，以便在中止时能停止
@@ -225,7 +227,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					? timeout
 					: [timeout, 0];
 
-				this.updateComputedResult({
+				this.updateComputedValue({
 					loading : true,
 					error   : null,
 					retry   : i > 0 ? retryCount - i + 1 : 0,
@@ -244,7 +246,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 						if (typeof timeoutCallback === "function") timeoutCallback();
 						if (!hasError) {
 							clearInterval(countdownId);
-							this.updateComputedResult({
+							this.updateComputedValue({
 								loading: false,
 								error  : "TIMEOUT",
 								timeout: 0,
@@ -254,7 +256,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					// 启用设置倒计时:  比如timeout= 6*1000, countdown= 6
 					if (countdown > 1) {
 						countdownId = setInterval(() => {
-							this.updateComputedResult({
+							this.updateComputedValue({
 								timeout: countdown--,
 							});
 							if (countdown === 0) clearInterval(countdownId);
@@ -266,7 +268,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				if (hasAbort) throw new Error("Abort");
 				if (!hasTimeout) {
 					Object.assign(afterUpdated, {
-						result: computedResult,
+						value: computedResult,
 						error: null,
 						timeout: 0,
 					});
@@ -287,7 +289,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				if(retryCount>0 && i===retryCount){
 					Object.assign(afterUpdated, { retry: 0 }); 
 				}
-				this.updateComputedResult(afterUpdated);
+				this.updateComputedValue(afterUpdated);
 			}
 			// 重试延迟
 			if (hasError) {// 最后一次不延迟				
@@ -313,8 +315,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	}
 	
 	/**
-	 * 由于所有异步计算属性均会被转换为一个AsyncComputedResult<{result,timeout,....}>的形式
-	 * 这样，当我们在指定一个依赖是异步属性时，就需要指定为xxxx.result才可以个侦听到变化
+	 * 由于所有异步计算属性均会被转换为一个AsyncComputedResult<{value,timeout,....}>的形式
+	 * 这样，当我们在指定一个依赖是异步属性时，就需要指定为xxxx.value才可以个侦听到变化
 	 * 
 	 * @example
 	 * const store = createStore({ 
@@ -323,16 +325,16 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      *              return scope.a0 + 1
      *            },["a0"],{initial:2}),
      *            a2: computed(async (scope:any)=>{
-     *              return scope.a1.result + 1
-     *            },["a1.result"],{initial:3})
+     *              return scope.a1.value + 1
+     *            },["a1.value"],{initial:3})
      *        });
 	 * 
-	 *  以上a2依赖于a1，由于a1是一个异步对象，所以在写依赖时就必须写上["a1.result"]
+	 *  以上a2依赖于a1，由于a1是一个异步对象，所以在写依赖时就必须写上["a1.value"]
 	 *  这就有点反直觉了。
 	 * 
 	 * 本函数在异步计算对象订阅变更事件时调用，用来返回字符串形式的依赖数组
 	 * 
-	 * 本函数的功能就是对所有依赖进行判断如果其是一个异步计算依赖，则自动添加.result，这样就可以如下方式来写依赖了
+	 * 本函数的功能就是对所有依赖进行判断如果其是一个异步计算依赖，则自动添加.value，这样就可以如下方式来写依赖了
 	 * 
 	 * 	const store = createStore({ 
      *            a0: 1,
@@ -340,7 +342,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      *              return scope.a0 + 1
      *            },["a0"],{initial:2}),
      *            a2: computed(async (scope:any)=>{
-     *              return scope.a1.result + 1
+     *              return scope.a1.value + 1
      *            },["a1"],{initial:3})   
      *        });
 	 * 
@@ -351,7 +353,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			if(dep.length===0) return dep 
 			for(let obj of this.store.computedObjects.values()){
 				if (isPathEq(obj.path, dep)) {
-					return [`${dep}.result`]
+					return [`${dep}.value`]
 				}
 			} 
 			return dep

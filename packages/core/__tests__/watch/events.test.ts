@@ -1,5 +1,5 @@
 import { expect,test,describe, beforeEach, afterEach } from "vitest"
-import { createStore, AutoStore } from "../../src";
+import { AutoStore } from "../../src";
 import { deepClone } from "flex-tools/object/deepClone";
 import { Watcher } from "../../src/watch/types";
 
@@ -28,7 +28,7 @@ describe("watch object", () => {
     let store:AutoStore<typeof data>;
     let watcher:Watcher
     beforeEach(() => {
-        store = createStore(deepClone(data));
+        store = new AutoStore(deepClone(data));
     })
     afterEach(() => {
         watcher.off();
@@ -89,7 +89,7 @@ describe("watch array", () => {
     let state:AutoStore<typeof data>;
     let watcher:Watcher
     beforeEach(() => {
-        state = createStore(deepClone(data));
+        state = new AutoStore(deepClone(data));
     })
     afterEach(() => {
         watcher.off();
@@ -239,7 +239,7 @@ describe("watch for keypaths", () => {
     let state:AutoStore<typeof data>;
     let watcher:Watcher
     beforeEach(() => {
-        state = createStore(deepClone(data));
+        state = new AutoStore(deepClone(data));
     })
     afterEach(() => {
         watcher && watcher.off();

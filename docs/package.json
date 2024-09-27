@@ -60,7 +60,7 @@
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@umijs/lint": "^4.0.0",
-    "dumi": "^2.3.0",
+    "dumi": "^2.4.12",
     "eslint": "^8.23.0",
     "father": "^4.1.0",
     "lint-staged": "^13.0.3",

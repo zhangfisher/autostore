@@ -1,6 +1,6 @@
 
 import { test,expect, describe } from "vitest"
-import { createStore,ComputedScopeRef,computed } from "../.."
+import { AutoStore,ComputedScopeRef,computed } from "../.."
 
  
   
@@ -10,7 +10,7 @@ describe("异步依赖参数的各种配置形式",()=>{
 
     test("使用字符串绝对路径参数依赖",()=>{
         return new Promise<void>(resolve=>{
-            let store = createStore({
+            let store = new AutoStore({
                 user:{
                     firstName:"zhang",
                     lastName:"fisher",
@@ -33,7 +33,7 @@ describe("异步依赖参数的各种配置形式",()=>{
     })
     test("使用路径字符串数组指定依赖",()=>{ 
         return new Promise<void>(resolve=>{
-            let store = createStore({
+            let store = new AutoStore({
                 user:{
                     firstName:"zhang",
                     lastName:"fisher",
@@ -57,7 +57,7 @@ describe("异步依赖参数的各种配置形式",()=>{
     test("使用相对当前路径字符串指定依赖",()=>{
         // ./代表当前在的对象，即fullName所在的对象user 
         return new Promise<void>(resolve=>{
-            let store = createStore({
+            let store = new AutoStore({
                 user:{                    
                     firstName:"zhang",
                     lastName:"fisher",
@@ -81,7 +81,7 @@ describe("异步依赖参数的各种配置形式",()=>{
     test("使用多级相对当前路径字符串指定依赖",()=>{
         // ./代表当前在的对象，即fullName所在的对象user 
         return new Promise<void>(resolve=>{
-            let store = createStore({
+            let store = new AutoStore({
                 root:{
                     a:{
                         user:{                                        

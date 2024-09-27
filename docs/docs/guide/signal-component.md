@@ -117,7 +117,7 @@ export default () => {
       {/* 引入Signal机制，可以局部更新Age */}
       <ColorBlock name="Price">{$('order.price')}</ColorBlock>
       <ColorBlock name="Count">{$('order.count')}</ColorBlock>
-      <ColorBlock name="Total">{$('order.total.result')}</ColorBlock>
+      <ColorBlock name="Total">{$('order.total.value')}</ColorBlock>
       <Button onClick={()=>state.order.count = state.order.count + 1}>+Count</Button>
     </div>
 }

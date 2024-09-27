@@ -11,7 +11,7 @@
 
 
 import { test,expect, describe, vi } from "vitest"
-import { createStore,computed } from "../.."
+import { AutoStore,computed } from "../.."
 import { delay } from "flex-tools/async/delay"
 import { AsyncComputedObject } from "../../src/computed/async"
 
@@ -24,7 +24,7 @@ describe("异步计算高级控制功能",()=>{
         let cancelCount:number =0 
         let calcCount:number = 0
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed(async (scope)=>{ 
@@ -59,7 +59,7 @@ describe("异步计算高级控制功能",()=>{
     test("通过abortSignal来中止计算函数的执行",()=>{
         return new Promise<void>((resolve)=>{
             const fn = vi.fn()
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed(async (scope,{abortSignal})=>{ 
@@ -95,7 +95,7 @@ describe("异步计算高级控制功能",()=>{
     test("当执行计算函数出错时,自动重试5次",()=>{
         let count = 0
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed(async (scope)=>{ 
@@ -115,7 +115,7 @@ describe("异步计算高级控制功能",()=>{
         let count = 0
         let times:number[] = []
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed(async (scope)=>{ 
@@ -141,7 +141,7 @@ describe("异步计算高级控制功能",()=>{
         let count = 0 
         let retryValues:(number|undefined)[] = []
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed(async ()=>{ 
@@ -179,7 +179,7 @@ describe("异步计算属性的超时功能",()=>{
     test("当执行超时的默认行为",()=>{
         // 执行时loading=true,然后超时后自动设置loading=false,error=TIMEOUT
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed(async (scope)=>{ 
@@ -203,7 +203,7 @@ describe("异步计算属性的超时功能",()=>{
         // 本例中配置timeout=[5*1000,5]，代表timeout值会从5递减到0
         const timeouts:any[] = []
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3,
                 total:computed(async (scope)=>{ 

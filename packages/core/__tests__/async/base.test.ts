@@ -1,5 +1,5 @@
 import { test,expect, describe,vi} from "vitest"
-import { createStore,computed, ComputedObject } from "../../src"
+import { AutoStore,computed, ComputedObject } from "../../src"
 import { delay } from "flex-tools/async/delay"
 import { AsyncComputedObject } from "../../src/computed/async"
  
@@ -11,7 +11,7 @@ describe("所有异步计算基础功能",()=>{
             let count:number =0 
             let results:number[] = [] 
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{
@@ -21,7 +21,7 @@ describe("所有异步计算基础功能",()=>{
                 },{                  // 遍历对象，从而导致计算属性被读取而立刻创建
                     lazy:false,
                     onComputedDone:()=>{  // 计算完成时触发
-                        results.push(store.state.total.result)
+                        results.push(store.state.total.value)
                         if(results.length===2){
                             expect(count).toBe(2)         
                             expect(results).toEqual([8,8]) 
@@ -35,7 +35,7 @@ describe("所有异步计算基础功能",()=>{
 
         test("从异步对象实例读取计算值",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{ 
@@ -45,7 +45,7 @@ describe("所有异步计算基础功能",()=>{
                     lazy:false,
                     onComputedDone:()=>{     
                         const cobj = store.computedObjects.get("x")!
-                        expect(cobj.value.result).toBe(6)
+                        expect(cobj.value.value).toBe(6)
                         resolve()        
                     }              
                 })  
@@ -54,7 +54,7 @@ describe("所有异步计算基础功能",()=>{
         test("当提供异步计算属性的默认值时不会触发初始计算",()=>{
             let count:number =0
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{ 
@@ -67,7 +67,7 @@ describe("所有异步计算基础功能",()=>{
                 },{lazy:false,})  
                 setTimeout(()=>{
                     const cobj = store.computedObjects.get("x")!
-                    expect(cobj.value.result).toBe(6)
+                    expect(cobj.value.value).toBe(6)
                     expect(count).toBe(0) // 提供转让 
                     resolve()        
                 },0)
@@ -76,7 +76,7 @@ describe("所有异步计算基础功能",()=>{
         test("当提供异步计算属性的默认值并且显示指定immediate为true时总会触发初始计算",()=>{
             let count:number =0
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{ 
@@ -91,18 +91,18 @@ describe("所有异步计算基础功能",()=>{
                     lazy:false,
                     onComputedDone:()=>{
                         const cobj = store.computedObjects.get("x")!
-                        expect(cobj.value.result).toBe(6)
+                        expect(cobj.value.value).toBe(6)
                         expect(count).toBe(1) // 提供转让 
                         resolve()        
                     }
                 })  
-                expect(store.state.total.result).toBe(6)
+                expect(store.state.total.value).toBe(6)
             })
         })  
 
         test("异步计算生成异步计算数据对象",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{
@@ -112,7 +112,7 @@ describe("所有异步计算基础功能",()=>{
                     lazy:true
                 } ) 
                 store.on("computed:created",()=>{
-                    expect("result" in store.state.total).toBe(true)
+                    expect("value" in store.state.total).toBe(true)
                     expect("error" in store.state.total).toBe(true)
                     expect("loading" in store.state.total).toBe(true)
                     expect("retry" in store.state.total).toBe(true)
@@ -128,7 +128,7 @@ describe("所有异步计算基础功能",()=>{
 
         test("创建计算对象实例",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{
@@ -158,7 +158,7 @@ describe("所有异步计算基础功能",()=>{
         test("全局控制启用与停止计算",()=>{
             let count = 0
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{
@@ -183,7 +183,7 @@ describe("所有异步计算基础功能",()=>{
         })
         test("单独控制计算属性的启用与停止计算",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total1:computed(async (scope)=>{
@@ -196,8 +196,8 @@ describe("所有异步计算基础功能",()=>{
                     lazy:false,
                     onComputedDone:({path})=>{
                         expect(path).toStrictEqual(["total2"])
-                        expect(store.state.total1.result).toBe(100)
-                        expect(store.state.total2.result).toBe(8)
+                        expect(store.state.total1.value).toBe(100)
+                        expect(store.state.total2.value).toBe(8)
                         resolve()
                     }
                 })        
@@ -207,7 +207,7 @@ describe("所有异步计算基础功能",()=>{
         test("通过计算属性对象手动执行计算函数",()=>{
             let count = 0
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope,{extras})=>{
@@ -228,7 +228,7 @@ describe("所有异步计算基础功能",()=>{
         })    
         test("异步计算属性的计算执行次数，初始化时执行一次",()=>{ 
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{
@@ -246,7 +246,7 @@ describe("所有异步计算基础功能",()=>{
 
         test("手动执行异步计算属性的计算函数",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (scope)=>{
@@ -255,14 +255,14 @@ describe("所有异步计算基础功能",()=>{
                 },{lazy:false})    
                 const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject
                 asyncObj.run().then(()=>{
-                    expect(store.state.total.result).toBe(6)
+                    expect(store.state.total.value).toBe(6)
                     resolve()
                 })
             })
         })
         test("手动传参覆盖默认的异步计算属性参数，然后运行",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total:computed(async (price)=>{
@@ -274,7 +274,7 @@ describe("所有异步计算基础功能",()=>{
                 asyncObj.run({scope:"price"}).then(()=>{
                     //// 运行时修改的scope仅在本次运行中有效，不会影响到下次运行
                     // 默认的scope没有配置是undefined,指向的是当前对象,
-                    expect(store.state.total.result).toBe(200)
+                    expect(store.state.total.value).toBe(200)
                     expect(store.computedObjects.get("x")!.options.scope).toBe(undefined)
                     resolve()
                 })
@@ -290,7 +290,7 @@ describe("所有异步计算基础功能",()=>{
         test("异步计算分组",()=>{
             let results:string[] = []
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total1:computed(async (scope)=>{
@@ -333,7 +333,7 @@ describe("所有异步计算基础功能",()=>{
         test("手动执行满足条件的计算",()=>{
             let results:string[] = []
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total1:computed(async (scope)=>{
@@ -374,7 +374,7 @@ describe("所有异步计算基础功能",()=>{
         test("指定超时手动执行满足条件的计算",()=>{
             vi.useFakeTimers()
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     price:2,
                     count:3,
                     total1:computed(async (scope)=>{

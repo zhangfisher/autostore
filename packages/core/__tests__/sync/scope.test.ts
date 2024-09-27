@@ -1,5 +1,5 @@
 import { test,expect, describe } from "vitest"
-import { createStore,ComputedScopeRef,computed } from "../.."
+import { AutoStore,ComputedScopeRef,computed } from "../.."
 
 describe("同步计算函数Scope指向",()=>{
 
@@ -8,7 +8,7 @@ describe("同步计算函数Scope指向",()=>{
 
         test("默认Scope指向Current=order",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                     order:{                
                         price:2,
                         count:3,
@@ -30,7 +30,7 @@ describe("同步计算函数Scope指向",()=>{
 
         test("Scope指向Root",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                         order:{                
                             price:2,
                             count:3,
@@ -50,7 +50,7 @@ describe("同步计算函数Scope指向",()=>{
         })
         test("Scope指向parent",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                         root:{
                             parent:{
                                 order:{                
@@ -74,7 +74,7 @@ describe("同步计算函数Scope指向",()=>{
         })
         test("Scope指向Depends",()=>{
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                         root:{
                             parent:{
                                 order:{                
@@ -99,7 +99,7 @@ describe("同步计算函数Scope指向",()=>{
         test("Scope指向字符串指定的绝对路径",()=>{
             // 
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                         root:{
                             parent:{
                                 order:{                
@@ -124,7 +124,7 @@ describe("同步计算函数Scope指向",()=>{
         test("Scope指向字符串指定的当前对象的相对路径",()=>{
             //注意： . 代表的是不是total，而是total所在的对象
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                         root:{
                             parent:{
                                 order:{                
@@ -148,7 +148,7 @@ describe("同步计算函数Scope指向",()=>{
         test("Scope指向字符串指定的当前对象父对象的相对路径",()=>{
             //注意： .. 代表的是不是total，而是total所在的对象
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                         root:{
                             parent:{
                                 order:{                
@@ -173,7 +173,7 @@ describe("同步计算函数Scope指向",()=>{
         test("Scope指向字符串指定的多级相对父对象路径",()=>{
             //注意： .. 代表的是不是total，而是total所在的对象
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                         root:{
                             parent:{
                                 order:{                
@@ -198,7 +198,7 @@ describe("同步计算函数Scope指向",()=>{
         test("使用字符串数组作为Scope指向的绝对路径",()=>{
             //注意： .. 代表的是不是total，而是total所在的对象
             return new Promise<void>((resolve)=>{
-                const store = createStore({
+                const store = new AutoStore({
                         root:{
                             parent:{
                                 order:{                
@@ -223,7 +223,7 @@ describe("同步计算函数Scope指向",()=>{
     describe("同步计算函数单独指定Scope指向",()=>{
 
         test('sync compute fullName value default scope=CURRENT ', () => {     
-            const store = createStore({
+            const store = new AutoStore({
                 user:{
                     firstName: 'zhang',
                     lastName: 'fisher',
@@ -235,7 +235,7 @@ describe("同步计算函数Scope指向",()=>{
             expect(store.state.user.fullName).toBe('li fisher')        
         })
         test('sync compute fullName value scope=ROOT ', () => {
-            const store = createStore({
+            const store = new AutoStore({
                 user:{
                     firstName: 'zhang',
                     lastName: 'fisher',
@@ -249,7 +249,7 @@ describe("同步计算函数Scope指向",()=>{
             expect(store.state.user.fullName).toBe('li fisher')
         })
         test('sync compute fullName value scope=PARENT ', () => {
-            const store = createStore({
+            const store = new AutoStore({
                 root:{
                     admin:{
                         user:{

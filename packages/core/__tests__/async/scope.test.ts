@@ -1,11 +1,11 @@
 import { test,expect, describe,} from "vitest"
-import { createStore,ComputedScopeRef,computed } from "../.."
+import { AutoStore,ComputedScopeRef,computed } from "../.."
  
 describe("异步计算函数的Scope指向",()=>{
 
     test("异步计算默认Scope指向Current=order",()=>{
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                 order:{                
                     price:2,
                     count:3,
@@ -22,7 +22,7 @@ describe("异步计算函数的Scope指向",()=>{
     })
     test("异步计算Scope指向Root",()=>{
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                     order:{                
                         price:2,
                         count:3,
@@ -42,7 +42,7 @@ describe("异步计算函数的Scope指向",()=>{
     })
     test("异步计算Scope指向parent",()=>{
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                     root:{
                         parent:{
                             order:{                
@@ -66,7 +66,7 @@ describe("异步计算函数的Scope指向",()=>{
     })
     test("异步计算Scope指向Depends",()=>{
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                     root:{
                         parent:{
                             order:{                
@@ -93,7 +93,7 @@ describe("异步计算函数的Scope指向",()=>{
     test("异步计算Scope指向字符串指定的绝对路径",()=>{
         // 
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                     root:{
                         parent:{
                             order:{                
@@ -118,7 +118,7 @@ describe("异步计算函数的Scope指向",()=>{
     test("异步计算Scope指向字符串指定的当前对象的相对路径",()=>{
         //注意： . 代表的是不是total，而是total所在的对象
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                     root:{
                         parent:{
                             order:{                
@@ -142,7 +142,7 @@ describe("异步计算函数的Scope指向",()=>{
     test("异步计算Scope指向字符串指定的当前对象父对象的相对路径",()=>{
         //注意： .. 代表的是不是total，而是total所在的对象
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                     root:{
                         parent:{
                             order:{                
@@ -167,7 +167,7 @@ describe("异步计算函数的Scope指向",()=>{
     test("异步计算Scope指向字符串指定的多级相对父对象路径",()=>{
         //注意： .. 代表的是不是total，而是total所在的对象
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                     root:{
                         parent:{
                             order:{                
@@ -192,7 +192,7 @@ describe("异步计算函数的Scope指向",()=>{
     test("异步计算使用字符串数组作为Scope指向的绝对路径",()=>{
         //注意： .. 代表的是不是total，而是total所在的对象
         return new Promise<void>((resolve)=>{
-            const store = createStore({
+            const store = new AutoStore({
                     root:{
                         parent:{
                             order:{                

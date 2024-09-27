@@ -1,7 +1,7 @@
 import React from "react"
-import { AsyncComputedResult } from "@autostorejs/core"
+import { AsyncComputedValue } from "@autostorejs/core"
 
  
 
-export type AsyncComponentRender = (params:AsyncComputedResult)=>React.ReactNode
+export type AsyncComponentRender = (params:AsyncComputedValue)=>React.ReactNode
 export type SyncComponentRender<Value=any> = (value:Value)=>React.ReactNode

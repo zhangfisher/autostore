@@ -1,10 +1,10 @@
 import { test,expect, describe } from "vitest"
-import { createStore,computed, StateOperateParams } from "../"  
+import { AutoStore,computed  } from "../"  
 
  
 describe("依赖关系管理",()=>{
     test("创建依赖关系链22",()=>{ 
-        const store = createStore({ 
+        const store = new AutoStore({ 
             sync:{
                 a: 1,
                 b: (scope:any)=>{ 
@@ -41,7 +41,7 @@ describe("依赖关系管理",()=>{
     })   
     test("创建异步依赖关系链",()=>{ 
         return new Promise<void>((resolve)=>{
-            const store = createStore({ 
+            const store = new AutoStore({ 
                 a0: 1,
                 a1: computed(async (scope:any)=>{
                   return scope.a0 + 1
@@ -63,7 +63,7 @@ describe("依赖关系管理",()=>{
           })
     })   
     test("创建依赖关系链",()=>{
-        const store = createStore({ 
+        const store = new AutoStore({ 
             sync:{
                 a: 1,
                 b: (scope:any)=>{
@@ -92,7 +92,7 @@ describe("依赖关系管理",()=>{
         store.state.sync.a = 2
     }) 
     test("收集依赖项列表",()=>{
-        const store = createStore({ 
+        const store = new AutoStore({ 
             a:1,
             b:2,
             c:3

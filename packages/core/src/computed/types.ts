@@ -232,7 +232,7 @@ export interface ComputedOptions<Value=any,Scope=any> extends IComputedDescripto
     /**
      * 当计算完成后的回调函数
      */
-    onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,result:any}):void
+    onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,value:any}):void
     /**
      * 依赖的路径
      * 可以是一个绝对路径，也可以是一个相对路径
@@ -242,13 +242,13 @@ export interface ComputedOptions<Value=any,Scope=any> extends IComputedDescripto
 }
 
 
-export type AsyncComputedResult<Result= any,ExtAttrs extends Dict = {}> ={
+export type AsyncComputedValue<Value = any,ExtAttrs extends Dict = {}> ={
     loading : boolean;
     progress: number;                // 进度值    
     timeout : number ;               // 超时时间，单位ms，当启用超时时进行倒计时
     error   : any;
     retry   : number                 // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试
-    result  : Result;                // 计算结果保存到此处
+    value   : Value;                // 计算结果保存到此处
     run     : (options?:RuntimeComputedOptions) => {};        // 重新执行任务
     cancel  : ()=>void                                        // 中止正在执行的异步计算
   } & ExtAttrs

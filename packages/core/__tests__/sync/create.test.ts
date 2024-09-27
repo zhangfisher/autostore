@@ -8,14 +8,14 @@
 
 
 import { test,expect, describe, } from "vitest"
-import { createStore } from "../../src"
+import { AutoStore } from "../../src"
 
 
 describe("动态创建同步择计算属性",()=>{
 
     test("创建同步计算属性提供默认值",()=>{
         return new Promise<void>(resolve=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3
             })
@@ -28,7 +28,7 @@ describe("动态创建同步择计算属性",()=>{
     })
     test("创建同步计算属性时指定scope",()=>{
         return new Promise<void>(resolve=>{
-            const store = createStore({
+            const store = new AutoStore({
                 order:{
                     price:2,
                     count:3
@@ -45,7 +45,7 @@ describe("动态创建同步择计算属性",()=>{
     })
     test("动态创建的同步计算对象-默认保存计算对象引用",()=>{
         return new Promise<void>(resolve=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3
             })
@@ -60,7 +60,7 @@ describe("动态创建同步择计算属性",()=>{
     })
     test("动态创建的同步计算对象，不保存计算对象引用",()=>{
         return new Promise<void>(resolve=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3
             })
@@ -76,7 +76,7 @@ describe("动态创建同步择计算属性",()=>{
 
     test("创建同步计算对象然后删除",()=>{
         return new Promise<void>(resolve=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3
             })
@@ -96,7 +96,7 @@ describe("动态创建同步择计算属性",()=>{
 
     test("动态计算属性依赖变化时自动更新",()=>{
         return new Promise<void>(resolve=>{
-            const store = createStore({
+            const store = new AutoStore({
                 price:2,
                 count:3
             })

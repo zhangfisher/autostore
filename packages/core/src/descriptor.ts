@@ -1,4 +1,4 @@
-import { AsyncComputed, AsyncComputedResult, Computed, ComputedDescriptorBuilder } from "./computed/types"
+import { AsyncComputed, AsyncComputedValue, Computed, ComputedDescriptorBuilder } from "./computed/types"
 import { COMPUTED_DESCRIPTOR_BUILDER_FLAG } from "./consts"  
 import { WatchDescriptorBuilder } from "./watch/types"
 
@@ -134,10 +134,10 @@ export interface IComputedDescriptorBuilder<
 // **************  以下实现将计算属性函数的返回值类型提取出来  **************
 
 
-export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedResult<X> : 
+export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
     ( T extends WatchDescriptorBuilder<infer X> ? X :                                  
         ( T extends Computed<infer X> ? X:                                              // 同步函数
-            (T extends AsyncComputed<infer X> ? AsyncComputedResult<X> :                // 异步函数
+            (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
                 T
             )
         )                              
