@@ -18,7 +18,6 @@ export class WatchObject<Value=any> extends ObserverObject<Value,WatchOptions<Va
         return this._cache!
     }
     toString(){ return `WatchObject<${this.id}>` }
-
  
     protected onInitial(){ 
     }

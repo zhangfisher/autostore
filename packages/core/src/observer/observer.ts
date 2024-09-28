@@ -159,11 +159,18 @@ export class ObserverObject<
      * 
      */
     watch(listener:(value:Value)=>void,options?:WatchListenerOptions){
-        return this.store.watch(this.path!.join(PATH_DELIMITER),({value})=>{
+        return this.store.watch(this.getValueWatchPath(),({value})=>{
             listener.call(this,value as Value)
         },options)
     } 
-    
+    /**
+     * 供子类重写，用来获取当前对象值的依赖路径
+     * @returns 
+     */
+    protected getValueWatchPath(){
+        return this.path!.join(PATH_DELIMITER)
+    }
+
     protected emitStoreEvent(event:keyof StoreEvents,args:any){
         setImmediate(()=>{
             this.store.emit(event,args)

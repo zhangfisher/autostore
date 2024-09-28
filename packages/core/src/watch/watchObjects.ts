@@ -57,8 +57,8 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
      * @param watchTo               侦听结果写到处下载
      * @returns 
      */
-    create<Value=any,DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDependFilter<DependValue>,options?:WatchOptions<Value,DependValue>) {      
-        const descrioptorBuilder = watch(getter,depends,options)     
+    create<Value=any,DependValue=any>(getter:WatchGetter<Value,DependValue>,filter?:WatchDependFilter<DependValue>,options?:Omit<WatchOptions<Value>,'filter'>) {      
+        const descrioptorBuilder = watch(getter,filter,options)     
         const descrioptor = descrioptorBuilder() 
         return this.store._createWatch(descrioptor)  as WatchObject<Value>    
     }

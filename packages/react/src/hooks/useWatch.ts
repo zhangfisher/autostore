@@ -1,9 +1,9 @@
 import { useEffect } from "react"
-import { ObserverScopeRef, IStore, Dict } from "../types"
+import { ObserverScopeRef, IStore, Dict } from "@autostorejs/core/src/types"
 import { sharex } from "helux"
-import { installWatch } from "./install"
-import { WatchDescriptorDefine,  WatchDependParams, WatchListener, WatchOptions } from "./types" 
-import { normalizedWatchDepends } from "./utils"
+import { installWatch } from "@autostorejs/core/src/watch/install"
+import { WatchDescriptorDefine,  WatchDependParams, WatchListener, WatchOptions } from "@autostorejs/core/src/watch/types" 
+import { normalizedWatchDepends } from "@autostorejs/core/src/watch/utils"
 import { IReactiveReadHookParams } from "../reactives/types"
 /**
  * createWatch的hook版本 

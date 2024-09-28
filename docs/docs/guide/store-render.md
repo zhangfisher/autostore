@@ -22,9 +22,8 @@ toc: content
 我们先看一个传统的`Context`的渲染例子。
 
 ```tsx
-import { createStore } from '@autostorejs/react';
 import React,{createContext,useContext,useState} from "react"
-import { Block } from "components"
+import { ColorBlock,Button,Divider } from "components"
 
 const ctx = createContext({
   firstName:"Zhang",
@@ -34,9 +33,9 @@ const ctx = createContext({
 
 const Child = React.memo((props)=>{
     const context=useContext(ctx)
-    return <Block name={`子组件:${props.name}`}>
+    return <ColorBlock name={`子组件:${props.name}`}>
       <span>Hello :{context.firstName}{' '}{context.lastName}</span> 
-    </Block>
+    </ColorBlock>
 })
 let count:number = 0
 export default ()=>{
@@ -46,14 +45,15 @@ export default ()=>{
     age:18
   })
   return <ctx.Provider value={user}>
-      <div>根组件</div>
-      <div>Hello :{user.firstName}{' '}{user.lastName}</div>
-      <div>Age :{user.age}</div>
-      <button onClick={()=>{
-        setUser({firstName:"Zhang",lastName:"Fisher",age:++count})
-      }}>+Age</button>
+      <Divider title="根组件"/>
+      <ColorBlock name={'FullName'}>{user.firstName}{' '}{user.lastName}</ColorBlock>
+      <ColorBlock name={'Age'}>Age :{user.age}</ColorBlock>
+      <Divider title="子组件"/>
       <Child name="A"/>
       <Child name="B"/>
+      <Button onClick={()=>{
+        setUser({firstName:"Zhang",lastName:"Fisher",age:++count})
+      }}>+Age</Button>
     </ctx.Provider>
 }
 
@@ -72,7 +72,7 @@ export default ()=>{
 ```tsx
 import { createStore } from '@autostorejs/react';
 import React from "react"
-import { ColorBlock,Button } from "components"
+import { ColorBlock,Button,Divider } from "components"
 
 
 const store = createStore({
@@ -84,13 +84,13 @@ const store = createStore({
 const FirstName = React.memo((props)=>{
     const [firstName] = store.useState('firstName') 
     return <ColorBlock name={`子组件:FirstName`}>
-      Hello :{firstName} 
+      {firstName} 
     </ColorBlock>
 })
 const LastName = React.memo((props)=>{
     const [lastName] = store.useState('lastName') 
     return <ColorBlock name={`子组件:lastName`}>
-      Hello :{lastName}
+      {lastName}
     </ColorBlock>
 })
 let count=0
@@ -99,13 +99,14 @@ export default ()=>{
     const [age] = store.useState('age') 
 
   return <>
-      <div>根组件</div>
-      <div>Hello :{store.state.firstName}{' '}{store.state.lastName}</div>
-      <div>Age {++count}:{age}</div>
-      <Button onClick={()=>store.state.age=store.state.age+1}>+Age</Button>
-      <Button onClick={()=>store.state.firstName=store.state.firstName+"."}>Change FirstName</Button>
+      <Divider title="根组件"/>
+      <ColorBlock name="FullName">Hello :{store.state.firstName}{' '}{store.state.lastName}</ColorBlock>
+      <ColorBlock name="Age">{age}</ColorBlock>      
+      <Divider title="子组件"/>
       <FirstName/>
       <LastName/>
+      <Button onClick={()=>store.state.age=store.state.age+1}>+Age</Button>
+      <Button onClick={()=>store.state.firstName=store.state.firstName+"."}>Change FirstName</Button>
     </>
 }
 
@@ -127,7 +128,7 @@ export default ()=>{
 ```tsx
 import { createStore } from '@autostorejs/react';
 import React,{createContext,useContext,useState} from "react"
-import { ColorBlock,Button } from "components"
+import { ColorBlock,Button,Divider } from "components"
  
 const {state,$ } = createStore({
   firstName:"Zhang",
@@ -145,16 +146,17 @@ const LastName = ()=>{
 let count=0
 export default ()=>{ 
   return <>
-      <div>根组件</div>
-      <ColorBlock>FullName :{$('firstName')}{' '}{$('lastName')}</ColorBlock>
-      <div>Age {++count}:{$('age')}</div>
+      <Divider title="根组件"/>
+      <ColorBlock name="FullName">{$('firstName')}{' '}{$('lastName')}</ColorBlock>
+      <ColorBlock name="Age">{$('age')}{' - '}{++count}</ColorBlock>
+      <Divider title="子组件"/>
       <FirstName/>
       <LastName/>      
       <Button onClick={()=>state.age=state.age+1}>+Age</Button>
       <Button onClick={()=>state.firstName=state.firstName+"."}>Change FirstName</Button>
       <Button onClick={()=>state.lastName=state.lastName+"*"}>Change LastName</Button>
     </>
-}
+} 
 
 ```
 - 在上例中，提供了更细粒度的更新，当状态变化时，仅`$(....)`内部会重新渲染，而其他部分不会重新渲染。再也不需要`React.memo`了。

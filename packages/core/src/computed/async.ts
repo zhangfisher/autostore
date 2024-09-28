@@ -18,7 +18,7 @@ import { getSnap } from "../utils/getSnap";
 import { getError } from "../utils/getError";
 import { StateOperateParams } from "../store/types";
 import { updateObjectVal } from "../utils/updateObjectVal";
-import { ASYNC_COMPUTED_VALUE } from "../consts";
+import { ASYNC_COMPUTED_VALUE, PATH_DELIMITER } from "../consts";
 
 
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<AsyncComputedValue<Value>> {
@@ -74,8 +74,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			(this.value as any)[name] = value
 		}
 	}	
-	private updateComputedValue(values: Partial<AsyncComputedValue>) {    
-		if(this.associated){
+	private batchUpdateComputedValue(values: Partial<AsyncComputedValue>) {    
+		if(this.associated){			
 			updateObjectVal(this.store.state, this.path!, values);
 		}else{
 			Object.assign(this.value as object,values)
@@ -202,7 +202,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		let hasAbort = false; // 是否接收到可中止信号
 
 		// 配置可中止信号，以便可以取消计算
-		this.updateComputedValue({
+		this.batchUpdateComputedValue({
 			cancel: markRaw(() => abortController.abort())
 		});
 		// 侦听中止信号，以便在中止时能停止
@@ -225,7 +225,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					? timeout
 					: [timeout, 0];
 
-				this.updateComputedValue({
+				this.batchUpdateComputedValue({
 					loading : true,
 					error   : null,
 					retry   : i > 0 ? retryCount - i + 1 : 0,
@@ -244,7 +244,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 						if (typeof timeoutCallback === "function") timeoutCallback();
 						if (!hasError) {
 							clearInterval(countdownId);
-							this.updateComputedValue({
+							this.batchUpdateComputedValue({
 								loading: false,
 								error  : "TIMEOUT",
 								timeout: 0,
@@ -254,7 +254,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					// 启用设置倒计时:  比如timeout= 6*1000, countdown= 6
 					if (countdown > 1) {
 						countdownId = setInterval(() => {
-							this.updateComputedValue({
+							this.batchUpdateComputedValue({
 								timeout: countdown--,
 							});
 							if (countdown === 0) clearInterval(countdownId);
@@ -287,7 +287,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				if(retryCount>0 && i===retryCount){
 					Object.assign(afterUpdated, { retry: 0 }); 
 				}
-				this.updateComputedValue(afterUpdated);
+				this.batchUpdateComputedValue(afterUpdated);
 			}
 			// 重试延迟
 			if (hasError) {// 最后一次不延迟				
@@ -311,9 +311,12 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	protected onDependsChange(params:StateOperateParams){ 
 		this.run({changed:params})		
 	}
-	
+
+	protected getValueWatchPath(){
+		return `${this.path!.join(PATH_DELIMITER)}.value`
+	}
 	/**
-	 * 由于所有异步计算属性均会被转换为一个AsyncComputedResult<{value,timeout,....}>的形式
+	 * 由于所有异步计算属性均会被转换为一个AsyncComputedValue<{value,timeout,....}>的形式
 	 * 这样，当我们在指定一个依赖是异步属性时，就需要指定为xxxx.value才可以个侦听到变化
 	 * 
 	 * @example
