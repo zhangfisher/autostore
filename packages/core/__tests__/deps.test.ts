@@ -42,12 +42,12 @@ describe("依赖关系管理",()=>{
     test("创建异步依赖关系链",()=>{ 
         return new Promise<void>((resolve)=>{
             const store = new AutoStore({ 
-                a0: 1,
+                a0: 10,
                 a1: computed(async (scope:any)=>{
                   return scope.a0 + 1
                 },["a0"],{initial:2}),
                 a2: computed(async (scope:any)=>{
-                  return scope.a1.result + 1
+                  return scope.a1.value + 1
                 },["a1"],{initial:3})
             });
             (async ()=>{

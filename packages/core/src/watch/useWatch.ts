@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { ComputedScopeRef, IStore, Dict } from "../types"
+import { ObserverScopeRef, IStore, Dict } from "../types"
 import { sharex } from "helux"
 import { installWatch } from "./install"
 import { WatchDescriptorDefine,  WatchDependParams, WatchListener, WatchOptions } from "./types" 
@@ -33,7 +33,7 @@ export function createUseWatch<T extends Dict>(store:IStore<T>){
                             selfPath: ['value'],
                             initial : 0,
                             enable  : true,
-                            scope   : ComputedScopeRef.Depends         
+                            scope   : ObserverScopeRef.Depends         
                         },options)
                     } as WatchDescriptorDefine 
                     return descr

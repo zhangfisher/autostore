@@ -1,7 +1,8 @@
-import { COMPUTED_DESCRIPTOR_BUILDER_FLAG,COMPUTED_DESCRIPTOR_FLAG } from "../consts";
+import { OBSERVER_DESCRIPTOR_BUILDER_FLAG,OBSERVER_DESCRIPTOR_FLAG } from "../consts";
 import { InvalidComputedArgumentsError } from "../errors";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { normalizeDeps } from "../utils/normalizeDeps";
+import { getDefaultComputedOptions } from "./utils";
 import {
 	AsyncComputedGetter,
 	ComputedDepends,
@@ -11,7 +12,6 @@ import {
 	ComputedOptions,
 	SyncComputedOptions
 } from "./types";
-import { getDefaultComputedOptions } from "./utils";
 
 /**
  * 用来封装状态的计算函数，使用计算函数的传入的是当前对象
@@ -38,7 +38,7 @@ export function computed<Value = any, Scope = any>(): any {
 		deps = [];
 	} else if (arguments.length === 2) {
 		if (Array.isArray(arguments[1])) {
-			opts.depends = arguments[1];			
+			opts.depends =  arguments[1];			
 		} else if (typeof arguments[1] === "object") {
 			Object.assign(opts, arguments[1]);
 			opts.depends = normalizeDeps(opts.depends);
@@ -61,10 +61,10 @@ export function computed<Value = any, Scope = any>(): any {
 			type:'computed', 
 			getter,
 			options: opts,
-			[COMPUTED_DESCRIPTOR_FLAG]:true
+			[OBSERVER_DESCRIPTOR_FLAG]:true
 		} as  ComputedDescriptor<Value,Scope>		
 	} 
-	descriptorBuilder[COMPUTED_DESCRIPTOR_BUILDER_FLAG]=true
+	descriptorBuilder[OBSERVER_DESCRIPTOR_BUILDER_FLAG]=true
 
 	return descriptorBuilder 
 }

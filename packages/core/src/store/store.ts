@@ -64,11 +64,11 @@ import { StoreEvents } from "../events/types";
 import { forEachObject, getVal } from "../utils";
 import { PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
-import { getComputedDescriptor } from "../computed/utils";
+import { getObserverDescriptor } from "../computed/utils";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects"; 
 import { WatchObject } from "../watch/watchObject";
-import type { ComputedState } from "../descriptor";
+import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
 import { EventEmitter, EventListener } from "../events"; 
   
@@ -96,7 +96,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.subscribeCallbacks()
         this._data = createReactiveObject(state,{
             notify:this._notify.bind(this),
-            createComputedObject:this.createComputedObject.bind(this)
+            createComputedObject:this.createObserverObject.bind(this)
         })  
         this.emit("created",this)       
         if(!this._options.lazy) forEachObject(this._data)
@@ -168,7 +168,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @returns {Watcher} - 返回一个表示监听器的数字标识符，用来取消监听。
      */    
     watch(listener:WatchListener,options?:WatchListenerOptions):Watcher
-    watch(keyPaths:string | (string|string[])[],listener:WatchListener,options?:WatchListenerOptions):Watcher
+    watch(paths:string | (string|string[])[],listener:WatchListener,options?:WatchListenerOptions):Watcher
     watch():Watcher{
         const isWatchAll = typeof(arguments[0])==='function' 
         const listener = isWatchAll ? arguments[0] : arguments[1]
@@ -196,7 +196,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             const keyPaths = arguments[0] as string | (string|string[])[]
             const paths:string[] = Array.isArray(keyPaths) ? 
                 keyPaths.map(v=>typeof(v)==='string'? v : v.join(PATH_DELIMITER)) : [keyPaths]
-            const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[2])  as Required<WatchListenerOptions>
+            const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[2]) as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.changesets.once.bind(this.changesets) : this.changesets.on.bind(this.changesets)
             const listeners:EventListener[]=[]
             const handler = createEventHandler(operates,filter)
@@ -219,8 +219,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @returns 
      */    
 
-    private createComputedObject(path:string[],value:any,parentPath:string[],parent:any){
-        const descriptor = getComputedDescriptor(value)
+    private createObserverObject(path:string[],value:any,parentPath:string[],parent:any){
+        const descriptor = getObserverDescriptor(value)
         const computedCtx = { path,value,parentPath,parent }
         if(descriptor){            
             if(descriptor.type==='computed'){                

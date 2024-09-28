@@ -3,19 +3,14 @@
  * 
  * 
  */
-import { PATH_DELIMITER } from "../consts"; 
 import { AutoStore } from "../store/store";
-import { StateOperateParams } from "../store/types";
-import { getDependPaths } from "../utils/getDependPaths";
+import { calcDependPaths } from "../utils/calcDependPaths";
 import { joinValuePath } from "../utils/joinValuePath";
 import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedOptions } from './types';
-import { Watcher } from "../watch/types"; 
-import { ComputedDescriptorObject } from "../descriptor/descriptorObject";
+import { ObserverObject } from "../observer/observer";
 
-
-export class ComputedObject<Value=any> extends ComputedDescriptorObject<Value,ComputedOptions<Value>>{     
-    private _subscribers:Watcher[] = []              // 保存订阅者的ID
-    private _subscribed:boolean = false 
+export class ComputedObject<Value=any> extends ObserverObject<Value,ComputedOptions<Value>>{     
+ 
 
     /**
      *  构造函数。
@@ -26,17 +21,9 @@ export class ComputedObject<Value=any> extends ComputedDescriptorObject<Value,Co
      */
     constructor(public store:AutoStore<any>,public descriptor:ComputedDescriptor,public context?:ComputedContext<Value>){
         super(store,descriptor,context) 
-        this.options.depends  = getDependPaths(this.path,this.options.depends ) 
+        descriptor.options.depends  = calcDependPaths(this.path,this.options.depends )         
     }    
-    toString(){ return `ComputedObject<${joinValuePath(this.path)}>` } 
-    get depends(){
-        return super.depends as string[][] | undefined
-    }
-
-    set depends(value:string[][] | undefined){
-        super.depends = value
-    }
-
+    toString(){ return `ComputedObject<${joinValuePath(this.path)}>` }  
     /**
      * 检查计算函数是否被禁用
      * 
@@ -54,44 +41,6 @@ export class ComputedObject<Value=any> extends ComputedDescriptorObject<Value,Co
     run(options?:RuntimeComputedOptions){
         options
         throw new Error("Method not implemented.");
-    }
-    /**
-     * 当依赖变化时调用
-     * @param _ 
-     */
-    protected onDependsChange(_:StateOperateParams){ 
-        throw new Error("Method not implemented.");
-    }
-    /**
-     * 获取当前对象的依赖路径
-     * 
-     * @returns 
-     */
-    protected getDepends(){
-        return this.depends!
-    }
-    /**
-     * 订阅依赖的变化事件
-     * 不包括读取依赖的事件
-     */
-    subscribe(){
-        if(this.depends && !this._subscribed){
-            this._subscribers.push(this.store.watch(
-                this.getDepends(),
-                this.onDependsChange.bind(this),
-                {operates:'write'}
-            ))
-            this.store.log(()=>`${this.toString()} subscribed to ${this.depends!.map(depends=>depends.join(PATH_DELIMITER)).join(",")}`)
-            this._subscribed=true
-        }
-    }    
-    /**
-     * 取消订阅依赖的变化事件
-     */
-    unsubscribe(){
-        this._subscribers.forEach(subscriber=>subscriber.off())
-        this._subscribed=false
-    }
-     
+    } 
 
 }

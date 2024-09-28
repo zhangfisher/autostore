@@ -1,7 +1,10 @@
-import { COMPUTED_DESCRIPTOR_BUILDER_FLAG } from "../consts";
-import { WatchDepends,  WatchDescriptorBuilder, WatchGetter,  WatchOptions } from "./types";
+import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
+import {   WatchDescriptorBuilder, WatchGetter,  WatchDependFilter,  WatchOptions } from "./types";
 import { normalizedWatchDepends } from "./utils";
 
+
+
+ 
  /* 
  *  watch函数用来声明一个监听函数，当监听的值发生变化时，会触发监听函数的执行
  *  
@@ -13,14 +16,22 @@ import { normalizedWatchDepends } from "./utils";
  *  然后将监听函数的返回值回写到validate属性中
  * 
  * {
- *     validate:watch<boolean,stirng>((value:string,oldValue:boolean)=>{
+ *     validate:watch<boolean,string>((value:string,oldValue:boolean)=>{
  *          return value.length>0
  *    },{
- *     depends:(path:string[],value:any)=>{
+ *     depends:(path:string[],value:string)=>{
  *          return path[path.length-1]=='validate'
  *      }
  *    })
- *  
+ * 
+ *  @example
+ *    {
+ *     validate:watch<boolean,stirng>((value:string,oldValue:boolean)=>{
+ *          return value.length>0
+ *    }，{
+        没有指定依赖函数时，会监听整个对象的所有变化
+ *    })
+ * 
  * 
  * @template Value  监听函数的返回值类型
  * @template DependValue 指发生变化的值类型，如watch的依赖的x的值是一个boolean，则当变化时，emitValue的类型就是boolean
@@ -28,17 +39,18 @@ import { normalizedWatchDepends } from "./utils";
  * @param options 
  * @returns 
  */
- export function watch<Value=any, DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDepends<DependValue>,options?:WatchOptions<Value,DependValue>):WatchDescriptorBuilder<Value>
- export function watch<Value=any, DependValue=any>(getter:WatchGetter<Value,DependValue>,options?:WatchOptions<Value,DependValue>):WatchDescriptorBuilder<Value>
+ export function watch<Value=any, DependValue=any>(getter:WatchGetter<Value,DependValue>,filter?:WatchDependFilter<DependValue>,options?:Omit<WatchOptions<Value>,'filter'>):WatchDescriptorBuilder<Value>
+ export function watch<Value=any, DependValue=any>(getter:WatchGetter<Value,DependValue>,options?:Omit<WatchOptions<Value>,'filter'>):WatchDescriptorBuilder<Value>
  export function watch<Value =any>(){
     const getter = arguments[0]
-    const depends = typeof(arguments[1])==='function' ? arguments[1] : ()=>true
+    const filter = typeof(arguments[1])==='function' ? arguments[1] : ()=>true
     const options = typeof(arguments[1])==='object' ? arguments[1] : arguments[2]
 
     const opts : WatchOptions<Value> =   Object.assign({
-        depends  : normalizedWatchDepends(depends),
+        depends  : [],
         enable   : true,
-        objectify: true
+        objectify: true,
+        filter
     },options)  
     const descriptorBuilder = () => {
         return { 
@@ -47,7 +59,7 @@ import { normalizedWatchDepends } from "./utils";
           options: opts,
         }
     }
-    descriptorBuilder[COMPUTED_DESCRIPTOR_BUILDER_FLAG] = true 
+    descriptorBuilder[OBSERVER_DESCRIPTOR_BUILDER_FLAG] = true 
 
     return descriptorBuilder as WatchDescriptorBuilder<Value>;
 }

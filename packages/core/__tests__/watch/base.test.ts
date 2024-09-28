@@ -300,9 +300,9 @@ describe("watch功能测试",()=>{
 
             expect(watchObj.id).toBe('w')
             expect(watchObj.initial).toBe(1)
-            expect(watchObj.path).toBeUndefined()
+            expect(watchObj.path).toEqual(['#w'])
             expect(watchObj.group).toBe("x")
-            expect(watchObj.attched).toBe(false)
+            expect(watchObj.associated).toBe(false)
 
         })
         
@@ -318,7 +318,7 @@ describe("watch功能测试",()=>{
             },()=>true,{initial:1,id:'total'})
             expect(watchObj.initial).toBe(1)
             expect(watchObj.value).toBe(1)
-            expect(watchObj.attched).toBe(false)
+            expect(watchObj.associated).toBe(false)
             store.state.books.count = 3
             expect(watchObj).toBe(store.watchObjects.get('total'))
             expect(watchObj.value).toBe(3)                        
@@ -338,7 +338,7 @@ describe("watch功能测试",()=>{
             },()=>true,{initial:1,id:'total',enable:false})
             expect(watchObj.initial).toBe(1)
             expect(watchObj.value).toBe(1)
-            expect(watchObj.attched).toBe(false)
+            expect(watchObj.associated).toBe(false)
             store.state.books.count = 3
             expect(watchObj).toBe(store.watchObjects.get('total'))
             expect(watchObj.value).toBe(1)     

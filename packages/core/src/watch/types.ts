@@ -1,7 +1,7 @@
 import type { StateOperateParams, StateOperates } from "../store/types"
 import type { WatchObject } from "./watchObject"
-import type { IComputedDescriptor, IComputedDescriptorBuilder, IComputedDescriptorOptions } from "../descriptor"
 import type { EventListener } from "../events/emitter"
+import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions } from "../observer/types"
 
 export type WatchListener<T=any,P=any> = (data:StateOperateParams<T,P>)=>void
 
@@ -13,14 +13,13 @@ export type WatchListenerOptions = {
 export type Watcher = EventListener
 
 
+export type WatchDependFilter<Value=any> = (path:string[],value:Value)=>boolean     
 
-export type WatchDepends<T=any> = (path:string[],value:T)=>boolean
-export type WatchDependParams<T=any> = string | (string | string[])[] | WatchDepends<T>
- 
+  
 
-export interface WatchOptions<Value=any,DependValue= any> extends IComputedDescriptorOptions<Value,DependValue>{ 
-    async?  : false                        // watch只能是同步  
-    depends?: WatchDepends<DependValue>    // 
+export interface WatchOptions<Value=any> extends ObserverOptions<Value>  { 
+    async?  : false                        
+    filter : WatchDependFilter<Value>     
 }
 
 export type WatchScope<Value=any> = {
@@ -29,11 +28,11 @@ export type WatchScope<Value=any> = {
 }
 
 export type WatchGetter<Value=any,DependValue= any> = (
-    scope:{path:string[],value:DependValue},
-    args:WatchObject<Value>
+    scope: {path:string[],value:DependValue},
+    args : WatchObject<Value>
 )=>Exclude<any,Promise<any>> | undefined
 
-export type WatchDescriptor<Value=any, Scope extends WatchScope=WatchScope> = IComputedDescriptor<
+export type WatchDescriptor<Value=any, Scope extends WatchScope=WatchScope> = ObserverDescriptor<
   'watch',
   Value,
   Scope,
@@ -46,7 +45,7 @@ export type WatchDescriptor<Value=any, Scope extends WatchScope=WatchScope> = IC
  * @template Scope 监听函数的第一个参数的类型
  */
 export type WatchDescriptorBuilder<Value = any>
-  = IComputedDescriptorBuilder<'watch',Value,WatchScope,WatchDescriptor<Value,WatchScope>> 
+  = ObserverDescriptorBuilder<'watch',Value,WatchScope,WatchDescriptor<Value,WatchScope>> 
 
 
 

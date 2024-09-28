@@ -198,7 +198,7 @@ const formState={
 除了可以在`State`中声明`watch`函数外，我们还可以在`Store`对象中声明`watch`函数，用来侦听`State`中的数据变化。
 
 ```tsx 
-import { createStore,computed,ComputedScopeRef } from "@autostorejs/react" 
+import { createStore,computed,ObserverScopeRef } from "@autostorejs/react" 
 import { useEffect,useState } from "react"
 const user = {
   user:{
@@ -210,7 +210,7 @@ const user = {
       "user/firstName",
       "user/lastName"
     ],{   
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     }) 
   } 
 }
@@ -245,7 +245,7 @@ export default ()=>{
 在组件内侦听可以使用`store.useWatch`函数，用来侦听`store`对象的变化,当组件销毁自动取消订阅。
  
 ```tsx 
-import { createStore,computed,ComputedScopeRef } from "@autostorejs/react" 
+import { createStore,computed,ObserverScopeRef } from "@autostorejs/react" 
 import { useEffect,useState } from "react"
 const user = {
   user:{
@@ -257,7 +257,7 @@ const user = {
       "user/firstName",
       "user/lastName"
     ],{   
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     }) 
   } 
 }

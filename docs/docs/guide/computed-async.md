@@ -26,7 +26,7 @@ toc: content
 异步计算属性使用`computed`进行声明，方式如下：
 
 ```tsx  
-import { createStore,computed,ComputedScopeRef,$} from '@autostorejs/react';
+import { createStore,computed,ObserverScopeRef,$} from '@autostorejs/react';
 import { useRef,useEffect } from "react" 
 import { delay } from "autostore-docs"
 
@@ -233,7 +233,7 @@ export type ComputedDepends =Array<string | Array<string>>
 重点在于这个相对是相对谁，我们用一个例子来说明。
 
 ```tsx {10,11,20,21,32,33}
-import { createStore,computed,ComputedScopeRef } from "@autostorejs/react" 
+import { createStore,computed,ObserverScopeRef } from "@autostorejs/react" 
 
 const user = {
   user:{
@@ -247,7 +247,7 @@ const user = {
     ],{  
       // 默认scope指向的是current，即fullName所在的对象
       // 这里指定scope为Depends，这样就可以传入
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     }),    
     fullName1: computed(async ([first,last])=>{ 
       return first + last
@@ -255,7 +255,7 @@ const user = {
       "./firstName",
       "./lastName"
     ],{   
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     })
   },
   other:{ 
@@ -267,7 +267,7 @@ const user = {
       "../user.firstName",
       "../user.lastName"
     ],{   
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     })
   }
 
@@ -473,7 +473,7 @@ store.state.user.fullName=={
 以下是一个异步计算加载状态的例子：
 
 ```tsx {25,26,27}
-import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
+import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
 import { Box} from "components"
@@ -524,7 +524,7 @@ export default ()=>{
 使用方法如下：
 
 ```tsx {25,26,27}
-import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
+import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
 import { Box} from "components"
@@ -547,7 +547,7 @@ const store = createStore({
       }) 
     },
     ["order.count","order.price"],
-    {scope:ComputedScopeRef.Depends}) 
+    {scope:ObserverScopeRef.Depends}) 
   }
 }  )
 
@@ -594,7 +594,7 @@ export default ()=>{
 
 
 ```tsx {25,26,27}
-import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
+import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
 import { Box} from "components"
@@ -611,7 +611,7 @@ const store = createStore({
     ["order.count","order.price"],
     {
       timeout:1000 ,
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     })
   }
 }  )
@@ -665,7 +665,7 @@ export default ()=>{
 
 
 ```tsx  
-import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
+import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
 import { Box} from "components"
@@ -682,7 +682,7 @@ const store = createStore({
     ["order.count","order.price"],
     {
       timeout:[5*1000,5] ,
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     })
   }
 }  )
@@ -731,7 +731,7 @@ export default ()=>{
 
 
 ```tsx  
-import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
+import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
 import { Box } from "components"
@@ -749,7 +749,7 @@ const store = createStore( {
     ["order.count","order.price"],
     {
       retry:[5,1000] ,// 重试5次，每次间隔1秒
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     })
   }
 }  )
@@ -807,7 +807,7 @@ export default ()=>{
  
 ```tsx  
 
-import { createStore,computed,ComputedScopeRef,getSnap } from '@autostorejs/react';
+import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
 import { Box} from "components"
@@ -831,7 +831,7 @@ const store = createStore({
     ["order.count","order.price"],
     {
       timeout:[10*1000,10] ,
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     })
   }
 }  )

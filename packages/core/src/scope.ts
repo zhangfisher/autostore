@@ -5,10 +5,11 @@
  * 
  */
 import { PATH_DELIMITER } from "./consts";
-import { ComputedContext, ComputedOptions, ComputedScope, ComputedScopeRef, ComputedType} from "./computed/types";
+import { ComputedContext, ComputedOptions, ComputedScope } from "./computed/types";
 import { getValueByPath } from "./utils/getValueByPath";
 import { ComputedObject } from "./computed/computedObject";
 import { getFullValuePath } from "./utils/getFullValuePath";
+import { ObserverScopeRef, ObserverType } from "./observer/types";
  
 
 /**
@@ -24,7 +25,7 @@ function getScopeOptions(valueObject:ComputedObject,computedScope?: ComputedScop
   if (typeof scope === "function") {
     try { scope = scope.call(valueObject.store,valueObject) } catch { }
   }
-  return scope == undefined ? (storeScope == undefined ? ComputedScopeRef.Current: storeScope) : scope;
+  return scope == undefined ? (storeScope == undefined ? ObserverScopeRef.Current: storeScope) : scope;
 }
  
 /**
@@ -35,13 +36,13 @@ function getScopeOptions(valueObject:ComputedObject,computedScope?: ComputedScop
  * @param params 
  * @returns 
  */
-export function getValueScope<Value=any,Scope=any,Options extends ComputedOptions<Value,Scope>=ComputedOptions<Value,Scope>>(computedObject:ComputedObject<Value>,computedType:ComputedType,valueContext:ComputedContext<Value> | undefined, computedOptions: Options) {
+export function getValueScope<Value=any,Scope=any,Options extends ComputedOptions<Value,Scope>=ComputedOptions<Value,Scope>>(computedObject:ComputedObject<Value>,observerType:ObserverType,valueContext:ComputedContext<Value> | undefined, computedOptions: Options) {
 
   let rootDraft = computedObject.store.state;
   const storeOptions = computedObject.store.options
     // 1. 获取计算函数的根scope
   if (typeof storeOptions.getRootScope=== "function") {
-    const newDraft = storeOptions.getRootScope(computedObject,{computedType: computedType,valuePath:valueContext?.path});
+    const newDraft = storeOptions.getRootScope(computedObject,{observerType ,valuePath:valueContext?.path});
     if (newDraft !== undefined) {
       rootDraft = newDraft;
     }
@@ -55,22 +56,22 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
 
     // 3. 根据配置参数获取计算函数的上下文对象
     try { 
-      if(scopeOption === ComputedScopeRef.Current) {
+      if(scopeOption === ObserverScopeRef.Current) {
         scope = getValueByPath(rootDraft, parentPath);
-      }else if (scopeOption === ComputedScopeRef.Parent) {
+      }else if (scopeOption === ObserverScopeRef.Parent) {
         scope = getValueByPath(rootDraft,valuePath!.slice(0, valuePath!.length - 2 < 0 ? 0 : valuePath!.length - 2));
-      }else if (scopeOption === ComputedScopeRef.Root) {
+      }else if (scopeOption === ObserverScopeRef.Root) {
         scope = rootDraft;
-      }else if (scopeOption === ComputedScopeRef.Depends) {        
+      }else if (scopeOption === ObserverScopeRef.Depends) {        
         scope = computedObject.depends?.map((dep:any) => getValueByPath(rootDraft, dep));
       }else{
        if (typeof scopeOption === "string") {       
           // 当scope是以@开头的字符串时，代表是一个路径指向，如：@./user，代表其scope是由user属性值指向的对象路径
           if(scopeOption.startsWith("@")){ // 
-            scope = getValueScope(computedObject,computedType,valueContext,
+            scope = getValueScope(computedObject,observerType,valueContext,
                 { 
                   ...computedOptions,
-                  scope:getValueScope(computedObject,computedType,{
+                  scope:getValueScope(computedObject,observerType,{
                     ...valueContext!,
                     path:scopeOption.slice(1).split(PATH_DELIMITER)
                   },{

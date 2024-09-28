@@ -73,7 +73,7 @@ const state = {
 } 
 ```
 - `fullName`是一个同步计算属性，当`firstName`或`lastName`变化时，会自动重新计算`fullName`的值。
-- `fullName`的第一个参数(即`作用域`)是由`createStore`时指定的`computedScope`指定的,默认指定的`ComputedScopeRef.Current`。因此，`fullName`的第一个参数是`user`对象。
+- `fullName`的第一个参数(即`作用域`)是由`createStore`时指定的`computedScope`指定的,默认指定的`ObserverScopeRef.Current`。因此，`fullName`的第一个参数是`user`对象。
 - 如果同步计算函数是一个普通函数而不是箭头函数，那么`this`指向是由`createStore`时指定的`computedThis`确定的。
 
 
@@ -90,8 +90,8 @@ const state = {
     fullName:computed<string>((state)=>{
       return state.user.firstName+state.user.lastName
     },{
-      context:ComputedScopeRef.Root             // 计算函数的this
-      scope:ComputedScopeRef.Root               // 计算函数的第一个参数
+      context:ObserverScopeRef.Root             // 计算函数的this
+      scope:ObserverScopeRef.Root               // 计算函数的第一个参数
     }) 
   }
 } 
@@ -101,7 +101,7 @@ const state = {
 
 
 ```tsx
-import { createStore,ComputedScopeRef } from '@autostorejs/react';
+import { createStore,ObserverScopeRef } from '@autostorejs/react';
 
 const state = {
   books:[

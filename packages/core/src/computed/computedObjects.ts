@@ -7,7 +7,7 @@ import { SyncComputedObject } from "./sync"
 import { AsyncComputedGetter, ComputedDepends, ComputedDescriptor,  ComputedGetter, ComputedOptions, RuntimeComputedOptions, SyncComputedOptions } from "./types"
 import { computed } from "./computed"
 import { isAbsolutePath } from "../utils/isAbsolutePath"
-import { isComputedDescriptor } from "./utils"
+import { isObserverDescriptor } from "./utils"
 import { PATH_DELIMITER } from "../consts"
 import { isPathEq } from "../utils"
 
@@ -53,7 +53,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     create<Value = any, Scope = any>(descriptor:ComputedDescriptor<Value,Scope>): AsyncComputedObject<Value,Scope> | SyncComputedObject<Value,Scope>    
     create():any {
       // @ts-ignore
-      const descrioptor = isComputedDescriptor(arguments[0]) ?  arguments[0] : computed(...arguments)()
+      const descrioptor = isObserverDescriptor(arguments[0]) ?  arguments[0] : computed(...arguments)()
       if(descrioptor.options.async){
           // 异步依赖是手工指定的，所以需要检查是否是绝对路径，不允许相对路径，因为没有计算上下文
           if(!isAbsolutePath(descrioptor.options.depends)){
@@ -163,7 +163,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
      * @returns 
      */
     delete(id: string){
-      this.get(id)?.unsubscribe()
+      this.get(id)?.detach()
       return super.delete(id)
     }
     /**

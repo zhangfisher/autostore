@@ -86,7 +86,7 @@ describe("动态创建同步择计算属性",()=>{
             expect(obj.value).toBe(6)    
             store.computedObjects.delete(obj.id)
             expect(store.computedObjects.size).toBe(0)
-            expect(obj.attched).toBe(false)
+            expect(obj.associated).toBe(false)
             store.state.count = 4
             expect(obj.value).toBe(6) // 当对象被删除后，不再计算
             resolve()

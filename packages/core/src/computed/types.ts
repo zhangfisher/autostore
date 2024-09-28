@@ -15,20 +15,11 @@
  * 
  * 
  */
+import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions, ObserverScopeRef } from "../observer/types"
 import { StateOperateParams } from "../store/types"
-import { Dict } from "../types"
 import { ComputedObject } from "./computedObject" 
-import { IComputedDescriptor, IComputedDescriptorBuilder, IComputedDescriptorOptions } from "../descriptor"
+import { Dict } from "../types"
 
-export type ComputedType = 'watch' | 'computed'
-
-export enum ComputedScopeRef{
-    Root    = 'ROOT',
-    Current = 'CURRENT',
-    Parent  = 'PARENT',  
-    Depends = 'DEPENDS',                // 指向依赖数组
-    Self    = 'SELF'                    // 指向自身，默认值
-} 
 
 /**
  * 同步计算属性配置参数
@@ -129,7 +120,7 @@ export type AsyncComputed<T=any> = (...args: any) => Promise<T>;    // 异步计
  * 当ComputedContext是一个字符串并且以@开头时，有个特殊含义，即是一个路径指向：
  * 如：{fields:{ user:"address",address:"user" }}，如果scope=@user，代表的当前scope对象指向的user属性的值所指向的对象，在这里实质传入的是address
  */
-export type ComputedScope  =  ComputedScopeRef | string | string[] | ((computedObject:ComputedObject)=>string | string[] | ComputedScopeRef)
+export type ComputedScope  =  ObserverScopeRef | string | string[] | ((computedObject:ComputedObject)=>string | string[] | ObserverScopeRef)
 
   
 
@@ -164,7 +155,7 @@ export type ComputedScope  =  ComputedScopeRef | string | string[] | ((computedO
  */
 export type ComputedDepends = ('CURRENT' | 'ROOT' | 'PARENT' | string | string[] )[]  
 
-export interface ComputedOptions<Value=any,Scope=any> extends IComputedDescriptorOptions<Value> {    
+export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Value> {    
     /**
      * 
      * 计算函数的执行超时时间
@@ -233,11 +224,11 @@ export interface ComputedOptions<Value=any,Scope=any> extends IComputedDescripto
      * 当计算完成后的回调函数
      */
     onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,value:any}):void
-    /**
-     * 依赖的路径
-     * 可以是一个绝对路径，也可以是一个相对路径
-     */
-    depends?: ComputedDepends     
+    // /**
+    //  * 依赖的路径
+    //  * 可以是一个绝对路径，也可以是一个相对路径
+    //  */
+    // depends?: ComputedDepends     
 
 }
 
@@ -281,41 +272,10 @@ export type ComputedSyncReturns<T=any> = (...args: any) => Exclude<T,Promise<any
 export type AsyncReturnType<T extends (...args: any) => any> = T extends (...args: any) => Promise<infer R> ? R : (
     T extends (...args: any) => infer R ? R : any)
  
-
-// export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedResult<X> : 
-//     ( T extends WatchDescriptorBuilder<infer X> ? X :                                  
-//         ( T extends Computed<infer X> ? X:                                              // 同步函数
-//             (T extends AsyncComputed<infer X> ? AsyncComputedResult<X> :                // 异步函数
-//                 T
-//             )
-//         )                              
-//     ) 
-
-
-// /**
- 
-//  转换状态中的计算属性函数的类型
-//  将状态中的计算属性函数转换为计算属性函数的返回值类型
-//  如：ComputedState<{count:()=>1}> => {count:number}
-//  如：ComputedState<{count:async ()=>1}> => {count:number}
-
-// */
-// export type ComputedState<T extends Record<string, any>> = {
-//     [K in keyof T]: T[K] extends (...args:any) => any ? PickComputedResult<T[K]> : T[K] extends Record<string, any> ? ComputedState<T[K]> : T[K];
-// };
-
  
 
-// // 在ComputedState的基础上，排除了undefined的类型
-// export type RequiredComputedState<T extends Record<string, any>> = {
-//     [K in keyof T]-?: Exclude<T[K],undefined> extends (...args:any) => any ? PickComputedResult<Exclude<T[K],undefined>> : Required<T[K]>extends Record<string, any> ? ComputedState<Exclude<T[K],undefined> > : Exclude<T[K],undefined> ;
-// };
 
-
-
-
-
-export type ComputedDescriptor<Value=any,Scope=any> = IComputedDescriptor<      
+export type ComputedDescriptor<Value=any,Scope=any> = ObserverDescriptor<      
     'computed',         
     Value,
     Scope, 
@@ -324,17 +284,6 @@ export type ComputedDescriptor<Value=any,Scope=any> = IComputedDescriptor<
 >
 
 export type ComputedDescriptorBuilder<Value=any,Scope=any> 
-    = IComputedDescriptorBuilder<'computed',Value,Scope,ComputedDescriptor<Value,Scope>>
+    = ObserverDescriptorBuilder<'computed',Value,Scope,ComputedDescriptor<Value,Scope>>
 
 
-
-// export type ComputedDescriptor<Value=any,Scope=any,Options extends Dict = Dict> = {      
-//     type   : 'computed'          
-//     getter : ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
-//     options: Options
-// }
-
-// export type ComputedDescriptorBuilder<Value=any,Scope=any,Options extends Dict = Dict> = {
-//     ():ComputedDescriptor<Value,Scope,Options> 
-//     [COMPUTED_DESCRIPTOR_FLAG]     : true      
-// } 

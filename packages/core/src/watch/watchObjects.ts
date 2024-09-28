@@ -2,7 +2,7 @@ import { Dict } from "../types"
 import { WatchObject } from "./watchObject";
 import { getVal } from "../utils";
 import { AutoStore } from '../store/store';
-import {  WatchDepends, Watcher, WatchGetter, WatchOptions } from "./types";
+import {  WatchDependFilter, Watcher, WatchGetter, WatchOptions } from "./types";
 import { watch } from "./watch";
 
 export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
@@ -29,7 +29,7 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
             if(!this._enable) return 
             const value = getVal(this.store.state,path)
             for(let watchObj of this.values()){
-                if(watchObj.isDepends(path,value)){
+                if(watchObj.isMatched(path,value)){
                     watchObj.run(path,value)
                 }
                 
@@ -57,7 +57,7 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
      * @param watchTo               侦听结果写到处下载
      * @returns 
      */
-    create<Value=any,DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDepends<DependValue>,options?:WatchOptions<Value,DependValue>) {      
+    create<Value=any,DependValue=any>(getter:WatchGetter<Value,DependValue>,depends?:WatchDependFilter<DependValue>,options?:WatchOptions<Value,DependValue>) {      
         const descrioptorBuilder = watch(getter,depends,options)     
         const descrioptor = descrioptorBuilder() 
         return this.store._createWatch(descrioptor)  as WatchObject<Value>    

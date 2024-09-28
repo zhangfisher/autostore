@@ -1,5 +1,6 @@
 import { ComputedObject } from "../computed/computedObject"
-import { ComputedScope, ComputedType } from "../computed/types"
+import { ComputedScope  } from "../computed/types"
+import { ObserverType } from "../observer/types"
 import { Dict } from "../types"
 import type { AutoStore } from "./store"
 
@@ -75,7 +76,7 @@ export type AutoStoreOptions<State extends Dict> = {
      * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
      * 
      */
-    getRootScope?:(state:State,options:{computedType:ComputedType, valuePath:string[] | undefined}) => any
+    getRootScope?:(state:State,options:{observerType:ObserverType, valuePath:string[] | undefined}) => any
 
     /**
      * 

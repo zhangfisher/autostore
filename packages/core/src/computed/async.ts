@@ -31,9 +31,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	/**
 	 *
 	 */
-	onInitial() {
+	protected onInitial() {
 		this.initial = this.createAsyncComputedValue();
-		this.subscribe()
+		this.attach()
 		// 为什么要延迟执行？
 		// 因为onInitial函数是在第一次读取时执行的同步操作，此时的依赖项还没有收集完毕，原始的计算函数还没有初始化
 		// 比如{ total:computed(async()=>{ return 1+2 }) }，在第一次读取total时，此时的computed函数还没有初始化
@@ -68,14 +68,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * @param values 
 	 */
 	private updateComputedValueItem(name:keyof AsyncComputedValue,value:any) {
-		if(this.attched){
+		if(this.associated){
 			updateObjectVal(this.store.state, [...this.path!, name], value);
 		}else{
 			(this.value as any)[name] = value
 		}
 	}	
 	private updateComputedValue(values: Partial<AsyncComputedValue>) {    
-		if(this.attched){
+		if(this.associated){
 			updateObjectVal(this.store.state, this.path!, values);
 		}else{
 			Object.assign(this.value as object,values)
@@ -168,8 +168,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	private onDoneCallback(options: Required<RuntimeComputedOptions>,error:Error,abort:boolean,timeout:boolean,scope:any,value:any) {
 		if(typeof(options.onDone)!=='function') return 
 		options.onDone.call(this, {
-			id:this.id,			
-			path:this.path,
+			id  : this.id,			
+			path: this.path,
 			value,
 			error,
 			abort,
@@ -350,7 +350,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		return depends.map((dep) => {
 			if(dep.length===0) return dep 
 			for(let obj of this.store.computedObjects.values()){
-				if (isPathEq(obj.path, dep)) {
+				if (isPathEq(obj.path, dep) && obj.async) {
 					return [`${dep}.value`]
 				}
 			} 

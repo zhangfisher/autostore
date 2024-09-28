@@ -5,8 +5,8 @@ import { ComputedOptions,  SyncRuntimeComputedOptions } from './types';
 import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
 import { StateOperateParams } from "../store/types";
-import { getDependPaths } from "../utils/getDependPaths"; 
 import { noRepeat } from "../utils/noRepeat";
+import { calcDependPaths } from '../utils/calcDependPaths';
 
 /**
  * 
@@ -93,10 +93,10 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       watcher.off() 
       // 同步函数也可以额外指定依赖
       if(Array.isArray(this.options.depends) && this.options.depends.length>0){
-        dependencies.push(...getDependPaths(this.path,this.options.depends))
+        dependencies.push(...calcDependPaths(this.path,this.options.depends))
       } 
       this.depends = noRepeat(dependencies)       
-      this.subscribe()
+      this.attach()
   }  
 
 

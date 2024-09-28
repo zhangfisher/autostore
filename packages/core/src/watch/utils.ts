@@ -1,6 +1,6 @@
-import { COMPUTED_DESCRIPTOR_BUILDER_FLAG, PATH_DELIMITER } from "../consts";
+import { OBSERVER_DESCRIPTOR_BUILDER_FLAG, PATH_DELIMITER } from "../consts";
 import { joinValuePath } from "../utils/joinValuePath";
-import { WatchDepends,WatchDependParams } from "./types";
+import { WatchDependFilter,WatchDependParams } from "./types";
 
 
 
@@ -19,7 +19,7 @@ import { WatchDepends,WatchDependParams } from "./types";
  * @param on 
  * @returns 
  */
-export function normalizedWatchDepends(on:WatchDependParams=[]): WatchDepends{
+export function normalizedWatchDepends(on:WatchDependParams=[]): WatchDependFilter{
     if(typeof on === 'function'){
         return on
     }else if(typeof(on)==='string'){
@@ -40,7 +40,7 @@ export function normalizedWatchDepends(on:WatchDependParams=[]): WatchDepends{
  
 
 export function isWatchDescriptorBuilder(value:any){
-    return typeof(value) === 'function' && value[COMPUTED_DESCRIPTOR_BUILDER_FLAG]===true
+    return typeof(value) === 'function' && value[OBSERVER_DESCRIPTOR_BUILDER_FLAG]===true
 }
 
 export function isWatchDescriptor(obj:any){

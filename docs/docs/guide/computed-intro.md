@@ -75,7 +75,7 @@ export default ()=>{
 `@autostorejs/react`在创建`Store`时，支持配置`scope`参数来指定计算属性函数的第一个参数，如下：
 
 ```ts
-export enum ComputedScopeRef{
+export enum ObserverScopeRef{
   Root    = 'root',                      // 指向State根对象
   Current = 'current',                // 指向计算属性所在的对象
   Parent  = 'parent',                  // 指向计算属性所在对象的父对象
@@ -84,7 +84,7 @@ export enum ComputedScopeRef{
 }
 
 // 指定Store中计算函数的上下文,如果是字符串代表是当前对象的指定键，如果是string[]，则代表是当前Store对象的完整路径
-export type ComputedScope  =  ComputedScopeRef | string | string[] | ((state:any)=>string | string[] | ComputedScopeRef)
+export type ComputedScope  =  ObserverScopeRef | string | string[] | ((state:any)=>string | string[] | ObserverScopeRef)
  
 const store = createStore( {
   user:{
@@ -100,14 +100,14 @@ const store = createStore( {
 
 ### Current
 
-默认情况下，`scope==ComputedScopeRef.Current`时，计算函数的`this`指向计算函数所在的对象。
+默认情况下，`scope==ObserverScopeRef.Current`时，计算函数的`this`指向计算函数所在的对象。
 
 ```tsx 
 /**
- * title: ComputedScopeRef.Current
- * description: store.options.scope==ComputedScopeRef.Current,
+ * title: ObserverScopeRef.Current
+ * description: store.options.scope==ObserverScopeRef.Current,
  */
-import { createStore,ComputedScopeRef } from '@autostorejs/react'; 
+import { createStore,ObserverScopeRef } from '@autostorejs/react'; 
 const state = {
   user:{
     firstName:"Zhang",
@@ -120,7 +120,7 @@ const state = {
 } 
 const store = createStore(state,{
   // 指定计算属性的默认上下文指向计算函数所有的当前对象
-  scope: ()=>ComputedScopeRef.Current,
+  scope: ()=>ObserverScopeRef.Current,
 })
 
 export default ()=>{
@@ -133,14 +133,14 @@ export default ()=>{
 
 ### Root
 
-`@autostorejs/react`会将计算属函数的`scope`指向`ComputedScopeRef.Root`，即当前的`State`根对象，如下：
+`@autostorejs/react`会将计算属函数的`scope`指向`ObserverScopeRef.Root`，即当前的`State`根对象，如下：
 
 ```tsx 
 /**
- * title: ComputedScopeRef.Root
- * description: store.options.scope==ComputedScopeRef.Root,
+ * title: ObserverScopeRef.Root
+ * description: store.options.scope==ObserverScopeRef.Root,
  */
-import { createStore,ComputedScopeRef } from '@autostorejs/react'; 
+import { createStore,ObserverScopeRef } from '@autostorejs/react'; 
  
 const store = createStore({
   user:{
@@ -153,7 +153,7 @@ const store = createStore({
   }
 },{
   // 指定计算属性的默认上下文指向State根对象
-  scope: () => ComputedScopeRef.Root
+  scope: () => ObserverScopeRef.Root
 })
 
 export default ()=>{
@@ -168,14 +168,14 @@ export default ()=>{
 
 #### Parent
 
-当`scope==ComputedScopeRef.Parent`时，指向计算函数所在的对象的父对象。
+当`scope==ObserverScopeRef.Parent`时，指向计算函数所在的对象的父对象。
 
 ```tsx 
 /**
- * title: ComputedScopeRef.Parent
- * description: scope==ComputedScopeRef.Parent
+ * title: ObserverScopeRef.Parent
+ * description: scope==ObserverScopeRef.Parent
  */
-import { createStore,ComputedScopeRef } from '@autostorejs/react'; 
+import { createStore,ObserverScopeRef } from '@autostorejs/react'; 
 const state = {
   user:{
     firstName:"Zhang",
@@ -188,7 +188,7 @@ const state = {
 } 
 const store = createStore(state,{
   // 指定计算属性的默认上下文指向计算函数所有的当前对象
-  scope: ()=>ComputedScopeRef.Parent,
+  scope: ()=>ObserverScopeRef.Parent,
 })
 
 export default ()=>{
@@ -281,10 +281,10 @@ export default ()=>{
 
 ### Depends
 
-当`scope==ComputedScopeRef.Depends`时，计算函数的`this`指向计算函数的依赖项的值。
+当`scope==ObserverScopeRef.Depends`时，计算函数的`this`指向计算函数的依赖项的值。
 
 :::warn
-**`ComputedScopeRef.Depends`仅在异步计算时生效,而异步计算必须通过computed函数来指定依赖**
+**`ObserverScopeRef.Depends`仅在异步计算时生效,而异步计算必须通过computed函数来指定依赖**
 :::
  
 ```tsx
@@ -292,7 +292,7 @@ export default ()=>{
  * title: <字符串数组>
  * description: scope==<字符串数组>
  */
-import { createStore,computed,ComputedScopeRef  } from '@autostorejs/react'; 
+import { createStore,computed,ObserverScopeRef  } from '@autostorejs/react'; 
 
 const state = {
   user:{
@@ -305,7 +305,7 @@ const state = {
       ['user.firstName','user.lastName'], 
     {      
       async:true,
-      scope:ComputedScopeRef.Depends
+      scope:ObserverScopeRef.Depends
     }) 
   }
 } 

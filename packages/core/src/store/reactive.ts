@@ -1,8 +1,8 @@
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
 import { StateOperates } from './types'; 
-import { CyleDependError } from '../errors';
-import { ComputedState } from '../descriptor'; 
+import { CyleDependError } from '../errors'; 
+import { ComputedState } from '../types';
 
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -65,8 +65,12 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
             let success = Reflect.set(obj, prop, value, receiver);
             if(prop === __NOTIFY__) return true  
             if (success && prop!==__NOTIFY__ && value!==oldValue) {
-                const path = [...parentPath, String(prop)];
-                options.notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});                  
+                if(Array.isArray(obj)){
+                    options.notify({type: 'update', path:parentPath,indexs: [Number(prop)], value, oldValue, parentPath, parent:obj});                  
+                }else{
+                    const path = [...parentPath, String(prop)];
+                    options.notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});                  
+                }                
             }
             return success;
         },

@@ -1,5 +1,5 @@
 import { test,expect, describe,} from "vitest"
-import { AutoStore,ComputedScopeRef,computed } from "../.."
+import { AutoStore,ObserverScopeRef,computed } from "../.."
  
 describe("异步计算函数的Scope指向",()=>{
 
@@ -34,7 +34,7 @@ describe("异步计算函数的Scope指向",()=>{
                         },['order.price','order.count']) 
                     }
                 },{
-                    scope:()=>ComputedScopeRef.Root
+                    scope:()=>ObserverScopeRef.Root
                 })
             
             store.state.order.total // 读取操作时创建计算属性
@@ -58,7 +58,7 @@ describe("异步计算函数的Scope指向",()=>{
                         }
                     }
                 },{
-                    scope:()=>ComputedScopeRef.Parent
+                    scope:()=>ObserverScopeRef.Parent
                 })
             
             store.state.root.parent.order.total // 读取操作时创建计算属性
@@ -85,7 +85,7 @@ describe("异步计算函数的Scope指向",()=>{
                         }
                     }
                 },{
-                    scope:()=>ComputedScopeRef.Depends
+                    scope:()=>ObserverScopeRef.Depends
                 })            
             store.state.root.parent.order.total // 读取操作时创建计算属性
         }) 

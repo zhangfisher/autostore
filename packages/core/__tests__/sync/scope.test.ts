@@ -1,5 +1,5 @@
 import { test,expect, describe } from "vitest"
-import { AutoStore,ComputedScopeRef,computed } from "../.."
+import { AutoStore,ObserverScopeRef,computed } from "../.."
 
 describe("同步计算函数Scope指向",()=>{
 
@@ -42,7 +42,7 @@ describe("同步计算函数Scope指向",()=>{
                             }) 
                         }
                     },{
-                        scope:()=>ComputedScopeRef.Root
+                        scope:()=>ObserverScopeRef.Root
                     })
                 
                 store.state.order.total // 读取操作时创建计算属性
@@ -66,7 +66,7 @@ describe("同步计算函数Scope指向",()=>{
                             }
                         }
                     },{
-                        scope:()=>ComputedScopeRef.Parent
+                        scope:()=>ObserverScopeRef.Parent
                     })
                 
                 store.state.root.parent.order.total // 读取操作时创建计算属性
@@ -91,7 +91,7 @@ describe("同步计算函数Scope指向",()=>{
                             }
                         }
                     },{
-                        scope:ComputedScopeRef.Depends
+                        scope:ObserverScopeRef.Depends
                     })            
                 store.state.root.parent.order.total // 读取操作时创建计算属性
             }) 
@@ -240,7 +240,7 @@ describe("同步计算函数Scope指向",()=>{
                     firstName: 'zhang',
                     lastName: 'fisher',
                     fullName: computed((scope:any) => `${scope.user.firstName} ${scope.user.lastName}`,{
-                        scope:ComputedScopeRef.Root
+                        scope:ObserverScopeRef.Root
                     })
                 }                
             });
@@ -256,7 +256,7 @@ describe("同步计算函数Scope指向",()=>{
                             firstName: 'zhang',
                             lastName: 'fisher',
                             fullName: computed((admin:any) => `${admin.user.firstName} ${admin.user.lastName}`,{
-                                scope:ComputedScopeRef.Parent
+                                scope:ObserverScopeRef.Parent
                             })
                         }                
                     }                

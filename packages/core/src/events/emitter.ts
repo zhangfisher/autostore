@@ -114,10 +114,10 @@ export class EventEmitter<Events extends Record<EventType, unknown>>{
      * 可以指定超时时间
      */
     wait<T extends keyof Events >(filter:(type:T,event:Events[T])=>boolean | undefined | void,timeout?:number):Promise<Events[T]>
-    wait<T extends keyof Events>(event:T,timeout?:number):Promise<Events[T]>
+    wait<T extends keyof Events>(type:T,timeout?:number):Promise<Events[T]>
     wait<T extends keyof Events>():Promise<Events[T]>{
         const firstType = typeof(arguments[0]) 
-        const eventType = firstType==='string' ? firstType : undefined
+        const eventType = firstType==='string' ? arguments[0] : undefined
         const timeout = arguments[1] || 0
         const filter = firstType==='function' ? firstType : undefined
         let timeId:any 
