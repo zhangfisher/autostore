@@ -62,7 +62,7 @@ import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
 import { forEachObject, getVal } from "../utils";
-import { PATH_DELIMITER } from "../consts";
+import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
 import { getObserverDescriptor } from "../computed/utils";
 import { AsyncComputedObject } from "../computed/async";
@@ -71,16 +71,22 @@ import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
 import { EventEmitter, EventListener } from "../events"; 
-  
+import { isPromise } from "../utils/isPromise";
+
+export type BatchChangeEvent= '__batch_update__'
+export type StateChangeEvents = Record<string,StateOperateParams>
+
+
+
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
     public watchObjects: WatchObjects<State>      
-    protected _changesets = new EventEmitter<Record<string,StateOperateParams>>()  // FlexEvent<StateOperateParams> = new FlexEvent<StateOperateParams>({wildcard:true,delimiter:"."})    // 依赖变更事件触发器
+    protected _changesets = new EventEmitter<StateChangeEvents>()                    // 依赖变更事件触发器
     private _options: Required<AutoStoreOptions<State>>
-    private _silenting = false                          // 是否静默更新，不触发事件
-    private _batching = false                           // 是否批量更新中
-    private _batchOperates:StateOperateParams[] = []    // 暂存批量操作
+    private _silenting = false                                                  // 是否静默更新，不触发事件
+    private _batching = false                                                   // 是否批量更新中
+    private _batchOperates:StateOperateParams[] = []                            // 暂存批量操作
     private _peeping:boolean = false
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
@@ -174,7 +180,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const listener = isWatchAll ? arguments[0] : arguments[1]
 
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
-            return (data:StateOperateParams)=>{            
+            return (data:StateOperateParams)=>{                            
                 if(operates==='*'){
                 }else if(operates==='write'){
                     if(data.type==='get') return
@@ -194,8 +200,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             return this.changesets.onAny(handler) 
         }else{ // 只侦听指定路径
             const keyPaths = arguments[0] as string | (string|string[])[]
-            const paths:string[] = Array.isArray(keyPaths) ? 
-                keyPaths.map(v=>typeof(v)==='string'? v : v.join(PATH_DELIMITER)) : [keyPaths]
+            const paths:string[] = Array.isArray(keyPaths) ? keyPaths.map(v=>typeof(v)==='string'? v : v.join(PATH_DELIMITER)) : [keyPaths]
             const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[2]) as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.changesets.once.bind(this.changesets) : this.changesets.on.bind(this.changesets)
             const listeners:EventListener[]=[]
@@ -368,7 +373,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             if(batch) this._batching = true
             if(peep) this._peeping = true
             try{
-                fn(this.state)
+                const r = fn(this.state)
+                if(batch && isPromise(r)) throw new Error("Batch update method can't be async function")
             }finally{
                 this._silenting = false
                 this._batching = false
@@ -376,7 +382,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 if(this._batchOperates.length>0){
                     this._batchOperates.forEach(operate=>this._notify(operate))
                     try{
-                        this._notify({type:'batch',path:[],value:undefined,opertaes:this._batchOperates})
+                        this._notify({type:'batch',path:[BATCH_UPDATE_EVENT],value:undefined})
+                        //this.changesets.emit('$$batchUpdate',{type:'batch',path:[],value:undefined})
                     }finally{
                         this._batchOperates = []
                     }

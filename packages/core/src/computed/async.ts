@@ -123,6 +123,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			this._isComputedRunning = false;
 		}
 	}
+
+
+	watch1(){
+
+		
+
+	}
+
 	/**
 	 * computed(async (scope,{getProgressbar})=>{
 	 *    const pbar = getProgressbar({max:100,min:0}) // 初始值

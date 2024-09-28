@@ -16,7 +16,6 @@ export type StateOperateParams<T=any,P=any> = {
     oldValue?  : T,
     parentPath?: string[],
     parent?    : P
-    opertaes?  : StateOperateParams[]    //type=batch当触发批量更新操作时，会将所有操作放在这个数组中
 }
  
 
