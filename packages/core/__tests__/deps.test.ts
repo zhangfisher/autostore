@@ -39,16 +39,16 @@ describe("依赖关系管理",()=>{
         // ])
         store.state.sync.a = 2
     })   
-    test("创建异步依赖关系链",()=>{ 
+    test("异步依赖关系链计算",()=>{ 
         return new Promise<void>((resolve)=>{
             const store = new AutoStore({ 
                 a0: 10,
                 a1: computed(async (scope:any)=>{
                   return scope.a0 + 1
-                },["a0"],{initial:2}),
+                },["a0"],{initial:11}),
                 a2: computed(async (scope:any)=>{
                   return scope.a1.value + 1
-                },["a1"],{initial:3})
+                },["a1"],{initial:12})
             });
             (async ()=>{
                 store.on('computed:done',(event)=>{
@@ -62,7 +62,7 @@ describe("依赖关系管理",()=>{
             })()
           })
     })   
-    test("创建依赖关系链",()=>{
+    test("同步依赖链计算",()=>{
         const store = new AutoStore({ 
             sync:{
                 a: 1,
