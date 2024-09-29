@@ -350,7 +350,7 @@ describe("使用update方法对同步计算属性进行更新",()=>{
         
     })  
 
-    test("使用update方法静默更新同步计算属性",async ()=>{
+    test("使用update方法静默更新同步计算属性",()=>{
         return new Promise<void>((resolve,reject)=>{
             // 静默更新指提不会触发事件,因此不会触发计算属性的重新计算,在进行初始化或特殊情况下可能需要
             const store = new AutoStore({
@@ -372,7 +372,7 @@ describe("使用update方法对同步计算属性进行更新",()=>{
             resolve()
         })
     })  
-    test("使用update方法批量更新同步计算属性",async ()=>{
+    test("使用update方法批量更新同步计算属性",()=>{
         return new Promise<void>((resolve)=>{
             const store = new AutoStore({
                 a:1,
@@ -397,27 +397,64 @@ describe("使用update方法对同步计算属性进行更新",()=>{
                         operate.path.join('.'),
                         operate.value
                     ])                                
-                }
-                
+                }                
             },{operates:"write"})     
-
             store.update(state=>{
                 state.a=2
                 state.b=3
                 state.c=4
                 state.d=5
             },{batch:true})
-            expect(events).toStrictEqual([
-                // 为什么这个事件会最先触发？
-                // 因为在update方法中的set事件会在update方法执行完成后再触发，而total的set事件不受影响，所以会先触发
-                ["set","total","14"],  
-                ["set","a","2"],
-                ["set","b","3"],
-                ["set","c","4"],
-                ["set","d","5"],
+            // 为什么这个事件会最先触发？有点反直觉，不应该是先set a=2，再派生出set total=14吗？
+            // 问题比较复杂 , 在事件触发时*优先级在后
+            // 1. 首先，total:computed和store.watch先后订阅事件，其中total:computed先订阅
+            // 2. 在执行store.update时不会触发total:computed的计算，因为是批量更新，但是事实上a,b,c,d均已变成新值了
+            //    只不过是没有触发事件,所以此时total还没有重新计算
+            // 3. 执行完store.update后，会依次触发a,b,c,d的set事件，
+            ///   在触发set a事件时，由于total:computed订阅在先，而store.watch(*)订阅在后,因此就会先触发total:computed的计算
+            //    计算完成后就会set total=14(此时a=2,b=2,c=3,d=4)，响应完totla的set事件后，才会触发store.watch的事件
+            //  因此就有了以下的结果
+            expect(events).toStrictEqual([                
+                ["set","total",14],  
+                ["set","a",2],
+                ["set","b",3],
+                ["set","c",4],
+                ["set","d",5],
                 ['batch','__batch_update__',["a","b","c","d"]]
-
             ]) 
+            resolve()
+        })
+    })  
+    test("使用update方法peep更新同步计算属性",()=>{
+        return new Promise<void>((resolve)=>{
+            // 静默更新指提不会触发事件,因此不会触发计算属性的重新计算,在进行初始化或特殊情况下可能需要
+            const store = new AutoStore({
+                price:2,
+                count:3,
+                total:computed((scope)=>{
+                    return  scope.price * scope.count
+                })
+            })
+            const events:any[]=[]
+            store.watch((operate)=>{
+                events.push([
+                    operate.type,
+                    operate.path.join('.'),
+                    operate.value
+                ])                
+            },{operates:"*"})     
+            store.update(state=>{
+                state.count = 4
+            },{peep:true})          
+            expect(events).toStrictEqual([
+                ["set","total",8], 
+                ["set","count",4]  // 不是先set count = 4 ?              
+            ]) 
+
+            // set count = 4 --> set total = 8 
+            //              |--> store.watch    优先级低
+
+            resolve()
         })
     })  
 })

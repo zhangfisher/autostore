@@ -89,11 +89,20 @@ export class EventEmitter<Events extends Record<EventType, unknown>>{
     offAll(){
         this._emitter.all.clear()
     }
+    /**
+     * 订阅所有事件
+     * 
+     * @description
+     * 
+     * @param handler 
+     * @param before  将事件处理器添加到事件处理器列表的前面
+     * @returns 
+     */
     onAny(handler:AnyEventHandler<Events>){ 
         const phandler = (type:any,event:any)=>{
             handler(event,type)
         }
-        this._emitter.on('*',phandler)
+        this._emitter.on('*',phandler) 
         return {
             off:()=>this._emitter.off('*',phandler)
         }
