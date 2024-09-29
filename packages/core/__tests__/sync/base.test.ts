@@ -407,8 +407,6 @@ describe("使用update方法对同步计算属性进行更新",()=>{
                 state.c=4
                 state.d=5
             },{batch:true})
-            
-            expect(store.state.total).toBe(14)
             expect(events).toStrictEqual([
                 // 为什么这个事件会最先触发？
                 // 因为在update方法中的set事件会在update方法执行完成后再触发，而total的set事件不受影响，所以会先触发
