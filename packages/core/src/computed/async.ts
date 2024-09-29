@@ -78,9 +78,12 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		if(this.associated){			
 			updateObjectVal(this.store.state, this.path!, values);
 		}else{
-			Object.assign(this.value as object,values)
+			Object.assign(this.value as object,values)			
 		}		
   	}
+
+	
+
 	/**
 	 *
 	 * 运行计算函数

@@ -1,5 +1,6 @@
 import { test,expect, describe } from "vitest"
-import { AutoStore,ObserverScopeRef,computed } from "../.."
+import { AutoStore,computed } from "../.."
+import { ObserverScopeRef } from "../../src/observer/types"
 
 describe("同步计算函数Scope指向",()=>{
 

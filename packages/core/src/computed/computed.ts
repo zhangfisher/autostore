@@ -2,7 +2,7 @@ import { OBSERVER_DESCRIPTOR_BUILDER_FLAG,OBSERVER_DESCRIPTOR_FLAG } from "../co
 import { InvalidComputedArgumentsError } from "../errors";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { normalizeDeps } from "../utils/normalizeDeps";
-import { getDefaultComputedOptions } from "./utils";
+import { getDefaultComputedOptions } from "../utils/getDefaultComputedOptions";
 import {
 	AsyncComputedGetter,
 	ComputedDepends,

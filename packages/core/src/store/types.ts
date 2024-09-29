@@ -4,6 +4,9 @@ import { ObserverType } from "../observer/types"
 import { Dict } from "../types"
 import type { AutoStore } from "./store"
 
+export type BatchChangeEvent= '__batch_update__'
+export type StateChangeEvents = Record<string,StateOperateParams>
+
 export type StateOperates = 'get' | 'set' | 'delete'                   // 用于对象
                             | 'insert' | 'update' | 'remove'           // 用于数组  
                             | 'batch'                                  // 批量操作

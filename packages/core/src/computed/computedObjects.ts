@@ -7,7 +7,7 @@ import { SyncComputedObject } from "./sync"
 import { AsyncComputedGetter, ComputedDepends, ComputedDescriptor,  ComputedGetter, ComputedOptions, RuntimeComputedOptions, SyncComputedOptions } from "./types"
 import { computed } from "./computed"
 import { isAbsolutePath } from "../utils/isAbsolutePath"
-import { isObserverDescriptor } from "./utils"
+import { isObserverDescriptor } from "../utils/isObserverDescriptor"
 import { PATH_DELIMITER } from "../consts"
 import { isPathEq } from "../utils"
 

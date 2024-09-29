@@ -1,7 +1,6 @@
 import { test,expect, describe } from "vitest"
 import { AutoStore,computed,  ComputedObject } from "../.." 
-import { CyleDependError } from "../../src/errors" 
- 
+import { CyleDependError } from "../../src/errors"  
 
 describe("同步计算属性的基本特性",()=>{
 
@@ -326,3 +325,101 @@ describe('同步计算函数的启用和禁用', () => {
     
 })
 
+describe("使用update方法对同步计算属性进行更新",()=>{
+
+    test("使用update方法更新同步计算属性",()=>{
+        return new Promise<void>((resolve)=>{
+            const store = new AutoStore({
+                price:2,
+                count:3,
+                total:computed((scope)=>{
+                    return  scope.price * scope.count
+                })
+            })
+            store.watch("count",(operate)=>{
+                expect(operate.type).toBe("set")    
+                expect(operate.value).toBe(4)
+                expect(operate.path).toEqual(["count"])
+                resolve()
+            },{operates:"write"})            
+            store.update(state=>{
+                state.count = 4
+            })
+            expect(store.state.total).toBe(8)
+        })
+        
+    })  
+
+    test("使用update方法静默更新同步计算属性",async ()=>{
+        return new Promise<void>((resolve,reject)=>{
+            // 静默更新指提不会触发事件,因此不会触发计算属性的重新计算,在进行初始化或特殊情况下可能需要
+            const store = new AutoStore({
+                price:2,
+                count:3,
+                total:computed((scope)=>{
+                    return  scope.price * scope.count
+                })
+            })
+            store.watch("count",()=>{
+                reject()
+            },{operates:"write"})     
+            store.update(state=>{
+                state.count = 4
+            },{silent:true})
+            // 由于静默更新count，导致不会触发count的set事件
+            // 而total又依赖count的set事件来重新计算，所以total的值不会变成8
+            expect(store.state.total).toBe(6)
+            resolve()
+        })
+    })  
+    test("使用update方法批量更新同步计算属性",async ()=>{
+        return new Promise<void>((resolve)=>{
+            const store = new AutoStore({
+                a:1,
+                b:2,
+                c:3,
+                d:4,
+                total:computed((scope)=>{
+                    return  scope.a + scope.b + scope.c + scope.d
+                })
+            })
+            const events:string[][]=[]
+            store.watch((operate)=>{
+                if(operate.type==="batch"){
+                    events.push([
+                        operate.type,   
+                        operate.path.join('.'),
+                        operate.value.map((item:any)=>item.path.join('.'))
+                    ])
+                }else{
+                    events.push([
+                        operate.type,
+                        operate.path.join('.'),
+                        operate.value
+                    ])                                
+                }
+                
+            },{operates:"write"})     
+
+            store.update(state=>{
+                state.a=2
+                state.b=3
+                state.c=4
+                state.d=5
+            },{batch:true})
+            
+            expect(store.state.total).toBe(14)
+            expect(events).toStrictEqual([
+                // 为什么这个事件会最先触发？
+                // 因为在update方法中的set事件会在update方法执行完成后再触发，而total的set事件不受影响，所以会先触发
+                ["set","total","14"],  
+                ["set","a","2"],
+                ["set","b","3"],
+                ["set","c","4"],
+                ["set","d","5"],
+                ['batch','__batch_update__',["a","b","c","d"]]
+
+            ]) 
+        })
+    })  
+})

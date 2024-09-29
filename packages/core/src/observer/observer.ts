@@ -23,20 +23,6 @@ import {  Watcher, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
 
 
-
-export type ReactiveObjectOptipons<Value=any> = {
-    id?     : string
-    path?   : string[]
-    enable? : boolean
-    group?  : string
-    initial?: Value
-}
-
-
-export type IDescriptorEvents<Value=any> = {
-    change:Value
-}
-
 export class ObserverObject<
     Value=any, 
     Options extends ObserverOptions<Value>= ObserverOptions<Value>>{    
@@ -150,6 +136,9 @@ export class ObserverObject<
      * 
      * 当计算结果值发生变化时触发
      * 
+     
+     * 
+     * 
      * @example
      * 
      * const computedObj = store.computedObject.get("xxx")
@@ -157,6 +146,17 @@ export class ObserverObject<
      *      
      * })
      * 
+     * 
+     * 
+     * @param options 
+     * @param  {boolean}  options.expand - 是否扩展侦听范围到子对象，当value是一个object时使用
+     * 
+     * 当Observer对象的值是一个对象时，如异步计算对象value={value,loading,timeout,....}     
+     * 则.watch((val)=>{....})这里正常返回的应该是value.value
+     * 如果需要侦听value对象的所有属性变化，则需要设置expand=true,此时侦听的就是`path.*`的变化
+     * 由于changesets支持通配符，所以就可以侦听到所成员属性的变化
+     * 
+     * @returns 
      */
     watch(listener:(value:Value)=>void,options?:WatchListenerOptions){
         return this.store.watch(this.getValueWatchPath(),({value})=>{

@@ -52,7 +52,7 @@
  
 import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
-import type { AutoStoreOptions, StateOperateParams, UpdateOptions } from "./types";
+import type { AutoStoreOptions, StateChangeEvents, StateOperateParams, UpdateOptions } from "./types";
 import type { Dict } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
@@ -64,7 +64,6 @@ import { StoreEvents } from "../events/types";
 import { forEachObject, getVal } from "../utils";
 import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
-import { getObserverDescriptor } from "../computed/utils";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects"; 
 import { WatchObject } from "../watch/watchObject";
@@ -72,9 +71,7 @@ import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
 import { EventEmitter, EventListener } from "../events"; 
 import { isPromise } from "../utils/isPromise";
-
-export type BatchChangeEvent= '__batch_update__'
-export type StateChangeEvents = Record<string,StateOperateParams>
+import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 
 
 
@@ -139,10 +136,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      */
     _notify(params:StateOperateParams) {          
         if(this._peeping && params.type=='get') return    // 偷看时不触发事件
-        if(this._silenting) return
         if(this._batching){
             this._batchOperates.push(params)
         }
+        if(this._silenting) return        
         this.changesets.emit(params.path.join(PATH_DELIMITER),params)       
     } 
 
@@ -282,9 +279,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      * @description
      * 
-     * 正常情况下可以通过store.state.xxx.xxx='xxxx'来更新状态，同时会触发事件
+     * 正常情况下可以通过store.state.xxx.xxx='xxxx'来更新状态，同时会触发事件，通过侦听事件可以用来实现
+     * 计算属性的重新计算
      * 
-     * 而通过store.update(fn)来更新则不会触发更新事件
+     * 静默更新时则指不会触发事件,也因此不会触发计算属性的重新计算,
+     * 
+     * 因此，可能会干扰正常的计算依赖情况，所以只在特殊情况下使用, 比如初始化
      * 
      * @example
      * 
@@ -367,10 +367,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @param {boolean} [options.silent=false] - 是否静默更新，默认为 false
      */
     update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions){
-        const {batch=true,silent=false,peep=false} = Object.assign({},options)
+        const {batch=false,silent=false,peep=false} = Object.assign({},options)
         if(typeof(fn)==='function'){                        
             if(silent) this._silenting=true
-            if(batch) this._batching = true
+            if(batch) {
+                this._batching = true
+                this._silenting = true       // 批量时肯定是静默更新的
+            }
             if(peep) this._peeping = true
             try{
                 const r = fn(this.state)
@@ -380,10 +383,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 this._batching = false
                 this._peeping = false
                 if(this._batchOperates.length>0){
+                    // 先分别触发每一个操作事件,这样一些依赖于单个操作的事件可以先触发
                     this._batchOperates.forEach(operate=>this._notify(operate))
-                    try{
-                        this._notify({type:'batch',path:[BATCH_UPDATE_EVENT],value:undefined})
-                        //this.changesets.emit('$$batchUpdate',{type:'batch',path:[],value:undefined})
+                    // 然后再触发批量更新事件
+                    try{                        
+                        this.changesets.emit(BATCH_UPDATE_EVENT,{type:'batch',path:[BATCH_UPDATE_EVENT],value:this._batchOperates})
                     }finally{
                         this._batchOperates = []
                     }

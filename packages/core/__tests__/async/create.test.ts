@@ -111,6 +111,21 @@ describe("动态创建异步计算属性",()=>{
         }) 
     })
 
-
+    test("侦听动态异步计算属性的变更事件",()=>{
+        return new Promise<void>(resolve=>{
+            const store = new AutoStore({
+                price:2,
+                count:3
+            })
+            const obj = store.computedObjects.create(async (state:any)=>{
+                return state.price * state.count
+            },["price","count"])
+            obj.watch((value)=>{
+                expect(value).toBe(8)    
+                resolve()    
+            })
+            store.state.count = 4
+        }) 
+    })
 
 })

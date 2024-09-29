@@ -10,13 +10,10 @@ export enum  ObserverScopeRef{
     Self    = 'SELF'                    // 指向自身，默认值
 } 
 
-
+  
 // 动态依赖匹配
 export type ObserverDependMatcher<Value=any> = (path:string[],value:Value)=>boolean
-
-// export type ObserverDepends<Value=any> = (string | string[] | 'CURRENT' | 'ROOT' | 'PARENT' )[] 
-//                             | ObserverDependMatcher<Value>
-
+ 
 export type ObserverDepends = (string | string[])[]
 
 export type ObserverScope = string | string[] | 'SELF'  | 'CURRENT' | 'ROOT' | 'PARENT'
@@ -31,7 +28,7 @@ export interface ObserverDescriptor<
     Getter = ObserverDescriptorGetter<Value,Scope>,
     Options extends ObserverOptions<Value> = ObserverOptions<Value>
     >{
-        type: T
+        type  : T
         getter: Getter
         options: Options
     }
