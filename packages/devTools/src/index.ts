@@ -18,19 +18,21 @@
 
 import { createStore } from "redux"
  
-
 const initialState = {}
- 
- 
-class AutoStoreDevTools{
+
+
+export class AutoStoreDevTools{
     private reduxStore:any
-    stores:any[] = []    
+    private _installed:boolean = false
+    stores = new WeakMap()
+
     constructor(){
         this.install()
     }
-    add(store:any){        
+    add(store:any){      
+        this.stores.set(store,true)  
         this.stores.push(store)
-        store.changesets.onAny((payload,type)=>{
+        store.changesets.onAny((payload:any,type:any)=>{
             this.reduxStore.dispatch({
                 type,
                 store,
@@ -45,13 +47,14 @@ class AutoStoreDevTools{
         }
     }
 
-    private reducer(state = initialState, action){
+    private reducer(state:object = initialState, action:any){
         return {
             ...state,
             [action.store.id]:{...action.store.state}
         }
     }
     private install(){
+        if(this._installed) return 
         this.reduxStore = createStore(
             this.reducer,
             // @ts-ignore
@@ -60,6 +63,7 @@ class AutoStoreDevTools{
         this.stores.forEach((store)=>{
             this.add(store)
         })
+        this._installed = true
     }
 }
 
@@ -68,5 +72,5 @@ export function install(){
 } 
 
 declare global{
-    var __AUTO_STORES__ : any
+    var __AUTO_STORES__ : AutoStoreDevTools
 }

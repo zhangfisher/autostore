@@ -46,7 +46,4 @@ export type RequiredComputedState<T extends Record<string, any>> = {
 
 
 
-
-declare global{
-    var __AUTO_STORES__ : any
-}
+ 

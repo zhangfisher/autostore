@@ -61,27 +61,16 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				console.log("cancel");
 			})
 		});
-	}
-	/**
-	 * 
-	 * @param name 
-	 * @param values 
-	 */
-	private updateComputedValueItem(name:keyof AsyncComputedValue,value:any) {
-		if(this.associated){
-			updateObjectVal(this.store.state, [...this.path!, name], value);
-		}else{
-			(this.value as any)[name] = value
-		}
-	}	
-	private batchUpdateComputedValue(values: Partial<AsyncComputedValue>) {    		
+	} 
+	private updateComputedValue(values: Partial<AsyncComputedValue>) {    		
+		const batchEvent = `${this.path.join(PATH_DELIMITER)}.__batch__`;
 		if(this.associated){			
 			this.store.update((state)=>{
 				updateObjectVal(state, this.path!, values);
-			},{batch:true})			
+			},{batch:batchEvent})			
 		}else{
 			Object.assign(this.value as object,values)		
-			this.store.changesets.emit(`${this.path}`,{type:"set",path:this.path,value:this.value})	
+			this.store.changesets.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
 		}		
   	}
 
@@ -140,19 +129,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * @param init
 	 * @returns
 	 */
-	private createComputeProgressbar(opts?: {
-		max?: number;
-		min?: number;
-		value?: number;
-	}): ComputedProgressbar {
+	private createComputeProgressbar(opts?: {max?: number;min?: number;value?: number;}): ComputedProgressbar {
 		const { max = 100, min = 0, value = 0 } = Object.assign({}, opts);
-		// setVal(this.store.state, [...this.path, "progress"], value);
-		this.updateComputedValueItem("progress", value);
+		this.updateComputedValue({"progress":value});
 		return {
 			value:(num: number)=>{
 				if (num > max) num = max;
 				if (num < min) num = min;
-				this.updateComputedValueItem("progress", num);
+				this.updateComputedValue({"progress":num});
 			},
 			end() {
 				this.value(max);
@@ -209,7 +193,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		let hasAbort = false; // 是否接收到可中止信号
 
 		// 配置可中止信号，以便可以取消计算
-		this.batchUpdateComputedValue({
+		this.updateComputedValue({
 			cancel: markRaw(() => abortController.abort())
 		});
 		// 侦听中止信号，以便在中止时能停止
@@ -232,7 +216,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					? timeout
 					: [timeout, 0];
 
-				this.batchUpdateComputedValue({
+				this.updateComputedValue({
 					loading : true,
 					error   : null,
 					retry   : i > 0 ? retryCount - i + 1 : 0,
@@ -251,7 +235,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 						if (typeof timeoutCallback === "function") timeoutCallback();
 						if (!hasError) {
 							clearInterval(countdownId);
-							this.batchUpdateComputedValue({
+							this.updateComputedValue({
 								loading: false,
 								error  : "TIMEOUT",
 								timeout: 0,
@@ -261,7 +245,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					// 启用设置倒计时:  比如timeout= 6*1000, countdown= 6
 					if (countdown > 1) {
 						countdownId = setInterval(() => {
-							this.batchUpdateComputedValue({
+							this.updateComputedValue({
 								timeout: countdown--,
 							});
 							if (countdown === 0) clearInterval(countdownId);
@@ -294,7 +278,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				if(retryCount>0 && i===retryCount){
 					Object.assign(afterUpdated, { retry: 0 }); 
 				}
-				this.batchUpdateComputedValue(afterUpdated);
+				this.updateComputedValue(afterUpdated);
 			}
 			// 重试延迟
 			if (hasError) {// 最后一次不延迟				

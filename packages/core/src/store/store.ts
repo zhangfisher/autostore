@@ -103,9 +103,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         })  
         this.emit("created",this)       
         if(!this._options.lazy) forEachObject(this._data)
-        if(this._options.debug) {        
-            if(!globalThis.__AUTO_STORES__) globalThis.__AUTO_STORES__ = []
-            globalThis.__AUTO_STORES__.push(this)
+        // @ts-ignore
+        if(this._options.debug && !globalThis.__AUTO_STORES__) {                    
+            // @ts-ignore
+            globalThis.__AUTO_STORES__.add(this)
         }
     }
     get id(){return this._options.id}
@@ -384,8 +385,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                     // 先分别触发每一个操作事件,这样一些依赖于单个操作的事件可以先触发
                     this._batchOperates.forEach(operate=>this._notify(operate))
                     // 然后再触发批量更新事件
-                    try{                        
-                        this.changesets.emit(BATCH_UPDATE_EVENT,{type:'batch',path:[BATCH_UPDATE_EVENT],value:this._batchOperates})
+                    try{          
+                        const batchEvent = batch===true ? BATCH_UPDATE_EVENT : String(batch)
+                        this.changesets.emit(batchEvent,{type:'batch',path:[batchEvent],value:this._batchOperates})
                     }finally{
                         this._batchOperates = []
                     }
