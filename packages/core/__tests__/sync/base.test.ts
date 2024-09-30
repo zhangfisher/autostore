@@ -405,18 +405,16 @@ describe("使用update方法对同步计算属性进行更新",()=>{
                 state.c=4
                 state.d=5
             },{batch:true})
-            // 为什么这个事件会最先触发？有点反直觉，不应该是先set a=2，再派生出set total=14吗？
-            // 问题比较复杂 , 在事件触发时*优先级在后
-            // 1. 首先，total:computed和store.watch先后订阅事件，其中total:computed先订阅
-            // 2. 在执行store.update时不会触发total:computed的计算，因为是批量更新，但是事实上a,b,c,d均已变成新值了
-            //    只不过是没有触发事件,所以此时total还没有重新计算
-            // 3. 执行完store.update后，会依次触发a,b,c,d的set事件，
-            ///   在触发set a事件时，由于total:computed订阅在先，而store.watch(*)订阅在后,因此就会先触发total:computed的计算
-            //    计算完成后就会set total=14(此时a=2,b=2,c=3,d=4)，响应完totla的set事件后，才会触发store.watch的事件
-            //  因此就有了以下的结果
-            expect(events).toStrictEqual([                
-                ["set","total",14],  
+            // 为什么只接收到一条["set","total",14], 而不是
+            // ["set","a",2],["set","total",14],["set","b",3],["set","total",14],["set","c",4],["set","total",14],["set","d",5],["set","total",14]?
+            // 因为在batch update方法里面，a,b,c,d的值已经被更新，但是没有触发事件，所以total的值也没有被重新计算
+            // 在batch update后，会分别触发set a ,set b ,set c,set d事件
+            // 当set a时，会触发total的重新计算，所以只会接收到一条["set","total",14]
+            // 然后在set b/c/d时，由于total的值没有变化，所以就不会触发total的重新计算,所以不会接收到["set","total",14]
+            // 重点：响应式系统当数据变更时会进行newValue和oldValue的对比，如果相同就不会触发事件
+            expect(events).toStrictEqual([                                
                 ["set","a",2],
+                ["set","total",14],  // 为什么只接收到一条？ 
                 ["set","b",3],
                 ["set","c",4],
                 ["set","d",5],
@@ -447,8 +445,8 @@ describe("使用update方法对同步计算属性进行更新",()=>{
                 state.count = 4
             },{peep:true})          
             expect(events).toStrictEqual([
-                ["set","total",8], 
-                ["set","count",4]  // 不是先set count = 4 ?              
+                ["set","count",4],  
+                ["set","total",8],
             ]) 
 
             // set count = 4 --> set total = 8 

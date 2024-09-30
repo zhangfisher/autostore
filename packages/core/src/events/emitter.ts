@@ -1,12 +1,10 @@
-import mitt, { Emitter, EventType } from "mitt";
 import { PATH_DELIMITER } from "../consts";
-
-export type EventHandler<T> = (event:T)=>void
-export type AnyEventHandler<T extends Record<string, unknown>> = (event: T[keyof T], type: keyof T) => void;
-export type EventListener = { off:()=>void }
 
 const Delimiter = PATH_DELIMITER
 
+export type EventHandler<T,P> = (payload:P,type:T)=>void
+export type EventListener = { off:()=>void }
+export type EventHandlerList = Array<EventHandler<any,any>>; 
 
 /**
  * 判断事件是否匹配指定的通配符
@@ -25,14 +23,14 @@ const Delimiter = PATH_DELIMITER
  * isEventMatched("a.b.c","a.*.d") == false
  * isEventMatched("a.b.c","**") == true
  * 
- * @param event 
+ * @param type 
  * @param pattern 
  * @returns 
  */
-export function isEventMatched(event:string,pattern:string){
+export function isEventMatched(type:string,pattern:string){
     if(!pattern) return true
     if(pattern==='**') return true    
-    const eventParts = event.split(Delimiter)
+    const eventParts = type.split(Delimiter)
     const patternParts = pattern.split(Delimiter)
     if(eventParts.length !== patternParts.length) return false
     for(let i=0;i<patternParts.length;i++){
@@ -42,9 +40,17 @@ export function isEventMatched(event:string,pattern:string){
     return true
 }
 
-export class EventEmitter<Events extends Record<EventType, unknown>>{    
-    private _emitter:Emitter<Events> = mitt()
-    get listeners(){ return this._emitter.all }
+type EventDefines = {
+    [key:string]:any    
+}
+
+export class EventEmitter<
+    Events extends EventDefines
+>{     
+    private _listeners = new Map< keyof Events,EventHandlerList>()
+    
+    get listeners(){ return this._listeners }
+
     /**
      * 订阅事件
      * 
@@ -56,38 +62,75 @@ export class EventEmitter<Events extends Record<EventType, unknown>>{
      * @param handler 
      * @returns 
      */
-    on<T extends keyof Events>(type: T, handler: EventHandler<Events[T]>):EventListener{
-        if(String(type).includes('*')){  // 订阅时包含了通配符     
-            this._emitter.on('*',(eventtype,event)=>{
-                if(isEventMatched(eventtype as string,type as any)){
-                    handler(event as Events[T])
+    
+    on<T extends keyof Events>(type: T, handler: EventHandler<T,Events[T]>,prepend ?:boolean):EventListener
+    on<P=any>(type: '**', handler: EventHandler<keyof Events,P>,prepend ?:boolean):EventListener
+    on():EventListener{
+        const type = arguments[0]
+        const handler = arguments[1]
+        const prepend = arguments[2]
+        let phandler = handler
+        // 当订阅时包含了通配符时，就需要订阅所有事件，然后在事件触发时判断是否匹配
+        if(type==='**'){
+            this.addHandler("*",phandler,prepend)
+        }else if(String(type).includes('*')){  
+            phandler = (payload:any,etype:any)=>{
+                if(isEventMatched(etype as string,type as any)){
+                    handler(payload,etype)
                 }
-            })
+            }
+            this.addHandler("*",phandler,prepend)
         }else{
-            this._emitter.on(type,handler)
-        }        
+            this.addHandler(type,phandler,prepend)
+        }               
         return {
-            off:()=>this._emitter.off(type,handler)
+            off:()=>this.off(type,phandler)
+        }
+    } 
+    /**
+     * 向指定类型的事件添加事件处理程序。
+     * @template T - 事件类型的键，必须是 Events 接口中的一个键。
+     * @param { keyof Events} type - 事件类型，必须是 Events 接口中的一个键。
+     * @param {EventHandler<Events[T]>} handler - 事件处理程序函数，它接受一个参数，该参数的类型是 Events 接口中对应 type 键的值的类型。
+     * @param {boolean} [prepend=false] - 可选参数，如果为 true，则将处理程序添加到列表的开头，否则添加到末尾。这会影响事件的触发顺序。
+     */
+    private addHandler<T extends  keyof Events>(type:  keyof Events, handler: EventHandler<T,Events[T]>,prepend ?:boolean){
+        const handlers: EventHandlerList | undefined = this._listeners.get(type);        
+        if (handlers) {
+            if(prepend){
+                handlers.unshift(handler) 
+            }else{
+                handlers.push(handler);
+            }            
+        } else {
+            this._listeners!.set(type, [handler]);
         }
     }
-    once<T extends keyof Events>(type: T, handler: EventHandler<Events[T]>) :EventListener{
-        const plistener =(data:Events[T]) => {
+
+    once<T extends  keyof Events>(type: T, handler: EventHandler<T,Events[T]>) :EventListener{
+        const plistener = (payload:Events[T],type:T) => {
             try{
-                handler(data)
+                handler(payload,type as T)
             }finally{            
-                this._emitter.off(type,plistener)
+                this.off(type,plistener)
+            }
+        }  
+        return this.on<T>(type,plistener)
+    }
+
+    off<T extends  keyof Events>(type: T, handler?: EventHandler<T,Events[T]> | undefined){ 
+        if(String(type).includes("*")) type="*" as any
+        const handlers: EventHandlerList | undefined = this._listeners.get(type);
+        if (handlers) {
+            if (handler) {
+                handlers.splice(handlers.indexOf(handler) >>> 0, 1);
+            } else {
+                this._listeners.set(type, []);
             }
         }
-        return this.on(type,plistener)
-    }
-    off<T extends keyof Events>(type: T, handler?: EventHandler<Events[T]> | undefined){ 
-        this._emitter.off<T>(type,handler) 
-    }
-    emit<T extends keyof Events>(type:T,event:Events[T]){ 
-        return this._emitter.emit(type,event)
-    }    
+    }  
     offAll(){
-        this._emitter.all.clear()
+        this._listeners.clear()
     }
     /**
      * 订阅所有事件
@@ -98,15 +141,10 @@ export class EventEmitter<Events extends Record<EventType, unknown>>{
      * @param before  将事件处理器添加到事件处理器列表的前面
      * @returns 
      */
-    onAny(handler:AnyEventHandler<Events>){ 
-        const phandler = (type:any,event:any)=>{
-            handler(event,type)
-        }
-        this._emitter.on('*',phandler) 
-        return {
-            off:()=>this._emitter.off('*',phandler)
-        }
+    onAny(handler:EventHandler<string,any>){ 
+        return this.on('**',handler) 
     }
+
     /**
      * 等待某个事件触发
      * 
@@ -122,28 +160,28 @@ export class EventEmitter<Events extends Record<EventType, unknown>>{
      * 
      * 可以指定超时时间
      */
-    wait<T extends keyof Events >(filter:(type:T,event:Events[T])=>boolean | undefined | void,timeout?:number):Promise<Events[T]>
-    wait<T extends keyof Events>(type:T,timeout?:number):Promise<Events[T]>
-    wait<T extends keyof Events>():Promise<Events[T]>{
-        const firstType = typeof(arguments[0]) 
-        const eventType = firstType==='string' ? arguments[0] : undefined
+    wait<T extends  keyof Events >(filter:(type:T,payload:Events[T])=>boolean | undefined | void,timeout?:number):Promise<Events[T]>
+    wait<T extends  keyof Events>(type:T,timeout?:number):Promise<Events[T]>
+    wait<T extends  keyof Events>():Promise<Events[T]>{
+        const firstArgType = typeof(arguments[0]) 
+        const eventType = firstArgType==='string' ? arguments[0] : undefined
         const timeout = arguments[1] || 0
-        const filter = firstType==='function' ? firstType : undefined
+        const filter = firstArgType==='function' ? firstArgType : undefined
         let timeId:any 
         return new Promise<any>((resolve,reject)=>{
             let listener:EventListener 
             if(eventType){
-                listener= this.once(eventType,(event)=>{
+                listener= this.once(eventType,(payload)=>{
                     clearTimeout(timeId)
-                    resolve(event)
+                    resolve(payload)
                 })
             }else if(typeof(filter)==='function'){
-                listener= this.onAny((event,type)=>{                    
-                    const r= (filter as any)(type,event)
+                listener= this.onAny((payload,type)=>{                    
+                    const r= (filter as any)(type,payload)
                     if(r!==false){
                         listener.off()
                         clearTimeout(timeId)                                                       
-                        resolve(event)
+                        resolve(payload)
                     }               
                 })
             }            
@@ -155,4 +193,23 @@ export class EventEmitter<Events extends Record<EventType, unknown>>{
             }            
         })
     }
+    emit<T extends keyof Events>(type:T,payload:Events[T]){ 
+        let handlers = this._listeners.get('*');
+        if (handlers) {
+            handlers.slice()
+                .map((handler) => {
+                    handler(payload,type );
+                })
+        }
+        handlers = this._listeners.get(type);
+        if (handlers) {
+            handlers.slice().map((handler) => {
+                handler(payload,type);
+            })
+        }
+    }
+    
+
 }
+
+ 

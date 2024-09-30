@@ -103,6 +103,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         })  
         this.emit("created",this)       
         if(!this._options.lazy) forEachObject(this._data)
+        if(this._options.debug) {        
+            if(!globalThis.__AUTO_STORES__) globalThis.__AUTO_STORES__ = []
+            globalThis.__AUTO_STORES__.push(this)
+        }
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
@@ -330,20 +334,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      * @example
      * 
-     * - 更新状态，并且在更新后触发批量变更事件
+     * - 批量更新
      * update((state)=>{
      *  state.a=xxx
      *  state.b=xxx
-     * })
-     * 
-     * 将函数执行后再一次性触发a,b的变更事件$batchUpdate事件
-     * 
-     * this.changesets.on('$batchUpdate',({
-     *      type, == 'batch'    批量更新事件
-     *      operates []         更新操作参数
-     * })=>{
-     * 
-     * 
+     * },{
+     *      batch:true           事件名称默认为__batch_update__
+     *      batch:"批量更新事件名称"， 
+     * ]}) 
      * 
      * @example
      * - 更新状态，并且每一次更新均会触发变更事件

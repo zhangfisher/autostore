@@ -74,11 +74,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			(this.value as any)[name] = value
 		}
 	}	
-	private batchUpdateComputedValue(values: Partial<AsyncComputedValue>) {    
+	private batchUpdateComputedValue(values: Partial<AsyncComputedValue>) {    		
 		if(this.associated){			
-			updateObjectVal(this.store.state, this.path!, values);
+			this.store.update((state)=>{
+				updateObjectVal(state, this.path!, values);
+			},{batch:true})			
 		}else{
-			Object.assign(this.value as object,values)			
+			Object.assign(this.value as object,values)		
+			this.store.changesets.emit(`${this.path}`,{type:"set",path:this.path,value:this.value})	
 		}		
   	}
 
@@ -125,13 +128,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		} finally {
 			this._isComputedRunning = false;
 		}
-	}
-
-
-	watch1(){
-
-		
-
 	}
 
 	/**

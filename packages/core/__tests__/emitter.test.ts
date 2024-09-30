@@ -41,17 +41,19 @@ describe("EventEmitter",()=>{
             emitter.on('a.b.c', listener);
             emitter.emit('a.b.c', 'test');
     
-            expect(listener).toHaveBeenCalledWith('test');
+            expect(listener).toHaveBeenCalledWith('test','a.b.c');
         });
     
         it('should call listener for wildcard event', () => {
             const emitter = new EventEmitter();
             const listener = vi.fn();
     
-            emitter.on('a.*.c', listener);
+            emitter.on('a.*.c',(payload,type)=>{
+                listener(payload,type)
+            });
             emitter.emit('a.b.c', 'test');
     
-            expect(listener).toHaveBeenCalledWith('test');
+            expect(listener).toHaveBeenCalledWith('test','a.b.c');
         });
     
         it('should not call listener for non-matching event', () => {
@@ -69,7 +71,7 @@ describe("EventEmitter",()=>{
             const listener = vi.fn();
             emitter.on('**', listener);
             emitter.emit('a.b.c', 'test');
-            expect(listener).toHaveBeenCalledWith('test');
+            expect(listener).toHaveBeenCalledWith('test','a.b.c');
         });
         
         it('应该正确处理空字符串模式', () => {
@@ -108,19 +110,19 @@ describe("EventEmitter",()=>{
     describe('EventEmitter onAny', () => {
         it('should call listener for any event', () => {
             const emitter = new EventEmitter();
-            const listener = vi.fn();
+            const handler = vi.fn();
     
-            const off = emitter.onAny(listener);
+            const listener = emitter.onAny(handler);
             emitter.emit('a.b.c', 'test');
             emitter.emit('a.b.d', 'test');
     
-            expect(listener).toHaveBeenCalledTimes(2);
-            expect(listener).toHaveBeenNthCalledWith(1, 'test',"a.b.c");
-            expect(listener).toHaveBeenNthCalledWith(2, 'test',"a.b.d");
+            expect(handler).toHaveBeenCalledTimes(2);
+            expect(handler).toHaveBeenNthCalledWith(1, 'test',"a.b.c");
+            expect(handler).toHaveBeenNthCalledWith(2, 'test',"a.b.d");
     
-            off.off();
+            listener.off();
             emitter.emit('a.b.c', 'test');
-            expect(listener).toHaveBeenCalledTimes(2);
+            expect(handler).toHaveBeenCalledTimes(2);
         });
     });
     

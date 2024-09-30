@@ -1,4 +1,5 @@
 import { AsyncComputed, AsyncComputedValue, Computed, ComputedDescriptorBuilder } from "./computed";
+import type { AutoStore } from "./store";
 import { WatchDescriptorBuilder } from "./watch/types";
 
  
@@ -40,3 +41,12 @@ export type ComputedState<T extends Record<string, any>> = {
 export type RequiredComputedState<T extends Record<string, any>> = {
 [K in keyof T]-?: Exclude<T[K],undefined> extends (...args:any) => any ? PickComputedResult<Exclude<T[K],undefined>> : Required<T[K]>extends Record<string, any> ? ComputedState<Exclude<T[K],undefined> > : Exclude<T[K],undefined> ;
 };
+
+
+
+
+
+
+declare global{
+    var __AUTO_STORES__ : any
+}

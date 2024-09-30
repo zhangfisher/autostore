@@ -156,7 +156,13 @@ export type AutoStoreOptions<State extends Dict> = {
 
 
 export type UpdateOptions = {
-    batch?:boolean,         // 执行批量更新操作，期间不会触发事件，等更新函数执行后再触发batch事件
+    /**
+     * 执行批量更新操作，期间不会触发事件，等更新函数执行后再触发batch事件
+     *  =false 不执行批量更新操作
+     *  =true  执行批量更新操作，批量更新事件名称为__batch_update__
+     *  <string> 执行批量更新操作，批量更新事件名称为指定的字符串
+     */
+    batch?:boolean | string,         
     silent?:boolean,        // 执行更新操作时，静默，不会触发任何事件
     peep?:boolean           // 执行更新操作时，不会触发GET事件
 }
