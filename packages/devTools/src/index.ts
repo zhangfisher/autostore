@@ -26,7 +26,7 @@ class AutoStoreDevTools{
     private reduxStore:any
     stores:any[] = []    
     constructor(){
-        this.start()
+        this.install()
     }
     add(store:any){        
         this.stores.push(store)
@@ -44,14 +44,14 @@ class AutoStoreDevTools{
             this.stores.splice(index,1)
         }
     }
-    
+
     private reducer(state = initialState, action){
         return {
             ...state,
             [action.store.id]:{...action.store.state}
         }
     }
-    private start(){
+    private install(){
         this.reduxStore = createStore(
             this.reducer,
             // @ts-ignore
