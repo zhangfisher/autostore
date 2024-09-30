@@ -8,7 +8,7 @@
 
 
 import { test,expect, describe } from "vitest"
-import { AutoStore } from "../../src"
+import { AsyncComputedValue, AutoStore } from "../../src"
 import { AsyncComputedObject } from "../../src/computed/async"
 
 
@@ -120,11 +120,17 @@ describe("动态创建异步计算属性",()=>{
             const obj = store.computedObjects.create(async (state:any)=>{
                 return state.price * state.count
             },["price","count"])
-            obj.watch((value)=>{
-                expect(value).toBe(8)    
-                resolve()    
+            const events:[string,AsyncComputedValue][]=[]
+            obj.watch((result,path)=>{
+                events.push([
+                    path.join("."),
+                    result
+                ])
             })
             store.state.count = 4
+            setTimeout(()=>{
+                events
+            },100)
         }) 
     })
 

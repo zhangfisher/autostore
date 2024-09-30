@@ -165,4 +165,14 @@ export type UpdateOptions = {
     batch?:boolean | string,         
     silent?:boolean,        // 执行更新操作时，静默，不会触发任何事件
     peep?:boolean           // 执行更新操作时，不会触发GET事件
+    /**
+     * 在批量更新结束后，会自动回放update(()=>{...})之间的所有操作事件
+     * 然后再触发一个__batch_update__事件
+     * 
+     * @description
+     * 
+     * =true 默认会回放所有操作事件
+     * =false 不会回放操作事件,仅会触发__batch_update__事件
+     */
+    reply?:boolean
 }

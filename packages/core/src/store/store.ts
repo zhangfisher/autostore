@@ -362,11 +362,16 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      * @param {function(ComputedState<State>): void} fn - 用于更新状态的函数,只能是同步函数
      * @param {Object} [options] - 可选参数
-     * @param {boolean} [options.batch=true] - 是否批量更新，默认为 true，变更事件在更新完成后触发
+     * @param {boolean} [options.batch=true] -  是否批量更新，=false 不批量更新，=true 批量更新，批量更新事件名称为__batch_update__，=<批量更新事件名称> 指定一个字符串
      * @param {boolean} [options.silent=false] - 是否静默更新，默认为 false
+     * @param {boolean} [options.peep=false] - 是否偷看，即读取状态值但不触发事件，默认为 false
+     * @param {boolean} [options.reply=false] - 当更新完成回放所有依赖的变化事件，默认为true，即回放所有依赖的变化事件，=false 不回放依赖的变化事件
+     *  比如update(state=>{
+     *      
+     *  })
      */
     update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions){
-        const {batch=false,silent=false,peep=false} = Object.assign({},options)
+        const {batch=false,reply=true,silent=false,peep=false} = Object.assign({},options)
         if(typeof(fn)==='function'){                        
             if(silent) this._silenting=true
             if(batch) {

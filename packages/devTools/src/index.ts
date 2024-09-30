@@ -17,6 +17,7 @@
  */
 
 import { createStore } from "redux"
+import { WeakObjectMap } from "./utils"
  
 const initialState = {}
 
@@ -24,14 +25,13 @@ const initialState = {}
 export class AutoStoreDevTools{
     private reduxStore:any
     private _installed:boolean = false
-    stores = new WeakMap()
+    stores = new WeakObjectMap()
 
     constructor(){
         this.install()
     }
     add(store:any){      
-        this.stores.set(store,true)  
-        this.stores.push(store)
+        this.stores.set(store.id,store)
         store.changesets.onAny((payload:any,type:any)=>{
             this.reduxStore.dispatch({
                 type,
@@ -40,10 +40,9 @@ export class AutoStoreDevTools{
             })
         })
     }
-    remove(store:any){
-        const index = this.stores.indexOf(store)
-        if(index!==-1){
-            this.stores.splice(index,1)
+    remove(store:any){        
+        if( this.stores.has(store.id)){
+            this.stores.delete(store.id)
         }
     }
 
@@ -59,10 +58,7 @@ export class AutoStoreDevTools{
             this.reducer,
             // @ts-ignore
             window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
-        );
-        this.stores.forEach((store)=>{
-            this.add(store)
-        })
+        );        
         this._installed = true
     }
 }

@@ -74,8 +74,8 @@ export class ObserverObject<
     set depends(value:string[][]){ this._depends = value }
     get getter(){ return this._getter}
     set getter(value){ this._getter= value  }   
+    toString(){ return `ObserverObject<${joinValuePath(this._path)}>` }
 
-    toString(){ return `ComputedDescriptorObject<${joinValuePath(this._path)}>` }
     get value(){ 
         if(this._associated){
             return getVal(this.store.state,this._path) 
@@ -158,16 +158,16 @@ export class ObserverObject<
      * 
      * @returns 
      */
-    watch(listener:(value:Value)=>void,options?:WatchListenerOptions){
-        return this.store.watch(this.getValueWatchPath(),({value})=>{
-            listener.call(this,value as Value)
+    watch(listener:(value:Value,path:string[])=>void,options?:WatchListenerOptions){
+        return this.store.watch(this.getValueWatchPath(),({value,path})=>{
+            listener.call(this,value as Value,path)
         },options)
     } 
     /**
      * 供子类重写，用来获取当前对象值的依赖路径
      * @returns 
      */
-    protected getValueWatchPath(){
+    protected getValueWatchPath():string | (string | string[])[]{
         return this.path!.join(PATH_DELIMITER)
     }
 

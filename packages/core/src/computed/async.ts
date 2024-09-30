@@ -23,6 +23,8 @@ import { ASYNC_COMPUTED_VALUE, PATH_DELIMITER } from "../consts";
 
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<AsyncComputedValue<Value>> {
 	private _isComputedRunning: boolean = false;
+	private _abortController: AbortController | null = null; 
+
 	get async() {return true}       
 	get value() {return super.value as AsyncComputedValue<Value>}
 	set value(value:AsyncComputedValue<Value>) {
@@ -58,18 +60,25 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				return this.store.computedObjects.run(this.id, Object.assign({}, args));
 			}),
 			cancel: markRaw(() => {
-				console.log("cancel");
+				
 			})
 		});
 	} 
+
 	private updateComputedValue(values: Partial<AsyncComputedValue>) {    		
-		const batchEvent = `${this.path.join(PATH_DELIMITER)}.__batch__`;
+		const batchEvent = `__${this.path.join(PATH_DELIMITER)}__`
 		if(this.associated){			
 			this.store.update((state)=>{
 				updateObjectVal(state, this.path!, values);
 			},{batch:batchEvent})			
 		}else{
 			Object.assign(this.value as object,values)		
+			Object.entries(values).forEach(([key,value])=>{
+				const spath = this.path.join(PATH_DELIMITER)
+				this.store.changesets.emit(
+					`${spath}.${key}`,
+					{type:"set",path:[spath,key],value:value,parent:this.value})
+			})
 			this.store.changesets.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
 		}		
   	}
@@ -168,38 +177,38 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			scope,
 		});
 	}
+	private getAbortController() {
+		if(!this._abortController) this._abortController = new AbortController()
+		if(this._abortController.signal.aborted) this._abortController = new AbortController()
+		return this._abortController
+	}
 	/**
 	 * 执行计算函数
 	 *
 	 */
 	private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
-		const { timeout = 0, retry = [0, 0] } = options;
+		const { timeout = 0, retry = [0, 0],abortController:getAbortController } = options;
 
 		const [retryCount, retryInterval] = Array.isArray(retry) ? retry : [Number(retry), 0];
 
 		let timeoutCallback: Function;
 
-		const abortController = new AbortController();
+
+		let abortController = (getAbortController && getAbortController()) || this.getAbortController();
 
 		const getterArgs: Required<AsyncComputedGetterArgs> = {
 			onTimeout     : (cb: Function) => (timeoutCallback = cb),
 			getProgressbar: this.createComputeProgressbar.bind(this),
-			getSnap       : (scope: any) => getSnap(scope),
-			abortSignal   : abortController.signal,
+			getSnap       : (scope: any) => getSnap(scope),			
 			cancel        : abortController.abort,
 			extras        : options.extras,
 			changed       : options.changed,
+			abortSignal   : abortController.signal
 		};
-		let hasAbort = false; // 是否接收到可中止信号
 
-		// 配置可中止信号，以便可以取消计算
-		this.updateComputedValue({
-			cancel: markRaw(() => abortController.abort())
-		});
+		let hasAbort = false; // 是否接收到可中止信号
 		// 侦听中止信号，以便在中止时能停止
-		abortController.signal.addEventListener("abort", () => {
-			hasAbort = true;
-		});
+		abortController.signal.addEventListener("abort", () => hasAbort = true)
 
 		let hasError:any = false
 		let hasTimeout = false;
@@ -216,6 +225,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					? timeout
 					: [timeout, 0];
 
+				// 初始化数据
 				this.updateComputedValue({
 					loading : true,
 					error   : null,
@@ -302,9 +312,20 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	protected onDependsChange(params:StateOperateParams){ 
 		this.run({changed:params})		
 	}
-
+	/**
+	 * 
+	 * 由于异步计算是一个对象，所以我们需要侦听的是对象的变化，而不仅是对象的值
+	 * 
+	 * 
+	 * 
+	 * 
+	 */
 	protected getValueWatchPath(){
-		return `${this.path!.join(PATH_DELIMITER)}.value`
+		const spath = this.path!.join(PATH_DELIMITER)
+		return [
+			`__${spath}__`,
+			`${spath}.*`
+		]
 	}
 	/**
 	 * 由于所有异步计算属性均会被转换为一个AsyncComputedValue<{value,timeout,....}>的形式

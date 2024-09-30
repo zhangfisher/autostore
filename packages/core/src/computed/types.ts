@@ -197,7 +197,7 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
      * 仅在异步计算函数中有效
      * 
      */
-    abortSignal?:()=>AbortSignal | null | void | undefined
+    abortController?:()=>AbortController | null | void | undefined
     /**
      * 当计算函数执行出错时的重试次数
      * 

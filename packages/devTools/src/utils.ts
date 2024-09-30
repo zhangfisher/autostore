@@ -1,5 +1,5 @@
 
-export class WeakObjectMap<T> {
+export class WeakObjectMap<T extends object> {
     private map: Map<string, WeakRef<T>>;
     private finalizationRegistry: FinalizationRegistry<string>;
   
