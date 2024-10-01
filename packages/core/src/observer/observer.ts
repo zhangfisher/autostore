@@ -36,6 +36,7 @@ export class ObserverObject<
     private _depends: string[][] = []
     private _options: Required<Options> 
     private _subscribers:Watcher[] = []              // 保存订阅者的ID
+    private _strPath?:string  
     /**
      *  构造函数。
      * 
@@ -74,7 +75,13 @@ export class ObserverObject<
     set depends(value:string[][]){ this._depends = value }
     get getter(){ return this._getter}
     set getter(value){ this._getter= value  }   
-    toString(){ return `ObserverObject<${joinValuePath(this._path)}>` }
+    get strPath(){ 
+        if(!this._strPath){
+            this._strPath= this._path.join(PATH_DELIMITER) 
+        } 
+        return  this._strPath!
+    }
+    toString(){ return `ObserverObject<${this.strPath}>` }
 
     get value(){ 
         if(this._associated){

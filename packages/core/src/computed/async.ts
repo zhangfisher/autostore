@@ -19,7 +19,15 @@ import { getError } from "../utils/getError";
 import { StateOperateParams } from "../store/types";
 import { updateObjectVal } from "../utils/updateObjectVal";
 import { ASYNC_COMPUTED_VALUE, PATH_DELIMITER } from "../consts";
+import { AbortError } from "../errors"; 
 
+type GetterRunContext = {
+	error 	      : any;
+	isError       : boolean;
+	isTimeout     : boolean;
+	isAbort       : boolean;
+	timeoutCallback: Function | undefined;
+};
 
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<AsyncComputedValue<Value>> {
 	private _isComputedRunning: boolean = false;
@@ -66,7 +74,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	} 
 
 	private updateComputedValue(values: Partial<AsyncComputedValue>) {    		
-		const batchEvent = `__${this.path.join(PATH_DELIMITER)}__`
+		const batchEvent = this.strPath
 		if(this.associated){			
 			this.store.update((state)=>{
 				updateObjectVal(state, this.path!, values);
@@ -74,10 +82,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		}else{
 			Object.assign(this.value as object,values)		
 			Object.entries(values).forEach(([key,value])=>{
-				const spath = this.path.join(PATH_DELIMITER)
 				this.store.changesets.emit(
-					`${spath}.${key}`,
-					{type:"set",path:[spath,key],value:value,parent:this.value})
+					`${this.strPath}.${key}`,
+					{type:"set",path:[this.strPath,key],value:value,parent:this.value})
 			})
 			this.store.changesets.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
 		}		
@@ -183,15 +190,58 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		return this._abortController
 	}
 	/**
+	 * 处理超时
+	 * @param timeoutCallback 
+	 * @param options 
+	 * @returns 
+	 */
+	private setTimeoutControl(ctx:GetterRunContext,initValue:Partial<AsyncComputedValue>,options: Required<RuntimeComputedOptions>){
+		const { timeout } = options
+		let [timeoutValue = 0, countdown = 0] = Array.isArray(timeout) ? timeout :  [timeout, 0];
+		let countdownId:any
+		let tmId:any
+		if(timeoutValue>0){
+			initValue.timeout = countdown > 1 ? countdown : timeoutValue,
+			tmId = setTimeout(() => {
+				ctx.isTimeout = true;
+				if (typeof ctx.timeoutCallback === "function") ctx.timeoutCallback();
+				if (!ctx.isError) {  // 没有错误时才更新超时状态
+					clearInterval(countdownId);
+					this.updateComputedValue({
+						loading: false,
+						error  : "TIMEOUT",
+						timeout: 0,
+					});
+				}
+			}, timeoutValue);
+			// 启用设置倒计时:  比如timeout= 6*1000, countdown= 6
+			if (countdown > 1) {
+				countdownId = setInterval(() => {
+					this.updateComputedValue({
+						timeout: countdown--,
+					});
+					if (countdown === 0) clearInterval(countdownId);
+				}, timeoutValue / (countdown + 1));
+			}
+		}
+		
+		return { 
+			clear:()=>{
+				clearTimeout(tmId)
+				clearInterval(countdownId)
+			}
+		}
+	}
+	/**
 	 * 执行计算函数
 	 *
 	 */
 	private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
-		const { timeout = 0, retry = [0, 0],abortController:getAbortController } = options;
+		const { retry = [0, 0],abortController:getAbortController } = options;
 
 		const [retryCount, retryInterval] = Array.isArray(retry) ? retry : [Number(retry), 0];
 
-		let timeoutCallback: Function;
+		let timeoutCallback: Function | undefined; // 异步计算函数可以在超时时执行的回调函数
 
 
 		let abortController = (getAbortController && getAbortController()) || this.getAbortController();
@@ -208,64 +258,47 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
 		let hasAbort = false; // 是否接收到可中止信号
 		// 侦听中止信号，以便在中止时能停止
-		abortController.signal.addEventListener("abort", () => hasAbort = true)
-
-		let hasError:any = false
-		let hasTimeout = false;
+		abortController.signal.addEventListener("abort", () => hasAbort = true) 
+		
+		let timeout = {clear:()=>{}}
 		let computedResult: any;
 
+		const ctx :GetterRunContext = {
+			error:null,
+			isError:false,
+			isTimeout:false,
+			isAbort:false,
+			timeoutCallback,
+		} 
 		for (let i = 0; i < retryCount + 1; i++) {
-			hasError = false;
-			hasTimeout = false;
-			let timerId: any, countdownId: any;
+			if(i>0){
+				Object.assign(ctx, {
+					error:null,
+					hasError:false,
+					hasTimeout:false
+				});
+			}
 			const afterUpdated = {}; // 保存执行完成后需要更新的内容，以便在最后一次执行后更新状态
 			try {
-				// 处理超时参数和倒计时
-				let [timeoutValue = 0, countdown = 0] = Array.isArray(timeout)
-					? timeout
-					: [timeout, 0];
-
-				// 初始化数据
-				this.updateComputedValue({
+				// 1. 初始化数据
+				const initValue: Partial<AsyncComputedValue> = {
 					loading : true,
-					error   : null,
-					retry   : i > 0 ? retryCount - i + 1 : 0,
-					timeout : countdown > 1 ? countdown : timeoutValue,
+					error   : null, 
 					progress: 0,
-				});
+				}
+				if(retryCount>0) initValue.retry = i > 0 ? retryCount - i + 1 : 0
+				
+				timeout = this.setTimeoutControl(ctx,initValue,options)
+
+				this.updateComputedValue(initValue);
 
 				// 如果有中止信号，则取消计算
-				if (hasAbort) {
-					throw new Error("Abort");
-				}
-				// 超时处理
-				if (timeoutValue > 0) {
-					timerId = setTimeout(() => {
-						hasTimeout = true;
-						if (typeof timeoutCallback === "function") timeoutCallback();
-						if (!hasError) {
-							clearInterval(countdownId);
-							this.updateComputedValue({
-								loading: false,
-								error  : "TIMEOUT",
-								timeout: 0,
-							});
-						}
-					}, timeoutValue);
-					// 启用设置倒计时:  比如timeout= 6*1000, countdown= 6
-					if (countdown > 1) {
-						countdownId = setInterval(() => {
-							this.updateComputedValue({
-								timeout: countdown--,
-							});
-							if (countdown === 0) clearInterval(countdownId);
-						}, timeoutValue / (countdown + 1));
-					}
-				}
+				if (ctx.isAbort) throw new AbortError()
+
 				// 执行计算函数
 				computedResult = await this.getter.call(this, scope, getterArgs);
-				if (hasAbort) throw new Error("Abort");
-				if (!hasTimeout) {
+				if(ctx.isAbort) throw new Error("Abort");
+				if (!ctx.isTimeout) {
 					Object.assign(afterUpdated, {
 						value: computedResult,
 						error: null,
@@ -273,41 +306,37 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					});
 				}
 			} catch (e: any) { 
-				hasError = e;
-				if (!hasTimeout) {
+				ctx.isError = e;
+				if (!ctx.isTimeout) {
 					Object.assign(afterUpdated, { error: getError(e).message, timeout: 0 });
 				}
 			} finally {
-				clearTimeout(timerId);
-				clearInterval(countdownId);
+				timeout.clear()
 				// 重试时不更新loading状态
-				if (!hasError || i == retryCount) Object.assign(afterUpdated, { loading: false });
-				if (!hasError && !hasTimeout) {
+				if (!ctx.isError || i == retryCount) Object.assign(afterUpdated, { loading: false });
+				if (!ctx.isError && !ctx.isTimeout) {
 					Object.assign(afterUpdated, { error: null });
 				}
 				if(retryCount>0 && i===retryCount){
 					Object.assign(afterUpdated, { retry: 0 }); 
 				}
-				this.updateComputedValue(afterUpdated);
+				this.updateComputedValue(afterUpdated); 
 			}
 			// 重试延迟
-			if (hasError) {// 最后一次不延迟				
+			if (ctx.isError) {// 最后一次不延迟				
 				if (retryCount > 0 && retryInterval > 0 && i < retryCount) {
 					await delay(retryInterval);
 				}
 			}
 		}
 		// 计算完成后触发事件
-		if (hasAbort || hasTimeout) {
-			this.emitStoreEvent("computed:cancel", { path: this.path, id:this.id, reason: hasTimeout ? "timeout" : "abort" ,computedObject:this});
-		} else if (hasError) {
-			this.emitStoreEvent("computed:error", { path: this.path, id:this.id, error: hasError,computedObject:this });
+		if (ctx.isAbort || ctx.isTimeout) {
+			this.emitStoreEvent("computed:cancel", { path: this.path, id:this.id, reason: ctx.isTimeout ? "timeout" : "abort" ,computedObject:this});
+		} else if (ctx.isError) {
+			this.emitStoreEvent("computed:error", { path: this.path, id:this.id, error: ctx.error,computedObject:this });
 		} else {
 			this.emitStoreEvent("computed:done", { path: this.path, id:this.id, value: computedResult,computedObject:this});		
-		}
-		setTimeout(() => {
-			this.onDoneCallback(options,hasError,hasAbort,hasTimeout,scope,computedResult);
-		}, 0); 
+		} 
 	}
 	protected onDependsChange(params:StateOperateParams){ 
 		this.run({changed:params})		
