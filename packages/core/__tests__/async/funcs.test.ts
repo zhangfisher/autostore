@@ -10,7 +10,7 @@
  */
 
 
-import { test,expect, describe, vi } from "vitest"
+import { test,expect, describe, vi, beforeEach, afterEach } from "vitest"
 import { AutoStore,computed } from "../.."
 import { delay } from "flex-tools/async/delay"
 import { AsyncComputedObject } from "../../src/computed/async"
@@ -18,7 +18,12 @@ import { AsyncComputedObject } from "../../src/computed/async"
 
 
 describe("异步计算高级控制功能",()=>{
- 
+    beforeEach(() => {
+        vi.useFakeTimers()
+      })
+      afterEach(() => {
+        vi.restoreAllMocks()
+      })
     // 注意：重入时仅会被忽略而不是产生错误
     test("控制计算函数的执行的不允许重入执行",()=>{
         let cancelCount:number =0 
@@ -52,6 +57,7 @@ describe("异步计算高级控制功能",()=>{
                 }
             })   
             store.state.total
+            vi.runAllTimers()
         })
     })
 
@@ -63,24 +69,23 @@ describe("异步计算高级控制功能",()=>{
                 price:2,
                 count:3,
                 total:computed(async (scope,{abortSignal})=>{ 
-                    return new Promise<number>((resolve,reject)=>{
+                    return new Promise<number>((resolve,)=>{
                         // 当接收到中止信号时，必须主动reject或者resolve，否则会被视为正常执行
                         abortSignal.addEventListener("abort",()=>{
                             fn()
-                            reject("cancelled") 
+                            resolve(0) // 重点: 当接收到中止信号 ，需要退出本应用
                         })
                         // 模拟一个耗时的异步操作                        
                         setTimeout(()=>{
                             resolve(scope.count*scope.price)
-                        },10 *1000)
+                        },100 *1000)
                         
                     })	
                 },['price','count'],{id:'x'})
             },{
-                onComputedCancel:({reason})=>{
-                    expect(reason).toBe("abort")
-                    expect(fn).toHaveBeenCalled()                
-                    resolve()
+                onComputedCancel:()=>{
+                    expect(fn).toHaveBeenCalled()                           
+                    resolve()         
                 },
                 onComputedCreated:()=>{
                     setTimeout(()=>{
@@ -88,7 +93,8 @@ describe("异步计算高级控制功能",()=>{
                     })
                 }
             })  
-            store.state.total
+            store.state.total 
+            vi.runAllTimers()
         })
     })
 

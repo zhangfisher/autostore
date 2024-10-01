@@ -119,7 +119,7 @@ describe("动态创建异步计算属性",()=>{
             })
             const obj = store.computedObjects.create(async (state:any)=>{
                 return state.price * state.count
-            },["price","count"])
+            },["price","count"],{initial:6})
             const events:[string,AsyncComputedValue][]=[]
             obj.watch((result,path)=>{
                 events.push([
