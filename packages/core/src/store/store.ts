@@ -104,7 +104,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.emit("created",this)       
         if(!this._options.lazy) forEachObject(this._data)
         // @ts-ignore
-        if(this._options.debug && !globalThis.__AUTO_STORES__) {                    
+        if(this._options.debug && typeof(globalThis.__AUTO_STORES__)=='object') {                    
             // @ts-ignore
             globalThis.__AUTO_STORES__.add(this)
         }

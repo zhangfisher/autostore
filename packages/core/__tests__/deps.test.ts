@@ -49,7 +49,7 @@ describe("依赖关系管理",()=>{
                 a2: computed(async (scope:any)=>{
                   return scope.a1.value + 1
                 },["a1"],{initial:12})
-            });
+            },{debug:true});
             (async ()=>{
                 store.on('computed:done',(event)=>{
                     if(event.path.join(".")==="a2"){

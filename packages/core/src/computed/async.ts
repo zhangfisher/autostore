@@ -367,6 +367,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		this.onDoneCallback(options,ctx.error,ctx.hasAbort,ctx.hasTimeout,scope,computedResult)
 	}
 	protected onDependsChange(params:StateOperateParams){ 
+		this.store.log(() => `AsyncComputed<${this.id}> is running by depends ${params.type}/${params.path.join(".")} changed `);
 		this.run({changed:params})		
 	}
 	/**
