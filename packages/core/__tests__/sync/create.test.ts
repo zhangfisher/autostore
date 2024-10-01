@@ -119,7 +119,7 @@ describe("动态创建同步择计算属性",()=>{
             const obj = store.computedObjects.create((state:any)=>{
                 return state.price * state.count
             })
-            obj.watch((value)=>{
+            obj.watch(({value})=>{
                 expect(value).toBe(8)    
                 resolve()    
             })

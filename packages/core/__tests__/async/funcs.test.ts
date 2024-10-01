@@ -18,12 +18,12 @@ import { AsyncComputedObject } from "../../src/computed/async"
 
 
 describe("异步计算高级控制功能",()=>{
-    beforeEach(() => {
-        vi.useFakeTimers()
-      })
-      afterEach(() => {
-        vi.restoreAllMocks()
-      })
+    // beforeEach(() => {
+    //     vi.useFakeTimers()
+    //   })
+    //   afterEach(() => {
+    //     vi.restoreAllMocks()
+    //   })
     // 注意：重入时仅会被忽略而不是产生错误
     test("控制计算函数的执行的不允许重入执行",()=>{
         let cancelCount:number =0 
@@ -57,13 +57,12 @@ describe("异步计算高级控制功能",()=>{
                 }
             })   
             store.state.total
-            vi.runAllTimers()
         })
     })
 
 
     test("通过abortSignal来中止计算函数的执行",()=>{
-        return new Promise<void>((resolve)=>{
+        return new Promise<void>((resolve)=>{ 
             const fn = vi.fn()
             const store = new AutoStore({
                 price:2,
@@ -94,7 +93,6 @@ describe("异步计算高级控制功能",()=>{
                 }
             })  
             store.state.total 
-            vi.runAllTimers()
         })
     })
 
@@ -193,8 +191,8 @@ describe("异步计算属性的超时功能",()=>{
                     return scope.price * scope.count
                 },['price','count'],{id:'x',timeout:100})
             },{
-                onComputedCancel:({reason})=>{
-                    expect(reason).toBe("timeout")
+                onComputedError:({error})=>{
+                    expect(error).toBe("TIMEOUT")
                     expect(store.state.total.loading).toBe(false)
                     expect(store.state.total.error).toBe("TIMEOUT")
                     resolve()
@@ -218,8 +216,8 @@ describe("异步计算属性的超时功能",()=>{
                 },['price','count'],{id:'x',timeout:[5*1000,5]})                
             },{ 
                 lazy:false,
-                onComputedCancel:({reason})=>{
-                    expect(reason).toBe("timeout")
+                onComputedError:({error})=>{
+                    expect(error).toBe('TIMEOUT')
                     expect(store.state.total.loading).toBe(false)
                     expect(store.state.total.timeout).toBe(0)
                     expect(store.state.total.error).toBe("TIMEOUT")

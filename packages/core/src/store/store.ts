@@ -388,7 +388,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 this._peeping = false
                 if(this._batchOperates.length>0){
                     // 先分别触发每一个操作事件,这样一些依赖于单个操作的事件可以先触发
-                    this._batchOperates.forEach(operate=>this._notify(operate))
+                    reply && this._batchOperates.forEach(operate=>this._notify(operate))
                     // 然后再触发批量更新事件
                     try{          
                         const batchEvent = batch===true ? BATCH_UPDATE_EVENT : String(batch)

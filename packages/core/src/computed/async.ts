@@ -80,11 +80,11 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 */
 	private updateComputedValue(values: Partial<AsyncComputedValue>) {    		
 		const batchEvent = this.strPath
-		const updateCount = Object.keys(values).length
+		const updatedCount = Object.keys(values).length
 		if(this.associated){			
 			this.store.update((state)=>{
 				updateObjectVal(state, this.path!, values);
-			},{batch: updateCount >1 ? batchEvent : false})			
+			},{batch: updatedCount > 1 ? batchEvent : false})			
 		}else{
 			Object.assign(this.value as object,values)		
 			Object.entries(values).forEach(([key,value])=>{
@@ -92,7 +92,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 					`${this.strPath}.${key}`,
 					{type:"set",path:[this.strPath,key],value:value,parent:this.value})
 			})
-			if(updateCount >1) this.store.changesets.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
+			if(updatedCount >1) this.store.changesets.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
 		}		
   	} 
 	/**
@@ -343,10 +343,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			} finally {
 				timeout.clear()				
 				if(i === retryCount) {// 最后一次执行时
-					if(!ctx.hasError && !ctx.hasTimeout) afterUpdated.error = null		
+					if(ctx.hasTimeout) afterUpdated.error = ctx.error
 					if(retryCount>0) afterUpdated.retry = 0			
-				}				
-
+				}			
 				afterUpdated.loading = false
 				this.updateComputedValue(afterUpdated); 
 			}

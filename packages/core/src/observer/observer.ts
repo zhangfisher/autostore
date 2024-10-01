@@ -165,9 +165,9 @@ export class ObserverObject<
      * 
      * @returns 
      */
-    watch(listener:(value:Value,path:string[])=>void,options?:WatchListenerOptions){
-        return this.store.watch(this.getValueWatchPath(),({value,path})=>{
-            listener.call(this,value as Value,path)
+    watch(listener:(operate:StateOperateParams)=>void,options?:WatchListenerOptions){
+        return this.store.watch(this.getValueWatchPath(),(operate)=>{
+            listener.call(this,operate)
         },options)
     } 
     /**
