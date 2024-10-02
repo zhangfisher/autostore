@@ -1,12 +1,12 @@
 import { AsyncComputed, AsyncComputedValue, Computed, ComputedDescriptorBuilder } from "./computed";
-import type { AutoStore } from "./store";
 import { WatchDescriptorBuilder } from "./watch/types";
 
  
 export type Dict<T=any> = Record<string,T>
 
-export type SyncFunction<T=any> =  (...args: any) => Exclude<T,Promise<any>>;  
+export type SyncFunction<R=any> =  (...args: any) => Exclude<R,Promise<any>>;  
 
+export type AsyncFunction<R=any> =  (...args: any) => Promise<R>;  
 
 
 

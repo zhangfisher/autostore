@@ -53,7 +53,7 @@
 import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
 import type { AutoStoreOptions, StateChangeEvents, StateOperateParams, UpdateOptions } from "./types";
-import type { Dict } from "../types";
+import type { AsyncFunction, Dict, SyncFunction } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
@@ -387,8 +387,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 this._batching = false
                 this._peeping = false
                 if(this._batchOperates.length>0){
+                    const ops =  [...this._batchOperates]
+                    this._batchOperates=[]
                     // 先分别触发每一个操作事件,这样一些依赖于单个操作的事件可以先触发
-                    reply && this._batchOperates.forEach(operate=>this._notify(operate))
+                    reply && ops.forEach(operate=>this._notify(operate))
                     // 然后再触发批量更新事件
                     try{          
                         const batchEvent = batch===true ? BATCH_UPDATE_EVENT : String(batch)
@@ -427,39 +429,101 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         }         
     }
     /**
-     * 执行同步函数，并且收集依赖
+     * 跟踪函数内部的操作，返回依赖路径
      * 
      * @example
      * 
      * - 执行函数，并且收集依赖，返回依赖路径
-     * const deps = store.collectDeps(()=>{
+     * const deps = store.collectDependencies(()=>{
      *      store.state.xxx.xxx
-     * })
-     * 
+     * })     
+     * @example
      * - 只收集函数内部的read操作
      * 
-     * const deps = store.collectDeps(()=>{
+     * const deps = store.collectDependencies(()=>{
      *     store.state.xxx.xxx
      * },'read')
+     *
+     *
+     * @example
      * 
      * @param fn 
      */
-    collectDeps(fn: Function,operates:WatchListenerOptions['operates'] = '*'):string[][]{
+    collectDependencies(fn: Function,operates:WatchListenerOptions['operates'] = '*'):string[][]{
         let dependencies:string[][] = []       
         const watcher = this.watch((event)=>{      
             dependencies.push(event.path)            
         },{operates})   
         // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
         try{
-            fn()   
-            // 依赖收集完成后就结束侦听
-            watcher.off()  
-        }catch{
+            fn()           
         }finally{
             watcher.off()
         }
-        return noRepeat(dependencies)      // 去重 
+        return noRepeat(dependencies)     
+    } 
+    /**
+     *  跟踪函数内部的操作
+     * 
+     * 主要用于调试，跟踪函数内部的操作
+     * 
+     * 比如我们想要知道执行一个state.xxx=1时，会触发哪些操作，可以通过此方法来跟踪 
+     * 
+     * 注意： 本方法主要用于调试，不要在生产环境中使用
+     * 
+     * @example
+     * 
+     * - 跟踪同步函数内部的操作
+     *   trace((state)=>{
+     *      state.xxx.xxx = 1
+     *   },(operate)=>{
+     *      console.log(operate)
+     *   })     
+     * 
+     * - 跟踪异步函数内部的操作??? 
+     * 
+     *  由于无法控制异步上下文，特别是在同时运行多个异步trace函数时，不同的trace函数可能会相互干扰，无法区分。
+     * 
+     *  因此，异步函数的跟踪难以实现，只能用在调试时且只运行单个异步trace函数时使用
+     * 
+     *  
+     *  
+     *  const fn = async (state,{})=>{
+     *     await fetch('xxxx')
+     *     state.xxx.xxx = 1
+     *     state.xxx.xxx = 2
+     * }
+     *  trace(fn,{
+     *      (operate)=>{
+     *          console.log(operate)
+     *      },           
+     *      operates:'write'
+     * 
+     * )     
+     * 
+     * 
+     * @param fn 
+     * @param operates 
+     * @returns 
+     */
+    tract(fn: SyncFunction,callback:(operate:StateOperateParams)=>void,operates?:WatchListenerOptions['operates']):Watcher
+    tract(fn: AsyncFunction,callback:(operate:StateOperateParams)=>void,abort:(operate:StateOperateParams)=>boolean,operates?:WatchListenerOptions['operates']):Watcher        
+    tract():Watcher{
+        const args = arguments
+        const fn = args[0] as Function
+        const callback = args[1] as (operate:StateOperateParams)=>void
+        const abort = args.length>=2 && typeof(args[2])==='function' ? args[2] : undefined
+        const operates:WatchListenerOptions['operates'] = (args.length===3 ? args[2] : (args.length===4 ?  args[3] : '*'))
+        const watcher = this.watch((event)=>{                
+            callback(event)   
+        },{operates})   
+        
+        Promise.resolve(fn(this.state)).finally(()=>{
+            watcher.off()
+        })
+        return watcher
     }
+    
 
     /**
      * 
