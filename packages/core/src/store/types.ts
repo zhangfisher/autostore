@@ -18,7 +18,11 @@ export type StateOperateParams<T=any,P=any> = {
     indexs?    : number[],               // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
     oldValue?  : T,
     parentPath?: string[],
-    parent?    : P
+    parent?    : P,    
+    /**
+     * 是否是批量操作时的回放事件
+     */
+    reply?     : boolean               
 }
  
 
@@ -175,4 +179,10 @@ export type UpdateOptions = {
      * =false 不会回放操作事件,仅会触发__batch_update__事件
      */
     reply?:boolean
+}
+
+
+export type StateTracker= {
+    stop:()=>void,
+    start(isStop?:(operate:StateOperateParams)=>boolean):Promise<StateOperateParams[]>
 }

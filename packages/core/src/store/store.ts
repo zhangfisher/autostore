@@ -52,8 +52,8 @@
  
 import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
-import type { AutoStoreOptions, StateChangeEvents, StateOperateParams, UpdateOptions } from "./types";
-import type { AsyncFunction, Dict, SyncFunction } from "../types";
+import type { AutoStoreOptions, StateChangeEvents, StateOperateParams, StateTracker, UpdateOptions } from "./types";
+import type { Dict, SyncFunction } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
@@ -390,7 +390,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                     const ops =  [...this._batchOperates]
                     this._batchOperates=[]
                     // 先分别触发每一个操作事件,这样一些依赖于单个操作的事件可以先触发
-                    reply && ops.forEach(operate=>this._notify(operate))
+                    reply && ops.forEach(operate=>{
+                        operate.reply = true
+                        this._notify(operate)
+                    })
                     // 然后再触发批量更新事件
                     try{          
                         const batchEvent = batch===true ? BATCH_UPDATE_EVENT : String(batch)
@@ -482,49 +485,68 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      * - 跟踪异步函数内部的操作??? 
      * 
+     *  注意：
      *  由于无法控制异步上下文，特别是在同时运行多个异步trace函数时，不同的trace函数可能会相互干扰，无法区分。
-     * 
      *  因此，异步函数的跟踪难以实现，只能用在调试时且只运行单个异步trace函数时使用
      * 
-     *  
-     *  
-     *  const fn = async (state,{})=>{
-     *     await fetch('xxxx')
-     *     state.xxx.xxx = 1
-     *     state.xxx.xxx = 2
-     * }
-     *  trace(fn,{
-     *      (operate)=>{
-     *          console.log(operate)
-     *      },           
-     *      operates:'write'
+     *  const store= new AutoStore({
+     *      price:10,
+     *      count:2,
+     *      total: async (state)=>{
+     *          await delay(1000)
+     *          return state.price * state.count
+     *      }
+     *  })
      * 
-     * )     
+     *  
+     *  
+     *  const fn = async ()=>{
+     *     await fetch('xxxx')
+     *     store.state.price = 20
+     *     store.state.count= 3
+     * }
+     * 我们想要知道fn执行时会触发哪些操作，可以通过trace来跟踪
+     * const ops = await trace(fn).start()
+     * 
+     * 
+     *  我们可以看到，fn执行时，只有显式的对price和count，但是由于total是异步计算属性，所以也会触发total的变化。
+     *  因此也应该被跟踪，但是由于其是异步计算属性，所以不会被跟踪。因此需要显式的提供一个abort参数来结束包括异步的跟踪过程
+     * 
+     * 
+     * stateTracker.stop()  // 取消跟踪
+     * const operates = await stateTracker.start((operate)=>{
+     *       return operate.type=='set' && path[0]==='total'
+     * })  // 开始跟踪
      * 
      * 
      * @param fn 
      * @param operates 
      * @returns 
      */
-    tract(fn: SyncFunction,callback:(operate:StateOperateParams)=>void,operates?:WatchListenerOptions['operates']):Watcher
-    tract(fn: AsyncFunction,callback:(operate:StateOperateParams)=>void,abort:(operate:StateOperateParams)=>boolean,operates?:WatchListenerOptions['operates']):Watcher        
-    tract():Watcher{
-        const args = arguments
-        const fn = args[0] as Function
-        const callback = args[1] as (operate:StateOperateParams)=>void
-        const abort = args.length>=2 && typeof(args[2])==='function' ? args[2] : undefined
-        const operates:WatchListenerOptions['operates'] = (args.length===3 ? args[2] : (args.length===4 ?  args[3] : '*'))
-        const watcher = this.watch((event)=>{                
-            callback(event)   
-        },{operates})   
-        
-        Promise.resolve(fn(this.state)).finally(()=>{
-            watcher.off()
-        })
-        return watcher
-    }
-    
-
+    trace(fn: SyncFunction,operates?:WatchListenerOptions['operates']):StateTracker { 
+        let watcher:Watcher 
+        return {
+            stop:()=>watcher && watcher.off(),
+            start:async (isStop?:(operate:StateOperateParams)=>boolean)=>{
+                const ops:StateOperateParams[] = []
+                return new Promise((resolve)=>{
+                    watcher = this.watch((operate)=>{       
+                        ops.push(operate)         
+                         if(isStop && isStop(operate)){
+                            watcher.off()
+                            resolve(ops)
+                        }
+                    },{operates})   
+                    Promise.resolve(fn()).finally(()=>{
+                        if(typeof(isStop)!=='function'){
+                            watcher.off()
+                            resolve(ops)
+                        }
+                    })
+                })
+            }
+        }
+    } 
     /**
      * 
      * 当store销毁时调用，用来取消一些订阅

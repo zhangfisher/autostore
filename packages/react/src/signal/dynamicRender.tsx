@@ -1,8 +1,8 @@
-import {  AsyncComputedValue, Dict, ObserverDescriptorBuilder, Watcher } from "@autostorejs/core"
+import {  AsyncComputedObject, AsyncComputedValue, Dict, ObserverDescriptorBuilder, SyncComputedObject, Watcher,WatchObject } from "@autostorejs/core"
 import type { ReactAutoStore } from "../store"
 import React, { useEffect, useState } from "react"
-import { getValueBySelector } from "../utils/getValueBySelector"
 import type  {  SignalComponentRender } from "./types"
+import { isPathEq } from '../../../core/src/utils/isPathEq';
 
 /**
  *  
@@ -28,6 +28,15 @@ import type  {  SignalComponentRender } from "./types"
  *   },()=>watch(getter,depends,options)))
  * 
  * 
+ *  关于异步计算的渲染优化
+ * 1. 在运行前value.loading=true，触发一次渲染
+ * 2. 在运行后value.loading=false,value.value=newvValue，触发两次事件导致2次渲染，如何优化成一次？
+ *      - 在run getter内部使用.update(fn,batch:true)来更新计算属性的数据，会触发
+ *          
+ *          batch事件，只需要侦听batch事件即可，当batch事件发生时，只触发一次渲染 * 
+ *      - 但是如果直接调用state.asyncobj.value更新值，则也会触发渲染
+ * 
+ * 
  * 
  */
 export function createDynamicRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,builder:ObserverDescriptorBuilder){
@@ -38,7 +47,7 @@ export function createDynamicRender<State extends Dict>(store:ReactAutoStore<Sta
 
         const descriptor = builder() 
         // 创建一个计算对象
-        const [ computedObj ] = useState(()=>{
+        const [ observerObj ] = useState(()=>{
             if(descriptor.type==='computed'){
                 return store.computedObjects.create(descriptor as any)
             }else if(descriptor.type==='watch'){
@@ -46,15 +55,33 @@ export function createDynamicRender<State extends Dict>(store:ReactAutoStore<Sta
             }
         })
         const [ value,setValue ] = useState<AsyncComputedValue>(()=>{
-            return computedObj ? computedObj.value : {}
+            return observerObj ? observerObj.value : {}
         }) 
         
         useEffect(()=>{ 
             let watcher:Watcher = {off:()=>{}}
-            if(computedObj){
-                watcher = computedObj.watch((val)=>{
-                    setValue(val)
-                })
+            if(observerObj){
+                watcher = observerObj.watch((operate)=>{                    
+                    // 
+                    if(operate.reply) return
+                    if(observerObj.type==='computed'){
+                        if(observerObj.async){
+                            const asyncObj = observerObj as unknown as AsyncComputedObject
+                            if(isPathEq(operate.path,asyncObj.path)){
+                                setValue(asyncObj.value)
+                            }else if(operate.type){
+                                setValue(asyncObj.value)
+
+                            }
+                        }else{
+                            // @ts-ignore
+                            setValue({value:(observerObj as unknown as SyncComputedObject).value})
+                        }
+                    }else if(observerObj.type==='watch'){
+                        // @ts-ignore
+                        setValue({value:(observerObj as unknown as WatchObject).value})
+                    }                    
+                },{operates:'write'})
             }            
             return ()=>watcher.off()
         },[descriptor])

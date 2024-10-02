@@ -102,7 +102,47 @@ describe("依赖关系管理",()=>{
         expect(deps).toStrictEqual([["a"],["b"],["c"]])
     })
 
-    test("跟踪操作",()=>{
+})
+
+
+
+describe("trace依赖关系管理",()=>{
+    test("同步依赖关系跟踪",()=>{
+        return new Promise<void>((resolve)=>{            
+            const store = new AutoStore({ 
+                sync:{
+                    a: 1,
+                    b: (scope:any)=>scope.a + 1,
+                    c: (scope:any)=>scope.b + 1,
+                    d: (scope:any)=>scope.c + 1,
+                    e: (scope:any)=>scope.d + 1,
+                    f: (scope:any)=>scope.e + 1,
+                    g: (scope:any)=>scope.f + 1,
+                    h: (scope:any)=>scope.g + 1,
+                }       
+            });    
+            store.trace(()=>{
+                store.state.sync.a = 2              
+            },"write").start().then((operates)=>{
+                expect(operates.map(op=>{
+                    return [op.type,op.path.join(".")]
+                })).toStrictEqual([
+                    ["set","sync.a"],
+                    ["set","sync.b"],
+                    ["set","sync.c"],
+                    ["set","sync.d"],
+                    ["set","sync.e"],
+                    ["set","sync.f"],
+                    ["set","sync.g"],
+                    ["set","sync.h"]
+                ])
+                resolve()
+            })
+        })
+    })
+
+
+    test("异步依赖关系跟踪",()=>{
         return new Promise<void>((resolve)=>{
             const store = new AutoStore({ 
                 a0: 10,
@@ -142,18 +182,17 @@ describe("依赖关系管理",()=>{
                     await delay(1)
                     return scope.a8.value + 1
                 },["a8"],{initial:19}),
-            });
-            const operates:StateOperateParams[] = []
-            store.tract((state)=>{
-                state.a0=2
-            },(operate)=>{
-                operates.push(operate)                
-            })                          
-            console.log(operates)
+            }); 
+            store.trace(()=>{
+                store.state.a0=2
+            },"write").start((operate)=>{
+                return operate.path[0]==="a9"
+            }).then(operates=>{
+                expect(operates[operates.length-1].path[0]).toBe("a9")
+                resolve()
+            })                      
         })
     })
 
 
-
 })
-

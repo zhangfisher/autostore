@@ -46,7 +46,7 @@ export class ObserverObject<
      */
     constructor(public store:AutoStore<any>,public descriptor:ObserverDescriptor,public context?:ComputedContext<Value>){        
         this._associated    =  context!==undefined
-        this._getter     = descriptor.getter         
+        this._getter     = descriptor.getter                 
         this._options    = Object.assign({
             enable: true,
             group: "",
@@ -59,6 +59,7 @@ export class ObserverObject<
         this._depends = calcDependPaths(this._path,this._options.depends)
         this._onInitial()
     }
+    get type(){ return this.descriptor.type }
     get options(){ return this._options}
     get id(){return this._id }
     get associated(){return this._associated }
