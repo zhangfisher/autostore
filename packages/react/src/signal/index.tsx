@@ -12,6 +12,8 @@ import { ReactAutoStore } from "../store"
 import React from "react";
 import { createStaticRender } from "./staticRender";
 import { createCustomRender } from "./customRender";
+import { createDynamicRender } from "./dynamicRender";
+
 import type { SignalComponentType } from "./types"
 
 /**
@@ -84,12 +86,17 @@ export function createSignalComponent<State extends Dict>(store:ReactAutoStore<S
         const args = arguments    
         const selector = args.length===1 && (typeof(args[0])==='string' || typeof(args[0])==='function') ? args[0] : undefined
         const render = args.length>=2 && typeof(args[0])==='function' ? args[0] : undefined
-        const getterOrCreator = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined 
+        const getterOrBuilder = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined 
         const selectPath = args.length>=2 && (typeof(args[1])==='string' || Array.isArray(args[1])) ? args[1] : undefined
 
         const SignalCompoent = selector ? createStaticRender(store,selector) 
-            : (selectPath ? createCustomRender(store,render,selectPath) 
-                : ()=><></>)
+            : (
+                selectPath ? createCustomRender(store,render,selectPath) 
+                : (
+                    getterOrBuilder ? createDynamicRender(store,render,getterOrBuilder) 
+                    : ()=><></>
+                ) 
+            )
 
         return <SignalCompoent/>; 
     }) as SignalComponentType<State>

@@ -53,14 +53,12 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
     let computedResult = finalComputedOptions.initial;
     try {
       computedResult = (this.getter).call(this,scope,{changed,first});
-      // 将结果回写入store
-      if(first){
-        this.initial = computedResult
-      }else{ 
-        this.store.peep(()=>{
+      
+      if(first) this.initial = computedResult
+      // 将结果回写入store,且不触发get事件
+      this.store.peep(()=>{
           this.value = computedResult  
-        })
-      }  
+       })
       !first && this.emitStoreEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
       !first && this.emitStoreEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});

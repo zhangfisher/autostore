@@ -36,7 +36,7 @@ export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){
         const [deps] = useState(()=>{
             let deps:string[][] = [] 
             if(typeof(selector)==='function'){
-                deps =  store.collectDeps(()=>selector(store.state))  
+                deps =  store.collectDependencies(()=>selector(store.state))  
             }else if(typeof(selector)==='string'){
                 deps = [selector.split(PATH_DELIMITER)]   
             }else if(Array.isArray(selector)){
