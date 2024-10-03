@@ -160,7 +160,7 @@ export default ()=>{
 
 ```
 - 在上例中，提供了更细粒度的更新，当状态变化时，仅`$(....)`内部会重新渲染，而其他部分不会重新渲染。再也不需要`React.memo`了。
-- 关于`Signal`的更多用法，可以参考[Signal](/guide/signal)
+- 关于`Signal`的更多用法，可以参考[信号组件](/guide/signal-about)
 
 
 

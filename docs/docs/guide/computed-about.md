@@ -2,83 +2,97 @@
 group:
   title: 计算属性
   order: 2
-title: 入门
+title: 了解
 order: 0  
 demo:
   tocDepth: 5
 toc: content
 ---
 
-## 介绍
+# 了解
 
-细心的朋友可能发现，在上面的`createStore`中我们没有声明任何的计算属性，但这并不是不支持计算属性，而是`@autostorejs/react`提供了**独特的计算属性的声明方式**。`@autostorejs/react`提供的计算属性的声明方式是`SpeedForm`之所以能提供无以伦比用户开发体验的关键。
+`AutoStore`提供了无与伦比的计算属性实现方式，支持同步计算属性和异步计算属性，具备丰富的计算重试、超时、加载中、错误等状态管理。
 
 ## 基本原理
 
 :::info
-**`@autostorejs/react`实现了最独特的移花接木式的计算属性实现方式**
+**`AutoStore`实现了最独特的移花接木式的计算属性实现方式**
 :::
 
-![](./computed.png)
+![](./store.drawio.png)
 
 **基本过程如下：**
 
-1. 首先直接在`State`中声明计算属性函数，如`fullName=(user)=>user.first+user.last`。
-2. 调用`createStore`创建`Store`时，会根据`State`中的函数来创建`mutate`或`computed`(在`helux`中叫派生对象，在其他状态库中可能叫计算算属性)。
-3. 如此，当`State`中的数据变化时，会自动触发计算属性的重新计算，将计算结果赋值给`State`中的对应属性。在上图中，当`firstName`和`lastName`变化时，会自动触发`fullName(mutate)`的重新计算，将计算结果赋值给`user.fullName`属性。这样，当我们访问`state.fullName`时,就是一个字符串了，而不是一个函数了。
+1. 首先直接在`State`中声明计算属性函数，如`total=computed(scope)=>scope.price*scope.count`。
+2. 调用`createStore`创建`AutoStore`时，会扫描整个`State`数据，如果是`函数`或者`ObserverDescriptorBuilder`对象（即`computed`和`watch`封装的函数），则会创建
+创建`ComputedObject`或`WatchObject`,然后根据依赖订阅事件。
+3.当`State`中的数据变化时，会自动触发计算属性的重新计算，将计算结果赋值给`State`中的对应属性。在上图中，当`price`和`count`变化时，会自动触发`total`的重新计算，将计算结果赋值给`total`属性。这样，当我们访问`state.total`时,就是计算结果，而不是一个函数了。
 
-**以上就是`@autostorejs/react`计算属性移花接木的过程原理,大家可以从下面示列中加深理解。**
+**以上就是`@autostorejs/react`计算属性移花接木的过程原理**
 
-```tsx
-/**
- * defaultShowCode: true
- */
-import { createStore } from '@autostorejs/react'; 
-import { Divider} from "components"
 
-const user = {
-  firstName:"Zhang",
-  lastName:"Fisher",
-  fullName: (user)=>{ 
-    return user.firstName+user.lastName
-  }
-}
 
-const store = createStore(user,{singleton:false})
- 
-export default ()=>{
-  const [state,setState] = store.useState()
-  return (<div>
-    <h4>声明时fullName是一个函数</h4>
-    <div>typeof(user.fullName)={typeof(user.fullName)}</div>
-    <Divider />
-    <h4>创建Store后,state.fullName是一个字符串</h4>
-    <div>typeof(store.state.fullName)={typeof(state.fullName)}</div>
-    <div>store.state.fullName=={state.fullName}</div> 
-  </div>)
-}
+## 计算属性类型
+
+计算属性有`同步计算属性`和`异步计算属性`之分，两个的创建方式略有不同，功能也不同
+
+### 同步计算属性
+
+```ts | pure
+function computed<Value = any, Scope = any >(
+    getter: ComputedGetter<Value,Scope>,
+    options?: SyncComputedOptions<Value,Scope>):Value;
 ```
 
-在上例中：
-- `user.fullName`是一个函数
-- `store.state.fullName`是一个字符串
-- 默认情况下，`createStore`直接在输入的`user`上进行创建，指定`singleton:false`时会深拷贝一份`user`，然后在拷贝的`user`上创建`mutate`或`computed`。
 
-## 作用域
+更详细介绍请参考[同步计算属性](./computed-sync.md)
 
-在学习如何声明创建计算属性之前，我们先来了解一下`计算作用域 - Scope`的概念。
+### 异步计算属性
 
-:::info
- **`计算作用域`指的是传递给计算函数的第一个参数**
-:::
+```ts | pure
+function computed<Value = any, Scope = any>(
+    getter: AsyncComputedGetter<Value,Scope>,
+    depends: ComputedDepends,
+    options?: ComputedOptions<Value,Scope>): ComputedDescriptorBuilder<Value,Scope>;
+```
+
+更详细介绍请参考[异步计算属性](./computed-async.md)
+
+## 计算函数 - Getter
+
+无论是同步计算属性还是异步计算属性，都需要一个`Getter`函数，用于计算属性的计算逻辑，该函数的返回值就是计算属性的值。
+
+同步计算属性和异步计算属的`Getter`函数签名不是一样的，如下：
+
+- **同步计算属性的Getter函数签名如下：**
+
+```ts | pure
+type ComputedGetter<Value = any, Scope = any> = (scope:Scope)=>Value
+```
+
+- **异步计算属性的Getter函数签名如下：**
+
+```ts | pure
+type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (
+    scope:Scope,
+    args:Required<AsyncComputedGetterArgs> & P) => Promise<Value>
+```
+
+- 同步计算属性和异步计算属的`Getter`函数的第一个参数`scope`，用来指定计算函数的作用域。
+- 异步计算属性的`Getter`函数的第二个参数`args`，用来指定异步计算的参数，如`retry`、`timeout`、`loading`、`error`等属性，可以进行更多的控制。
+
+
+## 作用域 - Scope
+
+`计算作用域`指的是传递给计算函数`Getter`的第一个参数
 
 `@autostorejs/react`在创建`Store`时，支持配置`scope`参数来指定计算属性函数的第一个参数，如下：
 
-```ts
+```ts | pure {7-9}
 export enum ObserverScopeRef{
-  Root    = 'root',                      // 指向State根对象
+  Root    = 'root',                   // 指向State根对象
   Current = 'current',                // 指向计算属性所在的对象
-  Parent  = 'parent',                  // 指向计算属性所在对象的父对象
+  Parent  = 'parent',                 // 指向计算属性所在对象的父对象
   Depends = 'depends'                 // 指向异步计算的依赖数组，仅在异步计算时生效
   Self    = 'self'                    // 指向自身，默认值   
 }
@@ -96,81 +110,82 @@ const store = createStore( {
   }
 } )
 
-```
+``` 
 
 ### Current
 
-默认情况下，`scope==ObserverScopeRef.Current`时，计算函数的`this`指向计算函数所在的对象。
+默认情况下，`scope==ObserverScopeRef.Current`时，计算函数的`scope`指向计算函数所在的对象。
 
-```tsx 
+```tsx  
 /**
  * title: ObserverScopeRef.Current
  * description: store.options.scope==ObserverScopeRef.Current,
  */
-import { createStore,ObserverScopeRef } from '@autostorejs/react'; 
-const state = {
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    fullName: function(scope){
-      // scope指向user对象      
-      return scope.firstName+scope.lastName
-    }
-  }
-} 
-const store = createStore(state,{
-  // 指定计算属性的默认上下文指向计算函数所有的当前对象
-  scope: ()=>ObserverScopeRef.Current,
-})
+import { ObserverScopeRef,useStore } from '@autostorejs/react'; 
+import { ColorBlock } from "components" 
 
 export default ()=>{
-  const [state,setState] = store.useState()
+
+  const { state } = useStore({
+    user:{
+      firstName:"Zhang",
+      lastName:"Fisher",
+      fullName: function(scope){
+        // scope指向user对象  
+        return scope.firstName+scope.lastName 
+      }
+    }},{
+    // 指定计算属性的默认上下文指向计算函数所有的当前对象
+    scope: ()=>ObserverScopeRef.Current
+  })
   return <div> 
-    <div>FullName:{state.user.fullName}</div>
+    <ColorBlock name="FullName">{state.user.fullName}</ColorBlock>
   </div>
 }
 ```
+
+- 上面代码中，`fullName`函数的`scope`指向所在的`user`对象，即`state.user`。
+
+
+:::warning{title=注意🌝}
+`scope==ObserverScopeRef.Current`是默认值，一般不需要指定，以上仅仅是示例。
+:::
 
 ### Root
 
 `@autostorejs/react`会将计算属函数的`scope`指向`ObserverScopeRef.Root`，即当前的`State`根对象，如下：
 
-```tsx 
+```tsx  
 /**
  * title: ObserverScopeRef.Root
  * description: store.options.scope==ObserverScopeRef.Root,
  */
-import { createStore,ObserverScopeRef } from '@autostorejs/react'; 
- 
-const store = createStore({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    fullName: function(scope){
-      // scope指向State根对象      
-      return scope.user.firstName+scope.user.lastName
-    }
-  }
-},{
-  // 指定计算属性的默认上下文指向State根对象
-  scope: () => ObserverScopeRef.Root
-})
-
+import { useStore,ObserverScopeRef } from '@autostorejs/react'; 
+  
 export default ()=>{
-  const [state,setState] = store.useState()
+  
+  const { state } = useStore({
+    user:{
+      firstName:"Zhang",
+      lastName:"Fisher",
+      fullName: function(scope){ 
+        // scope指向root对象  
+        return scope.user.firstName+scope.user.lastName 
+      }
+    }},{
+    scope: ObserverScopeRef.Root
+  })
   return <div> 
     <div>FullName:{state.user.fullName}</div>
-  </div>
+  </div> 
 }
-
 ``` 
 
-
-#### Parent
+### Parent
 
 当`scope==ObserverScopeRef.Parent`时，指向计算函数所在的对象的父对象。
 
-```tsx 
+```tsx  | pure
 /**
  * title: ObserverScopeRef.Parent
  * description: scope==ObserverScopeRef.Parent
@@ -204,7 +219,7 @@ export default ()=>{
 
 当`store.options.scope==<字符串>`时，此时`<字符串>`就是指向计算函数所在对象的键名称。
 
-```tsx
+```tsx | pure
 /**
  * title: <字符串>
  * description: store.options.scope==<字符串>
@@ -243,7 +258,7 @@ export default ()=>{
 
 ### 字符串数组 
 
-```tsx
+```tsx | pure
 /**
  * title: <字符串数组>
  * description: scope==<字符串数组>
@@ -287,7 +302,7 @@ export default ()=>{
 **`ObserverScopeRef.Depends`仅在异步计算时生效,而异步计算必须通过computed函数来指定依赖**
 :::
  
-```tsx
+```tsx | pure
 /**
  * title: <字符串数组>
  * description: scope==<字符串数组>
@@ -322,3 +337,11 @@ export default ()=>{
  
  
  
+
+## 创建方式
+
+`AutoStore`支持多种方式来创建计算属性，如下：
+
+- **简单方式：直接在状态上声明普通的计算属性函数**
+- **使用`computed`函数创建计算属性**
+- **使用`store.computedObjects.create`创建计算属性**

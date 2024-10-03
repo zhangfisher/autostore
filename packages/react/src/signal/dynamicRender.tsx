@@ -102,16 +102,13 @@ export function createDynamicRender<State extends Dict>(store:ReactAutoStore<Sta
                      * 
                      * 如果计算对象的值是通过state.computedItem.value=xxxx而触发的变化事件，则该事件的reply!=true，这样就会触发事件，也可以得到正确的渲染
                      * 
-                     */
-                    console.log('operate:',operate)
+                     */ 
                     if(operate.reply) return
                     if(observerObj.type==='computed'){
                         if(observerObj.async){
                             const asyncObj = observerObj as unknown as AsyncComputedObject                            
-                            if(isPathEq(operate.path,asyncObj.path)){
-                                setValue(asyncObj.value)
-                            }else if(operate.path[operate.path.length-1]==='value'){
-                                setValue(asyncObj.value)
+                            if(isPathEq(operate.path,asyncObj.path) || isPathEq(operate.path.slice(0,-1),asyncObj.path) ){
+                                setValue({...asyncObj.value}) 
                             }
                         }else{
                             // @ts-ignore

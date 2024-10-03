@@ -8,16 +8,19 @@ export type LoadingProps ={
     size?: number
     color?:string
     tips?:string
+    title?:string
 } 
 export const Loading:React.FC<LoadingProps> = (props)=>{
     const { size=20,visible=true,color,tips='loading...' } =props    
     return <span 
         title={tips}
         style={{
-            display: visible ? 'inline-block' : 'none',
+            display: visible ? 'inline-flex' : 'none',
             cursor:"pointer",
-            padding:"2px"
+            padding:"2px",            
+            alignItems:"center",
         }}>
         <ThreeCircles width={size} height={size} color={color}/>
+        {props.title ? <span style={{marginLeft:"4px"}}>{props.title}</span> : null}
     </span>
 }

@@ -7,54 +7,19 @@ demo:
 toc: content
 ---
 
-# 计算信号组件
- 
+# 监听信号组件
+
 :::warning{title=提示}
 阅读本节时请先理解`computed`和`watch`章节。
 :::
 
 ## 介绍
 
-前文中，我们介绍了如何将状态数据封装为信号组件，无论状态数据路径所指向的是一个普通状态数据还是一个计算属性，都可以通过`$`或`signal`函数将其封装为信号组件。
-但是前提是需要在状态中预先声明`computed`计算属性。如下：
-
-```ts | pure
-import { createStore } from '@autostorejs/react';
-const store = createStore({
-  order:{
-    price:100,
-    count:3,
-    // 简单同步计算属性
-    total:(order)=>order.price * order.count
-    // 使用computed函数创建计算属性
-    totalAsync:computed(async (order)=>{
-      await delay(1000)
-      return order.price * order.count
-    },['./price','./count'],{initial:100})
-  }
-})
-
-// 创建信号组件
-const { state , $ } = store
-()=>{
-  return <>
-    // 简单地封装一个状态数据为信号组件
-    {$('order.price')}
-    // 封装一个计算属性为信号组件
-    {$('order.total')}
-    {$('order.total.value')}
-    // 自定义渲染函数
-    {$(({value})=>{....},'order.total')}
-  </>
-}
-```
-
-以上方法的前提是需要在`State`中预先声明`computed`计算属性，然后指定状态数据的路径来创建信号组件。
-
-这种方法在组件中使用时，会有一定的局限性，因此我们提供了一种更加灵活的方式来创建信号组件，即**动态创建计算信号组件**。
+计算信号组件是将`computedObject`封装成信号组件，当`computedObject`中的状态数据变化时，会自动触发信号组件的重新渲染。
+而监听信号组件是将`watchObject`封装成信号组件，当`watchObject`中的状态数据变化时，会自动触发信号组件的重新渲染。
 
 
-![](./signal-computed.drawio.png)
+![](./signal-watch.drawio.png)
 
 **方法函数签名如下：**
 
@@ -265,4 +230,24 @@ export default () => {
 :::warning{title=提示}
 创建异步信号组件时，可以使用`computed`创建的异步计算的所有特性，包括`loading`、超时控制、重试、错误处理、进度等等。
 :::
- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

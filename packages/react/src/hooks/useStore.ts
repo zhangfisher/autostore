@@ -23,14 +23,14 @@
  */
 
 
-import { Dict } from "@autostorejs/core"
+import { Dict,AutoStoreOptions } from "@autostorejs/core"
 import { ReactAutoStore } from "../store"    
-import { useRef} from "react"
+import { useRef} from "react" 
 
-export function useStore<State extends Dict>(define:State){
+export function useStore<State extends Dict>(define:State,options?:AutoStoreOptions<State>){
     const ref = useRef<ReactAutoStore<State>>()
     if (!ref.current) {
-        ref.current = new ReactAutoStore<State>(define);
+        ref.current = new ReactAutoStore<State>(define,options);
     }
     return ref.current    
 }

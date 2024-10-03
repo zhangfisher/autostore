@@ -14,6 +14,53 @@ toc: content
   
 同步计算属性直接声明在状态中，本质上是一个普通的函数，,当`State`中的数据变化时，会自动触发计算属性的重新计算，将计算结果赋值给`State`中的对应属性。
 
+
+### 同步计算
+
+直接在状态中场景计算属性函数即可，如下：
+
+```ts | pure {7}
+
+import { createStore } from '@autostorejs/react';
+
+const store = createStore({
+  user:{
+    firstName:"Zhang",
+    lastName:"Fisher",
+    fullName:(user)=>user.firstName+user.lastName
+  }
+})
+
+```
+
+:::warning{title=提示}
+同步计算属性会在初始化时执行一次来自动收集依赖，这样就可以在依赖变化时自动触发重新计算。
+:::
+
+**特殊注意：**
+
+由于同步计算属性会在初始化时执行一次来自动收集依赖，因此应该确保计算属性函数是幂等的，即多次调用结果是一样的。才可以保证依赖收集的准确性。
+
+像以下示例就不无法保证正确收集依赖。
+
+```ts | pure {8-10}
+import { createStore } from '@autostorejs/react';
+
+const store = createStore({
+  user:{
+    firstName:"Zhang",
+    lastName:"Fisher",
+    fullName:(user)=>{
+      if(a===1){
+        return user.lastName
+      }
+      return user.firstName+user.lastName
+    }
+  }
+})
+```
+
+上例在第一次执行时收集依赖，如果`a=1`，返回`user.lastName`，就只能收集到`user.lastName`的依赖，而不会收集到`user.firstName`的依赖。这样在`user.firstName`变化时，就无法触发`fullName`的重新计算。
 ## 依赖收集
 
 同步计算属性的依赖收集是自动的，不需要显式指定依赖参数，当`State`中的所依赖的数据变化时，会自动触发计算属性的重新计算。 
