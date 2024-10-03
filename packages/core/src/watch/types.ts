@@ -1,14 +1,14 @@
-import type { StateOperateParams, StateOperates } from "../store/types"
+import type { StateOperate, StateOperateType } from "../store/types"
 import type { WatchObject } from "./watchObject"
 import type { EventListener } from "../events/emitter"
 import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions } from "../observer/types"
 
-export type WatchListener<T=any,P=any> = (operate:StateOperateParams<T,P>)=>void
+export type WatchListener<T=any,P=any> = (operate:StateOperate<T,P>)=>void
 
 export type WatchListenerOptions = {
     once?    : boolean                                      // 只侦听一次后自动移除
-    operates?: '*' | 'read' | 'write' | StateOperates[]     // 只侦听的操作类型
-    filter?  : (args:StateOperateParams)=>boolean           // 过滤器
+    operates?: '*' | 'read' | 'write' | StateOperateType[]     // 只侦听的操作类型
+    filter?  : (args:StateOperate)=>boolean           // 过滤器
 }
 export type Watcher = EventListener
 

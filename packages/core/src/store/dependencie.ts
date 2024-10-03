@@ -46,7 +46,7 @@
  * 
  */
 
-import { StateOperateParams } from ".";
+import { StateOperate } from ".";
 import { ComputedObject } from "../computed/computedObject";
 import { PATH_DELIMITER } from "../consts";
 import { forEachObject, isPathEq } from "../utils";
@@ -64,7 +64,7 @@ export class DependencieManager{
      * 侦听变更事件
      * @param state 
      */
-    private onUpdate(params:StateOperateParams){ 
+    private onUpdate(params:StateOperate){ 
         this.noticeChange(params)   
     }
 
@@ -97,7 +97,7 @@ export class DependencieManager{
      * @param oldValue 
      * @param newValue 
      */
-    private noticeChange(params:StateOperateParams){
+    private noticeChange(params:StateOperate){
         const { path} = params
         const pathStr = Array.isArray(path) ? path.join(PATH_DELIMITER) : path
         

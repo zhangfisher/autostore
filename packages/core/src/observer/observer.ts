@@ -18,7 +18,7 @@ import { getId } from "../utils/getId";
 import {  StoreEvents } from "../events"; 
 import { ObserverDescriptor, ObserverOptions } from "./types";
 import { ComputedContext } from "../computed/types";
-import { StateOperateParams, UpdateOptions } from "../store/types";
+import { StateOperate, UpdateOptions } from "../store/types";
 import {  Watcher, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
 
@@ -166,7 +166,7 @@ export class ObserverObject<
      * 
      * @returns 
      */
-    watch(listener:(operate:StateOperateParams)=>void,options?:WatchListenerOptions){
+    watch(listener:(operate:StateOperate)=>void,options?:WatchListenerOptions){
         return this.store.watch(this.getValueWatchPath(),(operate)=>{
             listener.call(this,operate)
         },options)
@@ -198,7 +198,7 @@ export class ObserverObject<
      * 当依赖变化时调用
      * @param _ 
      */
-    protected onDependsChange(_:StateOperateParams){ 
+    protected onDependsChange(_:StateOperate){ 
     
     }
 

@@ -1,7 +1,7 @@
 ---
 group:
   title: 信号组件
-order: 3  
+order: 2  
 demo:
   tocDepth: 5
 toc: content
@@ -11,14 +11,23 @@ toc: content
 
 将状态数据封装为信号组件，当状态数据变化时，自动触发信号组件的重新渲染。
 
-> 只需要指定状态数库的路径或者提供一个返回状态数据的函数即可。
+![](./signal-from-state.drawio.png)
+
+
 
 ```ts | pure
 interface SignalComponentType<State extends Dict>{
-    (selector: string):React.ReactNode
+    // 指定状态数据路径
+    (selector: string):React.ReactNode   
+    // 返回状态数据的函数
     <Value=any>(selector: (state:ComputedState<State>)=>Value):React.ReactNode 
 }
 ```
+
+:::success{title=提示}
+只需要指定状态数库的路径或者提供一个返回状态数据的函数即可。
+:::
+
 
 ## 同步信号组件
 
@@ -67,7 +76,7 @@ export default () => {
       <ColorBlock name="LastName">{$('user.lastName')}</ColorBlock>
       <ColorBlock>FullName :{$(state=>state.user.firstName + ' ' + state.user.lastName)}</ColorBlock>
       <Button onClick={()=>state.user.firstName=state.user.firstName+'❤️'}>Change FirstName</Button>
-      <Button onClick={()=>state.user.lastName=state.user.lastName+'.'}>Change LastName</Button>
+      <Button onClick={()=>state.user.lastName=state.user.lastName+'✈️'}>Change LastName</Button>
     </div>
 }
 ```
@@ -76,7 +85,6 @@ export default () => {
 ## 异步计算信号组件
 
 当使用`$('<状态路径>')`将**状态数据直接直接封装为信号组件**时，如果状态数据是异步数据对象`AsyncComputedValue`时，该对象包含了`loading`、`error`、`value`等属性。
-有
  
 
 ```tsx

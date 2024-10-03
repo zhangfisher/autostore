@@ -1,6 +1,6 @@
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
-import { StateOperates } from './types'; 
+import { StateOperateType } from './types'; 
 import { CyleDependError } from '../errors'; 
 import { ComputedState } from '../types';
 
@@ -8,8 +8,8 @@ import { ComputedState } from '../types';
 const __NOTIFY__ = Symbol('__NOTIFY__')
 
 export type ReactiveNotifyParams<T=any> = {
-    type:StateOperates, path: string[], indexs:number[] , value: T, oldValue: T, parentPath: string[], parent: any,
-    operates?:StateOperates[]
+    type:StateOperateType, path: string[], indexs:number[] , value: T, oldValue: T, parentPath: string[], parent: any,
+    operates?:StateOperateType[]
 }
 
 

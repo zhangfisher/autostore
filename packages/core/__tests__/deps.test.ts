@@ -1,5 +1,5 @@
 import { test,expect, describe } from "vitest"
-import { AutoStore,computed, delay, StateOperateParams  } from "../"  
+import { AutoStore,computed, delay, StateOperate  } from "../"  
 
  
 describe("依赖关系管理",()=>{
@@ -64,7 +64,7 @@ describe("依赖关系管理",()=>{
                     z:(scope:any)=>scope.y + 1,
                 }       
             });   
-            const operates:StateOperateParams[] = []
+            const operates:StateOperate[] = []
             store.watch((operate)=>{
                 operates.push(operate)
                 if(operate.path[1]==="h"){

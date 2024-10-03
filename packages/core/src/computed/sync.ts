@@ -4,7 +4,7 @@
 import { ComputedOptions,  SyncRuntimeComputedOptions } from './types';
 import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
-import { StateOperateParams } from "../store/types";
+import { StateOperate } from "../store/types";
 import { noRepeat } from "../utils/noRepeat";
 import { calcDependPaths } from '../utils/calcDependPaths';
 
@@ -102,7 +102,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
    * 当依赖发生变化时调用
    * @param event
    */
-  protected onDependsChange(event: StateOperateParams): void {      
+  protected onDependsChange(event: StateOperate): void {      
       this.run({changed:event})
   }
 }

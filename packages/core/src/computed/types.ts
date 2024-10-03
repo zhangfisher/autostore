@@ -16,7 +16,7 @@
  * 
  */
 import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions, ObserverScopeRef } from "../observer/types"
-import { StateOperateParams } from "../store/types"
+import { StateOperate } from "../store/types"
 import { ComputedObject } from "./computedObject" 
 import { Dict } from "../types"
 
@@ -34,7 +34,7 @@ export interface ComputedGetterArgs{
      * 发生变化的依赖信息 
      * 
      */
-    changed?:StateOperateParams
+    changed?:StateOperate
 }
  
 export type ComputedGetter<Value,Scope=any> = (scope: Scope,args:Required<ComputedGetterArgs>) => Exclude<Value,Promise<any>>
@@ -83,7 +83,7 @@ export interface AsyncComputedGetterArgs{
      * 发生变化的依赖信息 
      * 
      */
-    changed?:StateOperateParams
+    changed?:StateOperate
 }
 
 export type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (scope:Scope,args:Required<AsyncComputedGetterArgs> & P) => Promise<Value>
@@ -102,12 +102,12 @@ export type RequiredComputedOptions<Value=any> = Required<ComputedOptions<Value>
  */
 export type RuntimeComputedOptions = ComputedOptions & {
     first?  : boolean                           // 当第一次运行时为true
-    changed?: StateOperateParams                // 变化的依赖信息
+    changed?: StateOperate                // 变化的依赖信息
 } 
 
 export type SyncRuntimeComputedOptions = SyncComputedOptions & {
     first?  : boolean                           // 当第一次运行时为true
-    changed?: StateOperateParams                // 变化的依赖信息
+    changed?: StateOperate                // 变化的依赖信息
 } 
 
 

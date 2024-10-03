@@ -18,13 +18,14 @@ export type ColorBlockProps = React.PropsWithChildren<
 		value?: any;
 		name?: string;
 		loading?: boolean;		
+		comment?: string;
 	}
 >;
 
 export const ColorBlock: React.FC<ColorBlockProps> = React.memo(
 	(props) => {
 		const renderCount = useRef(0);
-		const { name, value = "",loading =false } = props;
+		const { name, value = "",loading =false,comment } = props;
 		const backgroundColor = getRandomColor();
 		let textColor = "block";
 		if (color.rgb(backgroundColor).isDark()) {
@@ -56,6 +57,7 @@ export const ColorBlock: React.FC<ColorBlockProps> = React.memo(
 						{props.children}
 					</span>
 				</span>		
+				{ comment ? <span style={{ paddingRight: "6px ",flexShrink:0 }}>{comment}</span> : null}
 				{ loading ? <Loading/> : null}
 				<span title="Render Count" style={{ fontSize: "8px" }}>{renderCount.current}</span>
 			</div>

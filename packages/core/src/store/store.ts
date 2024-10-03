@@ -52,7 +52,7 @@
  
 import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
-import type { AutoStoreOptions, StateChangeEvents, StateOperateParams, StateTracker, UpdateOptions } from "./types";
+import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from "./types";
 import type { Dict, SyncFunction } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
@@ -83,7 +83,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _options: Required<AutoStoreOptions<State>>
     private _silenting = false                                                  // 是否静默更新，不触发事件
     private _batching = false                                                   // 是否批量更新中
-    private _batchOperates:StateOperateParams[] = []                            // 暂存批量操作
+    private _batchOperates:StateOperate[] = []                            // 暂存批量操作
     private _peeping:boolean = false
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
@@ -139,7 +139,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      * type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any
      */
-    _notify(params:StateOperateParams) {          
+    _notify(params:StateOperate) {          
         if(this._peeping && params.type=='get') return    // 偷看时不触发事件
         if(this._batching){
             this._batchOperates.push(params)
@@ -182,7 +182,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const listener = isWatchAll ? arguments[0] : arguments[1]
 
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
-            return (data:StateOperateParams)=>{                            
+            return (data:StateOperate)=>{                            
                 if(operates==='*'){
                 }else if(operates==='write'){
                     if(data.type==='get') return
@@ -527,8 +527,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         let watcher:Watcher 
         return {
             stop:()=>watcher && watcher.off(),
-            start:async (isStop?:(operate:StateOperateParams)=>boolean)=>{
-                const ops:StateOperateParams[] = []
+            start:async (isStop?:(operate:StateOperate)=>boolean)=>{
+                const ops:StateOperate[] = []
                 return new Promise((resolve)=>{
                     watcher = this.watch((operate)=>{       
                         ops.push(operate)         

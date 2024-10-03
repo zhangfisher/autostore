@@ -5,14 +5,14 @@ import { Dict } from "../types"
 import type { AutoStore } from "./store"
 
 export type BatchChangeEvent= '__batch_update__'
-export type StateChangeEvents = Record<string,StateOperateParams>
+export type StateChangeEvents = Record<string,StateOperate>
 
-export type StateOperates = 'get' | 'set' | 'delete'                   // 用于对象
+export type StateOperateType = 'get' | 'set' | 'delete'                   // 用于对象
                             | 'insert' | 'update' | 'remove'           // 用于数组  
                             | 'batch'                                  // 批量操作
 
-export type StateOperateParams<T=any,P=any> = {
-    type       : StateOperates,
+export type StateOperate<T=any,P=any> = {
+    type       : StateOperateType,
     path       : string[],
     value      : T,
     indexs?    : number[],               // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
@@ -184,5 +184,5 @@ export type UpdateOptions = {
 
 export type StateTracker= {
     stop:()=>void,
-    start(isStop?:(operate:StateOperateParams)=>boolean):Promise<StateOperateParams[]>
+    start(isStop?:(operate:StateOperate)=>boolean):Promise<StateOperate[]>
 }

@@ -16,7 +16,7 @@ import { ComputedObject } from "./computedObject";
 import { Dict } from "../types";
 import { getSnap } from "../utils/getSnap";
 import { getError } from "../utils/getError";
-import { StateOperateParams } from "../store/types";
+import { StateOperate } from '../store/types';
 import { updateObjectVal } from "../utils/updateObjectVal";
 import { ASYNC_COMPUTED_VALUE, PATH_DELIMITER } from "../consts";
 import { AbortError } from "../errors"; 
@@ -87,12 +87,13 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			},{batch: updatedCount > 1 ? batchEvent : false})			
 		}else{
 			Object.assign(this.value as object,values)		
+			const isBatch = updatedCount > 1
 			Object.entries(values).forEach(([key,value])=>{
-				this.store.changesets.emit(
-					`${this.strPath}.${key}`,
-					{type:"set",path:[this.strPath,key],value:value,parent:this.value})
+				const op:StateOperate = {type:"set",path:[this.strPath,key],value:value,parent:this.value}
+				if(isBatch) op.reply = true
+				this.store.changesets.emit(`${this.strPath}.${key}`,op)
 			})
-			if(updatedCount >1) this.store.changesets.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
+			if(isBatch) this.store.changesets.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
 		}		
   	} 
 	/**
@@ -366,7 +367,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		} 
 		this.onDoneCallback(options,ctx.error,ctx.hasAbort,ctx.hasTimeout,scope,computedResult)
 	}
-	protected onDependsChange(params:StateOperateParams){ 
+	protected onDependsChange(params:StateOperate){ 
 		this.store.log(() => `AsyncComputed<${this.id}> is running by depends ${params.type}/${params.path.join(".")} changed `);
 		this.run({changed:params})		
 	}
