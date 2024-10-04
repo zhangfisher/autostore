@@ -176,9 +176,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @returns {Watcher} - 返回一个表示监听器的数字标识符，用来取消监听。
      */    
     watch(listener:WatchListener,options?:WatchListenerOptions):Watcher
-    watch(paths:string | (string|string[])[],listener:WatchListener,options?:WatchListenerOptions):Watcher
+    watch(paths:'*' | string | (string|string[])[],listener:WatchListener,options?:WatchListenerOptions):Watcher
     watch():Watcher{
-        const isWatchAll = typeof(arguments[0])==='function' 
+        const isWatchAll = typeof(arguments[0])==='function' || arguments[0]==='*'
         const listener = isWatchAll ? arguments[0] : arguments[1]
 
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{

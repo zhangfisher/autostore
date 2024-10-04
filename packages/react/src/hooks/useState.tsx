@@ -1,9 +1,10 @@
-import { PATH_DELIMITER, setVal, type ComputedState, type Dict } from '@autostorejs/core';
+import { isPlainObject, PATH_DELIMITER, setVal, Watcher, type ComputedState, type Dict } from '@autostorejs/core';
 import type { ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
 
 export type UseStateResult<Value>=[Value,React.Dispatch<React.SetStateAction<Value>>]
+
 export type UseStateGetter<Value,State extends Record<string, any>>= (state:ComputedState<State>)=>Value
 export type UseStateSetter<SetValue,State extends Record<string, any>>= (value:SetValue,state:ComputedState<State>)=>void
 
@@ -12,7 +13,7 @@ export interface UseStateType<State extends Dict> {
     <Value>(selector: string): UseStateResult<Value>
     <Value>(selector: string[]): UseStateResult<Value>
     <Value,SetValue>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateResult<Value>
-    ():any        
+    (): [State,UseStateGetter<void,State>,]
 }
 
 /**
@@ -54,24 +55,37 @@ export function createUseState<State extends Dict>(store:ReactAutoStore<State>){
         const setter = args.length===2 && typeof(args[1])==='function' ? args[1] : undefined
 
         const [ value,setValue ] = useState(()=>getValueBySelector(store,selector,true))    
+
         // 注意，如果输入的计算属性是一个异步计算属性，则会自动添加后缀'value'
         const deps = store.useDeps(selector)
 
-        useEffect(()=>{      
-            const watcher = store.watch(deps,()=>{
-                setValue(getValueBySelector(store,selector))  
-            })
+        useEffect(()=>{    
+            let watcher:Watcher  
+            if(deps.length===0){
+                watcher = store.watch(()=>{
+                    setValue({...store.state})  
+                })
+            }else{
+                watcher = store.watch(deps,()=>{
+                    const val = getValueBySelector(store,selector)
+                    setValue(isPlainObject(val) ? {...val} : Array.isArray(val) ? [...val] : val)  
+                })
+            }            
             return ()=>watcher.off()
         },[deps])    
 
         const updateValue = useCallback((value:any)=>{
-            if(typeof(selector)==='string'){            
-                store.update(state=>setVal(state,selector.split(PATH_DELIMITER),value))
-            }else if(Array.isArray(selector)){
-                store.update(state=>setVal(state,selector,value))
-            }else if (typeof(selector)==='function'){                
-                setter && store.update(state=>setter(value,state))
-            }
+            if(selector){
+                if(typeof(selector)==='string'){            
+                    store.update(state=>setVal(state,selector.split(PATH_DELIMITER),value))
+                }else if(Array.isArray(selector)){
+                    store.update(state=>setVal(state,selector,value))
+                }else if (typeof(selector)==='function'){                
+                    setter && store.update(state=>setter(value,state))
+                } 
+            }else if(typeof(value)==='function'){
+                store.update(state=>value(state),{batch:true})
+            }            
         },[selector])
         return [ value,updateValue ] 
     }) as UseStateType<State>

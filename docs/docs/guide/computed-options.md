@@ -3,12 +3,13 @@ group:
   title: 计算属性
   order: 2
 title: computed
-order: 3  
+order: 7 
 demo:
   tocDepth: 5
 toc: content
 ---
 
+# 配置
 
 无论是同步或异步计算属性均推荐使用`computed`函数来声明。
 

@@ -8,7 +8,7 @@ demo:
 toc: content
 ---
 
-# 了解
+# 关于
 
 ## 什么是信号？
 
@@ -179,7 +179,7 @@ toc: content
 
 因此，`React`并不支持`signal`的概念，除排未来`React`像`Vue`一样升级`Vue Vapor mode`进行重大升级，抛弃`Virtual DOM`，否则在`React`在中是不能真正使用如同`solidjs`和`Svelte`的`signal`概念的。
 
-但是无论是`Virtual DOM`还是`signal`，核心均是为了解决`细粒度更新`的问题，从而提高渲染问题。
+但是无论是`Virtual DOM`还是`signal`，核心均是为关于决`细粒度更新`的问题，从而提高渲染问题。
 
 因此，我们可以结合`React`的`React.memo`和`useMemo`等方法来模拟`signal`的概念，实现`细粒度更新`。
 
@@ -246,6 +246,6 @@ export default () => {
 
 
 :::info
-自`React 19`开始,`React`官方推出`Compiler`，帮助用户解决`React.memo`的问题，减少用户的心智负担。但是其并不是为了解决细粒度更新的问题，而是优化提高`React`的性能。
+自`React 19`开始,`React`官方推出`Compiler`，帮助用户解决`React.memo`的问题，减少用户的心智负担。但是其并不是为关于决细粒度更新的问题，而是优化提高`React`的性能。
 本人对`Compiler`的使用并不是很看好，有待进一步研究。
 :::

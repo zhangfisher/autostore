@@ -9,11 +9,11 @@ toc: content
 
 ---
 
-# 了解
+# 关于
 
 使用`AutoStore`的起手式就是创建一个`AutoStore`对象，`AutoStore`类是`AutoStore`的核心对象，所有的功能都是基于`AutoStore`对象来实现的。
 
-在使用`AutoStore`之前我们简单了解一下`AutoStore`的基本原理和工作流程。
+在使用`AutoStore`之前我们简单关于一下`AutoStore`的基本原理和工作流程。
 
 ## **对象结构**
 

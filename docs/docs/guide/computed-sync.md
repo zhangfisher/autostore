@@ -2,7 +2,7 @@
 group:
   title: 计算属性
   order: 2
-order: 0  
+order: 5 
 title: 同步计算
 demo:
   tocDepth: 5
