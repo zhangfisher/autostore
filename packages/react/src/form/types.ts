@@ -1,13 +1,14 @@
 import { ComputedState, Dict } from "@autostorejs/core"
 
-export type FormBindings<Value=any>={
-    value:Value
-    onChange:(value:Value)=>void
+export type InputBindings<Value=any>={ 
+    onChange?:(value:Value)=>void 
+}
+export type InputBindingsOptions = {
+    debounce?:number 
 }
 
-
-export interface FormInputBinder<State extends Dict>{
-    <Value=any>(selector: string):FormBindings<Value>
-    <Value=any>(getter: (state:ComputedState<State>)=>Value,setter:(value:Value)=>void):FormBindings<Value>
+export interface InputBindingsType<State extends Dict>{
+    <Value=any>(selector: string):InputBindings<Value>
+    <Value=any>(getter: (state:ComputedState<State>)=>Value,setter:(value:Value)=>void):InputBindings<Value>
 }
 

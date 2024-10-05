@@ -14,7 +14,7 @@ export type InputProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLI
 }
 
 export const Input:ReactFC<InputProps> = (props:InputProps)=>{
-    const { id=Math.random().toString(36).slice(2), enable = true, validate = true, visible = true, value, style, ...restProps } = props;
+    const {  enable = true, validate = true, visible = true, value, style, ...restProps } = props;
 
     const inputStyle: CSSProperties = {
         border: validate === false ? "1px solid red" : "1px solid #bbb",
@@ -23,7 +23,6 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
         margin: "4px",
         padding: "8px",
         display: visible ? "block" : "none",
-        flexGrow:1,
         ...style,
     };
     const labelStyle: CSSProperties = {
@@ -36,14 +35,16 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
 
     return (
         <div style={{display:"flex",alignItems:"center"}}>
-            { props.label ? <label htmlFor={id}  style={labelStyle}>{props.label}</label> : null }
-            <input
-                id={id}
-                style={inputStyle}
-                value={value ?? ""}
-                readOnly={!enable}
-                {...restProps}
-            />
+            <span style={{flexGrow:1}}>
+                <input
+                    style={inputStyle}
+                    value={value ?? ""}
+                    readOnly={!enable}
+                    {...restProps}
+                />
+            </span>           
+             { props.label ? <label style={labelStyle}>{props.label}</label> : null }
+
         </div>
     );
 };

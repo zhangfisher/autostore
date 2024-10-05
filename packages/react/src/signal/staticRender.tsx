@@ -57,6 +57,6 @@ export function createStaticRender<State extends Dict>(store:ReactAutoStore<Stat
             })
             return ()=>watcher.off()
         },[deps])
-        return <>{value}</>
+        return <>{String(value)}</>
     }, ()=>true) 
 }
