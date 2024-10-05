@@ -91,9 +91,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			Object.entries(values).forEach(([key,value])=>{
 				const op:StateOperate = {type:"set",path:[this.strPath,key],value:value,parent:this.value}
 				if(isBatch) op.reply = true
-				this.store.changesets.emit(`${this.strPath}.${key}`,op)
+				this.store.operates.emit(`${this.strPath}.${key}`,op)
 			})
-			if(isBatch) this.store.changesets.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
+			if(isBatch) this.store.operates.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
 		}		
   	} 
 	/**

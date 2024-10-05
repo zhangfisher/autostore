@@ -32,7 +32,7 @@ export class AutoStoreDevTools{
     }
     add(store:any){      
         this.stores.set(store.id,store)
-        store.changesets.onAny((payload:any,type:any)=>{
+        store.operates.onAny((payload:any,type:any)=>{
             this.reduxStore.dispatch({
                 type,
                 store,

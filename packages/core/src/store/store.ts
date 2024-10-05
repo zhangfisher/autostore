@@ -79,7 +79,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
     public watchObjects: WatchObjects<State>      
-    protected _changesets = new EventEmitter<StateChangeEvents>()                    // 依赖变更事件触发器
+    protected _operates = new EventEmitter<StateChangeEvents>()                    // 依赖变更事件触发器
     private _options: Required<AutoStoreOptions<State>>
     private _silenting = false                                                  // 是否静默更新，不触发事件
     private _batching = false                                                   // 是否批量更新中
@@ -111,7 +111,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
-    get changesets(){return this._changesets}    
+    get operates(){return this._operates}    
     get options(){return this._options}
     get silenting(){return this._silenting}
     get batching(){return this._batching}
@@ -145,7 +145,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             this._batchOperates.push(params)
         }
         if(this._silenting) return        
-        this.changesets.emit(params.path.join(PATH_DELIMITER),params)       
+        this.operates.emit(params.path.join(PATH_DELIMITER),params)       
     } 
 
     // ************* Watch **************/
@@ -199,12 +199,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         if(isWatchAll){ // 侦听全部
             const {operates,filter} = Object.assign({once:false,operates:'write'},arguments[1])  as Required<WatchListenerOptions>
             const handler = createEventHandler(operates,filter)
-            return this.changesets.onAny(handler) 
+            return this.operates.onAny(handler) 
         }else{ // 只侦听指定路径
             const keyPaths = arguments[0] as string | (string|string[])[]
             const paths:string[] = Array.isArray(keyPaths) ? keyPaths.map(v=>typeof(v)==='string'? v : v.join(PATH_DELIMITER)) : [keyPaths]
             const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[2]) as Required<WatchListenerOptions>
-            const subscribeMethod = once ? this.changesets.once.bind(this.changesets) : this.changesets.on.bind(this.changesets)
+            const subscribeMethod = once ? this.operates.once.bind(this.operates) : this.operates.on.bind(this.operates)
             const listeners:EventListener[]=[]
             const handler = createEventHandler(operates,filter)
             paths.forEach(path=>{                
@@ -397,7 +397,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                     // 然后再触发批量更新事件
                     try{          
                         const batchEvent = batch===true ? BATCH_UPDATE_EVENT : String(batch)
-                        this.changesets.emit(batchEvent,{type:'batch',path:[batchEvent],value:this._batchOperates})
+                        this.operates.emit(batchEvent,{type:'batch',path:[batchEvent],value:this._batchOperates})
                     }finally{
                         this._batchOperates = []
                     }
@@ -554,7 +554,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      */
     destroy(){
         this.offAll()
-        this._changesets.offAll()
+        this._operates.offAll()
         this.watchObjects.clear()
         this.computedObjects.clear()        
     }

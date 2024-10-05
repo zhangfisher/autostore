@@ -142,3 +142,11 @@ const obj = store.computedObject.create(
 
 ```
 
+ 
+
+:::success{title=提示}
+使用`computed(<getter>,<depends>,<options>)`创建计算属性时，涉及到
+- `getter`：计算函数, 详见[计算函数](./computed-getter.md)
+- `depends`：依赖, 详见[依赖](./computed-deps.md)
+- `options`：选项, 详见[选项](./computed-options.md)
+:::

@@ -153,7 +153,8 @@ export type ComputedScope  =  ObserverScopeRef | string | string[] | ((computedO
  * 
  *  
  */
-export type ComputedDepends = ('CURRENT' | 'ROOT' | 'PARENT' | string | string[] )[]  
+export type ComputedDepend = 'CURRENT' | 'ROOT' | 'PARENT' | `/${string}` | `./${string}` | `../${string}` | string | string[] 
+export type ComputedDepends = ComputedDepend[]  
 
 export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Value> {    
     /**
