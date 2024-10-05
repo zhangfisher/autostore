@@ -1,0 +1,99 @@
+// Variables
+@table-bg: transparent;
+@table-bg-accent: #f9f9f9;
+@table-bg-hover: #f5f5f5;
+@table-bg-active: #e8e8e8;
+@table-border-color: #dee2e6;
+
+// Mixin for table row variant
+.table-row-variant(@state, @background) {
+  .table-@{state} {
+    background-color: @background;
+  }
+  .table-@{state}-hover {
+    &:hover {
+      background-color: darken(@background, 5%);
+    }
+  }
+}
+
+// Base table styles
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  color: #212529;
+  background-color: @table-bg;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.75rem;
+    vertical-align: top;
+    border-top: 1px solid @table-border-color;
+  }
+
+  thead th {
+    vertical-align: bottom;
+    border-bottom: 2px solid @table-border-color;
+  }
+
+  tbody + tbody {
+    border-top: 2px solid @table-border-color;
+  }
+
+  .table {
+    background-color: @table-bg;
+  }
+}
+
+// Table variants
+.table-striped {
+  tbody tr:nth-of-type(odd) {
+    background-color: @table-bg-accent;
+  }
+}
+
+.table-hover {
+  tbody tr:hover {
+    background-color: @table-bg-hover;
+  }
+}
+
+.table-bordered {
+  border: 1px solid @table-border-color;
+
+  th,
+  td {
+    border: 1px solid @table-border-color;
+  }
+}
+
+.table-borderless {
+  th,
+  td,
+  thead th,
+  tbody + tbody {
+    border: 0;
+  }
+}
+
+.table-sm {
+  th,
+  td {
+    padding: 0.3rem;
+  }
+}
+
+// Table row variants
+.table-active {
+  background-color: @table-bg-active;
+}
+
+.table-row-variant('primary', #b8daff);
+.table-row-variant('secondary', #d6d8db);
+.table-row-variant('success', #c3e6cb);
+.table-row-variant('info', #bee5eb);
+.table-row-variant('warning', #ffeeba);
+.table-row-variant('danger', #f5c6cb);
+.table-row-variant('light', #fdfdfe);
+.table-row-variant('dark', #c6c8ca);

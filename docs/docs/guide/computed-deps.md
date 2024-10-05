@@ -2,7 +2,7 @@
 group:
   title: 计算属性
   order: 2
-order: 4  
+order: 3  
 demo:
   tocDepth: 5
 toc: content

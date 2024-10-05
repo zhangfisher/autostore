@@ -2,7 +2,7 @@
 group:
   title: 计算属性
   order: 2
-order: 2 
+order: 1 
 demo:
   tocDepth: 5
 toc: content
@@ -117,9 +117,9 @@ const store = createStore({
 :::
 
 
-## 独立创建计算属性
+## 动态创建计算对象
 
-也可以不在状态中声明，而是使用`store.computedObject.create`创建计算属性。
+也可以不在状态中声明，而是使用`store.computedObject.create`动态创建计算属性。
 
 ```ts | pure {11-16}
 import { createStore } from '@autostorejs/react';
@@ -136,17 +136,26 @@ const obj = store.computedObject.create((user)=>user.firstName+user.lastName)
 // 异步计算属性
 const obj = store.computedObject.create(
   async (user)=>user.firstName+user.lastName,  // 计算函数
-  ['./firstName','./lastName'],                // 指定依赖
+  ['./firstName','./lastName'],                // ❌ 不支持相对依赖
+  ['user.firstName','user.lastName'],          // ✅ 使用绝对依赖
   {...options....}                             // 参数
 )
 
 ```
 
- 
+**动态创建计算属性时与在状态中声明计算属性相比，存在以下区别**：
+
+- 动态创建计算属性不存在状态上下文，指依赖时不使用相对依赖，只能使用绝对依赖，即`./`、`./`、`PARENT`等依赖是无效的。
+- 动态创建计算对象的`associated=true`
+- 动态创建计算对象的功能与在状态中声明创建的功能基本相同，但计算结果没有存储在状态中，而是存储在计算对象中。可以通过`obj.value`来获取计算结果。
+
+更详细介绍请参考[动态创建计算对象](./computed-object.md)
+
+
 
 :::success{title=提示}
-使用`computed(<getter>,<depends>,<options>)`创建计算属性时，涉及到
-- `getter`：计算函数, 详见[计算函数](./computed-getter.md)
+使用`computed(<getter>,<depends>,<options>)`创建计算属性时，涉及到:
+- `getter`：计算函数, 在依赖更新时执行。详见[计算函数](./computed-getter.md)
 - `depends`：依赖, 详见[依赖](./computed-deps.md)
-- `options`：选项, 详见[选项](./computed-options.md)
+- `options`：各种控制选项, 详见[选项](./computed-options.md)
 :::
