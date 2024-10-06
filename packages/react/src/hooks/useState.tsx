@@ -1,20 +1,8 @@
-import { isPlainObject, PATH_DELIMITER, setVal, Watcher, type ComputedState, type Dict } from '@autostorejs/core';
+import { isPlainObject, PATH_DELIMITER, setVal, Watcher,  type Dict } from '@autostorejs/core';
 import type { ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
-
-export type UseStateResult<Value>=[Value,React.Dispatch<React.SetStateAction<Value>>]
-
-export type UseStateGetter<Value,State extends Record<string, any>>= (state:ComputedState<State>)=>Value
-export type UseStateSetter<SetValue,State extends Record<string, any>>= (value:SetValue,state:ComputedState<State>)=>void
-
-
-export interface UseStateType<State extends Dict> {
-    <Value>(selector: string): UseStateResult<Value>
-    <Value>(selector: string[]): UseStateResult<Value>
-    <Value,SetValue>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateResult<Value>
-    (): [State,UseStateGetter<void,State>,]
-}
+import { UseStateType } from './types';
 
 /**
  *  

@@ -1,13 +1,6 @@
-import { getVal, isAsyncComputedValue, PATH_DELIMITER, type ComputedState, type Dict } from "@autostorejs/core"
+import { getVal, isAsyncComputedValue, PATH_DELIMITER, type Dict } from "@autostorejs/core"
 import type { ReactAutoStore } from "../store"
 import { useState } from "react"
-
-export interface UseDepsType<State extends Dict>{
-    (selector: string,extendAsync?:boolean):string[][]
-    (selector: string[],extendAsync?:boolean):string[][]
-    (selector: (state:ComputedState<State>)=>any,extendAsync?:boolean):string[][]
-    (selector:any,extendAsync?:boolean):string[][] 
- }
 
 /**
  * 

@@ -1,4 +1,4 @@
-export function isPlainObject(obj: any): boolean {
+export function isPlainObject(obj: any): obj is object {
     if (obj === null || obj === undefined) {
         return false;
     }
@@ -8,3 +8,5 @@ export function isPlainObject(obj: any): boolean {
     return Object.prototype.toString.call(obj) === '[object Object]';
 }
 
+
+ 

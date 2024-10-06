@@ -1,49 +1,30 @@
 import { useEffect } from "react"
-import { ObserverScopeRef, IStore, Dict } from "@autostorejs/core/src/types"
-import { sharex } from "helux"
-import { installWatch } from "@autostorejs/core/src/watch/install"
-import { WatchDescriptorDefine,  WatchDependParams, WatchListener, WatchOptions } from "@autostorejs/core/src/watch/types" 
-import { normalizedWatchDepends } from "@autostorejs/core/src/watch/utils"
-import { IReactiveReadHookParams } from "../reactives/types"
+import {  Dict, WatchListenerOptions } from "@autostorejs/core" 
+import type { ReactAutoStore } from "../store"
+
+
+
 /**
- * createWatch的hook版本 
  * 
-   let { dd } = store.useWatch(()=>{
-
-   },[])
-
-
-
+ *  侦听store状态的变化，当组件销毁时自动取消侦听
+ * 
+ *   const { useWatch } = createStore({...})
+ * 
+ *   store.useWatch("order.price",(operate)=>{...})
+ *   store.useWatch(["order.price","order.count"],(operate)=>{...})
+ *   store.useWatch("order.price",(operate)=>{...},{operates:['add']}) 
  * 
  * 
  * @returns 
  */
-export function createUseWatch<T extends Dict>(store:IStore<T>){
-    return <Value = any,Result=Value>(listener:WatchListener<Value,Result>,depends:WatchDependParams<Value>,options?:WatchOptions<Result>)=>{
+export function createUseWatch<State extends Dict>(store:ReactAutoStore<State>){
+    return ()=>{        
+        const deps = arguments[0]
+        const listener = arguments[1]
+        const options = arguments[2] as WatchListenerOptions
         useEffect(() => { 
-            const params = {
-                path: ['value'], 
-                parent: undefined,
-                value: () => {
-                    const descr = {
-                        listener,
-                        options: Object.assign({
-                            depends: normalizedWatchDepends(depends),
-                            context : sharex({value: 0 }),
-                            selfPath: ['value'],
-                            initial : 0,
-                            enable  : true,
-                            scope   : ObserverScopeRef.Depends         
-                        },options)
-                    } as WatchDescriptorDefine 
-                    return descr
-                }
-            } as unknown as IReactiveReadHookParams
-            // 安装
-            const watchObject = installWatch(params,store)
-            return ()=>{ 
-                store.watchObjects.delete(watchObject.id)
-            }             
-        },[depends])        
+            const watcher = store.watch(deps,listener,options)
+            return ()=>watcher.off()
+        },[])        
     }
 }

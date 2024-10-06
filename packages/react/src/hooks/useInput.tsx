@@ -1,25 +1,13 @@
 
-import { isPlainObject, PATH_DELIMITER, setVal, Watcher, type ComputedState, type Dict } from '@autostorejs/core';
+import { isPlainObject, PATH_DELIMITER, setVal, Watcher, type Dict } from '@autostorejs/core';
 import type { ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
+import { getInputValueFromEvent } from '../utils/getInputValueFromEvent';
+import { isPrimitive } from '../utils/isPrimitive';
+import { UseInputType } from './types';
 
-export type UseInputBindings<Value> = Value extends Dict ? Record<string,{
-    value:any
-    onChange:(e:any)=>void
-}> : Value
 
-export type UseInputOptions<Value>={
-    transfrom?:(input:Value,state:Dict)=>void
-}
-
-export type UseInputGetter<Value,State extends Record<string, any>>= (state:ComputedState<State>)=>Value
-
-export interface UseInputType<State extends Dict> {
-    <Value>(selector: string,options?:UseInputOptions<Value>): UseInputBindings<Value>
-    <Value>(selector: string[],options?:UseInputOptions<Value>): UseInputBindings<Value>
-    <Value>(getter: UseInputGetter<Value,State>,options?:UseInputOptions<Value>):UseInputBindings<Value>
-}
 /**
  * 
  * useInput用来为表单元素提供绑定数据的hook
@@ -57,47 +45,90 @@ export interface UseInputType<State extends Dict> {
 export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
     return  (function(){
         const args = arguments    
-        const selector = args.length>=1 && (Array.isArray(args[0]) || typeof(args[0])==='string') ? args[0] : undefined     
-        const getter = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined
-        const options = Object.assign({
-            transform:(input:unknown,state:Dict)=>input
-        },args.length===2 && typeof(args[1])==='object' ? args[1] : undefined)
+        if(args.length===0){
+            throw new Error("useInput must have at least one argument")
+        }
+        const selector = args[0]
+        const { transform } = Object.assign({
+            transform:(input:unknown,_:Dict)=>input
+        },args.length>=2 && typeof(args[1])==='object' ? args[1] : undefined)
 
+        const createInputBinding = useCallback((key:string[] | string | undefined,val:any)=>{
+            return {
+                value:val,
+                onChange:(e:any)=>{
+                    const inputValue = getInputValueFromEvent(e)
+                    transform(inputValue,store.state)
+                    if(key){
+                        store.update(state=>setVal(state,Array.isArray(key) ? key : key.split(PATH_DELIMITER),bindings))
+                    }
+                    e.preventDefault()
+                }
+            }   
+        },[])
+        const createInputObjectBindings = useCallback((val:object)=>{
+            const bindings = {} as Record<string,any>
+            Object.entries(val).forEach(([key,val])=>{
+                if(isPrimitive(val)){
+                    bindings[key] = createInputBinding(key,val)
+                }                    
+            })
+            return bindings
+        },[])
 
-        const [ value,setValue ] = useState(()=>getValueBySelector(store,selector,true))    
+        const [ bindings, setBindings ] = useState(()=>{
+            if(typeof(selector)==='function'){
+                return createInputBinding(undefined,selector())
+            }else{
+                const val =selector ? getValueBySelector(store,selector,true) : store.state
+                if(isPlainObject(val)){ 
+                    return createInputObjectBindings(val)
+                }else{
+                    if(typeof(selector)==='string'){
+                        return createInputBinding(selector,val)
+                    }else if(Array.isArray(selector)){
+                        return createInputBinding(selector.join(PATH_DELIMITER),val)
+                    }
+                }
+            }
+            
+        })    
 
-        // 注意，如果输入的计算属性是一个异步计算属性，则会自动添加后缀'value'
-        const deps = store.useDeps(selector)
+        //  收集依赖的路径
+        const deps = store.useDeps(selector) 
+
         useEffect(()=>{    
             let watcher:Watcher  
             if(deps.length===0){
-                watcher = store.watch(()=>{
-                    setValue({...store.state})  
+                watcher = store.watch(({path,value})=>{
+                    if(path.length!==1) return  // 只能处理一级的绑定          
+                    if(isPrimitive(value)){          
+                        setBindings({
+                            ...bindings,
+                            [path[0]]:createInputBinding(path[0],value)
+                        })
+                    }
                 })
             }else{
-                watcher = store.watch(deps,()=>{
-                    const val = getValueBySelector(store,selector)
-                    setValue(isPlainObject(val) ? {...val} : Array.isArray(val) ? [...val] : val)  
+                //@ts-ignore
+                watcher = store.watch(deps,({path})=>{
+                    if(typeof(selector)==='function'){
+                        const newValue = selector(store.state)
+                        setBindings(createInputBinding(undefined,newValue))
+                    }else{
+                        const val = getValueBySelector(store,selector,true)
+                        if(isPlainObject(val)){
+                            setBindings(createInputObjectBindings(val))
+                        }else{
+                            setBindings(createInputBinding(path,val))
+                        }
+                    } 
                 })
             }            
             return ()=>watcher.off()
-        },[deps])    
-
-        const updateValue = useCallback((value:any)=>{
-            if(selector){
-                if(typeof(selector)==='string'){            
-                    store.update(state=>setVal(state,selector.split(PATH_DELIMITER),value))
-                }else if(Array.isArray(selector)){
-                    store.update(state=>setVal(state,selector,value))
-                }else if (typeof(selector)==='function'){                
-                    setter && store.update(state=>setter(value,state))
-                } 
-            }else if(typeof(value)==='function'){
-                store.update(state=>value(state),{batch:true})
-            }            
-        },[selector])
-        return [ value,updateValue ] 
-    })  
+        },[deps])     
+        return bindings
+    }) as UseInputType<State>
 }
 
  
