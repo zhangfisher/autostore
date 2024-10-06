@@ -1,4 +1,4 @@
-import { getVal, isAsyncComputedValue, PATH_DELIMITER, type Dict } from "@autostorejs/core"
+import { getDepends, getVal, isAsyncComputedValue, PATH_DELIMITER, type Dict } from "@autostorejs/core"
 import type { ReactAutoStore } from "../store"
 import { useState } from "react"
 
@@ -27,29 +27,8 @@ import { useState } from "react"
 export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){ 
     return function(selector:any,extendAsync?:boolean){
         const [deps] = useState(()=>{
-            let deps:string[][] = [] 
-            if(typeof(selector)==='function'){
-                deps =  store.collectDependencies(()=>selector(store.state))  
-            }else if(typeof(selector)==='string'){
-                deps = [selector.split(PATH_DELIMITER)]   
-            }else if(Array.isArray(selector)){
-                deps =  [selector]  
-            }else{
-                deps = []
-            } 
-            // 判断是否是异步计算属性，如果是则需要自动添加value
-            if(extendAsync!==false){
-                deps.forEach(dep=>{
-                    // 获取值,不触发GET事件,即偷看
-                    let value =  store.peep(state=>getVal(state,dep))
-                    if(isAsyncComputedValue(value)){
-                        dep.push("value")
-                    }
-                })
-            }
-            return deps 
-        })
-        
+           return getDepends(selector,store,extendAsync)
+        })        
         return deps
     }
  } 

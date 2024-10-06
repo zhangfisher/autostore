@@ -44,14 +44,12 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
         if(args.length===0){
             throw new Error("useInput must have at least one argument")
         }
-        const selector = args[0]
+        const selector:string[] | undefined = args.length>=1 ? (
+                Array.isArray(args[0]) ? args[0]
+                    : (typeof(args[0])==='string' ? args[0].split(PATH_DELIMITER): undefined)
+                ) : undefined
         const getter = args.length>=2 && typeof(args[0])==='function' ? args[0] : undefined
-        const setter = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined
-        // const { debounce } = Object.assign({
-        //     debounce:0
-        // },args.length===2 && typeof(args[1])==='object' ? args[1] : (
-        //     args.length===3 && typeof(args[2])==='object' ? args[2] : undefined
-        // ))
+        const setter = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined 
  
         const createInputBinding = useCallback((key:string[] | string | undefined,val:any)=>{
             return {
@@ -68,11 +66,12 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
         },[])
 
 
-        const createInputObjectBindings = useCallback((val:object)=>{
+        const createInputObjectBindings = useCallback((parent:string[] | undefined,val:object)=>{
             const bindings = {} as Record<string,any>
             Object.entries(val).forEach(([key,val])=>{
                 if(isPrimitive(val)){
-                    bindings[key] = createInputBinding(key,val)
+                    const fpath = parent ? [...parent,key] : [key]
+                    bindings[key] = createInputBinding(fpath,val)
                 }                    
             })
             return bindings
@@ -84,7 +83,7 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
             }else{
                 const val =selector ? getValueBySelector(store,selector,true) : store.state
                 if(isPlainObject(val)){ 
-                    return createInputObjectBindings(val)
+                    return createInputObjectBindings(selector,val)
                 }else{
                     if(typeof(selector)==='string'){
                         return createInputBinding(selector,val)
@@ -92,8 +91,7 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
                         return createInputBinding(selector.join(PATH_DELIMITER),val)
                     }
                 }
-            }
-            
+            }            
         })    
  
 
@@ -101,8 +99,8 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
         const deps = store.useDeps(selector) 
 
         useEffect(()=>{    
-            let watcher:Watcher  
-            if(deps.length===0){
+            let watcher:Watcher              
+            if(deps.length===0 || args.length===0){
                 watcher = store.watch(({path,value})=>{
                     if(path.length!==1) return  // 只能处理一级的绑定          
                     if(isPrimitive(value)){          
@@ -112,16 +110,24 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
                         })
                     }
                 })
-            }else{
-                //@ts-ignore
-                watcher = store.watch(deps,({path})=>{
-                    if(typeof(selector)==='function'){
-                        const newValue = selector(store.state)
+            }else if(deps.length>0){
+                const val = selector ? getValueBySelector(store,selector,true) : undefined
+                const isSelObject = isPlainObject(val)
+                // 如果是一个对象，则添加一个通配符，表示对象的所有属性都依赖
+                if(selector && isSelObject && deps.length===1){
+                    deps[0].push('*')
+                }
+                
+                watcher = store.watch(deps,({path,value})=>{
+                    if(typeof(getter)==='function'){
+                        const newValue = getter(store.state)
                         setBindings(createInputBinding(undefined,newValue))
                     }else{
-                        const val = getValueBySelector(store,selector,true)
-                        if(isPlainObject(val)){
-                            setBindings(createInputObjectBindings(val))
+                        if(isSelObject){
+                            setBindings({
+                                ...bindings,
+                                [path[path.length-1]]:createInputBinding(path,value)
+                            })
                         }else{
                             setBindings(createInputBinding(path,val))
                         }

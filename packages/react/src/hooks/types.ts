@@ -26,7 +26,7 @@ export type UseInputGetter<Value,State extends Record<string, any>>= (state:Comp
 export type UseInputSetter<Value,State extends Record<string, any>>= (input:Value,state:ComputedState<State>)=>void
 
 export interface UseInputType<State extends Dict> {
-    (): UseInputBindings<State>
+    (): UseInputBindings<ComputedState<State>>
     <Value>(selector: string,options?:UseInputOptions): UseInputBindings<Value>
     <Value>(selector: string[],options?:UseInputOptions): UseInputBindings<Value>
     <Value>(getter: UseInputGetter<Value,State>,setter:UseInputSetter<Value,State>,options?:UseInputOptions):UseInputBindings<Value>
