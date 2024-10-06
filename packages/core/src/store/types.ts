@@ -11,14 +11,14 @@ export type StateOperateType = 'get' | 'set' | 'delete'                   // 用
                             | 'insert' | 'update' | 'remove'           // 用于数组  
                             | 'batch'                                  // 批量操作
 
-export type StateOperate<T=any,P=any> = {
+export type StateOperate<Value=any,Parent=any> = {
     type       : StateOperateType,
     path       : string[],
-    value      : T,
+    value      : Value,
     indexs?    : number[],               // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
-    oldValue?  : T,
+    oldValue?  : Value,
     parentPath?: string[],
-    parent?    : P,    
+    parent?    : Parent,    
     /**
      * 是否是批量操作时的回放事件
      */

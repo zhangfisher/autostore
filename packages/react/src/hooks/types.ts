@@ -1,4 +1,4 @@
-import { ComputedState, Dict } from "@autostorejs/core"
+import { ComputedState, Dict, WatchListener, WatchListenerOptions } from "@autostorejs/core"
 
 // ********** useDeps ********** 
 
@@ -13,22 +13,23 @@ export interface UseDepsType<State extends Dict>{
  
 // ********** useInput **********  
 
- export type UseInputBindings<Value,State extends Dict> = Value extends Dict ? Record<keyof State,{
+ export type UseInputBindings<Value> = Value extends Dict ? Record<keyof Value,{
     value:any
     onChange:(e:any)=>void
 }> : Value
 
-export type UseInputOptions<Value>={
-    transfrom?:(input:Value,state:Dict)=>void
+export type UseInputOptions={
+     
 }
 
 export type UseInputGetter<Value,State extends Record<string, any>>= (state:ComputedState<State>)=>Value
+export type UseInputSetter<Value,State extends Record<string, any>>= (input:Value,state:ComputedState<State>)=>void
 
 export interface UseInputType<State extends Dict> {
-    (): UseInputBindings<State,State>
-    <Value>(selector: string,options?:UseInputOptions<Value>): UseInputBindings<Value,State>
-    <Value>(selector: string[],options?:UseInputOptions<Value>): UseInputBindings<Value,State>
-    <Value>(getter: UseInputGetter<Value,State>,options?:UseInputOptions<Value>):UseInputBindings<Value,State>
+    (): UseInputBindings<State>
+    <Value>(selector: string,options?:UseInputOptions): UseInputBindings<Value>
+    <Value>(selector: string[],options?:UseInputOptions): UseInputBindings<Value>
+    <Value>(getter: UseInputGetter<Value,State>,setter:UseInputSetter<Value,State>,options?:UseInputOptions):UseInputBindings<Value>
 }
 
 
@@ -47,4 +48,16 @@ export interface UseStateType<State extends Dict> {
     <Value,SetValue>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateResult<Value>
     (): [State,UseStateGetter<void,State>,]
 }
+
+
+
+
+
+//  ********** useWatch **********
+   
+export interface UseWatchType {
+    <Value>(selector: string,listener:WatchListener<Value>,options?:WatchListenerOptions): void
+    <Value>(selector: string[],listener:WatchListener<Value>,options?:WatchListenerOptions): void  
+}
+
 

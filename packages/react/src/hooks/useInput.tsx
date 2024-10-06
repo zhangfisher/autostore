@@ -1,12 +1,11 @@
 
 import { isPlainObject, PATH_DELIMITER, setVal, Watcher, type Dict } from '@autostorejs/core';
-import type { ReactAutoStore } from '../store';
+import { type ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
 import { getInputValueFromEvent } from '../utils/getInputValueFromEvent';
 import { isPrimitive } from '../utils/isPrimitive';
-import { UseInputType } from './types';
-
+import { UseInputType } from './types'; 
 
 /**
  * 
@@ -31,14 +30,11 @@ import { UseInputType } from './types';
  * 
  * @example
  *  
- * const bindFullname = useInput((state=>state.firstName + ' ' +state.lastName,{
- *      // 对输入进行解析
- *      transform:(input,state)=>{
- *          const [firstName,lastName]  = value.split(' ')
- *          state.firstName = firstName
- *          state.lastName = lastName
- *      }
- * }) 
+ * const bindFullname = useInput((state=>state.firstName + ' ' +state.lastName,(input,state)=>{
+*          const [firstName,lastName]  = value.split(' ')
+*          state.firstName = firstName
+*          state.lastName = lastName
+  * }) 
  * <input {...bindFullname} /> 
  * 
  */
@@ -49,23 +45,29 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
             throw new Error("useInput must have at least one argument")
         }
         const selector = args[0]
-        const { transform } = Object.assign({
-            transform:(input:unknown,_:Dict)=>input
-        },args.length>=2 && typeof(args[1])==='object' ? args[1] : undefined)
-
+        const getter = args.length>=2 && typeof(args[0])==='function' ? args[0] : undefined
+        const setter = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined
+        // const { debounce } = Object.assign({
+        //     debounce:0
+        // },args.length===2 && typeof(args[1])==='object' ? args[1] : (
+        //     args.length===3 && typeof(args[2])==='object' ? args[2] : undefined
+        // ))
+ 
         const createInputBinding = useCallback((key:string[] | string | undefined,val:any)=>{
             return {
                 value:val,
                 onChange:(e:any)=>{
                     const inputValue = getInputValueFromEvent(e)
-                    transform(inputValue,store.state)
                     if(key){
-                        store.update(state=>setVal(state,Array.isArray(key) ? key : key.split(PATH_DELIMITER),bindings))
+                        store.update(state=>setVal(state,Array.isArray(key) ? key : key.split(PATH_DELIMITER),inputValue))
+                    }else{
+                        setter(inputValue,store.state)
                     }
-                    e.preventDefault()
                 }
             }   
         },[])
+
+
         const createInputObjectBindings = useCallback((val:object)=>{
             const bindings = {} as Record<string,any>
             Object.entries(val).forEach(([key,val])=>{
@@ -77,8 +79,8 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
         },[])
 
         const [ bindings, setBindings ] = useState(()=>{
-            if(typeof(selector)==='function'){
-                return createInputBinding(undefined,selector())
+            if(typeof(getter)==='function'){
+                return createInputBinding(undefined,getter(store.state))
             }else{
                 const val =selector ? getValueBySelector(store,selector,true) : store.state
                 if(isPlainObject(val)){ 
@@ -93,6 +95,7 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
             }
             
         })    
+ 
 
         //  收集依赖的路径
         const deps = store.useDeps(selector) 
@@ -129,6 +132,4 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
         },[deps])     
         return bindings
     }) as UseInputType<State>
-}
-
- 
+} 

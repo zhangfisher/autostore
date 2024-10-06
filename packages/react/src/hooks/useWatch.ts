@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import {  Dict, WatchListenerOptions } from "@autostorejs/core" 
 import type { ReactAutoStore } from "../store"
-
+import { UseWatchType } from "./types"
 
 
 /**
@@ -26,5 +26,5 @@ export function createUseWatch<State extends Dict>(store:ReactAutoStore<State>){
             const watcher = store.watch(deps,listener,options)
             return ()=>watcher.off()
         },[])        
-    }
+    } 
 }

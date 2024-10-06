@@ -42,42 +42,14 @@ export function createInputBinding<State extends Dict>(store:ReactAutoStore<Stat
     return (function(){ 
         const args = arguments    
         const selector = args.length>=1 && typeof(args[0])==='string' ? args[0]: undefined
-        const getter = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined 
-        const setter = args.length>=2 && typeof(args[2])==='function'? args[2] : undefined
-        const options = Object.assign({
-            debounce:0
-        },args.length===2 && typeof(args[1])==='object' ? args[1] : (
-            args.length===3 && typeof(args[2])==='object' ? args[2] : undefined
-        ))
-
-        if(typeof(getter)==='function' && typeof(setter)!=='function'){
-            throw new Error("bind must have a getter && setter function")
-        } 
-        let timeoutId: NodeJS.Timeout | null = null;
-
+        if(!selector){
+            throw new Error("Input bind must have at least one argument")
+        }
         const bindings:InputBindings = { }
 
         bindings['onChange'] = (e:any)=>{
-            const value = getInputValueFromEvent(e)            
-            if (timeoutId !== null) {
-                clearTimeout(timeoutId);
-            }
-            if(options.debounce>0){
-                timeoutId = setTimeout(() => {
-                    if(selector){
-                        setVal(store.state,selector.split(PATH_DELIMITER),value)
-                    }else{
-                        setter(value,store.state)
-                    }
-                }, options.debounce);
-            }else{
-                if(selector){
-                    setVal(store.state,selector.split(PATH_DELIMITER),value)
-                }else{
-                    setter(value,store.state)
-                }
-            }            
-            e.preventDefault()
+            const value = getInputValueFromEvent(e)    
+            setVal(store.state,selector.split(PATH_DELIMITER),value)
         }   
         return bindings
     })

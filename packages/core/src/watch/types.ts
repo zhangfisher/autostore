@@ -3,7 +3,7 @@ import type { WatchObject } from "./watchObject"
 import type { EventListener } from "../events/emitter"
 import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions } from "../observer/types"
 
-export type WatchListener<T=any,P=any> = (operate:StateOperate<T,P>)=>void
+export type WatchListener<Value=any,Parent=any> = (operate:StateOperate<Value,Parent>)=>void
 
 export type WatchListenerOptions = {
     once?    : boolean                                      // 只侦听一次后自动移除
