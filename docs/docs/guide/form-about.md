@@ -163,7 +163,7 @@ export default ()=>{
 import { createStore } from '@autostorejs/react';
 import { ColorBlock,Button,Input } from "components"
 
-const { state, $, bind } = createStore({
+const { state, $, bind,useInput } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
