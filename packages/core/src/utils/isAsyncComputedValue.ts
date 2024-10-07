@@ -1,4 +1,4 @@
-import { AsyncComputedValue } from "../../dist"
+import { AsyncComputedValue } from "../computed/types"
 import { ASYNC_COMPUTED_VALUE } from "../consts" 
 
 export function isAsyncComputedValue(value: any): value is AsyncComputedValue{

@@ -61,7 +61,7 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getVal } from "../utils";
+import { forEachObject, getSnapshot, getVal } from "../utils";
 import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
@@ -558,7 +558,15 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.watchObjects.clear()
         this.computedObjects.clear()        
     }
- 
+    /**
+     * 
+     * 返回当前状态的快照数据
+     *  @param reserveAsync - 是否保留异步对象。异步对象的值是一个AsyncComputedValue对象。=true时会保留。=false时会只返回value值
+     * @returns 
+     */
+    getSnap(reserveAsync:boolean = true){
+        return getSnapshot(this._data,reserveAsync)
+    }
 }
 
 

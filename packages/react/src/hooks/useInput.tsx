@@ -40,10 +40,7 @@ import { UseInputType } from './types';
  */
 export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
     return  (function(){
-        const args = arguments    
-        if(args.length===0){
-            throw new Error("useInput must have at least one argument")
-        }
+        const args = arguments   
         const selector:string[] | undefined = args.length>=1 ? (
                 Array.isArray(args[0]) ? args[0]
                     : (typeof(args[0])==='string' ? args[0].split(PATH_DELIMITER): undefined)
@@ -96,7 +93,7 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
  
 
         //  收集依赖的路径
-        const deps = store.useDeps(selector) 
+        const deps = store.useDeps(selector || getter) 
 
         useEffect(()=>{    
             let watcher:Watcher              
@@ -129,7 +126,7 @@ export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
                                 [path[path.length-1]]:createInputBinding(path,value)
                             })
                         }else{
-                            setBindings(createInputBinding(path,val))
+                            setBindings(createInputBinding(path,value))
                         }
                     } 
                 })
