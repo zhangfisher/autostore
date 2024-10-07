@@ -47,12 +47,13 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
             { props.label ? <label htmlFor={id}  style={labelStyle}>{props.label}</label> : null }
             <input
                 id={id}
-                value={value ?? ""}
+                value={value}
                 readOnly={!enable}
                 {...restProps}
                 className={InputStyle.className}
                 style={InputStyle.getStyle(props)}
             />
+        <form></form>
         </div>
     );
 };

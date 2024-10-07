@@ -18,7 +18,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     bind:InputBindingsType
     useInput:UseInputType<State>
     useWatch:UseWatchType
-    UseFormBindings:UseFormBindingsType<State>
+    useFormBindings:UseFormBindingsType<State>
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,options)
         this.signal = this.$ = createSignalComponent(this).bind(this)
@@ -27,7 +27,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
         this.useInput = createUseInput(this).bind(this)
         this.bind = createInputBinding(this).bind(this)
         this.useWatch = createUseWatch(this).bind(this)
-        this.UseFormBindings = createUseFormBindings(this).bind(this)
+        this.useFormBindings = createUseFormBindings(this).bind(this)
     } 
 } 
 

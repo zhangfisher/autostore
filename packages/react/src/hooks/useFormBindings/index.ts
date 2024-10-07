@@ -77,33 +77,33 @@ export function createUseFormBindings<State extends Dict>(store:ReactAutoStore<S
     }
 }
 
-const store = new ReactAutoStore({
-    order:{
-        price:100,
-        count:1,
-        total:(scope:any)=>scope.price*scope.count
-    },
-    addresss:[
-        {
-            city:"BeiJing",
-            street:"chang'an"
-        },
-        {
-            city:"ShangHai",
-            street:"nanjing"
-        },
-        {
-            city:"QuanZhou",
-            street:"TianAn"
-        }
-    ]
-})
+// const store = new ReactAutoStore({
+//     order:{
+//         price:100,
+//         count:1,
+//         total:(scope:any)=>scope.price*scope.count
+//     },
+//     addresss:[
+//         {
+//             city:"BeiJing",
+//             street:"chang'an"
+//         },
+//         {
+//             city:"ShangHai",
+//             street:"nanjing"
+//         },
+//         {
+//             city:"QuanZhou",
+//             street:"TianAn"
+//         }
+//     ]
+// })
 
-const useBindings = createUseFormBindings(store)
-const bindings = useBindings()
-bindings.order
-bindings.order.price
-bindings.order.total
+// const useBindings = createUseFormBindings(store)
+// const bindings = useBindings()
+// bindings.order
+// bindings.order.price
+// bindings.order.total
 
 
-console.log("end")
+// console.log("end")

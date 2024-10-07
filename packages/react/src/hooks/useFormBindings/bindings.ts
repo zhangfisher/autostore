@@ -1,4 +1,4 @@
-import { Dict, isAsyncComputedValue, setVal } from "autostore"
+import { Dict, setVal } from "autostore"
 import { getInputValueFromEvent } from "../../utils/getInputValueFromEvent"
 import type { ReactAutoStore } from "../../store"
 

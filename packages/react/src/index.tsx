@@ -4,4 +4,4 @@ export * from "./form"
 export * from "./hooks/useStore"
 export * from "./types"
 export * from "./hooks/types"
-export * from "autostore";  
+export * from "autostore" 
