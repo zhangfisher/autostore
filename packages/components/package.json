@@ -1,11 +1,11 @@
 {
-  "name": "components",
+  "name": "x-react-components",
   "version": "1.0.0",
-  "description": "",
+  "description": "react components",
   "main": "src/index.ts",
-  "private": true,
+  "access": "public",
   "publishConfig": {
-    "main": "dist/index.ts",
+    "main": "dist/index.js",
     "module": "dist/index.mjs"
   },
   "scripts": {
@@ -17,7 +17,6 @@
   "dependencies": {
     "color": "^4.2.3",
     "flexstyled": "^2.1.2",
-    "react-json-tree": "^0.18.0",
     "react-loader-spinner": "^6.1.6"
   },
   "devDependencies": {

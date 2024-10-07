@@ -1,10 +1,9 @@
 
-import { isPlainObject, PATH_DELIMITER, setVal, Watcher, type Dict } from '@autostorejs/core';
+import { isPlainObject, PATH_DELIMITER, setVal, Watcher, type Dict,isPrimitive } from "autostore";
 import { type ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
-import { getInputValueFromEvent } from '../utils/getInputValueFromEvent';
-import { isPrimitive } from '../utils/isPrimitive';
+import { getInputValueFromEvent } from '../utils/getInputValueFromEvent'; 
 import { UseInputType } from './types'; 
 
 /**

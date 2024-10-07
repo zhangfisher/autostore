@@ -10,7 +10,7 @@
  */
 
 
-import { test,expect, describe, vi, beforeEach, afterEach } from "vitest"
+import { test,expect, describe, vi  } from "vitest"
 import { AutoStore,computed } from "../.."
 import { delay } from "flex-tools/async/delay"
 import { AsyncComputedObject } from "../../src/computed/async"
@@ -89,7 +89,7 @@ describe("异步计算高级控制功能",()=>{
                 onComputedCreated:()=>{
                     setTimeout(()=>{
                         (store.computedObjects.get("x") as AsyncComputedObject)!.value.cancel()
-                    })
+                    },10)
                 }
             })  
             store.state.total 

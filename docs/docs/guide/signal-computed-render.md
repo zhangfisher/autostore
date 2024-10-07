@@ -135,7 +135,7 @@ $(
  * description:`signal`的简写 
  */ 
 import { useStore,delay,computed } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
 
 export default () => {
   const { state , $ } = useStore({
@@ -191,7 +191,7 @@ $(
  * description:`signal`的简写 
  */ 
 import { useStore,delay,computed } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
 
 export default () => {
   const { state , $ } = useStore({
@@ -232,7 +232,7 @@ export default () => {
 ```tsx  
  
 import { useStore,delay,computed } from '@autostorejs/react';
-import { Button,ColorBlock,Loading } from "components"
+import { Button,ColorBlock,Loading } from "x-react-components"
 
 export default () => {
   const { state, $ } = useStore({

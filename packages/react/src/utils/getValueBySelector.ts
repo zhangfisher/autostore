@@ -1,4 +1,4 @@
-import { ComputedState, Dict, getVal, isAsyncComputedValue, PATH_DELIMITER } from "@autostorejs/core"
+import { ComputedState, Dict, getVal, isAsyncComputedValue, PATH_DELIMITER } from "autostore"
 import { ReactAutoStore } from "../store"
 
 

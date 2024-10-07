@@ -1,4 +1,4 @@
-import {  AsyncComputedGetter, AsyncComputedObject, AsyncComputedValue, computed, ComputedGetter, Dict, isObserverDescriptor, isObserverDescriptorBuilder, ObserverDescriptorBuilder, SyncComputedObject, Watcher,WatchObject } from "@autostorejs/core"
+import {  AsyncComputedGetter, AsyncComputedObject, AsyncComputedValue, computed, ComputedGetter, Dict, isObserverDescriptor, isObserverDescriptorBuilder, ObserverDescriptorBuilder, SyncComputedObject, Watcher,WatchObject } from "autostore"
 import type { ReactAutoStore } from "../store"
 import React, { useEffect, useState } from "react"
 import type  {  SignalComponentRender } from "./types"

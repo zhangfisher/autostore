@@ -108,6 +108,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             // @ts-ignore
             globalThis.__AUTO_STORES__.add(this)
         }
+        this.getSnap = this.getSnap.bind(this)
+        this.watch = this.watch.bind(this)
+        this.update = this.update.bind(this)
+        this.peep = this.peep.bind(this)
+        this.silentUpdate = this.silentUpdate.bind(this)
+        this.batchUpdate = this.batchUpdate.bind(this)
+        this.collectDependencies = this.collectDependencies.bind(this)
+        this.trace = this.trace.bind(this)
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
@@ -387,17 +395,17 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 this._batching = false
                 this._peeping = false
                 if(this._batchOperates.length>0){
-                    const ops =  [...this._batchOperates]
+                    const opts =  [...this._batchOperates]
                     this._batchOperates=[]
                     // 先分别触发每一个操作事件,这样一些依赖于单个操作的事件可以先触发
-                    reply && ops.forEach(operate=>{
+                    reply && opts.forEach(operate=>{
                         operate.reply = true
                         this._notify(operate)
                     })
                     // 然后再触发批量更新事件
                     try{          
                         const batchEvent = batch===true ? BATCH_UPDATE_EVENT : String(batch)
-                        this.operates.emit(batchEvent,{type:'batch',path:[batchEvent],value:this._batchOperates})
+                        this.operates.emit(batchEvent,{type:'batch',path:[batchEvent],value:opts})
                     }finally{
                         this._batchOperates = []
                     }
@@ -561,11 +569,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     /**
      * 
      * 返回当前状态的快照数据
+     *  @param options.entry  - 指定要获取的路径，如果不指定则返回整个状态数据
      *  @param reserveAsync - 是否保留异步对象。异步对象的值是一个AsyncComputedValue对象。=true时会保留。=false时会只返回value值
-     * @returns 
+     *  @returns 
      */
-    getSnap(reserveAsync:boolean = true){
-        return getSnapshot(this._data,reserveAsync)
+    getSnap(options?:{entry?:string[],reserveAsync?:boolean }){
+        const { reserveAsync,entry } =Object.assign({reserveAsync:true},options)        
+        return getSnapshot(entry ? getVal(this._data,entry) : this._data,reserveAsync)
     }
 }
 

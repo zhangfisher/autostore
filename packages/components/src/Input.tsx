@@ -27,7 +27,7 @@ const InputStyle = styled<InputProps>({
         boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"
     }
 },{
-    className:"v-input"
+    className:"xc-input"
 })
 
 export const Input:ReactFC<InputProps> = (props:InputProps)=>{

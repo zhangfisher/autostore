@@ -1,4 +1,4 @@
-import { ComputedState, Dict, ObserverDescriptorBuilder, AsyncComputedValue, ComputedGetter, AsyncComputedGetter} from "@autostorejs/core";
+import { ComputedState, Dict, ObserverDescriptorBuilder, AsyncComputedValue, ComputedGetter, AsyncComputedGetter} from "autostore";
 import React from "react";
 
 export type SignalComponentRenderArgs<Value=any> = AsyncComputedValue<Value>

@@ -43,7 +43,7 @@ type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (
 
 ```tsx
 import { createStore,computed,delay } from '@autostorejs/react';
-import { ColorBlock,Button } from 'components';
+import { ColorBlock,Button } from "x-react-components";
 
 const { state , $, computedObjects } = createStore({
   order:{

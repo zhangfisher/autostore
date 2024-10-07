@@ -53,7 +53,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     create<Value = any, Scope = any>(descriptor:ComputedDescriptor<Value,Scope>): AsyncComputedObject<Value,Scope> | SyncComputedObject<Value,Scope>    
     create():any {
       // @ts-ignore
-      const descrioptor = isObserverDescriptor(arguments[0]) ?  arguments[0] : computed(...arguments)()
+      const descrioptor:ComputedDescriptor = isObserverDescriptor(arguments[0]) ?  arguments[0] : computed(...arguments)()
       if(descrioptor.options.async){
           // 异步依赖是手工指定的，所以需要检查是否是绝对路径，不允许相对路径，因为没有计算上下文
           if(!isAbsolutePath(descrioptor.options.depends)){
@@ -66,6 +66,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
       }else  if(!isAbsolutePath([scope])){
         throw new InvalidScopeError("The scope of the dynamic computed object must be the root state object or an absolute path")
       }
+
       return this.store._createComputed(descrioptor)              
     }
     /**

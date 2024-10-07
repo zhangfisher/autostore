@@ -7,7 +7,7 @@
  * 
  */
 
-import { Dict} from "@autostorejs/core";
+import { Dict} from "autostore";
 import { ReactAutoStore } from "../store"
 import React from "react";
 import { createStaticRender } from "./staticRender";

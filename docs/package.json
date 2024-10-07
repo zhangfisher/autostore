@@ -72,10 +72,10 @@
     "stylelint": "^14.9.1"
   },
   "dependencies": {
-    "@autostorejs/core": "workspace:*",
+    "autostore": "workspace:*",
     "@autostorejs/react": "workspace:*",
     "clsx": "^2.1.1",
-    "components": "workspace:*",
+    "x-react-components": "workspace:*",
     "flex-tools": "^1.4.9",
     "flexstyled": "^2.1.2"
   }

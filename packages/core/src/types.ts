@@ -46,4 +46,4 @@ export type RequiredComputedState<T extends Record<string, any>> = {
 
 
 
- 
+export type Primitive = string | number | boolean | null | undefined | symbol | bigint;

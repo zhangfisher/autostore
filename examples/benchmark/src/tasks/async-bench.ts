@@ -1,5 +1,5 @@
 import { Bench } from 'tinybench';
-import { computed, createStore } from "@autostorejs/core"
+import { computed, AutoStore } from "autostore"
 import { derive, share, watch } from 'helux';
 
 
@@ -14,7 +14,7 @@ const bench = new Bench({
 bench   
   .add('[AutoStore] 多重依赖链异步计算', () => { 
     return new Promise<void>((resolve)=>{
-        const store = createStore({ 
+        const store = new AutoStore({ 
             a0: 1,
             a1: computed(async (scope:any)=>{
               await delay(1)

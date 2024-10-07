@@ -5,7 +5,7 @@ import { defineConfig } from 'tsup'
 export default defineConfig( 
     {
         entry: [
-            'src/index.ts'
+            'src/index.tsx'
         ],
         format: ['esm','cjs'],
         dts: true,
@@ -14,6 +14,6 @@ export default defineConfig(
         clean: true,
         treeshake:true,  
         minify: true,
-        noExternal:['flex-tools','mitt']
+        noExternal:["autostore"]
     }  )
  

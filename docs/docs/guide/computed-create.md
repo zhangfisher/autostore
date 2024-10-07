@@ -54,7 +54,7 @@ const store = createStore({
 
 ```tsx 
 import { createStore,computed } from '@autostorejs/react';
-import { ColorBlock,Button } from 'components';
+import { ColorBlock,Button } from "x-react-components";
 
 const store = createStore({
   order:{

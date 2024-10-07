@@ -23,7 +23,7 @@
  */
 
 
-import { Dict,AutoStoreOptions } from "@autostorejs/core"
+import { Dict,AutoStoreOptions } from "autostore"
 import { ReactAutoStore } from "../store"    
 import { useRef} from "react" 
 

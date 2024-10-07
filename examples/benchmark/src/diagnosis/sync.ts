@@ -1,9 +1,9 @@
-import  { createStore } from "@autostorejs/core/dist/index.js"
+import { AutoStore } from "autostore"
 
 
-const store = createStore({ 
+const store = new AutoStore({ 
     a0: 50,
-    a1: (scope)=>{
+    a1: (scope:any)=>{
       return scope.a0 + 1
     },
     // a2: (scope)=>scope.a1 + 1,
@@ -15,7 +15,7 @@ const store = createStore({
     // a8: (scope)=>scope.a7 + 1,
     // a9: (scope)=>scope.a8 + 1,
     // a10: (scope)=>scope.a9 + 1,
-},{immediate:true});
+});
 for(let i = 1; i <= 1; i++){
     store.state.a0 = i
 }

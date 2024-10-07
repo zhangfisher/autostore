@@ -1,7 +1,7 @@
-import  { createStore } from "@autostorejs/core"
+import  { AutoStore } from "autostore"
 
 const times:any[]=[]
-const store = createStore({ 
+const store = new AutoStore({ 
     a0: 50,
     a1: (scope:any)=>{ 
       return scope.a0 + 1

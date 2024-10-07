@@ -1,5 +1,5 @@
 import { Bench } from 'tinybench';
-import { createStore } from "@autostorejs/core"
+import { createStore } from "autostore"
 import { derive, share } from 'helux';
 import { MobxStore } from './mobx.store';
 

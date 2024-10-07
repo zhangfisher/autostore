@@ -16,6 +16,7 @@
  * 
  */
 
+//@ts-ignore
 import { createStore } from "redux"
 import { WeakObjectMap } from "./utils"
  
@@ -49,7 +50,7 @@ export class AutoStoreDevTools{
     private reducer(state:object = initialState, action:any){
         return {
             ...state,
-            [action.store.id]:{...action.store.state}
+            [action.store.id]:{...action.store.getSnap()}
         }
     }
     private install(){

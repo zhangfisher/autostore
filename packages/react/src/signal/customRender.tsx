@@ -1,4 +1,4 @@
-import {  AsyncComputedValue, Dict, isAsyncComputedValue, PATH_DELIMITER } from "@autostorejs/core"
+import {  AsyncComputedValue, Dict, isAsyncComputedValue, PATH_DELIMITER } from "autostore"
 import type { ReactAutoStore } from "../store"
 import React, { useEffect, useMemo, useState } from "react"
 import { getValueBySelector } from "../utils/getValueBySelector"

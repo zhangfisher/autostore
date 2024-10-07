@@ -1,6 +1,6 @@
 import React from 'react';
 import { createStore } from "@autostorejs/react"
-import { Card, Button,ColorBlock } from "components"
+import { Card, Button,ColorBlock } from "x-react-components"
 import { useState } from 'react';
 
 const { state,$ } = createStore({

@@ -41,7 +41,7 @@ const state = createStore({
 
 ```tsx
 import { createStore } from '@autostorejs/react';
-import { ColorBlock,Button } from "components"
+import { ColorBlock,Button } from "x-react-components"
 
 const store = createStore({
   user:{

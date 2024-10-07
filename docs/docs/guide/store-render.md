@@ -23,7 +23,7 @@ toc: content
 
 ```tsx
 import React,{createContext,useContext,useState} from "react"
-import { ColorBlock,Button,Divider } from "components"
+import { ColorBlock,Button,Divider } from "x-react-components"
 
 const ctx = createContext({
   firstName:"Zhang",
@@ -72,7 +72,7 @@ export default ()=>{
 ```tsx
 import { createStore } from '@autostorejs/react';
 import React from "react"
-import { ColorBlock,Button,Divider } from "components"
+import { ColorBlock,Button,Divider } from "x-react-components"
 
 
 const store = createStore({
@@ -128,7 +128,7 @@ export default ()=>{
 ```tsx
 import { createStore } from '@autostorejs/react';
 import React,{createContext,useContext,useState} from "react"
-import { ColorBlock,Button,Divider } from "components"
+import { ColorBlock,Button,Divider } from "x-react-components"
  
 const {state,$ } = createStore({
   firstName:"Zhang",

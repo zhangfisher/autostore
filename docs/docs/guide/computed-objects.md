@@ -18,7 +18,7 @@ toc: content
 ```tsx
 
 import { createStore,computed } from '@autostorejs/react';
-import { Divider,ColorBlock } from "components"
+import { Divider,ColorBlock } from "x-react-components"
 let count=0
 const state = {
   user:{
@@ -95,7 +95,7 @@ export class ComputedObjects<T=Dict> extends Map<string,ComputedObject<T>>{
 
 ```tsx 
 import { createStore,computed } from '@autostorejs/react';
-import { Divider,ColorBlock } from "components"
+import { Divider,ColorBlock } from "x-react-components"
 import { delay } from "autostore-docs"
 
 let count=0
@@ -181,7 +181,7 @@ export default ()=>{
 
 ```tsx 
 import { createStore,computed } from '@autostorejs/react';
-import { Divider,ColorBlock } from "components"
+import { Divider,ColorBlock } from "x-react-components"
 import { delay } from "autostore-docs"
 
 let count=0
@@ -269,7 +269,7 @@ export default ()=>{
 
 ```tsx
 import { createStore,computed } from '@autostorejs/react';
-import { Divider,ColorBlock } from "components"
+import { Divider,ColorBlock } from "x-react-components"
 import { delay } from "autostore-docs"
 
 let count=0

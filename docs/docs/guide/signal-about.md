@@ -203,7 +203,7 @@ toc: content
 * description: 通过`state.age=n`直接写状态时，需要使用`{$('age')}`来创建一个信号组件,内部会订阅`age`的变更事件，用来触发局部更新。
 */
 import { createStore } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
 
 const { state , $ } = createStore({
   age:18

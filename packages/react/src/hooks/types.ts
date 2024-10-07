@@ -1,4 +1,5 @@
-import { ComputedState, Dict, WatchListener, WatchListenerOptions } from "@autostorejs/core"
+import { ComputedState, Dict, WatchListener, WatchListenerOptions } from "autostore"
+import { InputBindings } from "../form"
 
 // ********** useDeps ********** 
 
@@ -58,6 +59,23 @@ export interface UseStateType<State extends Dict> {
 export interface UseWatchType {
     <Value>(selector: string,listener:WatchListener<Value>,options?:WatchListenerOptions): void
     <Value>(selector: string[],listener:WatchListener<Value>,options?:WatchListenerOptions): void  
+}
+
+
+// ********** useFormBindings **********  
+
+ 
+ 
+export type FormBindingsState<T extends Dict> = {
+    [K in keyof T]: T[K] extends Dict ? FormBindingsState<T[K]> 
+                                        : ( T[K] extends any[] ? FormBindingsState<T[K]> 
+                                            : Required<InputBindings<T[K]>>
+                                        )
+};
+
+ 
+export interface UseFormBindingsType<State extends Dict> {
+    (entry?: string,options?:WatchListenerOptions): FormBindingsState<ComputedState<State>> 
 }
 
 

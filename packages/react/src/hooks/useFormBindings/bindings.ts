@@ -1,5 +1,4 @@
-import { Dict, PATH_DELIMITER, setVal } from "@autostorejs/core"
-import { isPrimitive } from "../../utils/isPrimitive"
+import { Dict, isAsyncComputedValue, setVal } from "autostore"
 import { getInputValueFromEvent } from "../../utils/getInputValueFromEvent"
 import type { ReactAutoStore } from "../../store"
 
@@ -37,8 +36,7 @@ export function createFakeObjectBindings<State extends Dict>(store:ReactAutoStor
 
  
 
-export function createInputBinding<State extends Dict>(store:ReactAutoStore<State>,path:string[],val:any){
-    
+export function createInputBinding<State extends Dict>(store:ReactAutoStore<State>,path:string[],val:any){    
     return {
         value:val,
         onChange:(e:any)=>{

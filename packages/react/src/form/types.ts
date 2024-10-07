@@ -1,5 +1,6 @@
 export type InputBindings<Value=any>={ 
-    onChange?:(value:Value)=>void 
+    value?   : Value
+    onChange?: (e:any)=>void 
 }
  
 export interface InputBindingsType{

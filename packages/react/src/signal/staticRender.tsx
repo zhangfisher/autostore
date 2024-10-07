@@ -1,4 +1,4 @@
-import { ComputedState, Dict } from "@autostorejs/core"
+import { ComputedState, Dict } from "autostore"
 import type { ReactAutoStore } from "../store"
 import React, { useEffect, useState } from "react"
 import { getValueBySelector } from "../utils/getValueBySelector"

@@ -68,7 +68,7 @@ export interface WatchOptions<R=any>{
 
 ```tsx 
 import { createStore,watch } from '@autostorejs/react';
-import { Divider,Field } from "components"
+import { Divider,Field } from "x-react-components"
 
 const book = {
   orders:[

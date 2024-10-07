@@ -4,14 +4,18 @@
   "description": "",
   "type": "module",
   "main": "src/index.tsx",
+  "publishConfig": {
+    "main": "dist/index.js",
+    "module": "dist/index.mjs"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@autostorejs/core": "workspace:*"
+    "autostore": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.5.5",

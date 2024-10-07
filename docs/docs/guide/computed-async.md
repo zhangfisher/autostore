@@ -476,7 +476,7 @@ store.state.user.fullName=={
 import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
-import { Box} from "components"
+import { Box} from "x-react-components"
 
 const state = {
   user:{
@@ -527,7 +527,7 @@ export default ()=>{
 import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
-import { Box} from "components"
+import { Box} from "x-react-components"
 
  
 const store = createStore({
@@ -597,7 +597,7 @@ export default ()=>{
 import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
-import { Box} from "components"
+import { Box} from "x-react-components"
  
 const store = createStore({
   order:{
@@ -668,7 +668,7 @@ export default ()=>{
 import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
-import { Box} from "components"
+import { Box} from "x-react-components"
  
 const store = createStore({
   order:{
@@ -734,7 +734,7 @@ export default ()=>{
 import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
-import { Box } from "components"
+import { Box } from "x-react-components"
 let count = 0 
 const store = createStore( {
   order:{
@@ -810,7 +810,7 @@ export default ()=>{
 import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
 import { useRef,useEffect } from "react"
 import { delay } from "autostore-docs"
-import { Box} from "components"
+import { Box} from "x-react-components"
 
  
 const store = createStore({

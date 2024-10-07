@@ -39,7 +39,7 @@ export interface WatchObject extends WatchOptions>{
 ```tsx 
 import { createStore,computed,ObserverScopeRef,watch } from "@autostorejs/react" 
 import { useEffect,useState } from "react"
-import { ColorBlock,Divider } from "components"
+import { ColorBlock,Divider } from "x-react-components"
 
 function createTotalWatch(group){
   return watch((count,{state})=>{ 

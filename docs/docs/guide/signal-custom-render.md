@@ -56,7 +56,7 @@ $(
 * description: `$`是`signal`的简写    
 */
 import { useStore,delay,computed } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
 
 export default () => {
   const { state , $ } = useStore({
@@ -93,7 +93,7 @@ export default () => {
 * description: order.total是一个异步计算属性
 */
 import { useStore,delay,computed } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
 
  
 export default () => {
@@ -132,7 +132,7 @@ export default () => {
 
 ```tsx
 import { createStore,computed,delay } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
 
 const { state ,$ } = createStore({
   order:{

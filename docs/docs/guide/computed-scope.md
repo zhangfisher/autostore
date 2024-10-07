@@ -101,7 +101,7 @@ const store = createStore( {
  * description: scope===user
  */
 import { ObserverScopeRef,useStore } from '@autostorejs/react'; 
-import { ColorBlock } from "components" 
+import { ColorBlock } from "x-react-components" 
 
 export default ()=>{
 
@@ -140,7 +140,7 @@ export default ()=>{
  * description: scope===<ROOT>
  */
 import { useStore,ObserverScopeRef } from '@autostorejs/react'; 
-import { ColorBlock } from "components" 
+import { ColorBlock } from "x-react-components" 
 
 export default ()=>{
   
@@ -171,7 +171,7 @@ export default ()=>{
  * description: scope===parent
  */
 import { createStore,ObserverScopeRef } from '@autostorejs/react'; 
-import { ColorBlock } from "components" 
+import { ColorBlock } from "x-react-components" 
 
 const { state } = createStore({
   parent:{
@@ -207,7 +207,7 @@ export default ()=>{
  * description: scope===user.address.city
  */
 import { createStore } from '@autostorejs/react'; 
-import { ColorBlock } from "components" 
+import { ColorBlock } from "x-react-components" 
 
 const { state } = createStore({
   user:{
@@ -245,7 +245,7 @@ export default ()=>{
  * description:  scope===user.address['main.city']
  */
 import { createStore } from '@autostorejs/react'; 
-import { ColorBlock } from "components" 
+import { ColorBlock } from "x-react-components" 
 
 const { state } = createStore({
   user:{
@@ -286,7 +286,7 @@ export default ()=>{
  * description: scope==[firstName,lastName]
  */
 import { createStore,computed,ObserverScopeRef  } from '@autostorejs/react'; 
-import { ColorBlock } from "components" 
+import { ColorBlock } from "x-react-components" 
 
 const { state } = createStore({
   user:{

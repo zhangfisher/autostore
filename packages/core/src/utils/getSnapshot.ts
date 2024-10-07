@@ -43,7 +43,7 @@ import { isAsyncComputedValue } from "./isAsyncComputedValue"
  * 
  * 
  */
-export function getSnapshot(state:object,reserveAsync:boolean = true){
+export function getSnapshot(state:object,reserveAsync?:boolean ){
     if(Array.isArray(state)){
         const snapshot =  [...state]
         for(let i=0;i<snapshot.length;i++){
@@ -65,3 +65,29 @@ export function getSnapshot(state:object,reserveAsync:boolean = true){
 }
 
  
+// import { AutoStore } from "../store/store"
+// const store = new AutoStore({
+//     shop:{
+//         order:{
+//             price:2,
+//             count:3,
+//             total:async (scope:any)=>scope.price * scope.count 
+//         },
+//         addresss:[
+//             {
+//                 city:"beijing",
+//                 street:"wangfujing"
+//             },
+//             {
+//                 city:"shanghai",
+//                 street:"nanjing road"
+//             }
+//         ] 
+//     }
+     
+// })
+
+// console.log(JSON.stringify(getSnapshot(store.state)))
+// console.log(JSON.stringify(getSnapshot(store.state,{reserveAsync:false}))) 
+// console.log(JSON.stringify(getSnapshot(store.state.shop.order))) 
+// console.log(JSON.stringify(getSnapshot(store.state.shop.addresss.0))) 

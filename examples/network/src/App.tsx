@@ -1,5 +1,5 @@
-import './App.css'
-import BenchmarkTestComponent from './autostore/index';
+import './App.css' 
+import "./stores"
 
 function App() { 
   return (
@@ -7,8 +7,7 @@ function App() {
       <div>
          State Management Benchmark Test
       </div>
-      <h1>Vite + React</h1>
-      <BenchmarkTestComponent/>
+      <h1>Vite + React</h1> 
     </>
   )
 }

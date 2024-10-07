@@ -33,7 +33,7 @@ toc: content
 
 ```tsx
 import { createStore,computed } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
 const { state,useState,$ } = createStore({
   firstName:"Zhang",
   lastName:"Fisher",
@@ -72,8 +72,8 @@ export default () => {
 
 ```tsx 
 import { createStore } from '@autostorejs/react';
-import { ColorBlock } from "components"
-import { Button } from "components"
+import { ColorBlock } from "x-react-components"
+import { Button } from "x-react-components"
 
  
 const { useState,state,$ } = createStore( {
@@ -114,7 +114,7 @@ export default () => {
 * description: 通过`state.age=n`直接写状态时，需要使用`{$('age')}`来创建一个信号组件，用来触发局部更新。
 */
 import { createStore } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
 
 const { state , $ } = createStore({
   age:18

@@ -59,7 +59,7 @@ const { state, $, watch  } = store
 
 ```tsx
 import { useStore } from '@autostorejs/react';
-import { Button,ColorBlock } from "components"
+import { Button,ColorBlock } from "x-react-components"
  
 
 export default () => {

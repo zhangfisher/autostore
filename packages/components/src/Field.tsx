@@ -86,12 +86,6 @@ export const Field:ReactFC<FieldProps> = (props)=>{
             }}>{typeof(children) === 'function' ? '' : children}{memo && <span style={{color:'gray'}}>{memo}</span>}</span>  
             
             <ValidResult {...props}/>
-            {/* <ColorBlock style={{
-                position:'absolute',
-                right:0,
-                fontSize:'10px',
-                borderRadius: '4px',
-            }}  title="渲染计数"/>      */}
         </div>   
     )
 }

@@ -33,7 +33,7 @@
  * 
  * 
  */
-import { Dict, PATH_DELIMITER, setVal } from "@autostorejs/core";
+import { Dict, PATH_DELIMITER, setVal } from "autostore";
 import { ReactAutoStore } from "../store";
 import { getInputValueFromEvent } from "../utils/getInputValueFromEvent";
 import { InputBindings } from "./types";

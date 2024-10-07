@@ -1,4 +1,4 @@
-import { isPlainObject, PATH_DELIMITER, setVal, Watcher,  type Dict } from '@autostorejs/core';
+import { isPlainObject, PATH_DELIMITER, setVal, Watcher,  type Dict } from "autostore";
 import type { ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';

@@ -1,5 +1,4 @@
-一些用于演示的功能组件
 
-不会发布到npm,只是用于演示
+some react components for demo
 
-用在example和docs
+[use in autostore](https://github.com/zhangfisher/autostore)
