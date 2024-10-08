@@ -1,12 +1,13 @@
 import { defineConfig } from 'dumi';
 
 export default defineConfig({
-  // base:"/autostore/",
-  // publicPath:"/autostore/",
+  base:"/autostore/",
+  publicPath:"/autostore/",
   outputPath: 'dist',
   // mako:{ },
   themeConfig: {
     name: 'AutoStore',
+    logo:"/autostore/logo.png",
     lastUpdated: true,
     footer:
       'Made with<span style="color: rgb(255, 255, 255);">❤</span>by <span>ZhangFisher | Copyright © 2024-present</span>',

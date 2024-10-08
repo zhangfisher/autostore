@@ -476,71 +476,74 @@ export default ()=>{
 在创建`computed`时可以指定重试参数，实现**出错重试执行**的功能。基本过程是这样的。
 
 - 指定`options.retry=[重试次数,重试间隔ms]`
-- 当开始执行异步计算前，会更新`AsyncComputedObject.retry`属性。
-- 当执行出错时，会同步更新`AsyncComputedObject.retry`属性为重试次数。
+- 当开始执行异步计算前，会更新`AsyncComputedValue.retry`属性。
+- 当执行出错时，会同步更新`AsyncComputedValue.retry`属性为重试次数。
 
 
-```tsx   | pure
-import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
-import { useRef,useEffect } from "react"
-import { delay } from "autostore-docs"
-import { Box } from "x-react-components"
-let count = 0 
-const store = createStore( {
+```tsx  
+import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react';
+import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
+ 
+ 
+const { useState,state,$ ,bind,useAsyncState } = createStore({
   order:{
-    bookName:"ZhangFisher",
+    bookName:"Proficient in AutoStore",
     price:100,
     count:1,
-    total: computed(async ([count,price])=>{ 
-        ++count
+    total: computed(async ([count,price])=>{        
         await delay()
-        throw new Error("计算出错"+(count))
+        throw new Error("计算出错")
     },
-    ["order.count","order.price"],
+    ["order.count","order.price"], // 指定依赖
     {
-      retry:[5,1000] ,// 重试5次，每次间隔1秒
+       retry:[5,1000] ,// 重试5次，每次间隔1秒
       scope:ObserverScopeRef.Depends
     })
   }
 }  )
 
 export default ()=>{
-  const [state,setState] = store.useState()
-  return (<Box>
-    <table>
-      <thead><tr><td colSpan="2">订单信息</td></tr></thead>
+   const [ count ] = useState("order.count")
+  const total = useAsyncState("order.total")
+  return (<div>
+    <table className="table table-bordered table-striped">
       <tbody>
         <tr><td><b>书名</b></td><td>{state.order.bookName}</td></tr>
         <tr><td><b>价格</b></td><td>{state.order.price}</td></tr>
-        <tr><td><b>数量</b></td><td>
-          <button onClick={()=>setState(draft=>draft.order.count=draft.order.count-1)}>-</button>
-          <input value={state.order.count} onChange={store.sync(to=>to.order.count)}/>
-          <button  onClick={()=>setState(draft=>{count=0;draft.order.count=draft.order.count+1})}>+</button>
-        </td></tr>        
+        <tr><td><b>数量</b></td>
+          <td style={{display:"flex",alignItems:'center'}}>
+          <Button onClick={()=>state.order.count--}>-</Button>
+          <Input value={count} {...bind("order.count")} />
+          <Button  onClick={()=>state.order.count++}>+</Button>
+          调节数量
+          </td>
+        </tr>        
       </tbody>
       <tfoot>
-        <tr><td><b>总价</b></td><td>
+        <tr><td><b>总价</b></td>
+        <td style={{display:"flex",alignItems:'center'}}>
+          {total.loading ? <Loading/> : null }
          {
-        state.order.total.loading ? `正在计算...`  
-        : (
-          state.order.total.error ? `ERROR:${state.order.total.error}`: state.order.total.result
-        )}
-        {state.order.total.retry >0 ? `重试:${state.order.total.retry}` : ''}
+          total.loading ? <RichLabel text={`正在计算......`} color="red"/> 
+          : (
+            total.error && <RichLabel text={`出错: {${total.error}}`} color="red"/> 
+          )}
+          {total.retry >0 && <RichLabel text={`重试: {${total.retry}}`} color="red"/> }
         </td></tr>
         </tfoot>
       </table>
     
     <div>
-      {JSON.stringify(state.order.total)}
+      <JsonView>{JSON.stringify(state.order.total)}</JsonView>
     </div>
-  </Box>)
+  </div>)
 }
+
 ```
 
 **说明**
 
-- 重试期间`loading`会保持为`true`
-- 重试次数为0时，不会再次重试。重试次数为`N`时，实际会执行`N+1`次。
+- 重试次数为`0`时，不会再次重试。重试次数为`N`时，实际会执行`N+1`次。
 - 重试期间`error`会更新为最后一次错误信息。
 
 <Divider></Divider>
@@ -555,74 +558,77 @@ export default ()=>{
 - 取消时可以调用`AsyncComputedObject.cancel()`方法来触发一个`AbortSignal`信号。如下例中调用`state.order.total.cancel()`
   
  
-```tsx   | pure
-
-import { createStore,computed,ObserverScopeRef,getSnap } from '@autostorejs/react';
-import { useRef,useEffect } from "react"
-import { delay } from "autostore-docs"
-import { Box} from "x-react-components"
-
+```tsx   
+import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react';
+import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
  
-const store = createStore({
+ 
+const { useState,state,$ ,bind,useAsyncState } = createStore({
   order:{
-    bookName:"ZhangFisher",
+    bookName:"Proficient in AutoStore",
     price:100,
     count:1,
-    total: computed(async ([count,price],{abortSignal})=>{
+    total: computed(async ([count,price],{abortSignal})=>{        
         return new Promise<number>((resolve,reject)=>{
-					setTimeout(()=>{
-						resolve(count*price)
-					},10 *1000)
+					const tmId = setTimeout(()=>{
+						resolve(count*price)  // 模拟耗时干活
+					},1000 *1000)
 					abortSignal.addEventListener("abort",()=>{
+            clearTimeout(tmId)
 						reject("cancelled")
 					})
 				})	
     },
-    ["order.count","order.price"],
+    ["order.count","order.price"], // 指定依赖
     {
-      timeout:[10*1000,10] ,
       scope:ObserverScopeRef.Depends
     })
   }
 }  )
 
 export default ()=>{
-  const [state,setState] = store.useState()
-  return (<Box>
-    <table>
-      <thead><tr><td colSpan="2">订单信息</td></tr></thead>
+   const [ count ] = useState("order.count")
+  const total = useAsyncState("order.total")
+  return (<div>
+    <table className="table table-bordered table-striped">
       <tbody>
         <tr><td><b>书名</b></td><td>{state.order.bookName}</td></tr>
         <tr><td><b>价格</b></td><td>{state.order.price}</td></tr>
-        <tr><td><b>数量</b></td><td>
-          <button onClick={()=>setState(draft=>draft.order.count=draft.order.count-1)}>-</button>
-          <input value={state.order.count} onChange={store.sync(to=>to.order.count)}/>
-          <button  onClick={()=>setState(draft=>{draft.order.count=draft.order.count+1})}>+</button>
-        </td></tr>        
+        <tr><td><b>数量</b></td>
+          <td style={{display:"flex",alignItems:'center'}}>
+          <Button onClick={()=>state.order.count--}>-</Button>
+          <Input value={count} {...bind("order.count")} />
+          <Button onClick={()=>state.order.count++}>+</Button>
+          调节数量
+          </td>
+        </tr>        
       </tbody>
       <tfoot>
-        <tr><td><b>总价</b></td><td>
-          
+        <tr><td><b>总价</b></td>
+        <td style={{display:"flex",alignItems:'center'}}>
+          {total.loading ? <Loading/> : null }
          {
-        state.order.total.loading ? `正在计算...${state.order.total.timeout}`  
-        : (
-          state.order.total.error ? `ERROR:${state.order.total.error}`: state.order.total.result
-        )}
-        {state.order.total.loading ? <button  onClick={()=>state.order.total.cancel()}>取消</button> : ''  }
+          total.loading ? <RichLabel text={`正在计算......`} color="red"/> 
+          : (
+            total.error && <RichLabel text={`出错: {${total.error}}`} color="red"/> 
+          )}
+          { total.loading && <Button onClick={()=>total.cancel()}>取消</Button>}
         </td></tr>
         </tfoot>
       </table>
     
     <div>
-      {JSON.stringify(state.order.total)}
+      <JsonView>{JSON.stringify(state.order.total)}</JsonView>
     </div>
-  </Box>)
+  </div>)
 }
+
 ```
 **注意**：
 
 - `abortSignal`参数是一个`AbortSignal`对象，可以用来订阅`abort`信号或者传递给`fetch`或`axios`等。
-- 需要注意的，当调用`AsyncComputedObject.cancel()`时，计算函数如果订阅并接收到`abort`信号时，应该主动结束退出计算函数。如果计算函数没有订阅`abort`信号，调用`AsyncComputedObject.cancel()`是不会生效的。
+- **需要注意的**，如果想让计算函数是可取消的，则当调用`AsyncComputedObject.cancel()`时，计算函数应该在接收到`abortSignal`信号时，主动结束退出计算函数。如果计算函数没有订阅`abort`信号，调用`AsyncComputedObject.cancel()`是不会生效的。
+
 
 
 <Divider></Divider>
@@ -632,6 +638,7 @@ export default ()=>{
 默认情况下，每当依赖发生变化时均会执行异步计算函数，在连续变化时就会重复执行异步计算函数。
 
 在声明时，允许指定`options.noReentry=true`来防止重入，如果重入则只会在控制台显示一个警告。
+
 
 <Divider></Divider>
 
@@ -733,55 +740,66 @@ total(_x15) {
 
 **下面是一个更加完整的例子：**
 
-```tsx | pure
+```tsx 
 import { computed,createStore } from "@autostorejs/react"
+import { Input,Box, Button,Loading,JsonView,RichLabel } from "x-react-components"
 import { api } from "autostore-docs"
  
-const store = createStore({
+const {state,bind,$,useState,useAsyncState} = createStore({
   user:{
     repo:"https://api.github.com/users/zhangfisher/repos",
-    projects:computed<Project[]>(async ([repoUrl])=>{
-      await new Promise(resolve=>setTimeout(resolve,2000))
-        return await api.getProjects(repoUrl) 
+    projects:computed<Project[]>(async ([repoUrl],{abortSignal})=>{
+        await new Promise((resolve,reject)=>{
+          abortSignal.addEventListener("abort",()=>{
+            reject("cancelled")
+          })
+          api.getProjects(repoUrl).then(projects=>{
+            resolve(projects)
+          }).catch(e=>{
+            reject(e)
+          })
+        })        
      },
-     ["user.repo"],
+     ["./repo"],
      {
-      scope:"depends"
+      scope:"depends" 
      })
   }
 })
 
 export default ()=>{
-  const [state] = store.useState() 
+  const [ repo ] = useState("user.repo") 
+  const projects = useAsyncState("user.projects") 
   return <div>
-      <p><b>修改仓库地址将触发重新加载该仓库项目列表</b></p>
-      仓库地址：<input value={state.user.repo} onChange={store.sync(["user","repo"])}/>
-      <button onClick={()=>store.state.user.projects.run()}>重试</button> 
-      <button onClick={()=>store.state.user.repo = "https://api.github.com/users/zhangfisher/repos"}>恢复</button>    
-
-      <table className="projects-list">
-          <thead><tr><td colSpan="3">以下是我的开源项目，感谢支持！</td></tr>
-          <tr><td><b>项目名称</b></td><td><b>说明</b></td><td><b>星</b></td></tr></thead>                    
-          <tbody>
-          {
-              state.user.projects.loading ? 
-              (<tr><td colSpan={3}>正在加载...:</td></tr>)
-              :
-              (
-                  state.user.projects.error? (<tr><td colSpan={2}>加载错误:{state.user.projects.error}</td></tr>)
-                  : (
-                    state.user.projects && state.user.projects.result.map((project,index)=>{
-                          return <tr key={index}>
-                            <td><a href={project.url} target="__blank">{project.name}</a></td>
-                            <td>{project.description}</td>
-                            <td>{project.stars}</td>
-                            </tr>
-                      })
-                  )
-              )
-          }
-          </tbody>
-      </table>
+      <h3>修改仓库地址将触发重新加载该仓库项目列表</h3>
+      <Input label="仓库地址：" value={repo} {...bind("user.repo")}/>
+      <Button onClick={()=>state.user.projects.run()}>重试</Button> 
+      <Button onClick={()=>state.user.repo = "https://api.github.com/users/zhangfisher/repos"}>恢复</Button>    
+      <Box>
+        <table className="projects-list">
+            <thead><tr><td colSpan="3">以下是我的开源项目，感谢支持！</td></tr>
+            <tr><td><b>项目名称</b></td><td><b>说明</b></td><td><b>星</b></td></tr></thead>                    
+            <tbody>
+            {
+                projects.loading ? 
+                (<tr><td colSpan={3}>正在加载...:</td></tr>)
+                :
+                (
+                    projects.error? (<tr><td colSpan={2}>加载错误:{projects.error}</td></tr>)
+                    : (
+                      projects.value && projects.value.map((project,index)=>{
+                            return <tr key={index}>
+                              <td><a href={project.url} target="__blank">{project.name}</a></td>
+                              <td>{project.description}</td>
+                              <td>{project.stars}</td>
+                              </tr>
+                        })
+                    )
+                )
+            }
+            </tbody>
+        </table>
+      </Box>
   </div>
 
 }

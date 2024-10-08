@@ -340,7 +340,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				ctx.hasError = true;
 				ctx.error = e 				
 				if (!ctx.hasTimeout) afterUpdated.error = getError(e).message;		
-				if(ctx.hasAbort) afterUpdated.error = 'ABORT'
+				// if(ctx.hasAbort) afterUpdated.error = 'ABORT'
 			} finally {
 				timeout.clear()				
 				if(i === retryCount) {// 最后一次执行时
