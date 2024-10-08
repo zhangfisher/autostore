@@ -91,6 +91,7 @@ const state = {
 
 ```tsx
 import { createStore,ObserverScopeRef } from '@autostorejs/react';
+import{ Button } from "x-react-components"
 
 const store = createStore({
   books:[
@@ -119,22 +120,13 @@ export default ()=>{
           <td>{book.author}</td>
           <td>{book.price}</td>
           <td>
-            <button onClick={()=>store.state.books[index].count=store.state.books[index].count-1}>-</button>
+            <Button onClick={()=>store.state.books[index].count--}>-</Button>
             {book.count}
-            <button onClick={()=>store.state.books[index].count=store.state.books[index].count+1}>+</button>
+            <Button onClick={()=>store.state.books[index].count++}>+</Button>
           </td>
           <td>{book.total}</td>
         </tr>
       })}
-      <tr >
-          <td><input type="text"/></td>
-          <td><input type="text"/></td>
-          <td><input type="text"/></td>
-          <td>
-            <input type="text" value="1"/>
-          </td>
-          <td><input type="text"/></td>
-        </tr>
       <tr>
         <td colSpan={4}>总计</td>
         <td>{state.total}</td>

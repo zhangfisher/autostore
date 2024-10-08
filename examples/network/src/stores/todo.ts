@@ -11,3 +11,8 @@ export const todos = createStore({
 },{
     id:"todos"
 })
+
+
+
+// @ts-ignore
+globalThis.todos = todos

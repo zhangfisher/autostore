@@ -20,25 +20,34 @@
 import { createStore } from "redux"
 import { WeakObjectMap } from "./utils"
  
-const initialState = {}
+const initialState = {
+     
+}
 
 
 export class AutoStoreDevTools{
     private reduxStore:any
     private _installed:boolean = false
     stores = new WeakObjectMap()
-
     constructor(){
         this.install()
     }
+    private onStoreUnload(){
+
+    }
     add(store:any){      
         this.stores.set(store.id,store)
-        store.operates.onAny((payload:any,type:any)=>{
+        store.operates.onAny((payload:any,type:any)=>{   
+            if(payload.type=='get') return 
             this.reduxStore.dispatch({
-                type,
+                type:`${payload.type}@${type}`,
                 store,
                 payload 
             })
+        })
+        this.reduxStore.dispatch({
+            type:"__ADD_STORE__",
+            store
         })
     }
     remove(store:any){        
@@ -46,12 +55,19 @@ export class AutoStoreDevTools{
             this.stores.delete(store.id)
         }
     }
-
     private reducer(state:object = initialState, action:any){
-        return {
-            ...state,
-            [action.store.id]:{...action.store.getSnap()}
-        }
+        if(action.type.startsWith("@@")) return state
+        if(action.type==='__ADD_STORE__') {
+            return {
+                ...state,
+                [`AutoStore<${action.store.id}>`]:{...action.store.getSnap()}
+            }
+        }else{
+            return {
+                ...state,
+                [`AutoStore<${action.store.id}>`]:{...action.store.getSnap()}
+            }
+        }        
     }
     private install(){
         if(this._installed) return 
@@ -71,3 +87,6 @@ export function install(){
 declare global{
     var __AUTO_STORES__ : AutoStoreDevTools
 }
+
+
+install()

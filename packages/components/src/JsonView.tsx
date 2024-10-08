@@ -1,0 +1,40 @@
+/**
+ * 
+ * 一个简单的JSON数据展示组件
+ * 
+ */
+
+
+
+
+
+import React from "react"
+import { RichLabel } from "./RichLabel"
+
+export type JsonViewProps  = React.PropsWithChildren<{
+    
+}>
+    // 转义HTML特殊字符
+const escapeHtml = (str: string) => str.replace(/&/g, "&amp;")
+                                        .replace(/</g, "&lt;")
+                                        .replace(/>/g, "&gt;")
+                                        .replace(/"/g, "&quot;")
+                                        .replace(/'/g, "&#039;");
+
+export const JsonView:React.FC<JsonViewProps> =(props:JsonViewProps)=>{
+
+    const json = escapeHtml(String(props.children))
+
+    return <RichLabel text={json} rules={{
+            // "color:#918213;paddingRight:4px;": /[\{\}]{1}/g,    // 大括号    
+            "color:green;":/true|false/g,                         // 布尔值            
+            "color:#222;padding:4px;": /\"(.*?)\"/g,            // 键    
+            "color:#bd0081;padding:4px;":/(?!=\:\s*)[\d\.]+/g,       // 数字
+            "color:#888;padding:4px;":/(null|defined)/g,            
+        }}
+        style={{
+
+        }}
+    />
+}
+

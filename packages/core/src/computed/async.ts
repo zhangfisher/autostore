@@ -48,11 +48,11 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		// 比如{ total:computed(async()=>{ return 1+2 }) }，在第一次读取total时，此时的computed函数还没有初始化
 		// 如果这时候执行run，则total的值还是一个function，而run执行时会将运行的数据更新到total.value，total.loading 等值，
 		// 由于total还没有初始化为{loading,value,....}对象，所以会出错
-		setImmediate(()=>{
+		setTimeout(()=>{
 			if (this.options.immediate===true || (this.options.immediate==='auto' && this.options.initial===undefined)) {
 				this.run({first:true});
 			}
-		})		
+		},0)		
 	}
 
 	private createAsyncComputedValue() {

@@ -1,13 +1,13 @@
-import { ComputedState, Dict, WatchListener, WatchListenerOptions } from "autostore"
+import { AsyncComputedValue, ComputedState, Dict, ExtendAsyncOptions, WatchListener, WatchListenerOptions } from "autostore"
 import { InputBindings } from "../form"
 
 // ********** useDeps ********** 
 
 export interface UseDepsType<State extends Dict>{
-    (selector: string,extendAsync?:boolean):string[][]
-    (selector: string[],extendAsync?:boolean):string[][]
-    (selector: (state:ComputedState<State>)=>any,extendAsync?:boolean):string[][]
-    (selector:any,extendAsync?:boolean):string[][] 
+    (selector: string,extendAsync?:ExtendAsyncOptions):string[][]
+    (selector: string[],extendAsync?:ExtendAsyncOptions):string[][]
+    (selector: (state:ComputedState<State>)=>any,extendAsync?:ExtendAsyncOptions):string[][]
+    (selector:any,extendAsync?:ExtendAsyncOptions):string[][] 
  }
 
 
@@ -46,13 +46,18 @@ export type UseStateSetter<SetValue,State extends Record<string, any>>= (value:S
 export interface UseStateType<State extends Dict> {
     <Value>(selector: string): UseStateResult<Value>
     <Value>(selector: string[]): UseStateResult<Value>
+    <Value>(selector: string,async:boolean): UseStateResult<AsyncComputedValue<Value>>
+    <Value>(selector: string[],async:boolean): UseStateResult<AsyncComputedValue<Value>>
     <Value,SetValue>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateResult<Value>
     (): [State,UseStateGetter<void,State>,]
 }
 
+// ********** useAsyncState **********  
 
-
-
+export interface UseAsyncStateType{
+    <Value>(selector: string): AsyncComputedValue<Value>
+    <Value>(selector: string[]): AsyncComputedValue<Value>
+}
 
 //  ********** useWatch **********
    

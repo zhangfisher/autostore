@@ -180,9 +180,9 @@ export class ObserverObject<
     }
 
     protected emitStoreEvent(event:keyof StoreEvents,args:any){
-        setImmediate(()=>{
+        setTimeout(()=>{
             this.store.emit(event,args)
-        })
+        },0)
     }
     /**
      * 获取当前对象的依赖路径

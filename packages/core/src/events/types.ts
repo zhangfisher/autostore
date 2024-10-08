@@ -3,7 +3,8 @@ import type { AutoStore } from "../store";
 import type { WatchObject } from "../watch/watchObject";
 
 export type StoreEvents = {
-    'created'           : AutoStore<any>;                                    // 响应对象创建后    
+    'load'              : AutoStore<any>;                               // 响应对象创建后
+    'unload'            : AutoStore<any>                                // 响应对象销毁后
     'computed:created'  : ComputedObject                                // 当计算对象创建时
     'computed:done'     : {id:string,path:string[],value:any,computedObject:ComputedObject}           // 当计算函数执行成功后
     'computed:error'    : {id:string,path:string[],error:any,computedObject:ComputedObject}           // 当计算函数执行出错时

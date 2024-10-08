@@ -18,3 +18,7 @@ export const bookshop = createStore({
     id:"bookshop",
     debug:true
 })
+
+
+// @ts-ignore
+globalThis.bookshop = bookshop

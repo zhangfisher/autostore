@@ -1,4 +1,4 @@
-import { getDepends, getVal, isAsyncComputedValue, PATH_DELIMITER, type Dict } from "autostore"
+import { getDepends, type Dict } from "autostore"
 import type { ReactAutoStore } from "../store"
 import { useState } from "react"
 
@@ -25,7 +25,7 @@ import { useState } from "react"
  * 
  */
 export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){ 
-    return function(selector:any,extendAsync?:boolean){
+    return function(selector:any,extendAsync:'none' | 'value' | 'all'='none'){
         const [deps] = useState(()=>{
            return getDepends(selector,store,extendAsync)
         })        

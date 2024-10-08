@@ -13,7 +13,7 @@ export function getVal(obj: any, keyPath: string[] | undefined): any {
         if(key in parent){
           val = parent[key]
         }else{
-          throw new Error(`invalid keypath: ${keyPath.join(".")}`)
+          throw new Error(`invalid state path: ${keyPath.join(".")}`)
         }        
       } 
       parent = val     

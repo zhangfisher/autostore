@@ -5,12 +5,34 @@
 import React, { useRef, useEffect } from "react";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
-import * as color from "color"; 
 import { Loading } from "./Loading";
- // const Colors:string[]=['#4bc703','#eb03c4','#1000eb',"#99170e991",'red','#778888999']
+ // const Colors:string[]=[]
+
+const presetColors:string[] = [
+	"#ff4d4f","#a8071a",
+	"#ff7a45","#ad2102",
+	"#ffa940","#ad4e00",
+	"#ffc53d","#ad6800",
+	"#bae637","#5b8c00",
+	"#73d13d","#237804",
+	"#36cfc9","#006d75",
+	"#4096ff","#003eb3",
+	"#597ef7","#10239e",
+	"#9254de","#391085",
+	"#f759ab","#9e1068",
+	'#4bc703','#eb03c4',
+	'#eb7d00',"#99170e991",
+	'red','#028b8b9'
+]
+
+
+/**
+ * 从presetColors中随机获取一个颜色
+ */
 function getRandomColor() {
-	const c = `${Math.floor(Math.random() * 16777215).toString(16)}`;
-	return `#${c.padStart(6, "0")}`;
+	return presetColors[Math.floor(Math.random() * presetColors.length)];
+	//const c = `${Math.floor(Math.random() * 16777215).toString(16)}`;
+	//return `#${c.padStart(6, "0")}`;
 }
 
 export type ColorBlockProps = React.PropsWithChildren<
@@ -22,20 +44,19 @@ export type ColorBlockProps = React.PropsWithChildren<
 	}
 >;
 
-export const ColorBlock: React.FC<ColorBlockProps> = React.memo(
-	(props) => {
+export const ColorBlock: React.FC<ColorBlockProps> =(props) => {
 		const renderCount = useRef(0);
 		const { name, value = "",loading =false,comment } = props;
 		const backgroundColor = getRandomColor();
-		let textColor = "block";
-		if (color.rgb(backgroundColor).isDark()) {
-			textColor = "white";
-		} else {
-			textColor = "block";
-		}
+		let textColor = "white";
+		// if (color.rgb(backgroundColor).isDark()) {
+		// 	textColor = "white";
+		// } else {
+		// 	textColor = "block";
+		// }
 
 		useEffect(() => {
-			renderCount.current++;
+			renderCount.current++; 
 		});
 
 		return (
@@ -58,13 +79,8 @@ export const ColorBlock: React.FC<ColorBlockProps> = React.memo(
 					</span>
 				</span>		
 				{ comment ? <span style={{ paddingRight: "6px ",flexShrink:0 }}>{comment}</span> : null}
-				{ loading ? <Loading/> : null}
-				<span title="Render Count" style={{ fontSize: "8px" }}>{renderCount.current}</span>
+				{ loading ? <Loading color='white'/> : null}
+				<span title="Render Count" style={{ fontSize: "8px" ,paddingLeft:'6px'}}>{renderCount.current}</span>
 			</div>
 		);
-	},
-	(prev, next) => {
-		return prev.name === next.name && prev.value === next.value && prev.children === next.children;
-	}
-);
- 
+	} 

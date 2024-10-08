@@ -100,8 +100,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this._data = createReactiveObject(state,{
             notify:this._notify.bind(this),
             createComputedObject:this.createObserverObject.bind(this)
-        })  
-        this.emit("created",this)       
+        })    
         if(!this._options.lazy) forEachObject(this._data)
         // @ts-ignore
         if(this._options.debug && typeof(globalThis.__AUTO_STORES__)=='object') {                    
@@ -116,6 +115,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.batchUpdate = this.batchUpdate.bind(this)
         this.collectDependencies = this.collectDependencies.bind(this)
         this.trace = this.trace.bind(this)
+        this.installExtends()        
+        this.emit("load",this)     
     }
     get id(){return this._options.id}
     get state() {return this._data;  }
@@ -129,11 +130,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             this.options.log(message,level)
         } 
     }
-
     private installExtends(){
-        // @
-        const es = globalThis.__AUTOSTORE_EXTENDS__
-
+        const exts = globalThis.__AUTOSTORE_EXTENDS__
+        if(Array.isArray(exts)){
+            exts.forEach(ext=>typeof(ext)==="function" && ext(this))
+        }
     }
     private subscribeCallbacks(){
         if(this._options.onComputedCreated) this.on("computed:created",this._options.onComputedCreated.bind(this))
@@ -193,7 +194,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     watch():Watcher{
         const isWatchAll = typeof(arguments[0])==='function' || arguments[0]==='*'
         const listener = isWatchAll ? arguments[0] : arguments[1]
-
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
             return (data:StateOperate)=>{                            
                 if(operates==='*'){
@@ -208,7 +208,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 listener.call(this,data)              
             }        
         }
-
         if(isWatchAll){ // 侦听全部
             const {operates,filter} = Object.assign({once:false,operates:'write'},arguments[1])  as Required<WatchListenerOptions>
             const handler = createEventHandler(operates,filter)
@@ -569,7 +568,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.offAll()
         this._operates.offAll()
         this.watchObjects.clear()
-        this.computedObjects.clear()        
+        this.computedObjects.clear()  
+        this.emit("unload",this)      
     }
     /**
      * 
