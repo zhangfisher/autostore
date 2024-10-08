@@ -26,8 +26,8 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
         this.useDeps = createUseDeps(this).bind(this)
         this.useInput = createUseInput(this).bind(this)
         this.bind = createInputBinding(this).bind(this)
-        this.useWatch = createUseWatch(this).bind(this)
-        this.useFormBindings = createUseFormBindings(this).bind(this)
+        this.useWatch = createUseWatch(this).bind(this)  
+        this.useFormBindings = createUseFormBindings(this).bind(this)      
     } 
 } 
 

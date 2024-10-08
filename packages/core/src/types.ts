@@ -1,4 +1,5 @@
 import { AsyncComputed, AsyncComputedValue, Computed, ComputedDescriptorBuilder } from "./computed";
+import type  { AutoStore } from "./store";
 import { WatchDescriptorBuilder } from "./watch/types";
 
  
@@ -44,6 +45,9 @@ export type RequiredComputedState<T extends Record<string, any>> = {
 
 
 
+declare global {
+    var __AUTOSTORE_EXTENDS__: (<S extends AutoStore<any>>(store:S)=>void)[]
+}
 
 
 export type Primitive = string | number | boolean | null | undefined | symbol | bigint;

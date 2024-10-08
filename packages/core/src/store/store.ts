@@ -130,6 +130,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         } 
     }
 
+    private installExtends(){
+        // @
+        const es = globalThis.__AUTOSTORE_EXTENDS__
+
+    }
     private subscribeCallbacks(){
         if(this._options.onComputedCreated) this.on("computed:created",this._options.onComputedCreated.bind(this))
         if(this._options.onComputedDone) this.on("computed:done",this._options.onComputedDone.bind(this))
