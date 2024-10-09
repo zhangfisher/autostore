@@ -11,17 +11,19 @@ import { createUseWatch } from './hooks/useWatch';
 import { createUseFormBindings } from './hooks/useFormBindings';
 
 export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
-    useState:UseStateType<State>
-    useAsyncState:UseAsyncStateType
-    useDeps:UseDepsType<State>
-    $:SignalComponentType<State>
-    signal:SignalComponentType<State>
-    bind:InputBindingsType
-    useInput:UseInputType<State>
-    useWatch:UseWatchType
-    useFormBindings:UseFormBindingsType<State>
+    useState       : UseStateType<State>
+    useAsyncState  : UseAsyncStateType
+    useDeps        : UseDepsType<State>
+    $              : SignalComponentType<State>
+    signal         : SignalComponentType<State>
+    bind           : InputBindingsType
+    useInput       : UseInputType<State>
+    useWatch       : UseWatchType
+    useFormBindings: UseFormBindingsType<State>
     constructor(initial: State,options?:AutoStoreOptions<State>){
-        super(initial,options)
+        super(initial,Object.assign({
+            signalErrorBoundary : ()=><>ERROR</>
+        },options))
         this.signal = this.$ = createSignalComponent(this).bind(this)
         this.useState = createUseState(this).bind(this)
         this.useAsyncState = (selector:any)=>this.useState(selector,true)[0]
@@ -30,7 +32,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
         this.bind = createInputBinding(this).bind(this)
         this.useWatch = createUseWatch(this).bind(this)  
         this.useFormBindings = createUseFormBindings(this).bind(this)      
-    } 
+    }  
 } 
 
 export function createStore<State extends Dict>(initial: State,options?:AutoStoreOptions<State>){

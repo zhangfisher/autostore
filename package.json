@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "oxlint --fix -c=.oxlintrc.json"
+    "lint": "oxlint --fix -c=.oxlintrc.json",
+    "docs:dev": "cd docs && pnpm dev",
+    "docs:build": "cd docs && pnpm build"
   },
   "keywords": [],
   "author": "",

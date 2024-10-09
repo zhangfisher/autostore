@@ -1,10 +1,19 @@
 @import "./table.less";
 
-.dumi-default-source-code > pre.prism-code > .highlighted, 
+.dumi-default-source-code > pre.prism-code > .highlighted,
   .dumi-default-source-code-scroll-content > pre.prism-code > .highlighted{
-  background-color: #dff1fd;  
+  background-color: #dff1fd;
   font-weight: bold;
   &:after{
     background-color: #1677ff;
+  }
+}
+
+ul.dumi-default-toc{
+  &>li[data-depth=2]{
+    font-weight: bold;
+  }
+  &>li[data-depth=3]{
+    padding-left: 12px;
   }
 }

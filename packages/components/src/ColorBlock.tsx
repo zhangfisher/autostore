@@ -26,13 +26,17 @@ const presetColors:string[] = [
 ]
 
 
+let colorIndex = 0;
+
 /**
  * 从presetColors中随机获取一个颜色
  */
 function getRandomColor() {
-	return presetColors[Math.floor(Math.random() * presetColors.length)];
-	//const c = `${Math.floor(Math.random() * 16777215).toString(16)}`;
-	//return `#${c.padStart(6, "0")}`;
+	colorIndex++
+	if(colorIndex >= presetColors.length) {
+		colorIndex = 0
+	}
+	return presetColors[colorIndex] 
 }
 
 export type ColorBlockProps = React.PropsWithChildren<
@@ -48,12 +52,7 @@ export const ColorBlock: React.FC<ColorBlockProps> =(props) => {
 		const renderCount = useRef(0);
 		const { name, value = "",loading =false,comment } = props;
 		const backgroundColor = getRandomColor();
-		let textColor = "white";
-		// if (color.rgb(backgroundColor).isDark()) {
-		// 	textColor = "white";
-		// } else {
-		// 	textColor = "block";
-		// }
+		let textColor = "white"; 
 
 		useEffect(() => {
 			renderCount.current++; 

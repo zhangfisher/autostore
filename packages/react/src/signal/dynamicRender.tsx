@@ -1,8 +1,7 @@
-import {  AsyncComputedGetter, AsyncComputedObject, AsyncComputedValue, computed, ComputedGetter, Dict, isObserverDescriptor, isObserverDescriptorBuilder, ObserverDescriptorBuilder, SyncComputedObject, Watcher,WatchObject } from "autostore"
+import { isPathEq, AsyncComputedGetter, AsyncComputedObject, AsyncComputedValue, computed, ComputedGetter, Dict, isObserverDescriptor, isObserverDescriptorBuilder, ObserverDescriptorBuilder, SyncComputedObject, Watcher,WatchObject } from "autostore"
 import type { ReactAutoStore } from "../store"
-import React, { useEffect, useState } from "react"
-import type  {  SignalComponentRender } from "./types"
-import { isPathEq } from '../../../core/src/utils/isPathEq';
+import React, { ComponentType, useEffect, useState } from "react"
+import type  {  SignalComponentOptions, SignalComponentRender } from "./types"
 
 /**
  *  
@@ -51,28 +50,33 @@ import { isPathEq } from '../../../core/src/utils/isPathEq';
  * 
  * 
  */
-export function createDynamicRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,builder:ObserverDescriptorBuilder | ComputedGetter<any> | AsyncComputedGetter<any>){
-
+export function createDynamicRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,builder:ObserverDescriptorBuilder | ComputedGetter<any> | AsyncComputedGetter<any>,options:SignalComponentOptions){
+    const ErrorBoundary:ComponentType<{error:any}>= options.errorBoundary ||  store.options.signalErrorBoundary 
     return React.memo(()=>{
+        const [ error,setError] = useState<any>(null)
 
         const descriptor = isObserverDescriptorBuilder(builder) ?  builder() :  builder
 
         // 创建一个计算对象
         const [ observerObj ] = useState(()=>{
-            if(isObserverDescriptor(descriptor)){
-                descriptor.options.objectify = false // 不保存到computedObjects
-                if(descriptor.type==='computed'){
-                    return store.computedObjects.create(descriptor as any)
-                }else if(descriptor.type==='watch'){
-                    return store.watchObjects.create(descriptor as any)
+            try{
+                if(isObserverDescriptor(descriptor)){
+                    descriptor.options.objectify = false // 不保存到computedObjects
+                    if(descriptor.type==='computed'){
+                        return store.computedObjects.create(descriptor as any)
+                    }else if(descriptor.type==='watch'){
+                        return store.watchObjects.create(descriptor as any)
+                    }
+                }else{
+                    const builder = computed(descriptor as any)
+                    const descr = builder()
+                    descr.options.objectify = false
+                    return store.computedObjects.create(descr)
                 }
-            }else{
-                const builder = computed(descriptor as any)
-                const descr = builder()
-                descr.options.objectify = false
-                return store.computedObjects.create(descr)
-            }
-            
+            }catch(e){
+                setError(e)
+                return null
+            }            
         })
         const [ value,setValue ] = useState<AsyncComputedValue>(()=>{
             return observerObj ? observerObj.async ? observerObj.value : {value:observerObj.value } : {value:''}
@@ -104,25 +108,33 @@ export function createDynamicRender<State extends Dict>(store:ReactAutoStore<Sta
                      * 
                      */ 
                     if(operate.reply) return
-                    if(observerObj.type==='computed'){
-                        if(observerObj.async){
-                            const asyncObj = observerObj as unknown as AsyncComputedObject                            
-                            if(isPathEq(operate.path,asyncObj.path) || isPathEq(operate.path.slice(0,-1),asyncObj.path) ){
-                                setValue({...asyncObj.value}) 
+                    try{
+                        if(observerObj.type==='computed'){
+                            if(observerObj.async){
+                                const asyncObj = observerObj as unknown as AsyncComputedObject                            
+                                if(isPathEq(operate.path,asyncObj.path) || isPathEq(operate.path.slice(0,-1),asyncObj.path) ){
+                                    setValue({...asyncObj.value}) 
+                                }
+                            }else{
+                                // @ts-ignore
+                                setValue({value:(observerObj as unknown as SyncComputedObject).value})
                             }
-                        }else{
+                        }else if(observerObj.type==='watch'){
                             // @ts-ignore
-                            setValue({value:(observerObj as unknown as SyncComputedObject).value})
-                        }
-                    }else if(observerObj.type==='watch'){
-                        // @ts-ignore
-                        setValue({value:(observerObj as unknown as WatchObject).value})
+                            setValue({value:(observerObj as unknown as WatchObject).value})
+                        }                    
+                    }catch(e){
+                        setError(e)
                     }                    
                 },{operates:'write'})
             }            
             return ()=>watcher.off()
         },[descriptor])
 
-        return <>{render(value)}</>
+        return <>{
+            error ? 
+                <ErrorBoundary error={error}/> :
+                render(value)
+        }</>
     }, ()=>true) 
 }

@@ -14,12 +14,17 @@ toc: content
 
 ```ts | pure
 interface SignalComponentType<State extends Dict>{
-    (selector: string):React.ReactNode
-    <Value=any>(selector: (state:ComputedState<State>)=>Value):React.ReactNode
-    <Value=any>(render:SignalComponentRender,path:string | string[]):React.ReactNode
-    <Value=any, Scope=any >(render:SignalComponentRender,getter:AsyncComputedGetter<Value,Scope>):React.ReactNode
-    <Value=any, Scope=any >(render:SignalComponentRender,getter:ComputedGetter<Value,Scope>):React.ReactNode
-    <Value=any, Scope=any >(render:SignalComponentRender,builder: ObserverDescriptorBuilder<string,Value,Scope>):React.ReactNode;
+    // 封装单个状态数据
+    (selector: string,options?:SignalComponentOptions):React.ReactNode
+    // 封装组合多个状态数据
+    <Value=any>(selector: (state:ComputedState<State>)=>Value,options?:SignalComponentOptions):React.ReactNode
+    // 自定义渲染函数
+    <Value=any>(render:SignalComponentRender,path:string | string[],options?:SignalComponentOptions):React.ReactNode
+    // 自定义渲染函数,且动态创建计算属性
+    <Value=any, Scope=any >(render:SignalComponentRender,getter:AsyncComputedGetter<Value,Scope>,options?:SignalComponentOptions):React.ReactNode
+    <Value=any, Scope=any >(render:SignalComponentRender,getter:ComputedGetter<Value,Scope>,options?:SignalComponentOptions):React.ReactNode
+    <Value=any, Scope=any >(render:SignalComponentRender,builder: ObserverDescriptorBuilder<string,Value,Scope>,options?:SignalComponentOptions):React.ReactNode;
+}
 }
 ```
 
@@ -47,9 +52,9 @@ interface SignalComponentType<State extends Dict>{
 ![](./signal-custom-render.drawio.png)
 
 
-## 计算信号组件
+## 动态计算信号组件
 
-即将计算属性对象（`computedObject`）封装为信号组件。
+不需要预先在`State`中声明计算属性，动态创建计算属性，然后将计算属性对象（`computedObject`）封装为信号组件。
 
 ![](./signal-computed.drawio.png)
 
@@ -58,10 +63,12 @@ interface SignalComponentType<State extends Dict>{
 
 
 ```ts | pure
-<Value=any, Scope=any >(render:SignalComponentRender,getter:AsyncComputedGetter<Value,Scope>):React.ReactNode
-<Value=any, Scope=any >(render:SignalComponentRender,getter:ComputedGetter<Value,Scope>):React.ReactNode
-<Value=any, Scope=any >(render:SignalComponentRender,builder: ObserverDescriptorBuilder<string,Value,Scope>):React.ReactNode;
+<Value=any, Scope=any >(render:SignalComponentRender,getter:AsyncComputedGetter<Value,Scope>,options?:SignalComponentOptions):React.ReactNode
+<Value=any, Scope=any >(render:SignalComponentRender,getter:ComputedGetter<Value,Scope>,options?:SignalComponentOptions):React.ReactNode
+<Value=any, Scope=any >(render:SignalComponentRender,builder: ObserverDescriptorBuilder<string,Value,Scope>,options?:SignalComponentOptions):React.ReactNode;
+}
 ```
+
 :::info{title=提醒}
 阅读前文于[计算属性](/guide/computed)章节，了解计算属性的基本概念。
 :::

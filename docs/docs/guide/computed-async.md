@@ -11,7 +11,7 @@ toc: content
 
 # 异步计算
  
-`AutoStore`的异步计算属性是非常强大。 
+`AutoStore`提供了非常强大的异步计算属性特性，使用`computed`来声明创建一个异步计算属性。
 
 ## computed
 
@@ -60,78 +60,15 @@ function computed<Value = any, Scope = any>(
 
 ### 配置参数
 
+`options`参数是一个`ComputedOptions`对象，用来指定计算属性的一些选项。详见[计算参数](./computed-options.md)。
  
-<Divider></Divider>
 
-## 异步计算对象
-
-当在状态中使用`computed`声明异步计算属性后，在执行`createStore`后，会根据声明：
-
-- 创建一个`AsyncComputedObject`实例,保存在`store.computedObjects`中.
-- 状态中的原位置会被替换成一个类型为`AsyncComputedValue`的对象
-
-原地移花接木的过程如下：
-
-![异步计算对象](./computed-async.drawio.png)
-
-`AsyncComputedValue`对象类型声明如下：
-
-```ts
-export type AsyncComputedValue<Result= any,ExtAttrs extends Dict = {}> ={
-  // 是否正在计算
-  loading? : boolean;               
-  // 进度值    
-  progress?: number;                
-  // 超时时间，单位ms，当启用超时时进行倒计时
-  timeout? : number ;               
-  // 执行出错时的错误信息
-  error?   : any;        
-  // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试           
-  retry?   : number                 
-  // 计算函数的返回值保存到此处
-  value   : Result;                
-  // 重新运行计算函数
-  run  : (options?:RuntimeComputedOptions) => {};    
-  // 中止正在执行的异步计算
-  cancel  : ()=>void                                        
-} & ExtAttrs                        // 额外的属性
-```
-
-
-以下是一个例子，`state.user.fullName`是一个`AsyncComputedValue`对象，通过该对象可以读取到异步计算的进度以及结果等。
-
-```ts  | pure
-
-const state = {
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    fullName: async (user)=>{
-      // await some async code
-      return user.firstName+user.lastName
-    } 
-  }
-}  
-const store = createStore(state)
-
-// 经createStore处理后的fullName是一个AsyncComputedValue对象
-store.state.user.fullName=={
-  loading:false,          // 是否正在计算
-  error:null,             // 计算错误信息
-  timout:0,               // 超时计算相关
-  retry:0,                // 重试次数
-  value:"ZhangFisher",    // 计算结果
-  progress:0,             // 计算进度
-  run:()=>{},             // 重新执行计算
-  cancel: ()=>void 
-}
-```
- 
 <Divider></Divider>
 
 
 ## 基本用法
 
+异步计算属性的创建与同步计算一样均是使用`computed`来声明，但是最重要的一点是**异步计算需要显式指定依赖**。
 
 ```tsx  
 /**
@@ -178,8 +115,9 @@ export default ()=>{
 
 <Divider></Divider>
 
+## 高级特性🔥
 
-## 加载状态
+### 加载状态
 
 异步计算属性的加载状态保存在`AsyncComputedValue`对象的`loading`属性中，当`loading`为`true`时，代表异步计算正在进行中。
 
@@ -250,7 +188,7 @@ export default ()=>{
  
 <Divider></Divider> 
 
-## 执行进度
+### 执行进度
 
 异步计算属性允许控制计算的进度，执行进度保存在`AsyncComputedObject`对象的`progress`属性中，当`progress`为`0-100`时，代表异步计算的进度。开发者可以根据进度值来展示进度条等。
 
@@ -324,7 +262,7 @@ export default ()=>{
 
 <Divider></Divider>
 
-## 超时处理
+### 超时处理
 
 在创建`computed`时可以指定超时参数(单位为`ms`)，实现**超时处理**和**倒计时**功能。基本过程是这样的。
 
@@ -393,7 +331,7 @@ export default ()=>{
 
 <Divider></Divider>
 
-## 倒计时
+### 倒计时
 
 在`超时`功能中不会自动更新`timeout`属性，可以通过`timeout=[超时时间,间隔更新时长]`来启用倒计时功能。
 
@@ -471,7 +409,7 @@ export default ()=>{
 
 <Divider></Divider>
 
-## 重试
+### 重试
 
 在创建`computed`时可以指定重试参数，实现**出错重试执行**的功能。基本过程是这样的。
 
@@ -548,7 +486,7 @@ export default ()=>{
 
 <Divider></Divider>
 
-## 取消
+### 取消
 
 在创建`computed`时可以传入一个`abortSignal`参数，该参数返回一个`AbortSignal`，用来取消计算操作。
 
@@ -633,7 +571,7 @@ export default ()=>{
 
 <Divider></Divider>
 
-## 不可重入
+### 不可重入
 
 默认情况下，每当依赖发生变化时均会执行异步计算函数，在连续变化时就会重复执行异步计算函数。
 
@@ -644,7 +582,7 @@ export default ()=>{
 
 ## 简写异步计算
 
-一般情况下，异步计算属性均应该使用`computed`进行声明，但是在某些情况下，也可以直接使用一个异步函数。
+大部份情况下，异步计算属性均应该使用`computed`进行声明，但也可以直接使用一个异步函数。
 
 ```ts | pure 
 const order = {
@@ -671,33 +609,28 @@ const store = createStore({
     },[]) // 依赖是空的
 }
  )
-
-export default ()=>{
-  const [state] = store.useState()
-  return (<div>
-    <div>书名:{state.bookName}</div>
-    <div>价格:{state.price}</div>
-    <div>数量:{state.count}</div>
-    <div>总价:{state.total.result}</div>
-  </div>)
-}
 ```
 
-当不使用`computed`进行异步计算属性声明时，需要注意以下几点：
+**当不使用`computed`进行异步计算属性声明时，需要注意以下几点：**
 
 - 默认`scope`指向的是`current`，即`total`所在的对象。
 - 其依赖是空，所以不会自动收集依赖，也不会自动重新计算。也就是说上例中的`price`和`count`变化时，`total`不会自动重新计算。但是在会在第一次访问时自动计算一次。
+- 如果需要重新计算，可以手动执行`total.run()`或`store.computedObjects.get(id).run()`。
 
-:::warning
-**特别注意**：由于在不同的构建环境下，比如使用babel转码时，可能会将异步函数转码为同步函数，导致无法识别为异步函数而出现问题。
-:::
+
+
+**特别注意**：
+
+由于在不同的构建环境下，比如使用babel转码为`es5`时，可能会将异步函数转码为同步函数，导致无法识别为异步函数而出现问题。
+
 
 看看以下例子：
 
-```tsx | pure
-import { createStore} from "@autostorejs/react"
+```tsx 
+import { createStore } from "@autostorejs/react"
+import { ColorBlock,Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
 
-const store = createStore({
+const { state,$ } = createStore({
     bookName:"ZhangFisher",
     price:100,
     count:3,
@@ -708,18 +641,23 @@ const store = createStore({
 )
 
 export default ()=>{
-  const [state] = store.useState()
   return (<div>
-    <div>书名:{state.bookName}</div>
-    <div>价格:{state.price}</div>
-    <div>数量:{state.count}</div>
-    <div>总价:{state.total.result}</div>
-    <div>state.total={String(state.total)}</div>
+    <ColorBlock name="书名">{$('bookName')}</ColorBlock>
+    <ColorBlock name="价格">{$('price')}</ColorBlock>
+    <ColorBlock name="数量">
+      <Button onClick={()=>state.count--}>-</Button>
+      {$('count')}
+      <Button onClick={()=>state.count++}>+</Button>
+    </ColorBlock>
+    <ColorBlock name="总价" comment='不会重新计算'>{$('total.value',{
+      errorBoundary:(({error})=><>信号组件出错：{error.message}</>)
+    })}</ColorBlock>
+    <ColorBlock name="state.total">{String(state.total)}</ColorBlock>
   </div>)
 }
 ```
 
-**为什么不能正常工作，正确计算出`total`的值？**
+**上例为什么不能正确计算出`total`的值？**
 
 可以看到上述例子中`state.total`的值是`[object Promise]`。
 这是因为在本站使用的构建工具`webpack`使用`babel`进行转码，以上的异步函数被转码为同步函数，类似这样的形式：
@@ -736,100 +674,7 @@ total(_x15) {
 
 <Divider></Divider>
 
-## 完整例子 
-
-**下面是一个更加完整的例子：**
-
-```tsx 
-import { computed,createStore } from "@autostorejs/react"
-import { Input,Box, Button,Loading,JsonView,RichLabel } from "x-react-components"
-import { api } from "autostore-docs"
  
-const {state,bind,$,useState,useAsyncState} = createStore({
-  user:{
-    repo:"https://api.github.com/users/zhangfisher/repos",
-    projects:computed<Project[]>(async ([repoUrl],{abortSignal})=>{
-        await new Promise((resolve,reject)=>{
-          abortSignal.addEventListener("abort",()=>{
-            reject("cancelled")
-          })
-          api.getProjects(repoUrl).then(projects=>{
-            resolve(projects)
-          }).catch(e=>{
-            reject(e)
-          })
-        })        
-     },
-     ["./repo"],
-     {
-      scope:"depends" 
-     })
-  }
-})
-
-export default ()=>{
-  const [ repo ] = useState("user.repo") 
-  const projects = useAsyncState("user.projects") 
-  return <div>
-      <h3>修改仓库地址将触发重新加载该仓库项目列表</h3>
-      <Input label="仓库地址：" value={repo} {...bind("user.repo")}/>
-      <Button onClick={()=>state.user.projects.run()}>重试</Button> 
-      <Button onClick={()=>state.user.repo = "https://api.github.com/users/zhangfisher/repos"}>恢复</Button>    
-      <Box>
-        <table className="projects-list">
-            <thead><tr><td colSpan="3">以下是我的开源项目，感谢支持！</td></tr>
-            <tr><td><b>项目名称</b></td><td><b>说明</b></td><td><b>星</b></td></tr></thead>                    
-            <tbody>
-            {
-                projects.loading ? 
-                (<tr><td colSpan={3}>正在加载...:</td></tr>)
-                :
-                (
-                    projects.error? (<tr><td colSpan={2}>加载错误:{projects.error}</td></tr>)
-                    : (
-                      projects.value && projects.value.map((project,index)=>{
-                            return <tr key={index}>
-                              <td><a href={project.url} target="__blank">{project.name}</a></td>
-                              <td>{project.description}</td>
-                              <td>{project.stars}</td>
-                              </tr>
-                        })
-                    )
-                )
-            }
-            </tbody>
-        </table>
-      </Box>
-  </div>
-
-}
-
-```
-
-**说明**
-
-- 使用`computed`函数声明异步计算属性，`computed`参数：
-  - 第一个参数是一个异步函数，或者返回值是一个`Promise`对象,可以在此函数中编写业务逻辑，在本例中从`github`加载项目列表。
-  - 第二个参数是一个字符串数组，用来指定依赖的状态路径。可以指定多个依赖路径。
-  - 第三个参数是一个`ComputedOptions`对象，用来指定计算属性的一些选项。
-
-:::info
-**重点：经过`createStore`处理后，`state.user.projects`转换为一个`AsyncComputedObject`对象，通过该对象可以读取到异步计算的进度以及结果等信息。**
-:::
-
-**在上例中`state.user.projects`值为**
-
-```js
-  {
-    "loading":false,  // 是否正在计算
-    "timeout":0,
-    "retry":0,
-    "error":null,
-    "progress":0,
-    "result":/**此处就是异步计算函数的返回值**/
-  }
-```
-
 
 
 ## 注意事项

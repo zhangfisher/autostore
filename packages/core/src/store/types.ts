@@ -26,7 +26,7 @@ export type StateOperate<Value=any,Parent=any> = {
 }
  
 
-export type AutoStoreOptions<State extends Dict> = {
+export interface AutoStoreOptions<State extends Dict> {
     /**
      * 提供一个id，用于标识当前store
      */

@@ -7,13 +7,12 @@
  * 
  */
 
-import { Dict} from "autostore";
+import { Dict, isPlainObject} from "autostore";
 import { ReactAutoStore } from "../store"
 import React from "react";
 import { createStaticRender } from "./staticRender";
 import { createCustomRender } from "./customRender";
 import { createDynamicRender } from "./dynamicRender";
-
 import type { SignalComponentType } from "./types"
 
 /**
@@ -84,20 +83,34 @@ import type { SignalComponentType } from "./types"
 export function createSignalComponent<State extends Dict>(store:ReactAutoStore<State>){
     return (function(){ 
         const args = arguments    
-        const selector = args.length===1 && (typeof(args[0])==='string' || typeof(args[0])==='function') ? args[0] : undefined
-        const render = args.length>=2 && typeof(args[0])==='function' ? args[0] : undefined
-        const getterOrBuilder = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined 
-        const selectPath = args.length>=2 && (typeof(args[1])==='string' || Array.isArray(args[1])) ? args[1] : undefined
 
-        const SignalCompoent = selector ? createStaticRender(store,selector) 
+        const selector = args.length>=1 
+                        && (typeof(args[0])==='string' || typeof(args[0])==='function') 
+                        && (!args[1] || isPlainObject(args[1])) 
+                        ? args[0] : undefined
+
+        const render = args.length>=2 
+                        && typeof(args[0])==='function' 
+                        && (typeof(args[1])==='string' || Array.isArray(args[1]) || typeof(args[1])==='function')
+                        ? args[0] : undefined
+
+        const getterOrBuilder = args.length>=2 
+                                && typeof(args[1])==='function' ? args[1] : undefined 
+
+        const renderPath = args.length>=2 
+                        && typeof(args[0])==='function'
+                        && (typeof(args[1])==='string' || Array.isArray(args[1])) ? args[1] : undefined
+
+        const options = Object.assign({},args.length>1 && isPlainObject(args[args.length-1]) ? args[args.length-1] : undefined) 
+
+        const SignalCompoent = selector ? createStaticRender(store,selector,options) 
             : (
-                selectPath ? createCustomRender(store,render,selectPath) 
+                renderPath ? createCustomRender(store,render,renderPath,options) 
                 : (
-                    getterOrBuilder ? createDynamicRender(store,render,getterOrBuilder) 
+                    getterOrBuilder ? createDynamicRender(store,render,getterOrBuilder,options) 
                     : ()=><></>
                 ) 
             )
-
         return <SignalCompoent/>; 
     }) as SignalComponentType<State>
 }

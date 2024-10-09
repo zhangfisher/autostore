@@ -18,18 +18,24 @@ export type StateValueSelector<State extends Dict = Dict> = undefined | string[]
  * @param {boolean} [extandAsyncValue=false] - 可选，默认为false, 是否扩展异步计算值支持，当选择器指向的是一个异步计算属性时，是否自动获取异步计算属性的值
  * @returns {any} 根据选择器从store中获取的值，可以是任何类型
  */ 
-export function getValueBySelector<State extends Dict>(store:ReactAutoStore<State>,selector:StateValueSelector<State>,extandAsyncValue?:boolean):any{
+export function getValueBySelector<State extends Dict>(store:ReactAutoStore<State>,selector:StateValueSelector<State>,extandAsyncValue?:boolean,setError?:any):any{
     if(!selector) return store.state
     let value:any
-    if(typeof(selector)==='function'){
-        value = selector(store.state)
-    }else if(Array.isArray(selector)){
-        value = getVal(store.state,selector)
-    }else{
-        value = getVal(store.state,selector.split(PATH_DELIMITER))
-    } 
-    if(extandAsyncValue && isAsyncComputedValue(value)){
-        value = value.value
-    }
+    try{        
+        if(typeof(selector)==='function'){
+            value = selector(store.state)
+        }else if(Array.isArray(selector)){
+            value = getVal(store.state,selector)
+        }else{
+            value = getVal(store.state,selector.split(PATH_DELIMITER))
+        } 
+        if(extandAsyncValue && isAsyncComputedValue(value)){
+            value = value.value
+        }
+    }catch(e:any){
+        if(setError){
+            return setError(e)
+        }
+    }    
     return value
 }

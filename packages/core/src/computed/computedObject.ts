@@ -10,8 +10,6 @@ import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedO
 import { ObserverObject } from "../observer/observer";
 
 export class ComputedObject<Value=any> extends ObserverObject<Value,ComputedOptions<Value>>{     
- 
-
     /**
      *  构造函数。
      * 

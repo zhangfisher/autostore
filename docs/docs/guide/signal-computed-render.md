@@ -60,9 +60,21 @@ const { state , $ } = store
 
 ```ts | pure
 interface SignalComponentType<State extends Dict>{
-    <Value=any, Scope=any >(render:SignalComponentRender,getter:AsyncComputedGetter<Value,Scope>):React.ReactNode
-    <Value=any, Scope=any >(render:SignalComponentRender,getter:ComputedGetter<Value,Scope>):React.ReactNode
-    <Value=any, Scope=any >(render:SignalComponentRender,builder: ObserverDescriptorBuilder<string,Value,Scope>):React.ReactNode;
+    <Value=any, Scope=any >(
+        render:SignalComponentRender,
+        getter:AsyncComputedGetter<Value,Scope>,
+        options?:SignalComponentOptions
+    ):React.ReactNode
+    <Value=any, Scope=any >(
+        render:SignalComponentRender,
+        getter:ComputedGetter<Value,Scope>,
+        options?:SignalComponentOptions
+    ):React.ReactNode
+    <Value=any, Scope=any >(
+        render:SignalComponentRender,
+        builder: ObserverDescriptorBuilder<string,Value,Scope>,
+        options?:SignalComponentOptions
+    ):React.ReactNode;
 }
 ```
 
@@ -79,7 +91,7 @@ type AsyncComputedValue<Value = any,ExtAttrs extends Dict = {}> ={
     loading : boolean;          
     progress: number;                // 进度值    
     timeout : number ;               // 超时时间，单位ms，当启用超时时进行倒计时
-    error   : any;
+    error   : any;                   // 执行出错时的错误信息
     retry   : number                 // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试
     run     : (options?:RuntimeComputedOptions) => {};        // 重新执行任务
     cancel  : ()=>void                                        // 中止正在执行的异步计算

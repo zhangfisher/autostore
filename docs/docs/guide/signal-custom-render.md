@@ -21,7 +21,8 @@ toc: content
 interface SignalComponentType<State extends Dict>{
     <Value=any>(
       render:SignalComponentRender,    // 渲染函数
-      path:string | string[]           // 状态数据路径
+      path:string | string[],           // 状态数据路径,
+      options?:SignalComponentOptions
     ):React.ReactNode 
 }
 ```
@@ -66,12 +67,14 @@ export default () => {
   })
   return <div>
       <ColorBlock name="Age">{$(
+        // 自定义渲染函数
         ({value})=>{
           return <div style={{position:'relative',display:'flex',alignItems:'center',color:'red',background:"white"}}>
             <span style={{flexGrow:1}}>{value}</span>
             <Button onClick={()=>state.user.age++}>+Age</Button>
           </div>
         },
+        // 状态数据的路径
         "user.age"
       )}</ColorBlock> 
     </div>
@@ -97,22 +100,22 @@ import { Button,ColorBlock } from "x-react-components"
 
  
 export default () => {
-    const { state , $ } = useStore({
+    const { state , $,useAsyncState } = useStore({
     order:{
       price: 100,
       count: 1,
       total: computed(async (order)=>{
-        await delay(1000)
+        await delay()
         return order.price * order.count
       },['order.price','order.count'],{initial:100})
     }
   })
-
+  const total = useAsyncState("order.total")
   return <div> 
       <ColorBlock name="Price">{$('order.price')}</ColorBlock>
       <ColorBlock name="Count">{$('order.count')}</ColorBlock>
-      <ColorBlock name="Total" comment="延迟更新">{$('order.total.value')}</ColorBlock>
-      <ColorBlock name="Total" comment="延迟更新">{$('order.total')}</ColorBlock>
+      <ColorBlock name="Total" loading={total.loading} comment="延迟更新">{$('order.total.value')}</ColorBlock>
+      <ColorBlock name="Total" loading={total.loading}  comment="延迟更新">{$('order.total')}</ColorBlock>
       <Button onClick={()=>state.order.count++}>+Count</Button>
     </div>
 }

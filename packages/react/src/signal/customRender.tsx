@@ -1,8 +1,8 @@
 import {  AsyncComputedValue, Dict, isAsyncComputedValue, PATH_DELIMITER } from "autostore"
 import type { ReactAutoStore } from "../store"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { ComponentType, useEffect, useMemo, useState } from "react"
 import { getValueBySelector } from "../utils/getValueBySelector"
-import type { SignalComponentRender } from "./types"
+import type { SignalComponentOptions, SignalComponentRender } from "./types"
 
 /**
  * 
@@ -35,16 +35,19 @@ import type { SignalComponentRender } from "./types"
  *   
  * 
  */
-export function createCustomRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,path: string | string[]){
+export function createCustomRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,path: string | string[],options:SignalComponentOptions){
+    const ErrorBoundary:ComponentType<{error:any}>= options.errorBoundary || store.options.signalErrorBoundary 
     return React.memo(()=>{ 
-        const [ value,setValue ] = useState(()=>getValueBySelector(store,path))  
+
+        const [ error,setError] = useState<any>(null)
+        const [ value,setValue ] = useState(()=>getValueBySelector(store,path,false,setError))  
         const isAsync:boolean  = isAsyncComputedValue(value) 
 
         const renderArgs = useMemo<AsyncComputedValue>(()=>{
             return isAsync ? value : { value } as AsyncComputedValue
         },[value])
 
-        const deps = store.useDeps(path,false)
+        const deps = store.useDeps(path,'none')
 
         useEffect(()=>{ 
             const watchPath = isAsync ? `${Array.isArray(path) ? path.join(PATH_DELIMITER) : path}.*` : deps
@@ -55,14 +58,16 @@ export function createCustomRender<State extends Dict>(store:ReactAutoStore<Stat
                         [keypath[keypath.length-1]]:newValue
                     })  
                 }else{
-                    setValue(getValueBySelector(store,path))  
+                    setValue(getValueBySelector(store,path,false,setError))  
                 } 
             })
             return ()=>watcher.off()
         },[deps])
 
-
-
-        return <>{render(renderArgs)}</>
+        return <>{
+            error ? 
+                <ErrorBoundary error={error}/> :
+                render(renderArgs)}
+        </>
     }, ()=>true) 
 }

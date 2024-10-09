@@ -1,7 +1,9 @@
 import { ComputedState, Dict } from "autostore"
 import type { ReactAutoStore } from "../store"
-import React, { useEffect, useState } from "react"
+import React, { ComponentType, useEffect, useState } from "react"
 import { getValueBySelector } from "../utils/getValueBySelector"
+import { SignalComponentOptions } from "./types"
+
 
 /**
  * 
@@ -46,17 +48,21 @@ import { getValueBySelector } from "../utils/getValueBySelector"
  * 
  * 
  */
-export function createStaticRender<State extends Dict>(store:ReactAutoStore<State>,selector:string[] | ((state:ComputedState<State>)=>any)){
+export function createStaticRender<State extends Dict>(store:ReactAutoStore<State>,selector:string[] | ((state:ComputedState<State>)=>any),options:SignalComponentOptions){
+    const ErrorBoundary:ComponentType<{error:any}>= options.errorBoundary || store.options.signalErrorBoundary 
     return React.memo(()=>{
-        // 收集依赖的路径
-        const deps = store.useDeps(selector)
-        const [ value,setValue ] = useState(()=>getValueBySelector(store,selector,true)) 
+        const deps = store.useDeps(selector)  // 收集依赖的路径
+        const [ error,setError] = useState<any>(null)
+        const [ value,setValue ] = useState(()=>{
+            return getValueBySelector(store,selector,true,setError)
+        }) 
         useEffect(()=>{ 
             const watcher = store.watch(deps,()=>{
-                setValue(getValueBySelector(store,selector,true))  
+                setValue(getValueBySelector(store,selector,true,setError))  
             })
             return ()=>watcher.off()
         },[deps])
-        return <>{String(value)}</>
+        return <>{error ? <ErrorBoundary error={error}/> : String(value)}</>          
+            
     }, ()=>true) 
 }
