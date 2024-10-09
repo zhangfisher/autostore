@@ -15,7 +15,7 @@
  * 
  * 
  */
-import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions, ObserverScopeRef } from "../observer/types"
+import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions, ObserverScope, ObserverScopeRef } from "../observer/types"
 import { StateOperate } from "../store/types"
 import { ComputedObject } from "./computedObject" 
 import { Dict } from "../types"

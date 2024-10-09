@@ -9,6 +9,7 @@ demo:
 toc: content
 ---
 
+# 关于
 
 当使用`computed`创建好计算属性后，我们可以通过`store.computedObjects`来管理`store`内的所有计算属性。
 
@@ -63,3 +64,4 @@ export default ()=>{
 - 对于异步计算即可以通过`store.computedObjects.get("user.fullName2").run()`来手动执行计算函数，也可以通过`store.state.user.fullName2.run()`手动执行计算函数。
 - 而同步计算只能通过`store.computedObjects.get("user.fullName").run()`来手动执行计算函数。
 - `ComputedObject`实例有一个`value`属性，可以获取计算函数的返回值。
+- `ComputedObject`是一个类，查看API文档可以了解更多信息。

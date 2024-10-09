@@ -9,124 +9,185 @@ demo:
 toc: content
 ---
 
-# 配置
+# 计算参数
 
-无论是同步或异步计算属性均推荐使用`computed`函数来声明。
-
-
-## 函数签名
+无论是同步或异步计算属性均推荐使用`computed`函数来声明。`computed`函数支持`ComputedOptions`配置参数，可以通过配置参数来控制计算属性的行为。
 
 `computed`是一个函数，用于声明一个计算属性，其函数签名声明如下：
 
+```ts | pure {5,10}
+// 声明异步计算属性
+function computed<Value = any, Scope = any>(
+    getter: AsyncComputedGetter<Value,Scope>,
+    depends: ComputedDepends,
+    options?: ComputedOptions<Value,Scope>
+): ComputedDescriptorBuilder<Value,Scope>;
+// 同步计算属性
+function computed<Value = any, Scope = any >(
+    getter: ComputedGetter<Value,Scope>,
+    options?: SyncComputedOptions<Value,Scope>
+): ComputedDescriptorBuilder<Value,Scope>;
 
-```ts | pure
-export function computed<R = any,ExtraAttrs extends Dict = {}>( getter: AsyncComputedGetter<R>,depends?:ComputedDepends,options?: ComputedOptions<R,ExtraAttrs>): ComputedDescriptor<R & ExtraAttrs>;
-export function computed<R = any,ExtraAttrs extends Dict = {}>( getter: ComputedGetter<R>, options?: ComputedOptions<R,ExtraAttrs>): R
-export function computed<R = any,ExtraAttrs extends Dict = {}>( getter: any,depends?:any, options?: ComputedOptions<R,ExtraAttrs>):any {
 ```
 
-## getter
+**`ComputedOptions`配置参数如下：**
 
-`getter`参数是一个同步或异步的计算函数，其函数签名声明如下：
-
-```ts | pure
-export type ComputedGetter<R,Scope=any> = (scopeDraft: Scope) => Exclude<R,Promise<any>>
-export type AsyncComputedGetter<R,Scope=any> = (scopeDraft:Scope,options:Required<ComputedParams>) => Promise<R>
-```
-
-- `getter`函数的`this`默认指向根状态对象，但是可以通过`options.context`来重新指定。
-- `getter`函数的第一个入参`scopeDraft`，即`作用域`，默认指向当前状态对象，但是可以通过`options.scope`来重新指定。
-
-## Options
 
 `computed`支持以下计算配置参数：
 
-```ts |pure
+## id
 
-export interface ComputedOptions<Value=any,Extras extends Dict={}> {
-  // 计算函数的唯一标识，如果未指定，则自动生成一个唯一标识
-  id?:string | ((path:string[])=>string)                         
-  context?: ComputedContext             // 计算函数的this
-  scope?  : ComputedScope               // 计算函数的第一个参数
-  // 初始值
-  initial?: Value
-  // 异步计算,默认情况下，通过typeof(fn)=="async function"来判断是否是异步计算函数
-  // 但是在返回Promise或者Babel转码等情况下，判断可能失效时，需要手动指定async=true
-  async?:boolean
-  /**
-   * 指定超时时间，当计算函数执行超过指定时间后，会自动设置loading为false
-   * 如果timeout是一个数组，则第一个值表示超时时间，第二个值表示超时期的倒计时间隔
-   * 例如：[1000,10]表示1000ms代表1s后超时并置loading=false
-   * 10代表setInterval(1000/100), 每次执行时-1，直到为0时停止
-   * 这样就可以通过绑定timeout值来实现倒计时的效果
-   * 如果要实现60秒倒计时，可以这样写：[60*1000,60],这样value.timeout就会从60开始递减
-   */
-  timeout?:number  | [number,number]
-  // 是否立刻计算，默认为true，在创建时马上进行计算，=false,则只有在依赖变化时才会执行，或者手动调用run方法
-  immediate?:boolean                     
-  /**
-   *  计算函数不可重入，即同一个计算函数在执行过程中，不会再次执行   
-   *  如果重入时，则在debug=true时会在控制台打印出警告信息
-   */
-  noReentry?:boolean
-  /**
-   * 提供一个异步信号，用来传递给异步计算函数以便可以取消异步计算
-   */
-  abortSignal?:()=>AbortSignal | null | void | undefined
-  /**
-   * 当计算函数执行出错时的重试次数
-   * 
-   * retry:3  表示最多重试3次,重试间隔为0，加上第1次执行，总共执行4次
-   * retry:[3,1000] 表示最多重试3次，重试间隔为1000ms，加上第1次执行，总共执行4次
-   * 
-   * 重试数据可以通过AsyncComputedObject.retry获取
-   * 当首次执行失败时触发重试，此时AsyncComputedObject.retry=3，然后每次重试-1，直到为0时停止重试
-   * 可以在UI中通过AsyncComputedObject.retry来实时显示重试次数
-   * 
-   */
-  retry?:number | [number,number]
-  /**
-   * 当执行计算getter函数出错时的回调
-   */
-  onError?:(e:Error)=>void              
-  /**
-   * 指定计算结果更新到哪里
-   * 
-   * self: 默认，原地替换，异步计算属性会将计算函数转换成一AsyncComputedObject对象，此对象包含value,loading,error等属性
-   * root: 更新到根对象中
-   * parent: 更新到父对象中
-   * current: 更新到当前对象中
-   * none: 不更新到任何对象中
-   * {String} 当前对象的指定键
-   * {Array} 从根对象开始的完整路径
-   * 
-   */
-  toComputedResult?: 'self' | 'root' | 'parent' | 'current' | 'none' | string[] | string 
-  /**
-   * 为该计算函数指定一个分组名
-   * 
-   * 此属性用来将计算函数分组，比如一个store中具有相同group的计算函数
-   * 
-   * 然后就可以启用/关闭/运行指定分组的计算函数
-   * 
-   * 在表单中通过为所有validate指定统一的分组名称，这样就可以统一控制表单的验证是否计算
-   * 
-   * store.computedObjects.runGroup("a"])
-   * 
-   */
-  group?:string
-  /**
-   * 计算开关
-   * 当=false时不会执行计算
-   */
+**类型**：`string`
 
-  enable?:boolean
-  /**
-   * 额外合并到计算结果AsyncComputedObject中的属性
-   */
-  extras?:Extras
-};
+创建计算属性对象`ComputedObject`时唯一标识，如果未指定
+- 使用`computed`所在的路径名作为标识，如`user.fullName`。
+- 动态创建的`ComputedObject`会自动生成一个唯一标识。
 
+当然，您也可以通过`id`参数来指定唯一标识。
+
+## immediate
+
+**类型**：`boolean | 'auto'`
+**默认值**：`'auto'`
+
+针对异步计算属性是否在初始化时立刻运行一次计算函数`getter`.取值如下：
+| 值 | 说明 |
+| :---: | --- |
+| `true` | 在创建异步计算时马上执行一次 |
+| `false` | 在创建异步计算时不马上执行一次，后续仅在依赖变化时执行 |
+| `auto` | 当`initial==undefined`时会马上执行一次，其他值则不马上执行一次 |
+
+
+## initial
+
+**类型**：可以通过泛型参数指定`Value`
+**默认值**：undefined
+
+作为计算属性的初始值。
+
+## scope
+
+**类型**：`ComputedScope`
+**默认值**: `Current`
+
+指定计算函数的第一个参数，如果未指定，则默认为`Current`。详见[ComputedScope](./computed-scope.md)。
+
+## enable
+
+**类型**：`boolean`
+**默认值**：`true`
+
+计算开关，当`enable=false`时不会执行计算。
+也可以通过`store.computedObjects.get(<id>).enable=<true/false>`来统一控制计算属性的开关。
+
+## async 
+
+**类型**：`boolean`
+**默认值**：`undefined`
+    
+默认情况下，`computed`函数会通过`typeof(fn)=="async function"`来判断是否是异步计算函数,以决定如何创建同步或异步计算属性。
+但是在返回`Promise`或者`Babel`转码等情况下，判断会失效时，需要手动指定`async=true`
+
+
+## depends
+
+**类型**：`ComputedDepends`
+
+必填依赖项，用于异步计算属性指定的依赖项。详见[ComputedDepends](./computed-depends.md)。
+
+
+
+## group
+
+**类型**：`string`
+
+用于将计算属性分组，便于管理。比如可以通过`store.computedObjects.runGroup("a"])`来运行指定分组的计算函数。
+
+参考[手工运行](./computed-run.md)。
+
+## objectify
+
+**类型**：`boolean`
+**默认值**：`true`
+
+是否将创建的`computedObject`对象保存到`store.computedObjects`中。
+将`objectify=false`,在`React`组件中动态创建计算属性时，不将计算属性保存到`store.computedObjects`中。以便在组件销毁时自动释放。
+
+
+## timeout
+
+**类型**：`number | [number,number]`
+**默认值**：`0`
+
+用来控制异步函数执行的超时。
+
+- 指定超时时间，当计算函数执行超过指定时间后，会触发超时错误。
+- 如果`timeout=[超时时间,倒计时间隔]`， 例如：[1000,10]表示`1000ms`超时,每隔100ms更新一下`timeout`值，实现倒计时的效果。
+
+详见[超时处理](./computed-async#超时处理)。
+
+
+## noReentry
+
+**类型**：`boolean`
+**默认值**：`false`
+
+计算函数不可重入，即同一个计算函数在执行过程中，不会再次执行.
+
+
+## abortController
+
+**类型**：`()=>AbortController | undefine`
+
+提供一个自定义的`AbortController`用来替代默认的`AbortController`，用来传递给异步计算函数以便可以取消异步计算.
+
+详见[异步计算-取消](./computed-async#取消)。
+
+
+## retry
+
+**类型**：`number`
+**默认值**：`0`
+
+用来控制异步计算失败后重试次数。
+
+- 默认`retry=0`代表不启用重试控制。
+- `retry=3`表示最多重试`3`次,重试间隔为`0`，加上第`1`次执行，总共执行`4`次
+- `retry=[3,1000]`表示最多重试`3`次，重试间隔为`1000ms`，加上第`1`次执行，总共执行`4`次      
+- 重试数据可以通过`AsyncComputedValue.retry`获取
+- 当首次执行失败时触发重试，此时`AsyncComputedValue.retry=3`，然后每次重试`-1`，直到为`0`时停止重试
+
+详见[重试处理](./computed-async#重试)。
+
+## extras
+
+**类型**：`any`
+
+额外参数，用于传递给计算函数。在计算函数中可以通过`extras`参数获取。
+
+```ts | pure
+import { createStore,computed } from '@autostorejs/react';
+const store = createStore({
+    firstName:"Zhang",
+    lastName:"Fisher",
+    fullName: computed(async (user,{extras})=>{
+      // 通过extras获取额外参数
+      return user.firstName+user.lastName + `${count}`
+    },["./firstName","./lastName"],{extras:{count:0}})
+  }
+})
 ```
+
+## onError
+
+**类型**：`(error:Error)=>void`
+
+当执行计算`getter`函数出错时的回调
+
+## onDone
+
+**类型**：`(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,value:any}):void`
+
+当计算函数执行完成时的回调
 
 

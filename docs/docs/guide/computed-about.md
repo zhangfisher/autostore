@@ -2,14 +2,14 @@
 group:
   title: 计算属性
   order: 2
-title: 关于
+title: 工作机制
 order: 0  
 demo:
   tocDepth: 5
 toc: content
 ---
 
-# 关于
+# 工作机制
 
 `AutoStore`提供了无与伦比的计算属性实现方式，支持同步计算属性和异步计算属性，具备丰富的计算重试、超时、加载中、错误等状态管理。
 
@@ -63,11 +63,10 @@ const { state } = createStore({
   }
 })
 ```
+运行`createStore`后会扫描整个对象，如果发现`computed`声明，则：
 
-经过`createStore`后，`state.total`就是一个普通数值，且`typeof(state.total)==='number'`。
-
-`createStore`会根据状态上下文和`computed`函数创建一个`SyncComputedObject`对象,保存在`store.comnutedObjects`里面。
-
+1. `createStore`会根据状态上下文和`computed`函数创建一个`SyncComputedObject`对象,保存在`store.comnutedObjects`里面。
+2. 运行一次同步计算函数收集依赖，然后将返回值写入`state.total`,此时`typeof(state.total)==='number'`。
 
 ## 异步计算
 
@@ -98,7 +97,12 @@ const { state } = createStore({
   }
 })
 ```
-经过`createStore`后，`state.total`就是一个`AsyncComputedValue`，且`typeof(state.total)==='object`。
+
+运行`createStore`后会扫描整个对象，如果发现`computed`声明，则：
+
+
+1. 根据`computed`声明结合状态上下文创建一个`AsyncComputedObject`对象,保存在`store.comnutedObjects`里面。
+2. 将`state.total`替换成`AsyncComputedValue`。
 
 ```ts | pure
 state.total={
@@ -113,5 +117,4 @@ state.total={
 }
 ```
 
-`createStore`会根据状态上下文和`computed`函数创建一个`AsyncComputedObject`对象,保存在`store.comnutedObjects`里面。
-
+更多介绍请参考[异步计算](./computed-async)。

@@ -13,6 +13,7 @@ toc: content
  
 `AutoStore`提供了非常强大的异步计算属性特性，使用`computed`来声明创建一个异步计算属性。
 
+
 ## computed
 
 创建异步计算属性的基本方法是直接在`State`中任意位置使用`computed`进行声明。
