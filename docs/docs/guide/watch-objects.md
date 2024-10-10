@@ -25,7 +25,7 @@ toc: content
 import { createStore,watch } from '@autostorejs/react';
 import { Divider,ColorBlock,Button,Box,Input } from "x-react-components"
 
- const { state,useFormBindings,watchObjects,$  } = createStore({
+ const { state,useBindings,watchObjects,$  } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
@@ -46,7 +46,7 @@ import { Divider,ColorBlock,Button,Box,Input } from "x-react-components"
 } )
 
 export default ()=>{
-  const bindings = useFormBindings('user')
+  const bindings = useBindings('user')
   return (<div>
     <Input label="FirstName" {...bindings.firstName}/>
     <Input label="lastName" {...bindings.lastName}/> 

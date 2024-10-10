@@ -67,7 +67,7 @@ export interface UseWatchType {
 }
 
 
-// ********** useFormBindings **********  
+// ********** useBindings **********  
 
  
  
@@ -83,4 +83,19 @@ export interface UseFormBindingsType<State extends Dict> {
     (entry?: string,options?:WatchListenerOptions): FormBindingsState<ComputedState<State>> 
 }
 
+
+
+// ********** useForm **********  
+
+export type UseFormResult={
+    ref: React.RefObject<HTMLFormElement>  
+}
+
+export type UseFormOptions={
+
+}
+
+export interface UseFormType {
+    (entry?: string | string[],options?:UseFormOptions): UseFormResult
+}
 

@@ -19,6 +19,6 @@ toc: content
 
 - `bind` 
 - `useInput` 
-- `useFormBindings` 
+- `useBindings` 
  
 

@@ -1,9 +1,50 @@
 import {  Dict, getVal,isPrimitive, isPlainObject, setVal, PATH_DELIMITER, pathStartsWith, isAsyncComputedValue } from "autostore";
-import { ReactAutoStore } from "../../store";
+import { ReactAutoStore } from "../store";
 import { useState, useSyncExternalStore } from "react";
-import { createFakeObjectBindings, createInputBinding } from "./bindings"; 
-import type { UseFormBindingsType } from "../types";  
+import type { UseFormBindingsType } from "./types";  
+import { getInputValueFromEvent } from "../utils/getInputValueFromEvent";
 
+export const FAKE_BINDINGS = Symbol('FAKE_BINDINGS')
+
+/**
+ * 
+ * 构建一个假的对象绑定
+ * 
+ * @description
+ * 
+ * 为什么要构建假的对象绑定？
+ * 
+ * 主要是为了节约内存，如果没有访问到就不需要去创建绑定对象
+ * 
+ * @param store 
+ * @param val 
+ * @returns 
+ */
+export function createFakeObjectBindings<State extends Dict>(store:ReactAutoStore<State>,val:object){
+    const bindings = {} as Record<string,any>    
+    if (val instanceof Map) {
+        val.forEach((value, key) => {
+            bindings[key] = FAKE_BINDINGS;
+        });
+    } else {
+        Object.entries(val).forEach(([key])=>{
+            bindings[key] = FAKE_BINDINGS
+        })    
+    }
+    return bindings
+}
+
+ 
+
+export function createInputBinding<State extends Dict>(store:ReactAutoStore<State>,path:string[],val:any){    
+    return {
+        value:val,
+        onChange:(e:any)=>{
+            const inputValue = getInputValueFromEvent(e)
+            store.update(state=>setVal(state, path,inputValue))
+        }
+    }   
+}
 
 function createProxy<State extends Dict>(target: any, parentPath: string[],proxyCache:Map<any,any>,store:ReactAutoStore<State>,entry:string[]):any{
     if (typeof target !== 'object' || target === null) {
@@ -39,13 +80,13 @@ function createProxy<State extends Dict>(target: any, parentPath: string[],proxy
 }
 
 
-export function createFormBindingsState<State extends Dict>(store:ReactAutoStore<State>,entry:string[]){
+export function createBindingsState<State extends Dict>(store:ReactAutoStore<State>,entry:string[]){
     const proxyCache = new Map();
     return createProxy<State>({}, [],proxyCache,store,entry)  
 }
 
 
-export function createUseFormBindings<State extends Dict>(store:ReactAutoStore<State>): UseFormBindingsType<State>{ 
+export function createUseBindings<State extends Dict>(store:ReactAutoStore<State>): UseFormBindingsType<State>{ 
     return function (){
         const args = arguments
         const entry =args.length > 0 ? 
@@ -57,7 +98,7 @@ export function createUseFormBindings<State extends Dict>(store:ReactAutoStore<S
             return store.getSnap({entry})
         })
 
-        const [bindingsState] = useState(()=>createFormBindingsState(store,entry))
+        const [bindingsState] = useState(()=>createBindingsState(store,entry))
 
         useSyncExternalStore((callback)=>{
             const watcher = store.watch(({path,value})=>{   

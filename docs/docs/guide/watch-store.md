@@ -289,7 +289,7 @@ import { createStore, computed,useStore } from "@autostorejs/react"
 import { Box,Button,ColorBlock,Layout,CheckBox ,Input} from "x-react-components"
 import { useEffect,useRef } from "react" 
 
-const { state,watch,$,useState,useFormBindings } = createStore({
+const { state,watch,$,useState,useBindings } = createStore({
   order:{
     price:10,
     count:2,
@@ -317,7 +317,7 @@ export default ()=>{
     return ()=>watcher.off()
   },[])  
 
-  const bindBooks = useFormBindings('order.books')
+  const bindBooks = useBindings('order.books')
 
 
   return (<Layout style={{maxHeight:'400px'}}>

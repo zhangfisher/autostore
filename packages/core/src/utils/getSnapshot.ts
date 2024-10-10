@@ -38,7 +38,7 @@ import { isAsyncComputedValue } from "./isAsyncComputedValue"
  * 
  * @param state
  * @param reserveAsync - 是否保留异步对象。异步对象的值是一个AsyncComputedValue对象。=true时会保留。=false时会只返回value值
- * 
+ * 默认不会
  * 
  * 
  * 
