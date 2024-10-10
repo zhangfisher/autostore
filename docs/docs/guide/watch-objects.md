@@ -1,6 +1,6 @@
 ---
 title: 监视对象
-order: 3
+order: 4
 group:
   title: 监视
   order: 3  
@@ -30,9 +30,7 @@ export interface WatchObject extends WatchOptions>{
     reset(){}
     enableGroup(groupName:string,value:boolean=true){}
  }
-
 ```
-
 
 ## 使用示例
 

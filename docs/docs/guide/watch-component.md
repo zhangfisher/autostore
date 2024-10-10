@@ -1,15 +1,16 @@
 ---
-title: 适用范围
+title: useWatch
 group:
   title: 监视
   order: 3 
-order: 5
+order: 3
 demo:
   tocDepth: 5
 toc: content
 ---
 
- 
+# useWatch
+
 大部份情况下，我们应该使用`computed`函数来声明计算属性，而不是使用`watch`函数来侦听`State`中的数据变化。但是在一些特殊情况下，我们可能需要使用`watch`函数，主要在于：
 
 - **动态依赖**
@@ -64,3 +65,55 @@ export function validate<T=any>(options?:ValidateOptions){
 
 
 
+## 组件内侦听
+
+在组件内侦听可以使用`store.useWatch`函数，用来侦听`store`对象的变化,当组件销毁自动取消订阅。
+ 
+```tsx 
+import { createStore,computed,ObserverScopeRef } from "@autostorejs/react" 
+import { useEffect,useState } from "react"
+const user = {
+  user:{
+    firstName:"zhang",
+    lastName:"fisher",
+    fullName: computed(async ([first,last])=>{ 
+      return first + last
+    },[
+      "user/firstName",
+      "user/lastName"
+    ],{   
+      scope:ObserverScopeRef.Depends
+    }) 
+  } 
+}
+
+const store = createStore({state:user})
+
+
+export default ()=>{
+  const [state]=store.useState()
+  const [watchKey,setWatchKey] = useState('')
+  const [watchPath,setWatchPath]=useState("user/firstName")
+  const [watchValue,setWatchValue]=useState("")
+
+  store.useWatch((value,path)=>{
+      setWatchKey(path.join("/"))
+      setWatchValue(value)
+      return value
+  },watchPath,{id:"use1"}) 
+
+
+
+  return  (<div>
+      <div>watch for: {watchPath}</div>
+      <div>Watch value:{watchValue}</div>
+      <div>firstName=<input value={state.user.firstName} onChange={store.sync(to=>to.user.firstName)}/></div>
+      <div>lastName=<input value={state.user.lastName} onChange={store.sync(to=>to.user.lastName)}/></div>
+      <div>fullName={state.user.fullName.result}</div> 
+      <button onClick={()=>setWatchPath("user/firstName")}>watch firstName</button>
+      <button onClick={()=>setWatchPath("user/lastName")}>watch lastName</button>      
+    </div>)
+}
+
+```
+  

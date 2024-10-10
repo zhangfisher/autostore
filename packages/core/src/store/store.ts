@@ -194,18 +194,30 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     watch():Watcher{
         const isWatchAll = typeof(arguments[0])==='function' || arguments[0]==='*'
         const listener = isWatchAll ? arguments[0] : arguments[1]
+
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
-            return (data:StateOperate)=>{                            
+            return (operate:StateOperate)=>{                            
                 if(operates==='*'){
                 }else if(operates==='write'){
-                    if(data.type==='get') return
+                    if(operate.type==='get') return
                 }else if(operates ==='read'){
-                    if(data.type!=='get') return
+                    if(operate.type!=='get') return
                 }else if(Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
-                    if(!operates.includes(data.type)) return
+                    if(!operates.includes(operate.type)) return
                 }
-                if(typeof(filter)==='function' && !filter(data)) return
-                listener.call(this,data)              
+                if(typeof(filter)==='function' && !filter(operate)) return
+                // 在侦听函数内部如果涉及到状态的读写操作，会触发新的侦听事件，这样很容易会导致无限循环
+                // 比如我们watch(()=>{console.log(state.a)},{operates:'*'})，由于在侦听函数内部读取了state.a的值，会触发新的get侦听事件
+                // 然后又被侦听函数捕获，从而就变成无限循环
+                // 为了避免这种情况，需要避免所有读操作，即get操作, _peeping=true表示正在偷看，不触发get事件
+                // 如果在侦听函数内部使用写操作，如watch(()=>{state.a=1},{operates:'*'})
+                // 当执行state.a=1时，也就是会触发新的set事件，但是在第二次执行state.a=1时，由于值没有变化，不会触发set事件,也就不会造成无限循环
+                try{
+                    this._peeping = true
+                    listener(operate)
+                }finally{
+                    this._peeping = false
+                }
             }        
         }
         if(isWatchAll){ // 侦听全部
@@ -468,10 +480,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         let dependencies:string[][] = []       
         const watcher = this.watch((event)=>{      
             dependencies.push(event.path)            
-        },{operates})   
-        // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
+        },{operates})           
         try{
-            fn()           
+            fn() // 运行函数，如果函数读写操作，会触发上面的watcher事件，从而收集依赖
         }finally{
             watcher.off()
         }

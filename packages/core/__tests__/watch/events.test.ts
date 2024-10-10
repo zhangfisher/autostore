@@ -1,5 +1,5 @@
 import { expect,test,describe, beforeEach, afterEach } from "vitest"
-import { AutoStore } from "../../src";
+import { AutoStore, StateOperate } from "../../src";
 import { deepClone } from "flex-tools/object/deepClone";
 import { Watcher } from "../../src/watch/types";
 
@@ -318,5 +318,42 @@ describe("watch events",()=>{
     
         })
     })
+    describe("watch all events", () => {
+        const state = {
+            order:{
+                price:100,
+                count:1,
+                // 在计算函数中的get操作不会触发事件
+                total: (scope:any)=>scope.price* scope.count
+            }
+        }
+        let store:AutoStore<typeof state>;
+        let watcher:Watcher
+        beforeEach(() => {
+            store = new AutoStore(deepClone(state));
+        })
+        afterEach(() => {
+            watcher.off();
+        })
+
+        test("watch events * ",()=>{
+            const ops:string[] = []
+            watcher = store.watch((op)=>{
+                ops.push(`${op.type} ${op.path.join(".")}`)
+            },{
+                operates:"*"
+            })            
+            store.state.order.count++
+            expect(ops).toStrictEqual([
+                'get order',
+                'get order.count',
+                'set order.count',
+                'set order.total'
+            ])
+        })
+
+
+    })
+
 })
 

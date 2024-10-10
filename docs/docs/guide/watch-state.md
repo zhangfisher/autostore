@@ -1,29 +1,25 @@
 ---
-title: 监视
+title: 状态内监视
 group:
   title: 监视
   order: 3 
-order: 0
+order: 2
 demo:
   tocDepth: 5
 toc: content
 ---
 
-## 介绍
-
-`@autostorejs/react`提供`watch`功能，用来监视`State`数据的变化,当所监视的数据发生时，可以执行侦听器函数。
+# 状态监视
 
 
-提供三种使用`watch`的方式：
-
-- 直接在`State`中声明`watch`函数,然后将侦听器返回值写入声明`watch`函数所在的位置。
-- 调用`store.watch`函数，用来侦听`State`中的数据变化。
-- 在组件中调用`store.useWatch`函数，用来侦听`store`对象的变化,当组件销毁自动取消订阅。
 
 
 ## 状态内侦听
 
-`@autostorejs/react`提供了`watch`函数，用来在`state`声明来侦听`State`中的数据变化。
+`@autostorejs/react`提供了`watch`函数，用来在`state`声明侦听`State`中的数据变化，然后侦听函数的返回值写入声明所在路径。
+
+![](./signal-watch.drawio.png)
+
 
 `watch`函数的基本特性如下：
 
@@ -240,55 +236,68 @@ export default ()=>{
 }
 
 ``` 
-## 组件内侦听
 
-在组件内侦听可以使用`store.useWatch`函数，用来侦听`store`对象的变化,当组件销毁自动取消订阅。
+
+大部份情况下，我们应该使用`computed`函数来声明计算属性，而不是使用`watch`函数来侦听`State`中的数据变化。但是在一些特殊情况下，我们可能需要使用`watch`函数，主要在于：
+
+- **动态依赖**
+
+`computed`计算函数的依赖一般是确定的，而`watch`函数的依赖是动态的。这比较适合一些需要动态侦听的场景，比如上例中，我们动态侦听`orders[].count`的变化来计算`total`。而`computed`函数的依赖是静态的，一旦声明就不会变化。
+
+- **多字段复合计算**
+
+当某个字段需要进行复合计算时，我们可以使用`watch`函数来实现。比如在`SpeedForm`实现表单的`validate`和`dirty`属性的计算时，就是使用`watch`实现。
+
+比如这是表单`validate`检测的实现代码：
+
+```tsx | pure
+export function validate<T=any>(options?:ValidateOptions){
+    const { entry  } = Object.assign({},options)
+    return watch<boolean,boolean>((value,{ fromPath,selfPath,getCache})=>{        
+        // 只侦听entry下的所有字段
+        if(!isIncludePath(entry ? entry : selfPath,fromPath)) return   
+        const selfCache = getCache()  // 得到的是一个Dict用来保存所有字段的validate属性值
+        // validate属性是一个boolean
+        if(typeof(value)=='boolean'){
+            const srcKey = fromPath.join(OBJECT_PATH_DELIMITER)
+            if(value){
+                delete selfCache[srcKey]
+            }else{
+                selfCache[srcKey] = value
+            }
+        }
+        // 由于cache里面只记录validate=false的值，所以如果cache不为空则代表有字段的validate=false
+        return Object.keys(selfCache).length==0
+    },(path)=>isValidateField(path),{
+        initial:true
+    })
+}
  
-```tsx 
-import { createStore,computed,ObserverScopeRef } from "@autostorejs/react" 
-import { useEffect,useState } from "react"
-const user = {
-  user:{
-    firstName:"zhang",
-    lastName:"fisher",
-    fullName: computed(async ([first,last])=>{ 
-      return first + last
-    },[
-      "user/firstName",
-      "user/lastName"
-    ],{   
-      scope:ObserverScopeRef.Depends
-    }) 
-  } 
-}
-
-const store = createStore({state:user})
-
-
-export default ()=>{
-  const [state]=store.useState()
-  const [watchKey,setWatchKey] = useState('')
-  const [watchPath,setWatchPath]=useState("user/firstName")
-  const [watchValue,setWatchValue]=useState("")
-
-  store.useWatch((value,path)=>{
-      setWatchKey(path.join("/"))
-      setWatchValue(value)
-      return value
-  },watchPath,{id:"use1"}) 
-
-
-
-  return  (<div>
-      <div>watch for: {watchPath}</div>
-      <div>Watch value:{watchValue}</div>
-      <div>firstName=<input value={state.user.firstName} onChange={store.sync(to=>to.user.firstName)}/></div>
-      <div>lastName=<input value={state.user.lastName} onChange={store.sync(to=>to.user.lastName)}/></div>
-      <div>fullName={state.user.fullName.result}</div> 
-      <button onClick={()=>setWatchPath("user/firstName")}>watch firstName</button>
-      <button onClick={()=>setWatchPath("user/lastName")}>watch lastName</button>      
-    </div>)
-}
-
 ```
-  
+
+**基本逻辑：*
+
+- 以上`validate`传入一个入口参数`entry`,用来限定校验范围，然后创建一个`watch`对象。
+- `(path)=>isValidateField(path)`用来判断发生变化的路径是否包含的`validate`字段，如果是否则会执行`watch`监听函数。
+- 在`watch`监听函数内，
+    -  `value`：变化的值
+    - `fromPath`：指的是哪里发生变化的路径
+    - `getCache`：用来获取当前`watch`的`cache`对象，用来保存校验值。
+    - 在`cache`里面我们保存从校验范围内所有`value=false`，如果`Object.keys(selfCache).length==0`就代表在该校验范围内所有字段均有效。
+
+
+    
+
+
+
+
+
+
+
+
+`watch`函数与`computed`函数功能的区别如下：
+
+- `computed`函数是用来声明计算属性的，`watch`函数是用来侦听`State`中的数据变化的。
+- `computed`函数的返回值会写入`State`中的对应属性，`watch`函数的返回值会写入`watch`函数所在的位置。
+- `computed`函数的创建的计算属性是基于依赖收集的，而`watch`函数是基于侦听的,每当`State`状态变化时均会调用`watchOptions.on`过滤函数来匹配侦听函数，因此理论上，`computed`函数的性能更好，而`watch`函数性能会差些。
+- `watch`只能是同步侦听函数，而`computed`可以是异步函数。
