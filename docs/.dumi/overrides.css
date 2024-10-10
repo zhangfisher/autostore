@@ -4,12 +4,22 @@
   color: #212529;
   background-color: transparent;
   border-collapse: collapse;
+  border: 1px solid #dee2e6;
 }
 .table th,
 .table td {
   padding: 0.75rem;
   vertical-align: top;
   border-top: 1px solid #dee2e6;
+  border: 1px solid #dee2e6;
+}
+.table th > *,
+.table td > * {
+  display: -webkit-inline-box;
+  display: -webkit-inline-flex;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  position: relative;
 }
 .table thead th {
   vertical-align: bottom;

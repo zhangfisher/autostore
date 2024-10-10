@@ -1,8 +1,6 @@
 import { useEffect } from "react"
 import {  Dict, WatchListenerOptions } from "autostore" 
 import type { ReactAutoStore } from "../store"
-import { UseWatchType } from "./types"
-
 
 /**
  * 

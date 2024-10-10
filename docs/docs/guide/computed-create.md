@@ -119,29 +119,88 @@ const store = createStore({
 
 ## 动态创建计算对象
 
-也可以不在状态中声明，而是使用`store.computedObject.create`动态创建计算属性。
+也可以不在状态中声明`computed`，而是使用`store.computedObjects.create`动态创建计算属性。
 
-```ts | pure {11-16}
+`create`方法的签名如下：
+
+```ts | pure
+// 创建同步计算对象
+create<Value = any, Scope = any>(
+  getter: ComputedGetter<Value,Scope>,
+  options?: SyncComputedOptions<Value,Scope>
+):SyncComputedObject<Value,Scope>
+// 创建异步计算对象
+create<Value = any, Scope = any>(
+  getter: AsyncComputedGetter<Value,Scope>,
+  depends: ComputedDepends,options?: ComputedOptions<Value,Scope>
+): AsyncComputedObject<Value,Scope>    
+// 使用创建计算对象
+create<Value = any, Scope = any>(
+  descriptor:ComputedDescriptor<Value,Scope>
+): AsyncComputedObject<Value,Scope> | SyncComputedObject<Value,Scope>    
+   
+```
+
+动态创建计算属性的三种方法：
+
+### 动态创建同步计算
+
+```ts | pure
 import { createStore } from '@autostorejs/react';
 
 const store = createStore({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher"
+  order:{
+    price:100,
+    count:3,
   }
 })
 
-// 同步计算属性
-const obj = store.computedObject.create((user)=>user.firstName+user.lastName)
-// 异步计算属性
-const obj = store.computedObject.create(
-  async (user)=>user.firstName+user.lastName,  // 计算函数
-  ['./firstName','./lastName'],                // ❌ 不支持相对依赖
-  ['user.firstName','user.lastName'],          // ✅ 使用绝对依赖
-  {...options....}                             // 参数
-)
+// 简单的同步计算
+const totalObj = store.computedObjects.create((order)=>order.price * order.count)
+
 
 ```
+
+### 动态创建异步计算
+
+```ts | pure
+import { createStore } from '@autostorejs/react'; 
+
+const store = createStore({
+  order:{
+    price:100,
+    count:3,
+  }
+})
+
+// 简单的异步计算
+store.computedObjects.create(async (order)=>order.price * order.count,
+  ['order.price','order.count'] //  ✅ 使用绝对依赖
+  ['./price','./count']  // ❌ 不支持相对依赖
+)
+```
+
+
+### 使用computed创建
+
+上述两种方式内部也是使用`computed`来创建的，其等效于:
+
+```ts | pure
+
+// 同步计算
+const totalObj = store.computedObjects.create(computed((order)=>order.price * order.count))
+
+//  异步计算
+store.computedObjects.create(computed(async (order)=>order.price * order.count,
+  ['order.price','order.count'] //  ✅ 使用绝对依赖
+  ['./price','./count']  // ❌ 不支持相对依赖
+))
+```
+
+使用`computed`可以进行更多的配置，比如`options`等。
+
+
+### 小结
 
 **动态创建计算属性时与在状态中声明计算属性相比，存在以下区别**：
 

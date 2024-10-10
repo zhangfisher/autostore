@@ -24,12 +24,18 @@
   color: #212529;
   background-color: @table-bg;
   border-collapse: collapse;
+  border: 1px solid @table-border-color;
 
   th,
   td {
     padding: 0.75rem;
     vertical-align: top;
     border-top: 1px solid @table-border-color;
+    border: 1px solid @table-border-color;
+    & > * {
+      display: inline-flex;
+      position: relative;
+    }
   }
 
   thead th {

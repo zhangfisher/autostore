@@ -9,106 +9,95 @@ demo:
 toc: content
 ---
 
-# 状态监视
+# 状态内监视
 
+## 工作原理
 
-
-
-## 状态内侦听
-
-`@autostorejs/react`提供了`watch`函数，用来在`state`声明侦听`State`中的数据变化，然后侦听函数的返回值写入声明所在路径。
+`@autostorejs/react`提供了`watch`函数，用来在`state`中声明一个监听对象,然后监听函数的返回值写入声明所在路径。
 
 ![](./signal-watch.drawio.png)
 
 
 `watch`函数的基本特性如下：
 
-- `watch`可以用来侦听整个`store`对象的变化，当侦听到变化时会执行侦听器函数。
-- 侦听器函数只能是一个同步函数。
-- 侦听器函数的返回值会写入`watch`函数所在的位置。 
+- 在状态中的任意位置，使用`watch(...)`来声明一个监听器对象。
+- 在`createStore`执行后，会扫描状态数据，如果发现一个值是`watch(...)`,则会创建一个`WatchObject`对象，用来监听`State`中的数据变化。
+- 创建的`WatchObject`对象会保存在`Store`对象的`watchObjects`对象中
+- 当所监听的数据发生变化时，会调用`WatchObject`对象的`getter`函数，然后将返回结果写入到声明`watch(...)`的位置。
 
 
-### 基本用法
+
+## 基本用法
 
 `watch`函数签名如下：
 
-```typescript
-function watch<Value = any,Result=Value>(
-  listener:WatchListener<Value,Result>,
-  on:WatchOptions['on'],
-  options?:WatchOptions<Result>):WatchDescriptor<Value,Result>
-
-  
-export interface WatchOptions<R=any>{ 
-    // 指定额外的过滤条件，如果返回true，才会触发listener的执行
-    // 此函数会在表单中的每一个值发生变化时执行，如果返回true，则会触发listener的执行  
-    // 由于此函数会在表单中的每一个值发生变化时均会执行，所以此函数应该尽量简单，不要有复杂的逻辑      
-    // 如果大量的表单字段均需要监听，则可能会有性能问题
-    // 一般在动态依赖时使用
-    on?:(path:string[],value:any)=>boolean 
-    initial?:R,  
-    /**
-     * 用来对表单内的watch进行分组，以便能按组进行enable或disable或其他操作
-     */  
-    group?:string
-    /**
-     *  启用或禁用watch，默认为true
-     */
-    enable?:boolean
-}
- 
+```ts | pure
+// 监听filter过滤后的
+function watch<Value=any, DependValue=any>(
+  getter:WatchGetter<Value,DependValue>,
+  filter?:WatchDependFilter<DependValue>,
+  options?:Omit<WatchOptions<Value>,'filter'>
+):WatchDescriptorBuilder<Value>
+// 监听全部
+function watch<Value=any, DependValue=any>(
+  getter:WatchGetter<Value,DependValue>,
+  options?:Omit<WatchOptions<Value>,'filter'>
+):WatchDescriptorBuilder<Value>
 ```
+ 
+  
 
-`watch`函数基本使用如下：
-
+**`watch`函数基本使用如下：**
 
 ```tsx 
 import { createStore,watch } from '@autostorejs/react';
-import { Divider,Field } from "x-react-components"
+import { Divider,Input,Button } from "x-react-components"
 
-const book = {
+const { state,useState } = createStore({
   orders:[
-    { bookName:"SpeedForm Quick-Start",
+    { name:"AutoStore实战指南",
       price:100,
       count:1,
       total:(book)=>book.price*book.count
     },
-    { bookName:"Helux",
+    { name:"深入浅出AutoStore",
       price:98,
       count:1,
       total:(book)=>book.price*book.count
     }
-  ],  
+  ],    
   total: watch<true>((count)=>{
-     return store.state.orders.reduce((total,book)=>total+book.count*book.price,0)
-  },
-  // 当price或count变化时，触发侦听器函数的执行
-  (path:string[])=>{
-      return path[path.length-1]==='count'
-    },{    
-    initial:198         // total的初始值
-  })
-}
-
-const store = createStore({state:book},{singleton:false})
+     return state.orders.reduce((total,book)=>total+book.count*book.price,0)
+    },
+    // 当price或count变化时，触发侦听器函数的执行
+    (path:string[])=>{
+        return path[path.length-1]==='count'
+      },{    
+      initial:198         // total的初始值
+    })
+})
  
-export default ()=>{
-  const [state] = store.useState()
-  return (<table>
+export default ()=>{ 
+  const [ bookshop ] = useState()
+  return (<table className="table">
       <thead>
         <tr>
-          <th>BookName</th>
+          <th>Name</th>
           <th>Price</th>
           <th>Count</th>
           <th>Total</th>
         </tr>
       </thead>
       <tbody>
-        {state.orders.map((book,index)=>
+        {bookshop.orders.map((book,index)=>
           <tr key={index}>
-            <td>{book.bookName}</td>
+            <td>{book.name}</td>
             <td>{book.price}</td>
-            <td><input value={book.count} onChange={store.sync(to=>to.orders[index].count)}/></td>
+            <td>
+              <Button onClick={()=>book.count--}>-</Button>
+              <Input value={book.count} style={{display:"inline-flex"}}/>
+              <Button onClick={()=>book.count++}>+</Button>
+            </td>
             <td>{book.total}</td>
           </tr>
         )}
@@ -122,182 +111,86 @@ export default ()=>{
 
 ```
 
-> 注意：事实上以上示例更适合使用`计算属性`特性来实现，示例仅仅是演示其可以侦听动态依赖属性的特性
-
-
 在以上例子中：
 
-- `watch`函数的第一个参数是一个函数，用来侦听`State`中的数据变化。
-- `watch`函数的第二个参数是一个对象，用来配置`watch`函数的行为。
-- `on`属性用来配置`watch`函数的触发条件，传入的是发生变化的值所在的路径。
+- `watch`函数的第一个参数是`getter`函数，负责在依赖变化时计算新值。`getter`函数的返回值会写入`watch`函数所在的位置。
+- `watch`函数的第二个参数是一个过滤函数，当状态变化时会调用此方法，如果返回`true`才会执行`getter`
 - `initial`属性用来配置`watch`函数所在位置的`total`的初始值。
-- ``
 
-### 侦听函数
+ 
+## 监听函数
 
-`watch`的侦听函数只能是一个**同步函数**，签名如下：
+`watch`的`getter`参数只能是一个**同步函数**，签名如下：
 
 ```typescript
- type WatchListener<Value=any, Result= Value> = (value:Value,options:WatchListenerOptions<Result>)=>(Exclude<Result,Promise<any>> | undefined)
+type WatchGetter<Value=any,DependValue= any> = (
+    // 传入发生变化的路径和值
+    scope: {path:string[],value:DependValue},
+    // 创建的watchObject对象
+    watchObject : WatchObject<Value>
+)=>Exclude<any,Promise<any>> | undefined
 
-type WatchListenerOptions<Result=any> = {
-  getSelfValue:()=>Result ,     // 返回当前watch所在位置的当前值
-  selfPath:string[] ,           // 返回当前watch所在位置的路径
-  fromPath:string[],         // 返回发生变化的值所在的路径
-  getCache:()=>Dict             // 返回当前watch所在位置的缓存对象
+```
+
+## 监听参数
+
+`watch`支持以下参数
+
+```ts | pure
+interface WatchOptions<Value=any> extends ObserverOptions<Value>  { 
+    async?  : false                        
+    filter : WatchDependFilter<Value>     
 }
 ```
 
-- 当`State`中的数据发生变化时，会调用`watch`第二个参数指定的函数，如果返回`true`，则会调用执行侦听函数。
-- 侦听函数的第一个入参是`value`，指的是发生变化的新值。显然，如果`watch`函数的依赖范围很广，则`value`类型也可能是不固定的。
-- `getSelfValue`参数用来读取当前`watch`所在位置的当前值。
-- `selfPath`参数用来读取当前`watch`所在位置的路径。
-- `fromPath`参数用来读取发生变化的值所在的路径。
-- `getCache`参数用来读取当前`watch`所在位置的缓存对象，供保存一些临时值。
+- `initial`： 用来指定一个默认值
+- `id`： 用来指定一个唯一的标识，同时作为创建的`WatchObject`的`key`，可以通过`store.watchObjects.get(<id>)`来访问。
 
-### 缓存对象
 
-侦听函数的`getCache`参数用来获取一个仅供当前侦听函数使用缓存对象`{}`，供保存一些临时值。
+## 动态依赖
 
-下面举个例子来说明其用途。
+`computed`计算函数的依赖一般是确定的，而`watch`函数的依赖可以是动态的。这比较适合一些需要动态侦听的场景。
 
-在`SpeedForm`中，每一个字段均有一个`validate`用来声明其验证结果，而整个表单根对象也有一个`validate`用来表示表单是否有效。当某个字段的`validate`发生变化时，我们需要重新计算整个表单的`validate`。
+比如上例中，我们动态侦听`orders[].count`的变化来计算`total`。而`computed`函数的依赖是静态的，一旦声明就不会变化。
 
-- 需要使用**动态依赖**，即侦听表单中的所有`validate`的值。注：如由于一个表单字段可能很多或者是动态生成的，所以其依赖是动态的。
-- 需要使用**缓存对象**，用来记住表单编辑过程中所有字段的`validate`值，以便眼后计算整个表单的验证结果。
-
-**我们可以使用`watch`函数来实现。**
+以下是表单`validate`检测的简单示例：
 
 ```tsx | pure
-const formState={
-    validate:watch((value,{getCache,srcPath})=>{
-      const cache = getCache()
-      // 在cache中保存字段的validate值
-      cache[srcPath.join('.')]=value
-      // 整个表单的validate值是由所有字段的验证值进行计算而来的
-      return Object.values(cache).every(validate=>validate)
-    },
-    // 动态依赖
-    (path)=>path[path.length-1]==='validate',
-    // 指定初始值
-    {initial:true}
-    )  
-}
-```
-在进行表单验证时，我们可以使用`formState.validate`来获取整个表单的验证结果。
+const store = createStore({
+      a:{
+          validate:true
+      },
+      b:{
+          validate:true
+      },            
+      c:{
+          validate:true,
+          c1:{
+              validate:true
+          }
+      },
+      validate:watch<boolean,boolean>(({path,value},watchObj)=>{   
+          if(typeof(value) === 'boolean'){
+              const srcKey = path.join('.')
+              if(value){
+                  delete watchObj.cache[srcKey]
+              }else{
+                  watchObj.cache[srcKey] = value
+              }
+          }
+          // 由于cache里面只记录validate=false的值，所以如果cache不为空则代表有字段的validate=false
+          return Object.keys(watchObj.cache).length==0
 
-
-
-
-## 侦听状态
-
-除了可以在`State`中声明`watch`函数外，我们还可以在`Store`对象中声明`watch`函数，用来侦听`State`中的数据变化。
-
-```tsx 
-import { createStore,computed,ObserverScopeRef } from "@autostorejs/react" 
-import { useEffect,useState } from "react"
-const user = {
-  user:{
-    firstName:"zhang",
-    lastName:"fisher",
-    fullName: computed(async ([first,last])=>{ 
-      return first + last
-    },[
-      "user/firstName",
-      "user/lastName"
-    ],{   
-      scope:ObserverScopeRef.Depends
-    }) 
-  } 
-}
-
-const store = createStore({state:user})
-
-
-export default ()=>{
-  const [state]=store.useState()
-  const [watchKey,setWatchKey] = useState('')
-  useEffect(()=>{
-    const unwatch = store.watch((valuePaths:string[])=>{
-      setWatchKey(valuePaths.map(p=>p.join("/")).join(","))
-    },[
-      "user/firstName",
-      "user/lastName"
-    ])
-    return unwatch
-  },[])
-
-  return  (<div>
-      <div>watch: {watchKey}</div>
-      <div>firstName=<input value={state.user.firstName} onChange={store.sync(to=>to.user.firstName)}/></div>
-      <div>lastName=<input value={state.user.lastName} onChange={store.sync(to=>to.user.lastName)}/></div>
-      <div>fullName={state.user.fullName.result}</div> 
-    </div>)
-}
-
-``` 
-
-
-大部份情况下，我们应该使用`computed`函数来声明计算属性，而不是使用`watch`函数来侦听`State`中的数据变化。但是在一些特殊情况下，我们可能需要使用`watch`函数，主要在于：
-
-- **动态依赖**
-
-`computed`计算函数的依赖一般是确定的，而`watch`函数的依赖是动态的。这比较适合一些需要动态侦听的场景，比如上例中，我们动态侦听`orders[].count`的变化来计算`total`。而`computed`函数的依赖是静态的，一旦声明就不会变化。
-
-- **多字段复合计算**
-
-当某个字段需要进行复合计算时，我们可以使用`watch`函数来实现。比如在`SpeedForm`实现表单的`validate`和`dirty`属性的计算时，就是使用`watch`实现。
-
-比如这是表单`validate`检测的实现代码：
-
-```tsx | pure
-export function validate<T=any>(options?:ValidateOptions){
-    const { entry  } = Object.assign({},options)
-    return watch<boolean,boolean>((value,{ fromPath,selfPath,getCache})=>{        
-        // 只侦听entry下的所有字段
-        if(!isIncludePath(entry ? entry : selfPath,fromPath)) return   
-        const selfCache = getCache()  // 得到的是一个Dict用来保存所有字段的validate属性值
-        // validate属性是一个boolean
-        if(typeof(value)=='boolean'){
-            const srcKey = fromPath.join(OBJECT_PATH_DELIMITER)
-            if(value){
-                delete selfCache[srcKey]
-            }else{
-                selfCache[srcKey] = value
-            }
-        }
-        // 由于cache里面只记录validate=false的值，所以如果cache不为空则代表有字段的validate=false
-        return Object.keys(selfCache).length==0
-    },(path)=>isValidateField(path),{
-        initial:true
-    })
-}
- 
+      },
+      (path)=>path[path.length-1]=='validate', // 只侦听validate字段的值变化
+      {initial:true,id:"x"})
+  })  
 ```
 
-**基本逻辑：*
 
-- 以上`validate`传入一个入口参数`entry`,用来限定校验范围，然后创建一个`watch`对象。
-- `(path)=>isValidateField(path)`用来判断发生变化的路径是否包含的`validate`字段，如果是否则会执行`watch`监听函数。
-- 在`watch`监听函数内，
-    -  `value`：变化的值
-    - `fromPath`：指的是哪里发生变化的路径
-    - `getCache`：用来获取当前`watch`的`cache`对象，用来保存校验值。
-    - 在`cache`里面我们保存从校验范围内所有`value=false`，如果`Object.keys(selfCache).length==0`就代表在该校验范围内所有字段均有效。
+**说明：**
 
-
-    
-
-
-
-
-
-
-
-
-`watch`函数与`computed`函数功能的区别如下：
-
-- `computed`函数是用来声明计算属性的，`watch`函数是用来侦听`State`中的数据变化的。
-- `computed`函数的返回值会写入`State`中的对应属性，`watch`函数的返回值会写入`watch`函数所在的位置。
-- `computed`函数的创建的计算属性是基于依赖收集的，而`watch`函数是基于侦听的,每当`State`状态变化时均会调用`watchOptions.on`过滤函数来匹配侦听函数，因此理论上，`computed`函数的性能更好，而`watch`函数性能会差些。
-- `watch`只能是同步侦听函数，而`computed`可以是异步函数。
+- 上例中，我们需要实现一个`validate`字段来表单整个表单的有效，当状态中任意一个对象中的`validate`字段都为`false`时，则`validate=false`，否则为`true`。
+- 现在问题是`validate`可能是在一个复杂的嵌套对象中，并且可能是动态的。这时候，我们无法使用`computed`来进行计算，因为`computed`的依赖是静态的。
+- 此时就是使用`watch`函数的时候了，我们声明一个`watch`函数，用来监听所有路径中的`path[path.length-1]=='validate'`字段的变化即可。
+- 关于`WatchObject`的介绍，可以参考[监听对象](./watch-objects.md)。

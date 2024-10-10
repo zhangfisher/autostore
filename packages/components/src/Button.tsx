@@ -15,6 +15,7 @@ const ButtonStyle =styled<ButtonProps>({
     textAlign    : 'center',
     userSelect   : "none",
     color        : "#555",
+    fontSize     : "0.8em",
     "&:hover":{
         background:"#2c7af0",
         color:"white",
@@ -25,7 +26,7 @@ const ButtonStyle =styled<ButtonProps>({
         transition: "transform 0.1s"
     }
 },{
-    className:"speed-button"
+    className:"x-button"
 })
 
 export type ButtonProps =React.PropsWithChildren<
@@ -39,6 +40,7 @@ export type ButtonProps =React.PropsWithChildren<
         error?:string
         cancel?:()=>any
         block?:boolean              // 是否为块级元素
+        size?:'small'|'normal'|'large'
     }>
 
 export const Button:React.FC<ButtonProps> = (props)=>{

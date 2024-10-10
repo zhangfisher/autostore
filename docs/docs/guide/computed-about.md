@@ -2,14 +2,14 @@
 group:
   title: 计算属性
   order: 2
-title: 工作机制
+title: 关于
 order: 0  
 demo:
   tocDepth: 5
 toc: content
 ---
 
-# 工作机制
+# 关于
 
 `AutoStore`提供了无与伦比的计算属性实现方式，支持同步计算属性和异步计算属性，具备丰富的计算重试、超时、加载中、错误等状态管理。
 

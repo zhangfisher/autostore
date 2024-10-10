@@ -117,12 +117,9 @@ store.watch((operate)=>{
 使用`watch(listener,options?)`方法用来全局监听`State`中的数据变化，对状态的任何操作均会执行监听函数。
 
 ```tsx
-import { createStore, computed } from "@autostorejs/react"
-import { Box,Button,ColorBlock,Col,Row } from "x-react-components"
-import { useState,useEffect,useRef } from "react"
-// React严格模式（Strict Mode）会在开发模式下执行两次
-// 此时为了演示方便，我们做了包装只执行一次
-import { useOneEffect } from "autostore-docs"
+import { createStore, computed,useStore } from "@autostorejs/react"
+import { Box,Button,ColorBlock,Layout,CheckBox } from "x-react-components"
+import { useState,useEffect,useRef } from "react" 
 
 const { state,watch,$ } = createStore({
   order:{
@@ -133,19 +130,27 @@ const { state,watch,$ } = createStore({
     })
   } 
 })
+
+
 export default ()=>{
   const ref = useRef()
+
+  const op = useStore({
+    operates:'*'
+  })
+  const [ops,setOps] = op.useState('operates')
+
   useEffect(()=>{
     const watcher = watch((operate)=>{      
-        ref.current.insertAdjacentHTML("beforeend",`<p>${operate.type} ${operate.path.join('.')}</p>`)
+        ref.current.insertAdjacentHTML("beforeend",`<p style='margin:2px;'}>${operate.type} ${operate.path.join('.')}</p>`)
       },{
-        operates:'*'
+        operates:ops
       })
     return ()=>watcher.off()
-  },[])  
+  },[ops])  
 
-  return (<Row>
-    <Col>
+  return (<Layout style={{maxHeight:'400px'}}>
+    <div>
       <ColorBlock name="Price">{$('order.price')}</ColorBlock>
       <ColorBlock name="Count">
         <Button onClick={()=>{
@@ -159,83 +164,215 @@ export default ()=>{
         }}>+</Button>
       </ColorBlock>
       <ColorBlock name="Total">{$('order.total')}</ColorBlock>
-    </Col>
-    <Col> 
-      <div ref={ref} style={{
-        lineHeight:'100%',
-        maxHeight:200,
+      <Box>        
+            <CheckBox id="watch-all" label="监听所有操作" checked={ops==='*'} onChange={(e)=>{
+              setOps(e.target.checked ? '*' : 'read')
+            }}/>  
+            <CheckBox id="watch-write" label="只监听写操作" checked={ops==='write'} onChange={(e)=>{   
+              setOps(e.target.checked ?    'write' : '*')
+            }}/>  
+            <CheckBox id="watch-read" label="只监听读操作" checked={ops==='read'} onChange={(e)=>{
+              setOps(e.target.checked ? 'read' : '*')
+            }}/> 
+      </Box>
+      <Button onClick={()=>{
+        ref.current.innerHTML = ''
+      }}>Clear</Button>
+    </div>
+    <div ref={ref} style={{      
         overflowY:'auto',        
-      }}></div>
-    </Col>
-  </Row>)
+      }}>
+    </div>
+  </Layout>)
 }
 ```
 
 
 
-## 局部临听
+## 局部监听
+
+除了全局监听外，还可以使用`watch(paths,listener,options?)`方法用来监听指定路径的数据变化。
+
+```tsx
+/**
+ * title: 局部监听
+ * description: 使用`watch(paths,listener,options?)`方法用来监听指定路径的数据变化。
+ */
+import { createStore, computed,useStore } from "@autostorejs/react"
+import { Box,Button,ColorBlock,Layout,CheckBox } from "x-react-components"
+import { useState,useEffect,useRef } from "react" 
+
+const { state,watch,$ } = createStore({
+  order:{
+    price:10,
+    count:2,
+    total:computed((order)=>{    
+      return order.price*order.count
+    })
+  } 
+})
+
+
+export default ()=>{
+  const ref = useRef()
+
+  const op = useStore({
+    operates:'*'
+  })
+  const [ops,setOps] = op.useState('operates')
+
+  useEffect(()=>{
+    const watcher = watch("order.total",(operate)=>{      
+        ref.current.insertAdjacentHTML("beforeend",`<p style='margin:2px;'}>${operate.type} ${operate.path.join('.')}</p>`)
+      },{
+        operates:ops
+      })
+    return ()=>watcher.off()
+  },[ops])  
+
+  return (<Layout style={{maxHeight:'400px'}}>
+    <div>
+      <ColorBlock name="Price">{$('order.price')}</ColorBlock>
+      <ColorBlock name="Count">
+        <Button onClick={()=>{
+          state.order.count--
+          ref.current.insertAdjacentHTML("beforeend",`----------`)
+        }}>-</Button>
+        {$('order.count')}
+        <Button onClick={()=>{
+            state.order.count++
+            ref.current.insertAdjacentHTML("beforeend",`----------`)
+        }}>+</Button>
+      </ColorBlock>
+      <ColorBlock name="Total">{$('order.total')}</ColorBlock>
+      <Box>        
+            <CheckBox id="watch-all" label="监听所有操作" checked={ops==='*'} onChange={(e)=>{
+              setOps(e.target.checked ? '*' : 'read')
+            }}/>  
+            <CheckBox id="watch-write" label="只监听写操作" checked={ops==='write'} onChange={(e)=>{   
+              setOps(e.target.checked ?    'write' : '*')
+            }}/>  
+            <CheckBox id="watch-read" label="只监听读操作" checked={ops==='read'} onChange={(e)=>{
+              setOps(e.target.checked ? 'read' : '*')
+            }}/> 
+      </Box>
+      <Button onClick={()=>{
+        ref.current.innerHTML = ''
+      }}>Clear</Button>
+    </div>
+    <div ref={ref} style={{      
+        overflowY:'auto',        
+      }}>
+    </div>
+  </Layout>)
+}
+```
+
+- 也可以一次监听多个路径，比如`watch(['order.price','order.count'],listener)`。
+
+## 数组监听
+
+`watch`也可以支持数组的监听，比如`watch('order.books',listener)`，当`order.books`数组发生变化时，会执行监听函数。
+
+区别于普通对的是监听事件#️⃣
+
+- 数组的监听事件有`insert`,`update`,`remove`三种。
+- 对数组成员的操作参数会多一个`indexs`属性，用来标识数组的索引。
+- `get`操作事件也适用于数组
+
+```tsx
+/**
+ * title: 局部监听
+ * description: 使用`watch(paths,listener,options?)`方法用来监听指定路径的数据变化。
+ */
+import { createStore, computed,useStore } from "@autostorejs/react"
+import { Box,Button,ColorBlock,Layout,CheckBox ,Input} from "x-react-components"
+import { useEffect,useRef } from "react" 
+
+const { state,watch,$,useState,useFormBindings } = createStore({
+  order:{
+    price:10,
+    count:2,
+    books:[
+      "AutoStore实战指南",
+      "深入浅出AutoStore",
+      "AutoStore最佳实践"
+    ]
+  } 
+})
+
+
+export default ()=>{
+  const ref = useRef()
+  const inputRef = useRef() 
+ 
+  useEffect(()=>{
+    const watcher = watch("order.books",(operate)=>{      
+        ref.current.insertAdjacentHTML("beforeend",`<p style='margin:2px;'}>
+          ${operate.type} ${operate.path.join('.')}[${operate.indexs[0]}]
+        </p>`)
+      },{
+        operates:['insert','remove','update']
+      })
+    return ()=>watcher.off()
+  },[])  
+
+  const bindBooks = useFormBindings('order.books')
+
+
+  return (<Layout style={{maxHeight:'400px'}}>
+    <div>
+        {
+          state.order.books.map((book,index)=>{
+            return <Input key={index} {...bindBooks[index]} />
+          })
+        }
+        <Input ref={inputRef} actions={["+"]} 
+          placeholder="请输入书名"
+        onAction={(id,val)=>{
+          if(String(val).length>0){
+            state.order.books.push(val)
+            inputRef.current.value=''
+          }
+        }}/>       
+        <Button onClick={()=>{
+          ref.current.innerHTML = ''
+        }}>Clear</Button> 
+    </div>
+    <div ref={ref} style={{      
+        overflowY:'auto',        
+      }}>
+    </div>
+  </Layout>)
+}
+```
 
 
 
 ## 依赖收集
 
+基于`watch`强大的功能，内部就是用来进行依赖收集的。
 
+以下是同步计算属性在初始化时的依赖收集的代码：
 
-
-
-
-
-
-
-- **动态依赖**
-
-`computed`计算函数的依赖一般是确定的，而`watch`函数的依赖是动态的。这比较适合一些需要动态侦听的场景，比如上例中，我们动态侦听`orders[].count`的变化来计算`total`。而`computed`函数的依赖是静态的，一旦声明就不会变化。
-
-- **多字段复合计算**
-
-当某个字段需要进行复合计算时，我们可以使用`watch`函数来实现。比如在`SpeedForm`实现表单的`validate`和`dirty`属性的计算时，就是使用`watch`实现。
-
-比如这是表单`validate`检测的实现代码：
-
-```tsx | pure
-export function validate<T=any>(options?:ValidateOptions){
-    const { entry  } = Object.assign({},options)
-    return watch<boolean,boolean>((value,{ fromPath,selfPath,getCache})=>{        
-        // 只侦听entry下的所有字段
-        if(!isIncludePath(entry ? entry : selfPath,fromPath)) return   
-        const selfCache = getCache()  // 得到的是一个Dict用来保存所有字段的validate属性值
-        // validate属性是一个boolean
-        if(typeof(value)=='boolean'){
-            const srcKey = fromPath.join(OBJECT_PATH_DELIMITER)
-            if(value){
-                delete selfCache[srcKey]
-            }else{
-                selfCache[srcKey] = value
-            }
-        }
-        // 由于cache里面只记录validate=false的值，所以如果cache不为空则代表有字段的validate=false
-        return Object.keys(selfCache).length==0
-    },(path)=>isValidateField(path),{
-        initial:true
-    })
-}
- 
+```ts | pure
+function collectDependencies(){
+      let dependencies:string[][] = []       
+      // 1. 侦听所有的get操作
+      const watcher = this.store.watch((event)=>{      
+          // 将依赖路径保存起来
+          dependencies.push(event.path)            
+      },{operates:['get']})   
+      // 2. 运行一次同步计算的getter函数
+      this.run({first:true})   
+      // 3. 依赖收集完成后就结束监听
+      watcher.off() 
+      // .......
+      return dependencies
+}  
 ```
 
-**基本逻辑：*
-
-- 以上`validate`传入一个入口参数`entry`,用来限定校验范围，然后创建一个`watch`对象。
-- `(path)=>isValidateField(path)`用来判断发生变化的路径是否包含的`validate`字段，如果是否则会执行`watch`监听函数。
-- 在`watch`监听函数内，
-    -  `value`：变化的值
-    - `fromPath`：指的是哪里发生变化的路径
-    - `getCache`：用来获取当前`watch`的`cache`对象，用来保存校验值。
-    - 在`cache`里面我们保存从校验范围内所有`value=false`，如果`Object.keys(selfCache).length==0`就代表在该校验范围内所有字段均有效。
-
-
-    
-
-
-
-
+:::success
+`store.watch`方法用于全局监视`State`中的数据变化，计算属性的实现也是基于`watch`方法。
+:::
 

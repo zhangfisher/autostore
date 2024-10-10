@@ -1,6 +1,6 @@
  
 
-import React, { CSSProperties } from "react"
+import React, { CSSProperties, useRef } from "react"
 import { ReactFC } from "./types"; 
 import { styled } from "flexstyled"
 
@@ -11,6 +11,8 @@ export type InputProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLI
     validate?:boolean | null
     value?:string
     style?:Partial<CSSProperties>
+    onAction?:(id:string,value:any,e:any)=>void,
+    actions?:string[]
 }
 
 
@@ -31,9 +33,10 @@ const InputStyle = styled<InputProps>({
 })
 
 export const Input:ReactFC<InputProps> = (props:InputProps)=>{
-    const { id=Math.random().toString(36).slice(2), enable = true, value, ...restProps } = props;
+    const { id=Math.random().toString(36).slice(2), enable = true, style={},value, actions,...restProps } = props;
 
- 
+    const ref = useRef<HTMLInputElement>(null)
+    
     const labelStyle: CSSProperties = {
         color: "#666",
         fontSize: "14px",
@@ -43,9 +46,10 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
     };
 
     return (
-        <div style={{display:"flex",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",...style}}>
             { props.label ? <label htmlFor={id}  style={labelStyle}>{props.label}</label> : null }
             <input
+                ref={ref}
                 id={id}
                 value={value}
                 readOnly={!enable}
@@ -53,7 +57,14 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
                 className={InputStyle.className}
                 style={InputStyle.getStyle(props)}
             />
-        <form></form>
+            {
+                actions?.map(action=>{
+                    return <button key={action} onClick={(e)=>{
+                        // @ts-ignore
+                        props.onAction?.(action,ref.current.value,e)
+                    }}>{action}</button>
+                })
+            }
         </div>
     );
 };
