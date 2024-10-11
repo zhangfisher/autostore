@@ -546,14 +546,15 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @param operates 
      * @returns 
      */
-    trace(fn: SyncFunction,operates?:WatchListenerOptions['operates']):StateTracker { 
+    trace(fn: SyncFunction,operates:WatchListenerOptions['operates']='*'):StateTracker { 
         let watcher:Watcher 
+        const store = this
         return {
             stop:()=>watcher && watcher.off(),
             start:async (isStop?:(operate:StateOperate)=>boolean)=>{
                 const ops:StateOperate[] = []
                 return new Promise((resolve)=>{
-                    watcher = this.watch((operate)=>{       
+                    watcher = store.watch((operate)=>{       
                         ops.push(operate)         
                          if(isStop && isStop(operate)){
                             watcher.off()

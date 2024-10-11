@@ -29,12 +29,12 @@ const InputStyle = styled<InputProps>({
         boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"
     }
 },{
-    className:"xc-input"
+    className:"x-input"
 })
 
 export const Input:ReactFC<InputProps> = (props:InputProps)=>{
     const { id=Math.random().toString(36).slice(2), enable = true, style={},value, actions,...restProps } = props;
-
+    const label = props.label || props.name || props.id
     const ref = useRef<HTMLInputElement>(null)
     
     const labelStyle: CSSProperties = {
@@ -47,7 +47,7 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
 
     return (
         <div style={{display:"flex",alignItems:"center",...style}}>
-            { props.label ? <label htmlFor={id}  style={labelStyle}>{props.label}</label> : null }
+            { label ? <label htmlFor={id}  style={labelStyle}>{label}</label> : null }
             <input
                 ref={ref}
                 id={id}

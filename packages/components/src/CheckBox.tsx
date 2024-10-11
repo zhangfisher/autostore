@@ -31,8 +31,11 @@ const CheckBoxStyle = styled<CheckBoxProps>({
 
 
 export const CheckBox:React.FC<CheckBoxProps> = (props)=>{
+    
     // @ts-ignore
-    const { id=Math.random().toString(36).slice(2),labelPos='right',label='' } = props
+    const { id=Math.random().toString(36).slice(2),labelPos='right' } = props
+     // @ts-ignore
+    const label = props.label || props.name || props.id
     return <div className={CheckBoxStyle.className} style={CheckBoxStyle.getStyle(props)}>
               { labelPos==='left' ? <label htmlFor={id}>{label}</label> : null}   
               {/* @ts-ignore */}

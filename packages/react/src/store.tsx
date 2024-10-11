@@ -20,7 +20,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     bind           : InputBindingsType
     useInput       : UseInputType<State>
     useWatch       : UseWatchType
-    useBindings: UseFormBindingsType<State>
+    useBindings    : UseFormBindingsType<State>
     useForm        : UseFormType
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,Object.assign({

@@ -77,6 +77,7 @@ export class AutoStoreDevTools{
             window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
         );        
         this._installed = true
+        console.info('%c AutoStoreDevTools installed. %c Please open <Redux devtools> to view autostore',"color:red;",'')
     }
 }
 

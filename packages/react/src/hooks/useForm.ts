@@ -45,7 +45,7 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                 inputEles.forEach((input:any)=>{
                     const name = input.name
                     if(!name) return
-                    const path = [...entry,name.split(PATH_DELIMITER)]
+                    const path = [...entry,...name.split(PATH_DELIMITER)]
                     const value = getVal(snap,path,EMPTY_VALUE)
                     if(value!==EMPTY_VALUE){
                         input.value = value
@@ -71,10 +71,11 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                 const input = e.target
                 const name = input.name
                 if(!name) return
-                const path = [...entry,name.split(PATH_DELIMITER)]
+                const path = [...entry,...name.split(PATH_DELIMITER)]
+                const newVal = input.type == 'checkbox' ? input.checked : input.value   
                 // 3.1 更新到store
                 store.update((state)=>{
-                    setVal(state,path,input.value)
+                    setVal(state,path,newVal)
                 },{peep:true})
             }
             // 3. 侦听来自表单输入的变更

@@ -12,7 +12,7 @@ import React from "react"
 import { RichLabel } from "./RichLabel"
 
 export type JsonViewProps  = React.PropsWithChildren<{
-    
+    data?:any
 }>
     // 转义HTML特殊字符
 const escapeHtml = (str: string) => str.replace(/&/g, "&amp;")
@@ -22,9 +22,8 @@ const escapeHtml = (str: string) => str.replace(/&/g, "&amp;")
                                         .replace(/'/g, "&#039;");
 
 export const JsonView:React.FC<JsonViewProps> =(props:JsonViewProps)=>{
-
-    const json = escapeHtml(String(props.children))
-
+    const { data } = props
+    const json = escapeHtml(data ? JSON.stringify(data,null,4) : String(props.children))
     return <RichLabel text={json} rules={{
             "color:green;":/true|false/g,                         // 布尔值            
             "color:#222;padding:4px;": /\"(.*?)\"/g,            // 键    

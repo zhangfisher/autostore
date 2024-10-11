@@ -4,6 +4,9 @@ export default defineConfig({
   base:"/autostore/",
   publicPath:"/autostore/",
   outputPath: 'dist',
+  favicons:[
+    "/autostore/logo.png"
+  ],
   // mako:{ },
   themeConfig: {
     name: 'AutoStore',
