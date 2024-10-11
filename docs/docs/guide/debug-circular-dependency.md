@@ -82,7 +82,6 @@ export default ()=>{
         return scope.b.value + 1
       },['b']),
       b: computed(async (scope:any)=>{
-        debugger
         return scope.a.value + 1
       },['a'])
     })
