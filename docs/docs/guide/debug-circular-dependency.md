@@ -91,6 +91,7 @@ export default ()=>{
         ref.current=true
       }
   }
+  globalThis.store =store
   return <div style={{color:'red'}}>{error}</div>
 }
 

@@ -126,7 +126,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		);
 		// 4. 检查是否有重入
 		const { noReentry } = finalComputedOptions;
-		if (noReentry && this._isComputedRunning) {
+		if (noReentry && this._isComputedRunning) {			
 			this.store.log(() => `Reentry async computed: ${this.toString()}`, "warn");
 			this.emitStoreEvent("computed:cancel", { path: this.path, id: this.id, reason: "reentry",computedObject:this });
 			return;
