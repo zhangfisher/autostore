@@ -53,7 +53,7 @@
 import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from "./types";
-import type { Dict, SyncFunction } from "../types";
+import type { Dict } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
 import { ComputedObject } from "../computed/computedObject";
@@ -79,12 +79,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>  
     public watchObjects: WatchObjects<State>      
-    protected _operates = new EventEmitter<StateChangeEvents>()                    // 依赖变更事件触发器
+    protected _operates = new EventEmitter<StateChangeEvents>()         // 依赖变更事件触发器
     private _options: Required<AutoStoreOptions<State>>
-    private _silenting = false                                                  // 是否静默更新，不触发事件
-    private _batching = false                                                   // 是否批量更新中
-    private _batchOperates:StateOperate[] = []                            // 暂存批量操作
+    private _silenting = false                                          // 是否静默更新，不触发事件
+    private _batching = false                                           // 是否批量更新中
+    private _batchOperates:StateOperate[] = []                          // 暂存批量操作
     private _peeping:boolean = false
+    private _circularPaths?:string[]                                    // 保存循环依赖路径历史
+    private _hasCircular:boolean = false                                // 是否发现循环依赖
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
@@ -125,9 +127,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     get silenting(){return this._silenting}
     get batching(){return this._batching}
     get peeping(){return this._peeping}
+    get hasCircular(){ return this._hasCircular}
+
     log(message:LogMessageArgs,level?:LogLevel){
         if(this._options.debug){
-            this.options.log(message,level)
+            this.options.log.call(this,message,level)
         } 
     }
     private installExtends(){
@@ -141,6 +145,18 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         if(this._options.onComputedDone) this.on("computed:done",this._options.onComputedDone.bind(this))
         if(this._options.onComputedError) this.on("computed:error",this._options.onComputedError.bind(this))
         if(this._options.onComputedCancel) this.on("computed:cancel",this._options.onComputedCancel.bind(this))
+    }
+    /**
+     * 
+     * 启用循环依赖检测
+     * 
+     */
+    private enableCircularDependencyDetect(){
+        const onCircular = this.options.onCircularDependency
+
+        if(typeof(onCircular)==='function' || Array.isArray(onCircular)){
+         
+        }
     }
 
     /**
@@ -533,7 +549,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      * 
      *  我们可以看到，fn执行时，只有显式的对price和count，但是由于total是异步计算属性，所以也会触发total的变化。
-     *  因此也应该被跟踪，但是由于其是异步计算属性，所以不会被跟踪。因此需要显式的提供一个abort参数来结束包括异步的跟踪过程
+     *  因此也应该被跟踪，但是由于其是异步计算属性，所以不会被跟踪。
+     * 因此需要显式的提供一个abort参数来结束包括异步的跟踪过程
      * 
      * 
      * stateTracker.stop()  // 取消跟踪
@@ -546,15 +563,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @param operates 
      * @returns 
      */
-    trace(fn: SyncFunction,operates:WatchListenerOptions['operates']='*'):StateTracker { 
+    trace(fn: ()=>any,operates:WatchListenerOptions['operates']='*'):StateTracker { 
         let watcher:Watcher 
-        const store = this
         return {
             stop:()=>watcher && watcher.off(),
             start:async (isStop?:(operate:StateOperate)=>boolean)=>{
                 const ops:StateOperate[] = []
                 return new Promise((resolve)=>{
-                    watcher = store.watch((operate)=>{       
+                    watcher = this.watch((operate)=>{       
                         ops.push(operate)         
                          if(isStop && isStop(operate)){
                             watcher.off()

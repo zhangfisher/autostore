@@ -47,7 +47,7 @@ export class WatchObject<Value=any> extends ObserverObject<Value,WatchOptions<Va
     run(watchPath:string[],watchValue:any){   
         // 1. 检查是否启用
         if(!this.enable) {
-            this.store.options.log!(`WatchObject <${this.toString()}> is disabled`)
+            this.store.log(`WatchObject <${this.toString()}> is disabled`)
             return 
         } 
         try{

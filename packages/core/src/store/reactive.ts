@@ -43,7 +43,7 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
                             if(isComputedCreating.has(pathKey)){  // 如果已经创建过计算属性，则直接返回
                                 const cylePaths = [...isComputedCreating.keys(),pathKey]
                                 isComputedCreating.clear()
-                                throw new CyleDependError(`The computed property "${pathKey}" has a circular dependency, steps: ${cylePaths.join(' <- ')}`)
+                                throw new CyleDependError(`Find circular dependency at <"${path}">, steps: ${cylePaths.join(' <- ')}`)
                             }
                             isComputedCreating.set(pathKey,true)
                             return options.createComputedObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象

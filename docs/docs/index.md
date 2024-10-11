@@ -4,13 +4,13 @@ hero:
   description: 极致优雅的全自动状态管理库
   actions:
     - text: 快速入门
-      link: /
+      link: /guide/intro-get-started
       primary: true
     - text: Github
       link: https://github.com/zhangfisher/autostore
 features:
   - title: 计算属性
-    emoji: 💎  :cal
+    emoji: 💎
     description: 独有的移花接木式的创建同步/异步计算属性    
   - title: 异步计算
     emoji: 🔥
@@ -18,6 +18,9 @@ features:
   - title: 嵌套状态
     emoji: ☂️
     description: 支持任意深度的嵌套状态，无需担心状态管理的复杂性
+  - title: 循环依赖
+    emoji: 🎯
+    description: 能检测循环依赖减少故障
   - title: 状态监听
     emoji: 🎧
     description: 丰富的状态监听能力，支持对对象和数组的get/set/delete/insert等操作监听

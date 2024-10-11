@@ -9,6 +9,7 @@ export function getDefaultComputedOptions():ComputedOptions{
 		timeout  : 0,
 		depends  : [],
 		immediate: "auto",    // 马上执行一次，异步计算函数，如果提供initial值，则不会马上执行
-		extras   : undefined
+		extras   : undefined,
+		noReentry:true
     }
 }

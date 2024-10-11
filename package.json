@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@changesets/cli": "^2.27.9",
     "@types/node": "^22.5.0",
     "oxlint": "^0.9.1",
     "ts-node": "^10.9.2",
