@@ -20,7 +20,7 @@ toc: content
 
 以下示例中就存在循环依赖，构建`store`时会抛出异常。
 
-```tsx
+```tsx | pure
 /**
  * title: 循环依赖
  * description: 存在循环依赖时会抛出异常
@@ -58,41 +58,96 @@ export default ()=>{
 
 ## 异步循环依赖检测
 
-异步循环依赖就比较麻烦，无法在构建时自动检测，需要开发者手动跟踪检测。
-
+异步循环依赖就比较麻烦，无法像同步循环一样构建时自动检测，而是通过`computedOptions.maxReentry`来控制计算函数的重入次数，当重入次数超过最大重入次数时，就出错。
 
 ```tsx
 /**
- * title: 循环依赖
- * description: 存在循环依赖时会抛出异常
- * defaultShowCode: true 
+ * title: 更新x值
+ * description: 由于`a`,`b`存在循环依赖，内部会忽略`a`,`b`的计算，导致`a`,`b`的值为无法计算。
+ * defaultShowCode: false
  */
 import { useStore,computed } from '@autostorejs/react';
-import { Box } from "x-react-components"
+import { Box,ColorBlock,Button,JsonView } from "x-react-components"
 import { useState,useRef } from "react"
  
 export default ()=>{  
   const [error, setError] = useState(null);
   
-  const ref = useRef(false)
-  let store
-  try{
-    store = useStore({ 
+  let store = useStore({ 
+      x:1,
       a: computed(async (scope:any)=>{
-        return scope.b.value + 1
-      },['b']),
+        return scope.b.value + scope.x
+      },['b','x']),
       b: computed(async (scope:any)=>{
-        return scope.a.value + 1
-      },['a'])
-    })
-  }catch(e){
-      if(!ref.current){
-        setError(e.message)
-        ref.current=true
+        return scope.a.value + + scope.x
+      },['a','x'])
+    },{
+      debug:true,
+      // 当计算函数达到最大重入时会触发此回调
+      onComputedCancel:({path,reason})=>{
+        setError(reason)
       }
-  }
-  globalThis.store =store
-  return <div style={{color:'red'}}>{error}</div>
+    }) 
+  const [data] = store.useState()
+  return <div>
+    <ColorBlock name="x">
+        <Button onClick={()=>store.state.x--}>-</Button>
+        {store.$('x')}
+        <Button onClick={()=>store.state.x++}>+</Button>
+    </ColorBlock>
+    <div style={{color:'red'}}>{error}</div>
+    <JsonView data={data}/>
+    </div>
+}
+
+```          
+
+**注意：**
+
+- 默认情况下，`computedOptions.maxReentry=0`，即不允许在计算函数重入。因此，当上述例子中的`a`和`b`计算属性存在循环依赖关系时，计算函数就必会必然会反复重入，这时由于`maxReentry`的限制就会退出计算函数，从而不会进入无限循环。但是副作用就是`a`和`b`的值将无法计算，所以上述例子中`a`和`b`的值为`null`。
+- 如果需要允许计算函数重入，可以通过`computedOptions.maxReentry`为一个合适的值,当重入次数超过最大重入次数时，就退出错错。。
+
+
+```tsx
+/**
+ * title: 更新x值
+ * description: 由于`a`,`b`存在循环依赖，内部会忽略`a`,`b`的计算，导致`a`,`b`的值为无法计算。
+ * defaultShowCode: false
+ */
+import { useStore,computed } from '@autostorejs/react';
+import { Box,ColorBlock,Button,JsonView } from "x-react-components"
+import { useState,useRef } from "react"
+ 
+export default ()=>{  
+  const [error, setError] = useState(null);
+  
+  let store  = useStore({ 
+      x:1,
+      a: computed(async (scope:any)=>{
+        return scope.b.value + scope.x
+      },['b','x']),
+      b: computed(async (scope:any)=>{
+        return scope.a.value + + scope.x
+      },['a','x'])
+    },{
+      debug:true,
+      // 指定计算函数最大重入次数
+      maxReentry:10,
+      // 当计算函数达到最大重入时会触发此回调
+      onComputedCancel:({path,reason})=>{
+        setError(reason)
+      }
+    }) 
+  const [data] = store.useState()
+  return <div>
+    <ColorBlock name="x">
+        <Button onClick={()=>store.state.x--}>-</Button>
+        {store.$('x')}
+        <Button onClick={()=>store.state.x++}>+</Button>
+    </ColorBlock>
+    <div style={{color:'red'}}>{error}</div>
+    <JsonView data={data}/>
+    </div>
 }
 
 ```          

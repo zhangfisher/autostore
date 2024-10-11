@@ -90,10 +90,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
-            id       : getId(),
-            debug    : false,
-            lazy     : false,            
-            enableComputed:true,
+            id            : getId(),
+            debug         : false,
+            lazy          : false,            
+            enableComputed: true,
+            maxReentry    : 0,
             log,
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
@@ -146,19 +147,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         if(this._options.onComputedError) this.on("computed:error",this._options.onComputedError.bind(this))
         if(this._options.onComputedCancel) this.on("computed:cancel",this._options.onComputedCancel.bind(this))
     }
-    /**
-     * 
-     * 启用循环依赖检测
-     * 
-     */
-    private enableCircularDependencyDetect(){
-        const onCircular = this.options.onCircularDependency
-
-        if(typeof(onCircular)==='function' || Array.isArray(onCircular)){
-         
-        }
-    }
-
     /**
      * 
      * 当状态读写时调用此方法触发事件

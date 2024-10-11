@@ -56,6 +56,7 @@ export class ObserverObject<
         this._path       = context?.path || [`#${this._id}`]
         if(!this._path) this._path = [`#${this._id}`]
         this._initial = this._options.initial 
+        this.onOptions(this._options)
         this._depends = calcDependPaths(this._path,this._options.depends)
         this._onInitial()
     }
@@ -107,6 +108,12 @@ export class ObserverObject<
         this.onInitial()
     }
     protected onInitial(){
+
+    } 
+    /**
+     * 供子类对选项进行初始化处理
+     */
+    protected onOptions(options:Required<Options> ){
 
     } 
 

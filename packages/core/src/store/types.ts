@@ -103,7 +103,11 @@ export interface AutoStoreOptions<State extends Dict> {
      * @returns 
      */
     log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
-    
+    /**
+     * 计算函数不可重入
+     * 即同一个允许重入的次数，=0代表不允许重入
+     */
+    maxReentry?:number
     /**
      * 
      * 当创建计算属性时调用
@@ -152,28 +156,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param computedObject 
      * @returns 
      */
-    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void
-    /**
-     * 
-     * 此函数在检测到循环依赖时调用
-     * 
-     * @description
-     * 
-     * 由于循环依赖检测需要消耗性，所以仅当提供此函数时才会启动循环依赖检测
-     * 
-     * @example
-     * {
-     *    onCircularDependency: steps=>console.log(step)
-     * }
-     * @example
-     *  配置循环依赖检测的最大步数,默认是20步
-     * {
-     *    onCircularDependency: [30, steps=>console.log(step)]
-     * }
-     * 
-     * @param steps:  
-     */
-    onCircularDependency:[number,(steps:string[])=>void] | ((steps:string[])=>void)
+    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'maxReentry' | 'error',computedObject:ComputedObject<any>})=> void
 }
 
 
