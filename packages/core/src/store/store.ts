@@ -95,7 +95,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             lazy          : false,            
             enableComputed: true,
             maxReentry    : 0,
-            log,
+            log, 
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
         this.watchObjects  =  new WatchObjects<State>(this)

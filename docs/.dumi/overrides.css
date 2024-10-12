@@ -72,3 +72,33 @@ ul.dumi-default-toc > li[data-depth=2] {
 ul.dumi-default-toc > li[data-depth=3] {
   padding-left: 12px;
 }
+.dumi-default-features .dumi-default-features-item {
+  border: 1px solid #aaa;
+  -webkit-border-radius: 5px;
+          border-radius: 5px;
+  padding: 1em;
+  margin: 1em;
+  height: 136px;
+  background-color: #e5e5e5;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+.dumi-default-features .dumi-default-features-item > i {
+  font-size: 18px;
+  -webkit-border-radius: 5px;
+          border-radius: 5px;
+  background-color: #ddd;
+  padding: 12px;
+  width: 24px;
+  height: 24px;
+}
+.dumi-default-features .dumi-default-features-item > p {
+  margin: 4px;
+}

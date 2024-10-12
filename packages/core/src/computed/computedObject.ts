@@ -40,5 +40,6 @@ export class ComputedObject<Value=any> extends ObserverObject<Value,ComputedOpti
         options
         throw new Error("Method not implemented.");
     } 
+    
 
 }

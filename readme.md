@@ -105,7 +105,15 @@ const Card = () => {
 
 ```
 
-- **Two-way Form Binding**
+async computed with [loading](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8A%A0%E8%BD%BD%E7%8A%B6%E6%80%81),[timeout](https://zhangfisher.github.io/autostore/guide/computed-async#%E8%B6%85%E6%97%B6%E5%A4%84%E7%90%86), [retry](https://zhangfisher.github.io/autostore/guide/computed-async#%E9%87%8D%E8%AF%95), [cancel](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8F%96%E6%B6%88), [countdown](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%80%92%E8%AE%A1%E6%97%B6), [progress](https://zhangfisher.github.io/autostore/guide/computed-async#%E6%89%A7%E8%A1%8C%E8%BF%9B%E5%BA%A6).
+
+
+
+
+
+- **Form Two-way Binding**
+
+Form two-way binding is very simple.
 
 ```ts
 
@@ -129,5 +137,7 @@ const Card = () => {
 
 ```
 
+## License
 
+[MIT](./LICENSE)
 

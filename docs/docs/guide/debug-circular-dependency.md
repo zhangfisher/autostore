@@ -135,10 +135,11 @@ export default ()=>{
       maxReentry:10,
       // 当计算函数达到最大重入时会触发此回调
       onComputedCancel:({path,reason})=>{
+        debugger
         setError(reason)
       }
     }) 
-  const [data] = store.useState()
+  const [ data ] = store.useState()
   return <div>
     <ColorBlock name="x">
         <Button onClick={()=>store.state.x--}>-</Button>
