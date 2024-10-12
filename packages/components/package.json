@@ -1,9 +1,13 @@
 {
   "name": "x-react-components",
   "version": "1.0.0",
-  "description": "react components",
+  "description": "some react components for demo",
   "main": "src/index.ts",
   "access": "public",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhangfisher/autostore.git"
+  },
   "publishConfig": {
     "main": "dist/index.js",
     "module": "dist/index.mjs"
