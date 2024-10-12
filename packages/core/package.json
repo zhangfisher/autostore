@@ -1,15 +1,25 @@
 {
   "name": "autostore",
   "version": "0.0.1",
-  "description": "",
+  "description": "Very easy and elegant state management library.",
   "main": "src/index.ts",
-  "access": "public",
+  "access": "public",  
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhangfisher/autostore.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs",
+    "module": "dist/index.js"
+  },
   "type": "module",
   "scripts": {
     "build": "tsup"
   },
   "files": [
-    "readme.md"
+    "readme.md",
+    "dist"
   ],
   "keywords": [],
   "author": "",
