@@ -113,6 +113,7 @@ export class ObserverObject<
     /**
      * 供子类对选项进行初始化处理
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected onOptions(options:Required<Options> ){
 
     } 

@@ -106,7 +106,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         })    
         if(!this._options.lazy) forEachObject(this._data)
         // @ts-ignore
-        if(this._options.debug && typeof(globalThis.__AUTO_STORES__)=='object') {                    
+        if(this._options.debug && typeof(globalThis.__AUTO_STORES__) === 'object') {                    
             // @ts-ignore
             globalThis.__AUTO_STORES__.add(this)
         }
@@ -158,7 +158,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * type:StateOperates, path: string[], indexs:number[] , value: any, oldValue: any, parentPath: string[], parent: any
      */
     _notify(params:StateOperate) {          
-        if(this._peeping && params.type=='get') return    // 偷看时不触发事件
+        if(this._peeping && params.type==='get') return    // 偷看时不触发事件
         if(this._batching){
             this._batchOperates.push(params)
         }

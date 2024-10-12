@@ -1,6 +1,6 @@
 
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ReactNode } from 'react';
 import { Box } from './Box';
 
 interface Props {
@@ -20,10 +20,7 @@ export class ErrorBoundary extends Component<Props, State> {
   static getDerivedStateFromError(e: Error): State {
     return { error: e.stack };
   }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    
-  }
+ 
 
   render() {
     if (this.state.error) {

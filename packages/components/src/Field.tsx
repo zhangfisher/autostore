@@ -38,7 +38,7 @@ export interface DefaultFieldPropTypes{
   
   
 export const ValidResult:React.FC<FieldProps> = ({validate,help})=>{
-    if(validate==undefined) return 
+    if(validate===undefined) return 
     // 如果是同步校验，则validate是一个boolean
     const isAsycValidate = typeof(validate)!=='boolean'
     //

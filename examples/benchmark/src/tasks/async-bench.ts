@@ -1,6 +1,6 @@
 import { Bench } from 'tinybench';
 import { computed, AutoStore } from "autostore"
-import { derive, share, watch } from 'helux';
+import { share, watch } from 'helux';
 
 
 const delay = (ms:number) => new Promise<void>((resolve) => setTimeout(resolve, ms)); 

@@ -55,7 +55,7 @@ export const Card:ReactFC<CardProps> = (props:CardProps)=>{
       </div>
       <div style={{ padding:"12px" }}>
           {children.map((child,index)=>{
-            if(children.length > 1 && index==children.length-1 && (child.classList && child.classList.contains('footer'))){
+            if(children.length > 1 && index===children.length-1 && (child.classList && child.classList.contains('footer'))){
               return <div key={index} className="footer" style={{
                 borderTop:"1px solid #ccc",
                 padding:'8px',

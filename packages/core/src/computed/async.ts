@@ -138,7 +138,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
 		// 4. 检查是否有重入
 		const { maxReentry =0 } = finalComputedOptions;
-		if (this._isComputedRunning && (maxReentry==0 || (maxReentry > 0 && this._reentryCount >= maxReentry) ) ) {			
+		if (this._isComputedRunning && (maxReentry===0 || (maxReentry > 0 && this._reentryCount >= maxReentry) ) ) {			
 			this.store.log(() => `Async computed: ${this.toString()} is over maximum reentry count`, "warn");
 			this.emitStoreEvent("computed:cancel", { path: this.path, id: this.id, reason: "maxReentry",computedObject:this });			
 			this._reentryCount--

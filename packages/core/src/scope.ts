@@ -21,11 +21,11 @@ import { ObserverScopeRef, ObserverType } from "./observer/types";
  * @returns 
  */
 function getScopeOptions(valueObject:ComputedObject,computedScope?: ComputedScope,storeScope?: ComputedScope) {
-  let scope = computedScope == undefined ? storeScope : computedScope;
+  let scope = computedScope === undefined ? storeScope : computedScope;
   if (typeof scope === "function") {
     try { scope = scope.call(valueObject.store,valueObject) } catch { }
   }
-  return scope == undefined ? (storeScope == undefined ? ObserverScopeRef.Current: storeScope) : scope;
+  return scope === undefined ? (storeScope === undefined ? ObserverScopeRef.Current: storeScope) : scope;
 }
  
 /**

@@ -15,7 +15,7 @@ export function hookArrayMethods(notifyChange:any, array: any[], name:string,met
         return () => {
             const oldLength = array.length;
             const result = method.apply(array);
-            if (array.length == oldLength-1 ) {
+            if (array.length === oldLength-1 ) {
                 notifyChange({type:'remove',path:parentPath,indexs:[oldLength-1],value:[result],oldValue:undefined, parentPath,parent:array});
             }
             return result;
@@ -47,7 +47,7 @@ export function hookArrayMethods(notifyChange:any, array: any[], name:string,met
         return () => {
             const oldLength = array.length;
             const result = method.apply(array);
-            if (array.length == oldLength-1 ) {
+            if (array.length === oldLength-1 ) {
                 notifyChange({type:'remove',path:parentPath,indexs:[0],value:[result],oldValue:undefined, parentPath,parent:array});
             }
             return result;

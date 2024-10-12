@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react"
 import {  Dict, getVal, PATH_DELIMITER, pathStartsWith, setVal } from "autostore" 
 import type { ReactAutoStore } from "../store"
-import type { UseFormOptions } from "./types"
-
+ 
 const EMPTY_VALUE= Symbol("empty")
 /**
  *  
@@ -28,7 +27,7 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                         (   typeof(args[0])==='string' ? args[0].split(PATH_DELIMITER) 
                             : (Array.isArray(args[0]) ? args[0] : [])
                         ) : []
-        const options = args.length > 1 ? args[1] : {} as UseFormOptions
+        //const options = args.length > 1 ? args[1] : {} as UseFormOptions
                         
         const initial = useRef<boolean>(false)
         const inputs = useRef<Map<string,any>>()
@@ -72,7 +71,7 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                 const name = input.name
                 if(!name) return
                 const path = [...entry,...name.split(PATH_DELIMITER)]
-                const newVal = input.type == 'checkbox' ? input.checked : input.value   
+                const newVal = input.type === 'checkbox' ? input.checked : input.value   
                 // 3.1 更新到store
                 store.update((state)=>{
                     setVal(state,path,newVal)

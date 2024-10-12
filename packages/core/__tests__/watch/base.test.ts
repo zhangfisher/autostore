@@ -212,7 +212,7 @@ describe("watch功能测试",()=>{
                 store.watch("diary",({path})=>{
                     paths.push(path)
                     values.push(store.state.diary) 
-                    if(paths.length==3){
+                    if(paths.length===3){
                         expect(changed).toStrictEqual([['a','value'],['b','value']])
                         expect(paths).toStrictEqual([['diary'],['diary'],['diary']])
                         expect(values).toStrictEqual([true,false,true])
@@ -259,7 +259,7 @@ describe("watch功能测试",()=>{
                         return Object.keys(watchObj.cache).length==0
 
                     },
-                    (path)=>path[path.length-1]=='validate', // 只侦听validate字段的值变化
+                    (path)=>path[path.length-1]==='validate', // 只侦听validate字段的值变化
                     {initial:true,id:"x"})
                 }) 
 

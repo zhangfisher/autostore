@@ -17,7 +17,8 @@ const a8 = derive(() =>a7.val+1)
 const a9 = derive(() =>{
   return a8.val+1
 })
-const a10 = derive(() =>{
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ const a10 = derive(() =>{
   return a9.val+1
 }) 
 for(let i = 1; i <= 10000; i++){

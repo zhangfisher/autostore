@@ -32,13 +32,10 @@ export class AutoStoreDevTools{
     constructor(){
         this.install()
     }
-    private onStoreUnload(){
-
-    }
     add(store:any){      
         this.stores.set(store.id,store)
         store.operates.onAny((payload:any,type:any)=>{   
-            if(payload.type=='get') return 
+            if(payload.type==='get') return 
             this.reduxStore.dispatch({
                 type:`${payload.type}@${type}`,
                 store,

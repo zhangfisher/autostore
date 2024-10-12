@@ -1,5 +1,5 @@
 {
-  "name": "benchmark",
+  "name": "@autostore-examples/benchmark",
   "private": true,
   "version": "1.0.0",
   "type": "module",

@@ -3,5 +3,10 @@
         "eqeqeq": ["warn"],
         "tab-width": ["warn", 4]
     },
-    "ignore": ["node_modules","dist","packages/**/__tests__/**/*"]
-}
+    "ignore": [
+        "node_modules",
+        "dist",
+        "packages/**/__tests__/**/*",
+        "examples"
+    ]
+} 

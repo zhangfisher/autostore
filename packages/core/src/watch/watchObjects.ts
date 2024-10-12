@@ -14,7 +14,7 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
     get enable(){return this._enable}
     set enable(value:boolean){ this._enable = value  }      
     set(key:string,value:WatchObject){
-        if(super.size==0) {
+        if(super.size===0) {
             this.createWacher() 
         }        
         return super.set(key,value)
@@ -69,7 +69,7 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
      */
     enableGroup(groupName:string,value:boolean=true){
         for(const watcher of this.values()){
-            if(watcher.options.group==groupName){
+            if(watcher.options.group === groupName){
                 watcher.options.enable = value
             }
         }

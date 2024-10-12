@@ -1,5 +1,5 @@
 import { expect,test,describe, beforeEach, afterEach } from "vitest"
-import { AutoStore, StateOperate } from "../../src";
+import { AutoStore } from "../../src";
 import { deepClone } from "flex-tools/object/deepClone";
 import { Watcher } from "../../src/watch/types";
 

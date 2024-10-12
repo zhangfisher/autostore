@@ -80,7 +80,7 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
      * @param param3 
      */
     async runGroup(group:string,runArgs?:RuntimeComputedOptions ,options?: { wait?:boolean,timeout?:number }){       
-      return await this.run((computedObject:ComputedObject)=>computedObject.group==group,runArgs,options)
+      return await this.run((computedObject:ComputedObject)=>computedObject.group===group,runArgs,options)
     }
     /**
      * 运行指定id或满足条件的计算函数
@@ -96,14 +96,14 @@ export class ComputedObjects<State extends Dict =  Dict> extends Map<string,Comp
     async run(filter:(computedObject:ComputedObject)=>boolean,runArgs?:RuntimeComputedOptions,options?:{ wait?:boolean,timeout?:number }):Promise<any>
     async run(id:string,runArgs?:RuntimeComputedOptions ,options?: { wait?:boolean,timeout?:number }):Promise<any>
     async run():Promise<any>{
-      if(arguments.length==0){
+      if(arguments.length===0){
         return Promise.all([...this.values()].map(computedObject=>computedObject.run()))
       }      
       let filter:(computedObject:ComputedObject)=>boolean
       if(typeof(arguments[0])==='function'){
         filter = arguments[0] 
       }else if(typeof(arguments[0])==='string'){ // 运行指定的id
-        filter = (computedObject:ComputedObject)=>computedObject.id==arguments[0]
+        filter = (computedObject:ComputedObject)=>computedObject.id===arguments[0]
       }            
       
       const computedRunArgs = Object.assign({},arguments[1]) as RuntimeComputedOptions
