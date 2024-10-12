@@ -8,7 +8,7 @@ export type StoreEvents = {
     'computed:created'  : ComputedObject                                // 当计算对象创建时
     'computed:done'     : {id:string,path:string[],value:any,computedObject:ComputedObject}           // 当计算函数执行成功后
     'computed:error'    : {id:string,path:string[],error:any,computedObject:ComputedObject}           // 当计算函数执行出错时
-    'computed:cancel'   : {id:string,path:string[],reason:'timeout' | 'abort' | 'maxReentry' | 'error',computedObject:ComputedObject}       // 当计算函数被取消时
+    'computed:cancel'   : {id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject}       // 当计算函数被取消时
     'watch:created'     : WatchObject
     'watch:done'        : {value:any,watchObject:WatchObject}
     'watch:error'       : {error:any,watchObject:WatchObject}

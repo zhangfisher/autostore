@@ -37,7 +37,7 @@ describe("异步计算高级控制功能",()=>{
                     await delay(1000)
                     return scope.price * scope.count
                 },['price','count'],{ 
-                    maxReentry:true
+                    reentry:true
                 })
             },{ 
                 onComputedCancel:()=>{

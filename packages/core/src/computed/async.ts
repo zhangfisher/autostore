@@ -32,15 +32,18 @@ type GetterRunContext = {
 export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<AsyncComputedValue<Value>> {
 	private _isRunning: boolean = false;
 	private _defaultAbortController: AbortController | null = null; 
-	private _userAbortController?: AbortController  
-	private _reentryCount:number = 0
-	private _isOverMaxReentry:boolean = false
+	private _userAbortController?: AbortController   
 	get async() {return true}       
 	get value() {return super.value as AsyncComputedValue<Value>}
 	set value(value:AsyncComputedValue<Value>) {super.value = value	}
 	get running(){return this._isRunning }
+	/**
+	 * 本方法用来处理配置参数
+	 * 主要
+	 * @param options 
+	 */
 	protected onOptions(options: Required<RuntimeComputedOptions>) {
-		 if(!options.maxReentry) options.maxReentry = this.store.options.maxReentry
+		 if(!options.reentry) options.reentry = this.store.options.reentry
 	}
 
 	protected onInitial() {
@@ -112,10 +115,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		if (this.isDisable(options?.enable)) {
 			this.store.log(() => `Async computed <${this.toString()}> is disabled`, "warn");
 			return;
-		}
-
-		// 如果达到最大重入次数，则不再执行
-		if(this._isOverMaxReentry) return
+		} 
 
 		!first && this.store.log(() => `Run async computed for : ${this.toString()}`);
 
@@ -135,22 +135,17 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		);
 
 		// 4. 检查是否有重入
-		const { maxReentry =0 } = finalComputedOptions;
-		if (this._isRunning && (maxReentry===0 || (maxReentry > 0 && this._reentryCount >= maxReentry) ) ) {			
-			this._isOverMaxReentry = true
+		const { reentry } = finalComputedOptions;
+		if (this._isRunning && !reentry) {			
 			this.store.log(() => `Async computed: ${this.toString()} is over maximum reentry count`, "warn");
-			this.emitStoreEvent("computed:cancel", { path: this.path, id: this.id, reason: "maxReentry",computedObject:this });			
+			this.emitStoreEvent("computed:cancel", { path: this.path, id: this.id, reason: "reentry",computedObject:this });			
 			return;
-		}
-		this._reentryCount++  
+		}  
 		this._isRunning = true; // 即所依赖项的值
 		try {
 			return await this.executeGetter(scope, finalComputedOptions);
 		}finally {
-			this._isRunning = false;
-			// 处理重入逻辑
-			this._reentryCount--
-			if(this._reentryCount===0) this._isOverMaxReentry = false
+			this._isRunning = false; 
 		}
 	}
 

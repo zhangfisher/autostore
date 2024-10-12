@@ -186,11 +186,12 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
      */
     immediate?:'auto' | boolean
     /**
-     * 计算函数不可重入
-     * 即同一个允许重入的次数，=0代表不允许重入
+     * 计算函数是否允许重入执行
+     * 
+     * 默认为true，即允许重入执行
      * 
      */
-    maxReentry?:number
+    reentry?:boolean
     /**
      * 提供一个异步信号，用来传递给异步计算函数以便可以取消异步计算
      * 

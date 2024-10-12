@@ -84,9 +84,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _silenting = false                                          // 是否静默更新，不触发事件
     private _batching = false                                           // 是否批量更新中
     private _batchOperates:StateOperate[] = []                          // 暂存批量操作
-    private _peeping:boolean = false
-    private _circularPaths?:string[]                                    // 保存循环依赖路径历史
-    private _hasCircular:boolean = false                                // 是否发现循环依赖
+    private _peeping:boolean = false 
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
@@ -94,7 +92,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             debug         : false,
             lazy          : false,            
             enableComputed: true,
-            maxReentry    : 0,
+            reentry       : true,
             log, 
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
@@ -127,8 +125,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     get options(){return this._options}
     get silenting(){return this._silenting}
     get batching(){return this._batching}
-    get peeping(){return this._peeping}
-    get hasCircular(){ return this._hasCircular}
+    get peeping(){return this._peeping} 
 
     log(message:LogMessageArgs,level?:LogLevel){
         if(this._options.debug){

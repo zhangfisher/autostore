@@ -112,6 +112,15 @@ export class ObserverObject<
     } 
     /**
      * 供子类对选项进行初始化处理
+     * 
+     * @description
+     * 一些ObserverObject的子类的选择允许被Store的选择覆盖
+     * 
+     * 比如ComputedObject的enable属性，可以通过Store的enableComputed属性来覆盖
+     * 
+     *      
+     * 
+     * 
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected onOptions(options:Required<Options> ){

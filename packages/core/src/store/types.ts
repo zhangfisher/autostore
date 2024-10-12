@@ -104,10 +104,9 @@ export interface AutoStoreOptions<State extends Dict> {
      */
     log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
     /**
-     * 计算函数不可重入
-     * 即同一个允许重入的次数，=0代表不允许重入
+     * 计算函数是否允许重入     
      */
-    maxReentry?:number
+    reentry?:boolean
     /**
      * 
      * 当创建计算属性时调用
@@ -156,7 +155,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param computedObject 
      * @returns 
      */
-    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'maxReentry' | 'error',computedObject:ComputedObject<any>})=> void
+    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void
 }
 
 

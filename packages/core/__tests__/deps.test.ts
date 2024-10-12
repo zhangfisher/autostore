@@ -206,11 +206,11 @@ describe("trace依赖关系管理",()=>{
                   return scope.a.value + + scope.x
                 },['a','x'])
               },{
-                maxReentry:0,
+                reentry:0,
                 // 当计算函数达到最大重入时会触发此回调
                 onComputedCancel:({path,reason})=>{
                     cancelList.push(path.join("."))
-                    expect(reason).toBe("maxReentry")
+                    expect(reason).toBe("reentry")
                 }
               }) 
             setTimeout(()=>{
@@ -236,11 +236,11 @@ describe("trace依赖关系管理",()=>{
                   return scope.a.value + + scope.x
                 },['a','x'])
               },{
-                maxReentry:10,
+                reentry:10,
                 // 当计算函数达到最大重入时会触发此回调
                 onComputedCancel:({path,reason})=>{
                     cancelList.push(path.join("."))
-                    expect(reason).toBe("maxReentry")
+                    expect(reason).toBe("reentry")
                 }
               }) 
             setTimeout(()=>{
