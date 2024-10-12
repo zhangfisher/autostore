@@ -1,10 +1,10 @@
 {
   "name": "@autostorejs/react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Very easy and elegant state management library for react",
   "type": "module",
   "main": "src/index.tsx",
-  "access": "public",  
+  "access": "public",
   "repository": {
     "type": "git",
     "url": "https://github.com/zhangfisher/autostore.git"
