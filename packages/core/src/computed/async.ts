@@ -42,7 +42,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * 主要
 	 * @param options 
 	 */
-	protected onOptions(options: Required<RuntimeComputedOptions>) {
+	protected onInitOptions(options: Required<RuntimeComputedOptions>) {
 		 if(!options.reentry) options.reentry = this.store.options.reentry
 	}
 
@@ -60,7 +60,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			}
 		},0)		
 	}
-
 
 
 	private createAsyncComputedValue() {
@@ -105,6 +104,18 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		}		
   	} 
 	/**
+	 * 启动循环依赖运行检测
+	 */
+	private startComputedCycleDetected(){
+		const paths:string[]= []
+		if(typeof(this.store.options.onComputedCycleDetected)==='function'){
+			const watcher = this.store.watch(({path})=>{
+				paths.push(path.join('.'))
+				
+			},{operates:'read'})
+		}
+	}
+	/**
 	 *
 	 * 运行计算函数
 	 *
@@ -121,7 +132,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
 		// 2. 合成最终的配置参数
 		const finalComputedOptions = (options ? Object.assign(
-			{},
+			{first},
 			this.options,
 			options
 		)  : this.options) as Required<RuntimeComputedOptions>;
@@ -172,32 +183,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				this.value(max);
 			},
 		};
-	}
-
-	/**
-	 * 当计算属性操作完成时的回调函数
-	 * 
-	 * 此函数负责在计算属性操作完成后，根据操作的执行状态调用用户定义的回调函数
-	 * 它会传递操作的结果、错误状态、是否中止以及是否超时等信息给回调函数
-	 * 
-	 * @param options - 计算属性的运行时选项，被强制转换为Required类型，确保所有选项都是必需的
-	 * @param error - 如果操作过程中发生错误，该错误对象将被传递
-	 * @param abort - 一个布尔值，表示操作是否被中止
-	 * @param timeout - 一个布尔值，表示操作是否因超时而结束
-	 * @param scope - 操作执行的上下文或范围
-	 * @param value - 操作的结果，如果操作成功完成
-	 */
-	private onDoneCallback(options: Required<RuntimeComputedOptions>,error:Error,abort:boolean,timeout:boolean,scope:any,value:any) {
-		if(typeof(options.onDone)!=='function') return 
-		options.onDone.call(this, {
-			id  : this.id,			
-			path: this.path,
-			value,
-			error,
-			abort,
-			timeout,
-			scope,
-		});
 	}
 	/**
 	 * 
@@ -280,9 +265,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
 		const [retryCount, retryInterval] = Array.isArray(retry) ? retry : [Number(retry), 0];
 
-
 		let timeoutCallback: Function | undefined; // 异步计算函数可以在超时时执行的回调函数
-
 
 		let abortController = this.getAbortController(options);
 
@@ -292,7 +275,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			getSnap       : (scope: any) => getSnap(scope),			
 			cancel        : abortController.abort,
 			extras        : options.extras,
-			changed       : options.changed,
+			operate       : options.operate,
+			first		  : options.first,
 			abortSignal   : abortController.signal
 		};
 
@@ -376,10 +360,37 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			this.emitStoreEvent("computed:done", { path: this.path, id:this.id, value: computedResult,computedObject:this});		
 		} 
 		this.onDoneCallback(options,ctx.error,ctx.hasAbort,ctx.hasTimeout,scope,computedResult)
+
+	}
+	
+	/**
+	 * 当计算属性操作完成时的回调函数
+	 * 
+	 * 此函数负责在计算属性操作完成后，根据操作的执行状态调用用户定义的回调函数
+	 * 它会传递操作的结果、错误状态、是否中止以及是否超时等信息给回调函数
+	 * 
+	 * @param options - 计算属性的运行时选项，被强制转换为Required类型，确保所有选项都是必需的
+	 * @param error - 如果操作过程中发生错误，该错误对象将被传递
+	 * @param abort - 一个布尔值，表示操作是否被中止
+	 * @param timeout - 一个布尔值，表示操作是否因超时而结束
+	 * @param scope - 操作执行的上下文或范围
+	 * @param value - 操作的结果，如果操作成功完成
+	 */
+	private onDoneCallback(options: Required<RuntimeComputedOptions>,error:Error,abort:boolean,timeout:boolean,scope:any,value:any) {
+		if(typeof(options.onDone)!=='function') return 
+		options.onDone.call(this, {
+			id  : this.id,			
+			path: this.path,
+			value,
+			error,
+			abort,
+			timeout,
+			scope,
+		});
 	}
 	protected onDependsChange(params:StateOperate){ 
-		this.store.log(() => `AsyncComputed<${this.id}> is running by depends ${params.type}/${params.path.join(".")} changed `);
-		this.run({changed:params})		
+		this.store.log(() => `AsyncComputed<${this.id}> is running by depends ${params.type}/${params.path.join(".")} operate `);
+		this.run({operate:params})		
 	}
 	/**
 	 * 

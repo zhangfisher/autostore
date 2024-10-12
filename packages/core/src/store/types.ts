@@ -1,4 +1,4 @@
-import { ComputedObject } from "../computed/computedObject"
+import { ComputedObject } from '../computed/computedObject';
 import { ComputedScope  } from "../computed/types"
 import { ObserverType } from "../observer/types"
 import { Dict } from "../types"
@@ -156,9 +156,14 @@ export interface AutoStoreOptions<State extends Dict> {
      * @returns 
      */
     onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void
+
+    /**
+     * 当检测到循环依赖时的回调函数
+     * @param paths 
+     * @returns 
+     */
+    onComputedCycleDetected?: (paths:string[],computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
 }
-
-
 
 
 export type UpdateOptions = {

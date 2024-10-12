@@ -34,7 +34,7 @@ export interface ComputedGetterArgs{
      * 发生变化的依赖信息 
      * 
      */
-    changed?:StateOperate
+    operate?:StateOperate
 }
  
 export type ComputedGetter<Value,Scope=any> = (scope: Scope,args:Required<ComputedGetterArgs>) => Exclude<Value,Promise<any>>
@@ -80,10 +80,14 @@ export interface AsyncComputedGetterArgs{
      */
     extras?:any
     /**
-     * 发生变化的依赖信息 
-     * 
+     * 触发计算的操作
      */
-    changed?:StateOperate
+    operate?:StateOperate
+    /**
+     * 是否是第一次运行
+     */
+    first?:boolean
+
 }
 
 export type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (scope:Scope,args:Required<AsyncComputedGetterArgs> & P) => Promise<Value>
@@ -102,12 +106,12 @@ export type RequiredComputedOptions<Value=any> = Required<ComputedOptions<Value>
  */
 export type RuntimeComputedOptions = ComputedOptions & {
     first?  : boolean                           // 当第一次运行时为true
-    changed?: StateOperate                // 变化的依赖信息
+    operate?: StateOperate                // 变化的依赖信息
 } 
 
 export type SyncRuntimeComputedOptions = SyncComputedOptions & {
     first?  : boolean                           // 当第一次运行时为true
-    changed?: StateOperate                // 变化的依赖信息
+    operate?: StateOperate                // 变化的依赖信息
 } 
 
 
@@ -222,16 +226,13 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
     /**
      * 当执行计算getter函数出错时的回调
      */
-    onError?:(e:Error)=>void            
+    onError?:(e:Error)=>void                         
     /**
      * 当计算完成后的回调函数
      */
     onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,value:any}):void
-    // /**
-    //  * 依赖的路径
-    //  * 可以是一个绝对路径，也可以是一个相对路径
-    //  */
-    // depends?: ComputedDepends     
+
+
 
 }
 
@@ -252,7 +253,7 @@ export type AsyncComputedValue<Value = any,ExtAttrs extends Dict = {}> ={
 
 
 export type SyncComputedOptions<Value=any,Scope=any> = Pick<ComputedOptions<Value,Scope>, 
-    'id' | 'enable' | 'onError' | 'onDone' | 'depends' | 'initial' | 'objectify' | 'group' | 'scope' | 'extras'>
+    'id' | 'enable' | 'onError'  | 'onDone' | 'depends' | 'initial' | 'objectify' | 'group' | 'scope' | 'extras'>
 
 
 /**

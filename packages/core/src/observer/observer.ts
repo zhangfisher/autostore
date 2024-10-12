@@ -56,7 +56,7 @@ export class ObserverObject<
         this._path       = context?.path || [`#${this._id}`]
         if(!this._path) this._path = [`#${this._id}`]
         this._initial = this._options.initial 
-        this.onOptions(this._options)
+        this.onInitOptions(this._options)
         this._depends = calcDependPaths(this._path,this._options.depends)
         this._onInitial()
     }
@@ -104,9 +104,12 @@ export class ObserverObject<
     private _onInitial(){
         if(this._options.initial!==undefined){
             this.update(this._options.initial,{silent:true})
-        }
+        }        
         this.onInitial()
     }
+    /**
+     * 供子类继承进行初始化
+     */
     protected onInitial(){
 
     } 
@@ -123,7 +126,7 @@ export class ObserverObject<
      * 
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected onOptions(options:Required<Options> ){
+    protected onInitOptions(options:Required<Options> ){
 
     } 
 

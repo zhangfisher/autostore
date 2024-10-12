@@ -55,13 +55,13 @@ store.computedObjects.get("x").run()
 ```ts | pure
 export type RuntimeComputedOptions = ComputedOptions & {
     first?  : boolean            // 当第一次运行时为true
-    changed?: StateOperate       // 变化的依赖信息
+    operate?: StateOperate       // 变化的依赖信息
 } 
 ```
 
 - 当手动运行计算函数时，允许传入`RuntimeComputedOptions`参数，用来覆盖默认的计算参数。
 - `first`参数用来标识是否为第一次运行计算函数。一般手工运行时不要指定
-- `changed`参数用来指定变化的依赖信息，当计算属性的依赖值发生变化时，会传入此参数，此参数包含所依赖的状态信息。而当手工执行时，不需要指定此参数。
+- `operate`参数用来指定变化的依赖信息，当计算属性的依赖值发生变化时，会传入此参数，此参数包含所依赖的状态信息。而当手工执行时，不需要指定此参数。
 - `ComputedOptions`的配置参数可以参考[计算参数](./computed-options)。
  
 ## 运行分组

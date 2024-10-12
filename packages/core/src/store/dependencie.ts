@@ -130,7 +130,7 @@ export class DependencieManager{
         })
         this.store.silentUpdate(()=>{
             computedObjs.forEach(obj=>{
-                obj.run({changed:params})
+                obj.run({operate:params})
             })
         })
     }

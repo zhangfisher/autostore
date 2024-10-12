@@ -31,9 +31,9 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
    * @returns 
    */
   run(options?:SyncRuntimeComputedOptions){        
-    const { first ,changed } = Object.assign({
+    const { first ,operate } = Object.assign({
       first:false,
-      changed:undefined
+      operate:undefined
     },options)
     // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
     if(!first && this.isDisable(options?.enable)){
@@ -52,7 +52,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
     // 4. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
-      computedResult = (this.getter).call(this,scope,{changed,first});
+      computedResult = (this.getter).call(this,scope,{operate,first});
       
       if(first) this.initial = computedResult
       // 将结果回写入store,且不触发get事件
@@ -103,7 +103,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
    * @param event
    */
   protected onDependsChange(event: StateOperate): void {      
-      this.run({changed:event})
+      this.run({operate:event})
   }
 }
  
