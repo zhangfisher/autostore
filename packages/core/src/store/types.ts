@@ -163,6 +163,12 @@ export interface AutoStoreOptions<State extends Dict> {
      * @returns 
      */
     onComputedCycleDetected?: (paths:string[],computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
+    /**
+     * 检测循环依赖的时间间隔，单位ms
+     * 
+     * 0 表示不检测循环依赖
+     */
+    cycleDetectorInterval?:number
 }
 
 
