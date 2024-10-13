@@ -1,5 +1,6 @@
-import { ComputedObject } from '../computed/computedObject';
-import { ComputedScope  } from "../computed/types"
+import type { ComputedObject } from '../computed/computedObject';
+import type { ComputedScope  } from "../computed/types"
+import type { ObserverObject } from '../observer/observer';
 import { ObserverType } from "../observer/types"
 import { Dict } from "../types"
 import type { AutoStore } from "./store"
@@ -156,37 +157,16 @@ export interface AutoStoreOptions<State extends Dict> {
      * @returns 
      */
     onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void
+    /**
+     * 
+     * 当创建观察对象实例化时调用    
+     * 
+     * 一般可以在此对ObserverObject进行一些处理
+     * 比如重新封装run函数等
+     * 
+     */
+    onObserverCreated:(observerObject:ObserverObject<any,any>)=>void
 
-    /**
-     * 当检测到循环依赖时的回调函数
-     * @param paths 
-     * @returns 
-     */
-    onComputedCycleDetected?: (paths:string,computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
-    cycleDetectorInterval?:number
-    cycleDetectorCount?:number
-    /**
-     * 是否启用循环依赖检测
-     */
-    cycleDetect?:{
-        /**
-         * 当检测到循环依赖时的回调函数
-         * @param paths 
-         * @returns 
-         */
-        onDetected?:(paths:string,computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
-        /**
-         * 检测循环依赖的时间间隔，单位ms
-         * 
-         * 0 表示不检测循环依赖
-         * 默认是2000
-         */
-        interval?:number
-        /**
-         * 当检测到多少个循环时视为循环依赖         
-         */
-        cycleCount?:number
-    }
 }
 
 

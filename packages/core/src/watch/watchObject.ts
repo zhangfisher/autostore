@@ -8,7 +8,6 @@ import { ObserverObject } from "../observer/observer";
 export class WatchObject<Value=any> extends ObserverObject<Value,WatchOptions<Value>>{
     private _cache?: Dict 
     constructor(public store:AutoStore<any>,descriptor:WatchDescriptor,public context?:ComputedContext<any>){ 
-
         super(store,descriptor,context) 
         if(typeof(this.options.filter)!=='function') throw new Error("watch options.filter must be a function")                
     }

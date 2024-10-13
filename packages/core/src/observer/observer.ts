@@ -58,6 +58,7 @@ export class ObserverObject<
         this._initial = this._options.initial 
         this.onInitOptions(this._options)
         this._depends = calcDependPaths(this._path,this._options.depends)
+        this._onObserverCreated()
         this._onInitial()
     }
     get type(){ return this.descriptor.type }
@@ -101,6 +102,12 @@ export class ObserverObject<
             this.store._notify({type:'set',path:this.path,value})
         }
     }  
+    
+    private _onObserverCreated(){
+        if(typeof(this.store.options.onObserverCreated)==='function'){
+            this.store.options.onObserverCreated(this)
+        }
+    }
     private _onInitial(){
         if(this._options.initial!==undefined){
             this.update(this._options.initial,{silent:true})
@@ -238,6 +245,11 @@ export class ObserverObject<
         this._subscribers.forEach(subscriber=>subscriber.off())
         this._attached=false
     }
+    /**
+     * 供子类重写 
+     */
+    run(...args:any[]):any{
 
+    }
 }
  

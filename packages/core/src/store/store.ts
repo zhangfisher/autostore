@@ -92,7 +92,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             debug         : false,
             lazy          : false,            
             enableComputed: true,
-            reentry       : true,
+            reentry       : true, 
             log, 
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
@@ -102,12 +102,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             notify:this._notify.bind(this),
             createComputedObject:this.createObserverObject.bind(this)
         })    
-        if(!this._options.lazy) forEachObject(this._data)
-        // @ts-ignore
-        if(this._options.debug && typeof(globalThis.__AUTO_STORES__) === 'object') {                    
-            // @ts-ignore
-            globalThis.__AUTO_STORES__.add(this)
-        }
         this.getSnap = this.getSnap.bind(this)
         this.watch = this.watch.bind(this)
         this.update = this.update.bind(this)
@@ -116,10 +110,16 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.batchUpdate = this.batchUpdate.bind(this)
         this.collectDependencies = this.collectDependencies.bind(this)
         this.trace = this.trace.bind(this)
-        this.installExtends()        
+        this.installExtends()                     
+        if(!this._options.lazy) forEachObject(this._data)               
+        // @ts-ignore
+        if(this._options.debug && typeof(globalThis.__AUTOSTORE_DEVTOOLS__) === 'object') {                    
+            // @ts-ignore
+            globalThis.__AUTOSTORE_DEVTOOLS__.add(this)
+        }
         this.emit("load",this)     
     }
-    get id(){return this._options.id}
+    get id(){return this._options.id} 
     get state() {return this._data;  }
     get operates(){return this._operates}    
     get options(){return this._options}

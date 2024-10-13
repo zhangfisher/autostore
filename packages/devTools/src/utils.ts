@@ -30,5 +30,64 @@ export class WeakObjectMap<T extends object> {
       return weakRef ? weakRef.deref() !== undefined : false;
     }
 }
+/**
+ *  判定两个值是否相等
+ * 
+ *  如果两个值都是对象，则判断两个对象是否相等
+ * 如果两个值都是数组，则判断两个数组的值是否相等
+ * 
+ */
 
-new WeakObjectMap()   
+export function isPathEq(a:string[] | undefined,b:string[] | undefined):boolean{
+  if(!a) return false
+  if(!b) return false
+  if(a.length!==b.length) return false
+  return a.every((item,index)=>item===b[index])
+}
+/**
+ *  判断一个路径destPath是否包含另一个路径basePath判断
+ * @param basePath 
+ * @param destPath 
+ */
+export function pathStartsWith(basePath:string[],destPath:string[]){
+  if(basePath.length>destPath.length) return false
+  return basePath.every((p,i)=>{
+      return p===destPath[i]
+  })
+}
+
+export function analysisCyclePath(steps:string[],curPath:string):Map<string,number>{
+  // 使用curPath将steps分割为多个数组
+  const indexs = steps.reduce((prev,cur,index)=>{
+      if(cur===curPath) prev.push(index)            
+      return prev
+  },[] as number[])
+
+  const groups = indexs.map((v,i)=>{
+      if(i<indexs.length-1){
+          return steps.slice(v,indexs[i+1])
+      }else{
+          return steps.slice(v)
+      }        
+  })
+
+  // 找到groups相同的分组
+  const results = new Map<string,number>()
+  for(let i=0;i<groups.length;i++){
+      const group = groups[i]
+      if(group.length<2) continue
+      for(let j=i+1;j<groups.length;j++){
+          const group2 = groups[j]
+          if(isPathEq(group,group2) || pathStartsWith(group,group2)){
+              const gKey = group.join('->')
+              if(!results.has(gKey)){
+                  results.set(gKey,1)
+              }
+              const n = results.get(gKey)!                
+              results.set(gKey,n+1)
+          }
+      }
+  }
+  return results
+
+}

@@ -79,12 +79,13 @@ export class AutoStoreDevTools{
 }
 
 export function install(){
-    if(!globalThis.__AUTO_STORES__) globalThis.__AUTO_STORES__ = new AutoStoreDevTools()    
+    if(!globalThis.__AUTOSTORE_DEVTOOLS__) globalThis.__AUTOSTORE_DEVTOOLS__ = new AutoStoreDevTools()    
 } 
 
 declare global{
-    var __AUTO_STORES__ : AutoStoreDevTools
+    var __AUTOSTORE_DEVTOOLS__ : AutoStoreDevTools
 }
 
 
 install()
+
