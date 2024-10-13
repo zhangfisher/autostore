@@ -1,3 +1,4 @@
+import { AutoStore } from '../store/store';
 import { detectCyclePath } from '../utils/detectCyclePath';
 import { ComputedObject } from './computedObject';
 
@@ -16,9 +17,14 @@ export class AsyncCycleDetector{
     private tmId:any
     private _watcher:any
     path:string
+    detectOptions: Required<AutoStore<any>['options']['cycleDetect']>
     constructor(public computedObject:ComputedObject){
         this.path = computedObject.path.join('.')
         this.steps.push(this.path)
+        this.detectOptions = Object.assign({
+            interval:5000,
+            cycleCount:8
+        },computedObject.store.options.cycleDetect) as  Required<AutoStore<any>['options']['cycleDetect']>
     }
     
     /**
@@ -28,16 +34,16 @@ export class AsyncCycleDetector{
         this.running = true
         this.steps.push(path.join('.'))
         this._watcher = this.computedObject.store.watch((event)=>{
-            this.steps.push(event.path.join('.'))
+            if(this.steps.length<500){
+                this.steps.push(event.path.join('.'))
+            }
         },{operates:'read'})        
-        const detectInterval = this.computedObject.store.options.cycleDetectorInterval
-        if(detectInterval>500){
+        const { interval} = this.detectOptions
+        if(interval>=500){
             this.tmId = setTimeout(()=>{
-                this._watcher.off()                
-                if(this.detectSteps()){
-                    
-                }           
-            },detectInterval)
+                this._watcher.off()   
+                this.detectSteps()
+            },interval)
         }        
     }
     /**
@@ -59,13 +65,13 @@ export class AsyncCycleDetector{
      */
     private detectSteps(){
         const cyclePaths = detectCyclePath(this.steps,this.path)
-        if(cyclePaths.size>0){
-            const onComputedCycleDetected = this.computedObject.store.options.onComputedCycleDetected
-            for(let [paths,count] of cyclePaths){
-                if(typeof(onComputedCycleDetected )==='function'){
-                    const result = onComputedCycleDetected(paths,this.computedObject)
+        if(cyclePaths.size>0){            
+            const { onDetected,cycleCount } = this.detectOptions
+            for(let [ paths,count ] of cyclePaths){
+                if(count <=cycleCount) continue 
+                if(typeof(onDetected )==='function'){
+                    const result = onDetected(paths,this.computedObject)
                     if(result==='ignore') return false
-                    if(result==='throw') throw new Error(`Cycle detected in computed <${this.computedObject.toString()}>`)
                     if(result==='disable') {
                         this.computedObject.enable = false
                     }
@@ -75,8 +81,13 @@ export class AsyncCycleDetector{
             }
         }
     }
-    stop(){
-        clearTimeout(this.tmId)
-        this._watcher.off()
+
+    detect(){
+        if(this.steps.length>100){
+            this._watcher.off()
+            this.detectSteps()
+            this.steps=[]
+        }
     }
+
 }

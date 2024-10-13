@@ -162,13 +162,31 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param paths 
      * @returns 
      */
-    onComputedCycleDetected?: (paths:string[],computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
-    /**
-     * 检测循环依赖的时间间隔，单位ms
-     * 
-     * 0 表示不检测循环依赖
-     */
+    onComputedCycleDetected?: (paths:string,computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
     cycleDetectorInterval?:number
+    cycleDetectorCount?:number
+    /**
+     * 是否启用循环依赖检测
+     */
+    cycleDetect?:{
+        /**
+         * 当检测到循环依赖时的回调函数
+         * @param paths 
+         * @returns 
+         */
+        onDetected?:(paths:string,computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
+        /**
+         * 检测循环依赖的时间间隔，单位ms
+         * 
+         * 0 表示不检测循环依赖
+         * 默认是2000
+         */
+        interval?:number
+        /**
+         * 当检测到多少个循环时视为循环依赖         
+         */
+        cycleCount?:number
+    }
 }
 
 

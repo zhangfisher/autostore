@@ -20,6 +20,7 @@ import { StateOperate } from '../store/types';
 import { updateObjectVal } from "../utils/updateObjectVal";
 import { ASYNC_COMPUTED_VALUE, PATH_DELIMITER } from "../consts";
 import { AbortError } from "../errors"; 
+import { AsyncCycleDetector } from "./cycleDetect";
 
 type GetterRunContext = {
 	error 	      : any;
@@ -33,6 +34,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	private _isRunning: boolean = false;
 	private _defaultAbortController: AbortController | null = null; 
 	private _userAbortController?: AbortController   
+	private _cycleDetector?:AsyncCycleDetector
+	private _initialed: boolean = false;	// 是否已经初始化
 	get async() {return true}       
 	get value() {return super.value as AsyncComputedValue<Value>}
 	set value(value:AsyncComputedValue<Value>) {super.value = value	}
@@ -54,10 +57,13 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		// 比如{ total:computed(async()=>{ return 1+2 }) }，在第一次读取total时，此时的computed函数还没有初始化
 		// 如果这时候执行run，则total的值还是一个function，而run执行时会将运行的数据更新到total.value，total.loading 等值，
 		// 由于total还没有初始化为{loading,value,....}对象，所以会出错
-		setTimeout(()=>{
+		setTimeout(()=>{			
+			// 第一次运行时启动循环依赖检测
+			this.startComputedCycleDetected()
 			if (this.options.immediate===true || (this.options.immediate==='auto' && this.options.initial===undefined)) {
-				this.run({first:true});
+				this.run();
 			}
+
 		},0)		
 	}
 
@@ -107,13 +113,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * 启动循环依赖运行检测
 	 */
 	private startComputedCycleDetected(){
-		const paths:string[]= []
-		if(typeof(this.store.options.onComputedCycleDetected)==='function'){
-			const watcher = this.store.watch(({path})=>{
-				paths.push(path.join('.'))
-				
-			},{operates:'read'})
-		}
+		this._cycleDetector = new AsyncCycleDetector(this)
+		this._cycleDetector.start(this.path)
 	}
 	/**
 	 *
@@ -121,7 +122,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 *
 	 */
 	async run(options?: RuntimeComputedOptions) {
-		const { first = false } = options ?? {};		
+		
+		const first = !this._initialed 	// 第一次运行标志
+		
 		// 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
 		if (this.isDisable(options?.enable)) {
 			this.store.log(() => `Async computed <${this.toString()}> is disabled`, "warn");
@@ -129,6 +132,10 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		} 
 
 		!first && this.store.log(() => `Run async computed for : ${this.toString()}`);
+		
+		this._initialed = true;
+
+		this._cycleDetector?.detect()
 
 		// 2. 合成最终的配置参数
 		const finalComputedOptions = (options ? Object.assign(
