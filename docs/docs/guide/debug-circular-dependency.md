@@ -58,66 +58,45 @@ export default ()=>{
 
 ## 异步循环依赖检测
 
-异步循环依赖就比较麻烦，无法像同步循环一样构建时自动检测，而是通过`computedOptions.reentry`来控制计算函数的重入次数，当重入次数超过最大重入次数时，就出错。
+异步循环依赖就比较麻烦，无法像同步循环一样构建时自动检测。因为异步计算属性的计算函数是异步的，很容易在多个异步计算时形成很复杂的循环调用链。
+
+`AutoStore`提供了`cycleDetect`扩展，用来帮助检测异步计算属性的循环依赖。但是由于进行循环依赖检测需要一定的成本开消，
+所以该功能是作为一个扩展，需要手动安装。
+ 
+### 启用检测
+
+```ts | pure
+ import { installCycleDetectExtend }  from '@autostorejs/devtools'
+ 
+installCycleDetectExtend({
+  onDetected:(paths)=>{
+    console.error("发现循环依赖:",paths)
+    return 'disable'
+  }  
+})
+
+```
+
+### 示例
 
 ```tsx
 /**
- * title: 更新x值
+ * title: 打开控制台观察信息
  * description: 由于`a`,`b`存在循环依赖，内部会忽略`a`,`b`的计算，导致`a`,`b`的值为无法计算。
  * defaultShowCode: false
  */
 import { useStore,computed } from '@autostorejs/react';
 import { Box,ColorBlock,Button,JsonView } from "x-react-components"
 import { useState,useRef } from "react"
+import { installCycleDetectExtend }  from '@autostorejs/devtools'
  
-export default ()=>{  
-  const [error, setError] = useState(null);
-  
-  let store = useStore({ 
-      x:1,
-      a: computed(async (scope:any)=>{
-        return scope.b.value + scope.x
-      },['b','x']),
-      b: computed(async (scope:any)=>{
-        return scope.a.value + + scope.x
-      },['a','x'])
-    },{
-      debug:true,
-      // 当计算函数达到最大重入时会触发此回调
-      onComputedCancel:({path,reason})=>{
-        setError(reason)
-      }
-    }) 
-  const [data] = store.useState()
-  return <div>
-    <ColorBlock name="x">
-        <Button onClick={()=>store.state.x--}>-</Button>
-        {store.$('x')}
-        <Button onClick={()=>store.state.x++}>+</Button>
-    </ColorBlock>
-    <div style={{color:'red'}}>{error}</div>
-    <JsonView data={data}/>
-    </div>
-}
+installCycleDetectExtend({
+  onDetected:(paths)=>{
+    console.error("发现循环依赖:",paths)
+    return 'disable'
+  }  
+})
 
-```          
-
-**注意：**
-
-- 默认情况下，`computedOptions.reentry=0`，即不允许在计算函数重入。因此，当上述例子中的`a`和`b`计算属性存在循环依赖关系时，计算函数就必会必然会反复重入，这时由于`reentry`的限制就会退出计算函数，从而不会进入无限循环。但是副作用就是`a`和`b`的值将无法计算，所以上述例子中`a`和`b`的值为`null`。
-- 如果需要允许计算函数重入，可以通过`computedOptions.reentry`为一个合适的值,当重入次数超过最大重入次数时，就退出错错。。
-
-
-```tsx
-/**
- * title: 更新x值
- * description: 由于`a`,`b`存在循环依赖，内部会忽略`a`,`b`的计算，导致`a`,`b`的值为无法计算。
- * defaultShowCode: false
- */
-import { useStore,computed } from '@autostorejs/react';
-import { Box,ColorBlock,Button,JsonView } from "x-react-components"
-import { useState,useRef } from "react"
- 
 export default ()=>{  
   const [error, setError] = useState(null);
   
@@ -130,14 +109,7 @@ export default ()=>{
         return scope.a.value + + scope.x
       },['a','x'])
     },{
-      debug:true,
-      // 指定计算函数最大重入次数
-      reentry:10,
-      // 当计算函数达到最大重入时会触发此回调
-      onComputedCancel:({path,reason})=>{
-        debugger
-        setError(reason)
-      }
+      debug:true
     }) 
   const [ data ] = store.useState()
   return <div>
@@ -152,3 +124,33 @@ export default ()=>{
 }
 
 ```          
+
+- 在控制台可以发现`发现循环依赖: a->b->a.loading->a.timeout->a.retry->a.error->a.value->a.progress->b.loading->b.timeout->b.retry->b.error->b.value->b.progress->x`的信息，这是循环依赖的路径。
+- `onDetected`回调函数返回`disable`代表当检测到循环依赖后，会禁用该计算属性，这样就可以避免循环依赖导致的问题。
+
+### 基本原理
+
+异步循环依赖检测比较复杂，特别是在异步计算属性中，很容易形成很复杂的循环调用链。
+
+循环依赖检测的基本原理如下：
+
+- 安装`cycleDetect`扩展后，会对每个异步计算属性的`run`函数进行包装。
+- 当计算属性第一次运行时，执行`store.wath`记录侦听所有的`get`读操作事件。如果存在循环依赖，就会执行计算属性的`run`函数，从而可以收集到大量的`get`事件。
+- 当侦听到指定`maxOperates`数量的`get`事件后,进行分析，找出事件列表中的循环依赖路径即可。
+- 然后执行`onDetected`回调函数，由开发者决定如何处理：
+  - `return 'disable'`： 代表禁用该计算属性。
+  - `return 'ignore'`:  代表忽略
+  - 其他会触发错误
+
+### 配置参数
+
+`installCycleDetectExtend`具有以下配置参数：
+
+| 参数        | 类型     | 默认值 | 说明                                                        |
+| ----------- | -------- | ------ | ----------------------------------------------------------- |
+| `maxOperates` | `number`   | `200`    | 最大操作数，从开始运行计算函数后，当收集到此数量的操作事件后开如分析。|
+| `onDetected`  | `(paths:string)=>'disable' \| 'ignore' \| void` | -      | 当检测到循环依赖时的回调函数，返回`disable`代表禁用该计算属性，返回`ignore`代表忽略,其他触发错误。|
+
+
+
+

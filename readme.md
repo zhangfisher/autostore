@@ -14,7 +14,7 @@ Very easy and elegant state management library. It is based on proxy and provide
 - **Asynchronous Computation**: Powerful asynchronous computation control, supports advanced features like `timeout, retry, cancel, countdown, progress`.
 - **State watch**: Can listen to operations on state objects and arrays such as `get/set/delete/insert/update`.
 - **Signal Components**: Supports `signal` mechanism, enabling fine-grained component updates.
-- **Debugging**: Supports `Redux DevTools Extension` for `chrome`, making it easy to debug state changes.
+- **DevTools**: Supports `Redux DevTools Extension` for `chrome`, making it easy to debug state changes.
 - **Nested State**: Supports arbitrarily deep nested states, eliminating concerns about the complexity of state management.
 - **Form Binding**: Powerful and simple two-way form binding, making data collection easy and fast.
 - **Circular Dependency**: Helps detect circular dependencies to reduce faults.

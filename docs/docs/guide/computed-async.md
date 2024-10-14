@@ -191,7 +191,7 @@ export default ()=>{
 
 ### 执行进度
 
-异步计算属性允许控制计算的进度，执行进度保存在`AsyncComputedObject`对象的`progress`属性中，当`progress`为`0-100`时，代表异步计算的进度。开发者可以根据进度值来展示进度条等。
+异步计算属性允许控制计算的进度，执行进度保存在`AsyncComputedValue`对象的`progress`属性中，当`progress`为`0-100`时，代表异步计算的进度。开发者可以根据进度值来展示进度条等。
 
 **使用方法如下：**
 
@@ -576,7 +576,7 @@ export default ()=>{
 
 默认情况下，每当依赖发生变化时均会执行异步计算函数，在连续变化时就会重复执行异步计算函数。
 
-在声明时，允许指定`options.noReentry=true`来防止重入，如果重入则只会在控制台显示一个警告。
+在声明时，允许指定`options.reentry=false`来防止重入，如果重入则只会在控制台显示一个警告。
 
 
 <Divider></Divider>

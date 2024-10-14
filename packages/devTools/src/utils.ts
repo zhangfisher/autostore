@@ -56,7 +56,7 @@ export function pathStartsWith(basePath:string[],destPath:string[]){
   })
 }
 
-export function analysisCyclePath(steps:string[],curPath:string):Map<string,number>{
+export function analysisCyclePath(steps:string[],curPath:string):[string | undefined,number] {
   // 使用curPath将steps分割为多个数组
   const indexs = steps.reduce((prev,cur,index)=>{
       if(cur===curPath) prev.push(index)            
@@ -88,6 +88,16 @@ export function analysisCyclePath(steps:string[],curPath:string):Map<string,numb
           }
       }
   }
-  return results
+  // 找到results里面路径最长的
+  let count = 0
+  let paths = undefined
+  results.forEach((v,k)=>{
+      if(v<3) return
+      if(k.length>count){
+        paths = k
+        count = v          
+      }
+  }) 
+  return [paths,count]
 
 }

@@ -194,64 +194,35 @@ describe("trace依赖关系管理",()=>{
         })
     })
 
-    test("重入maxReentry=0时异步循环依赖处理",()=>{
-        return new Promise<void>(resolve=>{
-            const cancelList:string[] = []
-            const store = new AutoStore({ 
-                x:1,
-                a: computed(async (scope:any)=>{
-                  return scope.b.value + scope.x
-                },['b','x']),
-                b: computed(async (scope:any)=>{
-                  return scope.a.value + + scope.x
-                },['a','x'])
-              },{
-                reentry:0,
-                // 当计算函数达到最大重入时会触发此回调
-                onComputedCancel:({path,reason})=>{
-                    cancelList.push(path.join("."))
-                    expect(reason).toBe("reentry")
-                }
-              }) 
-            setTimeout(()=>{
-                store.state.x = 2
-                setTimeout(()=>{
-                    store.state.x = 3
-                    setTimeout(()=>{
-                        resolve()
-                    },1000)
-                },1000)
-            },500)            
-        })        
-    }, { timeout: Infinity })
-    test("重入maxReentry=10时异步循环依赖处理",()=>{
-        return new Promise<void>(resolve=>{
-            const cancelList:string[] = []
-            const store = new AutoStore({ 
-                x:1,
-                a: computed(async (scope:any)=>{
-                  return scope.b.value + scope.x
-                },['b','x']),
-                b: computed(async (scope:any)=>{
-                  return scope.a.value + + scope.x
-                },['a','x'])
-              },{
-                reentry:10,
-                // 当计算函数达到最大重入时会触发此回调
-                onComputedCancel:({path,reason})=>{
-                    cancelList.push(path.join("."))
-                    expect(reason).toBe("reentry")
-                }
-              }) 
-            setTimeout(()=>{
-                store.state.x = 2
-                setTimeout(()=>{
-                    store.state.x = 3
-                    setTimeout(()=>{
-                        resolve()
-                    },1000)
-                },1000)
-            },500)            
-        })        
-    }, { timeout: Infinity })
+    // test("重入maxReentry=0时异步循环依赖处理",()=>{
+    //     return new Promise<void>(resolve=>{
+    //         const cancelList:string[] = []
+    //         const store = new AutoStore({ 
+    //             x:1,
+    //             a: computed(async (scope:any)=>{
+    //               return scope.b.value + scope.x
+    //             },['b','x']),
+    //             b: computed(async (scope:any)=>{
+    //               return scope.a.value + + scope.x
+    //             },['a','x'])
+    //           },{
+    //             reentry:0,
+    //             // 当计算函数达到最大重入时会触发此回调
+    //             onComputedCancel:({path,reason})=>{
+    //                 cancelList.push(path.join("."))
+    //                 expect(reason).toBe("reentry")
+    //             }
+    //           }) 
+    //         setTimeout(()=>{
+    //             store.state.x = 2
+    //             setTimeout(()=>{
+    //                 store.state.x = 3
+    //                 setTimeout(()=>{
+    //                     resolve()
+    //                 },1000)
+    //             },1000)
+    //         },500)            
+    //     })        
+    // }, { timeout: Infinity })
+
 })

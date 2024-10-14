@@ -11,18 +11,25 @@ import { analysisCyclePath } from "./utils"
 
 export type CycleDetectExtendOptions = {    
     /**
-     * 检测循环依赖的时间间隔，单位ms
-     * 0 表示不检测循环依赖
-     * 默认是2000
-     */
-    interval?:number
-    /**
      * 当检测到多少个循环时视为循环依赖         
      */
     cycleCount?:number
-
-
+    /**
+     * 
+     * 当检测时间操作数量达到此值时，停止检测
+     * 
+     */
     maxOpereates?:number
+    /**
+     * 指定仅作用于指定的store
+     * =[]代表所有store均生效
+     */
+    stores:string[]
+    /**
+     * 
+     */
+    onDetected?:(paths:string[],computedObject:any)=>'ignore'|'throw'|'disable' 
+
 }
 
 /**
@@ -35,8 +42,7 @@ export type CycleDetectExtendOptions = {
  */
 export class AsyncCycleDetector{
     steps:string[] = []
-    running:boolean = false
-    private tmId:any
+    running:boolean = false 
     private _watcher:any
     path:string
     options: Record<string,any>
@@ -44,9 +50,9 @@ export class AsyncCycleDetector{
         this.path = computedObject.path.join('.')
         this.steps.push(this.path)
         this.options = Object.assign({
-            interval    : 3000,
             cycleCount  : 8,
-            maxOpereates: 100
+            maxOpereates: 200,
+            stores:[]
         },options)
     }    
     /**
@@ -79,26 +85,21 @@ export class AsyncCycleDetector{
      * @returns 
      */
     private analysisCycleSteps(){
-        const cyclePaths = analysisCyclePath(this.steps,this.path)
-        if(cyclePaths.size>0){            
-            const { onDetected,cycleCount } = this.options
-            for(let [ paths,count ] of cyclePaths){
-                if(count <=cycleCount) continue 
-                if(typeof(onDetected )==='function'){
-                    const result = onDetected(paths,this.computedObject)
-                    if(result==='ignore') return 
-                    if(result==='throw') {
-                        throw new Error(`Cycle detected in computed <${this.computedObject.toString()}>`)
-                    }
-                    if(result==='disable') {
-                        this.computedObject.enable = false
-                    }
-                }else{
-                    this.computedObject.store.log(`Cycle detected in computed <${this.computedObject.toString()}>`,'warn')
-                }    
+        const [paths,count] = analysisCyclePath(this.steps,this.path)
+        const { onDetected,cycleCount } = this.options
+        if(count<cycleCount) return
+        this.computedObject.store.log(`CycleDepend detected in <${this.computedObject.toString()}>: ${paths}`,'warn')
+        if(typeof(onDetected )==='function'){
+            const result = onDetected(paths,this.computedObject)
+            if(result==='ignore'){
+                return
+            }else if(result==='disable') {
+                this.computedObject.enable = false
+            }else{
+                throw new Error(`CycleDepend found in <${this.computedObject.toString()}>: ${paths}`)
             }
-        }
-    }
+        }    
+    } 
     detect(){
         if(this.steps.length>this.options.maxOpereates){
             this._watcher.off()
@@ -115,7 +116,10 @@ export class AsyncCycleDetector{
 function createCycleDetectExtend(options?:CycleDetectExtendOptions){
     return function cycleDetectExtend(store:any){
         const { onObserverCreated } = store.options
-        if(typeof(onObserverCreated)!=='function'){
+        if(typeof(onObserverCreated) ==='function'){ 
+            // 当store的onObserverCreated选项已经配置时，cycleDetectExtend不能生效
+            store.log(`Store<${store.id}> onObserverCreated is already configured, cycleDetectExtend is disabled`,"warn")
+        }else{
             store.options.onObserverCreated = (observerObject:any)=>{
                 // 只对异步计算属性进行循环依赖检测
                 if(observerObject.type==='computed' && observerObject.async){
@@ -133,13 +137,14 @@ function createCycleDetectExtend(options?:CycleDetectExtendOptions){
                     }).bind(observerObject)
                 }
             }
+            store.log("cycleDetectExtend is already installed")
         }
     } 
 
 }
 
 
-export function installCycleDetectExtend(options?:Record<string,any>){
+export function installCycleDetectExtend(options?:CycleDetectExtendOptions){
     // @ts-ignore
     if(!globalThis.__AUTOSTORE_EXTENDS__){
         // @ts-ignore
@@ -149,37 +154,4 @@ export function installCycleDetectExtend(options?:Record<string,any>){
     globalThis.__AUTOSTORE_EXTENDS__.push(createCycleDetectExtend(options))
  
 }
-
-
-
-
-    // /**
-    //  * 当检测到循环依赖时的回调函数
-    //  * @param paths 
-    //  * @returns 
-    //  */
-    // onComputedCycleDetected?: (paths:string,computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
-    // cycleDetectorInterval?:number
-    // cycleDetectorCount?:number
-    // /**
-    //  * 是否启用循环依赖检测
-    //  */
-    // cycleDetect?:{
-    //     /**
-    //      * 当检测到循环依赖时的回调函数
-    //      * @param paths 
-    //      * @returns 
-    //      */
-    //     onDetected?:(paths:string,computedObject:ComputedObject)=>'ignore' | 'throw' | 'disable'
-    //     /**
-    //      * 检测循环依赖的时间间隔，单位ms
-    //      * 
-    //      * 0 表示不检测循环依赖
-    //      * 默认是2000
-    //      */
-    //     interval?:number
-    //     /**
-    //      * 当检测到多少个循环时视为循环依赖         
-    //      */
-    //     cycleCount?:number
-    // }
+ 

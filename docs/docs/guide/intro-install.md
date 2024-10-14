@@ -13,7 +13,7 @@ toc: content
 `AutoStore`共包括三个包：
 
 - `autostore`: 核心包
-- `@autostorejs/reace`: 面向`React`开发者
+- `@autostorejs/react`: 面向`React`开发者
 - `@autostorejs/devtools`: 使用`Redux DevTools`调试`AutoStore`
 
 
@@ -42,13 +42,13 @@ pnpm add autostore
 :::
 
 
-## @autostorejs/reace
+## @autostorejs/react
 
 :::warning{title=注意}
 如果您是`React`开发者，只需要安装`@autostorejs/react`即可。
 :::
 
-`@autostorejs/react`已经集成了`autostore`包的所有功能，不需要额外安装`autostore`。
+`@autostorejs/react`已经集成了`autostore`包的所有功能，**不需要额外安装`autostore`**。
 
 :::code-group
 

@@ -111,7 +111,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 */
 	async run(options?: RuntimeComputedOptions) {
 		
-		const { first } =options?? {}
+		const { first } = options?? {}
 		
 		// 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
 		if (this.isDisable(options?.enable)) {
