@@ -90,7 +90,9 @@ type ComputedDepend = 'CURRENT' | 'ROOT' | 'PARENT'
 
 `相对路径`的相对指的是`computed`函数所在的对象，例如：
 
-- **相对当前对象**，这里的当前指的是`computed`函数所在的对象，即`total`所在的对象是`order`对象。
+- **相对当前对象**
+
+`CURRENT`这里的当前指的是`computed`函数所在的对象，即`total`所在的对象是`order`对象。
 
 ```ts | pure {8-9} 
 const state = {
@@ -107,7 +109,9 @@ const state = {
 }
 ```
 
-- **相对父对象**，即`total`所在的对象是`order`对象，`..`表示父对象，指向的就是根对象.
+- **相对父对象**
+
+即`total`所在的对象是`order`对象，`..`表示父对象，指向的就是根对象.
 
 
 ```ts | pure {8-9} 
@@ -128,6 +132,19 @@ const state = {
 :::warning{title=特别注意}
 相对的是`computed`函数声明的状态所在的对象，上例中的`total`所在的对象是`order`而不是`total`。
 :::
+
+## 通配符依赖
+
+在指定依赖时可以通过`*`通配符来匹配路径中任意字符，如:
+
+- ✅ `orders.*.total` 匹配`orders`的任意对象的`total`属性。  
+- ✅ `orders.*` 匹配`orders`下的任意成员。
+- ✅ `orders.*.address.*.city` 匹配`orders`的任意对象的`address`的任意对象的`city`属性。
+
+:::success{title=示例}
+在快速入门的示例中，我们就使用`orders.*.total`来匹配`orders`数组成员中的`total`属性。
+:::
+
 
 ## 收集依赖
 
@@ -167,7 +184,7 @@ const state = {
 
 ### 异步依赖收集
 
-很不幸，异步计算属性的依赖收集无法像同步计算属性那样自动完成，需要手动指定依赖路径。
+异步计算属性的依赖收集无法像同步计算属性那样自动完成，需要手动指定依赖路径。
 
 ```ts | pure {5-7}
 const state = {
