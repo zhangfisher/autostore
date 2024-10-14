@@ -78,6 +78,10 @@ const store = createStore({
 });
 ```
 
+
+- `total`是一个计算属性，其值是`orders`的`total`的和，在创建时会自动收集依赖，当`price`或`count`变化时会自动重新计算。
+
+
 **运行效果如下：**
 
 ```tsx  
@@ -152,6 +156,9 @@ const store = createStore({
 
 });
 ```
+
+注意： `discount`是一个异步计算属性，其计算函数是一个异步函数，其返回值会写入`store.state.discount`，这就是`AutoStore`与其他状态库最大不同之处，即原地计算。
+
 
 **运行效果如下：**
 
