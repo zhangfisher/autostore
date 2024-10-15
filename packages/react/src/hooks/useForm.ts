@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import {  Dict, getVal, isFunction, PATH_DELIMITER, pathStartsWith, setVal } from "autostore" 
 import type { ReactAutoStore } from "../store"
-import { UseFormOptions } from "./types"
+import { UseFormOptions, UseFormValidateResult } from "./types"
  
 const EMPTY_VALUE= Symbol("empty")
 
@@ -49,18 +49,72 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                         (  typeof(args[0])==='string' ? args[0].split(PATH_DELIMITER) 
                             : (Array.isArray(args[0]) ? args[0] : [])
                         ) : []
-        const options = Object.assign({
+        const options:UseFormOptions = Object.assign({
             debounce:0
         },args.length ===1 ? 
             (typeof(args[0])==='object' ? args[0] : null) 
             : (args.length >=2 ? (typeof(args[1])==='object' ? args[1] : null)  : null)
-        ) as UseFormOptions
+        ) 
 
                         
         const initial = useRef<boolean>(false)
         const inputs = useRef<Map<string,any>>()
         const formRef = useRef<HTMLFormElement>(null)
-        
+        // 对输入值进行校验
+        const onValidate = useCallback((path:string[],value:any,input:HTMLElement)=>{
+            const hasValidate = options.validate && isFunction(options.validate)            
+            const valid = { value:true,style:"color:red;border:1px solid red;" } as UseFormValidateResult
+            
+            if(hasValidate){
+                const spath = path.join(PATH_DELIMITER)
+                const v = options.validate!(spath,value,input)
+                if(typeof(v)==='boolean'){
+                    valid.value = v
+                }else if(typeof(v)==='object'){
+                    Object.assign(valid,v)
+                }
+                const inputStyle = isFunction(valid.style) ? valid.style(spath,value,input): valid.style
+                if(typeof(inputStyle)==='string'){
+                    if(valid.value){ 
+                        removeInputStyle(input,inputStyle)
+                    }else{
+                        insertInputStyle(input,inputStyle)
+                    }  
+                }
+                const validateMessage = input.dataset.validateMessage
+                // 获取错误信息的元素,如果没有则创建一个
+                const getMessageElement=():HTMLElement | undefined=>{
+                    if(!validateMessage) return
+                    const msgEl = valid.message && typeof(valid.message)==='function' ?
+                            valid.message(spath,validateMessage,input)  : input.nextSibling     
+                    if(msgEl && msgEl.nodeType===1){
+                        return  msgEl as HTMLElement
+                    }else{
+                        const span = document.createElement('span')
+                        span.style.color = 'red'
+                        span.classList.add('invalid') 
+                        if (input.nextSibling) {
+                            input.parentNode?.insertBefore(span, input.nextSibling);
+                        } else {
+                            input.parentNode?.appendChild(span);
+                        }
+                        return span
+                    }                    
+                }
+                const msgElement = getMessageElement()
+                // 当校验失败时呈现错误信息现
+                if(valid.value){        
+                    if(msgElement) msgElement.style.display='none'
+                }else{
+                    if(validateMessage && msgElement){
+                        msgElement.style.display='block'
+                        msgElement.innerHTML = validateMessage 
+                    }
+                }
+            }
+            return valid
+        },[])
+
         useEffect(()=>{
             const form = formRef.current
             if(!form) return
@@ -78,6 +132,7 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                         input.value = value
                     }
                     inputs.current!.set(path.join(PATH_DELIMITER),input)
+                    onValidate(path,value,input)
                 })
                 initial.current = true
             }            
@@ -101,25 +156,12 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                 const name = input.name
                 if(!name) return
                 const path = [...entry,...name.split(PATH_DELIMITER)]
-                const newVal = input.type === 'checkbox' ? input.checked : input.value   
-                
-                const valid = { result:true,style:"color:red;border:1px solid red;" } as { result:boolean,tips?:string,style?:string }
-                const hasValidate = options.validate && isFunction(options.validate)
-                if(hasValidate){
-                    const v = options.validate!(path.join(PATH_DELIMITER),newVal,input)
-                    if(typeof(v)==='boolean'){
-                        valid.result = v
-                    }else if(typeof(v)==='object'){
-                        Object.assign(valid,v)
-                    }
-                }   
-                if(valid.result){ 
+                const newVal = input.type === 'checkbox' ? input.checked : input.value                   
+                const valid = onValidate(path,newVal,input)                
+                if(valid.value){ 
                     store.update((state)=>{
                         setVal(state,path,newVal)
-                    },{peep:true})   
-                    if(hasValidate) removeInputStyle(input,valid.style)
-                }else if(typeof(options.validate)==='function'){                        
-                    if(hasValidate) insertInputStyle(input,valid.style)
+                    },{peep:true})                   
                 }                
             }
             // 3. 侦听来自表单输入的变更

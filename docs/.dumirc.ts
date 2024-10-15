@@ -13,7 +13,9 @@ export default defineConfig({
     logo:"/autostore/logo.png",
     lastUpdated: true,
     socialLinks: {
-      github: 'https://github.com/zhangfisher/autostore'
+      github: 'https://github.com/zhangfisher/autostore',
+      // @ts-ignore
+      // gitee:'https://gitee.com/zhangfisher/autostore'
     },
     footer:
       'Made with<span style="color: rgb(255, 255, 255);">❤</span>by <span>ZhangFisher | Copyright © 2024-present</span>',

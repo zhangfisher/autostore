@@ -93,9 +93,18 @@ export type UseFormResult={
     style:CSSProperties
 }
 
+export type UseFormValidateStyle = (path:string,value:any,input:HTMLElement)=>string
+export type UseFormValidateMessage = (path:string,message:string,input:HTMLElement)=>HTMLElement
+export type UseFormValidateResult = {
+    value:boolean
+    // 用来控制校验信息的显示
+    message?:UseFormValidateMessage
+    style?:string | UseFormValidateStyle
+}  
+
 export type UseFormOptions={
     debounce?:number            // 启用防抖
-    validate?:(path:string,value:any,input:HTMLElement)=>boolean | {result:boolean,tips?:string,style?:string}  
+    validate?:(path:string,value:any,input:HTMLElement)=>boolean | UseFormValidateResult
 }
 
 export interface UseFormType {
