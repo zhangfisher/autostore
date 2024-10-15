@@ -56,7 +56,7 @@ const myform = useForm()
 
 ```tsx   
 import { useStore } from '@autostorejs/react';
-import { Layout,ColorBlock,Button,Input,Box,CheckBox,JsonView,Select } from "x-react-components"
+import { TextArea,Layout,ColorBlock,Button,Input,Box,CheckBox,JsonView,Select } from "x-react-components"
  
 export default ()=>{
 
@@ -86,7 +86,7 @@ export default ()=>{
               { title:"Doctor", value:2 },
               { title:"Teacher", value:3 }
           ]}/>
-          <textarea name="user.resume"/>
+          <TextArea name="user.resume" label="Resume"/>
           <CheckBox name="user.vip" label="VIP"/>
         </form>
         <Button onClick={()=>{

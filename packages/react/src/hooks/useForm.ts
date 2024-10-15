@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react"
 import {  Dict, getVal, PATH_DELIMITER, pathStartsWith, setVal } from "autostore" 
 import type { ReactAutoStore } from "../store"
+import { UseFormOptions } from "./types"
  
 const EMPTY_VALUE= Symbol("empty")
 /**
@@ -27,7 +28,7 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                         (   typeof(args[0])==='string' ? args[0].split(PATH_DELIMITER) 
                             : (Array.isArray(args[0]) ? args[0] : [])
                         ) : []
-        //const options = args.length > 1 ? args[1] : {} as UseFormOptions
+        const options = args.length > 1 ? args[1] : {} as UseFormOptions
                         
         const initial = useRef<boolean>(false)
         const inputs = useRef<Map<string,any>>()
@@ -66,6 +67,8 @@ export function createUseForm<State extends Dict>(store:ReactAutoStore<State>){
                     }
                 }                
             })
+            
+            // 输入控件变更时的响应
             const onChange = (e:any)=>{
                 const input = e.target
                 const name = input.name

@@ -1,5 +1,6 @@
 import { AsyncComputedValue, ComputedState, Dict, ExtendAsyncOptions, WatchListener, WatchListenerOptions } from "autostore"
 import { InputBindings } from "../form"
+import { debounce } from '../utils/debounce';
 
 // ********** useDeps ********** 
 
@@ -92,7 +93,8 @@ export type UseFormResult={
 }
 
 export type UseFormOptions={
-
+    debounce?:number            // 启用防抖
+    validate?:(path:string[],value:any)=>boolean
 }
 
 export interface UseFormType {

@@ -8,25 +8,29 @@ export type TextAreaProps = React.PropsWithChildren<HTMLInputElement & {
 }>
 
 const TextAreaStyle = styled<TextAreaProps>({
-    padding:"4px",
-    margin:"4px",
+    padding:"0px", 
     display:"flex",
-    alignItems:"center",
-    cursor:"pointer",
     "&>label":{
-        padding:"4px",
-        userSelect:"none",       
-        cursor:"pointer",
+        color: "#666",
+        fontSize: "14px",
+        marginBottom: "4px",
+        flexShrink: 0,
+        width: "100px",
     },
     "&>textarea":{
-        margin:"0px",
-        padding:"0px",
-        width:"1.2em",
-        height:"1.2em",
-        cursor:"pointer",
+        margin: "4px",
+        padding: "8px",
+        minHeight:"80px",
+        borderRadius: "4px",
+        border: "1px solid #bbb",
+        flexGrow:1,        
+        "&:focus":{
+            outline:"none",
+            boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"
+        }
     },
 },{
-    className:"x-TextArea"
+    className:"x-textArea"
 })
 
 
@@ -40,7 +44,7 @@ export const TextArea:React.FC<TextAreaProps> = (props)=>{
     return <div className={TextAreaStyle.className} style={TextAreaStyle.getStyle(props)}>
                <label htmlFor={id}>{label}</label>    
               {/* @ts-ignore */}
-              <textarea {...props} id={id} type="TextArea">                      
+              <textarea {...props} id={id}>                      
             </textarea>
     </div>    
 }

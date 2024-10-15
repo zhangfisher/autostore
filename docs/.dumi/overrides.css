@@ -72,13 +72,22 @@ ul.dumi-default-toc > li[data-depth=2] {
 ul.dumi-default-toc > li[data-depth=3] {
   padding-left: 12px;
 }
+.dumi-default-hero {
+  background: white;
+  margin-bottom: 0;
+  padding-top: 200px;
+  padding-bottom: 3em;
+  height: auto;
+}
+.dumi-default-features {
+  background-color: white;
+  padding-bottom: 4em;
+}
 .dumi-default-features .dumi-default-features-item {
-  border: 1px solid #aaa;
   -webkit-border-radius: 5px;
           border-radius: 5px;
   padding: 1em;
-  margin: 1em;
-  height: 136px;
+  height: 160px;
   background-color: #e5e5e5;
   display: -webkit-box;
   display: -webkit-flex;
@@ -89,6 +98,8 @@ ul.dumi-default-toc > li[data-depth=3] {
   -webkit-flex-direction: column;
       -ms-flex-direction: column;
           flex-direction: column;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
 }
 .dumi-default-features .dumi-default-features-item > i {
   font-size: 18px;
@@ -101,4 +112,16 @@ ul.dumi-default-toc > li[data-depth=3] {
 }
 .dumi-default-features .dumi-default-features-item > p {
   margin: 4px;
+}
+.dumi-default-tabs {
+  border: 1px solid #eee;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+.dumi-default-tabs .dumi-default-tabs-tab {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+.dumi-default-footer {
+  margin: 1em;
 }
