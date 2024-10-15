@@ -8,32 +8,43 @@
 
 
 
-import React from "react"
-import { RichLabel } from "./RichLabel"
-
+import React from "react" 
+// @ts-ignore
+import jsonPrettyHtml from "json-pretty-html"
+import { styled } from "flexstyled"
+ 
 export type JsonViewProps  = React.PropsWithChildren<{
     data?:any
-}>
-    // 转义HTML特殊字符
-const escapeHtml = (str: string) => str.replace(/&/g, "&amp;")
-                                        .replace(/</g, "&lt;")
-                                        .replace(/>/g, "&gt;")
-                                        .replace(/"/g, "&quot;")
-                                        .replace(/'/g, "&#039;");
+}> 
+
+const JSONStyle = styled({
+    "&>.json-pretty":{
+        "& .json-key":{
+            color:"#5a5a5ac6",
+            padding:"2px"
+        },
+        "& .json-string":{
+            color:"#009817",
+            padding:"2px"
+        },
+        "& .json-number":{
+            color:"#2a00c0",
+            padding:"2px"
+        },
+        "& .json-boolean":{
+            color:"red"
+        },
+
+    } 
+},{
+    className:"x-json-view",
+})
 
 export const JsonView:React.FC<JsonViewProps> =(props:JsonViewProps)=>{
-    const { data } = props
-    const json = escapeHtml(data ? JSON.stringify(data,null,4) : String(props.children))
-    return <RichLabel text={json} rules={{
-            "color:green;":/true|false/g,                         // 布尔值            
-            "color:#222;padding:4px;": /"(.*?)"/g,            // 键    
-            "color:#bd0081;padding:4px;":/(?!=:\s*)[\d.]+/g,       // 数字
-            "color:#888;padding:4px;":/(null|defined)/g,            
-            "color:#918213;paddingRight:4px;": /^\{|\}$/g,          // 大括号    
-        }}
-        style={{
-
-        }}
-    />
+    const { data } = props 
+    return <div className={JSONStyle.className} 
+                dangerouslySetInnerHTML={{__html:jsonPrettyHtml(data)}}
+            /> 
+    
 }
 

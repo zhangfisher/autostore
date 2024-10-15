@@ -32,6 +32,43 @@ interface UseFormType {
 
 ```
 
+## 工作原理
+
+`useForm`的工作原理如下：
+
+### 1. `ref`绑定
+
+`useForm`返回一个`{ref,...}`对象，其中`ref`是一个`React.RefObject<HTMLFormElement>`对象。当我们在表单上使用`{...myform}`时，`ref`会自动绑定到`form`元素上。这是工作的基础。
+
+
+### 2. 初始化表单
+
+`useForm`内部的`useEffect`会自动初始化表单.
+
+- 由于`ref`绑定到`form`元素上，通过`ref.current`可以访问到`form`元素
+- 然后通过`ref.current.querySelectorAll('input,textarea,select')`获取到所有表单内部的`input`,`textarea`,`select`元素
+- 依次遍历这些元素，根据`name`属性，从`state`中获取对应的值，并设置到表单元素上。
+
+### 3. 订阅变更事件
+
+要实现双向绑定，我们需要：
+
+- **监听表单元素的`change`事件**
+
+由于表单事件`onchange`会冒泡，所以我们只需要在`form`元素上监听`change`事件即可。
+
+所以通过`ref.current.addEventListener('input',onChange)`就可以在表单元素变化时触发捕获到`onChange`事件。
+
+然后在`onChange`事件中，我们可以通过`event.target`获取到表单元素.
+
+最后将表单元素的值更新到`state[event.target.name]`。
+
+- **监听`state`的变化**
+
+使用`store.watch`监听`state`的变化，当`state`变化时，将数据更新到`name=<path>`的表单元素上即可。
+
+
+
 ## 基本用法
 
 `useFrom`返回一个可以绑定到`form`元素的对象，然后只需要将之应用到`form`元素上即可。
@@ -111,54 +148,22 @@ export default ()=>{
 ```
 
 
-## 工作原理
-
-`useForm`的工作原理如下：
-
-### 1. `ref`绑定
-
-`useForm`返回一个`{ref,...}`对象，其中`ref`是一个`React.RefObject<HTMLFormElement>`对象。当我们在表单上使用`{...myform}`时，`ref`会自动绑定到`form`元素上。这是工作的基础。
-
-
-### 2. 初始化表单
-
-`useForm`内部的`useEffect`会自动初始化表单.
-
-- 由于`ref`绑定到`form`元素上，通过`ref.current`可以访问到`form`元素
-- 然后通过`ref.current.querySelectorAll('input,textarea,select')`获取到所有表单内部的`input`,`textarea`,`select`元素
-- 依次遍历这些元素，根据`name`属性，从`state`中获取对应的值，并设置到表单元素上。
-
-### 3. 订阅变更事件
-
-要实现双向绑定，我们需要：
-
-- **监听表单元素的`change`事件**
-
-由于表单事件`onchange`进行进行冒泡，所以我们只需要在`form`元素上监听`change`事件即可。
-
-所以通过`ref.current.addEventListener('input',onChange)`就可以在表单元素变化时触发捕获到`onChange`事件。
-
-然后在`onChange`事件中，我们可以通过`event.target`获取到表单元素.
-
-最后将表单元素的值更新到`state[event.target.name]`。
-
-- **监听`state`的变化**
-
-使用`store.watch`监听`state`的变化，当`state`变化时，将数据更新到`name=<path>`的表单元素上即可。
-
 
 ## 表单校验
 
 可以绑定表单时指定`validate`参数，用来对输入进行校验，并在出错时应用样式。
 
 `validate`函数的签名如下：
+
 ```ts | pure
-    validate?:(path:string,value:any,input:HTMLElement)=>boolean | {
-        value:boolean,      // 是否有效
-        message?:string,       // 出错提示信息
-        // 作用于输入控件的样式
-        style?:string | ((path:string,value:any,input:HTMLElement)=>string) 
-    } 
+{
+  validate?:(path:string,value:any,input:HTMLElement)=>boolean | {
+      value:boolean,      // 是否有效
+      message?:string,       // 出错提示信息
+      // 作用于输入控件的样式
+      style?:string | ((path:string,value:any,input:HTMLElement)=>string) 
+  } 
+}
 ```
 
 | 参数 | 说明 |
@@ -341,18 +346,17 @@ export default ()=>{
 
 ### 小结
 
-以上就是`useForm`基本工作过程，其实现源码不到`50`行.
-
-当然，双向绑定有一个潜在的问题，就是可能导致循环更新，但是`AutoStore`内部已经处理了这个问题，所以不用担心。
+ 
 
 
 
 
 
-
-
-
-
+<div name="dddm">
+<input>
+<input>
+<button>Reset</button>
+</div>
 
 
 
