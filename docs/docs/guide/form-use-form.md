@@ -20,10 +20,16 @@ toc: content
 type UseFormResult={
     ref: React.RefObject<HTMLFormElement>  
 }
-type UseFormOptions={}
+type UseFormOptions={
+    debounce?:number            // 启用防抖
+    validate?:(path:string,value:any,input:HTMLElement)=>boolean | {result:boolean,tips?:string,style?:string}  
+}
+
 interface UseFormType {
+    (options?:UseFormOptions): UseFormResult
     (entry?: string | string[],options?:UseFormOptions): UseFormResult
 }
+
 ```
 
 ## 基本用法
@@ -139,6 +145,73 @@ export default ()=>{
 - **监听`state`的变化**
 
 使用`store.watch`监听`state`的变化，当`state`变化时，将数据更新到`name=<path>`的表单元素上即可。
+
+
+## 表单校验
+
+可以绑定表单时指定`validate`和`invalidStyle`两个参数，用来对输入进行校验，并在出错时应用样式。
+
+```tsx   
+import { useStore } from '@autostorejs/react';
+import { TextArea,Layout,ColorBlock,Button,Input,Box,CheckBox,JsonView,Select } from "x-react-components"
+ 
+export default ()=>{
+
+  const { state, $, useForm,useState } = useStore({
+    user:{
+      firstName:"Zhang",
+      lastName:"Fisher",
+      age:18,
+      vip:false,
+      job:1,
+      resume:"非著名开源软件开发者"
+    }
+  })
+
+  const [ user ] = useState()
+
+  const userform = useForm({
+    validate:(name,value)=>{
+      debugger
+      if(name=="user.firstName"){
+        return value.length>3
+      }else if(name=="user.lastName"){
+        return value.length>3
+      }else if(name=="user.age"){
+        return !isNaN(parseFloat(value)) && isFinite(value);
+      }
+    },
+  })
+
+  return <Layout>
+      <div>    
+        <form {...userform}>
+          <Input name="user.firstName" label="First Name"/>
+          <Input name="user.lastName" label="lastName"/>
+          <Input name="user.age" label="Age"/>
+          <Select name="job" label="Job" items={[
+              { title:"Engineer", value:1 },
+              { title:"Doctor", value:2 },
+              { title:"Teacher", value:3 }
+          ]}/>
+          <TextArea name="user.resume" label="Resume"/>
+          <CheckBox name="user.vip" label="VIP"/>
+        </form>
+        <Button onClick={()=>{
+          state.user.firstName= "Zhang"
+          state.user.lastName = "Fisher"
+          state.user.age = 18
+          state.user.vip = false
+        }}>Reset</Button>
+      </div>
+      <div>    
+        <JsonView data={user} />
+      </div>    
+    </Layout>
+}
+
+```
+
 
 ### 小结
 

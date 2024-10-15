@@ -12,9 +12,11 @@ export default defineConfig({
     name: 'AutoStore',
     logo:"/autostore/logo.png",
     lastUpdated: true,
+    socialLinks: {
+      github: 'https://github.com/zhangfisher/autostore'
+    },
     footer:
       'Made with<span style="color: rgb(255, 255, 255);">❤</span>by <span>ZhangFisher | Copyright © 2024-present</span>',
-    github: 'https://github.com/zhangfisher/autostore',
     localesEnhance: [
       { id: 'zh-CN', switchPrefix: '中' },
       { id: 'en-US', switchPrefix: 'en' }

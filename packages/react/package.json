@@ -20,7 +20,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "autostore": "workspace:*"
+    "autostore": "workspace:*",
+    "flexstyled": "^2.1.2"
   },
   "devDependencies": {
     "@types/node": "^22.5.5",

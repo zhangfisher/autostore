@@ -1,6 +1,6 @@
 import { AsyncComputedValue, ComputedState, Dict, ExtendAsyncOptions, WatchListener, WatchListenerOptions } from "autostore"
 import { InputBindings } from "../form"
-import { debounce } from '../utils/debounce';
+import type { CSSProperties } from "react";
 
 // ********** useDeps ********** 
 
@@ -90,14 +90,16 @@ export interface UseFormBindingsType<State extends Dict> {
 
 export type UseFormResult={
     ref: React.RefObject<HTMLFormElement>  
+    style:CSSProperties
 }
 
 export type UseFormOptions={
     debounce?:number            // 启用防抖
-    validate?:(path:string[],value:any)=>boolean
+    validate?:(path:string,value:any,input:HTMLElement)=>boolean | {result:boolean,tips?:string,style?:string}  
 }
 
 export interface UseFormType {
+    (options?:UseFormOptions): UseFormResult
     (entry?: string | string[],options?:UseFormOptions): UseFormResult
 }
 
