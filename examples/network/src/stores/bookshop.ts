@@ -22,3 +22,5 @@ export const bookshop = createStore({
 
 // @ts-ignore
 globalThis.bookshop = bookshop
+
+ 

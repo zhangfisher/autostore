@@ -1,7 +1,5 @@
 import { AsyncComputedValue, ComputedState, Dict, ExtendAsyncOptions, WatchListener, WatchListenerOptions } from "autostore"
-import { InputBindings } from "../form"
-import type { CSSProperties } from "react";
-
+ 
 // ********** useDeps ********** 
 
 export interface UseDepsType<State extends Dict>{
@@ -11,28 +9,6 @@ export interface UseDepsType<State extends Dict>{
     (selector:any,extendAsync?:ExtendAsyncOptions):string[][] 
  }
 
-
- 
-// ********** useInput **********  
-
- export type UseInputBindings<Value> = Value extends Dict ? Record<keyof Value,{
-    value:any
-    onChange:(e:any)=>void
-}> : Value
-
-export type UseInputOptions={
-     
-}
-
-export type UseInputGetter<Value,State extends Record<string, any>>= (state:ComputedState<State>)=>Value
-export type UseInputSetter<Value,State extends Record<string, any>>= (input:Value,state:ComputedState<State>)=>void
-
-export interface UseInputType<State extends Dict> {
-    (): UseInputBindings<ComputedState<State>>
-    <Value>(selector: string,options?:UseInputOptions): UseInputBindings<Value>
-    <Value>(selector: string[],options?:UseInputOptions): UseInputBindings<Value>
-    <Value>(getter: UseInputGetter<Value,State>,setter:UseInputSetter<Value,State>,options?:UseInputOptions):UseInputBindings<Value>
-}
 
 
 // ********** useState **********  
@@ -65,50 +41,5 @@ export interface UseAsyncStateType{
 export interface UseWatchType {
     <Value>(selector: string,listener:WatchListener<Value>,options?:WatchListenerOptions): void
     <Value>(selector: string[],listener:WatchListener<Value>,options?:WatchListenerOptions): void  
-}
-
-
-// ********** useBindings **********  
-
- 
- 
-export type FormBindingsState<T extends Dict> = {
-    [K in keyof T]: T[K] extends Dict ? FormBindingsState<T[K]> 
-                                        : ( T[K] extends any[] ? FormBindingsState<T[K]> 
-                                            : Required<InputBindings<T[K]>>
-                                        )
-};
-
- 
-export interface UseFormBindingsType<State extends Dict> {
-    (entry?: string,options?:WatchListenerOptions): FormBindingsState<ComputedState<State>> 
-}
-
-
-
-// ********** useForm **********  
-
-export type UseFormResult={
-    ref: React.RefObject<HTMLFormElement>  
-    style:CSSProperties
-}
-
-export type UseFormValidateStyle = (path:string,value:any,input:HTMLElement)=>string
-export type UseFormValidateMessage = (path:string,message:string,input:HTMLElement)=>HTMLElement
-export type UseFormValidateResult = {
-    value:boolean
-    // 用来控制校验信息的显示
-    message?:UseFormValidateMessage
-    style?:string | UseFormValidateStyle
-}  
-
-export type UseFormOptions={
-    debounce?:number            // 启用防抖
-    validate?:(path:string,value:any,input:HTMLElement)=>boolean | UseFormValidateResult
-}
-
-export interface UseFormType {
-    (options?:UseFormOptions): UseFormResult
-    (entry?: string | string[],options?:UseFormOptions): UseFormResult
 }
 

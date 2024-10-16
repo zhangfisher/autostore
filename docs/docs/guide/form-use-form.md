@@ -278,7 +278,7 @@ export default ()=>{
  * description: 输入无效的数据看看会发生什么
  */
 import { useStore } from '@autostorejs/react';
-import { TextArea,Layout,ColorBlock,Button,Input,Box,CheckBox,JsonView,Select } from "x-react-components"
+import { Star,TextArea,Layout,ColorBlock,Button,Input,Box,CheckBox,JsonView,Select } from "x-react-components"
  
 export default ()=>{
 
@@ -289,6 +289,7 @@ export default ()=>{
       age:'18n',
       vip:false,
       job:1,
+      stars:3,
       resume:"非著名开源软件开发者"
     }
   })
@@ -309,6 +310,7 @@ export default ()=>{
 
   return <Layout>
       <div>    
+     
         <form {...userform}>
           <Input name="user.firstName" label="First Name" 
                 data-validate-message = "长度必须大于3"/>
@@ -323,6 +325,7 @@ export default ()=>{
           ]}/>
           <TextArea name="user.resume" label="Resume"/>
           <CheckBox name="user.vip" label="VIP"/>
+          <Star name="stars"/>
         </form>
         <Button onClick={()=>{
           state.user.firstName= "Zhang"

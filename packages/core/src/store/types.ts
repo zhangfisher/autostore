@@ -165,7 +165,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * 比如重新封装run函数等
      * 
      */
-    onObserverCreated:(observerObject:ObserverObject<any,any>)=>void
+    onObserverCreated?:(observerObject:ObserverObject<any,any>)=>void
 
 }
 

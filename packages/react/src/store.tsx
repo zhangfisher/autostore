@@ -5,11 +5,12 @@ import { createSignalComponent } from "./signal";
 import type { SignalComponentType } from "./signal/types";
 import { createInputBinding } from './form/bind';
 import { InputBindingsType } from './form/types';
-import { createUseInput } from './hooks/useInput';
-import { UseDepsType, UseInputType, UseStateType, UseWatchType, UseFormBindingsType, UseAsyncStateType, UseFormType } from './hooks/types';
+import { createUseInput } from './form/useInput';
+import { UseDepsType,  UseStateType, UseWatchType, UseAsyncStateType } from './hooks/types';
+import { UseInputType, UseFormBindingsType, UseFormType } from "./form/types"
 import { createUseWatch } from './hooks/useWatch';
-import { createUseBindings } from './hooks/useBindings';
-import { createUseForm } from "./hooks/useForm";
+import { createUseBindings } from './form/useBindings';
+import { createUseForm } from "./form/useForm";
 
 export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     useState       : UseStateType<State>
@@ -21,7 +22,7 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     useInput       : UseInputType<State>
     useWatch       : UseWatchType
     useBindings    : UseFormBindingsType<State>
-    useForm        : UseFormType
+    useForm        : UseFormType<State>
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,Object.assign({
             signalErrorBoundary : ()=><>ERROR</>
