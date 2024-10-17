@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dict, getVal, PATH_DELIMITER,  } from "autostore";
 import type { ReactAutoStore } from "../store";
-import { UseFormOptions } from "./types";
+import { UseFormType } from "./types";
 import { validate } from "./validate";
 import { createAutoFormComponent } from "./Form";
 import { EMPTY_VALUE } from "./consts";
@@ -13,7 +13,7 @@ import { EMPTY_VALUE } from "./consts";
  *
  *   实现表单与store的双向绑定
  *
- *   const { state,useForm } = createStore({...})
+ *  const { state,useForm } = createStore({...})
  *  const { From,Feild,validation,dirty } = useForm({
  * 		entry,
  *      errElement: undefined | "[name={name}] ~ span" | (path,value,input)=>"[name={name}] ~ span",,
@@ -36,7 +36,7 @@ import { EMPTY_VALUE } from "./consts";
  *
  *      }
  *  })
- *   <form {...myform}>
+ *   <From>
  *      <input name="a" />
  *      <input name="b"
  *          data-from-state="^\d+"
@@ -49,40 +49,31 @@ import { EMPTY_VALUE } from "./consts";
  *          onChange={myform.xxx}
  *          value={myform.xxx}
  *      />
- *   </form>
- *
- *   bindings.reset()  // 重置表单
+ *   </From>
+ * 
  *
  *
  * @returns
  */
-export function createUseForm<State extends Dict>(store: ReactAutoStore<State>) {
+export function createUseForm<State extends Dict>(store: ReactAutoStore<State>):UseFormType<State> {
 	return function () {
-		const formRef = useRef<HTMLFormElement>(null); 
-		const options: UseFormOptions<State> = Object.assign(
-			{
-				entry:[],
-				fieldSelector: "input,textarea,select"
-			},arguments[0])
-
-		options.ref=formRef
-
-		const [validation,setValidation] = useState<boolean>(true)
-		const [dirty,setDirty] = useState<boolean>(false)
-		
+		const formCompRef = useRef<any>()
+		const formRef = useRef<HTMLFormElement>(null);
+		const options = arguments[0] || {}
+		if(!options.ref) options.ref = formRef;
+		const [valid, setValid] = useState<boolean>(true);
+		const [dirty, setDirty] = useState<boolean>(false);
 		const initial = useRef<boolean>(false);
-		const fields = useRef<Map<string, any>>();
-		
-		
-
+		const fields = useRef<Map<string, any> | undefined>(); 
 		useEffect(() => {
 			const form = formRef.current;
 			if (!form) return;
-            const { entry = []} = options
+			const { entry = [] } = options;
 			if (!initial.current && form) {
 				const snap = store.getSnap({ entry });
 				fields.current = new Map();
-				const fieldEles = form.querySelectorAll(options.fieldSelector!);
+				const fieldEles = form.querySelectorAll(options.fieldSelector || 'input,textarea,select');
+				let initValid:boolean	= true
 				fieldEles.forEach((field: any) => {
 					const name = field.name;
 					if (!name) return;
@@ -92,20 +83,33 @@ export function createUseForm<State extends Dict>(store: ReactAutoStore<State>) 
 						field.value = value;
 					}
 					fields.current!.set(path.join(PATH_DELIMITER), field);
-					validate(path, value, field,formRef.current!,options);
+					if(validate(path, value, field, formRef.current!, options)===false){
+						initValid = false
+					}
 				});
 				initial.current = true;
-				setDirty(false)
+				setDirty(false);
+				setValid(initValid);
 			}
-		},[options.entry])
+		}, []);
+			
+		const formCtx =  {
+			fields,
+			setDirty: () =>{if (dirty === false) setDirty(true)},
+			setValid
+		}
+
+		if(!formCompRef.current){
+			formCompRef.current = createAutoFormComponent<State>(store, options,formCtx)
+		}
 
 		return {
-			From: createAutoFormComponent<State>(store,options),
-			validation,
+			Form:formCompRef.current, 
+			valid,
 			dirty
 		};
-	};
+	} as unknown as UseFormType<State>
 }
 
 
-
+ 

@@ -36,18 +36,16 @@ interface UseFormType {
 
 `useForm`的工作原理如下：
 
-### 1. `ref`绑定
+### 1. 创建`Form`组件
 
-`useForm`返回一个`{ref,...}`对象，其中`ref`是一个`React.RefObject<HTMLFormElement>`对象。当我们在表单上使用`{...myform}`时，`ref`会自动绑定到`form`元素上。这是工作的基础。
-
+`useForm`返回一个`Form`组件，该组件是对标准`form`的封装。
 
 ### 2. 初始化表单
 
 `useForm`内部的`useEffect`会自动初始化表单.
 
-- 由于`ref`绑定到`form`元素上，通过`ref.current`可以访问到`form`元素
-- 然后通过`ref.current.querySelectorAll('input,textarea,select')`获取到所有表单内部的`input`,`textarea`,`select`元素
-- 依次遍历这些元素，根据`name`属性，从`state`中获取对应的值，并设置到表单元素上。
+然后在初始化时，调用`querySelectorAll('input,textarea,select')`获取到所有表单内部的`input`,`textarea`,`select`元素
+,依次遍历这些元素，根据`name`属性，从`state`中获取对应的值，并设置到表单元素上,完成表单字段的初始化。
 
 ### 3. 订阅变更事件
 
@@ -57,7 +55,7 @@ interface UseFormType {
 
 由于表单事件`onchange`会冒泡，所以我们只需要在`form`元素上监听`change`事件即可。
 
-所以通过`ref.current.addEventListener('input',onChange)`就可以在表单元素变化时触发捕获到`onChange`事件。
+所以通过`form.addEventListener('input',onChange)`就可以在表单元素变化时触发捕获到`onChange`事件。
 
 然后在`onChange`事件中，我们可以通过`event.target`获取到表单元素.
 
@@ -68,10 +66,9 @@ interface UseFormType {
 使用`store.watch`监听`state`的变化，当`state`变化时，将数据更新到`name=<path>`的表单元素上即可。
 
 
-
 ## 基本用法
 
-`useFrom`返回一个可以绑定到`form`元素的对象，然后只需要将之应用到`form`元素上即可。
+`useForm`返回一个`Form`组件，该组件是对标准`form`元素的封装。
 
 ```ts | pure
 const { state, useForm } = useStore({
@@ -83,16 +80,20 @@ const { state, useForm } = useStore({
   }  
 })
 
-const myform = useForm()
-<form {...myform}>
+const { Form } = useForm()
+<Form>
   <input name="user.firstName" />
   <input name="user.lastName" />
   <input name="user.age" />
   <input name="user.vip" />
-</form>
+</Form>
 ```
 
-应用到`form`元素上后，就可以轻松实现`表单`与`State`之间的双向绑定了。
+就这么简单，轻松实现`表单`与`store.state`之间的双向绑定了。
+
+:::success{title="提示"}
+配置`input`元素的`name=<状态数据路径>`即可。
+:::
 
 
 **以下是简单示例：**
@@ -116,22 +117,22 @@ export default ()=>{
 
   const [ user ] = useState()
 
-  const userform = useForm()
+  const { Form } = useForm()
 
   return <Layout>
-      <div>    
-        <form {...userform}>
+      <div>     
+        <Form>
           <Input name="user.firstName" label="First Name"/>
           <Input name="user.lastName" label="lastName"/>
           <Input name="user.age" label="Age"/>
-          <Select name="job" label="Job" items={[
+          <Select name="user.job" label="Job" items={[
               { title:"Engineer", value:1 },
               { title:"Doctor", value:2 },
               { title:"Teacher", value:3 }
           ]}/>
           <TextArea name="user.resume" label="Resume"/>
           <CheckBox name="user.vip" label="VIP"/>
-        </form>
+        </Form>
         <Button onClick={()=>{
           state.user.firstName= "Zhang"
           state.user.lastName = "Fisher"
@@ -146,6 +147,7 @@ export default ()=>{
 }
 
 ```
+
 
 
 
@@ -204,7 +206,7 @@ export default ()=>{
 
   const [ user ] = useState()
 
-  const userform = useForm({
+  const { Form,valid,dirty } = useForm({
     validate:(name,value)=>{
       if(name=="user.firstName"){
         return value.length>3
@@ -217,23 +219,25 @@ export default ()=>{
   })
 
   return <Layout>
-      <div>    
-        <form {...userform}>
+      <div>            
+        <ColorBlock name="有效">{String(valid)}</ColorBlock>
+        <ColorBlock name="脏">{String(dirty)}</ColorBlock>
+        <Form>
           <Input name="user.firstName" label="First Name" 
-                data-validate-message="长度必须大于3" />
+                data-error-tips="长度必须大于3" />
           <Input name="user.lastName" label="lastName" 
-                data-validate-message= "长度必须大于3" />
+                data-error-tips= "长度必须大于3" />
           <Input name="user.age" label="Age"  
-                data-validate-message= "必须是大于0的数字" />
+                data-error-tips= "必须是大于0的数字" />
           <Select name="job" label="Job" items={[
               { title:"Engineer", value:1 },
               { title:"Doctor", value:2 },
               { title:"Teacher", value:3 }
           ]}/>
           <TextArea name="user.resume" label="Resume"
-              data-validate-message="不能大于20个字符" />
+              data-error-tips="不能大于20个字符" />
           <CheckBox name="user.vip" label="VIP"/>
-        </form>
+        </Form>
         <Button onClick={()=>{
           state.user.firstName= "Zhang"
           state.user.lastName = "Fisher"
@@ -272,7 +276,7 @@ export default ()=>{
 
 
 
-```tsx  
+```tsx | pure
 /**
  * title: 表单输入校验
  * description: 输入无效的数据看看会发生什么

@@ -10,7 +10,7 @@ import { UseDepsType,  UseStateType, UseWatchType, UseAsyncStateType } from './h
 import { UseInputType, UseFormBindingsType, UseFormType } from "./form/types"
 import { createUseWatch } from './hooks/useWatch';
 import { createUseBindings } from './form/useBindings';
-import { createUseForm } from "./form/useForm/useForm";
+import { createUseForm } from "./form/useForm";
 
 export class ReactAutoStore<State extends Dict> extends AutoStore<State>{
     useState       : UseStateType<State>

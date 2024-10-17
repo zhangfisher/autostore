@@ -10,10 +10,7 @@ export function validate(path: string[], value: any, input: HTMLElement, form: H
     let errTips: string | undefined = input.dataset.errorTips;
     const hasValidate = errTips || (options.validate && isFunction(options.validate))
 
-    const validResult = {
-        value: true,                        
-        tips:""
-    };
+    let isValid =  true
 
     // 是否启用了校验功能
     if (hasValidate) {        
@@ -21,10 +18,10 @@ export function validate(path: string[], value: any, input: HTMLElement, form: H
         // 执行校验函数
         const result = options.validate!(spath, value, input);        
         if (typeof result === "boolean") {
-            validResult.value = result;
+            isValid = result;
 
         } else if (typeof result === "string") {
-            validResult.value = false
+            isValid = false
             errTips = result;
         }
         // 获取错误信息的元素,如果没有则创建默认<span class='error-tips"></span>
@@ -44,7 +41,7 @@ export function validate(path: string[], value: any, input: HTMLElement, form: H
         };
 
         const errEle = getErrorElement()
-        if(validResult.value){      // 校验成功
+        if(isValid){      // 校验成功
             removeElementStyleOrClass(input,options.errStyles,'style')
             removeElementStyleOrClass(input,options.errClasss,'class')   
             if(errEle) errEle.style.display = "none"
@@ -58,5 +55,5 @@ export function validate(path: string[], value: any, input: HTMLElement, form: H
         }
         
     }
-    return validResult;
+    return isValid;
 }

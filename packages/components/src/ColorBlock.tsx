@@ -45,12 +45,13 @@ export type ColorBlockProps = React.PropsWithChildren<
 		name?: string;
 		loading?: boolean;		
 		comment?: string;
+		inline?: boolean
 	}
 >;
 
 export const ColorBlock: React.FC<ColorBlockProps> =(props) => {
 		const renderCount = useRef(0);
-		const { name, value = "",loading =false,comment } = props;
+		const { name, value = "",loading =false,comment,inline } = props;
 		const backgroundColor = getRandomColor();
 		let textColor = "white"; 
 
@@ -64,7 +65,7 @@ export const ColorBlock: React.FC<ColorBlockProps> =(props) => {
 					backgroundColor,
 					padding: "6px",
 					color: textColor,
-					display: "flex",
+					display: inline ? "inline-flex ": "flex",
 					...props.style,
 					alignItems: "center",
 				}}

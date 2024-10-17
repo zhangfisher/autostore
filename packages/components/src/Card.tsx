@@ -8,10 +8,10 @@ import React, { ReactNode } from "react"
 //@ts-ignore
 import { ReactFC } from "./types";
 import { styled } from "flexstyled";
-
+import { Button } from "./Button"
 export type CardProps = React.PropsWithChildren<{
   title?:string
-  buttons?:{onClick:()=>void,title:string}[],
+  actions?:{onClick:()=>void,title:string}[],
   visible?:boolean
   enable?:boolean
   footer?:ReactNode
@@ -28,7 +28,7 @@ const CardStyle = styled<CardProps>({
   minWidth     : "320px",
   minHeight    : "200px",
   boxShadow    : "0 0 4px rgba(0,0,0,0.1)"
-},{className:"card"})
+},{className:"x-card"})
 
 const CardHeaderStyle = styled<CardProps>({  
   display:"flex",
@@ -37,10 +37,10 @@ const CardHeaderStyle = styled<CardProps>({
   padding:"8px",
   lineHeight:"200%",
   color:"#555"
-},{className:"card-header"})
+},{className:"x-card-header"})
 
 export const Card:ReactFC<CardProps> = (props:CardProps)=>{
-  const { title,enable=true,buttons=[] } = props 
+  const { title,enable=true,actions=[] } = props 
   const children = Array.isArray(props.children) ? props.children : [props.children]
 
   return (
@@ -48,8 +48,10 @@ export const Card:ReactFC<CardProps> = (props:CardProps)=>{
       <div  className={CardHeaderStyle.className} style={CardHeaderStyle.getStyle(props)} >
           <span style={{flexGrow:1,color:enable ? "#222" : 'gray'}}>{title}</span>
           <span style={{}}>
-            {buttons.map((btn,index)=>{
-              return <span key={index} className="button" style={{padding:"4px",margin:"4px",cursor:'pointer'}} onClick={btn.onClick}>{btn.title}</span>
+            {actions.map((action,index)=>{
+              return <Button onClick={action.onClick}>
+                {action.title}
+              </Button>
             })}
           </span>
       </div>
