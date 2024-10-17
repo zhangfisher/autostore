@@ -29,7 +29,7 @@ export const Star:React.FC<StarProps> = (props)=>{
                     const inputEvent = new InputEvent('input', {
                         bubbles: true, // 事件是否应该冒泡
                         cancelable: true, // 事件是否可以取消
-                        data: newValue, 
+                        data: String(newValue), 
                     });
                     ref.current!.dispatchEvent(inputEvent)
                 }}

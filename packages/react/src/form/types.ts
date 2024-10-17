@@ -1,5 +1,6 @@
 import { ComputedState, Dict, WatchListenerOptions } from "autostore"
 import { CSSProperties } from "react"
+import { AutoForm } from "./Form"
 
 export type InputBindings<Value=any>={ 
     value?   : Value
@@ -54,10 +55,10 @@ export interface UseFormBindingsType<State extends Dict> {
 
 // ********** useForm **********  
 
-export type UseFormResult={
-    ref       : React.RefObject<HTMLFormElement>  
-    style?    : CSSProperties
-    className?: string
+export type UseFormResult<State extends Dict>={ 
+    Form        : AutoForm<State>
+    validation  : boolean
+    dirty       : boolean
 }
 
 export type UseFormInputCallback = (path:string,value:any,input:HTMLElement)=>string | undefined
@@ -68,6 +69,8 @@ export type UseFormValidateStyle = (path:string,value:any,input:HTMLElement)=>st
 export type UseFormValidateMessage = (path:string,message:string | undefined,input:HTMLElement)=>HTMLElement | string
  
 export type UseFormOptions<State extends Dict>={
+    ref?:React.RefObject<HTMLFormElement>
+    entry?: string[]
     /**
      * 表单类名
      */
@@ -79,13 +82,16 @@ export type UseFormOptions<State extends Dict>={
     /**
      * 当校验出错时将错误信息显示在哪个元素上
      * @description
-     * - undefined:  写入到默认的当前input的下一个元素中
+     * - undefined:  写入到默认的当前input的下一个元素中，要求其具有.error-tips
      * - 选择器： 写入到选择器指向的元素中,选择器支持插值变量{name}代表当前input的name，即状态路径名称
+     * 
+     * errElement仅在出错时会显示
      * 
      */
     errElement?:string
     /**
      * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
+     * ROOT代表输入根元素
      */
     errClasss?:string | Record<string,string>
     /**
@@ -96,27 +102,12 @@ export type UseFormOptions<State extends Dict>={
      * - [selector,style string]: 样式作用于input的选择器指向的元素上 。如果selector返回空，则作用于input元素
      *   
      */
-    errStyle: string | [string,string]
-    
+    errStyles?: string | Record<string,string>
     /**
-     * 用来在表单内部选择输入元素
-     * 
-     * 默认值："input,textarea,select"
-     * 
-     * 但是也可以用来选择任意元素，但是只求元素内部有input,textarea,select
-     * 例：
-     *    inputs="input,textarea,select,div.x-spin"
-     * 则表单会:
-     * 
-     * - 选中div.x-spin内部的input,textarea,select，在状态改变时写入数据
-     * - 将errStyle,errClass作用于div.x-spin上
-     * 
-     * 
-     * 
-     * 
+     * 用来获取表单内的所有输入控件的CSS选择器
+     * 默认="input,textarea,select"
      */
-    inputs?:string
-
+    fieldSelector?:string
     /**
      * 在输入时执行数据校验，成功才会写入状态中
      * 错误时应返回false或错误字符串
@@ -141,8 +132,9 @@ export type UseFormOptions<State extends Dict>={
     toState?:(path:string,value:any,input:HTMLElement)=>any
 }
 
-export interface UseFormType<State extends Dict> {
-    (options?:UseFormOptions<State>): UseFormResult
-    (entry?: string | string[],options?:UseFormOptions<State>): UseFormResult
+export type UseFormType<State extends Dict>  = {
+    (options?:UseFormOptions<State>): UseFormResult<State>
 }
 
+
+ 
