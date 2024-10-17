@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { Dict, getVal,  PATH_DELIMITER, pathStartsWith, setVal } from "autostore";
 import type { ReactAutoStore } from "../store";
 import { UseFormOptions } from "./types";
-import { validate } from "./validate";
-import { removeItem } from "./utils";
+import { toggleValidateResult, validate } from './validate';
+import { removeArerayItem } from "./utils";
 import React from "react";
 
 
@@ -24,6 +24,15 @@ type FormCtx = {
 export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,options:UseFormOptions<State>,ctx:FormCtx): React.MemoExoticComponent<AutoForm<State>>{
     return React.memo<AutoForm<State>>((props:AutoFromProps)=>{
 		const invalids = useRef<string[]>([]);
+
+		const updateInvalids = useCallback((path:string,value:boolean)=>{
+			if(value){
+				removeArerayItem(invalids.current,path)
+			}else{
+				if(!invalids.current.includes(path)) invalids.current.push(path)
+			}
+		},[])
+
 		useEffect(() => {
 			const form = options.ref!.current;
 			if (!form) return; 
@@ -36,9 +45,13 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				const spath = path.join(PATH_DELIMITER);
 				if (ctx.fields.current!.has(spath)) {
 					const oldValue = ctx.fields.current!.get(spath).value;
-					if (oldValue !== value) {
-                        // 更新到表单字段中
-						ctx.fields.current!.get(spath).value = value;
+					if (oldValue !== value) {                        
+						ctx.fields.current!.get(spath).value = value;	// 更新到表单字段中	
+						// 执行校验
+						const validateResult = validate(path, value, ctx.fields.current!.get(spath).input,options.ref!.current!,options);
+						updateInvalids(spath,validateResult.value)
+						toggleValidateResult(spath,validateResult,ctx.fields.current!.get(spath).input,options.ref!.current!,options);						
+
 					}
 				}
 			});
@@ -49,19 +62,11 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				if (!name) return;
 				const path = [...entry, ...name.split(PATH_DELIMITER)];
 				const newVal = input.type === "checkbox" ? input.checked : input.value;
-				const isValid = validate(path, newVal, input,options.ref!.current!,options);                
-				if (isValid) {
-					store.update(
-						(state) => {
-							setVal(state, path, newVal);
-						},
-						{ peep: true }
-					);
-                    removeItem(invalids.current,name)
-				}else{                    
-                    if(!invalids.current.includes(name)) invalids.current.push(name)
+				const validateResult = validate(path, newVal, input,options.ref!.current!,options);                
+				if (validateResult.value) {
+					store.update((state) => { setVal(state, path, newVal); },{ peep: true });
                 }         
-                ctx.setValid(invalids.current.length===0)    
+				updateInvalids(name,validateResult.value)
                 ctx.setDirty()            
 			};
 			// 3. 侦听来自表单输入的变更

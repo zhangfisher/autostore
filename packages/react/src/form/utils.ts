@@ -164,7 +164,7 @@ export function createDefaultErrorElement(input:HTMLElement){
 
  
 
-export function removeItem(arr:any[],item:any){
+export function removeArerayItem(arr:any[],item:any){
     const index = arr.indexOf(item)
     if(index>=0){
         arr.splice(index,1)

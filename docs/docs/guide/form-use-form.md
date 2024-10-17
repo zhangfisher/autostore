@@ -332,10 +332,16 @@ export default ()=>{
           <Star name="stars"/>
         </form>
         <Button onClick={()=>{
-          state.user.firstName= "Zhang"
+          store.batchUpdate(()=>{
+            state.user.firstName= "Zhang"
+            state.user.lastName = "Fisher"
+            state.user.age = 18
+            state.user.vip = false
+          })
+          {/* state.user.firstName= "Zhang"
           state.user.lastName = "Fisher"
           state.user.age = 18
-          state.user.vip = false
+          state.user.vip = false */}
         }}>Reset</Button>
       </div>
       <div>    

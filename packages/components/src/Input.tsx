@@ -20,10 +20,10 @@ const InputStyle = styled<InputProps>({
     border: (props)=>props.validate === false ? "1px solid red" : "1px solid #bbb",
     borderRadius: "4px",
     background: (props)=>props.enable===false ? "gray" : "white",
-    display: (props)=>props.visible===false ? "none" : "block",
+    display: (props)=>props.visible===false ? "none" : "flex",
     margin: "4px",
     padding: "8px",
-    flexGrow:1,
+    flexGrow:1,  
     "&:focus":{
         outline:"none",
         boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"
