@@ -17,7 +17,7 @@ interface SignalComponentType<State extends Dict>{
     // 封装单个状态数据
     (selector: string,options?:SignalComponentOptions):React.ReactNode
     // 封装组合多个状态数据
-    <Value=any>(selector: (state:ComputedState<State>)=>Value,options?:SignalComponentOptions):React.ReactNode
+    (selector: (state:ComputedState<State>)=>React.ReactNode,options?:SignalComponentOptions):React.ReactNode
     // 自定义渲染函数
     <Value=any>(render:SignalComponentRender,path:string | string[],options?:SignalComponentOptions):React.ReactNode
     // 自定义渲染函数,且动态创建计算属性

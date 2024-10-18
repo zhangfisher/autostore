@@ -55,14 +55,31 @@ export function isInputElement(input: HTMLElement) {
  * @param input - 需要查找输入元素的 HTMLElement
  * @returns 返回找到的输入元素，如果没有找到则返回 undefined
  */
-export function getInputElement(input: HTMLElement) {
-	if (isInputElement(input)) {
-		return input;
+export function getInputElement(input: HTMLElement): HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | undefined {   
+    let ele 
+    if (isInputElement(input)) {
+		ele = input
 	}
-	return input.querySelector("input,textarea,select");
+	ele =input.querySelector("input,textarea,select") 
+    return ele as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | undefined 
 }
 
 
+/**
+ * 返回选择器选中的字段元素
+ * 
+ * 注意：只能选取元素节点
+ * 
+ *  @param form - 表单元素
+ * @param fieldSelector - 字段选择器
+ */
+export function queryAutoFieldElements(form:HTMLElement,fieldSelector:string | undefined){
+    const fields = form.querySelectorAll(fieldSelector || 'input,textarea,select');
+    // 过滤中选择的元素节点
+    return Array.from(fields).filter(field => {
+        return field.nodeType && field.nodeType === 1;
+    }) as unknown as HTMLElement[]
+}
 
 /**
  * 为元素添加一个或多个类名。

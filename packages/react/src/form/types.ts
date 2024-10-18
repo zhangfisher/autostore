@@ -72,6 +72,13 @@ export type UseFormOptions<State extends Dict>={
     ref?:React.RefObject<HTMLFormElement>
     entry?: string[]
     /**
+     * 在初始化时是否进行数据校验
+     * 
+     * 默认=true
+     * 
+     */
+    validAtInit?:boolean
+    /**
      * 表单类名
      */
     className?: string | ((state:ComputedState<State>)=>string)

@@ -198,6 +198,7 @@ export default ()=>{
       firstName:"Zh",
       lastName:"Fi",
       age:'18n',
+      email:"",
       vip:false,
       job:1,
       resume:"非著名开源软件开发者"
@@ -229,6 +230,8 @@ export default ()=>{
                 data-error-tips= "长度必须大于3" />
           <Input name="user.age" label="Age"  
                 data-error-tips= "必须是大于0的数字" />
+          <Input name="user.email" label="Email"  type="email"
+                data-error-tips= "必须输入有效的Email" />
           <Select name="job" label="Job" items={[
               { title:"Engineer", value:1 },
               { title:"Doctor", value:2 },

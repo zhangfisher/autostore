@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "start": "npm run dev",
-    "dev": "set ERROR_OVERLAY=none && dumi dev",
+    "dev": "dumi dev",
     "build": "father build",
     "build:watch": "father dev",
     "docs:build": "dumi build",

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dict, getVal, PATH_DELIMITER,  } from "autostore";
 import type { ReactAutoStore } from "../store";
 import { UseFormType } from "./types";
-import { validate } from "./validate";
+import { validate, Validator } from "./validate";
 import { createAutoFormComponent } from "./Form";
 import { EMPTY_VALUE } from "./consts";
 
@@ -59,48 +59,24 @@ export function createUseForm<State extends Dict>(store: ReactAutoStore<State>):
 	return function () {
 		const formCompRef = useRef<any>()
 		const formRef = useRef<HTMLFormElement>(null);
+		const fields = useRef<Map<string, any> | undefined>(); 		
+		const validator = useRef<Validator>();
+
 		const options = arguments[0] || {}
 		if(!options.ref) options.ref = formRef;
+
 		const [valid, setValid] = useState<boolean>(true);
 		const [dirty, setDirty] = useState<boolean>(false);
-		const initial = useRef<boolean>(false);
-		const fields = useRef<Map<string, any> | undefined>(); 
-		useEffect(() => {
-			const form = formRef.current;
-			if (!form) return;
-			const { entry = [] } = options;
-			if (!initial.current && form) {
-				const snap = store.getSnap({ entry });
-				fields.current = new Map();
-				const fieldEles = form.querySelectorAll(options.fieldSelector || 'input,textarea,select');
-				let initValid:boolean	= true
-				fieldEles.forEach((field: any) => {
-					const name = field.name;
-					if (!name) return;
-					const path = [...entry, ...name.split(PATH_DELIMITER)];
-					const value = getVal(snap, path, EMPTY_VALUE);
-					if (value !== EMPTY_VALUE) {
-						field.value = value;
-					}
-					fields.current!.set(path.join(PATH_DELIMITER), field);
-					if(validate(path, value, field, formRef.current!, options)===false){
-						initValid = false
-					}
-				});
-				initial.current = true;
-				setDirty(false);
-				setValid(initValid);
-			}
-		}, []);
-			
-		const formCtx =  {
-			fields,
-			setDirty: () =>{if (dirty === false) setDirty(true)},
-			setValid
-		}
+
+			 
 
 		if(!formCompRef.current){
-			formCompRef.current = createAutoFormComponent<State>(store, options,formCtx)
+			formCompRef.current = createAutoFormComponent<State>(store, options, {
+				fields,
+				validator,
+				setDirty: () =>{if (dirty === false) setDirty(true)},
+				setValid,
+			})
 		}
 
 		return {

@@ -62,7 +62,7 @@ export function createStaticRender<State extends Dict>(store:ReactAutoStore<Stat
             })
             return ()=>watcher.off()
         },[deps])
-        return <>{error ? <ErrorBoundary error={error}/> : String(value)}</>          
+        return <>{error ? <ErrorBoundary error={error}/> :value }</>          
             
     }, ()=>true) 
 }

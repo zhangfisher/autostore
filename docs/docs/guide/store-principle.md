@@ -33,7 +33,7 @@ toc: content
 ### **准备阶段**
 
 1. 当创建`AutoStore`对象时，会创建一个`Proxy`对象，用来代理状态数据。
-2. 同时创建一个名称为`operates`的`EventEmitter`（基于`mitt`封装）。
+2. 同时创建一个名称为`operates`的`EventEmitter`，就是一个事件分发器，就如何`mitt`、`eventemitter2`。
 3. 然后递归遍历状态数据时，会根据数据类型创建不同的对象（支持设置`lazy=true`，仅在读取时创建）：
     - 如果是`{}`或`数组`则会创建一个`Proxy`对象，用来代理`{}`或`数组`的属性和方法，这样就可以实现支持任意嵌套的状态数据。
     - 如果是`计算函数`则会创建一个`ComputedObject`对象，同时该`ComputedObject`对象会实例保存到`store.computedObjects`中。
@@ -57,3 +57,5 @@ toc: content
 2. 然后在`store.operates`触发`emit('<状态路径>',<operateParams>)`方法，通知所有订阅者。
 3. 对应的`ComputedObject`订阅者收到通知后，会执行`计算函数Getter`，
 4. 最后将`计算函数Getter`的执行结果保存到`store.state`中的原始路径上。
+
+

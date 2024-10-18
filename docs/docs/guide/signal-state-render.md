@@ -20,7 +20,7 @@ interface SignalComponentType<State extends Dict>{
     // 指定状态数据路径
     (selector: string):React.ReactNode   
     // 返回状态数据的函数
-    <Value=any>(selector: (state:ComputedState<State>)=>Value):React.ReactNode 
+    (selector: (state:ComputedState<State>)=>React.ReactNode):React.ReactNode 
 }
 ```
 
@@ -75,6 +75,7 @@ export default () => {
       <ColorBlock name="FirstName">{$('user.firstName')}</ColorBlock>
       <ColorBlock name="LastName">{$('user.lastName')}</ColorBlock>
       <ColorBlock>FullName :{$(state=>state.user.firstName + ' ' + state.user.lastName)}</ColorBlock>
+      <ColorBlock>FullName :{$(state=><span style={{color:'yellow'}}>{state.user.firstName} - {state.user.lastName}</span>)}</ColorBlock>
       <Button onClick={()=>state.user.firstName=state.user.firstName+'❤️'}>Change FirstName</Button>
       <Button onClick={()=>state.user.lastName=state.user.lastName+'✈️'}>Change LastName</Button>
     </div>

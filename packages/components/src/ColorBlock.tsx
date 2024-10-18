@@ -33,7 +33,7 @@ let colorIndex = 0;
  */
 function getRandomColor() {
 	colorIndex++
-	if(colorIndex >= presetColors.length) {
+	if(colorIndex >= presetColors.length-1) {
 		colorIndex = 0
 	}
 	return presetColors[colorIndex] 

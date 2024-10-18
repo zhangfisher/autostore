@@ -62,7 +62,8 @@ export function createUseState<State extends Dict>(store:ReactAutoStore<State>){
         useEffect(()=>{    
             let watcher:Watcher  
             if(deps.length===0){ // 监听整个状态
-                watcher = store.watch(()=>{
+                watcher = store.watch(({reply})=>{
+                    if(reply) return        // 针对批量操作时的优化
                     setValue({...store.state})  
                 })
             }else{
