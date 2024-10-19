@@ -32,7 +32,7 @@ export type AutoFormContext<State extends Dict> = {
     validator: React.MutableRefObject<Validator<State> | undefined>
 }
 
-export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,options:UseFormOptions<State>,ctx:AutoFormContext): React.MemoExoticComponent<AutoForm<State>>{
+export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,options:UseFormOptions<State>,ctx:React.RefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoForm<State>>{
     return React.memo<AutoForm<State>>((props:AutoFromProps)=>{
         
 		const initial = useRef<boolean>(false);
@@ -131,7 +131,8 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 			return () => {
 				watcher.off();
 				form.removeEventListener("input", onChange);
-                ctx.validator.current?.detach()
+
+				
 			};
 		},[]);
         const Children = React.memo(()=><>{props.children}</>,()=>true)

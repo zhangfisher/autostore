@@ -1,4 +1,5 @@
-import { AsyncComputed, AsyncComputedValue, Computed, ComputedDescriptorBuilder } from "./computed";
+import { AsyncComputed, AsyncComputedGetter, AsyncComputedValue, Computed, ComputedDescriptorBuilder, ComputedGetter } from "./computed";
+import { ObserverDescriptorBuilder } from "./observer/types";
 import type  { AutoStore } from "./store";
 import { WatchDescriptorBuilder } from "./watch/types";
 
@@ -51,3 +52,9 @@ declare global {
 
 
 export type Primitive = string | number | boolean | null | undefined | symbol | bigint;
+
+
+
+export type ObserverBuilder<Value=any,Scope=any> = 
+    ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<any> | AsyncComputedGetter<any>
+    | WatchDescriptorBuilder<Value>

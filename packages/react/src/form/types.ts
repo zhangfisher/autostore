@@ -82,8 +82,14 @@ export type UseFormOptions<State extends Dict>={
     validAtInit?:boolean
     /**
      * 表单类名
+     * 默认值：autoform
      */
     className?: string | ((state:ComputedState<State>)=>string)
+    /**
+     * 字段类型
+     * 默认值： field
+     */
+    fieldClassName?:string 
     /**
      * 表单样式
      */
@@ -147,3 +153,5 @@ export type UseFormType<State extends Dict>  = {
 
 
  
+
+export type NonFunction<T> = T extends Function ? never : T;

@@ -25,12 +25,18 @@
 
 import { Dict,AutoStoreOptions } from "autostore"
 import { ReactAutoStore } from "../store"    
-import { useRef} from "react" 
+import { useEffect, useRef} from "react" 
 
 export function useStore<State extends Dict>(define:State,options?:AutoStoreOptions<State>){
     const ref = useRef<ReactAutoStore<State>>()
     if (!ref.current) {
         ref.current = new ReactAutoStore<State>(define,options);
     }
+    useEffect(()=>{
+        return ()=>{
+            ref.current?.destroy()
+            ref.current=undefined
+        }
+    },[])
     return ref.current    
 }

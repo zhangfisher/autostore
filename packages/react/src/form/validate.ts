@@ -1,6 +1,6 @@
 import { Dict, getVal, isFunction, PATH_DELIMITER } from "autostore";
 import { UseFormOptions } from "./types";
-import { addElementStyleOrClass, createDefaultErrorElement, getInputElements, isInputElement, removeElementStyleOrClass } from "./utils";
+import { addElementStyleOrClass, createDefaultInvalidElement, getInputElements, isInputElement, removeArrayItem, removeStyleOrClass } from "./utils";
 import type { ReactAutoStore } from "../store";
 import type { AutoFormFieldInfos } from "./Form";
 
@@ -113,7 +113,7 @@ export class Validator<State extends Dict>{
                 );
         // 如果没有提供错误信息的元素，则创建一个
         if(!errElement || errElement.nodeType !== 1){ 
-            errElement = createDefaultErrorElement(fieldEle)
+            errElement = createDefaultInvalidElement(fieldEle)
         }
         return errElement
     };
@@ -134,8 +134,8 @@ export class Validator<State extends Dict>{
         addElementStyleOrClass(fieldEle,this.options.invalidClasss,'class')     
     } 
     hideError(path:string,fieldEle:any){
-        removeElementStyleOrClass(fieldEle,this.options.invalidStyles,'style')
-        removeElementStyleOrClass(fieldEle,this.options.invalidClasss,'class') 
+        removeStyleOrClass(fieldEle,this.options.invalidStyles,'style')
+        removeStyleOrClass(fieldEle,this.options.invalidClasss,'class') 
         const errEle = this.getErrorElement(path,fieldEle)
         if(errEle) errEle.style.display = "none"  
     } 
@@ -207,14 +207,14 @@ export function toggleValidateResult(spath: string,valid:ValidateResult,input: H
                 );
         // 如果没有提供错误信息的元素，则创建一个
         if(!errElement || errElement.nodeType !== 1){ 
-            errElement = createDefaultErrorElement(input)
+            errElement = createDefaultInvalidElement(input)
         }
         return errElement
     };
     const errEle = getErrorElement()
     if(valid.value){      // 校验成功
-        removeElementStyleOrClass(input,options.invalidStyles,'style')
-        removeElementStyleOrClass(input,options.invalidClasss,'class')   
+        removeStyleOrClass(input,options.invalidStyles,'style')
+        removeStyleOrClass(input,options.invalidClasss,'class')   
         if(errEle) errEle.style.display = "none"
     }else{          // 校验出错            
         const errorTips = valid.error || input.dataset.errorTips || 'ERROR'
