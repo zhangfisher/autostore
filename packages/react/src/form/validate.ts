@@ -1,35 +1,54 @@
-import { isFunction, PATH_DELIMITER } from "autostore";
+import { Dict, getVal, isFunction, PATH_DELIMITER } from "autostore";
 import { UseFormOptions } from "./types";
-import { addElementStyleOrClass, createDefaultErrorElement, getInputElement, isInputElement, removeElementStyleOrClass } from "./utils";
+import { addElementStyleOrClass, createDefaultErrorElement, getInputElements, isInputElement, removeElementStyleOrClass } from "./utils";
+import type { ReactAutoStore } from "../store";
+import type { AutoFormFieldInfos } from "./Form";
 
 
-export class Validator{
+export class Validator<State extends Dict>{
     private _onInvalid
     private _onFormValid:(valid:boolean)=>void      // 更新表单的有效状态
-    private _invalids:string = []           // 保存无效字段名称列表 
-    constructor(onFormValid:(valid:boolean)=>void,public form:HTMLFormElement,public fields:HTMLElement[],public options:UseFormOptions<any>){
+    private _invalids:string[] = []                   // 保存无效字段名称列表 
+    constructor(onFormValid:(valid:boolean)=>void,public store: ReactAutoStore<State>,public form:HTMLFormElement,public fields: AutoFormFieldInfos,public options:UseFormOptions<any>){
         this._onInvalid = this.onInvalid.bind(this)
         this._onFormValid = onFormValid
         this.attach()
+    }
+    getEntry(){
+        return getVal(this.store.state,this.options.entry || [])
     }
     attach(){
         this.form.addEventListener('invalid',this._onInvalid,true)
     }
     detach(){
         this.form.removeEventListener('invalid',this._onInvalid,true)
+        this._invalids = []
     }
     
     onInvalid(e:any){
         alert("invalid")
     }
 
+    private updateInvalids(path:string,value:boolean){
+        if(value){
+            removeArrayItem(invalids.current,path)
+        }else{
+            if(!invalids.current.includes(path)) invalids.current.push(path)
+        }
+        ctx.setValid(invalids.current.length===0)
+    }
     /**
      * 对所有字段执行校验
      */
     validateAll(){
         let isValid = this.form.checkValidity()
         if(!isValid) this.reportAll()    
-
+        const { entry = [] } = this.options
+        for(let field of this.fields){
+            
+            this.validate
+        }
+        
     }
 
     /**
@@ -46,7 +65,7 @@ export class Validator{
         }
     
         // 1. 执行表单控件的标准校验，即input控件上的max,min,pattern等
-        const inputEle = getInputElement(fieldEle)
+        const inputEle = getInputElements(fieldEle)
         if(inputEle && inputEle.checkValidity && !inputEle.checkValidity()){
             validResult.value = false
             validResult.error = inputEle.validationMessage
@@ -64,7 +83,7 @@ export class Validator{
                 validResult.value=false
                 validResult.error = isvalid                
             }
-            const inputEle = getInputElement(fieldEle)
+            const inputEle = getInputElements(fieldEle)
             if(inputEle && inputEle.setCustomValidity ){
                 inputEle.setCustomValidity(validResult.error || '')                
             }
@@ -86,9 +105,9 @@ export class Validator{
     getErrorElement(path:string,fieldEle:any): HTMLElement | undefined  {        
         if(!fieldEle) return 
         const isInputEle = isInputElement(fieldEle)    
-        const isCustomErr = this.options.errElement && typeof this.options.errElement === "string"
+        const isCustomErr = this.options.invalidElement && typeof this.options.invalidElement === "string"
         let errElement: any = isCustomErr 
-            ? this.form.querySelector(this.options.errElement!.replace(/\{\s*name\s*\}/, path))
+            ? this.form.querySelector(this.options.invalidElement!.replace(/\{\s*name\s*\}/, path))
                 : (
                     isInputEle ? fieldEle.nextSibling : fieldEle.querySelector(".error")
                 );
@@ -111,12 +130,12 @@ export class Validator{
             errEle.innerHTML = errorTips
             errEle.style.display = "block"
         }
-        addElementStyleOrClass(fieldEle,this.options.errStyles,'style')
-        addElementStyleOrClass(fieldEle,this.options.errClasss,'class')     
+        addElementStyleOrClass(fieldEle,this.options.invalidStyles,'style')
+        addElementStyleOrClass(fieldEle,this.options.invalidClasss,'class')     
     } 
     hideError(path:string,fieldEle:any){
-        removeElementStyleOrClass(fieldEle,this.options.errStyles,'style')
-        removeElementStyleOrClass(fieldEle,this.options.errClasss,'class') 
+        removeElementStyleOrClass(fieldEle,this.options.invalidStyles,'style')
+        removeElementStyleOrClass(fieldEle,this.options.invalidClasss,'class') 
         const errEle = this.getErrorElement(path,fieldEle)
         if(errEle) errEle.style.display = "none"  
     } 
@@ -124,7 +143,7 @@ export class Validator{
      *  报告错误
      */
     report(fieldEle:any){
-        const inputEle = getInputElement(fieldEle)
+        const inputEle = getInputElements(fieldEle)
         if(inputEle){
             inputEle.reportValidity()
         }
@@ -180,9 +199,9 @@ export function toggleValidateResult(spath: string,valid:ValidateResult,input: H
      // 获取错误信息的元素,如果没有则创建默认<span class='error-tips"></span>
     const getErrorElement = (): HTMLElement | undefined => {        
         const isInputEle = isInputElement(input)    
-        const isCustomErr = options.errElement && typeof options.errElement === "string"
+        const isCustomErr = options.invalidElement && typeof options.invalidElement === "string"
         let errElement: any = isCustomErr 
-            ? form.querySelector(options.errElement!.replace(/\{\s*name\s*\}/, spath))
+            ? form.querySelector(options.invalidElement!.replace(/\{\s*name\s*\}/, spath))
                 : (
                     isInputEle ? input.nextSibling : input.querySelector(".error")
                 );
@@ -194,8 +213,8 @@ export function toggleValidateResult(spath: string,valid:ValidateResult,input: H
     };
     const errEle = getErrorElement()
     if(valid.value){      // 校验成功
-        removeElementStyleOrClass(input,options.errStyles,'style')
-        removeElementStyleOrClass(input,options.errClasss,'class')   
+        removeElementStyleOrClass(input,options.invalidStyles,'style')
+        removeElementStyleOrClass(input,options.invalidClasss,'class')   
         if(errEle) errEle.style.display = "none"
     }else{          // 校验出错            
         const errorTips = valid.error || input.dataset.errorTips || 'ERROR'
@@ -203,8 +222,8 @@ export function toggleValidateResult(spath: string,valid:ValidateResult,input: H
             errEle.innerHTML = errorTips
             errEle.style.display = "block"
         }
-        addElementStyleOrClass(input,options.errStyles,'style')
-        addElementStyleOrClass(input,options.errClasss,'class')        
+        addElementStyleOrClass(input,options.invalidStyles,'style')
+        addElementStyleOrClass(input,options.invalidClasss,'class')        
     }
 
 }

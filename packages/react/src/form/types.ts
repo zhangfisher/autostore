@@ -61,6 +61,8 @@ export type UseFormResult<State extends Dict>={
     dirty       : boolean
 }
 
+export type HTMLFormInputElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+
 export type UseFormInputCallback = (path:string,value:any,input:HTMLElement)=>string | undefined
 // 默认情况下校验样式被应用到input元素上，如果input是经过包装的组件
 // 如果我们需要将校验样式应用到包装组件上，可以不返回,直接在函数内部处理修改input组件的父元素等
@@ -95,12 +97,12 @@ export type UseFormOptions<State extends Dict>={
      * errElement仅在出错时会显示
      * 
      */
-    errElement?:string
+    invalidElement?:string
     /**
      * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
      * ROOT代表输入根元素
      */
-    errClasss?:string | Record<string,string>
+    invalidClasss?:string | Record<string,string>
     /**
      * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
      * 
@@ -109,10 +111,10 @@ export type UseFormOptions<State extends Dict>={
      * - [selector,style string]: 样式作用于input的选择器指向的元素上 。如果selector返回空，则作用于input元素
      *   
      */
-    errStyles?: string | Record<string,string>
+    invalidStyles?: string | Record<string,string>
     /**
      * 用来获取表单内的所有输入控件的CSS选择器
-     * 默认="input,textarea,select"
+     * 默认="[name]" ，即所有字段均具有名称
      */
     fieldSelector?:string
     /**
@@ -129,14 +131,14 @@ export type UseFormOptions<State extends Dict>={
      *  state.vip=false --> 否
      * 
      */
-    fromState?:(path:string,value:any)=>any
+    fromState?:(path:string,value:any,part:string | undefined)=>any
     /**
      * 当表单输入控件变化时，调用本方法将数据转换后再写入状态
      * 
      * 例：将上例中的是/否转换为true/false
      * 
      */
-    toState?:(path:string,value:any,input:HTMLElement)=>any
+    toState?:(path:string,value:any,input:HTMLElement,part:string | undefined)=>any
 }
 
 export type UseFormType<State extends Dict>  = {

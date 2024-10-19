@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Dict, getVal, PATH_DELIMITER,  } from "autostore";
 import type { ReactAutoStore } from "../store";
 import { UseFormType } from "./types";
-import { validate, Validator } from "./validate";
-import { createAutoFormComponent } from "./Form";
+import { Validator } from "./validate";
+import { AutoFormFieldInfos, createAutoFormComponent } from "./Form";
 import { EMPTY_VALUE } from "./consts";
 
 
@@ -59,8 +59,8 @@ export function createUseForm<State extends Dict>(store: ReactAutoStore<State>):
 	return function () {
 		const formCompRef = useRef<any>()
 		const formRef = useRef<HTMLFormElement>(null);
-		const fields = useRef<Map<string, any> | undefined>(); 		
-		const validator = useRef<Validator>();
+		const fields = useRef<AutoFormFieldInfos>({}); 		
+		const validator = useRef<Validator<State>>();
 
 		const options = arguments[0] || {}
 		if(!options.ref) options.ref = formRef;
