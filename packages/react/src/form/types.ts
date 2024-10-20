@@ -122,7 +122,7 @@ export type UseFormOptions<State extends Dict>={
      * 用来获取表单内的所有输入控件的CSS选择器
      * 默认="[name]" ，即所有字段均具有名称
      */
-    fieldSelector?:string
+    findFields?:(from:HTMLFormElement)=>HTMLElement[]
     /**
      * 在输入时执行数据校验，成功才会写入状态中
      * 错误时应返回false或错误字符串

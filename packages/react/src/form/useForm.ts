@@ -61,7 +61,7 @@ export function createUseForm<State extends Dict>(store: ReactAutoStore<State>):
 		const formComponentRef = useRef<AutoForm<State> | null>(null)
 		const fieldComponentRef = useRef<AutoField<State> | null>(null)
 		const formRef = useRef<HTMLFormElement | null>(null);
-		const fields = useRef<AutoFormFieldInfos | null>(null); 		
+		const fields = useRef<AutoFormFieldInfos>({}); 		
 		const validator = useRef<Validator<State> | null>(null);
 		const formContext = useRef<AutoFormContext<State> | null>()
 
@@ -80,7 +80,7 @@ export function createUseForm<State extends Dict>(store: ReactAutoStore<State>):
 				setDirty: () =>dirty === false && setDirty(true),
 				setValid,
 			}
-			formComponentRef.current = createAutoFormComponent<State>(store, options,formContext )
+			formComponentRef.current = createAutoFormComponent<State>(store, options,formContext)
 			fieldComponentRef.current = createAutoFieldComponent<State>(store, options,formRef,formContext)
 		}
 

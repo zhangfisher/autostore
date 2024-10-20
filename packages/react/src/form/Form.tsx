@@ -3,9 +3,11 @@ import { Dict, getVal,  PATH_DELIMITER, pathStartsWith, setVal } from "autostore
 import type { ReactAutoStore } from "../store";
 import { UseFormOptions } from "./types";
 import { toggleValidateResult, validate, Validator } from './validate';
-import { getInputElements, findAutoFields, removeArrayItem } from "./utils";
+import { findAutoFields } from "./utils/findAutoFields";
 import React from "react";
-import { EMPTY_VALUE } from "./consts";
+import { EMPTY_VALUE } from "./consts"; 
+import { isEmpty } from "../utils/isEmpty"; 
+import { fromStateToField } from "./utils/fromStateToField";
 
 
 export type AutoFromProps = React.PropsWithChildren<
@@ -29,10 +31,10 @@ export type AutoFormContext<State extends Dict> = {
     setDirty:()=>void
     setValid:(val:boolean)=>void
     fields: React.MutableRefObject<AutoFormFieldInfos>
-    validator: React.MutableRefObject<Validator<State> | undefined>
+    validator: React.MutableRefObject<Validator<State> | null>
 }
 
-export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,options:UseFormOptions<State>,ctx:React.RefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoForm<State>>{
+export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,options:UseFormOptions<State>,ctx:AutoFormContext<State>): React.MemoExoticComponent<AutoForm<State>>{
     return React.memo<AutoForm<State>>((props:AutoFromProps)=>{
         
 		const initial = useRef<boolean>(false);
@@ -48,13 +50,15 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 		},[])
         // 仅在初始化时执行一次
         const initForm = useCallback(()=>{
-            const form = options.ref!.current;
-            const { entry = [] } = options;
+            const form = options.ref!.current;            
 			if (!form) return;             
             let initValid:boolean	= true
+			const { entry = [] } = options;
 			const snap = store.getSnap({ entry });
-            ctx.fields.current = new Map();
-            const fields = findAutoFields(form,options.fieldSelector || 'input,textarea,select');            
+            const fields = findAutoFields(form,options.findFields);            
+			if(isEmpty(fields)){
+				store.log('No fields found in the autoform', 'warn')
+			}
 			ctx.validator.current = new Validator(ctx.setValid,store,form,fields,options)
             // 初始化表单控件的值: 从state读取数据更新到表单控件
             Object.entries(fields).forEach(([name,field]) => {
@@ -65,11 +69,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 
 				}else{
                     field.initial = value
-					// 由于表单组件可能不是标准的input控件，此时需要获取内部的控件 data-field-part="1"
-					const inputEls = getInputElements(field.el)
-					
-					if(inputEl) inputEl.value = value
-
+					fromStateToField(field,value,options)
                 }                
             });
             // 初始化时是否进行数据校验

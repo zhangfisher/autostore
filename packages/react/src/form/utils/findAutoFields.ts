@@ -1,7 +1,15 @@
 import type { AutoFormFieldInfos } from "../Form";
+import { UseFormOptions } from "../types";
 import { isInputElement } from './isInputElement';
 
-const defaultFieldSelector = 'input[name],textarea[name],select[name],.autofield'
+function defaultFindFields(form:HTMLFormElement){
+    const nodes = form.querySelectorAll(':scope ' + "input[name][value=''],textarea[name][value=''],select[name][value=''],.autofield");    
+    // 过滤中选择的元素节点
+    const fieldEles = Array.from(nodes).filter(field => {
+        return field.nodeType && field.nodeType === 1;
+    }) as unknown as HTMLElement[]
+    return fieldEles
+} 
 
 /**
  * 
@@ -31,26 +39,22 @@ const defaultFieldSelector = 'input[name],textarea[name],select[name],.autofield
  * 
  *      <div className="field" name="order"> 
  *          <span name="a" data-input="xxxx" data-field-part='price'>  ==>   innerHTML
- *          <span name="a"  data-input="class:" data-field-part='price'> ==> class
- *          <span name="a"  data-input="style:" data-field-part='price'> ==> style
- *          <span name="a"  data-input="innerHTML:" data-field-part='price'> 
+ *          <span name="a" data-input="class:" data-field-part='price'> ==> class
+ *          <span name="a" data-input="style:" data-field-part='price'> ==> style
+ *          <span name="a" data-input="innerHTML:" data-field-part='price'> 
  *      </div>
  * 
  *  @param form - 表单元素
  * @param fieldSelector - 字段选择器
  */
-export function findAutoFields(form:HTMLElement,fieldSelector:string | undefined):AutoFormFieldInfos{
-    const nodes = form.querySelectorAll(':scope ' + fieldSelector || defaultFieldSelector);
-    // 过滤中选择的元素节点
-    const fieldEles = Array.from(nodes).filter(field => {
-        return field.nodeType && field.nodeType === 1;
-    }) as unknown as HTMLElement[]
-    return fieldEles.reduce((results,fieldEle)=>{
+export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<any>['findFields']):AutoFormFieldInfos{
+    const fieldEles = findFields ? findFields(form) : defaultFindFields(form)    
+    return fieldEles.reduce((results,fieldEle)=>{ 
         const fieldName = fieldEle.getAttribute('name')
         if(fieldName){            
             const inputs = Array.from(isInputElement(fieldEle) ? 
                 [fieldEle] 
-                : fieldEle.querySelectorAll('input,textarea,select')
+                : fieldEle.querySelectorAll("input[value=''],textarea[value=''],select[value='']")
             ) as HTMLInputElement[]
             results[fieldName] = {
                 name:fieldName,
