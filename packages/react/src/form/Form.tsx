@@ -1,53 +1,54 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Dict, getVal,  PATH_DELIMITER, pathStartsWith, setVal } from "autostore";
+import { ComputedState, Dict, getVal,  PATH_DELIMITER, pathStartsWith  } from "autostore";
 import type { ReactAutoStore } from "../store";
 import { UseFormOptions } from "./types";
-import { toggleValidateResult, validate, Validator } from './validate';
+import { Validator } from './validate';
 import { findAutoFields } from "./utils/findAutoFields";
 import React from "react";
 import { EMPTY_VALUE } from "./consts"; 
 import { isEmpty } from "../utils/isEmpty"; 
 import { fromStateToField } from "./utils/fromStateToField";
+import { fromFieldToState } from "./utils";
 
 
-export type AutoFromProps = React.PropsWithChildren<
+export type AutoFormProps<State extends Dict>  = React.PropsWithChildren<
     React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>,HTMLFormElement>
-    & { }
+    & {
+		onValidate?:(state:State)=>boolean
+	}
 >
 
-export type AutoForm<State extends Dict> = React.FC<AutoFromProps>
+export type AutoForm<State extends Dict> = React.FunctionComponent<AutoFormProps<State>>
 
 
-export type AutoFormFieldInfo = {
-	name:string
-	el:HTMLElement
-	inputs:HTMLInputElement[]
-	initial?:any					
-	invalidTips?:string | null
+export type AutoFormFieldContext = {
+	path        : string
+	el          : HTMLElement
+	inputs      : HTMLInputElement[]
+	initial?	: any					
+	invalidTips?: string | null
 }
-export type AutoFormFieldInfos = Record<string,AutoFormFieldInfo>
+
+export type AutoFormFieldContexts = Record<string,AutoFormFieldContext>
 
 export type AutoFormContext<State extends Dict> = {
-    setDirty:()=>void
-    setValid:(val:boolean)=>void
-    fields: React.MutableRefObject<AutoFormFieldInfos>
-    validator: React.MutableRefObject<Validator<State> | null>
+    setDirty 	: ()=>void
+    setValid 	: (val:boolean)=>void    
+	state       : ComputedState<State>
+	options     : UseFormOptions<State>
+	formRef     : React.MutableRefObject<HTMLFormElement | null>
+	fields?   	: AutoFormFieldContexts
+    validator?	: Validator<State>
 }
 
-export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,options:UseFormOptions<State>,ctx:AutoFormContext<State>): React.MemoExoticComponent<AutoForm<State>>{
-    return React.memo<AutoForm<State>>((props:AutoFromProps)=>{
-        
+export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>){
+	const ctx = formCtx.current! as Required<AutoFormContext<State>>
+	const options:UseFormOptions<State> = formCtx.current!.options
+	
+    return (React.memo<AutoFormProps<State>>((props)=>{        
+		
 		const initial = useRef<boolean>(false);
-        const invalids = useRef<string[]>([]);
 
-		const updateInvalids = useCallback((path:string,value:boolean)=>{
-			if(value){
-				removeArrayItem(invalids.current,path)
-			}else{
-				if(!invalids.current.includes(path)) invalids.current.push(path)
-			}
-            ctx.setValid(invalids.current.length===0)
-		},[])
         // 仅在初始化时执行一次
         const initForm = useCallback(()=>{
             const form = options.ref!.current;            
@@ -55,26 +56,24 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             let initValid:boolean	= true
 			const { entry = [] } = options;
 			const snap = store.getSnap({ entry });
-            const fields = findAutoFields(form,options.findFields);            
-			if(isEmpty(fields)){
+            ctx.fields = findAutoFields(form,options.findFields);            
+			if(isEmpty(ctx.fields)){
 				store.log('No fields found in the autoform', 'warn')
-			}
-			ctx.validator.current = new Validator(ctx.setValid,store,form,fields,options)
+			}			
+			ctx.validator = new Validator(store,ctx)
+			
             // 初始化表单控件的值: 从state读取数据更新到表单控件
-            Object.entries(fields).forEach(([name,field]) => {
-                const path = [...entry, ...name.split(PATH_DELIMITER)];
-				// 如果指定的路径不存在，则返回的是空值
-                const value = getVal(snap, path, EMPTY_VALUE);
-                if (value === EMPTY_VALUE) {
-
-				}else{
+            Object.entries(ctx.fields).forEach(([name,field]) => {
+                const path = [...entry, ...name.split(PATH_DELIMITER)];				
+                const value = getVal(snap, path, EMPTY_VALUE);// 如果指定的路径不存在，则返回的是空值
+                if (value !== EMPTY_VALUE) {
                     field.initial = value
 					fromStateToField(field,value,options)
                 }                
             });
             // 初始化时是否进行数据校验
             if(options.validAtInit){
-                ctx.validator.current.validateAll()
+                ctx.validator.validateAll()
             }
             initial.current = true;
             ctx.setDirty();
@@ -95,35 +94,22 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				if (!pathStartsWith(entry, path)) return;
 				// 2.2 更新到表单的输入控件
 				const spath = path.join(PATH_DELIMITER);
-				if (ctx.fields.current!.has(spath)) {
-					const oldValue = ctx.fields.current!.get(spath).value;
-                    //  注意：这里需要比对一个输入控件的值，如果不相同才进行更新，否则会导致死循环
-					if (oldValue !== value) {                        
-                        // 更新到表单字段中	
-						ctx.fields.current!.get(spath).value = value;	
-						// 执行校验
-                        const fieldEle = ctx.fields.current!.get(spath)
-						const validateResult = validate(path, value, fieldEle,options.ref!.current!,options);
-						updateInvalids(spath,validateResult.value)
-						toggleValidateResult(spath,validateResult,fieldEle,options.ref!.current!,options);						
+				if (spath in ctx.fields) {
+					const fieldInfo = ctx.fields![spath]
+					if(fromStateToField(fieldInfo,value,ctx.options)){
+						ctx.validator.validate(fieldInfo.el);
 					}
 				}
 			});
 			// 3. 输入控件变更时的响应
 			const onChange = (e: any) => {
 				const input = e.target;
-				const name = input.name;
-				if (!name) return;
-				const path = [...entry, ...name.split(PATH_DELIMITER)];
+				const path = input.name;
+				if (!path) return;
 				const newVal = input.type === "checkbox" ? input.checked : input.value;
-                // 当用户输入时进行比对，如果正确则更新
-				const validateResult = validate(path, newVal, input,options.ref!.current!,options);                
-				if (validateResult.value) {
-					store.update((state) => { setVal(state, path, newVal); },{ peep: true });
-                }                         
-                const fieldEle = ctx.fields.current!.get(name)
-				updateInvalids(name,validateResult.value)
-				toggleValidateResult(name,validateResult,fieldEle,options.ref!.current!,options);	
+				if(ctx.validator.validate(input)){
+					fromFieldToState(store, input,path, newVal, ctx.options);
+				}                
                 ctx.setDirty()            
 			};
             // 3. 侦听来自表单输入的变更
@@ -131,15 +117,13 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 			return () => {
 				watcher.off();
 				form.removeEventListener("input", onChange);
-
-				
 			};
 		},[]);
         const Children = React.memo(()=><>{props.children}</>,()=>true)
 		return <form {...props} ref={options.ref}>
             <Children/>
         </form>
-	},()=>true)
+	},()=>true)) as unknown as React.MemoExoticComponent<AutoForm<State>>
 }
 
 

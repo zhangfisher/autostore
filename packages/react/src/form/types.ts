@@ -1,6 +1,8 @@
 import { ComputedState, Dict, WatchListenerOptions } from "autostore"
 import { CSSProperties } from "react"
 import { AutoForm } from "./Form"
+import { ValidResult } from '../../../components/src/Field';
+import { ValidateResult } from "./validate";
 
 export type InputBindings<Value=any>={ 
     value?   : Value
@@ -81,6 +83,10 @@ export type UseFormOptions<State extends Dict>={
      */
     validAtInit?:boolean
     /**
+     * 何时进行字段校验
+     */
+    validOn?:'input' | 'lost-focus' | 'submit'
+    /**
      * 表单类名
      * 默认值：autoform
      */
@@ -97,13 +103,12 @@ export type UseFormOptions<State extends Dict>={
     /**
      * 当校验出错时将错误信息显示在哪个元素上
      * @description
-     * - undefined:  写入到默认的当前input的下一个元素中，要求其具有.error-tips
+     * - undefined:  采用浏览器默认的校验错误提示方式
      * - 选择器： 写入到选择器指向的元素中,选择器支持插值变量{name}代表当前input的name，即状态路径名称
-     * 
-     * errElement仅在出错时会显示
+     * - Function: 由函数自行决定如何显示
      * 
      */
-    invalidElement?:string
+    reportElement?:string | ((result:ValidateResult,fieldEle:HTMLElement)=>void)
     /**
      * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
      * ROOT代表输入根元素
@@ -127,7 +132,7 @@ export type UseFormOptions<State extends Dict>={
      * 在输入时执行数据校验，成功才会写入状态中
      * 错误时应返回false或错误字符串
      */
-    validate?:(path:string,value:any,input:HTMLElement)=>boolean | string
+    validate?:(path:string,value:any,part:string | null,input:HTMLElement)=>boolean | string
     /**
      * 当状态数据变化时，调用本方法将数据转换为表单输入控制使用的数据
      * 如果返回undefined则保留原值
@@ -136,15 +141,18 @@ export type UseFormOptions<State extends Dict>={
      *  state.vip=true  --> 是
      *  state.vip=false --> 否
      * 
+     * 返回值将写入input
+     * 
      */
-    fromState?:(path:string,value:any,part:string | undefined)=>any
+    fromState?:(path:string,stateValue:any,part:string | undefined)=>any
     /**
      * 当表单输入控件变化时，调用本方法将数据转换后再写入状态
      * 
      * 例：将上例中的是/否转换为true/false
      * 
+     * 
      */
-    toState?:(path:string,value:any,input:HTMLElement,part:string | undefined)=>any
+    toState?:(path:string,inputValue:any,part:string | undefined,stateValue:any,input:HTMLInputElement)=>any
 }
 
 export type UseFormType<State extends Dict>  = {

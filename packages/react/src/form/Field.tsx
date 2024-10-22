@@ -87,8 +87,11 @@ export type AutoFieldProps<State extends Dict,Value> = {
 
 export type AutoField<State extends Dict> = <Value>(props:AutoFieldProps<State,Value>)=>React.ReactNode
 
-export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,options:UseFormOptions<State>,formRef:React.MutableRefObject<HTMLFormElement | undefined>,formCtx:React.RefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoField<State>>{
-     return React.memo<AutoField<State>>(<Value=any>(props:AutoFieldProps<State,Value>)=>{
+export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoField<State>>{
+    const ctx = formCtx.current!
+    const options:UseFormOptions<State> = formCtx.current!.options
+
+    return React.memo<AutoField<State>>(<Value=any>(props:AutoFieldProps<State,Value>)=>{
         const { render,name } = props
         const ref = useRef<HTMLDivElement>(null)
         const [ value ] = store.useState(props.name as any,true)

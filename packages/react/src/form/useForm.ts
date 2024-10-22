@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { Dict, getVal, PATH_DELIMITER,  } from "autostore";
+import { MemoExoticComponent, useEffect, useRef, useState } from "react";
+import { Dict, getVal  } from "autostore";
 import type { ReactAutoStore } from "../store";
 import { UseFormType } from "./types";
-import { Validator } from "./validate";
-import { AutoForm, AutoFormContext, AutoFormFieldInfos, createAutoFormComponent } from "./Form";
-import { EMPTY_VALUE } from "./consts";
+import { AutoForm, AutoFormContext, createAutoFormComponent } from "./Form";
 import { AutoField, createAutoFieldComponent } from "./Field";
 
 
@@ -58,42 +56,36 @@ import { AutoField, createAutoFieldComponent } from "./Field";
  */
 export function createUseForm<State extends Dict>(store: ReactAutoStore<State>):UseFormType<State> {
 	return function () {
-		const formComponentRef = useRef<AutoForm<State> | null>(null)
-		const fieldComponentRef = useRef<AutoField<State> | null>(null)
-		const formRef = useRef<HTMLFormElement | null>(null);
-		const fields = useRef<AutoFormFieldInfos>({}); 		
-		const validator = useRef<Validator<State> | null>(null);
-		const formContext = useRef<AutoFormContext<State> | null>()
+		const formComponentRef = useRef<MemoExoticComponent<AutoForm<State>> | null>(null)
+		const fieldComponentRef = useRef<MemoExoticComponent<AutoField<State>> | null>(null)
+		const formRef = useRef<HTMLFormElement | null>(null);				
+		const formContext = useRef<AutoFormContext<State> | null>(null)
 
 		const [valid, setValid] = useState<boolean>(true);
 		const [dirty, setDirty] = useState<boolean>(false);
-
 
 		const options = arguments[0] || {}
 		if(!options.ref) options.ref = formRef;
 		
 
-		if(!formComponentRef.current){
+		if(!formComponentRef.current){ 
 			formContext.current = {
-				fields,
-				validator,
+				options, 
 				setDirty: () =>dirty === false && setDirty(true),
 				setValid,
+				state:getVal(store.state,options.entry || []),
+				formRef,
 			}
-			formComponentRef.current = createAutoFormComponent<State>(store, options,formContext)
-			fieldComponentRef.current = createAutoFieldComponent<State>(store, options,formRef,formContext)
+			formComponentRef.current = createAutoFormComponent<State>(store,formContext)
+			fieldComponentRef.current = createAutoFieldComponent<State>(store, formContext)
 		}
 
-		useEffect(()=>{
+		useEffect(()=>{			
 			return ()=>{
-				// 清除所有ref
-				formComponentRef.current = null;
+				formComponentRef.current  = null;
 				fieldComponentRef.current = null;
-				formRef.current = null
-				fields.current = null
-				validator.current = null
-				formContext.current = null
-
+				formRef.current           = null 
+				formContext.current       = null
 			}
 		},[])
 

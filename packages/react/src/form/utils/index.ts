@@ -5,7 +5,7 @@ export * from './removeStyle';
 export * from './removeArrayItem';
 export * from './addElementStyleOrClass';
 export * from './removeStyleOrClass';
-export * from './createDefaultInvalidElement'
+export * from './createDefaultReportElement'
 export * from './isInputElement';
 export * from './findAutoFields'
 export * from './fromFieldToState'

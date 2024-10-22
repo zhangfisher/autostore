@@ -1,4 +1,5 @@
-import type { AutoFormFieldInfos } from "../Form";
+import { FIELD_DATA_VALIDATE_MESSAGE } from "../consts";
+import type { AutoFormFieldContexts } from "../Form";
 import { UseFormOptions } from "../types";
 import { isInputElement } from './isInputElement';
 
@@ -47,7 +48,7 @@ function defaultFindFields(form:HTMLFormElement){
  *  @param form - 表单元素
  * @param fieldSelector - 字段选择器
  */
-export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<any>['findFields']):AutoFormFieldInfos{
+export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<any>['findFields']):AutoFormFieldContexts{
     const fieldEles = findFields ? findFields(form) : defaultFindFields(form)    
     return fieldEles.reduce((results,fieldEle)=>{ 
         const fieldName = fieldEle.getAttribute('name')
@@ -57,12 +58,16 @@ export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<an
                 : fieldEle.querySelectorAll("input[value=''],textarea[value=''],select[value='']")
             ) as HTMLInputElement[]
             results[fieldName] = {
-                name:fieldName,
+                path:fieldName,
                 el:fieldEle,
                 inputs,
-                invalidTips:fieldEle.getAttribute('data-valid-tips')
+                invalidTips:fieldEle.getAttribute(FIELD_DATA_VALIDATE_MESSAGE)
             }
+            // 为字段元素下的所有输入控件都设置同样name属性
+            results[fieldName].inputs.forEach(input=>{
+                input.setAttribute('name',fieldName)
+            })
         }
         return results
-    },{} as AutoFormFieldInfos)
+    },{} as AutoFormFieldContexts)
 }

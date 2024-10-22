@@ -1,5 +1,5 @@
 import { isNumber } from "../../utils/isNumber"
-import type { AutoFormFieldInfo } from "../Form"
+import type { AutoFormFieldContext } from "../Form"
 import { UseFormOptions } from "../types"
 
 
@@ -18,20 +18,37 @@ function defaultFromState(_:string,value:any,part:string | undefined){
     return value
 }
 
-export function fromStateToField(fieldInfo:AutoFormFieldInfo,value:any,options:UseFormOptions<any>){
+
+
+/**
+ * 将表单状态转换为字段值，并更新对应的表单元素。
+ * @param fieldInfo - 表单字段信息。
+ * @param value - 需要转换的值。
+ * @param options - 表单使用的选项，包括状态转换函数。
+ * @returns 如果字段值发生变化则返回 true，否则返回 false。
+ */
+export function fromStateToField(fieldInfo:AutoFormFieldContext,value:any,options:UseFormOptions<any>){
     const fromState = options.fromState || defaultFromState    
+    let changed:boolean = false
     fieldInfo.inputs.forEach(input=>{
          const part = input.dataset.fieldPart        
         // 转换值,以便可以写入到表单元素中
-        const v = fromState(fieldInfo.name,value,part)        
+        const v = fromState(fieldInfo.path,value,part)    
+        const oldVal = input.type==='checkbox' ? input.checked : input.value    
+        let newVal:any
         if(input.type === "checkbox"){
-            input.checked = Boolean(v)
-        }else if(input.type === "radio"){
-            input.checked = input.value === v
-        }else if(input.type === "file"){
-            // 不支持文件类型
+            newVal = Boolean(v)
         }else{
-            input.value = v || ''
+            newVal = v || ''
+        }
+        if(oldVal !== newVal){
+            if(input.type === "checkbox"){
+                input.checked= newVal
+            }else{
+                input.value = newVal
+            }
+            changed=true
         }
     })
+    return changed
 }

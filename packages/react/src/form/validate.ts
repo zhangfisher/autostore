@@ -1,22 +1,28 @@
-import { Dict, getVal, isFunction, PATH_DELIMITER } from "autostore";
-import { UseFormOptions } from "./types";
-import { addElementStyleOrClass, createDefaultInvalidElement, getInputElements, isInputElement, removeArrayItem, removeStyleOrClass } from "./utils";
+import { Dict, isFunction } from "autostore";
+import { addElementStyleOrClass, createDefaultReportElement, getInputElements, isInputElement, removeArrayItem, removeStyleOrClass } from "./utils";
 import type { ReactAutoStore } from "../store";
-import type { AutoFormFieldInfos } from "./Form";
+import type { AutoFormContext } from "./Form";
+import { FIELD_DATA_PART, FIELD_INVALID_CLASS } from "./consts";
 
+export type ValidateResult = {
+    path : string
+    value: boolean
+    error: string | null | undefined
+}
+  
 
 export class Validator<State extends Dict>{
     private _onInvalid
-    private _onFormValid:(valid:boolean)=>void      // 更新表单的有效状态
     private _invalids:string[] = []                   // 保存无效字段名称列表 
-    constructor(onFormValid:(valid:boolean)=>void,public store: ReactAutoStore<State>,public form:HTMLFormElement,public fields: AutoFormFieldInfos,public options:UseFormOptions<any>){
+    private _onFormValid:AutoFormContext<State>['setValid']
+    constructor(public store: ReactAutoStore<State>,public formCtx:AutoFormContext<State>){
         this._onInvalid = this.onInvalid.bind(this)
-        this._onFormValid = onFormValid
+        this._onFormValid = formCtx.setValid
         this.attach()
-    }
-    getEntry(){
-        return getVal(this.store.state,this.options.entry || [])
-    }
+    } 
+    get form(){return this.formCtx.formRef.current!}
+    get options(){return this.formCtx.options}
+    get fields(){ return this.formCtx.fields!}
     attach(){
         this.form.addEventListener('invalid',this._onInvalid,true)
     }
@@ -24,18 +30,23 @@ export class Validator<State extends Dict>{
         this.form.removeEventListener('invalid',this._onInvalid,true)
         this._invalids = []
     }
-    
+    /**
+     * 当元素校验无效时调用
+     */
     onInvalid(e:any){
-        alert("invalid")
+        
+    }
+    setValid(value:boolean){    
+        this.formCtx.setValid(value)
     }
 
     private updateInvalids(path:string,value:boolean){
         if(value){
-            removeArrayItem(invalids.current,path)
+            removeArrayItem(this._invalids,path)
         }else{
-            if(!invalids.current.includes(path)) invalids.current.push(path)
+            if(!this._invalids.includes(path)) this._invalids.push(path)
         }
-        ctx.setValid(invalids.current.length===0)
+        this.setValid(this._invalids.length===0)
     }
     /**
      * 对所有字段执行校验
@@ -43,57 +54,56 @@ export class Validator<State extends Dict>{
     validateAll(){
         let isValid = this.form.checkValidity()
         if(!isValid) this.reportAll()    
-        const { entry = [] } = this.options
-        for(let field of this.fields){
-            
-            this.validate
-        }
-        
+        for(let fieldCtx of Object.values(this.fields)){            
+            this.validate(fieldCtx.el)
+        }        
     }
 
     /**
      * 对单个字段执行校验，返回校验结果{value:boolean,error:string | null}
      * 
+     * 本方法在
+     * 
      */
-    validate(path:string,value:any,fieldEle: HTMLElement){
+    validate(fieldEle: HTMLElement){
         const validateFn = this.options.validate
         const hasCustomValidate =  validateFn && isFunction(validateFn)
-
+        const path= fieldEle.getAttribute('name') 
+        if(!path) return 
         const validResult:ValidateResult =  {
+            path,
             value:true,
             error:null
+        }    
+        // 1. 首先执行表单控件的标准校验，即input控件上的max,min,pattern等
+        const inputEles = getInputElements(fieldEle)
+        for(let inputEle of inputEles){
+            if(inputEle && inputEle.checkValidity && !inputEle.checkValidity()){
+                validResult.value = false
+                validResult.error = inputEle.validationMessage 
+                this.report(fieldEle,validResult)
+            }
         }
-    
-        // 1. 执行表单控件的标准校验，即input控件上的max,min,pattern等
-        const inputEle = getInputElements(fieldEle)
-        if(inputEle && inputEle.checkValidity && !inputEle.checkValidity()){
-            validResult.value = false
-            validResult.error = inputEle.validationMessage
-            return  
-        }
-
-        // 2. 是否启用了自定义校验功能
+        // 2. 是否启用了自定义校验功能，即调用options.validate方法来进行校验
         if (hasCustomValidate) {        
-            // 执行校验函数
-            const isvalid = validateFn!(path, value, fieldEle);        
-            if (typeof isvalid === "boolean") {
-                validResult.value = isvalid
-                validResult.error = fieldEle.dataset.errorTips || 'ERROR'
-            } else if (typeof isvalid === "string") {
-                validResult.value=false
-                validResult.error = isvalid                
-            }
-            const inputEle = getInputElements(fieldEle)
-            if(inputEle && inputEle.setCustomValidity ){
-                inputEle.setCustomValidity(validResult.error || '')                
-            }
-        }
-        if(inputEle){
-            if(validResult.value){
-                inputEle.setCustomValidity('')
-            }else{
-                inputEle.reportValidity()
-            }
+            const inputEles = getInputElements(fieldEle)
+            for(let inputEle of inputEles){
+                const value = inputEle.value
+                const part = inputEle.getAttribute(FIELD_DATA_PART)
+                // 执行校验函数
+                const isValid = validateFn!(path!,value,part,fieldEle);        
+                if (typeof isValid === "boolean") {
+                    validResult.value = isValid
+                    validResult.error = fieldEle.dataset.errorTips || 'ERROR'
+                } else if (typeof isValid === "string") {
+                    validResult.value=false
+                    validResult.error = isValid                
+                }
+                if(inputEle && inputEle.setCustomValidity ){
+                    inputEle.setCustomValidity(validResult.error || '')                
+                }
+                this.report(fieldEle,validResult)
+            }  
         }        
         return validResult;
     }
@@ -102,133 +112,77 @@ export class Validator<State extends Dict>{
     /**
      * 获取一个元素用来显示校验错误信息
      */
-    getErrorElement(path:string,fieldEle:any): HTMLElement | undefined  {        
+    getReportElement(path:string,fieldEle:any): HTMLElement | undefined  {        
         if(!fieldEle) return 
         const isInputEle = isInputElement(fieldEle)    
-        const isCustomErr = this.options.invalidElement && typeof this.options.invalidElement === "string"
+        const reportElement = this.options.reportElement
+        const isCustomErr = reportElement && typeof reportElement === "string"
         let errElement: any = isCustomErr 
-            ? this.form.querySelector(this.options.invalidElement!.replace(/\{\s*name\s*\}/, path))
+            ? this.form.querySelector(reportElement!.replace(/\{\s*name\s*\}/, path))
                 : (
-                    isInputEle ? fieldEle.nextSibling : fieldEle.querySelector(".error")
+                    isInputEle ? fieldEle.nextSibling : fieldEle.querySelector(FIELD_INVALID_CLASS)
                 );
         // 如果没有提供错误信息的元素，则创建一个
         if(!errElement || errElement.nodeType !== 1){ 
-            errElement = createDefaultInvalidElement(fieldEle)
+            errElement = createDefaultReportElement(fieldEle)
         }
         return errElement
     };
+    toggleReport(fieldEle:HTMLElement,validResult:ValidateResult){
+        if(validResult.value){
+            this.hideReport(fieldEle,validResult)
+        }else{
+            this.showReport(fieldEle,validResult)
+        }
+    }
     /**
      * 显示错误元素
      * 
      * 当校验错误时调用，用来在输入控件周围显示一个元素，用来显示错误信息
      * 
      */
-    showError(path:string,error:any,fieldEle:any){
-        const errEle = this.getErrorElement(path,fieldEle)
-        const errorTips = error || fieldEle.dataset.errorTips || 'ERROR'
-        if(errEle && errorTips){
-            errEle.innerHTML = errorTips
+    private showReport(fieldEle:HTMLElement,validResult:ValidateResult){
+        const errEle = this.getReportElement(validResult.path,fieldEle)
+        const validateMessage = validResult.error || fieldEle.dataset.validateMessage || 'ERROR'
+        if(errEle && validateMessage){
+            errEle.innerHTML = validateMessage
             errEle.style.display = "block"
         }
         addElementStyleOrClass(fieldEle,this.options.invalidStyles,'style')
         addElementStyleOrClass(fieldEle,this.options.invalidClasss,'class')     
     } 
-    hideError(path:string,fieldEle:any){
+
+    private hideReport(fieldEle:HTMLElement,validResult:ValidateResult){
         removeStyleOrClass(fieldEle,this.options.invalidStyles,'style')
         removeStyleOrClass(fieldEle,this.options.invalidClasss,'class') 
-        const errEle = this.getErrorElement(path,fieldEle)
+        const errEle = this.getReportElement(validResult.path,fieldEle)
         if(errEle) errEle.style.display = "none"  
     } 
     /**
      *  报告错误
      */
-    report(fieldEle:any){
-        const inputEle = getInputElements(fieldEle)
-        if(inputEle){
-            inputEle.reportValidity()
+    report(fieldEle:HTMLElement,validResult:ValidateResult){
+
+        // 自定义报告
+        const report = this.options.reportElement
+        if(report){ // 将错误信息写入到指定的错误元素中
+            if(typeof(report)==='function'){
+                report(validResult,fieldEle)
+            }else if(typeof(report)==='string'){    // 使用选择器来获取错误输出元素
+                this.toggleReport(fieldEle,validResult)
+            }     
+        }else{ // 浏览器标准html5校验方式
+            const inputEles = getInputElements(fieldEle)
+            inputEles.forEach(inputEle=>{
+                inputEle.reportValidity()                
+            })
         }
+
+        
     }
     reportAll(){
         this.form.reportValidity()
     }
 
-
 }
-
-
-export type ValidateResult = {
-    value: boolean
-    error: string | null
-}
-
-// 对输入值进行校验
-export function validate(path: string[], value: any, input: HTMLElement, form: HTMLElement,options:UseFormOptions<any>)  {
-
-    const hasValidate =  options.validate && isFunction(options.validate)
-    let validResult:ValidateResult =  {
-        value:true,
-        error:null
-    }
-
-    // 是否启用了校验功能
-    if (hasValidate) {        
-        const spath = path.join(PATH_DELIMITER);        
-        // 执行校验函数
-        const isvalid = options.validate!(spath, value, input);        
-        if (typeof isvalid === "boolean") {
-            validResult.value = isvalid
-            validResult.error = input.dataset.errorTips || null
-        } else if (typeof isvalid === "string") {
-            validResult.value=false
-            validResult.error = isvalid
-        }
-    }
-    return validResult;
-}
-/**
- * 
- * 在DOM中显示切换校验结果
- * 
- * @param path 
- * @param value 
- * @param input 
- * @param form 
- * @param options 
- */
-export function toggleValidateResult(spath: string,valid:ValidateResult,input: HTMLElement, form: HTMLElement,options:UseFormOptions<any>)  {
-     // 获取错误信息的元素,如果没有则创建默认<span class='error-tips"></span>
-    const getErrorElement = (): HTMLElement | undefined => {        
-        const isInputEle = isInputElement(input)    
-        const isCustomErr = options.invalidElement && typeof options.invalidElement === "string"
-        let errElement: any = isCustomErr 
-            ? form.querySelector(options.invalidElement!.replace(/\{\s*name\s*\}/, spath))
-                : (
-                    isInputEle ? input.nextSibling : input.querySelector(".error")
-                );
-        // 如果没有提供错误信息的元素，则创建一个
-        if(!errElement || errElement.nodeType !== 1){ 
-            errElement = createDefaultInvalidElement(input)
-        }
-        return errElement
-    };
-    const errEle = getErrorElement()
-    if(valid.value){      // 校验成功
-        removeStyleOrClass(input,options.invalidStyles,'style')
-        removeStyleOrClass(input,options.invalidClasss,'class')   
-        if(errEle) errEle.style.display = "none"
-    }else{          // 校验出错            
-        const errorTips = valid.error || input.dataset.errorTips || 'ERROR'
-        if(errEle && errorTips){
-            errEle.innerHTML = errorTips
-            errEle.style.display = "block"
-        }
-        addElementStyleOrClass(input,options.invalidStyles,'style')
-        addElementStyleOrClass(input,options.invalidClasss,'class')        
-    }
-
-}
-
-
-
-
 

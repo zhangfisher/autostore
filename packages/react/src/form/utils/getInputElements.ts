@@ -7,12 +7,12 @@ import { isInputElement } from "./isInputElement"
  * @param input - 需要查找输入元素的 HTMLElement
  * @returns 返回找到的输入元素，如果没有找到则返回 undefined
  */
-export function getInputElements(input: HTMLElement):(HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[] {   
+export function getInputElements(input: HTMLElement):HTMLInputElement[] {   
     let ele 
     if (isInputElement(input)) {
-		ele = input
+		return [input] as HTMLInputElement[]
 	}
-	ele =input.querySelectorAll("input,textarea,select") 
-    return Array.from(ele) as (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[]
+	ele = input.querySelectorAll("input,textarea,select") 
+    return Array.from(ele) as HTMLInputElement[]
 }
 
