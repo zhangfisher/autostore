@@ -1,7 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import {Input,Button,ColorBlock,Box,Layout,JsonView,Card,CheckBox } from "x-react-components"
-import { useStore} from "@autostorejs/react";
-import React from 'react';
+import { useForm } from "@autostorejs/react";
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
@@ -10,13 +8,10 @@ const meta = {
 
 export default meta;
 
-// type Story = StoryObj<typeof meta>;
-
-
-
 
 export const BaseFrom = ()=>{
-  const { $,useState,useForm } = useStore({
+  
+  const { Form,useState } = useForm({
     user:{
         name:"张三",
         age:18,
@@ -25,11 +20,9 @@ export const BaseFrom = ()=>{
         email:"fisher@china.com",
         vip:false
     }
-  });
-
+  })
   const [ state ] = useState()
-
-  const { Form } = useForm()
+  
 
   return (
     <Card title="BaseForm">

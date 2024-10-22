@@ -1,8 +1,10 @@
-import { ComputedState, Dict, WatchListenerOptions } from "autostore"
-import { CSSProperties } from "react"
+import { AutoStore, AutoStoreOptions, ComputedState, Dict, WatchListenerOptions } from "autostore"
+import { MemoExoticComponent } from "react"
 import { AutoForm } from "./Form"
-import { ValidResult } from '../../../components/src/Field';
 import { ValidateResult } from "./validate";
+import { ReactAutoStore } from '../store';
+import { AutoField } from "./Field";
+import { PublicProperties } from "../types";
 
 export type InputBindings<Value=any>={ 
     value?   : Value
@@ -58,10 +60,20 @@ export interface UseFormBindingsType<State extends Dict> {
 // ********** useForm **********  
 
 export type UseFormResult<State extends Dict>={ 
-    Form        : AutoForm<State>
-    validation  : boolean
+    Form        : MemoExoticComponent<AutoForm<State>>
+    Field       : MemoExoticComponent<AutoField<State>>  
+    valid       : boolean
     dirty       : boolean
-}
+} & Pick<ReactAutoStore<State>,
+    '$' |'signal' | 'useState' | 'useAsyncState' | 'useDeps' | 'useField'
+    | 'bind' | 'useWatch' | 'useBindings'
+    | 'watch' | 'update' | 'batchUpdate' | 'silentUpdate'
+    | 'peep' | 'collectDependencies' | 'trace'
+    | 'id' | 'operates' | 'state' | 'peeping' | 'batching' | 'silenting'
+    | 'log' | 'destroy' | 'getSnap'
+
+>
+
 
 export type HTMLFormInputElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
@@ -72,14 +84,19 @@ export type UseFormValidateStyle = (path:string,value:any,input:HTMLElement)=>st
 // 返回字符串代表错误信息，返回HTMLElement代表错误信息的容器
 export type UseFormValidateMessage = (path:string,message:string | undefined,input:HTMLElement)=>HTMLElement | string
  
-export type UseFormOptions<State extends Dict>={
+export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
+    /**
+     * 可选，表单元素的ref
+     */
     ref?:React.RefObject<HTMLFormElement>
+    /**
+     * 当使用外部store时，可以指定entry来限定表单的数据范围
+     * 可选
+     */
     entry?: string[]
     /**
      * 在初始化时是否进行数据校验
-     * 
      * 默认=true
-     * 
      */
     validAtInit?:boolean
     /**
@@ -100,6 +117,14 @@ export type UseFormOptions<State extends Dict>={
      * 表单样式
      */
     style?: string | ((state:ComputedState<State>)=>string)
+    /**
+     * 当校验出错时，如何报告错误
+     * 
+     * - default:  采用浏览器默认的校验错误提示方式
+     * - custom:   自定义方式，此时由reportElement决定如何显示错误信息
+     * 
+     */
+    reportStyle? : 'custom' | 'default'
     /**
      * 当校验出错时将错误信息显示在哪个元素上
      * @description
@@ -156,10 +181,13 @@ export type UseFormOptions<State extends Dict>={
 }
 
 export type UseFormType<State extends Dict>  = {
-    (options?:UseFormOptions<State>): UseFormResult<State>
+    (store:ReactAutoStore<State> | AutoStore<State>,options?:UseFormOptions<State>): UseFormResult<State>
+    (state:State,options?:UseFormOptions<State>): UseFormResult<State>
 }
 
 
  
 
 export type NonFunction<T> = T extends Function ? never : T;
+
+ 

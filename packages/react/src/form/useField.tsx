@@ -37,7 +37,7 @@ import { UseInputType } from './types';
  * <input {...bindFullname} /> 
  * 
  */
-export function createUseInput<State extends Dict>(store:ReactAutoStore<State>){
+export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
     return  (function(){
         const args = arguments   
         const selector:string[] | undefined = args.length>=1 ? (

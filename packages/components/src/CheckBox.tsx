@@ -1,11 +1,12 @@
 import { styled } from "flexstyled"
+import React from "react"
 
 
 
-export type CheckBoxProps = React.PropsWithChildren<HTMLInputElement & {
-    lable?:string
+export type CheckBoxProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
+    label?:string
     labelPos?: 'left' | 'right'
-}>
+}
 
 const CheckBoxStyle = styled<CheckBoxProps>({
     padding:"4px",
