@@ -14,10 +14,8 @@ export type ValidateResult = {
 export class Validator<State extends Dict>{
     private _onInvalid
     private _invalids:string[] = []                   // 保存无效字段名称列表 
-    private _onFormValid:AutoFormContext<State>['setValid']
     constructor(public store: ReactAutoStore<State>,public formCtx:AutoFormContext<State>){
         this._onInvalid = this.onInvalid.bind(this)
-        this._onFormValid = formCtx.setValid
         this.attach()
     } 
     get form(){return this.formCtx.formRef.current!}
