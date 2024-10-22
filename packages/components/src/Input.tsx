@@ -48,23 +48,32 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
     return (
         <div style={{display:"flex",alignItems:"center",...style}}>
             { label ? <label htmlFor={id}  style={labelStyle}>{label}</label> : null }
-            <input
-                ref={ref}
-                id={id}
-                value={value}
-                readOnly={!enable}
-                {...restProps}
-                className={InputStyle.className}
-                style={InputStyle.getStyle(props)}
-            />
-            {
-                actions?.map(action=>{
-                    return <button key={action} onClick={(e)=>{
-                        // @ts-ignore
-                        props.onAction?.(action,ref.current.value,e)
-                    }}>{action}</button>
-                })
-            }
+            <div style={{
+                display:"flex",
+                flexDirection:"column",
+            }}>
+                <div>
+                    <input
+                        ref={ref}
+                        id={id}
+                        value={value}
+                        readOnly={!enable}
+                        {...restProps}
+                        className={InputStyle.className}
+                        style={InputStyle.getStyle(props)}
+                    />
+                    {
+                        actions?.map(action=>{
+                            return <button key={action} onClick={(e)=>{
+                                // @ts-ignore
+                                props.onAction?.(action,ref.current.value,e)
+                            }}>{action}</button>
+                        })
+                    }
+                </div>
+                <span className="error"></span>            
+            </div>
+
         </div>
     );
 };

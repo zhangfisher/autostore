@@ -2,7 +2,7 @@ import { Dict, isFunction } from "autostore";
 import { addElementStyleOrClass, createDefaultReportElement, getInputElements, isInputElement, removeArrayItem, removeStyleOrClass } from "./utils";
 import type { ReactAutoStore } from "../store";
 import type { AutoFormContext } from "./Form";
-import { FIELD_DATA_PART, FIELD_INVALID_CLASS } from "./consts";
+import { FIELD_DATA_PART, FIELD_INVALID_CLASS } from './consts';
 
 export type ValidateResult = {
     path : string
@@ -34,7 +34,8 @@ export class Validator<State extends Dict>{
      * 当元素校验无效时调用
      */
     onInvalid(e:any){
-        
+        const input = e.target
+        console.log("form invalid:",input.getAttribute('name'))
     }
     setValid(value:boolean){    
         this.formCtx.setValid(value)
@@ -52,11 +53,24 @@ export class Validator<State extends Dict>{
      * 对所有字段执行校验
      */
     validateAll(){
-        let isValid = this.form.checkValidity()
-        if(!isValid) this.reportAll()    
         for(let fieldCtx of Object.values(this.fields)){            
             this.validate(fieldCtx.el)
         }        
+    }
+
+    /**
+     * 标准input的没有修改前调用checkValidity会返回true
+     * <input minlength="2" value="1/>
+     * 
+     * 此时调用checkValidity会返回true，只有当用户修改后再调用才会在无效时返回false
+     * 也就是说checkValidity在初始化调用时是无效的
+     * 
+     * 
+     * 
+     */
+    private checkValidity(inputEle:HTMLInputElement){
+        const isValid = inputEle && inputEle.checkValidity && !inputEle.checkValidity()
+        
     }
 
     /**
@@ -80,9 +94,12 @@ export class Validator<State extends Dict>{
         for(let inputEle of inputEles){
             if(inputEle && inputEle.checkValidity && !inputEle.checkValidity()){
                 validResult.value = false
-                validResult.error = inputEle.validationMessage 
-                this.report(fieldEle,validResult)
+                validResult.error = inputEle.validationMessage                 
+            }else{
+                validResult.value=true
+                validResult.error=null
             }
+            this.report(fieldEle,validResult)
         }
         // 2. 是否启用了自定义校验功能，即调用options.validate方法来进行校验
         if (hasCustomValidate) {        
@@ -156,19 +173,19 @@ export class Validator<State extends Dict>{
         removeStyleOrClass(fieldEle,this.options.invalidStyles,'style')
         removeStyleOrClass(fieldEle,this.options.invalidClasss,'class') 
         const errEle = this.getReportElement(validResult.path,fieldEle)
-        if(errEle) errEle.style.display = "none"  
+        if(errEle && errEle.classList.contains(FIELD_INVALID_CLASS)) errEle.style.display = "none"  
     } 
     /**
      *  报告错误
      */
     report(fieldEle:HTMLElement,validResult:ValidateResult){
-
         // 自定义报告
-        const report = this.options.reportElement
-        if(report){ // 将错误信息写入到指定的错误元素中
+        const reportStyle = this.options.reportStyle || 'custom'
+        if(reportStyle==='custom'){ // 将错误信息写入到指定的错误元素中            
+            const report = this.options.reportElement
             if(typeof(report)==='function'){
                 report(validResult,fieldEle)
-            }else if(typeof(report)==='string'){    // 使用选择器来获取错误输出元素
+            }else{    // 使用选择器来获取错误输出元素
                 this.toggleReport(fieldEle,validResult)
             }     
         }else{ // 浏览器标准html5校验方式

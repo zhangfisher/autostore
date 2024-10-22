@@ -22,7 +22,6 @@
   "devDependencies": {
     "@autostorejs/devtools": "workspace:*",
     "@autostorejs/react": "workspace:*",
-    "@chromatic-com/storybook": "1.9.0",
     "@eslint/js": "^9.9.0",
     "@storybook/addon-essentials": "8.3.5",
     "@storybook/addon-interactions": "8.3.5",

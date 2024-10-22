@@ -12,6 +12,34 @@ function defaultFindFields(form:HTMLFormElement){
     return fieldEles
 } 
 
+
+
+/**
+ * 修正输入控件的长度约束
+ * 
+ * input的minlength,maxlength属性在初始化时调用checkValidity总是返回true
+ * 只有当输入时才会根据minlength,maxlength属性进行校验
+ * 这导致在初始化时无法校验显示错误
+ * 所以将minlength,maxlength属性转换为pattern属性
+ * 
+ */
+// function fixInputLengthCheckBehavior(input:HTMLInputElement){
+//     const minLen = input.getAttribute('minlength')
+//     const maxLen = input.getAttribute('maxlength')
+//     if(minLen || minLen){
+//         input.setAttribute('pattern',`.{${minLen || ''},${maxLen || ''}}`)        
+//     }
+//     input.removeAttribute('minlength')
+//     input.removeAttribute('maxlength')
+//     if(minLen && maxLen){
+//         input.setCustomValidity(`请输入${minLen}-${maxLen}个字符`)
+//     }else if(minLen){
+//         input.setCustomValidity(`最少输入${minLen}个字符`)
+//     }else if(maxLen){
+//         input.setCustomValidity(`最多输入${maxLen}个字符`)
+//     }
+// }
+
 /**
  * 
  * 根据表单元素和字段选择器，查询表单中的字段元素
@@ -66,8 +94,12 @@ export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<an
             // 为字段元素下的所有输入控件都设置同样name属性
             results[fieldName].inputs.forEach(input=>{
                 input.setAttribute('name',fieldName)
+                //fixInputLengthCheckBehavior(input)
             })
         }
         return results
     },{} as AutoFormFieldContexts)
 }
+
+
+

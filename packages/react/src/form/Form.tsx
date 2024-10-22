@@ -9,6 +9,7 @@ import { EMPTY_VALUE } from "./consts";
 import { isEmpty } from "../utils/isEmpty"; 
 import { fromStateToField } from "./utils/fromStateToField";
 import { fromFieldToState } from "./utils";
+import { isFalse } from "./utils/isFalse";
 
 
 export type AutoFormProps<State extends Dict>  = React.PropsWithChildren<
@@ -72,7 +73,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
                 }                
             });
             // 初始化时是否进行数据校验
-            if(options.validAtInit){
+            if(!isFalse(options.validAtInit)){
                 ctx.validator.validateAll()
             }
             initial.current = true;
