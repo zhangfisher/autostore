@@ -3,7 +3,7 @@ export const EMPTY_VALUE = Symbol("empty");
 
 
 export const FIELD_INVALID_CLASS = "invalid"
-export const FIELD_DATA_VALIDATE_MESSAGE = 'data-validate-message'
+export const FIELD_DATA_INVALID_TIPS = 'data-invalid-tips'
 export const FIELD_DATA_PART = 'data-field-part'
 export const FIELD_VALIDATE_FIELD = "data-validate-field"
 

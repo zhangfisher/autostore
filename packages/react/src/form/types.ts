@@ -127,7 +127,7 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * - custom:   自定义方式，校验信息将写入到[data-validate-field=xxxx]所在的元素
      * 
      */
-    reportStyle? : 'default' | 'custom'  
+    customReport? : boolean
     /**
      * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
      * ROOT代表输入根元素

@@ -1,5 +1,5 @@
 import { Dict, isFunction } from "autostore";
-import { addElementStyleOrClass, getInputElements, removeArrayItem, removeStyleOrClass } from "./utils";
+import { addElementStyleOrClass, getInputElements, removeArrayItem, removeClass, removeStyleOrClass } from "./utils";
 import type { ReactAutoStore } from "../store";
 import type { AutoFormContext } from "./Form";
 import { DEFAULT_INVALUE_STYLE, FIELD_DATA_PART, FIELD_INVALID_CLASS } from './consts';
@@ -100,7 +100,7 @@ export class Validator<State extends Dict>{
                     validResult.error = isValid                
                 }
                 //this.updateInvalids(path,validResult.value)
-                if(inputEle && inputEle.setCustomValidity && this.options.reportStyle==='default'){
+                if(inputEle && inputEle.setCustomValidity && this.options.customReport){
                     inputEle.setCustomValidity(validResult.error || '')                
                 }
                 this.report(fieldEle,validResult)
@@ -114,6 +114,22 @@ export class Validator<State extends Dict>{
         return fieldEle.getAttribute('name') 
             || fieldEle.getAttribute('data-field-name')
     }
+    /**
+     * 获取指定字段的相关元素
+     * - 字段根元素
+     * - 内部所有input元素
+     */
+    private getFieldRelElements(fieldEle:HTMLElement){
+        const name = this.getFieldName(fieldEle)
+        if(!name) return []
+        const els:any[]=[]
+        this.fields[name] && this.fields[name].forEach(field=>{
+            els.push(field.el)
+            els.push(...field.inputs)
+        })
+        return els
+    }
+
 
     /**
      * 获取一个元素用来显示校验错误信息
@@ -143,28 +159,35 @@ export class Validator<State extends Dict>{
      * 
      */
     private showReport(fieldEle:HTMLElement,validResult:ValidateResult){
+        // 1. 将错误信息显示在指定元素上
         const reportEles = this.getReportElements(fieldEle,validResult)
-        const validateMessage = validResult.error || fieldEle.dataset.validateMessage || 'ERROR'
+        const validateMessage = validResult.error || fieldEle.dataset.invalidTips || 'ERROR'
         if(reportEles && validateMessage){
             reportEles.forEach(reportEle=>{
                 reportEle.innerHTML = validateMessage
                 reportEle.style.display = "block"
             })
         }
-        addElementStyleOrClass(fieldEle,this.options.invalidStyles || DEFAULT_INVALUE_STYLE,'style')
-        addElementStyleOrClass(fieldEle,this.options.invalidClasss || FIELD_INVALID_CLASS,'class')    
-
+        // 2. 为字段元素添加错误类和样式
+        const relEles = this.getFieldRelElements(fieldEle)
+        relEles.forEach(el=>{
+            addClass(el,FIELD_INVALID_CLASS)
+        })
     } 
 
     private hideReport(fieldEle:HTMLElement,validResult:ValidateResult){
-        removeStyleOrClass(fieldEle,this.options.invalidStyles || DEFAULT_INVALUE_STYLE,'style')
-        removeStyleOrClass(fieldEle,this.options.invalidClasss || FIELD_INVALID_CLASS,'class') 
+        // 1. 隐藏错误信息
         const reportEles = this.getReportElements(fieldEle,validResult)
         if(reportEles){
             reportEles.forEach(reportEle=>{
                 if(reportEle.classList.contains(FIELD_INVALID_CLASS)) reportEle.style.display = "none"  
             })
         } 
+        // 2. 移除错误类和样式
+        const relEles = this.getFieldRelElements(fieldEle)
+        relEles.forEach(el=>{
+            removeClass(el,FIELD_INVALID_CLASS)
+        })
     } 
     /**
      * 
@@ -172,16 +195,15 @@ export class Validator<State extends Dict>{
      * 
      */
     report(fieldEle:HTMLElement,validResult:ValidateResult){
-        // 自定义报告
-        const reportStyle = this.options.reportStyle || 'custom'
-        if(reportStyle==='default'){            
+        const isCustomReport = this.options.customReport !== false  // 自定义报告
+        if(isCustomReport){
+            this.toggleReport(fieldEle,validResult)            
+        } else{            
             const inputEles = getInputElements(fieldEle)
             inputEles.forEach(inputEle=>{
                 inputEle.reportValidity()                
             })
-        }else{
-            this.toggleReport(fieldEle,validResult)            
-        } 
+        }
     }
     reportAll(){
         this.form.reportValidity()

@@ -1,4 +1,4 @@
-import { FIELD_DATA_VALIDATE_MESSAGE } from "../consts";
+import { FIELD_DATA_INVALID_TIPS } from "../consts";
 import type { AutoFormFieldContext, AutoFormFieldContexts } from "../Form";
 import { UseFormOptions } from "../types";
 import { isInputElement } from './isInputElement';
@@ -95,7 +95,7 @@ export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<an
                 path:fieldName,
                 el:fieldEle,
                 inputs,
-                invalidTips:fieldEle.getAttribute(FIELD_DATA_VALIDATE_MESSAGE)
+                invalidTips:fieldEle.getAttribute(FIELD_DATA_INVALID_TIPS)
             } as AutoFormFieldContext)
         }        
         return fields      

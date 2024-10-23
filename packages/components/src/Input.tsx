@@ -17,27 +17,30 @@ export type InputProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLI
 
 
 const InputStyle = styled<InputProps>({
-    border: (props)=>props.validate === false ? "1px solid red" : "1px solid #bbb",
-    borderRadius: "4px",
-    background: (props)=>props.enable===false ? "gray" : "white",
-    display: (props)=>props.visible===false ? "none" : "flex",
-    margin: "4px",
-    padding: "8px",
-    flexGrow:1,  
-    "&:focus":{
-        outline:"none",
-        boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"
-    },
-    "&:invalid":{
-        border:"1px solid red",
-        color:"red",
-        "& .error":{
-            display:"block",
+    display:"flex",
+    alignItems:"center",
+    "& input": {
+        border: (props)=>props.validate === false ? "1px solid red" : "1px solid #bbb",
+        borderRadius: "4px",
+        background: (props)=>props.enable===false ? "gray" : "white",
+        display: (props)=>props.visible===false ? "none" : "flex",
+        margin: "4px",
+        padding: "8px",
+        flexGrow:1,  
+        "&:focus":{
+            outline:"none",
+            boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"
+        },
+        "&.invalid":{
+            border:"1px solid red",
             color:"red"
-        }        
-    },
-    "& .invalid":{
-        display: 'none'
+        }
+    },    
+    "& .error":{
+        display: "none",
+        "&.invalid":{
+            display:"block"
+        }
     }
 },{
     className:"x-input"
@@ -57,7 +60,10 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
     };
 
     return (
-        <div style={{display:"flex",alignItems:"center",...style}}>
+        <div         
+            className={InputStyle.className}
+            style={InputStyle.getStyle(props,style as any)}
+        >
             { label ? <label htmlFor={id}  style={labelStyle}>{label}</label> : null }
             <div style={{
                 display:"flex",
@@ -70,8 +76,6 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
                         value={value}
                         readOnly={!enable}
                         {...restProps}
-                        className={InputStyle.className}
-                        style={InputStyle.getStyle(props)}
                     />
                     {
                         actions?.map(action=>{

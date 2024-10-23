@@ -24,7 +24,7 @@ export const CustomReportVerify = {
 				vip: false,
 			},
 		},{
-			reportStyle:reportStyle as any 
+			customReport:reportStyle as any 
 		});	
 
 		const [state] = useState();
