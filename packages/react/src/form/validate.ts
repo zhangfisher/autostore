@@ -118,14 +118,16 @@ export class Validator<State extends Dict>{
     /**
      * 获取一个元素用来显示校验错误信息
      */
-    getReportElement(fieldEle:HTMLElement,_:ValidateResult): HTMLElement | undefined | null  {        
-        if(!fieldEle) return 
+    getReportElements(fieldEle:HTMLElement,_:ValidateResult): HTMLElement[]  {        
+        if(!fieldEle) return []
         const fieldName = this.getFieldName(fieldEle)        
-        const reportEle = this.form.querySelector(`[data-validate-field='${fieldName}']`)
-        if(reportEle){
-            addClass(reportEle,FIELD_INVALID_CLASS)
+        const reportEles = this.form.querySelectorAll(`[data-validate-field='${fieldName}']`)
+        if(reportEles){
+            reportEles.forEach(reportEle=>{
+                addClass(reportEle,FIELD_INVALID_CLASS)
+            })
         }
-        return reportEle as HTMLElement | undefined | null
+        return reportEles as unknown  as HTMLElement[]
     };
     toggleReport(fieldEle:HTMLElement,validResult:ValidateResult){
         if(validResult.value){
@@ -141,21 +143,28 @@ export class Validator<State extends Dict>{
      * 
      */
     private showReport(fieldEle:HTMLElement,validResult:ValidateResult){
-        const reportEle = this.getReportElement(fieldEle,validResult)
+        const reportEles = this.getReportElements(fieldEle,validResult)
         const validateMessage = validResult.error || fieldEle.dataset.validateMessage || 'ERROR'
-        if(reportEle && validateMessage){
-            reportEle.innerHTML = validateMessage
-            reportEle.style.display = "block"
+        if(reportEles && validateMessage){
+            reportEles.forEach(reportEle=>{
+                reportEle.innerHTML = validateMessage
+                reportEle.style.display = "block"
+            })
         }
         addElementStyleOrClass(fieldEle,this.options.invalidStyles || DEFAULT_INVALUE_STYLE,'style')
-        addElementStyleOrClass(fieldEle,this.options.invalidClasss || FIELD_INVALID_CLASS,'class')         
+        addElementStyleOrClass(fieldEle,this.options.invalidClasss || FIELD_INVALID_CLASS,'class')    
+
     } 
 
     private hideReport(fieldEle:HTMLElement,validResult:ValidateResult){
         removeStyleOrClass(fieldEle,this.options.invalidStyles || DEFAULT_INVALUE_STYLE,'style')
         removeStyleOrClass(fieldEle,this.options.invalidClasss || FIELD_INVALID_CLASS,'class') 
-        const reportEle = this.getReportElement(fieldEle,validResult)
-        if(reportEle && reportEle.classList.contains(FIELD_INVALID_CLASS)) reportEle.style.display = "none"  
+        const reportEles = this.getReportElements(fieldEle,validResult)
+        if(reportEles){
+            reportEles.forEach(reportEle=>{
+                if(reportEle.classList.contains(FIELD_INVALID_CLASS)) reportEle.style.display = "none"  
+            })
+        } 
     } 
     /**
      * 
