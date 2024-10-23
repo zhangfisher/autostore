@@ -102,7 +102,6 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 		return ()=>{
 			formComponentRef.current  = null;
 			fieldComponentRef.current = null;
-			formRef.current           = null 
 			formContext.current       = null
 			storeRef.current?.destroy()
 			storeRef.current	      = null			

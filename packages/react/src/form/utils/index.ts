@@ -4,8 +4,7 @@ export * from './insertStyle';
 export * from './removeStyle';
 export * from './removeArrayItem';
 export * from './addElementStyleOrClass';
-export * from './removeStyleOrClass';
-export * from './createDefaultReportElement'
+export * from './removeStyleOrClass'; 
 export * from './isInputElement';
 export * from './findAutoFields'
 export * from './fromFieldToState'

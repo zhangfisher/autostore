@@ -1,10 +1,10 @@
 import { FIELD_DATA_VALIDATE_MESSAGE } from "../consts";
-import type { AutoFormFieldContexts } from "../Form";
+import type { AutoFormFieldContext, AutoFormFieldContexts } from "../Form";
 import { UseFormOptions } from "../types";
 import { isInputElement } from './isInputElement';
 
 function defaultFindFields(form:HTMLFormElement){
-    const nodes = form.querySelectorAll(':scope ' + "input[name][value=''],textarea[name][value=''],select[name][value=''],.autofield");    
+    const nodes = form.querySelectorAll(':scope ' + "input[name][value=''],textarea[name][value=''],select[name][value=''],[data-field-name]");    
     // 过滤中选择的元素节点
     const fieldEles = Array.from(nodes).filter(field => {
         return field.nodeType && field.nodeType === 1;
@@ -78,26 +78,27 @@ function defaultFindFields(form:HTMLFormElement){
  */
 export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<any>['findFields']):AutoFormFieldContexts{
     const fieldEles = findFields ? findFields(form) : defaultFindFields(form)    
-    return fieldEles.reduce((results,fieldEle)=>{ 
-        const fieldName = fieldEle.getAttribute('name')
-        if(fieldName){            
+    const fields:AutoFormFieldContexts= {}
+    return fieldEles.reduce((fields,fieldEle)=>{ 
+        const fieldName = fieldEle.getAttribute('name') || fieldEle.getAttribute('data-field-name')
+        if(fieldName){
             const inputs = Array.from(isInputElement(fieldEle) ? 
                 [fieldEle] 
-                : fieldEle.querySelectorAll("input[value=''],textarea[value=''],select[value='']")
+                : fieldEle.querySelectorAll("input,textarea,select")
             ) as HTMLInputElement[]
-            results[fieldName] = {
+            // 为字段元素下的所有输入控件都设置同样name属性
+            inputs.forEach(input=>{
+                input.setAttribute('name',fieldName) 
+            })            
+            if(!fields[fieldName]) fields[fieldName]=[]
+            fields[fieldName].push({
                 path:fieldName,
                 el:fieldEle,
                 inputs,
                 invalidTips:fieldEle.getAttribute(FIELD_DATA_VALIDATE_MESSAGE)
-            }
-            // 为字段元素下的所有输入控件都设置同样name属性
-            results[fieldName].inputs.forEach(input=>{
-                input.setAttribute('name',fieldName)
-                //fixInputLengthCheckBehavior(input)
-            })
-        }
-        return results
+            } as AutoFormFieldContext)
+        }        
+        return fields      
     },{} as AutoFormFieldContexts)
 }
 

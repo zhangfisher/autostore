@@ -1,15 +1,12 @@
 import { Dict, isFunction } from "autostore";
-import { addElementStyleOrClass, createDefaultReportElement, getInputElements, isInputElement, removeArrayItem, removeStyleOrClass } from "./utils";
+import { addElementStyleOrClass, getInputElements, removeArrayItem, removeStyleOrClass } from "./utils";
 import type { ReactAutoStore } from "../store";
 import type { AutoFormContext } from "./Form";
-import { FIELD_DATA_PART, FIELD_INVALID_CLASS } from './consts';
+import { DEFAULT_INVALUE_STYLE, FIELD_DATA_PART, FIELD_INVALID_CLASS } from './consts';
+import { ValidateResult } from "./types";
+import { addClass } from './utils/addClass';
 
-export type ValidateResult = {
-    path : string
-    value: boolean
-    error: string | null | undefined
-}
-  
+
 
 export class Validator<State extends Dict>{
     private _onInvalid
@@ -33,8 +30,9 @@ export class Validator<State extends Dict>{
      */
     onInvalid(e:any){
         const input = e.target
-        console.log("form invalid:",input.getAttribute('name'))
+    //    / this.updateInvalids(input.name,false)
     }
+
     setValid(value:boolean){    
         this.formCtx.setValid(value)
     }
@@ -51,26 +49,12 @@ export class Validator<State extends Dict>{
      * 对所有字段执行校验
      */
     validateAll(){
-        for(let fieldCtx of Object.values(this.fields)){            
-            this.validate(fieldCtx.el)
+        for(let fields of Object.values(this.fields)){  
+            fields.forEach(field=>{
+                this.validate(field.el)
+            })          
         }        
     }
-
-    /**
-     * 标准input的没有修改前调用checkValidity会返回true
-     * <input minlength="2" value="1/>
-     * 
-     * 此时调用checkValidity会返回true，只有当用户修改后再调用才会在无效时返回false
-     * 也就是说checkValidity在初始化调用时是无效的
-     * 
-     * 
-     * 
-     */
-    private checkValidity(inputEle:HTMLInputElement){
-        const isValid = inputEle && inputEle.checkValidity && !inputEle.checkValidity()
-        
-    }
-
     /**
      * 对单个字段执行校验，返回校验结果{value:boolean,error:string | null}
      * 
@@ -97,6 +81,7 @@ export class Validator<State extends Dict>{
                 validResult.value=true
                 validResult.error=null
             }
+            //this.updateInvalids(path,validResult.value)
             this.report(fieldEle,validResult)
         }
         // 2. 是否启用了自定义校验功能，即调用options.validate方法来进行校验
@@ -114,34 +99,33 @@ export class Validator<State extends Dict>{
                     validResult.value=false
                     validResult.error = isValid                
                 }
-                if(inputEle && inputEle.setCustomValidity ){
+                //this.updateInvalids(path,validResult.value)
+                if(inputEle && inputEle.setCustomValidity && this.options.reportStyle==='default'){
                     inputEle.setCustomValidity(validResult.error || '')                
                 }
                 this.report(fieldEle,validResult)
             }  
+
         }        
         return validResult;
     }
 
+    private getFieldName(fieldEle:HTMLElement){
+        return fieldEle.getAttribute('name') 
+            || fieldEle.getAttribute('data-field-name')
+    }
 
     /**
      * 获取一个元素用来显示校验错误信息
      */
-    getReportElement(path:string,fieldEle:any): HTMLElement | undefined  {        
+    getReportElement(fieldEle:HTMLElement,_:ValidateResult): HTMLElement | undefined | null  {        
         if(!fieldEle) return 
-        const isInputEle = isInputElement(fieldEle)    
-        const reportElement = this.options.reportElement
-        const isCustomErr = reportElement && typeof reportElement === "string"
-        let errElement: any = isCustomErr 
-            ? this.form.querySelector(reportElement!.replace(/\{\s*name\s*\}/, path))
-                : (
-                    isInputEle ? fieldEle.nextSibling : fieldEle.querySelector(FIELD_INVALID_CLASS)
-                );
-        // 如果没有提供错误信息的元素，则创建一个
-        if(!errElement || errElement.nodeType !== 1){ 
-            errElement = createDefaultReportElement(fieldEle)
+        const fieldName = this.getFieldName(fieldEle)        
+        const reportEle = this.form.querySelector(`[data-validate-field='${fieldName}']`)
+        if(reportEle){
+            addClass(reportEle,FIELD_INVALID_CLASS)
         }
-        return errElement
+        return reportEle as HTMLElement | undefined | null
     };
     toggleReport(fieldEle:HTMLElement,validResult:ValidateResult){
         if(validResult.value){
@@ -157,46 +141,42 @@ export class Validator<State extends Dict>{
      * 
      */
     private showReport(fieldEle:HTMLElement,validResult:ValidateResult){
-        const errEle = this.getReportElement(validResult.path,fieldEle)
+        const reportEle = this.getReportElement(fieldEle,validResult)
         const validateMessage = validResult.error || fieldEle.dataset.validateMessage || 'ERROR'
-        if(errEle && validateMessage){
-            errEle.innerHTML = validateMessage
-            errEle.style.display = "block"
+        if(reportEle && validateMessage){
+            reportEle.innerHTML = validateMessage
+            reportEle.style.display = "block"
         }
-        addElementStyleOrClass(fieldEle,this.options.invalidStyles,'style')
-        addElementStyleOrClass(fieldEle,this.options.invalidClasss,'class')     
+        addElementStyleOrClass(fieldEle,this.options.invalidStyles || DEFAULT_INVALUE_STYLE,'style')
+        addElementStyleOrClass(fieldEle,this.options.invalidClasss || FIELD_INVALID_CLASS,'class')         
     } 
 
     private hideReport(fieldEle:HTMLElement,validResult:ValidateResult){
-        removeStyleOrClass(fieldEle,this.options.invalidStyles,'style')
-        removeStyleOrClass(fieldEle,this.options.invalidClasss,'class') 
-        const errEle = this.getReportElement(validResult.path,fieldEle)
-        if(errEle && errEle.classList.contains(FIELD_INVALID_CLASS)) errEle.style.display = "none"  
+        removeStyleOrClass(fieldEle,this.options.invalidStyles || DEFAULT_INVALUE_STYLE,'style')
+        removeStyleOrClass(fieldEle,this.options.invalidClasss || FIELD_INVALID_CLASS,'class') 
+        const reportEle = this.getReportElement(fieldEle,validResult)
+        if(reportEle && reportEle.classList.contains(FIELD_INVALID_CLASS)) reportEle.style.display = "none"  
     } 
     /**
-     *  报告错误
+     * 
+     *  报告校验错误
+     * 
      */
     report(fieldEle:HTMLElement,validResult:ValidateResult){
         // 自定义报告
         const reportStyle = this.options.reportStyle || 'custom'
-        if(reportStyle==='custom'){ // 将错误信息写入到指定的错误元素中            
-            const report = this.options.reportElement
-            if(typeof(report)==='function'){
-                report(validResult,fieldEle)
-            }else{    // 使用选择器来获取错误输出元素
-                this.toggleReport(fieldEle,validResult)
-            }     
-        }else{ // 浏览器标准html5校验方式
+        if(reportStyle==='default'){            
             const inputEles = getInputElements(fieldEle)
             inputEles.forEach(inputEle=>{
                 inputEle.reportValidity()                
             })
-        }
-
-        
+        }else{
+            this.toggleReport(fieldEle,validResult)            
+        } 
     }
     reportAll(){
         this.form.reportValidity()
+        
     }
 
 }

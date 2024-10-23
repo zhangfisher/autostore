@@ -30,6 +30,7 @@ import React, { CSSProperties } from "react"
     color?:string | Record<string,string>
     rules?:Record<string,RegExp>
     style?:CSSProperties
+    className?:string
 }
 export const RichLabel:React.FC<RichLabelProps> =(props:RichLabelProps)=>{
     const {text,color='#ff6c00',rules } = props
@@ -49,12 +50,14 @@ export const RichLabel:React.FC<RichLabelProps> =(props:RichLabelProps)=>{
         }).replaceAll("undefined","空值")
     }
     return (
-        <div style={{ 
-            boxSizing: "border-box",
-            padding: "8px",
-            margin:"4px",
-            color:"#222",
-            ...props.style
+        <div
+            className ={props.className}
+            style={{ 
+                boxSizing: "border-box",
+                padding: "8px",
+                margin:"4px",
+                color:"#222",
+                ...props.style
         }}>
             <span dangerouslySetInnerHTML={{__html:html}}></span>
         </div>

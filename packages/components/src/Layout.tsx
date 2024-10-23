@@ -16,13 +16,13 @@ const LayoutStyle = styled<LayoutProps>({
     flex: 1,
     boxSizing:"border-box",
     position:"relative",
-    borderLeft:"1px solid #eee",
-    borderTop:"1px solid #eee",
-    borderBottom:"1px solid #eee",    
+    borderLeft:"1px solid #ccc",
+    borderTop:"1px solid #ccc",
+    borderBottom:"1px solid #ccc",    
     padding:"8px",
   },
   "&>:last-child":{
-    borderRight:"1px solid #eee",    
+    borderRight:"1px solid #ccc",    
   }
 },{
   className:"x-layout"

@@ -27,6 +27,17 @@ const InputStyle = styled<InputProps>({
     "&:focus":{
         outline:"none",
         boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"
+    },
+    "&:invalid":{
+        border:"1px solid red",
+        color:"red",
+        "& .error":{
+            display:"block",
+            color:"red"
+        }        
+    },
+    "& .invalid":{
+        display: 'none'
     }
 },{
     className:"x-input"
@@ -71,7 +82,7 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
                         })
                     }
                 </div>
-                <span className="error"></span>            
+                <span className="error" data-validate-field={props.name}></span>            
             </div>
 
         </div>

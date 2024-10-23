@@ -8,11 +8,9 @@
  */
 export function removeStyle(input: any, style: string | undefined) {
 	if (!style) return;
-	let inputStyle = (input.getAttribute("style") || "").trim();
-	if (inputStyle.endsWith(";")) inputStyle += ";";
-	if (style.endsWith(";")) style = style += ";";
-    style.split(";").forEach(styl=>{        
-        inputStyle = inputStyle.replace(styl+";", "")        
-    })
-    input.setAttribute("style", inputStyle.replace(style, ""));	
+	if (!style.endsWith(";")) style = style += ";";
+     style.split(";").forEach(styl=>{        
+        const [name,val] = styl.split(":")
+        input.style[name]=''
+    }) 
 }

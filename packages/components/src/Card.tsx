@@ -36,7 +36,8 @@ const CardHeaderStyle = styled<CardProps>({
   backgroundColor:"#f5f5f5",
   padding:"8px",
   lineHeight:"200%",
-  color:"#555"
+  color:"#555",
+  borderRadius:"6px 6px 0 0",
 },{className:"x-card-header"})
 
 export const Card:ReactFC<CardProps> = (props:CardProps)=>{

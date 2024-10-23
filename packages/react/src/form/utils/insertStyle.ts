@@ -7,13 +7,10 @@
 export function insertStyle(input: any, style: string | undefined) {
 	if (!style) return;
 	let inputStyle = (input.getAttribute("style") || "");
-    if (inputStyle.endsWith(";")) inputStyle += ";";
-    if (style.endsWith(";")) style = style += ";";    
+    if (!inputStyle.endsWith(";")) inputStyle += ";";
+    if (!style.endsWith(";")) style = style += ";";    
     style.split(";").forEach(styl=>{        
-        if (!inputStyle.includes(styl+";")) {                        
-            inputStyle+=styl+";"
-        }
-    })
-    input.setAttribute("style", inputStyle + style);
-	
+        const [name,val] = styl.split(":")
+        input.style[name]=val
+    })	
 }

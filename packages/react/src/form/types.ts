@@ -1,10 +1,8 @@
 import { AutoStore, AutoStoreOptions, ComputedState, Dict, WatchListenerOptions } from "autostore"
 import { MemoExoticComponent } from "react"
 import { AutoForm } from "./Form"
-import { ValidateResult } from "./validate";
 import { ReactAutoStore } from '../store';
 import { AutoField } from "./Field";
-import { PublicProperties } from "../types";
 
 export type InputBindings<Value=any>={ 
     value?   : Value
@@ -55,7 +53,12 @@ export interface UseFormBindingsType<State extends Dict> {
 }
 
 
-
+export type ValidateResult = {
+    path : string
+    value: boolean
+    error: string | null | undefined
+}
+  
 
 // ********** useForm **********  
 
@@ -121,19 +124,10 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * 当校验出错时，如何报告错误
      * 
      * - default:  采用浏览器默认的校验错误提示方式
-     * - custom:   自定义方式，此时由reportElement决定如何显示错误信息
+     * - custom:   自定义方式，校验信息将写入到[data-validate-field=xxxx]所在的元素
      * 
      */
-    reportStyle? : 'custom' | 'default'
-    /**
-     * 当校验出错时将错误信息显示在哪个元素上
-     * @description
-     * - undefined:  采用浏览器默认的校验错误提示方式
-     * - 选择器： 写入到选择器指向的元素中,选择器支持插值变量{name}代表当前input的name，即状态路径名称
-     * - Function: 由函数自行决定如何显示
-     * 
-     */
-    reportElement?:string | ((result:ValidateResult,fieldEle:HTMLElement)=>void)
+    reportStyle? : 'default' | 'custom'  
     /**
      * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
      * ROOT代表输入根元素
@@ -143,8 +137,14 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
      * 
      * 
-     * - string： 样式作用于input元素上
-     * - [selector,style string]: 样式作用于input的选择器指向的元素上 。如果selector返回空，则作用于input元素
+     * - string： 样式作用于field元素上
+     * - {selector:style string}: 样式作用于field的选择器指向的元素上
+     *    例如：
+     *     fieldEle= <div><input name="a" /><button.></div>
+     *    则 {
+     *       "ROOT":"color:red"   == 作用于fieldEle，ROOT是特殊的选择器，代表fieldEle根元素
+     *       "button":"color:red" == 作用于button
+     *  }   
      *   
      */
     invalidStyles?: string | Record<string,string>
@@ -157,7 +157,7 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * 在输入时执行数据校验，成功才会写入状态中
      * 错误时应返回false或错误字符串
      */
-    validate?:(path:string,value:any,part:string | null,input:HTMLElement)=>boolean | string
+    validate?:(path:string,value:any,part:string | null,fieldEle:HTMLElement)=>boolean | string
     /**
      * 当状态数据变化时，调用本方法将数据转换为表单输入控制使用的数据
      * 如果返回undefined则保留原值

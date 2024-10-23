@@ -30,7 +30,7 @@ export type AutoFormFieldContext = {
 	invalidTips?: string | null
 }
 
-export type AutoFormFieldContexts = Record<string,AutoFormFieldContext>
+export type AutoFormFieldContexts = Record<string,AutoFormFieldContext[]> 
 
 export type AutoFormContext<State extends Dict> = {
     setDirty 	: ()=>void
@@ -64,12 +64,14 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 			ctx.validator = new Validator(store,ctx)
 			
             // 初始化表单控件的值: 从state读取数据更新到表单控件
-            Object.entries(ctx.fields).forEach(([name,field]) => {
+            Object.entries(ctx.fields).forEach(([name,fields]) => {
                 const path = [...entry, ...name.split(PATH_DELIMITER)];				
                 const value = getVal(snap, path, EMPTY_VALUE);// 如果指定的路径不存在，则返回的是空值
                 if (value !== EMPTY_VALUE) {
-                    field.initial = value
-					fromStateToField(field,value,options)
+					fields.forEach(field=>{
+                    	field.initial = value
+						fromStateToField(field,value,options)
+					})
                 }                
             });
             // 初始化时是否进行数据校验
@@ -79,7 +81,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             initial.current = true;
             ctx.setDirty();
             ctx.setValid(initValid); 
-        },[])
+        },[options])
  
 		useEffect(() => {
 			const form = options.ref!.current;
@@ -96,10 +98,12 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				// 2.2 更新到表单的输入控件
 				const spath = path.join(PATH_DELIMITER);
 				if (spath in ctx.fields) {
-					const fieldInfo = ctx.fields![spath]
-					if(fromStateToField(fieldInfo,value,ctx.options)){
-						ctx.validator.validate(fieldInfo.el);
-					}
+					const fields = ctx.fields![spath]
+					fields && fields.forEach(fieldInfo=>{
+						if(fromStateToField(fieldInfo,value,ctx.options)){
+							ctx.validator.validate(fieldInfo.el);
+						}
+					})
 				}
 			});
 			// 3. 输入控件变更时的响应
@@ -108,7 +112,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				const path = input.name;
 				if (!path) return;
 				const newVal = input.type === "checkbox" ? input.checked : input.value;
-				if(ctx.validator.validate(input)){
+				if(ctx.validator.validate(input)?.value){
 					fromFieldToState(store, input,path, newVal, ctx.options);
 				}                
                 ctx.setDirty()            
@@ -118,8 +122,9 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 			return () => {
 				watcher.off();
 				form.removeEventListener("input", onChange);
+				initial.current=false
 			};
-		},[]);
+		},[options]);
         const Children = React.memo(()=><>{props.children}</>,()=>true)
 		return <form {...props} ref={options.ref}>
             <Children/>

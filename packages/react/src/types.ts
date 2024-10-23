@@ -10,11 +10,4 @@ declare module "autostore"{
         signalErrorBoundary?:React.ComponentType<{error:any}>
     }
 }
-
-
-
-
-// 定义一个辅助类型来提取类的所有公共属性
-export type PublicProperties<T> = {
-    [K in keyof T]: K extends `_${string}` ? never : K
-}[keyof T];
+ 

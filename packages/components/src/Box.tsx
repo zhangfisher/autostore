@@ -22,10 +22,10 @@ export const Box: ReactFC<BoxProps> = forwardRef<HTMLDivElement, BoxProps>((prop
         display: visible ? 'flex' : 'none',
         position: "relative",
         flexDirection: 'column',
-        padding: "8px",
-        margin: "16px 4px 4px 4px",
+        padding: "16px",
+        margin: "16px 8px 8px 8px",
         boxSizing: "border-box",
-        border: `1px solid #bbb`,
+        border: `1px solid #ccc`,
       }}
     >
       <span
@@ -35,7 +35,7 @@ export const Box: ReactFC<BoxProps> = forwardRef<HTMLDivElement, BoxProps>((prop
           top: "-16px",
           background: 'white',
           left: "8px",
-          color: enable ? '#bbb' : 'gray'
+          color: enable ? '#999' : 'gray'
         }}
       >
         {title || ''}
