@@ -1,8 +1,8 @@
 import { Dict, isFunction } from "autostore";
-import { addElementStyleOrClass, getInputElements, removeArrayItem, removeClass, removeStyleOrClass } from "./utils";
+import { getInputElements, removeArrayItem, removeClass } from "./utils";
 import type { ReactAutoStore } from "../store";
 import type { AutoFormContext } from "./Form";
-import { DEFAULT_INVALUE_STYLE, FIELD_DATA_PART, FIELD_INVALID_CLASS } from './consts';
+import { FIELD_DATA_PART, FIELD_INVALID_CLASS } from './consts';
 import { ValidateResult } from "./types";
 import { addClass } from './utils/addClass';
 
@@ -30,8 +30,9 @@ export class Validator<State extends Dict>{
      */
     onInvalid(e:any){
         const input = e.target
-    //    / this.updateInvalids(input.name,false)
-    }
+        //this.updateInvalids(input.name,false)
+    }   
+
 
     setValid(value:boolean){    
         this.formCtx.setValid(value)
@@ -64,7 +65,7 @@ export class Validator<State extends Dict>{
     validate(fieldEle: HTMLElement){
         const validateFn = this.options.validate
         const hasCustomValidate =  validateFn && isFunction(validateFn)
-        const path= fieldEle.getAttribute('name') 
+        const path= this.getFieldName(fieldEle)
         if(!path) return 
         const validResult:ValidateResult =  {
             path,
@@ -81,7 +82,7 @@ export class Validator<State extends Dict>{
                 validResult.value=true
                 validResult.error=null
             }
-            //this.updateInvalids(path,validResult.value)
+            this.updateInvalids(path,validResult.value)
             this.report(fieldEle,validResult)
         }
         // 2. 是否启用了自定义校验功能，即调用options.validate方法来进行校验
@@ -99,7 +100,7 @@ export class Validator<State extends Dict>{
                     validResult.value=false
                     validResult.error = isValid                
                 }
-                //this.updateInvalids(path,validResult.value)
+                this.updateInvalids(path,validResult.value)
                 if(inputEle && inputEle.setCustomValidity && this.options.customReport){
                     inputEle.setCustomValidity(validResult.error || '')                
                 }
@@ -166,6 +167,7 @@ export class Validator<State extends Dict>{
             reportEles.forEach(reportEle=>{
                 reportEle.innerHTML = validateMessage
                 reportEle.style.display = "block"
+                addClass(reportEle,FIELD_INVALID_CLASS)
             })
         }
         // 2. 为字段元素添加错误类和样式
@@ -181,6 +183,7 @@ export class Validator<State extends Dict>{
         if(reportEles){
             reportEles.forEach(reportEle=>{
                 if(reportEle.classList.contains(FIELD_INVALID_CLASS)) reportEle.style.display = "none"  
+                removeClass(reportEle,FIELD_INVALID_CLASS)
             })
         } 
         // 2. 移除错误类和样式

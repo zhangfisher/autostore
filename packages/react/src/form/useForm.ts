@@ -1,4 +1,4 @@
-import { MemoExoticComponent, useEffect, useRef, useState } from "react";
+import { MemoExoticComponent, useCallback, useEffect, useRef, useState } from "react";
 import { AutoStore, Dict, getVal  } from "autostore";
 import { ReactAutoStore } from "../store";
 import { UseFormOptions, UseFormResult, UseFormType } from "./types";
@@ -84,7 +84,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	const [valid, setValid] = useState<boolean>(true);
 	const [dirty, setDirty] = useState<boolean>(false);
  
-	const store= storeRef.current!
+	const store= storeRef.current! 
 
 	if(!formComponentRef.current){ 
 		formContext.current = {

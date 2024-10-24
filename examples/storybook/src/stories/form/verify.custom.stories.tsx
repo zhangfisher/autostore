@@ -1,19 +1,19 @@
-import { useForm,ValidateResult } from "@autostorejs/react";
-import {Input,Button,ColorBlock,Box,Layout,JsonView,Card,CheckBox,RichLabel } from "x-react-components"
+import { useForm } from "@autostorejs/react";
+import {Input,List,ColorBlock,Box,Layout,JsonView,Card,CheckBox,RichLabel } from "x-react-components"
+ 
+
  
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: 'Form/Validate'
+  title: 'Form/DefaultValidate'
 } 
 
 export default meta;
   
-export const CustomReportVerify = { 
-	name:"自定义校验信息显示",
-	argTypes: { 
-	},
-	render:({reportStyle='next'}) => {
+export const CustomVerify = { 
+	name:'自定义元素校验显示',
+	render:() => {
 		const { Form, useState } = useForm({
 			user: {
 				name: "x",
@@ -24,34 +24,33 @@ export const CustomReportVerify = {
 				vip: false,
 			},
 		},{
-			customReport:reportStyle as any 
+			//customReport:true
 		});	
 
 		const [state] = useState();
 
 		return (
-			<Card title="自定义校验信息显示">
+			<Card title="按浏览器的默认行为显示校验信息">
 				<Layout>
 					<div>
 						<Form>
-							<Input name="user.name" minLength={3} label="Name"  required title="至少3个字符" />
-							<div data-validate-message="user.name" className="error" style={{padding:'8px',color:"blue"}} ></div>
+							<Input name="user.name" minLength={3} label="Name" required />
 							<Input name="user.age" label="Age" type="number" />
-							<div className="error" style={{padding:'8px',color:"blue"}}  ></div>
 							<Input name="user.address" maxLength={5} label="Address" />
-							<div className="error" style={{padding:'8px',color:"blue"}}  ></div>
 							<Input name="user.phone" pattern="^138\d{8}" label="Phone" />
-							<div className="error" style={{padding:'8px',color:"blue"}}  ></div>
 							<Input name="user.email" label="Email" type="email" />
-							<div className="error"  style={{padding:'8px',color:"blue"}} ></div>							
 							<CheckBox name="user.vip" label="VIP" />
 						</Form>
 					</div>
 					<JsonView data={state} />
 				</Layout>
-				<Box title="校验信息显示">					
-					将校验信息显示在指定的元素中
-				</Box>
+				<List title="校验信息显示"
+					description="默认情况下，{customReport=true},校验信息显示在{[data-validate-field=xxxxx]}自定义元素中"
+					items={[
+						`需要自行准备一个[data-validate-field=xxxxx]的自定义元素`,						
+						`例如：  <div {data-validate-field="user.name}/>`,						
+					]}
+				/>
 			</Card>
 		);
 	}

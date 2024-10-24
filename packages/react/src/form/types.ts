@@ -127,27 +127,7 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * - custom:   自定义方式，校验信息将写入到[data-validate-field=xxxx]所在的元素
      * 
      */
-    customReport? : boolean
-    /**
-     * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
-     * ROOT代表输入根元素
-     */
-    invalidClasss?:string | Record<string,string>
-    /**
-     * 当校验失败时的在input元素上应用的样式，在校验成功时会移除
-     * 
-     * 
-     * - string： 样式作用于field元素上
-     * - {selector:style string}: 样式作用于field的选择器指向的元素上
-     *    例如：
-     *     fieldEle= <div><input name="a" /><button.></div>
-     *    则 {
-     *       "ROOT":"color:red"   == 作用于fieldEle，ROOT是特殊的选择器，代表fieldEle根元素
-     *       "button":"color:red" == 作用于button
-     *  }   
-     *   
-     */
-    invalidStyles?: string | Record<string,string>
+    customReport? : boolean 
     /**
      * 用来获取表单内的所有输入控件的CSS选择器
      * 默认="[name]" ，即所有字段均具有名称

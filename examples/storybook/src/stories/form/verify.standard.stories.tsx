@@ -1,26 +1,19 @@
 import { useForm } from "@autostorejs/react";
-import {Input,Button,ColorBlock,Box,Layout,JsonView,Card,CheckBox,RichLabel } from "x-react-components"
+import {Input,List,ColorBlock,Box,Layout,JsonView,Card,CheckBox,RichLabel } from "x-react-components"
+ 
 
  
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: 'Form/Validate'
+  title: 'Form/DefaultValidate'
 } 
 
 export default meta;
   
 export const StandardVerify = { 
 	name:'默认的校验显示方式',
-	argTypes: {
-		reportStyle:{
-			name:"校验信息显示方式",
-			type:'select',
-			options:['default' ,'next' , 'custom'  ],
-			
-		}	
-	},
-	render:({reportStyle='next'}) => {
+	render:() => {
 		const { Form, useState } = useForm({
 			user: {
 				name: "x",
@@ -31,13 +24,13 @@ export const StandardVerify = {
 				vip: false,
 			},
 		},{
-			customReport:reportStyle as any 
+			customReport:false
 		});	
 
 		const [state] = useState();
 
 		return (
-			<Card title="默认的校验显示方式">
+			<Card title="按浏览器的默认行为显示校验信息">
 				<Layout>
 					<div>
 						<Form>
@@ -51,12 +44,13 @@ export const StandardVerify = {
 					</div>
 					<JsonView data={state} />
 				</Layout>
-				<Box title="校验信息显示">					
-					<ul>
-						<li><RichLabel text="{default}: 以浏览器的默认方式进行显示" color='red'/></li>
-						<li><RichLabel text="{custom}: 自定义元素显示" color='red'/></li>
-					</ul>
-				</Box>
+				<List title="校验信息显示"
+					description="当{customReport=false}时按浏览器的默认方式显示校验信息"
+					items={[
+						"{default}: 以浏览器的默认方式进行显示",
+						"{custom}: 自定义元素显示"
+					]}
+				/>
 			</Card>
 		);
 	}

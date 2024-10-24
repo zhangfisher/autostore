@@ -81,7 +81,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             initial.current = true;
             ctx.setDirty();
             ctx.setValid(initValid); 
-        },[options])
+        },[])
  
 		useEffect(() => {
 			const form = options.ref!.current;
@@ -124,10 +124,9 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				form.removeEventListener("input", onChange);
 				initial.current=false
 			};
-		},[options]);
-        const Children = React.memo(()=><>{props.children}</>,()=>true)
+		},[]);
 		return <form {...props} ref={options.ref}>
-            <Children/>
+            {props.children}
         </form>
 	},()=>true)) as unknown as React.MemoExoticComponent<AutoForm<State>>
 }

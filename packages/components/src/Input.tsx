@@ -36,10 +36,21 @@ const InputStyle = styled<InputProps>({
             color:"red"
         }
     },    
+    "& label":{
+        color: "#666",
+        fontSize: "14px",
+        marginBottom: "4px",
+        flexShrink: 0,
+        width: "100px",
+    },
+    "&.invalid>label": {
+        color: "red"
+    },
     "& .error":{
         display: "none",
         "&.invalid":{
-            display:"block"
+            display:"block", 
+            color:"red"
         }
     }
 },{
@@ -51,20 +62,14 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
     const label = props.label || props.name || props.id
     const ref = useRef<HTMLInputElement>(null)
     
-    const labelStyle: CSSProperties = {
-        color: "#666",
-        fontSize: "14px",
-        marginBottom: "4px",
-        flexShrink: 0,
-        width: "100px",
-    };
-
+ 
     return (
         <div         
             className={InputStyle.className}
             style={InputStyle.getStyle(props,style as any)}
+            data-field-name={props.name}
         >
-            { label ? <label htmlFor={id}  style={labelStyle}>{label}</label> : null }
+            { label ? <label htmlFor={id}>{label}</label> : null }
             <div style={{
                 display:"flex",
                 flexDirection:"column",
