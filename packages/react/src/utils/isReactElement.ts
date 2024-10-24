@@ -6,7 +6,7 @@ import React from 'react';
  * @param {any} value - 要检查的值
  * @returns {boolean} - 如果值是 React.ReactNode，则返回 true，否则返回 false
  */
-export function isReactNode(value: any): boolean {
+export function isReactElement(value: any): boolean {
     if (value === null || value === undefined) {
         return false;
     }
@@ -14,7 +14,7 @@ export function isReactNode(value: any): boolean {
         return true;
     }
     if (Array.isArray(value)) {
-        return value.every(isReactNode);
+        return value.every(isReactElement);
     }
     if (React.isValidElement(value)) {
         return true;

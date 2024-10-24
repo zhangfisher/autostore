@@ -23,7 +23,17 @@ const LayoutStyle = styled<LayoutProps>({
   },
   "&>:last-child":{
     borderRight:"1px solid #ccc",    
+  },
+  "&+.x-layout":{
+    borderTop:"none",
+    marginTop:"-12px",
+    "&>*":{
+      borderTop:"none",
+      paddingTop:"12px"
+    }
   }
+
+
 },{
   className:"x-layout"
 })

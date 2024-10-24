@@ -3,7 +3,7 @@ import { useForm } from "@autostorejs/react";
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: 'Form/Base'
+  title: '表单/基础功能'
 } 
 
 export default meta;

@@ -10,6 +10,7 @@ import { isEmpty } from "../utils/isEmpty";
 import { fromStateToField } from "./utils/fromStateToField";
 import { fromFieldToState } from "./utils";
 import { isFalse } from "./utils/isFalse";
+import { getInputValue } from "./utils/getInputValue";
 
 
 export type AutoFormProps<State extends Dict>  = React.PropsWithChildren<
@@ -67,7 +68,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
                 if (value !== EMPTY_VALUE) {
 					fields.forEach(field=>{
                     	field.initial = value
-						fromStateToField(field,value,options)
+						fromStateToField(field,value,options,true)
 					})
                 }                
             });
@@ -108,7 +109,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				const input = e.target;
 				const path = input.name;
 				if (!path) return;
-				const newVal = input.type === "checkbox" ? input.checked : input.value;
+				const newVal = getInputValue(input)
 				if(ctx.validator.validate(input)?.value){
 					fromFieldToState(store, input,path, newVal, ctx.options);
 					ctx.setDirty()  
