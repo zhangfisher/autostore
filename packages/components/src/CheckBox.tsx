@@ -40,7 +40,11 @@ export const CheckBox:React.FC<CheckBoxProps> = (props)=>{
     return <div className={CheckBoxStyle.className} style={CheckBoxStyle.getStyle(props)}>
               { labelPos==='left' ? <label htmlFor={id}>{label}</label> : null}   
               {/* @ts-ignore */}
-              <input {...props} id={id} type="checkbox"/>
+              <input {...props} id={id} 
+                    checked={props.checked}                     
+                    value={props.value}
+                    type="checkbox"
+                />
               { labelPos==='right' ? <label htmlFor={id}>{label}</label> : null}   
     </div>    
 }

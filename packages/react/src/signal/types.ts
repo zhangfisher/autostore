@@ -20,14 +20,15 @@ export type SignalComponentOptions={
 export type SignalComponentRenderArgs<Value=any> = AsyncComputedValue<Value>
 
 export type SignalComponentRender<Value=any> =(value:SignalComponentRenderArgs<Value>)=>React.ReactNode
-export type SignalComponentGetter<State extends Dict = Dict,Value=any> = (state:State)=>Value 
+export type SignalComponentGetter<State extends Dict = Dict,Value=any> = (state:ComputedState<State>)=>Value 
 
 export interface SignalComponentType<State extends Dict>{
     (selector: string,options?:SignalComponentOptions):React.ReactNode
     (selector: (state:ComputedState<State>)=>React.ReactNode,options?:SignalComponentOptions):React.ReactNode
-    <Value=any>(render:SignalComponentRender,path:string | string[],options?:SignalComponentOptions):React.ReactNode
-    <Value=any, Scope=any >(render:SignalComponentRender,getter:AsyncComputedGetter<Value,Scope>,options?:SignalComponentOptions):React.ReactNode
-    <Value=any, Scope=any >(render:SignalComponentRender,getter:ComputedGetter<Value,Scope>,options?:SignalComponentOptions):React.ReactNode
-    <Value=any, Scope=any >(render:SignalComponentRender,builder: ObserverDescriptorBuilder<string,Value,Scope>,options?:SignalComponentOptions):React.ReactNode;
+    <Value=any>(render:SignalComponentRender<Value>,getter:AsyncComputedGetter<Value,ComputedState<State>>,options?:SignalComponentOptions):React.ReactNode
+    <Value=any>(render:SignalComponentRender<Value>,getter: ComputedGetter<Value,ComputedState<State>>,options?:SignalComponentOptions):React.ReactNode
+    <Value=any, Scope=any >(render:SignalComponentRender<Value>,builder: ObserverDescriptorBuilder<string,Value,Scope>,options?:SignalComponentOptions):React.ReactNode;
+    <Value=any>(render:SignalComponentRender<Value>,path:string | string[],options?:SignalComponentOptions):React.ReactNode
 }
 
+ 

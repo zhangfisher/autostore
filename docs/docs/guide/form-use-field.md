@@ -3,7 +3,7 @@ group:
   title: 表单
   order: 5
 order: 2 
-title: useInput
+title: useField
 demo:
   tocDepth: 5
 toc: content
@@ -11,21 +11,21 @@ toc: content
 
 
 
-# useInput
+# useField
 
-使用`useInput`进行双向绑定更加简单。
+使用`useField`进行双向绑定更加简单。
 
 ## 基本用法
 
 ```tsx  
 /**
- * title: useInput
+ * title: useField
  * description: 输入框的值会自动同步到状态中。
  */
 import { createStore } from '@autostorejs/react';
 import { ColorBlock,Button,Input } from "x-react-components"
 
-const { state, $, bind, useState,useInput } = createStore({
+const { state, $, bind, useState,useField } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
@@ -35,10 +35,10 @@ const { state, $, bind, useState,useInput } = createStore({
 })
 
 export default ()=>{
-  const bindFirstName = useInput("user.firstName")
-  const bindLastName = useInput("user.lastName")
-  const bindVip = useInput("user.vip")
-  const bindJob = useInput("user.job")
+  const bindFirstName = useField("user.firstName")
+  const bindLastName = useField("user.lastName")
+  const bindVip = useField("user.vip")
+  const bindJob = useField("user.job")
   return <div>    
     <Input label="First Name" {...bindFirstName}/>
     <Input label="last Name" {...bindLastName} />
@@ -75,7 +75,7 @@ export default ()=>{
 import { createStore } from '@autostorejs/react';
 import { ColorBlock,Button,Input } from "x-react-components"
 
-const { state, $, bind, useState,useInput } = createStore({
+const { state, $, bind, useState,useField } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher" 
@@ -83,7 +83,7 @@ const { state, $, bind, useState,useInput } = createStore({
 })
 
 export default ()=>{ 
-  const bindFullName = useInput(
+  const bindFullName = useField(
     (state)=>state.user.firstName+" "+state.user.lastName,
     // 解析输入的值
     (value,state)=>{
@@ -104,7 +104,7 @@ export default ()=>{
 ```
 ## 对象双向绑定
 
-当`useInput(<path>)`的路径指向的是一个对象时，会为该对象的每个属性创建一个双向绑定。可以直接使用。
+当`useField(<path>)`的路径指向的是一个对象时，会为该对象的每个属性创建一个双向绑定。可以直接使用。
 
 ```tsx  
 /**
@@ -114,7 +114,7 @@ export default ()=>{
 import { createStore } from '@autostorejs/react';
 import { ColorBlock,Button,Input } from "x-react-components"
 
-const { state, $, bind,useInput } = createStore({
+const { state, $, bind,useField } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
@@ -125,7 +125,7 @@ const { state, $, bind,useInput } = createStore({
 
 export default ()=>{
   
-  const bindUser = useInput("user")
+  const bindUser = useField("user")
 
   return <div>    
     <Input label="First Name" {...bindUser.firstName}/>
@@ -152,7 +152,7 @@ export default ()=>{
 使用对象双向绑定时，不支持深层嵌套对象。
 :::
 
-如果没有为`useInput`指定路径，那么会绑定整个状态。但是不能支持嵌套成员。
+如果没有为`useField`指定路径，那么会绑定整个状态。但是不能支持嵌套成员。
 
 ```tsx  
 /**
@@ -165,14 +165,14 @@ import { ColorBlock,Button,Input } from "x-react-components"
  
 export default ()=>{
 
-  const { state, $, bind,useInput } = useStore({
+  const { state, $, bind,useField } = useStore({
       firstName:"Zhang",
       lastName:"Fisher",
       age:18,
       vip:false 
   })
 
-  const bindUser = useInput()
+  const bindUser = useField()
 
   return <div>    
     <Input label="First Name" {...bindUser.firstName}/>
@@ -200,7 +200,7 @@ export default ()=>{
 
 ```ts | pure {14-17}
 export default ()=>{
-  const { state, $, bind,useInput } = useStore({
+  const { state, $, bind,useField } = useStore({
     user:{
       firstName:"Zhang",
       lastName:"Fisher",
@@ -209,7 +209,7 @@ export default ()=>{
     }  
   })
 
-  const bindUser = useInput()
+  const bindUser = useField()
 
   return <div>    
     <Input label="First Name" {...bindUser.user.firstName}/>      // ❌ 不支持

@@ -67,7 +67,7 @@ export function useForm<State extends Dict>(store:ReactAutoStore<State>,options?
 export function useForm<State extends Dict>(state:State,options?:UseFormOptions<State>): UseFormResult<State>
 export function useForm<State extends Dict>(): UseFormResult<State>{
 	
-	const formComponentRef = useRef<MemoExoticComponent<AutoForm<State>> | null>(null)
+	const formComponentRef = useRef<AutoForm<State> | null>(null)
 	const fieldComponentRef = useRef<MemoExoticComponent<AutoField<State>> | null>(null)
 	const formRef = useRef<HTMLFormElement | null>(null);				
 	const formContext = useRef<AutoFormContext<State> | null>(null)
@@ -89,7 +89,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	if(!formComponentRef.current){ 
 		formContext.current = {
 			options:opts, 
-			setDirty: () =>dirty === false && setDirty(true),
+			setDirty: (val:boolean=true) => setDirty(val),
 			setValid,
 			state:getVal(store.state,opts.entry || []),
 			formRef,

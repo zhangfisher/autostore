@@ -4,7 +4,7 @@ import { type ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
 import { getInputValueFromEvent } from '../utils/getInputValueFromEvent'; 
-import { UseInputType } from './types'; 
+import { UseFieldType } from './types'; 
 
 /**
  * 
@@ -133,5 +133,5 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
             return ()=>watcher.off()
         },[deps])     
         return bindings
-    }) as UseInputType<State>
+    }) as UseFieldType<State>
 } 

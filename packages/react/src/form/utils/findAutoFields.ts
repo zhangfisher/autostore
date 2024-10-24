@@ -4,7 +4,7 @@ import { UseFormOptions } from "../types";
 import { isInputElement } from './isInputElement';
 
 function defaultFindFields(form:HTMLFormElement){
-    const nodes = form.querySelectorAll(':scope ' + "input[name][value=''],textarea[name][value=''],select[name][value=''],[data-field-name]");    
+    const nodes = form.querySelectorAll(':scope ' + "input[name],input[name][value=''],textarea[name],textarea[name][value=''],select[name],select[name][value=''],[data-field-name]");    
     // 过滤中选择的元素节点
     const fieldEles = Array.from(nodes).filter(field => {
         return field.nodeType && field.nodeType === 1;

@@ -94,7 +94,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
     return React.memo<AutoField<State>>(<Value=any>(props:AutoFieldProps<State,Value>)=>{
         const { render,name } = props
         const ref = useRef<HTMLDivElement>(null)
-        const [ value ] = store.useState(props.name as any,true)
+        const [ value ] = store.useReactive(props.name as any,true)
 
         useEffect(()=>{
             

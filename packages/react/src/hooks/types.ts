@@ -16,8 +16,8 @@ export interface UseDepsType<State extends Dict>{
 
 export type UseStateResult<Value>=[Value,React.Dispatch<React.SetStateAction<Value>>]
 
-export type UseStateGetter<Value,State extends Record<string, any>>= (state:ComputedState<State>)=>Value
-export type UseStateSetter<SetValue,State extends Record<string, any>>= (value:SetValue,state:ComputedState<State>)=>void
+export type UseStateGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
+export type UseStateSetter<SetValue,State extends Dict>= (value:SetValue,state:ComputedState<State>)=>void
 
 
 export interface UseStateType<State extends Dict> {
@@ -26,7 +26,24 @@ export interface UseStateType<State extends Dict> {
     <Value>(selector: string,async:boolean): UseStateResult<AsyncComputedValue<Value>>
     <Value>(selector: string[],async:boolean): UseStateResult<AsyncComputedValue<Value>>
     <Value,SetValue>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateResult<Value>
-    (): [State,UseStateGetter<void,State>,]
+    (): UseStateResult<ComputedState<State>>
+}
+
+// ********** useReactive **********  
+export type UseReactiveResult<Value>=UseStateResult<Value>
+
+export type UseReactiveGetter<Value,State extends Dict>= UseStateGetter<Value,State>
+
+export type UseReactiveSetter<SetValue,State extends Dict>=UseStateSetter<SetValue,State>
+
+
+export interface UseReactiveType<State extends Dict> {
+    <Value>(selector: string): UseReactiveResult<Value>
+    <Value>(selector: string[]): UseReactiveResult<Value>
+    <Value>(selector: string,async:boolean): UseReactiveResult<AsyncComputedValue<Value>>
+    <Value>(selector: string[],async:boolean): UseReactiveResult<AsyncComputedValue<Value>>
+    <Value,SetValue>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseReactiveResult<Value>
+    (): UseStateResult<ComputedState<State>>
 }
 
 // ********** useAsyncState **********  
@@ -35,6 +52,10 @@ export interface UseAsyncStateType{
     <Value>(selector: string): AsyncComputedValue<Value>
     <Value>(selector: string[]): AsyncComputedValue<Value>
 }
+
+// ********** useAsyncReactive **********  
+
+export type UseAsyncReactiveType = UseAsyncStateType
 
 //  ********** useWatch **********
    

@@ -1,6 +1,6 @@
 import { useForm } from "@autostorejs/react";
 import {List,Layout,JsonView,Card,ColorBlock } from "x-react-components"
- 
+import { useState } from "react"
 
  
 
@@ -14,7 +14,7 @@ export default meta;
 export const CustomField = { 
 	name:'自定义字段',
 	render:() => {
-		const { Form, useState,valid,dirty } = useForm({
+		const { Form, useReactive,valid,dirty } = useForm({
 			user: {
 				name: "x",
 				age: 7,
@@ -22,12 +22,13 @@ export const CustomField = {
 				phone: "1381234567",
 				email: "fisher@china.com",
 				vip: false,
+				memo:"hello"
 			},
 		},{
 			//customReport:true 默认值
 		});	
 
-		const [state] = useState();
+		const [state] = useReactive();
 		const invalieStyle={color:'red'}
 		const inputStyle={ 
 			border: "1px solid #bbb",
@@ -37,18 +38,20 @@ export const CustomField = {
 			padding: "8px",
 			flexGrow:1
 		}
+		const  [ name,setName ] = useState("tom")
 		return (
 			<Card title="按浏览器的默认行为显示校验信息">
 				<Layout>
 					<div>
+						<ColorBlock name="isValid" value={valid}></ColorBlock>
+						<ColorBlock name="isDirty" value={dirty}></ColorBlock>
 						<Form>
-							<ColorBlock name="isValid" value={valid}></ColorBlock>
-							<ColorBlock name="isDirty" value={dirty}></ColorBlock>
 							<div data-field-name="user.name">
 								<label>Name</label>
 								<input type="text" minLength={3}  style={inputStyle} />
 								<span data-validate-field="user.name" style={invalieStyle}></span>
 							</div>
+							<input name="user.name1"  onChange={e=>setName(e.target.value)} />
 							<div data-field-name="user.age">
 								<label>Age</label>
 								<input type="number" min={8}   style={inputStyle} />
@@ -63,6 +66,11 @@ export const CustomField = {
 								<label>Phone</label>
 								<input type="text" pattern="^138\d{8}"  style={inputStyle} />
 								<span data-validate-field="user.phone" style={invalieStyle}></span>
+							</div>
+							<div data-field-name="user.memo">
+								<label>Memo</label>
+								<textarea style={inputStyle}  />
+								<span data-validate-field="user.memo" style={invalieStyle}></span>
 							</div>
 						</Form> 
 					</div>

@@ -15,25 +15,25 @@ export interface InputBindingsType{
 }
 
  
-// ********** useInput **********  
+// ********** useField **********  
 
-export type UseInputBindings<Value> = Value extends Dict ? Record<keyof Value,{
+export type UseFieldBindings<Value> = Value extends Dict ? Record<keyof Value,{
     value:any
     onChange:(e:any)=>void
 }> : Value
 
-export type UseInputOptions={
+export type UseFieldOptions={
      
 }
 
-export type UseInputGetter<Value,State extends Record<string, any>>= (state:ComputedState<State>)=>Value
-export type UseInputSetter<Value,State extends Record<string, any>>= (input:Value,state:ComputedState<State>)=>void
+export type UseFieldGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
+export type UseFieldSetter<Value,State extends Dict>= (input:Value,state:ComputedState<State>)=>void
 
-export interface UseInputType<State extends Dict> {
-    (): UseInputBindings<ComputedState<State>>
-    <Value>(selector: string,options?:UseInputOptions): UseInputBindings<Value>
-    <Value>(selector: string[],options?:UseInputOptions): UseInputBindings<Value>
-    <Value>(getter: UseInputGetter<Value,State>,setter:UseInputSetter<Value,State>,options?:UseInputOptions):UseInputBindings<Value>
+export interface UseFieldType<State extends Dict> {
+    (): UseFieldBindings<ComputedState<State>>
+    <Value>(selector: string,options?:UseFieldOptions): UseFieldBindings<Value>
+    <Value>(selector: string[],options?:UseFieldOptions): UseFieldBindings<Value>
+    <Value>(getter: UseFieldGetter<Value,State>,setter:UseFieldSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>
 }
 
 // ********** useBindings **********  
@@ -63,7 +63,7 @@ export type ValidateResult = {
 // ********** useForm **********  
 
 export type UseFormResult<State extends Dict>={ 
-    Form        : MemoExoticComponent<AutoForm<State>>
+    Form        : AutoForm<State>
     Field       : MemoExoticComponent<AutoField<State>>  
     valid       : boolean
     dirty       : boolean
@@ -73,7 +73,7 @@ export type UseFormResult<State extends Dict>={
     | 'watch' | 'update' | 'batchUpdate' | 'silentUpdate'
     | 'peep' | 'collectDependencies' | 'trace'
     | 'id' | 'operates' | 'state' | 'peeping' | 'batching' | 'silenting'
-    | 'log' | 'destroy' | 'getSnap'
+    | 'log' | 'destroy' | 'getSnap' | 'useReactive'
 
 >
 
@@ -154,7 +154,6 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * 当表单输入控件变化时，调用本方法将数据转换后再写入状态
      * 
      * 例：将上例中的是/否转换为true/false
-     * 
      * 
      */
     toState?:(path:string,inputValue:any,part:string | undefined,stateValue:any,input:HTMLInputElement)=>any

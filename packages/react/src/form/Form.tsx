@@ -33,7 +33,7 @@ export type AutoFormFieldContext = {
 export type AutoFormFieldContexts = Record<string,AutoFormFieldContext[]> 
 
 export type AutoFormContext<State extends Dict> = {
-    setDirty 	: ()=>void
+    setDirty 	: (val?:boolean)=>void
     setValid 	: (val:boolean)=>void    
 	state       : ComputedState<State>
 	options     : UseFormOptions<State>
@@ -44,12 +44,9 @@ export type AutoFormContext<State extends Dict> = {
 
 export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>){
 	const ctx = formCtx.current! as Required<AutoFormContext<State>>
-	const options:UseFormOptions<State> = formCtx.current!.options
-	
-    return (React.memo<AutoFormProps<State>>((props)=>{        
-		
+	const options:UseFormOptions<State> = formCtx.current!.options	
+    return (props:AutoFormProps<State>)=>{        		
 		const initial = useRef<boolean>(false);
-
         // 仅在初始化时执行一次
         const initForm = useCallback(()=>{
             const form = options.ref!.current;            
@@ -78,9 +75,9 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             if(!isFalse(options.validAtInit)){
                 ctx.validator.validateAll()
             }
-            initial.current = true;
-            ctx.setDirty();
+            initial.current = true;            
             ctx.setValid(initValid); 
+			ctx.setDirty(false);
         },[])
  
 		useEffect(() => {
@@ -114,8 +111,8 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				const newVal = input.type === "checkbox" ? input.checked : input.value;
 				if(ctx.validator.validate(input)?.value){
 					fromFieldToState(store, input,path, newVal, ctx.options);
-				}                
-                ctx.setDirty()            
+					ctx.setDirty()  
+				}                                          
 			};
             // 3. 侦听来自表单输入的变更
 			form.addEventListener("input", onChange); 
@@ -128,7 +125,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 		return <form {...props} ref={options.ref}>
             {props.children}
         </form>
-	},()=>true)) as unknown as React.MemoExoticComponent<AutoForm<State>>
+	} 
 }
 
 

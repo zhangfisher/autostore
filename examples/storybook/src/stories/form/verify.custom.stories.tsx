@@ -14,12 +14,12 @@ export default meta;
 export const CustomVerify = { 
 	name:'自定义元素校验显示',
 	render:() => {
-		const { Form, useState } = useForm({
+		const { Form, useState,valid,dirty} = useForm({
 			user: {
 				name: "x",
 				age: 18,
 				address: "福建省泉州市丰泽区",
-				phone: "1234567890",
+				phone: "1381234567",
 				email: "fisher@china.com",
 				vip: false,
 			},
@@ -32,7 +32,9 @@ export const CustomVerify = {
 		return (
 			<Card title="按浏览器的默认行为显示校验信息">
 				<Layout>
-					<div>
+					<div>						
+						<ColorBlock name="isValid" value={valid}></ColorBlock>
+						<ColorBlock name="isDirty" value={dirty}></ColorBlock>
 						<Form>
 							<Input name="user.name" minLength={3} label="Name" required />
 							<Input name="user.age" label="Age" type="number" />
