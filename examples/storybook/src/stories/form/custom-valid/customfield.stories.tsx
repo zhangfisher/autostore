@@ -6,7 +6,7 @@ import { useState } from "react"
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: 'Form/DefaultValidate'
+  title: '表单/自定义校验'
 } 
 
 export default meta;
@@ -38,6 +38,7 @@ export const CustomField = {
 			padding: "8px",
 			flexGrow:1
 		}
+		const fieldStyle={display:"flex",alignItems:"center",flexDirection:"row"}
 		const  [ name,setName ] = useState("tom")
 		return (
 			<Card title="按浏览器的默认行为显示校验信息">
@@ -47,11 +48,13 @@ export const CustomField = {
 						<ColorBlock name="isDirty" value={dirty}></ColorBlock>
 						<Form>
 							<div data-field-name="user.name">
-								<label>Name</label>
-								<input type="text" minLength={3}  style={inputStyle} />
+								<div>
+									<label>Name:</label>
+									<input type="text" minLength={3}  style={inputStyle} />
+								</div>								
 								<span data-validate-field="user.name" style={invalieStyle}></span>
 							</div>
-							<input name="user.name1"  onChange={e=>setName(e.target.value)} />
+							<input name="user.name"  onChange={e=>setName(e.target.value)} />
 							<div data-field-name="user.age">
 								<label>Age</label>
 								<input type="number" min={8}   style={inputStyle} />
