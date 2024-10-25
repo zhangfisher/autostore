@@ -11,6 +11,7 @@ import { fromStateToField } from "./utils/fromStateToField";
 import { fromFieldToState } from "./utils";
 import { isFalse } from "./utils/isFalse";
 import { getInputValue } from "./utils/getInputValue";
+import { initFormFields } from "./utils/initFormFields";
 
 
 export type AutoFormProps<State extends Dict>  = React.PropsWithChildren<
@@ -53,25 +54,14 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             const form = options.ref!.current;            
 			if (!form) return;             
             let initValid:boolean	= true
-			const { entry = [] } = options;
-			const snap = store.getSnap({ entry });
-            ctx.fields = findAutoFields(form,options.findFields);            
+			ctx.fields = findAutoFields(form,options.findFields);            
 			if(isEmpty(ctx.fields)){
 				store.log('No fields found in the autoform', 'warn')
+				return
 			}			
-			ctx.validator = new Validator(store,ctx)
-			
-            // 初始化表单控件的值: 从state读取数据更新到表单控件
-            Object.entries(ctx.fields).forEach(([name,fields]) => {
-                const path = [...entry, ...name.split(PATH_DELIMITER)];				
-                const value = getVal(snap, path, EMPTY_VALUE);// 如果指定的路径不存在，则返回的是空值
-                if (value !== EMPTY_VALUE) {
-					fields.forEach(field=>{
-                    	field.initial = value
-						fromStateToField(field,value,options,true)
-					})
-                }                
-            });
+			ctx.validator = new Validator(store,ctx)			
+			// 初始化表单控件的值: 从state读取数据更新到表单控件
+			initFormFields(store,ctx.fields,options)            
             // 初始化时是否进行数据校验
             if(!isFalse(options.validAtInit)){
                 ctx.validator.validateAll()

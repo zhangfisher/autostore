@@ -1,5 +1,5 @@
 import { useForm } from "@autostorejs/react";
-import {Input,List,ColorBlock,Box,Layout,JsonView,Card,CheckBox,RichLabel } from "x-react-components"
+import {Input,List,ColorBlock,Field,Layout,JsonView,Card,CheckBox,RichLabel } from "x-react-components"
  
 
  
@@ -11,14 +11,12 @@ const meta = {
 
 export default meta;
   
-export const CheckBoxField = { 
-	name:'CheckBox',
+export const RadioField = { 
+	name:'Radio',
 	render:() => {
 		const { Form, useReactive } = useForm({
 			user: {
-				vip: false,				
-				selected:"a",
-				number:1,
+				vip: false, 
 				sex: "男"
 			},
 		},{
@@ -28,15 +26,22 @@ export const CheckBoxField = {
 		const [state] = useReactive();
 
 		return (
-			<Card title="按浏览器的默认行为显示校验信息">
+			<Card title="Radio">
 				<Layout direction="column">
 					<div> 
 						<Form> 
 							<Layout>
-								<div style={{background:"#F4F4F4"}}><RichLabel text='正常模式下，状态值是{boolean}类型号,对应{checkbox}的选中/取消'/></div>
+								<div style={{background:"#F4F4F4"}}><RichLabel text='如果状态值是{boolean}类型,自动设置{radio}的{value=true|false}'/></div>
 							</Layout> 
 							<Layout>
-								<div><CheckBox name="user.vip" label="VIP" /></div>
+								<div>
+									<Field label="VIP">
+										<label htmlFor="vip-yes">是</label>
+										<input id="vip-yes" name="user.vip" type="radio"/>
+										<label htmlFor="vip-no">否</label>
+										<input id="vip-no" name="user.vip" type="radio"/>
+									</Field>
+								</div>
 								<div><RichLabel text="简单的{Boolean}值绑定"/></div>
 							</Layout>
 							<Layout>

@@ -47,11 +47,16 @@ export function fromFieldToState<State extends Dict>(store:ReactAutoStore<State>
     const path = name.split(PATH_DELIMITER)
     const dataType = input.dataset.typeof
     const stateValue = store.peep((state)=>getVal(state,path))
+
     let newValue = toState(name,value,part,stateValue,input)
-    if(dataType==='boolean'){
-        newValue = Boolean(newValue)
-    }else if(dataType==='number'){
-        newValue = parseFloat(newValue)
-    }
+
+    // if(input.type==='checkbox' || input.type==='radio'){
+    //     if(dataType==='boolean'){
+    //         newValue = Boolean(newValue)
+    //     }else if(dataType==='number'){
+    //         newValue = parseFloat(newValue)
+    //     }
+    // }
+    
     store.update((state) => { setVal(state, name.split(PATH_DELIMITER), newValue); },{ peep: true });
 }

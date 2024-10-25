@@ -37,14 +37,24 @@ export function fromStateToField(fieldInfo:AutoFormFieldContext,value:any,option
     fieldInfo.inputs.forEach(input=>{
         if(initial){
             // 在初始化时，如果是checkbox或radio，则需要设置默认值
-            if(input.type==='checkbox' || input.type==='radio'){
+            if(input.type==='checkbox'){
                 if(isEmpty(input.value) && !isBool(value)){
                     input.value = `${value},`
                 }                 
+            }else if(input.type==='radio'){
+                if(isBool(value)){
+                    const form = options.ref?.current
+                    if(form){
+                        const radios = form.querySelectorAll(`:scope input[type="radio"][name="${input.name}"]`) as NodeListOf<HTMLInputElement>
+                        if(radios.length>1){
+                            let index = Array.from(radios).findIndex(radio=>radio.value==='true')
+                            input.value = String(index<0)
+                        }
+                    }
+                }
             }
             input.dataset.typeof = typeof value
         }
-
         const part = input.dataset.fieldPart        
         const oldVal = getInputValue(input)
         const newVal = fromState(fieldInfo.path,value,part)            

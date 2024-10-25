@@ -2,6 +2,7 @@ import { isEmpty } from "../../utils"
 
 export function getInputValue(input:HTMLInputElement):any{    
     let value:any
+    const datatype = input.dataset.typeof
     if(input.type==='checkbox'){
         if(isEmpty(input.value) ){
             value = input.checked
@@ -10,13 +11,28 @@ export function getInputValue(input:HTMLInputElement):any{
             value = input.checked ? trueVal : falseVal
         }
     }else if(input.type==='radio'){
-        if(isEmpty(input.value)){
-            value = input.checked
+        const name = input.name
+        const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`) as NodeListOf<HTMLInputElement>
+        if(radios.length>1){
+            let index = Array.from(radios).findIndex(radio=>radio.checked)
+            value = index>=0 ? (
+                radios[index].value
+            ) : null
         }else{
-            value =  input.checked ? input.value : undefined
-        }        
+            value = radios[0].checked
+        }
     }else{
         value =  input.value
+    }
+    if(datatype){
+        if(datatype==='boolean'){
+            value = value ==='true'
+        }else if(datatype==='number'){
+            value = parseFloat(value)
+        }else if(datatype==='object'){
+            try{value = JSON.parse(value)
+            }catch{}
+        }
     }
     return value
 }

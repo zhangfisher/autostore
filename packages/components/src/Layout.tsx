@@ -10,7 +10,6 @@ const LayoutStyle = styled<LayoutProps>({
   padding:'4px',
   margin:"4px",
   boxSizing:"border-box",
-  // border:(props)=>props.border ? '1px solid #eee' : 'none',
   alignItems:"stretch",
   "&>*":{
     flex: 1,
@@ -18,11 +17,13 @@ const LayoutStyle = styled<LayoutProps>({
     position:"relative",
     borderLeft:"1px solid #ccc",
     borderTop:"1px solid #ccc",
-    borderBottom:"1px solid #ccc",    
+    borderBottom:(props)=>props.direction ==='column' ?  'none' : "1px solid #ccc",    
+    borderRight:(props)=>props.direction ==='column' ?  "1px solid #ccc" : 'none',    
     padding:"8px",
   },
   "&>:last-child":{
-    borderRight:"1px solid #ccc",    
+    borderRight: "1px solid #ccc",    
+    borderBottom:"1px solid #ccc"    
   },
   "&+.x-layout":{
     borderTop:"none",
