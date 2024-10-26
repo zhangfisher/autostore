@@ -35,7 +35,10 @@ export default defineConfig({
             link: '/guide/store',
             items:[
               { text: '关于', link: '/guide/store/about' },
-              { text: '创建', link: '/guide/store/create' },              
+              { text: 'Store', link: '/guide/store/store' },              
+              { text: 'State', link: '/guide/store/state' },   
+              { text: '渲染优化', link: '/guide/store/render' }, 
+              { text: '事件', link: '/guide/store/events' }, 
             ]
           }, 
           {
@@ -58,18 +61,43 @@ export default defineConfig({
             text: '监视',
             link: '/guide/watch',
             items:[
+              { text: '关于', link: '/guide/watch/about' },
+              { text: '全局监视', link: '/guide/watch/store-watch' },
+              { text: '声明监视', link: '/guide/watch/watch' },
+              { text: 'useWatch', link: '/guide/watch/use-watch' },
+              { text: '监视对象', link: '/guide/watch/objects' }
             ]
           },
           {
             text: '信号',
             link: '/guide/signal/',
             items:[
+              { text: '关于', link: '/guide/signal/about' },
+              { text: '信号组件', link: '/guide/signal/component' },
+              { text: '状态信号组件', link: '/guide/signal/state-render' },
+              { text: '自定义渲染', link: '/guide/signal/custom-render' },
+              { text: '计算信号组件', link: '/guide/signal/computed-render' },
+              { text: '监听信号组件', link: '/guide/signal/watch' },
+              { text: '错误处理', link: '/guide/signal/error' }
             ]
           },
           {
-            text: '表单',
-            link: '/guide/form',
+            text: '表单', 
             items:[
+              { text: '关于', link: '/guide/form/about' },
+              { text: 'bind', link: '/guide/form/bind' },
+              { text: 'useField', link: '/guide/form/use-field' },
+              { text: 'useFields', link: '/guide/form/use-fields' },
+              { text: 'useForm', link: '/guide/form/use-form' },
+            ]
+          },
+          {
+            text: '调试与诊断', 
+            items:[
+              { text: 'DevTools', link: '/guide/debug/devtools' },
+              { text: 'trace', link: '/guide/debug/trace' },
+              { text: '日志', link: '/guide/debug/log' },
+              { text: '循环依赖', link: '/guide/debug/circular-dependency' },
             ]
           }
         ]

@@ -1,6 +1,9 @@
-# 创建
+# Store
 
-使用`AutoStore`的起手式就是创建一个`AutoStore`对象，`Store`对象是`AutoStore`的核心对象，所有的功能都是基于`Store`对象来实现的。
+
+使用`AutoStore`的起手式就是创建一个`AutoStore`核心对象，所有的功能都是基于`Store`对象来实现的。
+
+`AutoStore`提供了`createStore`和`useStore`两个方法来创建`Store`对象。
  
 
 ## createStore
@@ -15,7 +18,7 @@
 function createStore<State extends Dict>(
   initial: State,
   options?:AutoStoreOptions<State>
-):AutoStore<State>
+):ReactAutoStore<State>
 ```
 
 - **示例**
@@ -44,7 +47,21 @@ const { state, $, watch  } = store
  
 ## useStore
 
-一般使用`createStore`创建全局状态对象，如果需要在组件中使用，可以使用`useStore`来获创建。
+在组件中可以使用`useStore`创建`AutoStore`实例。
+
+
+- **方法签名**
+
+`createStore`方法签名如下：
+ 
+```ts
+function useStore<State extends Dict>(
+  initial: State,
+  options?:AutoStoreOptions<State>
+):ReactAutoStore<State>
+```
+
+- **示例**
 
 ```tsx
 import { useStore } from '@autostorejs/react';
