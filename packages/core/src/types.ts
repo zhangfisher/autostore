@@ -1,5 +1,4 @@
 import { AsyncComputed, AsyncComputedGetter, AsyncComputedValue, Computed, ComputedDescriptorBuilder, ComputedGetter } from "./computed";
-import { ObserverDescriptorBuilder } from "./observer/types";
 import type  { AutoStore } from "./store";
 import { WatchDescriptorBuilder } from "./watch/types";
 
@@ -16,14 +15,24 @@ export type AsyncFunction<R=any> =  (...args: any) => Promise<R>;
 // **************  以下实现将计算属性函数的返回值类型提取出来  **************
 
 
-export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
-( T extends WatchDescriptorBuilder<infer X> ? X :                                  
-    ( T extends Computed<infer X> ? X:                                              // 同步函数
+// export type PickComputedResult<T> = T extends Computed<infer X> ? X : 
+// ( T extends  AsyncComputed<infer X> ? AsyncComputedValue<X> :                                  
+//     ( T extends ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> :                                              // 同步函数
+//         (T extends WatchDescriptorBuilder<infer X> ? X :                // 异步函数
+//             T
+//         )
+//     )                              
+// ) 
+
+export type PickComputedResult<T> = T extends ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
+( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
+    ( T extends  Computed<infer X> ? X :                                              // 同步函数
         (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
             T
         )
     )                              
 ) 
+
 
 /**
 
@@ -34,7 +43,9 @@ export type PickComputedResult<T> = T extends  ComputedDescriptorBuilder<infer X
 
 */
 export type ComputedState<T extends Record<string, any>> = {
-[K in keyof T]: T[K] extends (...args:any) => any ? PickComputedResult<T[K]> : T[K] extends Record<string, any> ? ComputedState<T[K]> : T[K];
+    [K in keyof T]: T[K] extends (...args:any) => any 
+        ?  PickComputedResult<T[K]> : T[K] extends Record<string, any> 
+            ? ComputedState<T[K]> : T[K];
 };
 
 

@@ -44,7 +44,7 @@ pnpm add autostore
 
 ## @autostorejs/react
 
-:::warning{title=注意}
+:::warning 
 如果您是`React`开发者，只需要安装`@autostorejs/react`即可。
 :::
 

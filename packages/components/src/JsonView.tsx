@@ -19,16 +19,17 @@ export type JsonViewProps  = React.PropsWithChildren<{
 
 const JSONStyle = styled({
     "&>.json-pretty":{
+        lineHeight:"150%",
         "& .json-key":{
             color:"#5a5a5ac6",
             padding:"2px"
         },
         "& .json-string":{
-            color:"#009817",
+            color:"#007912",
             padding:"2px"
         },
         "& .json-number":{
-            color:"#2a00c0",
+            color:"#e67206",
             padding:"2px"
         },
         "& .json-boolean":{

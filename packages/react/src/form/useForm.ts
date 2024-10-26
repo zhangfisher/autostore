@@ -76,7 +76,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	const opts = arguments[1] || {}
 	if(!opts.ref) opts.ref = formRef;
 	
-	if(storeRef.current===null){
+	if(!storeRef.current){
 		storeRef.current = arguments[0] instanceof ReactAutoStore ? arguments[0] : new ReactAutoStore(arguments[0],arguments[1])
 	} 
 	
@@ -84,7 +84,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	const [valid, setValid] = useState<boolean>(true);
 	const [dirty, setDirty] = useState<boolean>(false);
  
-	const store= storeRef.current! 
+	const store = storeRef.current!  
 
 	if(!formComponentRef.current){ 
 		formContext.current = {
@@ -111,6 +111,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 
 	return {
 		...store,
+		state:store.state,
 		Form: formComponentRef.current,
 		Field: fieldComponentRef.current!,
 		valid,

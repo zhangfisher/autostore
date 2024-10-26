@@ -115,7 +115,7 @@ export type SyncRuntimeComputedOptions = SyncComputedOptions & {
 } 
 
 
-export type Computed<T=any> = (...args: any) => Exclude<T,Promise<any>>;                   // 同步计算函数
+export type Computed<T> = (...args: any) => Exclude<T,Promise<any>>;                   // 同步计算函数
 export type AsyncComputed<T=any> = (...args: any) => Promise<T>;    // 异步计算函数
 
  
@@ -244,7 +244,7 @@ export type AsyncComputedValue<Value = any,ExtAttrs extends Dict = {}> ={
     error   : any;
     retry   : number                 // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试
     value   : Value;                // 计算结果保存到此处
-    run     : (options?:RuntimeComputedOptions) => {};        // 重新执行任务
+    run     : (options?:RuntimeComputedOptions) => void ;     // 重新执行任务
     cancel  : ()=>void                                        // 中止正在执行的异步计算
   } & ExtAttrs
 

@@ -13,7 +13,7 @@ import { createUseBindings } from './form/useBindings';
 
 export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
     useState        : UseStateType<State>
-    useAsyncState   : UseAsyncStateType
+    useAsyncState   
     useDeps         : UseDepsType<State>
     $               : SignalComponentType<State>
     signal          : SignalComponentType<State>
@@ -22,14 +22,14 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
     useWatch        : UseWatchType
     useBindings     : UseFormBindingsType<State>
     useReactive     : UseReactiveType<State>
-    useAsyncReactive: UseAsyncReactiveType
+    useAsyncReactive
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,Object.assign({
             signalErrorBoundary : ()=><>ERROR</>
         },options))
         this.signal           = this.$ = createSignalComponent(this).bind(this)
         this.useState         = createUseState(this).bind(this)
-        this.useAsyncState    = (selector:any)=>this.useReactive(selector,true)[0]
+        this.useAsyncState    = (selector:any)=>this.useState<State>(selector,true)[0]
         this.useDeps          = createUseDeps(this).bind(this)
         this.useField         = createUseField(this).bind(this)
         this.bind             = createInputBinding(this).bind(this)
