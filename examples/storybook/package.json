@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@storybook/addon-storysource": "^8.3.5",
+    "@storybook/manager-api": "^8.3.6",
     "flexstyled": "^2.1.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

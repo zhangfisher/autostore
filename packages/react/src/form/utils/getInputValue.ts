@@ -1,28 +1,39 @@
 import { isEmpty } from "../../utils"
+import { HTMLInputElements } from "../types"
+import { isHtmlInputElement, isHtmlSelectElement } from "./isInputElement"
 
-export function getInputValue(input:HTMLInputElement):any{    
+export function getInputValue(input:HTMLInputElements):any{    
     let value:any
-    const datatype = input.dataset.typeof
-    if(input.type==='checkbox'){
-        if(isEmpty(input.value) ){
-            value = input.checked
+    const datatype = input.dataset.typeof    
+    if(isHtmlInputElement(input)){
+        if(input.type==='checkbox'){
+            if(isEmpty(input.value) ){
+                value = input.checked
+            }else{
+                const [trueVal,falseVal ] = String(input.value).split(",")
+                value = input.checked ? trueVal : falseVal
+            }
+        }else if(input.type==='radio'){
+            const name = input.name
+            const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`) as NodeListOf<HTMLInputElement>
+            if(radios.length>1){
+                let index = Array.from(radios).findIndex(radio=>radio.checked)
+                value = index>=0 ? (
+                    radios[index].value
+                ) : null
+            }else{
+                value = radios[0].checked
+            }
         }else{
-            const [trueVal,falseVal ] = String(input.value).split(",")
-            value = input.checked ? trueVal : falseVal
+            value =  input.value
         }
-    }else if(input.type==='radio'){
-        const name = input.name
-        const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`) as NodeListOf<HTMLInputElement>
-        if(radios.length>1){
-            let index = Array.from(radios).findIndex(radio=>radio.checked)
-            value = index>=0 ? (
-                radios[index].value
-            ) : null
+    }else if(isHtmlSelectElement(input)){
+        if(input.multiple){
+            const selectedOptions = input.selectedOptions
+            value =  Array.from(selectedOptions).map(option=>option.value)
         }else{
-            value = radios[0].checked
+            value =  input.value
         }
-    }else{
-        value =  input.value
     }
     if(datatype){
         if(datatype==='boolean'){

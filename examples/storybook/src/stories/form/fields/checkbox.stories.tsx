@@ -33,14 +33,18 @@ export const CheckBoxField = {
 					<div> 
 						<Form> 
 							<Layout>
-								<div style={{background:"#F4F4F4"}}><RichLabel text='正常模式下，状态值是{boolean}类型号,对应{checkbox}的选中/取消'/></div>
+								<div style={{background:"#F4F4F4"}}>
+									<RichLabel text='正常模式下，状态值是{boolean}类型时对应{checkbox}的选中/取消'/>
+								</div>
 							</Layout> 
 							<Layout>
 								<div><CheckBox name="user.vip" label="VIP" /></div>
 								<div><RichLabel text="简单的{Boolean}值绑定"/></div>
 							</Layout>
 							<Layout>
-								<div style={{background:"#F4F4F4"}}><RichLabel text='选中/取消{checkbox}时,如果指定{value="[trueValue],[falseValue]"},则状态值在两个值之间切换，需要指定'/></div>
+								<div style={{background:"#F4F4F4"}}>
+									<RichLabel text='如果状态的值不是{boolean}，而是任意两个值之间切换,则需要为{checkobx}指定元素的{value="[trueValue],[falseValue]"}'/>
+								</div>
 							</Layout> 
 							<Layout>
 								<div><CheckBox name="user.selected" label="Selected" value="a,b" /></div>
@@ -49,6 +53,13 @@ export const CheckBoxField = {
 							<Layout>
 								<div><CheckBox name="user.number" label="Number" value="1,0"/></div>
 								<div><RichLabel text='当值是数字时需要在{0|1}之间切换时,需要指定类型'/></div>
+							</Layout>
+							<Layout>
+								<div>
+									<RichLabel>
+										通过字段转换可以使用checkbox
+									</RichLabel>
+								</div>
 							</Layout>
 							
 						</Form>

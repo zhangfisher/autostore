@@ -1,8 +1,16 @@
 import { useForm } from "@autostorejs/react";
-import {Input,List,ColorBlock,Field,Layout,JsonView,Card,CheckBox,RichLabel } from "x-react-components"
- 
+import { Field,Layout,JsonView,Card,RichLabel } from "x-react-components"
+import { styled } from "flexstyled"
 
- 
+const  FormStyle=styled({
+	"& input[type=radio]":{
+		marginLeft: "12px",
+		cursor: "pointer",
+		"& ~ label":{
+			cursor: "pointer",
+		}
+	}	
+})
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
@@ -17,7 +25,9 @@ export const RadioField = {
 		const { Form, useReactive } = useForm({
 			user: {
 				vip: false, 
-				sex: "男"
+				sex: "男",
+				job: "教师",
+				level: 3,
 			},
 		},{
 			customReport:false
@@ -29,7 +39,7 @@ export const RadioField = {
 			<Card title="Radio">
 				<Layout direction="column">
 					<div> 
-						<Form> 
+						<Form className={FormStyle.className}> 
 							<Layout>
 								<div style={{background:"#F4F4F4"}}><RichLabel text='如果状态值是{boolean}类型,自动设置{radio}的{value=true|false}'/></div>
 							</Layout> 
@@ -45,15 +55,34 @@ export const RadioField = {
 								<div><RichLabel text="简单的{Boolean}值绑定"/></div>
 							</Layout>
 							<Layout>
-								<div style={{background:"#F4F4F4"}}><RichLabel text='选中/取消{checkbox}时,如果指定{value="[trueValue],[falseValue]"},则状态值在两个值之间切换，需要指定'/></div>
+								<div style={{background:"#F4F4F4"}}>
+									<RichLabel text='如果状态取值是多个选项，则需要为{radio}指定{value}'/></div>
 							</Layout> 
 							<Layout>
-								<div><CheckBox name="user.selected" label="Selected" value="a,b" /></div>
-								<div><RichLabel text='当状态值在{a|b}切换时,需要在指定checkbox元素的{value="a,b"}'/></div>
+								<Field label="Job">									
+									<input id="job1" name="user.job" type="radio" value="程序员"/>
+									<label htmlFor="job1">程序员</label>									
+									<input id="job2" name="user.job" type="radio" value="教师"/>
+									<label htmlFor="job2">教师</label>									
+									<input id="job3" name="user.job" type="radio" value="公务员"/>
+									<label htmlFor="job3">公务员</label>									
+									<input id="job4" name="user.job" type="radio" value="外卖员"/>
+									<label htmlFor="job4">外卖员</label>
+								</Field>
 							</Layout>
 							<Layout>
-								<div><CheckBox name="user.number" label="Number" value="1,0"/></div>
-								<div><RichLabel text='当值是数字时需要在{0|1}之间切换时,需要指定类型'/></div>
+								<Field label="Level">									
+									<input id="l1" name="user.level" type="radio" value="1"/>
+									<label htmlFor="l1">L1</label>									
+									<input id="l2" name="user.level" type="radio" value="2"/>
+									<label htmlFor="l2">L2</label>									
+									<input id="l3" name="user.level" type="radio" value="3"/>
+									<label htmlFor="l3">L3</label>									
+									<input id="l4" name="user.level" type="radio" value="4"/>
+									<label htmlFor="l4">L4</label>
+									<input id="l5" name="user.level" type="radio" value="5"/>
+									<label htmlFor="l5">L5</label>
+								</Field>
 							</Layout>
 							
 						</Form>

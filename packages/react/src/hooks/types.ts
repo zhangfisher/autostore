@@ -21,11 +21,11 @@ export type UseStateSetter<SetValue,State extends Dict>= (value:SetValue,state:C
 
 
 export interface UseStateType<State extends Dict> {
-    <Value>(selector: string): UseStateResult<Value>
-    <Value>(selector: string[]): UseStateResult<Value>
-    <Value>(selector: string,async:boolean): UseStateResult<AsyncComputedValue<Value>>
-    <Value>(selector: string[],async:boolean): UseStateResult<AsyncComputedValue<Value>>
-    <Value,SetValue>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateResult<Value>
+    <Value=any>(selector: string): UseStateResult<Value>
+    <Value=any>(selector: string[]): UseStateResult<Value>
+    <Value=any>(selector: string,async:boolean): UseStateResult<AsyncComputedValue<Value>>
+    <Value=any>(selector: string[],async:boolean): UseStateResult<AsyncComputedValue<Value>>
+    <Value=any,SetValue=any>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateResult<Value>
     (): UseStateResult<ComputedState<State>>
 }
 
@@ -38,11 +38,11 @@ export type UseReactiveSetter<SetValue,State extends Dict>=UseStateSetter<SetVal
 
 
 export interface UseReactiveType<State extends Dict> {
-    <Value>(selector: string): UseReactiveResult<Value>
-    <Value>(selector: string[]): UseReactiveResult<Value>
-    <Value>(selector: string,async:boolean): UseReactiveResult<AsyncComputedValue<Value>>
-    <Value>(selector: string[],async:boolean): UseReactiveResult<AsyncComputedValue<Value>>
-    <Value,SetValue>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseReactiveResult<Value>
+    <Value=any>(selector: string): UseReactiveResult<Value>
+    <Value=any>(selector: string[]): UseReactiveResult<Value>
+    <Value=any>(selector: string,async:boolean): UseReactiveResult<AsyncComputedValue<Value>>
+    <Value=any>(selector: string[],async:boolean): UseReactiveResult<AsyncComputedValue<Value>>
+    <Value=any,SetValue=any>(getter: UseReactiveGetter<Value,State>,setter?:UseReactiveSetter<SetValue,State>): UseReactiveResult<Value>
     (): UseStateResult<ComputedState<State>>
 }
 

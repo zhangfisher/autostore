@@ -1,0 +1,31 @@
+{
+  "name": "@autostorejs/website",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@autostorejs/devtools": "workspace:*",
+    "@autostorejs/react": "workspace:*",
+    "autostore": "workspace:*",
+    "flex-tools": "^1.4.9",
+    "flexstyled": "^2.1.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "x-react-components": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "vitepress-demo-plugin": "^1.0.2"
+  }
+}

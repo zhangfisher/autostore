@@ -78,7 +78,7 @@ export type UseFormResult<State extends Dict>={
 >
 
 
-export type HTMLFormInputElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+export type HTMLInputElements = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
 export type UseFormInputCallback = (path:string,value:any,input:HTMLElement)=>string | undefined
 // 默认情况下校验样式被应用到input元素上，如果input是经过包装的组件
@@ -168,5 +168,3 @@ export type UseFormType<State extends Dict>  = {
  
 
 export type NonFunction<T> = T extends Function ? never : T;
-
- 

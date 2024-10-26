@@ -25,17 +25,21 @@
  */ 
 import React, { CSSProperties } from "react"
 
- export interface RichLabelProps {
-    text:string
+ export type RichLabelProps  = React.PropsWithChildren<{
+    text?:string
     color?:string | Record<string,string>
     rules?:Record<string,RegExp>
     style?:CSSProperties
     className?:string
+}>
+function escapeHtmlString(str:string){
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 export const RichLabel:React.FC<RichLabelProps> =(props:RichLabelProps)=>{
     const {text,color='#ff6c00',rules } = props
     const colors:Record<string,string> = typeof(color) === 'string' ? {default:color} :  Object.assign({default:""},color)
-    let html = text 
+    let html = escapeHtmlString(text || String(props.children))
+
     // 处理正则表达式着色，优先级高于插值
     if(rules){
        Object.entries(rules).forEach(([style,rule])=>{ 
@@ -45,7 +49,7 @@ export const RichLabel:React.FC<RichLabelProps> =(props:RichLabelProps)=>{
             })
         })
     }else{
-        html = text.replace(/\{\s?(.*?)\s?\}/gm,(_,word)=>{
+        html = html.replace(/\{\s?(.*?)\s?\}/gm,(_,word)=>{
             return `<span style='color: ${ word in colors ? colors[word] : colors.default}'>${word}</span>`
         }).replaceAll("undefined","空值")
     }

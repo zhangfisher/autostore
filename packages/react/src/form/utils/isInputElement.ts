@@ -8,3 +8,9 @@
 export function isInputElement(input: HTMLElement) {
 	return ["input", "textarea", "select"].includes(input.tagName.toLowerCase());
 }
+export function isHtmlInputElement(input: HTMLElement):input is HTMLInputElement {
+	return input.tagName.toLowerCase()==="input"
+}
+export function isHtmlSelectElement(input: HTMLElement):input is HTMLSelectElement {
+	return input.tagName.toLowerCase()==="select"
+}
