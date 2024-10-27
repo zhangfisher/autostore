@@ -1,24 +1,17 @@
----
-group:
-  title: 计算属性
-  order: 2
-order: 6  
-title: 异步计算🔥
-demo:
-  tocDepth: 5
-toc: content
----
-
 # 异步计算
- 
+
+## 引言 
 `AutoStore`提供了非常强大的异步计算属性特性，使用`computed`来声明创建一个异步计算属性。
 
+:::warning 提示
+所有`computed(async (scope)=>{....})`声明的异步计算属性均会被原地替换为`AsyncComputedValue`对象。
+:::
 
-## computed
+## 工作内幕
 
 创建异步计算属性的基本方法是直接在`State`中任意位置使用`computed`进行声明。
 
-```tsx | pure  {6-8}
+```tsx   {6-8}
 import { computed } from "@autostorejs/react"
 const store = createStore({
   order:{
@@ -31,9 +24,41 @@ const store = createStore({
 })
 ```
 
+- 以上`total`是一个异步计算属性，并且手动指定依赖了`./price`和`./count`(相对路径依赖，见[依赖收集](./deps))。
+
+
+<demo react="computed/showAsyncValue.tsx"/>
+
+**重点：**
+
+当我们使用`createStore`创建异步计算属性，内部主要做了两件事：
+
+- **1. 将声明原地替换为`AsyncComputedValue`**
+
+经过`createStore`处理后，`store.state.order.total`的值会被替换为`AsyncComputedValue`类型的值，即:
+```json
+{   
+  "loading":false,
+  "timeout":0,
+  "retry":0,
+  "error":null,
+  "value":10,
+  "progress":0
+}
+```
+
+当异步计算的依赖发生变化时，会自动触发计算属性的重新计算，并更新`value`以及`loading`、`error`、`progress`等状态。详见下文高级特性。
+
+- **2. 创建`AsyncComputedObject`对象**
+
+同时会创建一个名称为`声明所在路径名称`的`AsyncComputedObject`对象保存在`store.computedObjects`中。
+因此，在上例中，`store.computedObjects.get("order.total")`就是`AsyncComputedObject`对象。
+
+## computed
+
 **`computed`是一个普通的函数，用于声明计算属性，异步计算属性的函数签名如下：**
 
-```ts | pure
+```ts 
 function computed<Value = any, Scope = any>(
   getter: AsyncComputedGetter<Value,Scope>,
   depends: ComputedDepends,
@@ -49,72 +74,36 @@ function computed<Value = any, Scope = any>(
 | `depends` | `ComputedDepends` | 声明依赖 |
 | `options` | `ComputedOptions` | 异步计算属性相关参数 |
 
-
 ### 异步计算函数
 
-`getter`参数（即异步计算函数）,其返回值将更新到状态中的`computed`声明的路径上，详见[介绍](./computed-getter.md)。
+`getter`参数（即异步计算函数）,其返回值将更新到状态中的`computed`声明的路径上，详见[介绍](./getter)。
 
 ### 指定依赖
 
-- `depends`：依赖收集，用来指定依赖的状态路径。如何指定依赖详见[依赖收集](./computed-deps.md)。
-- `options`：异步计算属性的一些选项，详见[选项](./computed-options.md)。
+- `depends`：依赖收集，用来指定依赖的状态路径。如何指定依赖详见[依赖收集](./deps)。
+- `options`：异步计算属性的一些选项，详见[选项](./options)。
 
 ### 配置参数
 
-`options`参数是一个`ComputedOptions`对象，用来指定计算属性的一些选项。详见[计算参数](./computed-options.md)。
+`options`参数是一个`ComputedOptions`对象，用来指定计算属性的一些选项。详见[计算选项](./options)。
  
-
-<Divider></Divider>
-
-
 ## 基本用法
 
 异步计算属性的创建与同步计算一样均是使用`computed`来声明，但是最重要的一点是**异步计算需要显式指定依赖**。
 
-```tsx  
-/**
-* title: 异步计算
-* description: 输入框`firstName`和`lastName`的值变化时，`fullName`会延时自动重新计算。
-*/
-import { delay,createStore,computed,ObserverScopeRef } from '@autostorejs/react';
-import { Input,ColorBlock } from "x-react-components"
+<demo react="computed/asyncBase.tsx" 
+  title="修改firstName或lastName时，fullName会自动重新计算。"
+/>
 
-const { useAsyncState,useState,state, bind } = createStore({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    fullName: computed(async (user)=>{
-      await delay(1000)       // 模拟异步计算
-      return user.firstName+' '+user.lastName  
-    },["user.firstName","./lastName"],{ // 指定依赖
-      initial:"ZhangFisher"
-    }) 
-  }
-},{
-  id:"async-base", 
-  debug:true // 打开Redux devtools
-})
-
-export default ()=>{ 
-  const [firstName] = useState("user.firstName") 
-  const [lastName] = useState("user.lastName") 
-  const fullName = useAsyncState("user.fullName")  
-  return <>
-    <Input label="firstName" value={firstName} {...bind('user.firstName')} />
-    <Input label="lastName" value={lastName} {...bind('user.lastName')} />
-    <ColorBlock name="FullName" loading={fullName.loading}>{fullName.value}</ColorBlock>
-    </>
-}
-```
 
 - 以上`fullName`是一个异步计算属性，手动指定其依赖于`user.firstName`和`./lastName`(相对路径)。
-- 依赖可以使用绝对路径或相对路径，使用`.`作为路径分割符，`./`指的是当前对象，`../`指的是父对象,详见[依赖收集](./computed-deps.md)。
+- 依赖可以使用绝对路径或相对路径，使用`.`作为路径分割符，`./`指的是当前对象，`../`指的是父对象,详见[依赖收集](./deps)。
 - 当在输入框架中修改`firstName`或`lastName`时，`fullName`会自动重新计算。
 - 计算属性的结果保存在`state.user.fullName.value`中。
 - 当计算属性正在计算时，`state.user.fullName.loading`为`true`。计算完成后，`state.user.fullName.loading`为`false`。
-- 关于`...bind('user.firstName')`的用法详见[表单绑定](./form-bind.md)。
+- 关于`...bind('user.firstName')`的用法详见[表单绑定](../form/bind)。
 
-<Divider></Divider>
+
 
 ## 高级特性🔥
 
@@ -187,7 +176,7 @@ export default ()=>{
 - 当`fullName.loading`为`true`时，代表异步计算正在进行中。
 - 当`fullName.error`不为`null`时，代表异步计算出错。
  
-<Divider></Divider> 
+ 
 
 ### 执行进度
 
@@ -200,7 +189,7 @@ import {delay,createStore,computed,ObserverScopeRef } from '@autostorejs/react';
 import { JsonView,Button,Input,Loading } from "x-react-components"
 
  
-const { useState,state,$ ,bind,useAsyncState } = createStore({
+const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
   order:{
     bookName:"Proficient in AutoStore",
     price:100,
@@ -222,7 +211,7 @@ const { useState,state,$ ,bind,useAsyncState } = createStore({
 }  )
 
 export default ()=>{
-  const [ count ] = useState("order.count")
+  const [ count ] =  useReactive("order.count")
   const total = useAsyncState("order.total")
   return (<div>
     <table className="table table-bordered table-striped">
@@ -261,7 +250,7 @@ export default ()=>{
 - 进度条对象有两个方法：`value`和`end`，`value`用来设置进度值，`end`用来结束进度条。
 
 
-<Divider></Divider>
+
 
 ### 超时处理
 
@@ -277,7 +266,7 @@ import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react'
 import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
  
  
-const { useState,state,$ ,bind,useAsyncState } = createStore({
+const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
   order:{
     bookName:"Proficient in AutoStore",
     price:100,
@@ -295,7 +284,7 @@ const { useState,state,$ ,bind,useAsyncState } = createStore({
 }  )
 
 export default ()=>{
-   const [ count ] = useState("order.count")
+   const [ count ] =  useReactive("order.count")
   const total = useAsyncState("order.total")
   return (<div>
     <table className="table table-bordered table-striped">
@@ -330,7 +319,7 @@ export default ()=>{
 }
 ```
 
-<Divider></Divider>
+
 
 ### 倒计时
 
@@ -353,7 +342,7 @@ import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react'
 import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
  
  
-const { useState,state,$ ,bind,useAsyncState } = createStore({
+const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
   order:{
     bookName:"Proficient in AutoStore",
     price:100,
@@ -371,7 +360,7 @@ const { useState,state,$ ,bind,useAsyncState } = createStore({
 }  )
 
 export default ()=>{
-   const [ count ] = useState("order.count")
+   const [ count ] =  useReactive("order.count")
   const total = useAsyncState("order.total")
   return (<div>
     <table className="table table-bordered table-striped">
@@ -408,7 +397,7 @@ export default ()=>{
 ```
 
 
-<Divider></Divider>
+
 
 ### 重试
 
@@ -424,7 +413,7 @@ import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react'
 import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
  
  
-const { useState,state,$ ,bind,useAsyncState } = createStore({
+const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
   order:{
     bookName:"Proficient in AutoStore",
     price:100,
@@ -442,7 +431,7 @@ const { useState,state,$ ,bind,useAsyncState } = createStore({
 }  )
 
 export default ()=>{
-   const [ count ] = useState("order.count")
+   const [ count ] =  useReactive("order.count")
   const total = useAsyncState("order.total")
   return (<div>
     <table className="table table-bordered table-striped">
@@ -485,7 +474,7 @@ export default ()=>{
 - 重试次数为`0`时，不会再次重试。重试次数为`N`时，实际会执行`N+1`次。
 - 重试期间`error`会更新为最后一次错误信息。
 
-<Divider></Divider>
+
 
 ### 取消
 
@@ -502,7 +491,7 @@ import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react'
 import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
  
  
-const { useState,state,$ ,bind,useAsyncState } = createStore({
+const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
   order:{
     bookName:"Proficient in AutoStore",
     price:100,
@@ -526,7 +515,7 @@ const { useState,state,$ ,bind,useAsyncState } = createStore({
 }  )
 
 export default ()=>{
-   const [ count ] = useState("order.count")
+   const [ count ] =  useReactive("order.count")
   const total = useAsyncState("order.total")
   return (<div>
     <table className="table table-bordered table-striped">
@@ -570,7 +559,7 @@ export default ()=>{
 
 
 
-<Divider></Divider>
+
 
 ### 不可重入
 
@@ -579,13 +568,13 @@ export default ()=>{
 在声明时，允许指定`options.reentry=false`来防止重入，如果重入则只会在控制台显示一个警告。
 
 
-<Divider></Divider>
+
 
 ## 简写异步计算
 
 大部份情况下，异步计算属性均应该使用`computed`进行声明，但也可以直接使用一个异步函数。
 
-```ts | pure 
+```ts  
 const order = {
     bookName:"ZhangFisher",
     price:100,
@@ -598,7 +587,7 @@ const order = {
 
 上述简单的异步声明方式等效于以下方式：
 
-```tsx | pure
+```tsx 
 import { createStore,computed} from "@autostorejs/react"
 
 const store = createStore({
@@ -673,7 +662,7 @@ total(_x15) {
 
 解决方法是显式指定`computed(async ()=>{...},[...],{async:true})`，这样就可以正确识别为异步函数。
 
-<Divider></Divider>
+
 
  
 
@@ -686,7 +675,7 @@ total(_x15) {
 但是在某些情况下，这个判断可能不正确。
 比如在进行`babel`将代码转译到`es5`等低版本代码时，异步函数可能会被转译为同步函数，此时需要也显式指定`options.async=true`。
 
-```ts | pure {7}
+```ts  {7}
 const store = createStore({
     firstName:"Zhang",
     lastName:"Fisher",

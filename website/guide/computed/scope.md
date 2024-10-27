@@ -15,7 +15,7 @@ toc: content
 
 `@autostorejs/react`在创建`Store`时，支持配置`scope`参数来指定计算属性函数的第一个参数，如下：
 
-```ts | pure {17}
+```ts {20}
 export enum ObserverScopeRef{
   Root    = 'root',                   // 指向State根对象
   Current = 'current',                // 指向计算属性所在的对象
@@ -24,8 +24,10 @@ export enum ObserverScopeRef{
   Self    = 'self'                    // 指向自身，默认值   
 }
 
-// 指定Store中计算函数的上下文,如果是字符串代表是当前对象的指定键，如果是string[]，则代表是当前Store对象的完整路径
-export type ComputedScope  =  ObserverScopeRef | string | string[] | ((state:any)=>string | string[] | ObserverScopeRef)
+// 指定Store中计算函数的上下文,如果是字符串代表是当前对象的指定键
+// 如果是string[]，则代表是当前Store对象的完整路径
+export type ComputedScope  =  ObserverScopeRef | string | string[] 
+            | ((state:any)=>string | string[] | ObserverScopeRef)
  
 const store = createStore( {
   user:{
@@ -55,7 +57,7 @@ const store = createStore( {
 
 可以在创建`Store`时，通过`scope`参数来全局指定计算属性的默认`scope`，如下：
 
-```tsx | pure  {6,11}
+```tsx  {6,11}
 const store = createStore( {
   user:{
     firstName:"Zhang",
@@ -74,7 +76,7 @@ const store = createStore( {
 
 也可以局部指定计算属性的`scope`，如下：
 
-```tsx | pure  {6,9}
+```tsx  {6,9}
 const store = createStore( {
   user:{
     firstName:"Zhang",
@@ -95,11 +97,7 @@ const store = createStore( {
 
 默认情况下，`scope==ObserverScopeRef.Current`时，计算函数的`scope`指向计算函数所在的对象。
 
-```tsx  
-/**
- * title: ObserverScopeRef.Current
- * description: scope===user
- */
+```tsx  {16}
 import { ObserverScopeRef,useStore } from '@autostorejs/react'; 
 import { ColorBlock } from "x-react-components" 
 
@@ -126,7 +124,7 @@ export default ()=>{
 - 上面代码中，`fullName`函数的`scope`指向所在的`user`对象，即`state.user`。
 
 
-:::warning{title=注意🌝}
+:::warning 注意🌝
 `scope==ObserverScopeRef.Current`是默认值，一般不需要指定，以上仅仅是示例。
 :::
 
@@ -134,11 +132,7 @@ export default ()=>{
 
 `@autostorejs/react`会将计算属函数的`scope`指向`ObserverScopeRef.Root`，即当前的`State`根对象，如下：
 
-```tsx  
-/**
- * title: ObserverScopeRef.Root
- * description: scope===<ROOT>
- */
+```tsx   {15}
 import { useStore,ObserverScopeRef } from '@autostorejs/react'; 
 import { ColorBlock } from "x-react-components" 
 
@@ -153,7 +147,7 @@ export default ()=>{
         return scope.user.firstName+scope.user.lastName 
       }
     }},{
-    scope: ObserverScopeRef.Root
+      scope: ObserverScopeRef.Root
   })
   return <div> 
     <ColorBlock name='FullName'>{state.user.fullName}</ColorBlock>
@@ -165,11 +159,7 @@ export default ()=>{
 
 当`scope==ObserverScopeRef.Parent`时，指向计算函数所在的对象的父对象。
 
-```tsx   
-/**
- * title: ObserverScopeRef.Parent
- * description: scope===parent
- */
+```tsx  {10-11,17}
 import { createStore,ObserverScopeRef } from '@autostorejs/react'; 
 import { ColorBlock } from "x-react-components" 
 
@@ -186,7 +176,7 @@ const { state } = createStore({
   }
 } ,{
   // 指定计算属性的默认上下文指向计算函数所有的当前对象
-  scope: ObserverScopeRef.Parent,
+    scope: ObserverScopeRef.Parent,
 })
 
 export default ()=>{ 
@@ -201,11 +191,7 @@ export default ()=>{
 
 当`store.options.scope==<字符串>`时，此时`<字符串>`就是指向绝对路径。
 
-```tsx
-/**
- * title: <字符串>
- * description: scope===user.address.city
- */
+```tsx  {9-10,17}
 import { createStore } from '@autostorejs/react'; 
 import { ColorBlock } from "x-react-components" 
 
@@ -233,17 +219,13 @@ export default ()=>{
 
 ```
 
-:::warning{title=提醒}
+:::warning 提醒
 `scope===<字符串>`时使用的是绝对路径，采用`.`作为路径分隔符，如`user.address.city`。
 :::
 
 ### 字符串数组 
 
-```tsx  
-/**
- * title: <字符串数组 >
- * description:  scope===user.address['main.city']
- */
+```tsx  {9-10,17}
 import { createStore } from '@autostorejs/react'; 
 import { ColorBlock } from "x-react-components" 
 
@@ -270,7 +252,7 @@ export default ()=>{
 }
 ```
 
-:::warning{title=提醒}
+:::warning 提醒
 当状态路径中包含`.`字符时，可以使用字符串数组来指定路径,避免产生歧义。
 :::
 
@@ -281,10 +263,6 @@ export default ()=>{
 
  
 ```tsx
-/**
- * title: <字符串数组>
- * description: scope==[firstName,lastName]
- */
 import { createStore,computed,ObserverScopeRef  } from '@autostorejs/react'; 
 import { ColorBlock } from "x-react-components" 
 
@@ -311,6 +289,6 @@ export default ()=>{
 
 ```  
    
-:::warn
-**`ObserverScopeRef.Depends`仅在异步计算时生效,而异步计算必须通过computed函数来指定依赖**
+:::warning 提示
+**`ObserverScopeRef.Depends`仅在异步计算时生效,而异步计算必须通过`computed`函数来指定依赖**
 :::

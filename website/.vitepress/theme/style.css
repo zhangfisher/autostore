@@ -68,6 +68,8 @@
   --vp-c-danger-2: var(--vp-c-red-2);
   --vp-c-danger-3: var(--vp-c-red-3);
   --vp-c-danger-soft: var(--vp-c-red-soft);
+
+  --vp-code-line-highlight-color: #f5f4cb;
 }
 
 /**
@@ -141,4 +143,11 @@
 
 .vp-doc table{
   display: inline-table;
+}
+
+
+
+.vp-code .line.highlighted:before{
+    content: '➡️';
+    margin-left: -1em;
 }

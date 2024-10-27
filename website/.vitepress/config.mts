@@ -31,8 +31,8 @@ export default defineConfig({
         text: '指南',
         items:[
           { 
-            text: 'Store', 
-            link: '/guide/store',
+            text: 'Store',  
+            collapsed: false,
             items:[
               { text: '关于', link: '/guide/store/about' },
               { text: 'Store', link: '/guide/store/store' },              
@@ -42,8 +42,8 @@ export default defineConfig({
             ]
           }, 
           {
-            text: '计算属性',
-            link: '/guide/computed',
+            text: '计算属性', 
+            collapsed: false,
             items:[
               { text: '关于', link: '/guide/computed/about' },
               { text: '创建', link: '/guide/computed/create' },
@@ -58,8 +58,8 @@ export default defineConfig({
             ]
           },
           {
-            text: '监视',
-            link: '/guide/watch',
+            text: '监视', 
+            collapsed: false,
             items:[
               { text: '关于', link: '/guide/watch/about' },
               { text: '全局监视', link: '/guide/watch/store-watch' },
@@ -69,8 +69,8 @@ export default defineConfig({
             ]
           },
           {
-            text: '信号',
-            link: '/guide/signal/',
+            text: '信号', 
+            collapsed: false,
             items:[
               { text: '关于', link: '/guide/signal/about' },
               { text: '信号组件', link: '/guide/signal/component' },
@@ -83,6 +83,7 @@ export default defineConfig({
           },
           {
             text: '表单', 
+            collapsed: false,
             items:[
               { text: '关于', link: '/guide/form/about' },
               { text: 'bind', link: '/guide/form/bind' },
@@ -93,6 +94,7 @@ export default defineConfig({
           },
           {
             text: '调试与诊断', 
+            collapsed: false,
             items:[
               { text: 'DevTools', link: '/guide/debug/devtools' },
               { text: 'trace', link: '/guide/debug/trace' },
