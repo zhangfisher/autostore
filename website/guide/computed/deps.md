@@ -1,13 +1,3 @@
----
-group:
-  title: 计算属性
-  order: 2
-order: 3  
-demo:
-  tocDepth: 5
-toc: content
----
-
 # 依赖收集
 
 当状态数据发生变更时（即计算属性的依赖发生变化时），`AutoStore`会自动执行计算属性的`Getter`函数，然后将计算结果赋值给`State`中的对应属性。
@@ -16,13 +6,13 @@ toc: content
 
 在了解计算属性的依赖路径之前，先了解下依赖路径的概念。依赖路径是指在状态树中的路径，依赖路径的格式为：
 
-```ts | pure
+```ts
 type DependPath  = string | string[]
 ```
 
-依赖路径是一个`使用`.`作为分割符的字符串`或者`string[]`数组。
+依赖路径是一个使用`.`作为分割符的字符串或者`string[]`数组。
 
-```ts | pure
+```ts
 
 const state = {
   user:{
@@ -59,15 +49,14 @@ user.tags.1          // 数组索引
 
 :::info
 - **Q**: 为什么有`字符串路径`和`数组路径`的区别？
-- **A**: 两者是等效的，相较而言，`使用`.`作为分割符的字符串`更加友好方便，但缺点是当状态数据的键名称包含`.`字符时会产生岐义。而`数组路径`更加精准，不会产生岐义。
+- **A**: 两者是等效的，相较而言，使用`.`作为分割符的字符串更加友好方便，但缺点是当状态数据的键名称包含`.`字符时会产生岐义。而`数组路径`更加精准，不会产生岐义。
 :::
-
 
 ## 依赖类型
 
 计算属性的依赖类型定义如下：
 
-```ts | pure
+```ts
 type ComputedDepend = 'CURRENT' | 'ROOT' | 'PARENT' 
   | `/${string}` | `./${string}` | `../${string}` | string | string[] 
 
@@ -94,7 +83,7 @@ type ComputedDepend = 'CURRENT' | 'ROOT' | 'PARENT'
 
 `CURRENT`这里的当前指的是`computed`函数所在的对象，即`total`所在的对象是`order`对象。
 
-```ts | pure {8-9} 
+```ts {8-9} 
 const state = {
   order:{
     price:10,
@@ -114,7 +103,7 @@ const state = {
 即`total`所在的对象是`order`对象，`..`表示父对象，指向的就是根对象.
 
 
-```ts | pure {8-9} 
+```ts {8-9} 
 const state = {
   order:{
     price:10,
@@ -129,7 +118,7 @@ const state = {
 }
 ```
 
-:::warning{title=特别注意}
+:::warning 特别注意 
 相对的是`computed`函数声明的状态所在的对象，上例中的`total`所在的对象是`order`而不是`total`。
 :::
 
@@ -165,7 +154,7 @@ const state = {
 如下示例就无法保证正确收集依赖。
  
 
-```ts | pure {6-9} 
+```ts {6-9} 
 const state = {
   order:{
     price:10,
@@ -186,7 +175,7 @@ const state = {
 
 异步计算属性的依赖收集无法像同步计算属性那样自动完成，需要手动指定依赖路径。
 
-```ts | pure {5-7}
+```ts {5-7}
 const state = {
   order:{
     price:10,

@@ -6,7 +6,7 @@
 - **实例事件触发器**：
 - **状态事件触发器**
 
-## 实例事件触发器
+## Store事件
 
 `AutoStore`对象实例本身就是一个事件触发器，提供了一些事件用来监听实例的生命周期、状态变化以及计算属性等事件。
 
@@ -53,16 +53,98 @@ export type StoreEvents = {
 
 #### on
 
+订阅事件，返回一个`EventListener`用来取消订阅。
+
+```ts
+export type EventListener = { off:()=>void }
+on<T extends keyof Events>(
+    type: T, 
+    handler: EventHandler<T,Events[T]>,
+    prepend ?:boolean
+):EventListener
+on<P=any>(
+    type: '**', 
+    handler: EventHandler<keyof Events,P>,
+    prepend ?:boolean
+):EventListener
+```
+
+- `type`：事件类型，可以是具体的事件名，也可以是`**`，表示监听所有事件。
+- `handler`：事件处理函数。
+- `prepend`：是否在事件订阅队列头部插入，订阅队列是一个数组，`prepend`为`true`时会在头部插入，`false`时在尾部插入。这样可以使得事件处理函数的执行顺序发生变化。
+
 #### onAny
+订阅所有事件，返回一个`EventListener`用来取消订阅。
+
+```ts
+onAny(handler:EventHandler<string,any>):EventHandler
+```
+
+- `onAny(handler)`等效于`on('**',handler)`
 
 #### once
 
+只订阅一次事件，事件触发后会自动取消订阅。
+
+```ts
+once<T extends  keyof Events>(
+    type: T, 
+    handler: EventHandler<T,Events[T]>
+) :EventListener
+```
+
 #### off
+
+取消订阅事件。
+
+```ts
+off<T extends  keyof Events>(
+    type: T, 
+    handler?: EventHandler<T,Events[T]> | undefined
+)
+```
+
 #### offAll
+
+取消所有订阅。
+
+```ts
+offAll()
+```
+
 #### emit
+
+触发事件。
+
+```ts
+emit<T extends keyof Events>(type:T,payload:Events[T])
+```
+
 #### wait
 
+等待事件触发。
 
+```ts
+wait<T extends  keyof Events >(
+    filter:(type:T,payload:Events[T])=>boolean | undefined | void,
+    timeout?:number
+):Promise<Events[T]>
+wait<T extends  keyof Events>(
+    type:T,
+    timeout?:number
+):Promise<Events[T]>
+```
+
+- `filter`：过滤器，当返回`true`时触发，当返回`undefined`时触发，当返回`void`时不触发。
+- `timeout`：超时时间，单位毫秒。
+
+```ts
+// 等待load事件触发
+await store.wait('load')
+// 等待computed:done事件触发
+await store.wait('computed:done',2000)
+
+```
 
 ### 事件
 
@@ -70,22 +152,195 @@ export type StoreEvents = {
 
 #### load
 
+当`AutoStore`对象实例创建后触发。
+
+```ts
+store.on('load',(store:AutoStore)=>{
+    console.log('store loaded:',store)
+})
+```
+
 #### unload
 
+当调用`store.destory()`销毁`AutoStore`对象实例后触发。
+
+```ts
+store.on('unload',(store:AutoStore)=>{
+    console.log('store loaded:',store)
+})
+```
 #### computed:created
+
+当计算属性对象创建时触发。
+
+```ts
+store.on('computed:created',(computedObject:ComputedObject)=>{
+    console.log('computedObject created:',computedObject)
+})
+```
 #### computed:done
+
+当计算函数执行成功时触发。
+
+```ts
+store.on('computed:done',({id,path,value,computedObject}:any)=>{
+    console.log('computedObject done:',id,path,value,computedObject)
+})
+```
+
 #### computed:error
+
+当计算函数执行出错时触发。
+
+```ts
+store.on('computed:error',({id,path,error,computedObject}:any)=>{
+    console.log('computedObject error:',id,path,error,computedObject)
+})
+```
+
 #### computed:cancel
+
+当异步计算函数被取消时触发。
+
+```ts
+store.on('computed:cancel',({id,path,reason,computedObject}:any)=>{
+    console.log('computedObject cancel:',id,path,reason,computedObject)
+})
+```
+- `reason`是计算被取消的原因，取值:`timeout` | `abort` | `reentry` | `error`
+
 #### watch:created
+
+当`watch`对象创建时触发。
+
+```ts
+store.on('watch:created',(watchObject:WatchObject)=>{
+    console.log('watchObject created:',watchObject)
+})
+```
+
 #### watch:done
+
+当`watch`函数执行成功时触发。
+
+```ts
+store.on('watch:done',({value,watchObject}:any)=>{
+    console.log('watchObject done:',value,watchObject)
+})
+```
+
 #### watch:error
 
+当`watch`函数执行出错时触发。
 
+```ts
+store.on('watch:error',({error,watchObject}:any)=>{
+    console.log('watchObject error:',error,watchObject)
+})
+```
 
 ## 状态变更触发器
 
-`AutoStore`对象实例提供了一个状态变更触发器`operates`，用来监听状态的读写变化。
+`AutoStore`对象实例提供了一个状态变更事件触发器`operates`，用来监听状态的读写变化。
 
 
+### 触发状态读写事件
 
+当对状态进行读写操作时，会在`operates`触发名称为`<状态路径>`的事件。
+
+```ts
+const store = createStore({
+  user:{
+    name:'tom',
+    age:18
+  }
+})
+
+```
+
+**例如:**
+
+- **读操作：** `console.log(store.state.user.name)`：
+
+触发名称为`user.name`的事件。相当于`store.operates.emit('user.name',<operate>)`。
+
+- **写操作：** `store.state.user.name='jack'`：
+
+触发名称为`user.name`的事件。相当于`store.operates.emit('user.name',<operate>)`。
+
+### 事件操作参数
+
+`operates`触发的事件的参数是一个`StateOperate`对象，用来描述状态的读写操作。
+
+```ts
+type StateOperate<Value=any,Parent=any> = {
+    type       : StateOperateType,
+    path       : string[],
+    value      : Value,
+    indexs?    : number[],               
+    oldValue?  : Value,
+    parentPath?: string[],
+    parent?    : Parent,    
+    reply?     : boolean               
+}
+
+type BatchChangeEvent= '__batch_update__'
+type StateChangeEvents = Record<string,StateOperate>
+
+type StateOperateType = 'get' | 'set' | 'delete'      // 用于对象
+                            | 'insert' | 'update' | 'remove'  // 用于数组  
+                            | 'batch'      // 批量操作
+```
+
+**`StateOperate`对象包含以下属性：**
+
+| 属性 | 类型 | 说明 |
+| :---: | :---: | --- |
+| `type` | `StateOperateType` | 操作类型，取值`get`、`set`、`delete`、`insert`、`update`、`remove`、`batch`。 |
+| `path` | `string[]` | 状态路径。 |
+| `value` | `Value` | 状态值。 |
+| `indexs` | `number[]` | 数组操作时的索引。 |
+| `oldValue` | `Value` | 旧值。 |
+| `parentPath` | `string[]` | 父路径。 |
+| `parent` | `Parent` | 父对象。 |
+| `reply` | `boolean` | 是否回放操作。 |
+
+- `type`：操作类型，`get`表示读操作，`set`表示写操作，`delete`表示删除操作，`insert`表示插入操作，`update`表示更新操作，`remove`表示删除操作，`batch`表示批量操作。
+- `insert`、`update`、`remove`用于表示数组的插入、更新、删除操作。操作时还提供`indexs`属性用来表示操作的索引。
+- `get`、`set`、`delete`用于表示对象的读、写、删除操作。
+- `batch`用于表示批量操作。
+- `get`代表所有读操作
+
+
+### 监听状态操作
+
+要监听状态读写操作，可以通过`operates`的`on/once/onAny/wait`方法订阅事件。
+
+```ts
+const store = createStore({
+  user:{
+    name:'tom',
+    age:18
+  }
+})
+```
+
+- **监听user.name操作**
+
+`store.operates.on('user.name',(operate:StateOperate)=>{...})`
+
+- **监听所有操作**
+
+`store.operates.onAny((operate:StateOperate)=>{...})`
+
+- **使用通配符**
+
+支持`*`通配符，可以监听所有`user`下的操作。
+
+`store.operates.on('user.*',(operate:StateOperate)=>{...})`
+
+
+:::warning 提示
+`AutoStore`的所有依赖收集以及事件响应均是基于`store.operates`实现的，所以`store.operates`是一个非常重要的事件触发器对象。
+:::
 
