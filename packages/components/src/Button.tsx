@@ -1,6 +1,6 @@
 import React  from 'react'
 import { Loading } from './Loading'
-import { styled } from 'flexstyled'
+import { styled } from 'flexstyled' 
 
 const ButtonStyle =styled<ButtonProps>({
     padding      : "8px",
@@ -10,7 +10,7 @@ const ButtonStyle =styled<ButtonProps>({
     flexDirection: "row",
     borderRadius : "6px",
     alignItems   : "center",
-    border       : `1px solid #eee`,    
+    border       : `1px solid #ccc`,    
     background   : "#fafafa",
     textAlign    : 'center',
     userSelect   : "none",
@@ -48,7 +48,7 @@ export const Button:React.FC<ButtonProps> = (props)=>{
  
     return (
         <div 
-            className={ButtonStyle.className}
+            className={ButtonStyle.className + (props.className ? ' '+props.className : '')}
             style={ButtonStyle.getStyle(props)}
             onClick={onClick}
         >

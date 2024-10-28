@@ -1,18 +1,6 @@
----
-group:
-  title: 表单
-  order: 5
-order: 3 
-title: useBindings
-demo:
-  tocDepth: 5
-toc: content
----
- 
+# useFields
 
-# useBindings
-
-如果要对深层嵌套的对象进行双向绑定，可以使用`useBindings`.
+如果要对深层嵌套的对象进行双向绑定，可以使用`UseFields`.
 
 ## 基本用法
 
@@ -22,7 +10,7 @@ import { Layout,ColorBlock,Button,Input } from "x-react-components"
  
 export default ()=>{
 
-  const { state, $, useBindings } = useStore({
+  const { state, $, UseFields } = useStore({
     user:{
       firstName:"Zhang",
       lastName:"Fisher",
@@ -31,7 +19,7 @@ export default ()=>{
     }
   })
 
-  const bindings = useBindings()
+  const bindings = UseFields()
 
   return <Layout>
       <div>    
@@ -57,7 +45,7 @@ export default ()=>{
 
 ```
 
-- 使用`useBindings`创建的嵌套绑定对象，可以支持嵌套成员,直接根据路径绑定到表单控件上即可。
-- `useBindings`创建的绑定对象，会自动同步状态中的值到表单控件上。
+- 使用`UseFields`创建的嵌套绑定对象，可以支持嵌套成员,直接根据路径绑定到表单控件上即可。
+- `UseFields`创建的绑定对象，会自动同步状态中的值到表单控件上。
 
 

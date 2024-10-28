@@ -3,6 +3,7 @@
 import React, { CSSProperties, useRef } from "react"
 import { ReactFC } from "./types"; 
 import { styled } from "flexstyled"
+import { Button } from "./Button";
 
 export type InputProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
     label?:string
@@ -20,7 +21,7 @@ const InputStyle = styled<InputProps>({
     display:"flex",
     alignItems:"center",
     "& input": {
-        border: (props)=>props.validate === false ? "1px solid red" : "1px solid #bbb",
+        border: (props)=>props.validate === false ? "1px solid red" : "1px solid #ccc",
         borderRadius: "4px",
         background: (props)=>props.enable===false ? "gray" : "white",
         display: (props)=>props.visible===false ? "none" : "flex",
@@ -52,7 +53,28 @@ const InputStyle = styled<InputProps>({
             display:"block", 
             color:"red"
         }
+    },
+    "& .x-input-wrapper":{
+        display:'flex',
+        alignItems:'center',
+        "& > input ~ .x-input-action":{
+            borderRadius:'0px',
+            marginLeft:0,
+            marginRight:0,
+            borderLeft: 'none',
+            paddingLeft:"1.2em",
+            paddingRight:"1.2em",
+        },
+        "& > input + .x-input-action":{
+            marginLeft: "-8px",
+            borderLeft:(props)=>props.validate === false ? "1px solid red" : "1px solid #ccc"
+        },
+        "& > input ~ .x-input-action:last-child":{
+            borderTopRightRadius: "4px",
+            borderBottomRightRadius:"4px"
+        }
     }
+
 },{
     className:"x-input"
 })
@@ -74,7 +96,7 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
                 display:"flex",
                 flexDirection:"column",
             }}>
-                <div>
+                <div className="x-input-wrapper">
                     <input
                         ref={ref}
                         id={id}
@@ -83,11 +105,10 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
                         {...restProps}
                     />
                     {
-                        actions?.map(action=>{
-                            return <button key={action} onClick={(e)=>{
-                                // @ts-ignore
-                                props.onAction?.(action,ref.current.value,e)
-                            }}>{action}</button>
+                        actions?.map((action,index)=>{
+                            return <Button className="x-input-action" key={index} onClick={(e)=>{
+                                props.onAction?.(action,ref.current!.value,e)
+                            }}>{action}</Button>
                         })
                     }
                 </div>

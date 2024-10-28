@@ -1,60 +1,12 @@
----
-group:
-  title: 计算属性
-  order: 2
-title: 计算对象
-order: 7 
-demo:
-  tocDepth: 5
-toc: content
----
+# 计算对象
 
-# 关于
+## 关于
 
-当使用`computed`创建好计算属性后，我们可以通过`store.computedObjects`来管理`store`内的所有计算属性。
+当使用`computed`创建好计算属性后，我们可以通过`store.computedObjects`来管理`store`内的所有计算属性，包括同步计算对象和异步计算对象。
 
 通过`store.computedObjects`可以访问到所有的计算对象，`store.computedObjects`是一个`Map`对象。
-
-```tsx
-
-import { createStore,computed } from '@autostorejs/react';
-import { Divider,ColorBlock,Button } from "x-react-components"
-
-let count=0
-const store = createStore({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    fullName: (user)=>{
-      return user.firstName+user.lastName + `${++count}`
-    },
-    fullName2: computed(async (user)=>{
-      return user.firstName+user.lastName  + `${++count}`
-    },["./firstName","./lastName"]) 
-  }
-} )
-
-export default ()=>{
-  const [state] = store.useState()
-
-  return (<div>
-    <ColorBlock name="FirstName">{state.user.firstName}</ColorBlock>
-    <ColorBlock name="lastName">{state.user.lastName}</ColorBlock>
-    <ColorBlock name="FullName"  value={state.user.fullName}/>
-    <ColorBlock name="FullName2"  value={state.user.fullName2.value}/>
-    <Divider/>
-    <div>typeof(store.computedObjects)=={typeof(store.computedObjects)}</div>
-    <div>store.computedObjects instanceof Map={String(store.computedObjects instanceof Map)}</div>
-    <div>store.computedObjects.size={store.computedObjects.size}</div>
-    <div>store.computedObjects.size={store.computedObjects.size}</div>
-    <div>store.computedObjects.keys()={[...store.computedObjects.keys()].join(" , ")}</div>
-    <Button onClick={()=>store.computedObjects.get("user.fullName").run()}>执行fullName计算函数</Button>
-    <Button onClick={()=>store.computedObjects.get("user.fullName2").run()}>执行fullName2计算函数</Button>
-    <Button onClick={()=>store.state.user.fullName2.run()}>执行fullName2计算函数</Button>
-  </div>)
-}
-
-```
+ 
+<demo react="computed/computedObject.tsx" />
 
 **说明**:
 
@@ -65,3 +17,4 @@ export default ()=>{
 - 而同步计算只能通过`store.computedObjects.get("user.fullName").run()`来手动执行计算函数。
 - `ComputedObject`实例有一个`value`属性，可以获取计算函数的返回值。
 - `ComputedObject`是一个类，查看API文档可以了解更多信息。
+- 默认情况下，使用声明`computed`时所在的状态数据路径作为`ComputedObject`的`id`，也可以通过`options.id`参数来指定`id`，如上例中的`fullName3`的`id=='myname'`。

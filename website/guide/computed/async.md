@@ -109,74 +109,17 @@ function computed<Value = any, Scope = any>(
 
 ### 加载状态
 
-异步计算属性的加载状态保存在`AsyncComputedValue`对象的`loading`属性中，当`loading`为`true`时，代表异步计算正在进行中。
+异步计算属性的加载状态保存在`AsyncComputedValue`对象的`loading`属性中。
+
+- 当`loading=true`时，代表异步计算正在进行中。
+- 当`loading=false`时，代表异步计算已经完成。
 
 以下是一个异步计算加载状态的例子：
 
-```tsx  
-import { useStore,computed,ObserverScopeRef,getSnap,delay } from '@autostorejs/react';
-import { ColorBlock,Button,JsonView } from "x-react-components"
- 
+<demo react="computed/asyncLoading.tsx"/>
 
-export default ()=>{
-  const {state,$,useAsyncState } =  useStore({
-      firstName:"Zhang",
-      lastName:"Fisher",
-      fullName: computed(async (user)=>{
-        await delay() 
-        // 模拟产生错误
-        if(user.triggerError) throw new Error("计算FullName时出错")
-        return user.firstName+' '+user.lastName  
-      },["firstName","lastName"]), 
-      triggerError:false
-  })
+- `useAsyncReactive`用来返回异步计算属性的状态数据。
 
-  const fullName = useAsyncState("fullName") 
-
-  return (<div>
-    <ColorBlock name="FirstName">{$("firstName")}</ColorBlock>
-    <ColorBlock name="FirstName">{$("lastName")}</ColorBlock> 
-    <ColorBlock name="FullName" loading={fullName.loading}>
-    {
-        fullName.loading ? '正在计算...' : (
-          fullName.error ? `ERROR:${fullName.error}`: 
-            fullName.value
-        )
-    }
-    </ColorBlock>      
-    <div>
-        <Button onClick={()=>{
-          state.triggerError = false
-          state.firstName=state.firstName+'🔥'
-        }}>Change FirstName</Button>
-        <Button onClick={()=>{
-          state.triggerError = false
-          state.lastName=state.lastName+'❤️'
-        }}>Change LastName</Button>
-    </div>
-    <div>
-        <Button onClick={()=>{
-          state.firstName=state.firstName+'🔥'
-        }}>Change FirstName with Error</Button>
-        <Button onClick={()=>{
-          state.triggerError = true
-          state.lastName=state.lastName+'❤️'
-        }}>Change LastName with Error</Button>
-    </div>
-    <div>
-      state.fullName=
-      <JsonView>{JSON.stringify(fullName)}</JsonView>
-    </div>
-  </div>
-  )
-}
-```
-
-- `useAsyncState`用来返回异步计算属性的状态数据。
-- 当`fullName.loading`为`true`时，代表异步计算正在进行中。
-- 当`fullName.error`不为`null`时，代表异步计算出错。
- 
- 
 
 ### 执行进度
 
@@ -184,72 +127,13 @@ export default ()=>{
 
 **使用方法如下：**
 
-```tsx  
-import {delay,createStore,computed,ObserverScopeRef } from '@autostorejs/react';
-import { JsonView,Button,Input,Loading } from "x-react-components"
-
- 
-const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
-  order:{
-    bookName:"Proficient in AutoStore",
-    price:100,
-    count:1,
-    total: computed(async ([count,price],{getProgressbar})=>{
-      const progressbar = getProgressbar()
-      return new Promise(async (resolve)=>{
-        for(let i=1;i<=100;i++){
-          await delay(20)
-          progressbar.value(i)
-        }
-        progressbar.end()
-        resolve(count*price)
-      }) 
-    },
-    ["order.count","order.price"],
-    {scope:ObserverScopeRef.Depends}) 
-  }
-}  )
-
-export default ()=>{
-  const [ count ] =  useReactive("order.count")
-  const total = useAsyncState("order.total")
-  return (<div>
-    <table className="table table-bordered table-striped">
-      <tbody>
-        <tr><td><b>书名</b></td><td>{state.order.bookName}</td></tr>
-        <tr><td><b>价格</b></td><td>{state.order.price}</td></tr>
-        <tr><td><b>数量</b></td>
-          <td style={{display:"flex",alignItems:'center'}}>
-          <Button onClick={()=>state.order.count--}>-</Button>
-          <Input value={count} {...bind("order.count")} />
-          <Button  onClick={()=>state.order.count++}>+</Button>
-          调节数量
-          </td>
-        </tr>        
-      </tbody>
-      <tfoot>
-        <tr><td><b>总价</b></td><td>
-          {total.loading ? <Loading/> : null }
-         {
-        total.loading ? `正在计算......${total.progress}%`  
-        : (
-          total.error ? `ERROR:${total.error}`: total.value
-        )}
-        </td></tr>
-        </tfoot>
-      </table>
-    
-    <div>
-      <JsonView>{JSON.stringify(state.order.total)}</JsonView>
-    </div>
-  </div>)
-}
-```
-
-- 在计算函数中，可以通过`getProgressbar`函数获取一个进度条对象。
-- 进度条对象有两个方法：`value`和`end`，`value`用来设置进度值，`end`用来结束进度条。
+<demo react="computed/asyncProgressbar.tsx"
+  title="调节订单数量时，total会自动重新计算。"
+/>
 
 
+- 当调用`getProgressbar`函数时会启动进度条功能，可以控制进度条的进度。
+- `getProgressbar`函数返回一个进度条对象，该对象有两个方法：`value`和`end`，`value`用来设置进度值，`end`用来结束进度条。
 
 
 ### 超时处理
@@ -260,65 +144,7 @@ export default ()=>{
 2. 当异步计算开始时，会启动一个定时器时，并更新`AsyncComputedValue`对象的`timeout`属性。
 3. 当超时触发时会触发`TIMEOUT`错误，将错误更新到`AsyncComputedValue.error`属性中。
 
-
-```tsx  
-import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react';
-import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
- 
- 
-const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
-  order:{
-    bookName:"Proficient in AutoStore",
-    price:100,
-    count:1,
-    total: computed(async ([count,price])=>{
-        await delay(5000)    // 模拟长时间计算
-        return count*price
-    },
-    ["order.count","order.price"], // 指定依赖
-    {
-      timeout:1000 ,   // 指定超时时间为1秒
-      scope:ObserverScopeRef.Depends
-    })
-  }
-}  )
-
-export default ()=>{
-   const [ count ] =  useReactive("order.count")
-  const total = useAsyncState("order.total")
-  return (<div>
-    <table className="table table-bordered table-striped">
-      <tbody>
-        <tr><td><b>书名</b></td><td>{state.order.bookName}</td></tr>
-        <tr><td><b>价格</b></td><td>{state.order.price}</td></tr>
-        <tr><td><b>数量</b></td>
-          <td style={{display:"flex",alignItems:'center'}}>
-          <Button onClick={()=>state.order.count--}>-</Button>
-          <Input value={count} {...bind("order.count")} />
-          <Button  onClick={()=>state.order.count++}>+</Button>
-          调节数量
-          </td>
-        </tr>        
-      </tbody>
-      <tfoot>
-        <tr><td><b>总价</b></td><td>
-          {total.loading ? <Loading/> : null }
-         {
-        total.loading ? `正在计算......${total.timeout}ms`  
-        : (
-          total.error ? <RichLabel text={`ERROR: {${total.error}}`} color="red"/> : null
-        )}
-        </td></tr>
-        </tfoot>
-      </table>
-    
-    <div>
-      <JsonView>{JSON.stringify(state.order.total)}</JsonView>
-    </div>
-  </div>)
-}
-```
-
+<demo react="computed/asyncTimeout.tsx"/>
 
 
 ### 倒计时
@@ -335,68 +161,8 @@ export default ()=>{
 
 **例如：`options.timoeut=[5*1000,5]`代表超时时间为5秒，每1000ms更新一次`timeout`属性，倒计时`5`次。**
 
-
-
-```tsx  
-import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react';
-import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
  
- 
-const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
-  order:{
-    bookName:"Proficient in AutoStore",
-    price:100,
-    count:1,
-    total: computed(async ([count,price])=>{
-        await delay(6000)    // 模拟长时间计算
-        return count*price
-    },
-    ["order.count","order.price"], // 指定依赖
-    {
-      timeout:[5*1000,5] ,   // 指定超时时间为5秒，每秒更新一次
-      scope:ObserverScopeRef.Depends
-    })
-  }
-}  )
-
-export default ()=>{
-   const [ count ] =  useReactive("order.count")
-  const total = useAsyncState("order.total")
-  return (<div>
-    <table className="table table-bordered table-striped">
-      <tbody>
-        <tr><td><b>书名</b></td><td>{state.order.bookName}</td></tr>
-        <tr><td><b>价格</b></td><td>{state.order.price}</td></tr>
-        <tr><td><b>数量</b></td>
-          <td style={{display:"flex",alignItems:'center'}}>
-          <Button onClick={()=>state.order.count--}>-</Button>
-          <Input value={count} {...bind("order.count")} />
-          <Button  onClick={()=>state.order.count++}>+</Button>
-          调节数量
-          </td>
-        </tr>        
-      </tbody>
-      <tfoot>
-        <tr><td><b>总价</b></td>
-        <td style={{display:"flex",alignItems:'center'}}>
-          {total.loading ? <Loading/> : null }
-         {
-          total.loading ? <RichLabel text={`正在计算......倒计时{${total.timeout}}秒`} color="red"/> 
-          : (
-            total.error ? <RichLabel text={`ERROR: {${total.error}}`} color="red"/> : null
-          )}
-        </td></tr>
-        </tfoot>
-      </table>
-    
-    <div>
-      <JsonView>{JSON.stringify(state.order.total)}</JsonView>
-    </div>
-  </div>)
-}
-```
-
-
+<demo react="computed/asyncCountDown.tsx"/>
 
 
 ### 重试
@@ -408,72 +174,12 @@ export default ()=>{
 - 当执行出错时，会同步更新`AsyncComputedValue.retry`属性为重试次数。
 
 
-```tsx  
-import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react';
-import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
+<demo react="computed/asyncRetry.tsx"/>
  
- 
-const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
-  order:{
-    bookName:"Proficient in AutoStore",
-    price:100,
-    count:1,
-    total: computed(async ([count,price])=>{        
-        await delay()
-        throw new Error("计算出错")
-    },
-    ["order.count","order.price"], // 指定依赖
-    {
-       retry:[5,1000] ,// 重试5次，每次间隔1秒
-      scope:ObserverScopeRef.Depends
-    })
-  }
-}  )
-
-export default ()=>{
-   const [ count ] =  useReactive("order.count")
-  const total = useAsyncState("order.total")
-  return (<div>
-    <table className="table table-bordered table-striped">
-      <tbody>
-        <tr><td><b>书名</b></td><td>{state.order.bookName}</td></tr>
-        <tr><td><b>价格</b></td><td>{state.order.price}</td></tr>
-        <tr><td><b>数量</b></td>
-          <td style={{display:"flex",alignItems:'center'}}>
-          <Button onClick={()=>state.order.count--}>-</Button>
-          <Input value={count} {...bind("order.count")} />
-          <Button  onClick={()=>state.order.count++}>+</Button>
-          调节数量
-          </td>
-        </tr>        
-      </tbody>
-      <tfoot>
-        <tr><td><b>总价</b></td>
-        <td style={{display:"flex",alignItems:'center'}}>
-          {total.loading ? <Loading/> : null }
-         {
-          total.loading ? <RichLabel text={`正在计算......`} color="red"/> 
-          : (
-            total.error && <RichLabel text={`出错: {${total.error}}`} color="red"/> 
-          )}
-          {total.retry >0 && <RichLabel text={`重试: {${total.retry}}`} color="red"/> }
-        </td></tr>
-        </tfoot>
-      </table>
-    
-    <div>
-      <JsonView>{JSON.stringify(state.order.total)}</JsonView>
-    </div>
-  </div>)
-}
-
-```
-
 **说明**
 
 - 重试次数为`0`时，不会再次重试。重试次数为`N`时，实际会执行`N+1`次。
 - 重试期间`error`会更新为最后一次错误信息。
-
 
 
 ### 取消
@@ -485,79 +191,12 @@ export default ()=>{
 - 在`computed`中传入`abortSignal`参数，该参数是一个`AbortSignal`，可用来订阅`abort`信号或者传递给`fetch`或`axios`等。
 - 取消时可以调用`AsyncComputedObject.cancel()`方法来触发一个`AbortSignal`信号。如下例中调用`state.order.total.cancel()`
   
- 
-```tsx   
-import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react';
-import { Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
- 
- 
-const {  useReactive,state,$ ,bind,useAsyncState } = createStore({
-  order:{
-    bookName:"Proficient in AutoStore",
-    price:100,
-    count:1,
-    total: computed(async ([count,price],{abortSignal})=>{        
-        return new Promise<number>((resolve,reject)=>{
-					const tmId = setTimeout(()=>{
-						resolve(count*price)  // 模拟耗时干活
-					},1000 *1000)
-					abortSignal.addEventListener("abort",()=>{
-            clearTimeout(tmId)
-						reject("cancelled")
-					})
-				})	
-    },
-    ["order.count","order.price"], // 指定依赖
-    {
-      scope:ObserverScopeRef.Depends
-    })
-  }
-}  )
-
-export default ()=>{
-   const [ count ] =  useReactive("order.count")
-  const total = useAsyncState("order.total")
-  return (<div>
-    <table className="table table-bordered table-striped">
-      <tbody>
-        <tr><td><b>书名</b></td><td>{state.order.bookName}</td></tr>
-        <tr><td><b>价格</b></td><td>{state.order.price}</td></tr>
-        <tr><td><b>数量</b></td>
-          <td style={{display:"flex",alignItems:'center'}}>
-          <Button onClick={()=>state.order.count--}>-</Button>
-          <Input value={count} {...bind("order.count")} />
-          <Button onClick={()=>state.order.count++}>+</Button>
-          调节数量
-          </td>
-        </tr>        
-      </tbody>
-      <tfoot>
-        <tr><td><b>总价</b></td>
-        <td style={{display:"flex",alignItems:'center'}}>
-          {total.loading ? <Loading/> : null }
-         {
-          total.loading ? <RichLabel text={`正在计算......`} color="red"/> 
-          : (
-            total.error && <RichLabel text={`出错: {${total.error}}`} color="red"/> 
-          )}
-          { total.loading && <Button onClick={()=>total.cancel()}>取消</Button>}
-        </td></tr>
-        </tfoot>
-      </table>
-    
-    <div>
-      <JsonView>{JSON.stringify(state.order.total)}</JsonView>
-    </div>
-  </div>)
-}
-
-```
+<demo react="computed/asyncCancel.tsx"/>
+  
 **注意**：
 
 - `abortSignal`参数是一个`AbortSignal`对象，可以用来订阅`abort`信号或者传递给`fetch`或`axios`等。
 - **需要注意的**，如果想让计算函数是可取消的，则当调用`AsyncComputedObject.cancel()`时，计算函数应该在接收到`abortSignal`信号时，主动结束退出计算函数。如果计算函数没有订阅`abort`信号，调用`AsyncComputedObject.cancel()`是不会生效的。
-
-
 
 
 
@@ -566,8 +205,6 @@ export default ()=>{
 默认情况下，每当依赖发生变化时均会执行异步计算函数，在连续变化时就会重复执行异步计算函数。
 
 在声明时，允许指定`options.reentry=false`来防止重入，如果重入则只会在控制台显示一个警告。
-
-
 
 
 ## 简写异步计算
@@ -605,66 +242,8 @@ const store = createStore({
 
 - 默认`scope`指向的是`current`，即`total`所在的对象。
 - 其依赖是空，所以不会自动收集依赖，也不会自动重新计算。也就是说上例中的`price`和`count`变化时，`total`不会自动重新计算。但是在会在第一次访问时自动计算一次。
-- 如果需要重新计算，可以手动执行`total.run()`或`store.computedObjects.get(id).run()`。
+- 如果需要重新计算，可以手动执行`store.state.total.run()`或`store.computedObjects.get(<id>).run()`。
 
-
-
-**特别注意**：
-
-由于在不同的构建环境下，比如使用babel转码为`es5`时，可能会将异步函数转码为同步函数，导致无法识别为异步函数而出现问题。
-
-
-看看以下例子：
-
-```tsx 
-import { createStore } from "@autostorejs/react"
-import { ColorBlock,Input, Button,Loading,JsonView,RichLabel } from "x-react-components"
-
-const { state,$ } = createStore({
-    bookName:"ZhangFisher",
-    price:100,
-    count:3,
-    total:async (order)=>{
-      return order.price*order.count
-    }
-}   
-)
-
-export default ()=>{
-  return (<div>
-    <ColorBlock name="书名">{$('bookName')}</ColorBlock>
-    <ColorBlock name="价格">{$('price')}</ColorBlock>
-    <ColorBlock name="数量">
-      <Button onClick={()=>state.count--}>-</Button>
-      {$('count')}
-      <Button onClick={()=>state.count++}>+</Button>
-    </ColorBlock>
-    <ColorBlock name="总价" comment='不会重新计算'>{$('total.value',{
-      errorBoundary:(({error})=><>信号组件出错：{error.message}</>)
-    })}</ColorBlock>
-    <ColorBlock name="state.total">{String(state.total)}</ColorBlock>
-  </div>)
-}
-```
-
-**上例为什么不能正确计算出`total`的值？**
-
-可以看到上述例子中`state.total`的值是`[object Promise]`。
-这是因为在本站使用的构建工具`webpack`使用`babel`进行转码，以上的异步函数被转码为同步函数，类似这样的形式：
-
-```js
-total(_x15) {
-  return _total.apply(this, arguments);
-}
-```
-
-这导致`AutoStore`不能将其识别为异步函数，也就不能相应地创建异步`AsyncComputedObject`，而只是将其当作一个普通的同步计算属性。
-
-解决方法是显式指定`computed(async ()=>{...},[...],{async:true})`，这样就可以正确识别为异步函数。
-
-
-
- 
 
 
 ## 注意事项
@@ -672,8 +251,9 @@ total(_x15) {
 - **当异步计算函数返回一个`Promise`时的问题**
 
 `computed`内部使用`isAsync`来判断传入的`getter`函数是否是一个异步函数，以采取不同的处理逻辑。
-但是在某些情况下，这个判断可能不正确。
-比如在进行`babel`将代码转译到`es5`等低版本代码时，异步函数可能会被转译为同步函数，此时需要也显式指定`options.async=true`。
+但是在低版本JS场景下，这个判断可能不正确。
+
+比如在进行`babel`将代码转译到`es5`等低版本代码时，异步函数可能会被转译为同步函数，此时需要显式指定`options.async=true`。
 
 ```ts  {7}
 const store = createStore({
@@ -686,3 +266,9 @@ const store = createStore({
     })
   })
 ```
+
+显式指定`computed(async ()=>{...},[...],{async:true})`，这样就可以正确识别为异步函数。
+
+
+
+ 

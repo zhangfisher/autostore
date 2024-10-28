@@ -31,6 +31,7 @@ import React, { CSSProperties } from "react"
     rules?:Record<string,RegExp>
     style?:CSSProperties
     className?:string
+    inline?:boolean
 }>
 function escapeHtmlString(str:string){
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -57,6 +58,7 @@ export const RichLabel:React.FC<RichLabelProps> =(props:RichLabelProps)=>{
         <div
             className ={props.className}
             style={{ 
+                display:props.inline ? "inline-block" : "block",
                 boxSizing: "border-box",
                 padding: "8px",
                 margin:"4px",

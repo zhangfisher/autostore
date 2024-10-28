@@ -1,14 +1,3 @@
----
-title: useWatch
-group:
-  title: 监视
-  order: 3 
-order: 3
-demo:
-  tocDepth: 5
-toc: content
----
-
 # useWatch
 
 `useWatch`函数用来侦听`store`对象的变化,当组件销毁自动取消订阅，本质上是对`store.watch`的封装。

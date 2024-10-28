@@ -36,20 +36,21 @@ export interface UseFieldType<State extends Dict> {
     <Value>(getter: UseFieldGetter<Value,State>,setter:UseFieldSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>
 }
 
-// ********** useBindings **********  
+// ********** UseFields **********  
 
  
  
-export type FormBindingsState<T extends Dict> = {
-    [K in keyof T]: T[K] extends Dict ? FormBindingsState<T[K]> 
-                                        : ( T[K] extends any[] ? FormBindingsState<T[K]> 
+export type UseFieldsState<T extends Dict> = {
+    [K in keyof T]: T[K] extends Dict ? UseFieldsState<T[K]> 
+                                        : ( T[K] extends any[] ? UseFieldsState<T[K]> 
                                             : Required<InputBindings<T[K]>>
                                         )
 };
 
  
-export interface UseFormBindingsType<State extends Dict> {
-    (entry?: string,options?:WatchListenerOptions): FormBindingsState<ComputedState<State>> 
+export interface UseFieldsType<State extends Dict> {
+    <EntryState extends Dict = State>(entry?: string,options?:WatchListenerOptions)
+        : UseFieldsState<ComputedState<EntryState>> 
 }
 
 
@@ -68,12 +69,14 @@ export type UseFormResult<State extends Dict>={
     valid       : boolean
     dirty       : boolean
 } & Pick<ReactAutoStore<State>,
-    '$' |'signal' | 'useState' | 'useAsyncState' | 'useDeps' | 'useField'
-    | 'bind' | 'useWatch' | 'useBindings'
+    '$' |'signal' | 'useState' | 'useAsyncState' | 'useDeps'
+    | 'useWatch' 
+    | 'useField' | 'useFields' | 'bind'
     | 'watch' | 'update' | 'batchUpdate' | 'silentUpdate'
     | 'peep' | 'collectDependencies' | 'trace'
     | 'id' | 'operates' | 'state' | 'peeping' | 'batching' | 'silenting'
-    | 'log' | 'destroy' | 'getSnap' | 'useReactive'
+    | 'log' | 'destroy' | 'getSnap' 
+    | 'useReactive' | 'useAsyncReactive'
 
 >
 

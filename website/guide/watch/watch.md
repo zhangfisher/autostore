@@ -1,21 +1,12 @@
----
-title: 状态内监视
-group:
-  title: 监视
-  order: 3 
-order: 2
-demo:
-  tocDepth: 5
-toc: content
----
-
 # 状态内监视
+
+除了通过`store.watch`来监听状态外，还可以在状态内部声明`watch`函数来监听状态数据的变化。
 
 ## 工作原理
 
 `@autostorejs/react`提供了`watch`函数，用来在`state`中声明一个监听对象,然后监听函数的返回值写入声明所在路径。
 
-![](./signal-watch.drawio.png)
+![](./images/signal-watch.drawio.png)
 
 
 `watch`函数的基本特性如下：
@@ -49,69 +40,9 @@ function watch<Value=any, DependValue=any>(
 
 **`watch`函数基本使用如下：**
 
-```tsx 
-import { createStore,watch } from '@autostorejs/react';
-import { Divider,Input,Button } from "x-react-components"
+<demo react="watch/watchBase.tsx"/>  
 
-const { state,useState } = createStore({
-  orders:[
-    { name:"AutoStore实战指南",
-      price:100,
-      count:1,
-      total:(book)=>book.price*book.count
-    },
-    { name:"深入浅出AutoStore",
-      price:98,
-      count:1,
-      total:(book)=>book.price*book.count
-    }
-  ],    
-  total: watch<true>((count)=>{
-     return state.orders.reduce((total,book)=>total+book.count*book.price,0)
-    },
-    // 当price或count变化时，触发侦听器函数的执行
-    (path:string[])=>{
-        return path[path.length-1]==='count'
-      },{    
-      initial:198         // total的初始值
-    })
-})
- 
-export default ()=>{ 
-  const [ bookshop ] = useState()
-  return (<table className="table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Price</th>
-          <th>Count</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        {bookshop.orders.map((book,index)=>
-          <tr key={index}>
-            <td>{book.name}</td>
-            <td>{book.price}</td>
-            <td>
-              <Button onClick={()=>book.count--}>-</Button>
-              <Input value={book.count} style={{display:"inline-flex"}}/>
-              <Button onClick={()=>book.count++}>+</Button>
-            </td>
-            <td>{book.total}</td>
-          </tr>
-        )}
-        <tr>
-          <td colSpan={3}>Total</td>
-          <td>{state.total}</td>
-        </tr>
-        </tbody>
-    </table>)
-}
-
-```
-
-在以上例子中：
+在以上例子中，我们使用`watch`实现了`computed`的类似功能：
 
 - `watch`函数的第一个参数是`getter`函数，负责在依赖变化时计算新值。`getter`函数的返回值会写入`watch`函数所在的位置。
 - `watch`函数的第二个参数是一个过滤函数，当状态变化时会调用此方法，如果返回`true`才会执行`getter`
@@ -136,7 +67,7 @@ type WatchGetter<Value=any,DependValue= any> = (
 
 `watch`支持以下参数
 
-```ts | pure
+```ts 
 interface WatchOptions<Value=any> extends ObserverOptions<Value>  { 
     async?  : false                        
     filter : WatchDependFilter<Value>     
@@ -155,7 +86,7 @@ interface WatchOptions<Value=any> extends ObserverOptions<Value>  {
 
 以下是表单`validate`检测的简单示例：
 
-```tsx | pure
+```tsx
 const store = createStore({
       a:{
           validate:true
@@ -193,4 +124,4 @@ const store = createStore({
 - 上例中，我们需要实现一个`validate`字段来表单整个表单的有效，当状态中任意一个对象中的`validate`字段都为`false`时，则`validate=false`，否则为`true`。
 - 现在问题是`validate`可能是在一个复杂的嵌套对象中，并且可能是动态的。这时候，我们无法使用`computed`来进行计算，因为`computed`的依赖是静态的。
 - 此时就是使用`watch`函数的时候了，我们声明一个`watch`函数，用来监听所有路径中的`path[path.length-1]=='validate'`字段的变化即可。
-- 关于`WatchObject`的介绍，可以参考[监听对象](./watch-objects.md)。
+- 关于`WatchObject`的介绍，可以参考[监听对象](./objects.md)。

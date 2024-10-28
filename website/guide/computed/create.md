@@ -123,7 +123,6 @@ const store = createStore({
 // 简单的同步计算
 const totalObj = store.computedObjects.create((order)=>order.price * order.count)
 
-
 ```
 
 ### 动态创建异步计算
@@ -140,8 +139,8 @@ const store = createStore({
 
 // 简单的异步计算
 store.computedObjects.create(async (order)=>order.price * order.count,
-  ['order.price','order.count'] //  ✅ 使用绝对依赖
-  ['./price','./count']  // ❌ 不支持相对依赖
+  ['order.price','order.count']     //  ✅ 使用绝对依赖
+  ['./price','./count']             // ❌ 不支持相对依赖
 )
 ```
 

@@ -1,8 +1,8 @@
 import { Dict } from "../types" 
 import { WatchObject } from "./watchObject";
-import { getVal } from "../utils";
+import { getVal, isObserverDescriptor } from "../utils";
 import { AutoStore } from '../store/store';
-import {  WatchDependFilter, Watcher, WatchGetter, WatchOptions } from "./types";
+import {  WatchDependFilter, WatchDescriptor, WatchDescriptorBuilder, Watcher, WatchGetter, WatchOptions } from "./types";
 import { watch } from "./watch";
 
 export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
@@ -25,9 +25,10 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
      * 负责处理动态侦听
      */
     private createWacher(){
-        this._watcher = this.store.watch("**",({path})=>{
+        this._watcher = this.store.watch("**",({path,value:val})=>{
             if(!this._enable) return 
-            const value = getVal(this.store.state,path)
+            // 如果路径是以#开头代表是一个watchObject对象，否则就是状态路径
+            const value = path[0].startsWith('#') ? val : getVal(this.store.state,path)
             for(let watchObj of this.values()){
                 if(watchObj.isMatched(path,value)){
                     watchObj.run(path,value)
@@ -41,6 +42,9 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
      */
     reset(){
         this._watcher && this._watcher.off()
+        for(let watchObj of this.values()){
+            watchObj.reset()
+        }
         this.createWacher()
     }
    
@@ -57,9 +61,11 @@ export class WatchObjects<State extends Dict> extends Map<string,WatchObject>{
      * @param watchTo               侦听结果写到处下载
      * @returns 
      */
-    create<Value=any,DependValue=any>(getter:WatchGetter<Value,DependValue>,filter?:WatchDependFilter<DependValue>,options?:Omit<WatchOptions<Value>,'filter'>) {      
-        const descrioptorBuilder = watch(getter,filter,options)     
-        const descrioptor = descrioptorBuilder() 
+    create<Value=any,DependValue=any>(getter:WatchGetter<Value,DependValue>,filter?:WatchDependFilter<DependValue>,options?:Omit<WatchOptions<Value>,'filter'>):WatchObject<Value>           
+    create<Value=any>(descriptor:WatchDescriptorBuilder<Value>):WatchObject<Value>    
+    create<Value=any>() {      
+        // @ts-ignore
+        const descrioptor:WatchDescriptor = isObserverDescriptor(arguments[0]) ?  arguments[0] : watch(...arguments)()
         return this.store._createWatch(descrioptor)  as WatchObject<Value>    
     }
     /**

@@ -31,13 +31,13 @@ toc: content
 
 由于`Virtual DOM`的特性，无论是`React`还是`Vue`，本质上都是在`Virtual DOM`上进行`diff`算法，然后再进行`patch`操作，差别就是`diff`算法的实现方式不同。
 
-**但是无论怎么整， 在`Virtual DOM`的`diff`算法加持下，将`状态的变化`总是难以精准地与`DOM`对应匹配。**
+**但是无论怎么整， 在`Virtual DOM`的`diff`算法加持下，`状态的变化`总是难以精准地与`DOM`对应匹配。**
 
 通俗说，就是当`state.xxx`更新时，不是直接找到使用`state.xxx`的`DOM`进行精准更新，而是通过`Virtual DOM`的`diff`算法比较算出需要更新的`DOM`元素，然后再进行`patch`操作。
 
 问题是，这种`diff`算法比较复杂，需要进行各处优化，对开发者也有一定的心智负担，比如在在大型`React`应用中对`React.memo`的使用,或者在`Vue`中的模板优化等等。
 
-:::warning{title=注意}
+:::warning 注意
 -  Q: **为什么说在大型应用中使用`React.memo`是一种心智负担？**
 -  A: 实际上`React.memo`的逻辑本身很简单，无论老手或小白均可以轻松掌握。但是在大型应用中，一方面组件的嵌套层级很深，组件之间的依赖关系很复杂，另外一方面，组件数量成百上千。如果都要使用`React.memo`来优化渲染，就是一种很大的心智负担。如果采用后期优化，则问题更加严重，往往需要使用一些性能分析工具才可以进行针对性的优化。简单地说，当应用复杂后，`React.memo`才会成为负担。
 :::
@@ -74,7 +74,7 @@ toc: content
 
 让数据可观察有多种方法，比如`mobx`就不是使用`Proxy`，而是使用`Class`的`get`属性来实现的。甚至你也可以用自己的一套`API`来实现。只不过现在普遍使用`Proxy`实现。核心原理就是要**拦截对状态的访问，从而收集依赖信息**。
 
-:::warning{title=注意}
+:::warning 注意
 让状态数据可观察的目的是为了感知状态数据的变化，这样才能进行下一步的响应。感知的颗粒度越细，就越能实现细粒度更新。
 :::
 
@@ -88,7 +88,7 @@ toc: content
  
 `信号发布/订阅`最核心的事实上就是一个订阅表，记录了谁订阅了什么信号，在前端就是哪个DOM渲染函数，依赖于哪个信号（状态变化）。
 
-:::warning{title=提示}
+:::warning 提示
 建立一个发布/订阅机制的目的是为了建立`渲染函数`与`状态数据`之间的映射关系，当态数据发生变化时，根据此来查询到依赖于该状态数据的`渲染函数`，然后执行这些`渲染函数`，从而实现`细粒度更新`。
 :::
 
@@ -191,7 +191,7 @@ toc: content
 这样我们就有了**信号组件**的概念，其本质上是使用`React.memo`包裹的`ReactNode`组件，将渲染更新限制在较细的范围内。
 
 
-![](./signal.drawio.png)
+![](./images/signal.drawio.png)
 
 - 核心是一套依赖收集和事件分发机制，用来感知状态变化，然后通过事件分发变化。
 - 信号组件本质上就是一个普通的是React组件，但使用`React.memo(()=>{.....},()=>true)`进行包装，`diff`总是返回`true`,用来隔离`DOM`渲染范围。
@@ -202,36 +202,15 @@ toc: content
 以下是`AutoStore`中的`signal`的一个简单示例：
 
 
-```tsx
-/**
-* title: 信号组件
-* description: 通过`state.age=n`直接写状态时，需要使用`{$('age')}`来创建一个信号组件,内部会订阅`age`的变更事件，用来触发局部更新。
-*/
-import { createStore } from '@autostorejs/react';
-import { Button,ColorBlock } from "x-react-components"
+<demo react="signals/signalBase.tsx"/>
 
-const { state , $ } = createStore({
-  age:18
-})
-
-export default () => {
-
-  return <div>
-      {/* 引入Signal机制，可以局部更新Age */}
-      <ColorBlock>Age+Signal :{$('age')}</ColorBlock>
-      {/* 当直接更新Age时，仅在组件当重新渲染时更新 */}
-      <ColorBlock>Age :{state.age}</ColorBlock>
-      <Button onClick={()=>state.age=state.age+1}>+Age</Button>
-    </div>
-}
-
-``` 
+- 上例中，当更新`Age`时，渲染被限制在`信号组件`内部，不会引起连锁反应。
 
 
-:::warning{title=注意}
+:::warning 注意
 - 信号组件仅仅是模拟`signal`实现了`细粒度更新`，其本质上是使用`React.memo`包裹的`ReactNode`组件。
 - 创建`$`来创建信号组件时，`$`是`signal`的快捷名称。因此上面的`{$('age')}`等价于`{signal("age")}`。
-- 更多的`信号组件`的用法请参考[signal](/guide/signal-component)。
+- 更多的`信号组件`的用法请参考[signal](/guide/signal/component)。
 :::
 
 

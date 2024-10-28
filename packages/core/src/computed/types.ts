@@ -105,7 +105,7 @@ export type RequiredComputedOptions<Value=any> = Required<ComputedOptions<Value>
  * 
  */
 export type RuntimeComputedOptions = ComputedOptions & {
-    first?  : boolean                           // 当第一次运行时为true
+    first?  : boolean                      // 当第一次运行时为true
     operate?: StateOperate                // 变化的依赖信息
 } 
 

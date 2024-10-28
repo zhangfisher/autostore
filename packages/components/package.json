@@ -22,6 +22,7 @@
     "color": "^4.2.3",
     "flexstyled": "^2.1.2",
     "json-pretty-html": "^1.1.6",
+    "pretty-print-json": "^3.0.3",
     "react-loader-spinner": "^6.1.6"
   },
   "devDependencies": {

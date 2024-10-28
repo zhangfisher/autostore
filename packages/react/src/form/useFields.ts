@@ -1,7 +1,7 @@
 import {  Dict, getVal,isPrimitive, isPlainObject, setVal, PATH_DELIMITER, pathStartsWith, isAsyncComputedValue } from "autostore";
 import { ReactAutoStore } from "../store";
 import { useState, useSyncExternalStore } from "react";
-import type { UseFormBindingsType } from "./types";  
+import type { UseFieldsType } from "./types";  
 import { getInputValueFromEvent } from "../utils/getInputValueFromEvent";
 
 export const FAKE_BINDINGS = Symbol('FAKE_BINDINGS')
@@ -86,7 +86,7 @@ export function createBindingsState<State extends Dict>(store:ReactAutoStore<Sta
 }
 
 
-export function createUseBindings<State extends Dict>(store:ReactAutoStore<State>): UseFormBindingsType<State>{ 
+export function createUseFields<State extends Dict>(store:ReactAutoStore<State>): UseFieldsType<State>{ 
     return function (){
         const args = arguments
         const entry =args.length > 0 ? 

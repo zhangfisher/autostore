@@ -295,9 +295,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      */
     _createWatch(descriptor:WatchDescriptor,computedContext?:ComputedContext){ 
         const watchObj = new WatchObject(this,descriptor,computedContext)
-        if(descriptor.options.objectify){
-            this.watchObjects.set(watchObj.id,watchObj)
-        }
+        this.watchObjects.set(watchObj.id,watchObj)
         this.emit("watch:created",watchObj)
         return watchObj
     }

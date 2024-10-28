@@ -63,7 +63,7 @@ export default defineConfig({
             items:[
               { text: '关于', link: '/guide/watch/about' },
               { text: '全局监视', link: '/guide/watch/store-watch' },
-              { text: '声明监视', link: '/guide/watch/watch' },
+              { text: '状态内监视', link: '/guide/watch/watch' },
               { text: 'useWatch', link: '/guide/watch/use-watch' },
               { text: '监视对象', link: '/guide/watch/objects' }
             ]

@@ -112,7 +112,7 @@ store.watch((operate)=>{
 })
 ```
 
-## 全局临听
+## 全局监听
 
 使用`watch(listener,options?)`方法用来全局监听`State`中的数据变化，对状态的任何操作均会执行监听函数。
 

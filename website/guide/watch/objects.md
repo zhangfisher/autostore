@@ -1,13 +1,4 @@
----
-title: 监视对象
-order: 4
-group:
-  title: 监视
-  order: 3  
-demo:
-  tocDepth: 5
-toc: content
----
+# 监视对象
 
 ## 关于
 
@@ -17,60 +8,8 @@ toc: content
 
 以下是实现表单数据的脏检察的简单示例：
 
-```tsx
-/**
- * title: 使用watch功能实现表单数据的脏检察
- * description: 编辑`firstName`或`lastName`,会触发`dirty`的变化
- */
-import { createStore,watch } from '@autostorejs/react';
-import { Divider,ColorBlock,Button,Box,Input } from "x-react-components"
-
- const { state,useBindings,watchObjects,$  } = createStore({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    fullName:(user)=>{
-      return user.firstName + " " + user.lastName
-    }, 
-    dirty:watch(({path,value},watchObj)=>{   
-            //watchObj.cache是一个{...}对象 
-            watchObj.cache[path.join(".")] = true
-            return true
-        },
-        (path)=>{
-          // 在本例中，只有firstName和lastName会触发dirty
-          return ['firstName','lastName'].includes(path[path.length-1])
-        },
-        {initial:false})
-  }
-} )
-
-export default ()=>{
-  const bindings = useBindings('user')
-  return (<div>
-    <Input label="FirstName" {...bindings.firstName}/>
-    <Input label="lastName" {...bindings.lastName}/> 
-    <Divider/>
-    <Box>
-      <ColorBlock name="FullName">{$('user.fullName')}</ColorBlock>
-      <ColorBlock name="Dirty">{$('user.dirty')}</ColorBlock>
-      <Button onClick={()=>{
-          state.user.firstName = "Zhang"
-          state.user.lastName = "Fisher"
-          // 重置dirty
-          watchObjects.get("user.dirty").reset()
-      }}>Reset</Button>
-    </Box>
-    <Box>
-    <div>typeof(store.watchObjects)=={typeof(watchObjects)}</div>
-    <div>store.watchObjects.size={watchObjects.size}</div>
-    <div>store.watchObjects.size={watchObjects.size}</div>
-    <div>store.watchObjects.keys()={[...watchObjects.keys()].join(" , ")}</div>
-    </Box> 
-  </div>)
-}
+<demo react="watch/watchDirty.tsx"/>
  
-```
 
 ## 动态创建监听对象
 
@@ -78,7 +17,7 @@ export default ()=>{
 
 `create`方法签名如下：
 
-```ts | pure
+```ts
   create<Value=any,DependValue=any>(
     getter:WatchGetter<Value,DependValue>,
     filter?:WatchDependFilter<DependValue>,
@@ -88,7 +27,7 @@ export default ()=>{
 
 示例如下：
 
-```ts | pure {11-16}
+```ts {11-16}
 import { createStore } from '@autostorejs/react';
 
 const store = createStore({
@@ -98,11 +37,11 @@ const store = createStore({
   }
 })
 
-// 同步计算属性
-const obj = store.computedObject.create((user)=>user.firstName+user.lastName)
-// 异步计算属性
-const obj = store.computedObject.create(
-  async (user)=>user.firstName+user.lastName,  // 计算函数
+
+const obj = store.watchObjects.create((user)=>user.firstName+user.lastName)
+ 
+const obj = store.watchObjects.create(
+  (user)=>user.firstName+user.lastName,  // 计算函数
   ['./firstName','./lastName'],                // ❌ 不支持相对依赖
   ['user.firstName','user.lastName'],          // ✅ 使用绝对依赖
   {...options....}                             // 参数

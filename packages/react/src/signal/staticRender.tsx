@@ -62,7 +62,7 @@ export function createStaticRender<State extends Dict>(store:ReactAutoStore<Stat
             })
             return ()=>watcher.off()
         },[deps])
-        return <>{error ? <ErrorBoundary error={error}/> :value }</>          
+        return <>{error ? <ErrorBoundary error={error}/> : typeof(value)==='boolean' ? String(value) : value }</>          
             
     }, ()=>true) 
 }
