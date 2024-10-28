@@ -17,7 +17,7 @@ interface SignalComponentType<State extends Dict>{
 }
 ```
 
-:::success 提示
+:::info 提示
 只需要指定状态数库的路径或者提供一个返回状态数据的函数即可。
 :::
 

@@ -51,9 +51,11 @@ export default ()=>{
                 null,
                 total.value
             ]
-        ]}/>
-        <Box title='state.order.total='>
-          {JSON.stringify(state.order.total)}
-        </Box>
+        ]}/> 
+        <JsonView 
+            title="state.order.total="
+            highlightKeys={["retry","error","value"]}
+            data={total}
+        />
   </div>)
 }

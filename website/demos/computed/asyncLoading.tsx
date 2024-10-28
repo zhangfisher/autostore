@@ -1,6 +1,6 @@
 import React from "react"
 import { useStore,computed,delay } from '@autostorejs/react';
-import { ColorBlock,Button, Box } from "x-react-components"
+import { ColorBlock,Button, Box, JsonView } from "x-react-components"
  
 
 export default ()=>{
@@ -48,9 +48,11 @@ export default ()=>{
           state.lastName=state.lastName+'❤️'
         }}>Change LastName with Error</Button>
     </div>
-    <Box title="state.fullName=">
-      {JSON.stringify(fullName)} 
-    </Box>
+    <JsonView 
+          title="state.fullName"
+          highlightKeys={["loading"]}
+          data={fullName}
+      />
   </div>
   )
 }

@@ -1,6 +1,6 @@
 import React from "react"
 import {delay,createStore,computed,ObserverScopeRef } from '@autostorejs/react';
-import { Button,Table, Box, Loading, RichLabel } from "x-react-components"
+import { Button,Table, Box, Loading, RichLabel, JsonView } from "x-react-components"
 
  
 const {  state,useAsyncState } = createStore({
@@ -55,8 +55,11 @@ export default ()=>{
             ]
         ]}
     />    
-    <Box title='state.order.total='>
-      {JSON.stringify(state.order.total)}
-    </Box>
+
+    <JsonView 
+          title="state.order.total="
+          highlightKeys={["progress","value"]}
+          data={total}
+    />
   </div>)
 }

@@ -78,7 +78,7 @@ export default defineConfig({
               { text: '自定义渲染', link: '/guide/signal/custom-render' },
               { text: '计算信号组件', link: '/guide/signal/computed-render' },
               { text: '监听信号组件', link: '/guide/signal/watch' },
-              { text: '错误处理', link: '/guide/signal/error' }
+              { text: '错误处理', link: '/guide/signal/error-boundary' }
             ]
           },
           {

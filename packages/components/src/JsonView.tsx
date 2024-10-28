@@ -2,25 +2,23 @@
  * 
  * 一个简单的JSON数据展示组件
  * 
- */
-
-
-
-
-
-import React, { useRef,useEffect } from "react" 
-// @ts-ignore
-import jsonPrettyHtml from "json-pretty-html"
+ */ 
+import React, { useRef,useEffect } from "react"  
 import { styled } from "flexstyled" 
 import { prettyPrintJson } from 'pretty-print-json';
 
 export type JsonViewProps  = React.PropsWithChildren<{
     data?:any
     border?:boolean
+    title?: string;
+    highlightKeys?:string[]
 }> 
 
-const JSONStyle = styled({
-    "margin":"4px",
+const JSONStyle = styled<JsonViewProps>({
+    "padding":"8px",
+    boxSizing: 'border-box',
+    border: (props)=>props.border===false ? "none" : "1px solid #ccc",
+    position: 'relative', 
     "& .json-container ":{
         fontFamily: 'menlo, consolas, monospace',
         fontStyle: 'normal',
@@ -29,6 +27,13 @@ const JSONStyle = styled({
         fontSize: '0.9rem',
         transition: 'background-color 400ms',
         backgroundColor: 'white',
+        position: "relative",
+        maxHeight:" 400px",
+        overflowX: "hidden",
+        overflowY: "auto",
+        width: "100%",
+        display: "block",
+        background: "transparent"
     },
     "& .json-link":{
         textDecoration: 'none',
@@ -65,8 +70,28 @@ const JSONStyle = styled({
     "& .json-key, .json-string, .json-number, .json-boolean, .json-null, .json-mark, a.json-link, ol.json-lines >li":{ 
         transition: "all 400ms"
     },
-    "& .json-container":                   { backgroundColor: "white" },
-    "& .json-key":                         { color: "brown" },
+    "& .json-key.highlight:after":{
+        position: 'absolute',
+        content:"' '",
+        width: '1000px',
+        height: '100%',
+        top: '0px',
+        left:"-50px",
+        display: 'inline-block',        
+        backgroundColor: '#caf9cc',
+        zIndex: -1,
+    },
+    "& .json-container":  {         
+        position: 'relative',
+        maxHeight: '400px',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+    },
+    "& .json-key":                         { 
+        color: "brown", 
+        position: 'relative',
+        backgroundColor: 'transparent',
+    },
     "& .json-string":                      { color: "olive" },
     "& .json-number":                      { color: "navy" },
     "& .json-boolean":                     { color: "teal" },
@@ -88,14 +113,36 @@ export const JsonView:React.FC<JsonViewProps> =(props:JsonViewProps)=>{
     const jsonData = props.data || String(props.children)
     const ref = useRef<HTMLDivElement>(null)
     useEffect(()=>{
-        if(ref.current){
+        if(ref.current){            
             ref.current.innerHTML = prettyPrintJson.toHtml(typeof(jsonData)==='string' ? JSON.parse(jsonData) : jsonData,{
                 trailingCommas:false,
                 linksNewTab:true
             })
+            const highlightKeys = props.highlightKeys
+            if(highlightKeys){                
+                    const els = ref.current!.querySelectorAll("span.json-key")
+                    els.forEach((el:any)=>{
+                        const key = el.innerText.trim()
+                        if(highlightKeys.includes(key)){
+                            el.classList.add('highlight')
+                        }                        
+                    })
+            }
         }
     },[jsonData])
-    return <pre className={JSONStyle.className}>
+    return <pre className={JSONStyle.className} style={JSONStyle.getStyle(props)}>        
+      <span
+        style={{
+          position: 'absolute',
+          padding: "2px 4px 2px 4px",
+          top: "-16px",
+          background: 'white',
+          left: "8px",
+          color: 'gray'
+        }}
+      >
+        {props.title || ''}
+      </span>
         <span ref={ref} className="json-container"/>
         </pre> 
     

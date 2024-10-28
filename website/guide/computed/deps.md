@@ -131,7 +131,7 @@ const state = {
 - ✅ `orders.*` 匹配`orders`下的任意成员。
 - ✅ `orders.*.address.*.city` 匹配`orders`的任意对象的`address`的任意对象的`city`属性。
 
-:::success{title=示例}
+:::success 示例
 在快速入门的示例中，我们就使用`orders.*.total`来匹配`orders`数组成员中的`total`属性。
 :::
 

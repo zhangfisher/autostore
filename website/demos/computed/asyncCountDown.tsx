@@ -1,6 +1,6 @@
 import React from "react"
 import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react';
-import { Button,Loading,Box,RichLabel,Table } from "x-react-components"
+import { Button,Loading,Box,RichLabel,Table, JsonView } from "x-react-components"
   
 const { state,useAsyncReactive } = createStore({
   order:{
@@ -49,6 +49,10 @@ export default ()=>{
                 total.value
             ]
         ]}/>
-       <Box title="state.order.total=">{JSON.stringify(state.order.total)}</Box> 
+        <JsonView 
+          title="state.order.total="
+          highlightKeys={["error","timeout","value"]}
+          data={total}
+      />
   </div>)
 }

@@ -211,7 +211,7 @@ function computed<Value = any, Scope = any>(
 
 大部份情况下，异步计算属性均应该使用`computed`进行声明，但也可以直接使用一个异步函数。
 
-```ts  
+```ts   {5-7}
 const order = {
     bookName:"ZhangFisher",
     price:100,
@@ -224,7 +224,7 @@ const order = {
 
 上述简单的异步声明方式等效于以下方式：
 
-```tsx 
+```tsx {7-9}
 import { createStore,computed} from "@autostorejs/react"
 
 const store = createStore({
