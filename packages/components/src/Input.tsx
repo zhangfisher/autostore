@@ -6,14 +6,15 @@ import { styled } from "flexstyled"
 import { Button } from "./Button";
 
 export type InputProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
-    label?:string
-    visible?:boolean
-    enable?:boolean
-    validate?:boolean | null
-    value?:string
-    style?:Partial<CSSProperties>
-    onAction?:(id:string,value:any,e:any)=>void,
-    actions?:string[]
+    label?   : string
+    visible? : boolean
+    enable?  : boolean
+    validate?: boolean | null
+    value?   : string
+    style?   : Partial<CSSProperties>
+    onAction?: (id:string,value:any,e:any)=>void,
+    actions? : string[]
+    inline?  : boolean
 }
 
 
@@ -27,7 +28,7 @@ const InputStyle = styled<InputProps>({
         display: (props)=>props.visible===false ? "none" : "flex",
         margin: "4px",
         padding: "8px",
-        flexGrow:1,  
+        flexGrow:1, 
         "&:focus":{
             outline:"none",
             boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"

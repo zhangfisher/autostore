@@ -1,15 +1,13 @@
 import { AsyncComputedValue, ComputedState, Dict, ExtendAsyncOptions, WatchListener, WatchListenerOptions } from "autostore"
  
+export type StateGetter<State extends Dict,Value=any> =  (state:ComputedState<State>)=>Value
+
 // ********** useDeps ********** 
 
 export interface UseDepsType<State extends Dict>{
-    (selector: string,extendAsync?:ExtendAsyncOptions):string[][]
-    (selector: string[],extendAsync?:ExtendAsyncOptions):string[][]
-    (selector: (state:ComputedState<State>)=>any,extendAsync?:ExtendAsyncOptions):string[][]
-    (selector:any,extendAsync?:ExtendAsyncOptions):string[][] 
+    (selector: string | StateGetter<State>,extendAsync?:ExtendAsyncOptions):string[][]
+    (selector: (string | string[] | StateGetter<State>)[],extendAsync?:ExtendAsyncOptions):string[][]
  }
-
-
 
 // ********** useState **********  
 

@@ -8,7 +8,9 @@ export function getInputValueFromEvent(e: any) {
         // 针对 <input type='checkbox' /> 标签不能取 value，要特殊处理下
         if (currentTarget.tagName === 'INPUT' && currentTarget.type === 'checkbox') {
           val = currentTarget.checked;
-        } else {
+        } else if(currentTarget.type==='radio'){
+          
+        }else {
           val = currentTarget.value;
         }
       } else if (e.nativeEvent && e.target) {

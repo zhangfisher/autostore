@@ -17,10 +17,10 @@ export interface InputBindingsType{
  
 // ********** useField **********  
 
-export type UseFieldBindings<Value> = Value extends Dict ? Record<keyof Value,{
+export type UseFieldBindings<Value> ={
     value:any
     onChange:(e:any)=>void
-}> : Value
+} 
 
 export type UseFieldOptions={
      
@@ -28,12 +28,15 @@ export type UseFieldOptions={
 
 export type UseFieldGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
 export type UseFieldSetter<Value,State extends Dict>= (input:Value,state:ComputedState<State>)=>void
+export type UseFieldPartSetter<Value,State extends Dict>= (part:number,input:Value,state:ComputedState<State>)=>void
+
 
 export interface UseFieldType<State extends Dict> {
     (): UseFieldBindings<ComputedState<State>>
     <Value>(selector: string,options?:UseFieldOptions): UseFieldBindings<Value>
-    <Value>(selector: string[],options?:UseFieldOptions): UseFieldBindings<Value>
+    // <Value>(selector: string[],options?:UseFieldOptions): UseFieldBindings<Value>
     <Value>(getter: UseFieldGetter<Value,State>,setter:UseFieldSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>
+    <Value>(getters: (string | string[] | UseFieldGetter<Value,State>)[],setter:UseFieldPartSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>[]
 }
 
 // ********** UseFields **********  

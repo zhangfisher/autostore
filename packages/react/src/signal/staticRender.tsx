@@ -3,6 +3,7 @@ import type { ReactAutoStore } from "../store"
 import React, { ComponentType, useEffect, useState } from "react"
 import { getValueBySelector } from "../utils/getValueBySelector"
 import { SignalComponentOptions } from "./types"
+import { StateGetter } from "../hooks/types"
 
 
 /**
@@ -48,7 +49,10 @@ import { SignalComponentOptions } from "./types"
  * 
  * 
  */
-export function createStaticRender<State extends Dict>(store:ReactAutoStore<State>,selector:string[] | ((state:ComputedState<State>)=>any),options:SignalComponentOptions){
+export function createStaticRender<State extends Dict>(
+    store:ReactAutoStore<State>,
+    selector:string | StateGetter<State>
+,options:SignalComponentOptions){
     const ErrorBoundary:ComponentType<{error:any}>= options.errorBoundary || store.options.signalErrorBoundary 
     return React.memo(()=>{
         const deps = store.useDeps(selector)  // 收集依赖的路径

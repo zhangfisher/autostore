@@ -1,14 +1,3 @@
----
-group:
-  title: 调试与诊断
-  order: 6
-order: 1 
-title: trace
-demo:
-  tocDepth: 5
-toc: content
----
-
 # trace
 
 由于状态之间可能存在复杂的依赖计算关系，为了更好的调试状态的变化，`AutoStore`提供了一个`trace`函数来帮助调试`AutoStore`的状态操作。

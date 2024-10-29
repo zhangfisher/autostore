@@ -1,10 +1,10 @@
 
-import { isPlainObject, PATH_DELIMITER, setVal, Watcher, type Dict,isPrimitive } from "autostore";
+import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq } from "autostore";
 import { type ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
 import { getInputValueFromEvent } from '../utils/getInputValueFromEvent'; 
-import { UseFieldType } from './types'; 
+import { UseFieldGetter, UseFieldType } from './types'; 
 
 /**
  * 
@@ -38,100 +38,99 @@ import { UseFieldType } from './types';
  * 
  */
 export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
-    return  (function(){
-        const args = arguments   
-        const selector:string[] | undefined = args.length>=1 ? (
-                Array.isArray(args[0]) ? args[0]
-                    : (typeof(args[0])==='string' ? args[0].split(PATH_DELIMITER): undefined)
-                ) : undefined
-        const getter = args.length>=2 && typeof(args[0])==='function' ? args[0] : undefined
-        const setter = args.length>=2 && typeof(args[1])==='function' ? args[1] : undefined 
- 
-        const createInputBinding = useCallback((key:string[] | string | undefined,val:any)=>{
-            return {
-                value:val,
-                onChange:(e:any)=>{
-                    const inputValue = getInputValueFromEvent(e)
-                    if(key){
-                        store.update(state=>setVal(state,Array.isArray(key) ? key : key.split(PATH_DELIMITER),inputValue))
-                    }else{
-                        setter(inputValue,store.state)
-                    }
-                }
-            }   
-        },[])
+    return  (function () {
 
+        // 1. 参数处理
+        const args = arguments;
+        // 是否多段: 第一个参数是数组(string | string[] | StateGetter)[]
+        const isMultiParts = Array.isArray(args[0]) && args[0].length > 1;
+        const selector: string[] | undefined = args.length >= 1 && typeof (args[0]) === 'string' ? args[0].split(PATH_DELIMITER) : undefined;
+        const getter = args.length >= 2 && typeof (args[0]) === 'function' ? args[0] : undefined;
+        const setter = args.length >= 2 && typeof (args[1]) === 'function' ? args[1] : undefined;
 
-        const createInputObjectBindings = useCallback((parent:string[] | undefined,val:object)=>{
-            const bindings = {} as Record<string,any>
-            Object.entries(val).forEach(([key,val])=>{
-                if(isPrimitive(val)){
-                    const fpath = parent ? [...parent,key] : [key]
-                    bindings[key] = createInputBinding(fpath,val)
-                }                    
-            })
-            return bindings
-        },[])
+        const getters = (isMultiParts ? args[0] : [selector || getter]) as unknown as (string | string[] | UseFieldGetter<any, State>)[];
 
-        const [ bindings, setBindings ] = useState(()=>{
-            if(typeof(getter)==='function'){
-                return createInputBinding(undefined,getter(store.state))
-            }else{
-                const val =selector ? getValueBySelector(store,selector,true) : store.state
-                if(isPlainObject(val)){ 
-                    return createInputObjectBindings(selector,val)
-                }else{
-                    if(typeof(selector)==='string'){
-                        return createInputBinding(selector,val)
-                    }else if(Array.isArray(selector)){
-                        return createInputBinding(selector.join(PATH_DELIMITER),val)
-                    }
-                }
-            }            
-        })    
- 
-
-        //  收集依赖的路径
-        const deps = store.useDeps(selector || getter) 
-
-        useEffect(()=>{    
-            let watcher:Watcher              
-            if(deps.length===0 || args.length===0){
-                watcher = store.watch(({path,value})=>{
-                    if(path.length!==1) return  // 只能处理一级的绑定          
-                    if(isPrimitive(value)){          
-                        setBindings({
-                            ...bindings,
-                            [path[0]]:createInputBinding(path[0],value)
-                        })
-                    }
-                })
-            }else if(deps.length>0){
-                const val = selector ? getValueBySelector(store,selector,true) : undefined
-                const isSelObject = isPlainObject(val)
-                // 如果是一个对象，则添加一个通配符，表示对象的所有属性都依赖
-                if(selector && isSelObject && deps.length===1){
-                    deps[0].push('*')
-                }
-                
-                watcher = store.watch(deps,({path,value})=>{
-                    if(typeof(getter)==='function'){
-                        const newValue = getter(store.state)
-                        setBindings(createInputBinding(undefined,newValue))
-                    }else{
-                        if(isSelObject){
-                            setBindings({
-                                ...bindings,
-                                [path[path.length-1]]:createInputBinding(path,value)
-                            })
+        const createUseFieldBinding = useCallback((path: string[] | string | undefined, val: any,part:number) => {
+            const binding = {
+                value: val,
+                onChange: (e: any) => {
+                    const inputValue = getInputValueFromEvent(e);
+                    if (path) {
+                        store.update(state => setVal(state, Array.isArray(path) ? path : path.split(PATH_DELIMITER), inputValue));
+                    } else {
+                        if(isMultiParts){
+                            setter(part,inputValue, store.state);
                         }else{
-                            setBindings(createInputBinding(path,value))
+                            setter(inputValue, store.state);
                         }
-                    } 
-                })
+                    }
+                }
             }            
-            return ()=>watcher.off()
-        },[deps])     
-        return bindings
-    }) as UseFieldType<State>
+            if(path){
+                // @ts-ignore
+                binding["data-field-name"] = Array.isArray(path) ? path.join(PATH_DELIMITER) : path
+            }
+            return binding
+        }, []); 
+
+        const [ bindings, setBindings ] = useState(() => {
+            return getters.map((getter,index) => {
+                if (typeof (getter) === 'function') {
+                    return createUseFieldBinding(undefined, getter(store.state),index);
+                } else {
+                    const val = selector ? getValueBySelector(store, selector, true) : store.state;            
+                    if (typeof (selector) === 'string') {
+                        return createUseFieldBinding(selector, val,index);
+                    } else if (Array.isArray(selector)) {
+                        return createUseFieldBinding(selector.join(PATH_DELIMITER), val,index);
+                    } 
+                }
+            });
+        }); 
+
+        // 收集依赖
+        // const deps = store.useDeps(getters)
+        // deps=[getter1'deps,...,getterN'deps]  记录了每一个getter的依赖
+        // mergedDeps=[dep1,...,depN]  合并去重了记录了所有getter的依赖，用于订阅
+        const [ [allDeps,mergedDeps] ] = useState<[string[][][],string[][]]>(()=>{        
+            // 如果是异步计算属性，则会自动依赖于其value    
+            const allDeps = getters.map(getter=>getDepends(getter,store,'value'))   
+            // 合并所有依赖并消除重复
+            const mergedDeps = noRepeat(allDeps.reduce((r,cur)=>{
+                if(cur) r.push(...cur)
+                return r
+            },[] as string[][]))
+            return [allDeps,mergedDeps]
+        })
+
+        if (mergedDeps.length === 0 || args.length === 0) {
+            return {}
+        }
+
+        useEffect(() => {
+            let watcher: Watcher;            
+            watcher = store.watch(mergedDeps, ({ path, value }) => {   
+                // 判断是哪一个getter的依赖发生了变化                 
+                allDeps.forEach((itemDep,index)=>{          
+                    if(itemDep.some(dep=>isPathEq(dep,path))){
+                        const getter = getters[index]
+                        if (typeof (getter) === 'function') {
+                            const newValue = getter(store.state);
+                            bindings[index] = createUseFieldBinding(undefined, newValue,index)
+                            setBindings([...bindings]);                            
+                        } else {               
+                            bindings[index] = createUseFieldBinding(path, value,index)
+                            setBindings([...bindings]); 
+                        }
+                    }  
+                })                    
+            });
+            
+            return () => watcher.off();
+        }, [mergedDeps]);
+
+        return isMultiParts ? bindings : bindings[0];
+    }) as unknown as UseFieldType<State>
 } 
+
+

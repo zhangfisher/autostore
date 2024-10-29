@@ -1,7 +1,31 @@
-import { getDepends, type Dict } from "autostore"
+import { getDepends, noRepeat, type Dict } from "autostore"
 import type { ReactAutoStore } from "../store"
 import { useState } from "react"
 
+
+export type UseDepsOptions = {
+    /**
+     * 当依赖是一个异步计算属性时，是否展开进行依赖收集
+     * - none: 不展开
+     * - value: 自动添加.value作为依赖
+     * - all: 添加.*作为依赖
+     * 
+     */
+    extendAsync:'none' | 'value' | 'all'  
+    /**
+     * 如果useDeps的参数是一个数组，如useDeps(["a.b","b.c"])
+     * 则依赖是否进行合并
+     * 
+     * - true: 合并并去重
+     * - false: 不合并，分别返回每个数组的依赖，
+     *     
+     *  假设a的依赖是x,y,b的依赖是x,m,n
+     *  useDeps(["a","b"]) === [ [['x'],['y]], [['x'],['m'],['n']] ]
+     * 
+     * 
+     */
+    mergeArrayDeps?:boolean
+}
 /**
  * 
  * 创建一个函数钩子，该函数钩子用于返回指定路径的依赖
@@ -10,12 +34,19 @@ import { useState } from "react"
  * @description
  * 
  * - 输入一个字符串路径，转换为路径数组
- * useDeps("order.price") == [["order","price"]]
- * useDeps(["order","price"]) == [["order","price"]]
  * 
+ * useDeps("order.price") == [["order","price"]]
+  
  * - 输入一个函数，执行该函数并收集依赖
  * useDeps((state)=>state.order.price* state.order.count)) == [["order","price"],["order","count"]]
- * 
+ 
+ * - 输入一个数组，里面是函数或字符串或字符串数组，对函数并收集依赖
+*   useDeps([
+*       (state)=>state.order.price* state.order.count))
+*       "user.name",
+* ])
+*  == [["order","price"],["order","count"],['user','name']]
+* 
  * 针对异步计算属性
  * 
  * useDeps("order.total")  如果order.total是一个异步计算属性
@@ -27,8 +58,16 @@ import { useState } from "react"
 export function createUseDeps<State extends Dict>(store:ReactAutoStore<State>){ 
     return function(selector:any,extendAsync:'none' | 'value' | 'all'='none'){
         const [deps] = useState(()=>{
-           return getDepends(selector,store,extendAsync)
+            if(Array.isArray(selector)){
+                const deps:string[][] = []
+                selector.forEach((item)=>{
+                    deps.push(...getDepends(item,store,extendAsync))
+                })
+                return deps
+            }else{
+                return getDepends(selector,store,extendAsync)
+            }           
         })        
-        return deps
+        return noRepeat(deps)
     }
  } 

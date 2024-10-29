@@ -12,6 +12,7 @@ export type JsonViewProps  = React.PropsWithChildren<{
     border?:boolean
     title?: string;
     highlightKeys?:string[]
+    highlightChar?:string
 }> 
 
 const JSONStyle = styled<JsonViewProps>({
@@ -22,8 +23,7 @@ const JSONStyle = styled<JsonViewProps>({
     "& .json-container ":{
         fontFamily: 'menlo, consolas, monospace',
         fontStyle: 'normal',
-        fontWeight: 'bold',
-        lineHeight: '1.4em',
+        fontWeight: 'bold', 
         fontSize: '0.9rem',
         transition: 'background-color 400ms',
         backgroundColor: 'white',
@@ -31,6 +31,7 @@ const JSONStyle = styled<JsonViewProps>({
         maxHeight:" 400px",
         overflowX: "hidden",
         overflowY: "auto",
+        lineHeight:"calc(100% + 2px)",
         width: "100%",
         display: "block",
         background: "transparent"
@@ -76,21 +77,21 @@ const JSONStyle = styled<JsonViewProps>({
         width: '1000px',
         height: '100%',
         top: '0px',
-        left:"-50px",
+        left:"-2em",
         display: 'inline-block',        
         backgroundColor: '#caf9cc',
         zIndex: -1,
     },
     "& .json-container":  {         
         position: 'relative',
-        maxHeight: '400px',
+        maxHeight: '500px',
         overflowX: 'hidden',
         overflowY: 'auto',
     },
     "& .json-key":                         { 
         color: "brown", 
         position: 'relative',
-        backgroundColor: 'transparent',
+        backgroundColor: 'transparent', 
     },
     "& .json-string":                      { color: "olive" },
     "& .json-number":                      { color: "navy" },

@@ -35,7 +35,7 @@ import type { SignalComponentOptions, SignalComponentRender } from "./types"
  *   
  * 
  */
-export function createCustomRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,path: string | string[],options:SignalComponentOptions){
+export function createCustomRender<State extends Dict>(store:ReactAutoStore<State>,render:SignalComponentRender,path: string,options:SignalComponentOptions){
     const ErrorBoundary:ComponentType<{error:any}>= options.errorBoundary || store.options.signalErrorBoundary 
     return React.memo(()=>{ 
 

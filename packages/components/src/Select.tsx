@@ -1,10 +1,11 @@
+import React from "react"
 import { styled } from "flexstyled"
 import { SelectHTMLAttributes } from "react"
 
 
 
 export type SelectProps = React.PropsWithChildren<SelectHTMLAttributes<any> & {
-    lable?:string 
+    label?:string 
     items?:{title:string,value:string}[]
 }>
 
@@ -45,7 +46,7 @@ export const Select:React.FC<SelectProps> = (props)=>{
     const label = props.label || props.name || props.id
 
     return <div className={SelectStyle.className} style={SelectStyle.getStyle(props)}>
-              <label>{label}</label>             
+              { label ? <label>{label}</label> : null}
               <select {...props} value={props.value}>
                 {
                     items.map(item=>{

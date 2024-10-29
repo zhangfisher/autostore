@@ -25,7 +25,7 @@ export type ExtendAsyncOptions = 'none' | 'value' | 'all'
  * @param extendAsync - 是否扩展异步计算属性，默认为 true
  * @returns 依赖项列表
  */
-export function getDepends<State extends Dict>(selector: string | string[] | Function,store:AutoStore<State>,extendAsync:ExtendAsyncOptions='none'):string[][]{ 
+export function getDepends<State extends Dict>(selector: string | string[] | Function,store:AutoStore<State>,extendAsync?:ExtendAsyncOptions):string[][]{ 
     let deps:string[][] = [] 
     if(typeof(selector)==='function'){
         deps =  store.collectDependencies(()=>selector(store.state))  

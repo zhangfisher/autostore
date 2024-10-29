@@ -98,6 +98,7 @@ export default defineConfig({
             items:[
               { text: 'DevTools', link: '/guide/debug/devtools' },
               { text: 'trace', link: '/guide/debug/trace' },
+              { text: '依赖收集', link: '/guide/debug/deps' },
               { text: '日志', link: '/guide/debug/log' },
               { text: '循环依赖', link: '/guide/debug/circular-dependency' },
             ]

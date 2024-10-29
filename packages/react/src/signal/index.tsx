@@ -99,7 +99,7 @@ export function createSignalComponent<State extends Dict>(store:ReactAutoStore<S
 
         const renderPath = args.length>=2 
                         && typeof(args[0])==='function'
-                        && (typeof(args[1])==='string' || Array.isArray(args[1])) ? args[1] : undefined
+                        && (typeof(args[1])==='string') ? args[1] : undefined
 
         const options = Object.assign({},args.length>1 && isPlainObject(args[args.length-1]) ? args[args.length-1] : undefined) 
 

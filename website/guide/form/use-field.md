@@ -1,94 +1,56 @@
 # useField
 
-使用`useField`进行双向绑定更加简单。
+## 关于
+
+`bind`绑定控件的功能比较简单，`useField`进行双向绑定更加简单。
+
+**`useField`签名如下：**
+
+```ts
+type UseFieldBindings<Value> = Value extends Dict ? Record<keyof Value,{
+    value:any
+    onChange:(e:any)=>void
+}> : Value
+
+type UseFieldOptions={}
+
+type UseFieldGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
+type UseFieldSetter<Value,State extends Dict>= (input:Value,state:ComputedState<State>)=>void
+
+interface UseFieldType<State extends Dict> {
+    (): UseFieldBindings<ComputedState<State>>
+    <Value>(selector: string,options?:UseFieldOptions): UseFieldBindings<Value>
+    <Value>(
+        getter: UseFieldGetter<Value,State>,
+        setter:UseFieldSetter<Value,State>,
+        options?:UseFieldOptions
+    ):UseFieldBindings<Value>
+}
+```
 
 ## 基本用法
 
-```tsx  
-/**
- * title: useField
- * description: 输入框的值会自动同步到状态中。
- */
-import { createStore } from '@autostorejs/react';
-import { ColorBlock,Button,Input } from "x-react-components"
+可以直接通过`useField(<状态路径>)`来创建一个双向绑定对象，然后解构到`input`控件即可。
 
-const { state, $, bind, useState,useField } = createStore({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    vip:false, 
-    job:"unknown"
-  }
-})
+<demo react="form/useFieldBase.tsx"/>
+ 
+- `状态路径`可以是任意深度的字符串或字符串数组，如`useField("order.user.name")`。
 
-export default ()=>{
-  const bindFirstName = useField("user.firstName")
-  const bindLastName = useField("user.lastName")
-  const bindVip = useField("user.vip")
-  const bindJob = useField("user.job")
-  return <div>    
-    <Input label="First Name" {...bindFirstName}/>
-    <Input label="last Name" {...bindLastName} />
-    <Input type="checkbox" label="VIP" {...bindVip}/>
-    <ColorBlock name="Job">    
-      <select id="job" {...bindJob}>
-        <option value="1">Engineer</option>
-        <option value="2">Doctor</option>
-        <option value="3">Teacher</option>
-      </select>
-    </ColorBlock>
-    <ColorBlock name="First Name">{$('user.firstName')}</ColorBlock>
-    <ColorBlock name="Last Name">{$('user.lastName')}</ColorBlock>        
-    <ColorBlock name="VIP">{$('user.vip')}</ColorBlock>    
-    <ColorBlock name="Job">{$('user.job')}</ColorBlock>
-    <Button onClick={()=>{
-      setFirstName("Zhang")
-      setLastName("Fisher")
-    }}>Reset</Button>
-  </div>
-}
 
-```
+## 合并状态绑定
 
-## 组合双向绑定
+支持自定义`getter`和`setter`方法，可以实现将多个状态值合并后绑定到一个`input`
 
-支持自定义`getter`和`setter`方法。可以实现在输入框中输入多个值，甚至更复杂的双向数据绑定。
+<demo react="form/useFieldCombo.tsx"/>
 
-```tsx  
-/**
- * title: onInput
- * description: FullName输入框中的firstName和lastName使用空格分开
- */
-import { createStore } from '@autostorejs/react';
-import { ColorBlock,Button,Input } from "x-react-components"
+- 上例中，我们通过`getter`和`setter`方法，将`firstName & lastName`合并后绑定到`1`个`input`。
 
-const { state, $, bind, useState,useField } = createStore({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher" 
-  }
-})
+ 
+## 拆分状态绑定
 
-export default ()=>{ 
-  const bindFullName = useField(
-    (state)=>state.user.firstName+" "+state.user.lastName,
-    // 解析输入的值
-    (value,state)=>{
-      const [firstName,lastName] = value.split(/\s+/)
-      state.user.firstName = firstName
-      state.user.lastName = lastName
-    })
-  return <div>    
-    <Input label="FullName" {...bindFullName}/>
-    <ColorBlock name="First Name">{$('user.firstName')}</ColorBlock>
-    <ColorBlock name="Last Name">{$('user.lastName')}</ColorBlock>            
-    <Button onClick={()=>{
-      state.user.firstName= "Zhang"
-      state.user.lastName = "Fisher"
-    }}>Reset</Button>
-  </div>
-}
-```
+也支持将一个或多个状态值绑定到多个`input`上。
+
+
 ## 对象双向绑定
 
 当`useField(<path>)`的路径指向的是一个对象时，会为该对象的每个属性创建一个双向绑定。可以直接使用。
@@ -135,7 +97,7 @@ export default ()=>{
 
 ```
 
-:::warning{title=注意}
+:::warning 注意 
 使用对象双向绑定时，不支持深层嵌套对象。
 :::
 
