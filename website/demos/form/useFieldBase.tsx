@@ -18,7 +18,7 @@ export default ()=>{
     const bindLastName = useField("user.lastName")
     const bindVip = useField("user.vip")
     const bindJob = useField("user.job")
-    const bindSex = useField("user.sex")
+    const bindSex = useField("user.sex",{type:'radio',values:['男','女']})
 
     return <Layout>    
         <div>
@@ -32,8 +32,8 @@ export default ()=>{
                     {value:"3",title:"Teacher"}
                 ]}
             /> 
-            <Radio label="男" {...bindSex} value="男" />
-            <Radio label="女" {...bindSex} value="女"/>         
+            <Radio label="男" {...bindSex}/>
+            <Radio label="女" {...bindSex}/>         
             <Button onClick={()=>{
                 batchUpdate((state)=>{
                     state.user.firstName = "Zhang"

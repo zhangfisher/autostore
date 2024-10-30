@@ -23,7 +23,9 @@ export type UseFieldBindings<Value> ={
 } 
 
 export type UseFieldOptions={
-     
+    // 当字段绑定到不同的input时，可以指定类型,绑定逻辑均不一样
+    type?: 'radio' | 'checkbox' | 'select' | 'textarea' | 'input'
+    values?: any[] & {_index_?:number}
 }
 
 export type UseFieldGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
@@ -34,7 +36,6 @@ export type UseFieldPartSetter<Value,State extends Dict>= (part:number,input:Val
 export interface UseFieldType<State extends Dict> {
     (): UseFieldBindings<ComputedState<State>>
     <Value>(selector: string,options?:UseFieldOptions): UseFieldBindings<Value>
-    // <Value>(selector: string[],options?:UseFieldOptions): UseFieldBindings<Value>
     <Value>(getter: UseFieldGetter<Value,State>,setter:UseFieldSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>
     <Value>(getters: (string | string[] | UseFieldGetter<Value,State>)[],setter:UseFieldPartSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>[]
 }

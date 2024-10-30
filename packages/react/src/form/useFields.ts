@@ -76,7 +76,6 @@ function createProxy<State extends Dict>(target: any, parentPath: string[],proxy
     })
     proxyCache.set(pathKey, proxyObj);
     return proxyObj
-
 }
 
 
@@ -98,7 +97,7 @@ export function createUseFields<State extends Dict>(store:ReactAutoStore<State>)
             return store.getSnap({entry})
         })
 
-        const [bindingsState] = useState(()=>createBindingsState(store,entry))
+        const [ bindingsState ] = useState(()=>createBindingsState(store,entry))
 
         useSyncExternalStore((callback)=>{
             const watcher = store.watch(({path,value})=>{   
@@ -117,34 +116,3 @@ export function createUseFields<State extends Dict>(store:ReactAutoStore<State>)
         return bindingsState        
     }
 }
-
-// const store = new ReactAutoStore({
-//     order:{
-//         price:100,
-//         count:1,
-//         total:(scope:any)=>scope.price*scope.count
-//     },
-//     addresss:[
-//         {
-//             city:"BeiJing",
-//             street:"chang'an"
-//         },
-//         {
-//             city:"ShangHai",
-//             street:"nanjing"
-//         },
-//         {
-//             city:"QuanZhou",
-//             street:"TianAn"
-//         }
-//     ]
-// })
-
-// const useBindings = createUseFormBindings(store)
-// const bindings = useBindings()
-// bindings.order
-// bindings.order.price
-// bindings.order.total
-
-
-// console.log("end")

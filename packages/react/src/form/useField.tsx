@@ -1,26 +1,28 @@
 
-import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq } from "autostore";
+import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq, isPlainObject } from "autostore";
 import { type ReactAutoStore } from '../store';
 import { useCallback, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
 import { getInputValueFromEvent } from '../utils/getInputValueFromEvent'; 
-import { UseFieldGetter, UseFieldType } from './types'; 
+import { UseFieldGetter, UseFieldOptions, UseFieldType } from './types'; 
 
 export type UseFieldBinding = {
+    checked?: boolean
     value: any
     onChange: (e: any) => void
-    name?: string
-    "data-field-name"?: string
+    name?: string 
 }
+
+
 
 /**
  * 
- * useInput用来为表单元素提供绑定数据的hook
+ * useField用来为表单元素提供绑定数据的hook
  * 
  * 
  * @example
  * 
- * const bindPrice = useInput("order.price") 
+ * const bindPrice = useField("order.price") 
  * <input {...bindPrice} />
  * 
  * @example
@@ -29,24 +31,30 @@ export type UseFieldBinding = {
  * 
  * 注意：不支持嵌套对象
  * 
- * const bindOrder = useInput<typeof state.order>("order") 
+ * const bindOrder = useField<typeof state.order>("order") 
  * <input {...bindOrder.price} />
  * <input {...bindOrder.count} />
  * 
  * 
  * @example
  *  
- * const bindFullname = useInput((state=>state.firstName + ' ' +state.lastName,(input,state)=>{
+ * const bindFullname = useField((state=>state.firstName + ' ' +state.lastName,(input,state)=>{
 *          const [firstName,lastName]  = value.split(' ')
 *          state.firstName = firstName
 *          state.lastName = lastName
   * }) 
  * <input {...bindFullname} /> 
  * 
+ * 
+ * @example
+ * 
+ * 绑定多个值到多个input
+ * const bindSex = useField("order.sex",{type:"radio",values:['男','女']}) 
+ * <input type="radio" {...bindSex} />
+ * <input type="radio" {...bindSex} />
  */
 export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
     return  (function () {
-
         // 1. 参数处理
         const args = arguments;
         // 是否多段: 第一个参数是数组(string | string[] | StateGetter)[]
@@ -57,9 +65,14 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
 
         const getters = (isMultiParts ? args[0] : [selector || getter]) as unknown as (string | string[] | UseFieldGetter<any, State>)[];
 
+        const [ options ] = useState<UseFieldOptions>(()=>{
+            return args.length >= 2 && isPlainObject(args[1]) ? args[1]
+            :  ( args.length === 3 && isPlainObject(args[2]) ? args[2] : {})
+        })
+
         const createUseFieldBinding = useCallback((path: string[] | string | undefined, val: any,part:number) => {
+            const { type: inputType } = options
             const binding = {
-                value: val,
                 onChange: (e: any) => {
                     const inputValue = getInputValueFromEvent(e);
                     if (path) {
@@ -72,11 +85,19 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
                         }
                     }
                 }
-            } as UseFieldBinding
+            } as UseFieldBinding            
             if(path){
                 const fieldName=  Array.isArray(path) ? path.join(PATH_DELIMITER) : path
-                binding['name']= fieldName
-                // binding["data-field-name"] = fieldName
+                binding['name']= fieldName 
+            }            
+            if(inputType === 'radio'){                
+                if(Array.isArray(options.values)){
+                    if(!options.values._index_) options.values._index_=0
+                    binding['value'] = options.values[options.values._index_++]    
+                }                
+                binding['checked']= val == binding['value']
+            }else{
+                binding['value'] = val
             }
             return binding
         }, []); 
