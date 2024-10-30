@@ -1,4 +1,4 @@
-import { ComputedState, Dict } from "autostore"
+import { Dict } from "autostore"
 import type { ReactAutoStore } from "../store"
 import React, { ComponentType, useEffect, useState } from "react"
 import { getValueBySelector } from "../utils/getValueBySelector"

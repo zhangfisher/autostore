@@ -7,8 +7,8 @@ const { batchUpdate, $, useField,useReactive } = createStore({
     firstName:"Zhang",
     lastName:"Fisher",
     vip:false, 
-    job:"unknown",
-    sex:1
+    job:2,
+    sex:'男'
   }
 })
 
@@ -22,24 +22,24 @@ export default ()=>{
 
     return <Layout>    
         <div>
-        <Input label="First Name" {...bindFirstName}/>
-        <Input label="last Name" {...bindLastName} />
-        <Input type="checkbox" label="VIP" {...bindVip}/>
-        <Select {...bindJob}  label ="Job" style={{color:'#333'}}
-            items={[
-                {value:"1",title:"Engineer"},
-                {value:"2",title:"Doctor"},
-                {value:"3",title:"Teacher"}
-            ]}
-        /> 
-        <Radio label="男" {...bindSex} value="男" />
-        <Radio label="女" {...bindSex} value="女"/>         
-        <Button onClick={()=>{
-        batchUpdate((state)=>{
-            state.user.firstName = "Zhang"
-            state.user.lastName = "Fisher"
-        })      
-        }}>Reset</Button>
+            <Input label="First Name" {...bindFirstName}/>
+            <Input label="last Name" {...bindLastName} />
+            <Input type="checkbox" label="VIP" {...bindVip}/>
+            <Select {...bindJob}  label ="Job" style={{color:'#333'}}
+                items={[
+                    {value:"1",title:"Engineer"},
+                    {value:"2",title:"Doctor"},
+                    {value:"3",title:"Teacher"}
+                ]}
+            /> 
+            <Radio label="男" {...bindSex} value="男" />
+            <Radio label="女" {...bindSex} value="女"/>         
+            <Button onClick={()=>{
+                batchUpdate((state)=>{
+                    state.user.firstName = "Zhang"
+                    state.user.lastName = "Fisher"
+                })      
+            }}>Reset</Button>
         </div>
         <div>
             <JsonView  border={false} data={state}/>

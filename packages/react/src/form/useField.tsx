@@ -6,6 +6,13 @@ import { getValueBySelector } from '../utils/getValueBySelector';
 import { getInputValueFromEvent } from '../utils/getInputValueFromEvent'; 
 import { UseFieldGetter, UseFieldType } from './types'; 
 
+export type UseFieldBinding = {
+    value: any
+    onChange: (e: any) => void
+    name?: string
+    "data-field-name"?: string
+}
+
 /**
  * 
  * useInput用来为表单元素提供绑定数据的hook
@@ -65,10 +72,11 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
                         }
                     }
                 }
-            }            
+            } as UseFieldBinding
             if(path){
-                // @ts-ignore
-                binding["data-field-name"] = Array.isArray(path) ? path.join(PATH_DELIMITER) : path
+                const fieldName=  Array.isArray(path) ? path.join(PATH_DELIMITER) : path
+                binding['name']= fieldName
+                // binding["data-field-name"] = fieldName
             }
             return binding
         }, []); 
@@ -78,11 +86,11 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
                 if (typeof (getter) === 'function') {
                     return createUseFieldBinding(undefined, getter(store.state),index);
                 } else {
-                    const val = selector ? getValueBySelector(store, selector, true) : store.state;            
-                    if (typeof (selector) === 'string') {
-                        return createUseFieldBinding(selector, val,index);
-                    } else if (Array.isArray(selector)) {
-                        return createUseFieldBinding(selector.join(PATH_DELIMITER), val,index);
+                    const val = getValueBySelector(store, getter, true) //: store.state;            
+                    if (typeof (getter) === 'string') {
+                        return createUseFieldBinding(getter, val, index);
+                    } else if (Array.isArray(getter)) {
+                        return createUseFieldBinding(getter.join(PATH_DELIMITER), val, index);
                     } 
                 }
             });
