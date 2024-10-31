@@ -15,11 +15,12 @@ export type InputProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLI
     onAction?: (id:string,value:any,e:any)=>void,
     actions? : string[]
     inline?  : boolean
+    width?: number
 }
 
 
 const InputStyle = styled<InputProps>({
-    display:"flex",
+    display:(props)=> props.inline ? "inline-flex" : "flex",
     alignItems:"center",
     "& input": {
         border: (props)=>props.validate === false ? "1px solid red" : "1px solid #ccc",
@@ -36,7 +37,8 @@ const InputStyle = styled<InputProps>({
         "&.invalid":{
             border:"1px solid red",
             color:"red"
-        }
+        },
+        width:(props)=>props.width ? `${props.width}px` : "auto"
     },    
     "& label":{
         color: "#666",

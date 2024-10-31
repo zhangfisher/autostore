@@ -15,7 +15,7 @@ export default ()=>{
     const bindFullName = useField(
         (state)=>state.user.firstName+" "+state.user.lastName,
         // 解析输入的值
-        (value,state)=>{
+        ({value},state)=>{
             const [firstName,lastName] = value.split(/\s+/)
             state.user.firstName = firstName
             state.user.lastName = lastName

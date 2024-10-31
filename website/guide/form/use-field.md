@@ -30,7 +30,7 @@ interface UseFieldType<State extends Dict> {
 
 ## 基本用法
 
-可以直接通过`useField(<状态路径>)`来创建一个双向绑定对象，然后解构到`input`控件即可。
+可以直接通过`useField(<状态路径>)`来创建一个双向字段绑定对象，然后解构到`input`控件即可。
 
 <demo react="form/useFieldBase.tsx"/>
  
@@ -39,16 +39,22 @@ interface UseFieldType<State extends Dict> {
 
 ## 合并状态绑定
 
-支持自定义`getter`和`setter`方法，可以实现将多个状态值合并后绑定到一个`input`
+可以实现将多个状态值合并后绑定到一个`input`
 
 <demo react="form/useFieldCombo.tsx"/>
 
 - 上例中，我们通过`getter`和`setter`方法，将`firstName & lastName`合并后绑定到`1`个`input`。
+- `getter`方法用于将状态值合并成一个值。
+- `setter`方法负责解析`input`值,并将其分解更新到状态中。
+
+
 
  
 ## 拆分状态绑定
 
-也支持将一个或多个状态值绑定到多个`input`上。
+也支持将多个状态值绑定到多个`input`上。
+
+<demo react="form/useFieldIpAddress.tsx"/>
 
 
 ## 对象双向绑定

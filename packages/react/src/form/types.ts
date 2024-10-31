@@ -18,26 +18,32 @@ export interface InputBindingsType{
 // ********** useField **********  
 
 export type UseFieldBindings<Value> ={
+    name?:string
     value:any
     onChange:(e:any)=>void
-} 
+    checked?:boolean
+} & {
+    [index:number]:UseFieldBindings<Value>
+}
 
 export type UseFieldOptions={
-    // 当字段绑定到不同的input时，可以指定类型,绑定逻辑均不一样
-    type?: 'radio' | 'checkbox' | 'select' | 'textarea' | 'input'
-    values?: any[] & {_index_?:number}
+    name?       : string      // 可选的字段名称    
+    type?       : 'radio' | 'checkbox' | 'select' | 'textarea' | 'input'
+    // 仅当type = radio或checkbox时有效时有效
+    values?     : any[] 
+    toState?    : <V=any>(value:V,options?:{path:string[] | undefined,part:number})=>any            // 将数据更新到状态中时调用进行转换
+    fromState?  : <V=any>(value:any,options?:{path:string[] | undefined,part:number})=>any          // transform value from state to input
 }
 
 export type UseFieldGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
-export type UseFieldSetter<Value,State extends Dict>= (input:Value,state:ComputedState<State>)=>void
-export type UseFieldPartSetter<Value,State extends Dict>= (part:number,input:Value,state:ComputedState<State>)=>void
+export type UseFieldSetter<Value,State extends Dict>= (input:{value:Value,path:string[] | undefined,part:number},state:ComputedState<State>)=>void
 
 
 export interface UseFieldType<State extends Dict> {
     (): UseFieldBindings<ComputedState<State>>
     <Value>(selector: string,options?:UseFieldOptions): UseFieldBindings<Value>
     <Value>(getter: UseFieldGetter<Value,State>,setter:UseFieldSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>
-    <Value>(getters: (string | string[] | UseFieldGetter<Value,State>)[],setter:UseFieldPartSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>[]
+    <Value>(getters: (string | string[] | UseFieldGetter<Value,State>)[],setter:UseFieldSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>[]
 }
 
 // ********** UseFields **********  

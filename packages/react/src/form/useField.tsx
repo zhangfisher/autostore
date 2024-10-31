@@ -1,10 +1,11 @@
 
-import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq, isPlainObject } from "autostore";
+import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq, isPlainObject, isFunction } from "autostore";
 import { type ReactAutoStore } from '../store';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
 import { getInputValueFromEvent } from '../utils/getInputValueFromEvent'; 
-import { UseFieldGetter, UseFieldOptions, UseFieldType } from './types'; 
+import { UseFieldGetter, UseFieldOptions, UseFieldSetter, UseFieldType } from './types'; 
+import { isNumber } from "../utils/isNumber";
 
 export type UseFieldBinding = {
     checked?: boolean
@@ -13,6 +14,49 @@ export type UseFieldBinding = {
     name?: string 
 }
 
+export function createFieldBinding<State extends Dict,Value=any>(
+    store:ReactAutoStore<State>,
+    path:string[] | undefined,
+    part:number,
+    value:any,
+    fieldValue:any,
+    setter:UseFieldSetter<Value,State>,
+    options:UseFieldOptions 
+){    
+    const getCheckedValue = (val:any)=>{
+        if(options.type==='radio'){
+            return fieldValue === val
+        }else if(options.type==='checkbox'){
+            return Boolean(value)
+        }
+    }
+    return new Proxy({
+        value,
+        onChange:(e:any)=>{
+            let inputValue = getInputValueFromEvent(e)
+            if(isFunction(options.toState)){
+                inputValue = options.toState(inputValue,{path,part})
+            }
+            if(isFunction(setter)){
+                setter({value:inputValue,path,part},store.state);
+            }else{
+                if(path){
+                    store.update(state => setVal(state, path, inputValue));
+                }
+            }        
+        },
+        name: options.name ? options.name : (Array.isArray(path) ? path.join(PATH_DELIMITER) : path),
+        checked: getCheckedValue(value)
+    },{
+        get(target, key:string,receiver){             
+            if(isNumber(key) && options.type==='radio' && options.values){
+                const part = Number(key)
+                return createFieldBinding(store,path,part,options.values[part],value,setter,options)
+            }
+            return Reflect.get(target, key,receiver);
+        }
+    })  
+}
 
 
 /**
@@ -62,7 +106,6 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
         const selector: string[] | undefined = args.length >= 1 && typeof (args[0]) === 'string' ? args[0].split(PATH_DELIMITER) : undefined;
         const getter = args.length >= 2 && typeof (args[0]) === 'function' ? args[0] : undefined;
         const setter = args.length >= 2 && typeof (args[1]) === 'function' ? args[1] : undefined;
-
         const getters = (isMultiParts ? args[0] : [selector || getter]) as unknown as (string | string[] | UseFieldGetter<any, State>)[];
 
         const [ options ] = useState<UseFieldOptions>(()=>{
@@ -70,49 +113,18 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
             :  ( args.length === 3 && isPlainObject(args[2]) ? args[2] : {})
         })
 
-        const createUseFieldBinding = useCallback((path: string[] | string | undefined, val: any,part:number) => {
-            const { type: inputType } = options
-            const binding = {
-                onChange: (e: any) => {
-                    const inputValue = getInputValueFromEvent(e);
-                    if (path) {
-                        store.update(state => setVal(state, Array.isArray(path) ? path : path.split(PATH_DELIMITER), inputValue));
-                    } else {
-                        if(isMultiParts){
-                            setter(part,inputValue, store.state);
-                        }else{
-                            setter(inputValue, store.state);
-                        }
-                    }
-                }
-            } as UseFieldBinding            
-            if(path){
-                const fieldName=  Array.isArray(path) ? path.join(PATH_DELIMITER) : path
-                binding['name']= fieldName 
-            }            
-            if(inputType === 'radio'){                
-                if(Array.isArray(options.values)){
-                    if(!options.values._index_) options.values._index_=0
-                    binding['value'] = options.values[options.values._index_++]    
-                }                
-                binding['checked']= val == binding['value']
-            }else{
-                binding['value'] = val
-            }
-            return binding
-        }, []); 
 
         const [ bindings, setBindings ] = useState(() => {
             return getters.map((getter,index) => {
                 if (typeof (getter) === 'function') {
-                    return createUseFieldBinding(undefined, getter(store.state),index);
+                    return createFieldBinding(
+                        store,undefined,
+                        index,getter(store.state),undefined,setter,options);
                 } else {
-                    const val = getValueBySelector(store, getter, true) //: store.state;            
-                    if (typeof (getter) === 'string') {
-                        return createUseFieldBinding(getter, val, index);
-                    } else if (Array.isArray(getter)) {
-                        return createUseFieldBinding(getter.join(PATH_DELIMITER), val, index);
-                    } 
+                    const val = getValueBySelector(store, getter, true)       
+                    return createFieldBinding(
+                        store,Array.isArray(getter) ? getter : getter.split(PATH_DELIMITER),
+                        index,val,undefined,setter,options);
                 }
             });
         }); 
@@ -145,10 +157,13 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
                         const getter = getters[index]
                         if (typeof (getter) === 'function') {
                             const newValue = getter(store.state);
-                            bindings[index] = createUseFieldBinding(undefined, newValue,index)
+                            bindings[index] = createFieldBinding(
+                                store,undefined,
+                                index,newValue,undefined,setter,options);
+
                             setBindings([...bindings]);                            
                         } else {               
-                            bindings[index] = createUseFieldBinding(path, value,index)
+                            bindings[index] = createFieldBinding(store,path,index,value,undefined,setter,options);
                             setBindings([...bindings]); 
                         }
                     }  
@@ -163,3 +178,27 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
 } 
 
 
+
+
+// const createUseFieldBinding = useCallback((path: string[] | string | undefined, val: any,part:number) => {
+//     const { type: inputType } = options
+//     const binding = {
+//         onChange: (e: any) => {
+//             const inputValue = getInputValueFromEvent(e);
+//             if (path) {
+//                 store.update(state => setVal(state, Array.isArray(path) ? path : path.split(PATH_DELIMITER), inputValue));
+//             } else {
+//                 if(isMultiParts){
+//                     setter(part,inputValue, store.state);
+//                 }else{
+//                     setter(inputValue, store.state);
+//                 }
+//             }
+//         }
+//     } as UseFieldBinding            
+//     if(path){
+//         const fieldName=  Array.isArray(path) ? path.join(PATH_DELIMITER) : path
+//         binding['name']= fieldName 
+//     }         
+//     return binding
+// }, []); 

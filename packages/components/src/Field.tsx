@@ -5,7 +5,7 @@ import { Loading } from "./Loading"
 import { ChangeEventHandler } from "react"
 
 // 默认同步字段属性
-export interface DefaultFieldPropTypes{
+export interface DefaultFieldPropTypes{    
     value        : any
     initial?     : any                   // 表单默认值
     oldValue?    : any                   // 旧值
@@ -14,6 +14,7 @@ export interface DefaultFieldPropTypes{
     placeholder? : string;               // 占位符
     required?    : boolean;              // 是否必填
     readonly?    : boolean;              // 是否只读
+    labelWidth?  : string;               // 标签宽度
     visible?     : boolean;              // 是否可见
     enable?      : boolean               // 是否可用
     dirty?       : boolean                // 数据已经更新过
@@ -61,7 +62,7 @@ export const ValidResult:React.FC<FieldProps> = ({validate,help})=>{
 export type FieldProps = Partial<FieldRenderProps<any>> & {memo?:string}
 
 export const Field:ReactFC<FieldProps> = (props)=>{
-    const {enable=true,visible=true,label='',children='',memo} = props 
+    const {enable=true,visible=true,label='',children='',memo,labelWidth="128px"} = props 
     return  (
         <div  className="field"  style={{
             position:'relative',
@@ -73,7 +74,7 @@ export const Field:ReactFC<FieldProps> = (props)=>{
             padding:"8px"
         }}>   
             <label  className="field-label"  style={{
-                minWidth:'160px',
+                minWidth:labelWidth,
                 fontWeight:'bold',
                 color: enable===false ? 'gray' : 'inherit'
             }}>{label}:</label>

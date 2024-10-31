@@ -1,6 +1,6 @@
 import React from 'react';
 import { createStore } from '@autostorejs/react';
-import { ColorBlock,Button,Input, Layout, JsonView } from "x-react-components"
+import { Field,Button,Input, Layout, JsonView } from "x-react-components"
 
 const { batchUpdate, $, useReactive,useField } = createStore({
   net:{
@@ -9,7 +9,6 @@ const { batchUpdate, $, useReactive,useField } = createStore({
 })
 
 export default ()=>{ 
-
     const [ state ] = useReactive()
     const ipParts = useField(
         [
@@ -19,19 +18,19 @@ export default ()=>{
             (state)=> state.net.ip.split(".")[3],
         ],
         // 解析输入的值
-        (part,value,state)=>{
+        ({value,part},state)=>{
             const ipParts = state.net.ip.split(".")
             ipParts[part] = value
             state.net.ip = ipParts.join(".")           
         })
     return <Layout>    
         <div>
-            <Input label="FullName" {...ipParts[0]}/>.
-            <Input label="FullName" {...ipParts[1]}/>.
-            <Input label="FullName" {...ipParts[2]}/>.
-            <Input label="FullName" {...ipParts[3]}/>
-            <ColorBlock name="First Name">{$('user.firstName')}</ColorBlock>
-            <ColorBlock name="Last Name">{$('user.lastName')}</ColorBlock>            
+            <Field labelWidth="80px" label="IP">
+            <Input inline width={60} {...ipParts[0]}/>.
+            <Input inline width={60} {...ipParts[1]}/>.
+            <Input inline width={60} {...ipParts[2]}/>.
+            <Input inline width={60} {...ipParts[3]}/>
+            </Field>
             <Button onClick={()=>{
                 batchUpdate(state=>{
                     state.net.ip= "127.0.0.1"

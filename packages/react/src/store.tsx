@@ -1,3 +1,4 @@
+import React from "react";
 import { AutoStore, Dict, AutoStoreOptions } from "autostore";
 import { createUseState } from "./hooks/useState";
 import { createUseDeps } from "./hooks/useDeps";

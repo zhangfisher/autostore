@@ -36,7 +36,7 @@ export function createFakeObjectBindings<State extends Dict>(store:ReactAutoStor
 
  
 
-export function createInputBinding<State extends Dict>(store:ReactAutoStore<State>,path:string[],val:any){    
+export function createFieldBinding<State extends Dict>(store:ReactAutoStore<State>,path:string[],val:any){    
     return {
         value:val,
         onChange:(e:any)=>{
@@ -66,9 +66,9 @@ function createProxy<State extends Dict>(target: any, parentPath: string[],proxy
             const path = [...entry,...parentPath, String(key)];
             const value = getVal(store.state,path);    
             if(isPrimitive(value)){
-                return createInputBinding(store,path,value)
+                return createFieldBinding(store,path,value)
             }else if(isAsyncComputedValue(value)){
-                return createInputBinding(store,[...path,'value'],value)
+                return createFieldBinding(store,[...path,'value'],value)
             }else{
                 return createProxy(value, path,proxyCache,store,entry);     
             } 

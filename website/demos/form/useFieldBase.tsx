@@ -2,13 +2,14 @@ import React from "react"
 import { createStore } from '@autostorejs/react';
 import { ColorBlock,Button,Input,Layout, JsonView, Select, Radio } from "x-react-components"
 
-const { batchUpdate, $, useField,useReactive } = createStore({
+const { batchUpdate, useField,useReactive } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
     vip:false, 
     job:2,
-    sex:'男'
+    sex:'男',
+    pets:""
   }
 })
 
@@ -27,13 +28,13 @@ export default ()=>{
             <Input type="checkbox" label="VIP" {...bindVip}/>
             <Select {...bindJob}  label ="Job" style={{color:'#333'}}
                 items={[
-                    {value:"1",title:"Engineer"},
-                    {value:"2",title:"Doctor"},
-                    {value:"3",title:"Teacher"}
+                    {value:1,title:"Engineer"},
+                    {value:2,title:"Doctor"},
+                    {value:3,title:"Teacher"}
                 ]}
             /> 
-            <Radio label="男" {...bindSex}/>
-            <Radio label="女" {...bindSex}/>         
+            <Radio label="男" {...bindSex[0]}/>
+            <Radio label="女" {...bindSex[1]}/>         
             <Button onClick={()=>{
                 batchUpdate((state)=>{
                     state.user.firstName = "Zhang"

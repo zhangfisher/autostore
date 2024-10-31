@@ -6,7 +6,7 @@ import { SelectHTMLAttributes } from "react"
 
 export type SelectProps = React.PropsWithChildren<SelectHTMLAttributes<any> & {
     label?:string 
-    items?:{title:string,value:string}[]
+    items?:{title:string,value:any}[]
 }>
 
 const SelectStyle = styled<SelectProps>({ 
