@@ -15,7 +15,8 @@ export type InputProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLI
     onAction?: (id:string,value:any,e:any)=>void,
     actions? : string[]
     inline?  : boolean
-    width?: number
+    width?   : number
+    center?  : boolean
 }
 
 
@@ -30,6 +31,7 @@ const InputStyle = styled<InputProps>({
         margin: "4px",
         padding: "8px",
         flexGrow:1, 
+        textAlign:(props)=>props.center ? "center" : "left",
         "&:focus":{
             outline:"none",
             boxShadow:"0 0 0 1px rgba(231, 231, 231, 0.6)"
@@ -86,8 +88,6 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
     const { id=Math.random().toString(36).slice(2), enable = true, style={},value, actions,...restProps } = props;
     const label = props.label || props.name || props.id
     const ref = useRef<HTMLInputElement>(null)
-    
- 
     return (
         <div         
             className={InputStyle.className}

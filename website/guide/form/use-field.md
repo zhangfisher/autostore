@@ -35,6 +35,7 @@ interface UseFieldType<State extends Dict> {
 <demo react="form/useFieldBase.tsx"/>
  
 - `状态路径`可以是任意深度的字符串或字符串数组，如`useField("order.user.name")`。
+- `input[type='radio']`的字段需要指定`{type:'radio',values:['男','女']})`选项，然后在每一个`radio`上指定`value`值绑定。
 
 
 ## 合并状态绑定
@@ -47,131 +48,34 @@ interface UseFieldType<State extends Dict> {
 - `getter`方法用于将状态值合并成一个值。
 - `setter`方法负责解析`input`值,并将其分解更新到状态中。
 
-
-
  
 ## 拆分状态绑定
 
 也支持将多个状态值绑定到多个`input`上。
 
+`useField`支持如下的调用签名：
+
+```ts
+useField<Value>(
+    getters: (string | string[] | UseFieldGetter<Value,State>)[],
+    setter:UseFieldSetter<Value,State>,
+    options?:UseFieldOptions
+):UseFieldBindings<Value>[]
+```
+
+- `getters`:  输入一个`getter`数组，每个`getter`可以是`字符串`或`字符串数组`的状态路径，也可以是一个`getter`函数。
+- `setter`:  一个`setter`函数，用于解析`input`值并更新到状态中。
+
+以下是简单的示例：
+
 <demo react="form/useFieldIpAddress.tsx"/>
 
+## 转换状态值
 
-## 对象双向绑定
+通过指定`options.toState`和`options.fromState`参数，可以在`input`和状态值之间进行转换。
 
-当`useField(<path>)`的路径指向的是一个对象时，会为该对象的每个属性创建一个双向绑定。可以直接使用。
+- **下例中输入的字符会被转换为大写再更新到状态**
 
-```tsx  
-/**
- * title: onInput
- * description: 输入框的值会自动同步到状态中。
- */
-import { createStore } from '@autostorejs/react';
-import { ColorBlock,Button,Input } from "x-react-components"
-
-const { state, $, bind,useField } = createStore({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    age:18,
-    vip:false 
-  }
-})
-
-export default ()=>{
-  
-  const bindUser = useField("user")
-
-  return <div>    
-    <Input label="First Name" {...bindUser.firstName}/>
-    <Input label="last Name" {...bindUser.lastName} />
-    <Input label="Age" {...bindUser.age}/>
-    <Input type="checkbox" label="VIP" {...bindUser.vip} />
-
-    <ColorBlock name="First Name">{$('user.firstName')}</ColorBlock>
-    <ColorBlock name="Last Name">{$('user.lastName')}</ColorBlock>        
-    <ColorBlock name="Age">{$('user.age')}</ColorBlock>        
-    <ColorBlock name="VIP">{$('user.vip')}</ColorBlock>    
-    <Button onClick={()=>{
-      state.user.firstName= "Zhang"
-      state.user.lastName = "Fisher"
-      state.user.age = 18
-      state.user.vip = false
-    }}>Reset</Button>
-  </div>
-}
-
-```
-
-:::warning 注意 
-使用对象双向绑定时，不支持深层嵌套对象。
-:::
-
-如果没有为`useField`指定路径，那么会绑定整个状态。但是不能支持嵌套成员。
-
-```tsx  
-/**
- * title: onInput
- * description: 双向绑定根状态。
- */
-import { useStore } from '@autostorejs/react';
-import { ColorBlock,Button,Input } from "x-react-components"
-
- 
-export default ()=>{
-
-  const { state, $, bind,useField } = useStore({
-      firstName:"Zhang",
-      lastName:"Fisher",
-      age:18,
-      vip:false 
-  })
-
-  const bindUser = useField()
-
-  return <div>    
-    <Input label="First Name" {...bindUser.firstName}/>
-    <Input label="last Name" {...bindUser.lastName} />
-    <Input label="Age" {...bindUser.age}/>
-    <Input type="checkbox" label="VIP" {...bindUser.vip} />
-
-    <ColorBlock name="First Name">{$('firstName')}</ColorBlock>
-    <ColorBlock name="Last Name">{$('lastName')}</ColorBlock>        
-    <ColorBlock name="Age">{$('age')}</ColorBlock>        
-    <ColorBlock name="VIP">{$('vip')}</ColorBlock>    
-    <Button onClick={()=>{
-      state.firstName= "Zhang"
-      state.lastName = "Fisher"
-      state.age = 18
-      state.vip = false
-    }}>Reset</Button>
-  </div>
-}
-
-```
-
-
-**注意**：不能支持嵌套成员，所以以下用法是不支持的。
-
-```ts | pure {14-17}
-export default ()=>{
-  const { state, $, bind,useField } = useStore({
-    user:{
-      firstName:"Zhang",
-      lastName:"Fisher",
-      age:18,
-      vip:false 
-    }  
-  })
-
-  const bindUser = useField()
-
-  return <div>    
-    <Input label="First Name" {...bindUser.user.firstName}/>      // ❌ 不支持
-    <Input label="last Name" {...bindUser.user.lastName} />       // ❌ 不支持
-    <Input label="Age" {...bindUser.user.age}/>                   // ❌ 不支持
-    <Input type="checkbox" label="VIP" {...bindUser.user.vip} />  // ❌ 不支持
-  </div>
-}
-```
-
+<demo react="form/useFieldToState.tsx"
+  title="将输入字符全部转换为大写"
+/>

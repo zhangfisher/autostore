@@ -1,8 +1,8 @@
 import React from 'react';
 import { createStore } from '@autostorejs/react';
-import { ColorBlock,Button,Input, Layout, JsonView } from "x-react-components"
+import { Button,Input, Layout, JsonView } from "x-react-components"
 
-const { batchUpdate, $, useReactive,useField } = createStore({
+const { batchUpdate,useReactive,useField } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher" 
@@ -22,9 +22,7 @@ export default ()=>{
         })
     return <Layout>    
         <div>
-            <Input label="FullName" {...bindFullName}/>
-            <ColorBlock name="First Name">{$('user.firstName')}</ColorBlock>
-            <ColorBlock name="Last Name">{$('user.lastName')}</ColorBlock>            
+            <Input label="FullName" {...bindFullName}/>         
             <Button onClick={()=>{
                 batchUpdate(state=>{
                     state.user.firstName= "Zhang"

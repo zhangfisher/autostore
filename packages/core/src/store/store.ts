@@ -72,6 +72,7 @@ import { noRepeat } from "../utils/noRepeat";
 import { EventEmitter, EventListener } from "../events"; 
 import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor"
+import { isMatchOperates } from "../utils/isMatchOperates";
 
 
 
@@ -198,14 +199,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
 
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
             return (operate:StateOperate)=>{                            
-                if(operates==='*'){
-                }else if(operates==='write'){
-                    if(operate.type==='get') return
-                }else if(operates ==='read'){
-                    if(operate.type!=='get') return
-                }else if(Array.isArray(operates) && operates.length>0 ){     // 指定操作类型                
-                    if(!operates.includes(operate.type)) return
-                }
+                if(!isMatchOperates(operate,operates)) return
                 if(typeof(filter)==='function' && !filter(operate)) return
                 // 在侦听函数内部如果涉及到状态的读写操作，会触发新的侦听事件，这样很容易会导致无限循环
                 // 比如我们watch(()=>{console.log(state.a)},{operates:'*'})，由于在侦听函数内部读取了state.a的值，会触发新的get侦听事件
@@ -215,6 +209,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 // 当执行state.a=1时，也就是会触发新的set事件，但是在第二次执行state.a=1时，由于值没有变化，不会触发set事件,也就不会造成无限循环
                 try{
                     this._peeping = true
+                    // 如果是批量操作，则需要过滤一下，比如operates=write，批量操作变化所有
+                    if(operate.type==='batch'){                        
+                        const ops = (operate.value as StateOperate[]).filter(op=>isMatchOperates(op,operates))
+                        if(ops.length>0){
+                            operate.value = ops
+                        }
+                    }
                     listener(operate)
                 }finally{
                     this._peeping = false
@@ -394,7 +395,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      *  })
      */
     update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions){
-        const {batch=false,reply=true,silent=false,peep=false} = Object.assign({},options)
+        const {batch=false,reply=true,silent=false,peep=false} = Object.assign({},options)        
         if(typeof(fn)==='function'){                        
             if(silent) this._silenting=true
             if(batch) {
@@ -409,25 +410,33 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 this._silenting = false
                 this._batching = false
                 this._peeping = false
-                if(this._batchOperates.length>0){
-                    const opts =  [...this._batchOperates]
-                    this._batchOperates=[]
-                    // 先分别触发每一个操作事件,这样一些依赖于单个操作的事件可以先触发
-                    reply && opts.forEach(operate=>{
-                        operate.reply = true
-                        this._notify(operate)
-                    })
-                    // 然后再触发批量更新事件
-                    try{          
-                        const batchEvent = batch===true ? BATCH_UPDATE_EVENT : String(batch)
-                        this.operates.emit(batchEvent,{type:'batch',path:[batchEvent],value:opts})
-                    }finally{
-                        this._batchOperates = []
-                    }
-                }
+                this.replyBatchOperates(reply,batch)                
             }            
         }else{
             throw new Error("update method must provide a function argument")
+        }
+    }
+    /**
+     * 
+     * 回放批量操作
+     * 
+     */
+    private replyBatchOperates(reply:boolean,batch:boolean|string){
+        if(this._batchOperates.length>0){
+            const opts =  [...this._batchOperates]
+            this._batchOperates=[]
+            // 先分别触发每一个操作事件,这样一些依赖于单个操作的事件可以先触发
+            reply && opts.forEach(operate=>{
+                operate.reply = true
+                this._notify(operate)
+            })
+            // 然后再触发批量更新事件
+            try{          
+                const batchEvent = batch===true ? BATCH_UPDATE_EVENT : String(batch)
+                this.operates.emit(batchEvent,{type:'batch',path:[batchEvent],value:opts})
+            }finally{
+                this._batchOperates = []
+            }
         }
     }
     /**

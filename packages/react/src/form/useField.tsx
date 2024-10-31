@@ -1,5 +1,5 @@
 
-import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq, isPlainObject, isFunction } from "autostore";
+import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq, isPlainObject, isFunction, getId } from "autostore";
 import { type ReactAutoStore } from '../store';
 import { useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
@@ -20,7 +20,7 @@ export function createFieldBinding<State extends Dict,Value=any>(
     part:number,
     value:any,
     fieldValue:any,
-    setter:UseFieldSetter<Value,State>,
+    setter:UseFieldSetter<Value,State> | undefined,
     options:UseFieldOptions 
 ){    
     const getCheckedValue = (val:any)=>{
@@ -30,6 +30,10 @@ export function createFieldBinding<State extends Dict,Value=any>(
             return Boolean(value)
         }
     }
+    
+    const fieldName = options.name ? options.name : (Array.isArray(path) ? path.join(PATH_DELIMITER) : path || '')    
+    
+
     return new Proxy({
         value,
         onChange:(e:any)=>{
@@ -45,7 +49,7 @@ export function createFieldBinding<State extends Dict,Value=any>(
                 }
             }        
         },
-        name: options.name ? options.name : (Array.isArray(path) ? path.join(PATH_DELIMITER) : path),
+        name: fieldName,
         checked: getCheckedValue(value)
     },{
         get(target, key:string,receiver){             
@@ -54,7 +58,7 @@ export function createFieldBinding<State extends Dict,Value=any>(
                 return createFieldBinding(store,path,part,options.values[part],value,setter,options)
             }
             return Reflect.get(target, key,receiver);
-        }
+        } 
     })  
 }
 
@@ -179,26 +183,4 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
 
 
 
-
-// const createUseFieldBinding = useCallback((path: string[] | string | undefined, val: any,part:number) => {
-//     const { type: inputType } = options
-//     const binding = {
-//         onChange: (e: any) => {
-//             const inputValue = getInputValueFromEvent(e);
-//             if (path) {
-//                 store.update(state => setVal(state, Array.isArray(path) ? path : path.split(PATH_DELIMITER), inputValue));
-//             } else {
-//                 if(isMultiParts){
-//                     setter(part,inputValue, store.state);
-//                 }else{
-//                     setter(inputValue, store.state);
-//                 }
-//             }
-//         }
-//     } as UseFieldBinding            
-//     if(path){
-//         const fieldName=  Array.isArray(path) ? path.join(PATH_DELIMITER) : path
-//         binding['name']= fieldName 
-//     }         
-//     return binding
-// }, []); 
+ 

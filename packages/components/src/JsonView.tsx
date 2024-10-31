@@ -18,7 +18,7 @@ export type JsonViewProps  = React.PropsWithChildren<{
 const JSONStyle = styled<JsonViewProps>({
     "padding":"8px",
     boxSizing: 'border-box',
-    border: (props)=>props.border===false ? "none" : "1px solid #ccc",
+    border: (props)=>props.border===true ? "1px solid #ccc" : "none" ,
     position: 'relative', 
     "& .json-container ":{
         fontFamily: 'menlo, consolas, monospace',

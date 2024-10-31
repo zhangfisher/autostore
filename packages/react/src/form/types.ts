@@ -26,13 +26,12 @@ export type UseFieldBindings<Value> ={
     [index:number]:UseFieldBindings<Value>
 }
 
-export type UseFieldOptions={
+export type UseFieldOptions<Value=any>={
     name?       : string      // 可选的字段名称    
     type?       : 'radio' | 'checkbox' | 'select' | 'textarea' | 'input'
     // 仅当type = radio或checkbox时有效时有效
     values?     : any[] 
-    toState?    : <V=any>(value:V,options?:{path:string[] | undefined,part:number})=>any            // 将数据更新到状态中时调用进行转换
-    fromState?  : <V=any>(value:any,options?:{path:string[] | undefined,part:number})=>any          // transform value from state to input
+    toState?    : (value:string,options?:{path:string[] | undefined,part:number})=>Value            // 将数据更新到状态中时调用进行转换
 }
 
 export type UseFieldGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
@@ -41,9 +40,9 @@ export type UseFieldSetter<Value,State extends Dict>= (input:{value:Value,path:s
 
 export interface UseFieldType<State extends Dict> {
     (): UseFieldBindings<ComputedState<State>>
-    <Value>(selector: string,options?:UseFieldOptions): UseFieldBindings<Value>
-    <Value>(getter: UseFieldGetter<Value,State>,setter:UseFieldSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>
-    <Value>(getters: (string | string[] | UseFieldGetter<Value,State>)[],setter:UseFieldSetter<Value,State>,options?:UseFieldOptions):UseFieldBindings<Value>[]
+    <Value>(selector: string,options?:UseFieldOptions<Value>): UseFieldBindings<Value>
+    <Value>(getter: UseFieldGetter<Value,State>,setter:UseFieldSetter<Value,State>,options?:UseFieldOptions<Value>):UseFieldBindings<Value>
+    <Value>(getters: (string | string[] | UseFieldGetter<Value,State>)[],setter:UseFieldSetter<Value,State>,options?:UseFieldOptions<Value>):UseFieldBindings<Value>[]
 }
 
 // ********** UseFields **********  
@@ -53,7 +52,7 @@ export interface UseFieldType<State extends Dict> {
 export type UseFieldsState<T extends Dict> = {
     [K in keyof T]: T[K] extends Dict ? UseFieldsState<T[K]> 
                                         : ( T[K] extends any[] ? UseFieldsState<T[K]> 
-                                            : Required<InputBindings<T[K]>>
+                                            : Required<UseFieldBindings<T[K]>>
                                         )
 };
 

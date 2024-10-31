@@ -1,8 +1,9 @@
-import {  Dict, getVal,isPrimitive, isPlainObject, setVal, PATH_DELIMITER, pathStartsWith, isAsyncComputedValue } from "autostore";
+import {  Dict, getVal,isPrimitive, isPlainObject, setVal, PATH_DELIMITER, pathStartsWith, isAsyncComputedValue, StateOperate } from "autostore";
 import { ReactAutoStore } from "../store";
 import { useState, useSyncExternalStore } from "react";
 import type { UseFieldsType } from "./types";  
 import { getInputValueFromEvent } from "../utils/getInputValueFromEvent";
+import { createFieldBinding } from "./useField";
 
 export const FAKE_BINDINGS = Symbol('FAKE_BINDINGS')
 
@@ -36,15 +37,15 @@ export function createFakeObjectBindings<State extends Dict>(store:ReactAutoStor
 
  
 
-export function createFieldBinding<State extends Dict>(store:ReactAutoStore<State>,path:string[],val:any){    
-    return {
-        value:val,
-        onChange:(e:any)=>{
-            const inputValue = getInputValueFromEvent(e)
-            store.update(state=>setVal(state, path,inputValue))
-        }
-    }   
-}
+// export function createFieldBinding<State extends Dict>(store:ReactAutoStore<State>,path:string[],val:any){    
+//     return {
+//         value:val,
+//         onChange:(e:any)=>{
+//             const inputValue = getInputValueFromEvent(e)
+//             store.update(state=>setVal(state, path,inputValue))
+//         }
+//     }   
+// }
 
 function createProxy<State extends Dict>(target: any, parentPath: string[],proxyCache:Map<any,any>,store:ReactAutoStore<State>,entry:string[]):any{
     if (typeof target !== 'object' || target === null) {
@@ -62,13 +63,13 @@ function createProxy<State extends Dict>(target: any, parentPath: string[],proxy
     }
     const proxyObj = new Proxy(fakeTarget, {             
         get: (obj, key, receiver) => { 
-            if(typeof(key)!=='string') return Reflect.get(obj, key, receiver);
-            const path = [...entry,...parentPath, String(key)];
+            if(typeof(key)!=='string') return Reflect.get(obj, key, receiver);            
+            const path = [...entry,...parentPath, String(key)];            
             const value = getVal(store.state,path);    
             if(isPrimitive(value)){
-                return createFieldBinding(store,path,value)
+                return createFieldBinding(store,path,0,value,undefined,undefined,{})
             }else if(isAsyncComputedValue(value)){
-                return createFieldBinding(store,[...path,'value'],value)
+                return createFieldBinding(store,[...path,'value'],0,value,undefined,undefined,{})
             }else{
                 return createProxy(value, path,proxyCache,store,entry);     
             } 
@@ -100,14 +101,18 @@ export function createUseFields<State extends Dict>(store:ReactAutoStore<State>)
         const [ bindingsState ] = useState(()=>createBindingsState(store,entry))
 
         useSyncExternalStore((callback)=>{
-            const watcher = store.watch(({path,value})=>{   
-                if(!pathStartsWith(entry,path)) return            
-                const relPath =path.slice(entry.length)
-                setVal(snap,relPath,value)
-                setVal(bindingsState,[...relPath,'value'],value)
+            const watcher = store.watch((op)=>{   
+                if(op.reply) return
+                const ops =  (op.type =='batch' ? op.value   : [op]) as StateOperate[]
+                ops.forEach(({path,value})=>{
+                    if(!pathStartsWith(entry,path)) return     
+                    const relPath =path.slice(entry.length)
+                    setVal(snap,relPath,value)
+                    setVal(bindingsState,[...relPath,'value'],value)
+                })
                 setSnap({...snap})
                 callback()
-            })  
+            },{operates:'write'})  
             return ()=>{
                 watcher.off()
             }
