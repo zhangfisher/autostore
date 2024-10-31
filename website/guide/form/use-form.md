@@ -1,40 +1,12 @@
----
-group:
-  title: 表单
-  order: 5
-order: 4
-title: useForm
-demo:
-  tocDepth: 5
-toc: content
----
- 
-
 # useForm
 
-`useFrom`是创建可绑定表单的完整解决方案,可以让更方便将`AutoStore`的状态和表单控件进行双向绑定，使得收集数据变得更简单。
+`useField`和`useFields`适合于简单的表单场景，但是对于复杂的表单场景，我们需要更多的功能，比如表单校验，表单提交等。
 
-`useFrom`函数签名如下：
+则可以选用`useFrom`,其提供了更加完整的创建可绑定表单的完整解决方案,可以让更方便将`AutoStore`的状态和表单控件进行双向绑定，使得收集数据变得更简单。
 
-```ts | pure
-type UseFormResult={
-    ref: React.RefObject<HTMLFormElement>  
-}
-type UseFormOptions={
-    debounce?:number            // 启用防抖
-    validate?:(path:string,value:any,input:HTMLElement)=>boolean | {result:boolean,message?:string,style?:string}  
-}
+## 基本原理
 
-interface UseFormType {
-    (options?:UseFormOptions): UseFormResult
-    (entry?: string | string[],options?:UseFormOptions): UseFormResult
-}
-
-```
-
-## 工作原理
-
-`useForm`的工作原理如下：
+`useForm`的基本原理如下：
 
 ### 1. 创建`Form`组件
 
@@ -44,8 +16,8 @@ interface UseFormType {
 
 `useForm`内部的`useEffect`会自动初始化表单.
 
-然后在初始化时，调用`querySelectorAll('input,textarea,select')`获取到所有表单内部的`input`,`textarea`,`select`元素
-,依次遍历这些元素，根据`name`属性，从`state`中获取对应的值，并设置到表单元素上,完成表单字段的初始化。
+然后在初始化时，调用`querySelectorAll`获取到所有表单内部的`input`,`textarea`,`select`元素
+,依次遍历这些元素，根据`name`属性，从`state`中获取对应的值，并设置绑定到表单元素上,完成表单字段的初始化。
 
 ### 3. 订阅变更事件
 
@@ -70,7 +42,7 @@ interface UseFormType {
 
 `useForm`返回一个`Form`组件，该组件是对标准`form`元素的封装。
 
-```ts | pure
+```ts 
 const { state, useForm } = useStore({
   user:{
     firstName:"Zhang",
@@ -89,71 +61,30 @@ const { Form } = useForm()
 </Form>
 ```
 
-就这么简单，轻松实现`表单`与`store.state`之间的双向绑定了。
+就这么简单，轻松实现`表单`与`store.state`之间的双向绑定了，输入的数据会自动同步到`state`中，反之亦然。
 
-:::success{title="提示"}
+
+**下面是一个简单的示例：**
+
+<demo react="form/formBase.tsx"/>
+
+
+:::info 提示
 配置`input`元素的`name=<状态数据路径>`即可。
 :::
 
-
-**以下是简单示例：**
-
-```tsx   
-import { useStore } from '@autostorejs/react';
-import { TextArea,Layout,ColorBlock,Button,Input,Box,CheckBox,JsonView,Select } from "x-react-components"
  
-export default ()=>{
-
-  const { state, $, useForm,useState } = useStore({
-    user:{
-      firstName:"Zhang",
-      lastName:"Fisher",
-      age:18,
-      vip:false,
-      job:1,
-      resume:"非著名开源软件开发者"
-    }
-  })
-
-  const [ user ] = useState()
-
-  const { Form } = useForm()
-
-  return <Layout>
-      <div>     
-        <Form>
-          <Input name="user.firstName" label="First Name"/>
-          <Input name="user.lastName" label="lastName"/>
-          <Input name="user.age" label="Age"/>
-          <Select name="user.job" label="Job" items={[
-              { title:"Engineer", value:1 },
-              { title:"Doctor", value:2 },
-              { title:"Teacher", value:3 }
-          ]}/>
-          <TextArea name="user.resume" label="Resume"/>
-          <CheckBox name="user.vip" label="VIP"/>
-        </Form>
-        <Button onClick={()=>{
-          state.user.firstName= "Zhang"
-          state.user.lastName = "Fisher"
-          state.user.age = 18
-          state.user.vip = false
-        }}>Reset</Button>
-      </div>
-      <div>    
-        <JsonView data={user} />
-      </div>    
-    </Layout>
-}
-
-```
-
-
-
 
 ## 表单校验
 
+
+<demo react="form/formDefaultValid.tsx"/>
+
+
 可以绑定表单时指定`validate`参数，用来对输入进行校验，并在出错时应用样式。
+
+
+
 
 `validate`函数的签名如下：
 

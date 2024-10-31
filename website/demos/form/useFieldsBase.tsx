@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '@autostorejs/react';
-import { Layout,JsonView,Button,Input, Select } from "x-react-components"
+import { Layout,JsonView,Button,Input, Select, Radio } from "x-react-components"
  
 export default ()=>{
 
@@ -10,11 +10,17 @@ export default ()=>{
       lastName:"Fisher",
       job:2,
       age:18,
+      pets:"Dog",
       vip:false 
     }
   })
 
-  const fields = useFields()
+  const fields = useFields({
+    "user.pets":{
+      type:"radio",
+      values:["Dog","Cat","Fish"]
+    }
+  })
   const [ state  ]=  useReactive()
 
   return <Layout>
@@ -30,6 +36,9 @@ export default ()=>{
                 ]}
             /> 
         <Input type="checkbox" label="VIP" {...fields.user.vip} />
+        <Radio inline label="Dog" {...fields.user.pets[0]}/>
+        <Radio label="Cat" {...fields.user.pets[1]}/>
+        <Radio label="Fish" {...fields.user.pets[2]}/>
         <Button onClick={()=>{
             batchUpdate(state=>{
                 state.user.firstName= "Zhang"

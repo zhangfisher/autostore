@@ -34,6 +34,8 @@ export function getInputValue(input:HTMLInputElements):any{
         }else{
             value =  input.value
         }
+    }else{
+        value =  input.value
     }
     if(datatype){
         if(datatype==='boolean'){

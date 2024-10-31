@@ -5,18 +5,20 @@ import React from "react"
 
 export type RadioProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
     label?:string 
+    inline?:boolean
 }
 
 const RadioStyle = styled<RadioProps>({
     padding:"4px",
     margin:"4px",
-    display:"flex",
+    display:(props)=>props.inline===false ? "flex" : "inline-flex",
     alignItems:"center",
     cursor:"pointer",
     "&>label":{
         padding:"4px",
         userSelect:"none",       
         cursor:"pointer",
+        marginRight:"4px",
     },
     "&>input":{
         margin:"0px",
@@ -39,12 +41,12 @@ export const Radio:React.FC<RadioProps> = (props)=>{
         className={RadioStyle.className} 
         style={RadioStyle.getStyle(props)}
     >
-        <label htmlFor={id}>{label}</label> 
         {/* @ts-ignore */}
         <input {...props} id={id} 
             checked={props.checked}                     
             value={props.value}
             type="radio"
         /> 
+        <label htmlFor={id}>{label}</label> 
     </div>    
 }

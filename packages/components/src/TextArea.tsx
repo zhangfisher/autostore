@@ -1,10 +1,12 @@
+import React from "react"
 import { styled } from "flexstyled"
 
 
 
-export type TextAreaProps = React.PropsWithChildren<HTMLInputElement & {
-    lable?:string
+export type TextAreaProps = React.PropsWithChildren<React.InputHTMLAttributes<HTMLInputElement> & {
+    label?:string
     labelPos?: 'left' | 'right'
+    height?:string
 }>
 
 const TextAreaStyle = styled<TextAreaProps>({

@@ -55,10 +55,15 @@ export type UseFieldsState<T extends Dict> = {
                                             : Required<UseFieldBindings<T[K]>>
                                         )
 };
+export type UseFieldsOptions = {
+    entry?: string | string[]    
+} & {
+    [key:string]: UseFieldOptions
+}
 
  
 export interface UseFieldsType<State extends Dict> {
-    <EntryState extends Dict = State>(entry?: string,options?:WatchListenerOptions)
+    <EntryState extends Dict = State>(options?:UseFieldsOptions)
         : UseFieldsState<ComputedState<EntryState>> 
 }
 
