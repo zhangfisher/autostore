@@ -118,25 +118,7 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * 在初始化时是否进行数据校验
      * 默认=true
      */
-    validAtInit?:boolean
-    /**
-     * 何时进行字段校验
-     */
-    validOn?:'input' | 'lost-focus' | 'submit'
-    /**
-     * 表单类名
-     * 默认值：autoform
-     */
-    className?: string | ((state:ComputedState<State>)=>string)
-    /**
-     * 字段类型
-     * 默认值： field
-     */
-    fieldClassName?:string 
-    /**
-     * 表单样式
-     */
-    style?: string | ((state:ComputedState<State>)=>string)
+    validAtInit?:boolean 
     /**
      * 当校验出错时，如何报告错误
      * 

@@ -12,6 +12,7 @@ function defaultFindFields(form:HTMLFormElement){
     return fieldEles
 } 
 
+ 
 
 
 /**
@@ -78,7 +79,6 @@ function defaultFindFields(form:HTMLFormElement){
  */
 export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<any>['findFields']):AutoFormFieldContexts{
     const fieldEles = findFields ? findFields(form) : defaultFindFields(form)    
-    const fields:AutoFormFieldContexts= {}
     return fieldEles.reduce((fields,fieldEle)=>{ 
         const fieldName = fieldEle.getAttribute('name') || fieldEle.getAttribute('data-field-name')
         if(fieldName){
@@ -91,6 +91,14 @@ export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<an
                 input.setAttribute('name',fieldName) 
             })            
             if(!fields[fieldName]) fields[fieldName]=[]
+            // 如果输入元素已经存在于某个x-field的普通元素中则不需要添加
+            if( fields[fieldName].length>0 
+                && isInputElement(fieldEle) 
+                && fields[fieldName].some(fieldCtx=>!isInputElement(fieldCtx.el) && fieldCtx.inputs.findIndex(input=>input===fieldEle)>=0)
+            ){
+                return fields
+            }
+                
             fields[fieldName].push({
                 path:fieldName,
                 el:fieldEle,
