@@ -1,4 +1,5 @@
 // https://vitepress.dev/guide/custom-theme
+// @ts-ignore
 import { h } from 'vue'
 import type { Theme, } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'

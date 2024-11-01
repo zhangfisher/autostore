@@ -9,12 +9,12 @@
   },
   "scripts": {
     "lint": "oxlint --fix -c .oxlintrc.json",
-    "docs:dev": "vitepress dev",
-    "docs:build": "vitepress build",
+    "docs:dev": "cd docs && vitepress dev",
+    "docs:build": "cd docs && vitepress build",
     "changeset": "changeset",
     "publish:all": "turbo build --filter=./packages/* && changeset version && changeset publish",
     "build:all": "turbo build --filter=./packages/*",
-    "docs:preview": "vitepress preview"
+    "docs:preview": "cd docs && vitepress preview"
   },
   "keywords": [],
   "author": "",

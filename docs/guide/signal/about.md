@@ -1,13 +1,3 @@
----
-group:
-  title: 信号组件
-  order: 4 
-order: 0  
-demo:
-  tocDepth: 5
-toc: content
----
-
 # 关于✨ 
 
 ## 什么是信号？
