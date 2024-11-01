@@ -163,7 +163,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         if(this._silenting) return        
         this.operates.emit(params.path.join(PATH_DELIMITER),params)       
     } 
-
     // ************* Watch **************/
     /**
      * 监视数据变化，并在变化时执行指定的监听器函数。

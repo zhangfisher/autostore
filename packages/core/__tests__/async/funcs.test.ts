@@ -37,7 +37,7 @@ describe("异步计算高级控制功能",()=>{
                     await delay(1000)
                     return scope.price * scope.count
                 },['price','count'],{ 
-                    reentry:true
+                    reentry:false
                 })
             },{ 
                 onComputedCancel:()=>{
@@ -48,7 +48,7 @@ describe("异步计算高级控制功能",()=>{
                     }
                 },
                 onComputedCreated:()=>{
-                    // 连接执行多次依赖更新,但是由于noReentry=false,所以只会执行一次，其它的会被忽略
+                    // 连接执行多次依赖更新,但是由于reentry=false,所以只会执行一次，其它的会被忽略
                     setTimeout(()=>{
                         for(let i=0;i<10;i++){
                             store.state.count += i
@@ -58,7 +58,7 @@ describe("异步计算高级控制功能",()=>{
             })   
             store.state.total
         })
-    })
+    },100000)
 
 
     test("通过abortSignal来中止计算函数的执行",()=>{

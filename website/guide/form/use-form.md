@@ -202,9 +202,42 @@ const { Form } = useForm({
 
 ## 拆分字段
 
+在`input`元素上 `data-field-part`属性可以指定字段的分割方式,将一个状态值绑定到多个`input`上，实现双向绑定。
+
+
+### 正则表达式拆分
+
+当状态值是一个字符串时，可以指定`data-field-part="<正则表达式>"`进行拆分。
+
+下例中`net.ip`是一个`ip`地址，我们希望将其拆分为`4`个`input`元素进行绑定。
+
+```tsx {3,5,7,9}
+<div data-field-name="net.ip">
+    <div>                                
+        <Input data-field-part="(\d{1,3})\.\d{1,3}\.\d{1,3}\.\d{1,3}" inline width={60} /> 
+        <span>.</span>
+        <Input data-field-part="\d{1,3}\.(\d{1,3})\.\d{1,3}\.\d{1,3}" inline width={60}/>
+        <span>.</span>
+        <Input data-field-part="\d{1,3}\.\d{1,3}\.(\d{1,3})\.\d{1,3}" inline width={60}/>
+        <span>.</span>
+        <Input data-field-part="\d{1,3}\.\d{1,3}\.\d{1,3}\.(\d{1,3})" inline width={60}/>
+    </div>
+</div>
+```
 
 <demo react="form/formSplitField.tsx"/>
 
+
+- `data-field-part="<正则表达式>"`只适用于**指向的状态值是字符串**的情况。
+- 由于状态与`input`是双向绑定的，而`<正则表达式>`不仅用于从状态中提取，也用于将输入`input`的值更新到状态的指定位置中。
+- 我们约定，`<正则表达式>`中必须具有一个捕获组，如:`\d{1,3}\.(\d{1,3})\.\d{1,3}\.\d{1,3}`，其中`(\d{1,3})`就是非命名捕获组。在绑定时会读取该组的值，更新到`input`状态中，反之同理。
+- 正则情况下，每一个`part`均具有不同位置的正则捕获组，所以`part`的值是不同的。如果没有正确的指定捕获组，则会导致字段拆分不能正常工作。
+
+### 数组拆分
+
+当状态值是一个数组时，可以指定`data-field-part="<索引>"`进行拆分。
+
+<demo react="form/formSplitArrayField.tsx"/>
 
 
 ## 表单字段

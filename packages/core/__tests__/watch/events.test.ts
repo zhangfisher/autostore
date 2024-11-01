@@ -188,8 +188,8 @@ describe("watch events",()=>{
             state.state.address[0] = {city:"QuanZhou",street:"TongYang"}
             expect(events[0]).toStrictEqual({ 
                 type      : 'update', 
-                path      : ['address'],
-                indexs    : [0],
+                path      : ['address','0'],
+                indexs    : [],
                 value     : {city:"QuanZhou",street:"TongYang"},
                 parent    : state.state.address,
                 parentPath: ['address'],
@@ -215,7 +215,7 @@ describe("watch events",()=>{
             })  
         })
         test("remove array multi member",()=>{
-            const events:any[] = [];
+            const events:any[] = []; 
             watcher =  state.watch((event) => {
                 events.push(event);
             },{

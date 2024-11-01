@@ -53,7 +53,7 @@ export function fromStateToField(fieldInfo:AutoFormFieldContext,value:any,option
                     }
                 }
             }
-            input.dataset.typeof = Array.isArray(value) ? 'array' : typeof value
+            input.dataset.typeof = Array.isArray(value) ? (value.length>0 ? typeof(value) : 'array') : typeof value
         }
         const part = input.dataset.fieldPart        
         const oldVal = getInputValue(input)

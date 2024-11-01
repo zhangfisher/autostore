@@ -91,10 +91,11 @@ export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<an
                 input.setAttribute('name',fieldName) 
             })            
             if(!fields[fieldName]) fields[fieldName]=[]
+            const fieldCtxs = fields[fieldName]
             // 如果输入元素已经存在于某个x-field的普通元素中则不需要添加
-            if( fields[fieldName].length>0 
+            if( fieldCtxs.length>0 
                 && isInputElement(fieldEle) 
-                && fields[fieldName].some(fieldCtx=>!isInputElement(fieldCtx.el) && fieldCtx.inputs.findIndex(input=>input===fieldEle)>=0)
+                && fieldCtxs.some(fieldCtx=>!isInputElement(fieldCtx.el) && fieldCtx.inputs.findIndex(input=>input===fieldEle)>=0)
             ){
                 return fields
             }

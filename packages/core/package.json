@@ -15,7 +15,8 @@
   },
   "type": "module",
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "test":"vitest"
   },
   "files": [
     "readme.md",

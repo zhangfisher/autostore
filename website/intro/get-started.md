@@ -80,7 +80,7 @@ const store = createStore({
 
 
 - `total`是一个计算属性，其值是`orders`的`total`的和，在创建时会自动收集依赖，当`price`或`count`变化时会自动重新计算。
-- 使用`$('状态路径')`来创建一个信号组件，当状态变化时，会自动更新。详见[信号组件](/guide/signal/)。
+- 使用`$('状态路径')`来创建一个信号组件，当状态变化时，会自动更新。详见[信号组件](/guide/signal/about)。
 
 
 **运行效果如下：**
@@ -184,7 +184,7 @@ const store = createStore({
 - **可取消**：如果用户取消了订单，我们需要取消请求。
 - **处理进度**：可能我们想提供一个请求进度`0-100%`，告诉用户请求进度。
 
-所有这些功能`AutoStore`均为你准备好了，开箱即可，简单快捷，详见[异步计算](./computed-async)
+所有这些功能`AutoStore`均为你准备好了，开箱即用，简单快捷，详见[异步计算](/guide/computed/async)
 
 ## 第6步: 增加订单
 
@@ -220,7 +220,7 @@ const store = createStore({
 
 
 :::warning
-`AutoStore`提供了非常强大的表单双向绑定能力，详见[表单绑定](/guide/form/)查看更多内容.
+`AutoStore`提供了非常强大的表单双向绑定能力，详见[表单绑定](/guide/form/about)查看更多内容.
 :::
 
 

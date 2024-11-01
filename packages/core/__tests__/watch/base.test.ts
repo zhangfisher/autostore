@@ -19,7 +19,7 @@ describe("watch功能测试",()=>{
                 }
             })
             store.state.books.total // 注意：watch仅在第一次读取时创建        
-            const watchId = 'books_total'
+            const watchId = 'books.total'
             expect(store.watchObjects.size).toBe(1)
             expect(store.watchObjects.has(watchId)).toBeDefined()
             expect(store.watchObjects.get(watchId)?.id).toBe(watchId)

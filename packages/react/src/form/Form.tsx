@@ -79,7 +79,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				initForm()
 			}
 			// 2. 侦听来自变更
-			const watcher = store.watch(({ path, value }) => {
+			const watcher = store.watch(({type,indexs, path, value }) => {
 				// 2.1 如果变更的路径不是表单的路径，则忽略
 				if (!pathStartsWith(entry, path)) return;
 				// 2.2 更新到表单的输入控件

@@ -62,7 +62,7 @@ type StateOperate<Value=any,Parent=any> = {
 - `watch`能状态的读写操作,包括`get`,`set`,`delete`,`insert`,`update`,`remove`,`batch`等操作进行监听。
 - `get`,`set`,`delete`适于对象的值的读写
 - `insert`,`update`,`remove`适于数组的操作
-- `batch`适于批量操作,当使用`batchUpdate`会触发此类型的操作事件，详见[批量操作](./store-state)
+- `batch`适于批量操作,当使用`batchUpdate`会触发此类型的操作事件，详见[批量操作](../store/state)
 - `reply`参数用于标识该操作是否是在批量更新时的事件回放。
 
 

@@ -44,7 +44,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * @param options 
 	 */
 	protected onInitOptions(options: Required<RuntimeComputedOptions>) {
-		 if(!options.reentry) options.reentry = this.store.options.reentry
+		 if(options.reentry===undefined) options.reentry = this.store.options.reentry
 	}
 
 	protected onInitial() {
@@ -141,7 +141,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		// 4. 检查是否有重入
 		const { reentry } = finalComputedOptions;
 		if (this._isRunning && !reentry) {			
-			this.store.log(() => `Async computed: ${this.toString()} is over maximum reentry count`, "warn");
+			this.store.log(() => `Async computed: ${this.toString()} is running, can't reentry`, "warn");
 			this.emitStoreEvent("computed:cancel", { path: this.path, id: this.id, reason: "reentry",computedObject:this });			
 			return;
 		}  

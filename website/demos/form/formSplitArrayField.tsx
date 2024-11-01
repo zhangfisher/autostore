@@ -6,7 +6,7 @@ import {  ColorBlock,Input,JsonView, Layout } from 'x-react-components';
 export  default () => {
 		const { Form, useReactive,valid,dirty } = useForm({
 			net: {
-				ip:"127.1.2.3",                
+				ip:["127","1","2","3"],                
 			},
 		});	
 
@@ -21,13 +21,13 @@ export  default () => {
                         <div data-field-name="net.ip">
                             <label>IP:</label>
                             <div>                                
-                                <Input data-field-part="(\d{1,3})\.\d{1,3}\.\d{1,3}\.\d{1,3}" inline width={60} /> 
+                                <Input data-field-part="0" inline width={60} /> 
                                 <span>.</span>
-                                <Input data-field-part="\d{1,3}\.(\d{1,3})\.\d{1,3}\.\d{1,3}" inline width={60}/>
+                                <Input data-field-part="1" inline width={60}/>
                                 <span>.</span>
-                                <Input data-field-part="\d{1,3}\.\d{1,3}\.(\d{1,3})\.\d{1,3}" inline width={60}/>
+                                <Input data-field-part="2" inline width={60}/>
                                 <span>.</span>
-                                <Input data-field-part="\d{1,3}\.\d{1,3}\.\d{1,3}\.(\d{1,3})" inline width={60}/>
+                                <Input data-field-part="3" inline width={60}/>
                             </div>
                         </div>
                     </Form>

@@ -21,42 +21,48 @@ import { Dict, getVal, setVal } from "autostore";
 import { ReactAutoStore } from "../../store";
 import { UseFormOptions } from "../types";
 import { PATH_DELIMITER } from "autostore";
+import { replaceWithRegex } from "./replaceWithRegex";
 
 
-function defaultToState(path:string,value:any,part:string | undefined,stateValue:any,input:HTMLInputElement){
+function defaultToState(this:HTMLInputElement,path:string,value:any,part:string | undefined){
     if(!part) return value
-    if(Array.isArray(stateValue)){
-        stateValue[parseInt(part)]  = value
-    }else if(typeof(stateValue) === "object"){
-        stateValue[part] = value
-    }else if(typeof(stateValue)==='string'){ // 视为正则表达式，从字符串中提取
-        return stateValue.replace(new RegExp(part),(matched,partValue)=>{
-            return matched.replace(partValue,value)
-        })            
-    }else if(typeof(stateValue)==='boolean'){
-        return Boolean(value)
-    }else if(typeof stateValue==='number'){
-        return parseFloat(value)
-    }
     return value
 }
+function toTypedValue(val:any,datatype:string | undefined){
+    if(!datatype) return val
+    if(datatype==='number'){
+        return parseFloat(val)
+    }else if(datatype==='boolean'){
+        return Boolean(val)
+    }else if(datatype==='string'){
+        return String(val)
+    }
+    return val
 
+}
 export function fromFieldToState<State extends Dict>(store:ReactAutoStore<State>,input:HTMLInputElement,name:string,value:any,options:UseFormOptions<any>){
     const toState = options.toState || defaultToState
     const part = input.dataset.fieldPart
     const path = name.split(PATH_DELIMITER)
+    // 在执行fromStateToField时会将dataType写入data-typeof属性，记住这个属性的原始类型
     const dataType = input.dataset.typeof
+
     const stateValue = store.peep((state)=>getVal(state,path))
 
-    let newValue = toState(name,value,part,stateValue,input)
-
-    // if(input.type==='checkbox' || input.type==='radio'){
-    //     if(dataType==='boolean'){
-    //         newValue = Boolean(newValue)
-    //     }else if(dataType==='number'){
-    //         newValue = parseFloat(newValue)
-    //     }
-    // }
+    const typedValue = toTypedValue(value,dataType)
     
-    store.update((state) => { setVal(state, name.split(PATH_DELIMITER), newValue); },{ peep: true });
+    let newValue = toState.call(input,name,typedValue,part)
+
+    if(part){        
+        if(Array.isArray(stateValue)){
+            stateValue[parseInt(part)]  = newValue
+        }else if(typeof(stateValue) === "object"){
+            stateValue[part] = newValue
+        }else if(dataType==='string'){
+            newValue = replaceWithRegex(stateValue,part,value)       
+            store.update((state) => { setVal(state, path, newValue); },{ peep: true });
+        }
+    }else{
+        store.update((state) => { setVal(state, path, newValue); },{ peep: true });
+    }
 }

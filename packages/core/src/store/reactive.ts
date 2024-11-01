@@ -65,12 +65,14 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
             let success = Reflect.set(obj, prop, value, receiver);
             if(prop === __NOTIFY__) return true  
             if (success && prop!==__NOTIFY__ && value!==oldValue) {
-                if(Array.isArray(obj)){
-                    options.notify({type: 'update', path:parentPath,indexs: [Number(prop)], value, oldValue, parentPath, parent:obj});                  
-                }else{
-                    const path = [...parentPath, String(prop)];
-                    options.notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});                  
-                }                
+                // if(Array.isArray(obj)){
+                //     options.notify({type: 'update', path:parentPath,indexs: [Number(prop)], value, oldValue, parentPath, parent:obj});                  
+                // }else{
+                //     const path = [...parentPath, String(prop)];
+                //     options.notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});                  
+                // }   
+                const path = [...parentPath, String(prop)];
+                options.notify({type:Array.isArray(obj) ? 'update' : 'set', path,indexs: [], value, oldValue, parentPath, parent:obj});
             }
             return success;
         },

@@ -40,7 +40,7 @@ interface SignalComponentType<State extends Dict>{
 
 即将单个状态数据直接封装为信号组件，这是最简单的信号组件创建方式。
 
-![](./signal-from-state.drawio.png)
+![](./images/signal-from-state.drawio.png)
 
 
 ## 组合多个状态
@@ -90,7 +90,7 @@ interface SignalComponentType<State extends Dict>{
 
 即将监听属性对象（`watchObject`）封装为信号组件。
 
-![](./signal-watch.drawio.png)
+![](./images/signal-watch.drawio.png)
 
 :::warning 提醒 
 `watch`和`computed`均是`AutoStore`中的`ObserverObject`的子类，但是功能是不一样的。

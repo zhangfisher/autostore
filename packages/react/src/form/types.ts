@@ -155,7 +155,7 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * 例：将上例中的是/否转换为true/false
      * 
      */
-    toState?:(path:string,inputValue:any,part:string | undefined,stateValue:any,input:HTMLInputElement)=>any
+    toState?:(this:HTMLInputElement,path:string,inputValue:any,part:string | undefined)=>any
 }
 
 export type UseFormType<State extends Dict>  = {

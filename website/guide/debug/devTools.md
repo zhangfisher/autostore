@@ -82,7 +82,7 @@ export default () => {
 ![devTools](./devtools.png)
 
 
-:::success{title=提示}
+:::warning 提示
 - 单击以上示例中的`Age++`和`Change lastName`按钮，然后查看`Redux DevTools Extension`中的状态变化。
 - 在控制台你还可以看到更多的调试信息。
 :::
