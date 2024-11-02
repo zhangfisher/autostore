@@ -1,5 +1,16 @@
 # @autostorejs/react
 
+## 1.1.0
+
+### Minor Changes
+
+- [`57e9a4d`](https://github.com/zhangfisher/autostore/commit/57e9a4d306eddb680e1c28c2b142affd1761b359) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 正式发布
+
+### Patch Changes
+
+- Updated dependencies [[`57e9a4d`](https://github.com/zhangfisher/autostore/commit/57e9a4d306eddb680e1c28c2b142affd1761b359)]:
+  - autostore@1.1.0
+
 ## 1.0.1
 
 ### Patch Changes
