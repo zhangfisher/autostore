@@ -1,5 +1,18 @@
 # @autostorejs/react
 
+## 1.1.0
+
+### Minor Changes
+
+- [`57e9a4d`](https://github.com/zhangfisher/autostore/commit/57e9a4d306eddb680e1c28c2b142affd1761b359) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 正式发布
+
+### Patch Changes
+
+- [`970ad90`](https://github.com/zhangfisher/autostore/commit/970ad908aaf4e28730082562ba8d475f70f5fa72) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 增加`store.reset()`方法，可以在`resetable=true`时调用`reset`方法恢复状态数据
+
+- Updated dependencies [[`970ad90`](https://github.com/zhangfisher/autostore/commit/970ad908aaf4e28730082562ba8d475f70f5fa72), [`57e9a4d`](https://github.com/zhangfisher/autostore/commit/57e9a4d306eddb680e1c28c2b142affd1761b359)]:
+  - autostore@1.1.0
+
 ## 1.0.1
 
 ### Patch Changes
