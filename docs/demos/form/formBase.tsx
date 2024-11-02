@@ -1,9 +1,9 @@
 import React from "react"
 import { useForm } from "@autostorejs/react";
-import { CheckBox, Input, JsonView, Layout, TextArea } from "x-react-components";
+import { Button, CheckBox, Input, JsonView, Layout, TextArea } from "x-react-components";
 
 export default ()=>{
-    const { Form,useReactive } = useForm({
+    const { Form,useReactive,reset } = useForm({
         user:{
             name:"张三",
             age:18,
@@ -29,6 +29,7 @@ export default ()=>{
                     <TextArea name="user.resume" label="Resume"/> 
                     <CheckBox name='user.vip' label="VIP"/>
                 </Form>  
+                <Button onClick={()=>reset()}>Reset</Button>
             </div>
             <div>
                 <JsonView data={state}/>

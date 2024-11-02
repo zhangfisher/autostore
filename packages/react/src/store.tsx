@@ -38,6 +38,7 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
         this.useFields        = createUseFields(this).bind(this)
         this.useReactive      = this.useState
         this.useAsyncReactive = this.useAsyncState.bind(this)
+        this.reset            = this.reset.bind(this)
     }  
 } 
 

@@ -10,8 +10,8 @@
     "url": "https://github.com/zhangfisher/autostore.git"
   },
   "publishConfig": {
-    "main": "dist/index.js",
-    "module": "dist/index.mjs"
+    "main": "dist/index.cjs",
+    "module": "dist/index.js"
   },
   "scripts": {
     "build": "tsup"

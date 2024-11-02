@@ -1,4 +1,4 @@
-import { MemoExoticComponent, useEffect, useRef, useState } from "react";
+import { MemoExoticComponent, useCallback, useEffect, useRef, useState } from "react";
 import { Dict, getVal  } from "autostore";
 import { ReactAutoStore } from "../store";
 import { UseFormOptions, UseFormResult } from "./types";
@@ -78,13 +78,23 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	
 	if(!storeRef.current){
 		storeRef.current = arguments[0] instanceof ReactAutoStore ? arguments[0] : new ReactAutoStore(arguments[0],arguments[1])
-	} 
-	
+		storeRef.current.resetable = true
+	} 	
 
 	const [valid, setValid] = useState<boolean>(true);
 	const [dirty, setDirty] = useState<boolean>(false);
+
+
+
+	const submit = useCallback(()=>{
+
+	},[])
  
 	const store = storeRef.current!  
+	
+	const reset = useCallback(()=>{
+		store.reset()		
+	},[])
 
 	if(!formComponentRef.current){ 
 		formContext.current = {
@@ -92,7 +102,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 			setDirty: (val:boolean=true) => setDirty(val),
 			setValid,
 			state:getVal(store.state,opts.entry || []),
-			formRef,
+			formRef 
 		}
 		formComponentRef.current = createAutoFormComponent<State>(store,formContext)
 		fieldComponentRef.current = createAutoFieldComponent<State>(store, formContext)
@@ -115,6 +125,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 		Form: formComponentRef.current,
 		Field: fieldComponentRef.current!,
 		valid,
-		dirty
+		dirty,
+		reset
 	} as unknown as UseFormResult<State>
 }   

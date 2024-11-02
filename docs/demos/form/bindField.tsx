@@ -2,7 +2,7 @@ import React from "react"
 import { createStore } from '@autostorejs/react';
 import { Layout,Button,Input,JsonView } from "x-react-components" 
 
-const { $, bind, useReactive } = createStore({
+const { bind, useReactive } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",

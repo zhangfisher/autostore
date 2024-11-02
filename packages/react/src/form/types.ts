@@ -91,7 +91,7 @@ export type UseFormResult<State extends Dict>={
     | 'id' | 'operates' | 'state' | 'peeping' | 'batching' | 'silenting'
     | 'log' | 'destroy' | 'getSnap' 
     | 'useReactive' | 'useAsyncReactive'
-
+    | 'reset' 
 >
 
 

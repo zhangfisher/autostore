@@ -40,7 +40,7 @@ export type AutoFormContext<State extends Dict> = {
 	options     : UseFormOptions<State>
 	formRef     : React.MutableRefObject<HTMLFormElement | null>
 	fields?   	: AutoFormFieldContexts
-    validator?	: Validator<State>
+    validator?	: Validator<State> 
 }
 
 export function createAutoFormComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>){
@@ -79,7 +79,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				initForm()
 			}
 			// 2. 侦听来自变更
-			const watcher = store.watch(({type,indexs, path, value }) => {
+			const watcher = store.watch(({path, value }) => {
 				// 2.1 如果变更的路径不是表单的路径，则忽略
 				if (!pathStartsWith(entry, path)) return;
 				// 2.2 更新到表单的输入控件

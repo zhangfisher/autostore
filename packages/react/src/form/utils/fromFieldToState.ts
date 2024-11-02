@@ -40,7 +40,7 @@ function toTypedValue(val:any,datatype:string | undefined){
     return val
 
 }
-export function fromFieldToState<State extends Dict>(store:ReactAutoStore<State>,input:HTMLInputElement,name:string,value:any,options:UseFormOptions<any>){
+export function fromFieldToState<State extends Dict>(store:ReactAutoStore<State>,input:HTMLInputElement,name:string,value:any,options:UseFormOptions<any>):[string,any] | undefined{
     const toState = options.toState || defaultToState
     const part = input.dataset.fieldPart
     const path = name.split(PATH_DELIMITER)
@@ -56,13 +56,18 @@ export function fromFieldToState<State extends Dict>(store:ReactAutoStore<State>
     if(part){        
         if(Array.isArray(stateValue)){
             stateValue[parseInt(part)]  = newValue
+            return [`${name}.${part}`,newValue]
         }else if(typeof(stateValue) === "object"){
             stateValue[part] = newValue
+            return [`${name}.${part}`,newValue]
         }else if(dataType==='string'){
             newValue = replaceWithRegex(stateValue,part,value)       
-            store.update((state) => { setVal(state, path, newValue); },{ peep: true });
-        }
+            store.update((state) => { setVal(state, path, newValue); },{ peep: true });    
+            return [name,newValue]   
+        }        
     }else{
         store.update((state) => { setVal(state, path, newValue); },{ peep: true });
+        return [name,newValue]
     }
+    
 }

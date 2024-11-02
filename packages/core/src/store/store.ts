@@ -61,7 +61,7 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal } from "../utils";
+import { forEachObject, getSnapshot, getVal, setVal } from "../utils";
 import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
@@ -73,6 +73,7 @@ import { EventEmitter, EventListener } from "../events";
 import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
+ 
 
 
 
@@ -86,6 +87,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _batching = false                                           // 是否批量更新中
     private _batchOperates:StateOperate[] = []                          // 暂存批量操作
     private _peeping:boolean = false 
+    private _updatedState?:Dict                                           // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
+    private _updatedWatcher:Watcher | undefined                          // 脏状态侦听器
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
@@ -112,7 +115,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.collectDependencies = this.collectDependencies.bind(this)
         this.trace = this.trace.bind(this)
         this.installExtends()                     
-        if(!this._options.lazy) forEachObject(this._data)               
+        if(!this._options.lazy) forEachObject(this._data)           
+        if(this._options.resetable) this.resetable = true 
         // @ts-ignore
         if(this._options.debug && typeof(globalThis.__AUTOSTORE_DEVTOOLS__) === 'object') {                    
             // @ts-ignore
@@ -127,6 +131,49 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     get silenting(){return this._silenting}
     get batching(){return this._batching}
     get peeping(){return this._peeping} 
+    get resetable(){return this._options.resetable}
+    set resetable(value:boolean){
+        if(!this._options.resetable) return 
+        if(value && !this._updatedWatcher){
+            this._updatedState = {}
+            this._updatedWatcher = this.watch(({path,value})=>{
+                if(path.length===0) return              
+                const pathKey = path.join(PATH_DELIMITER)
+                if(!(pathKey in this._updatedState!)){
+                    this._updatedState![pathKey] = value
+                }
+            },{operates:'write'})
+        }else{
+            if(this._updatedWatcher){
+                this._updatedWatcher.off()
+                this._updatedWatcher = undefined
+            }
+            this._updatedState = undefined
+        }
+    }
+    /**
+     * 重置store恢复到状态的原始状态
+     * 
+     * @description
+     * 
+     * 当启用resetable=true选项时，可以调用此方法将store恢复到初始状态
+     *   
+     */
+    reset(){
+        if(this._options.resetable && this._updatedState){
+            try{
+                this.batchUpdate(state=>{
+                    Object.entries(this._updatedState!).forEach(([key,value])=>{
+                        setVal(state,key.split(PATH_DELIMITER),value)
+                    })
+                })  
+            }finally{
+                this._updatedState = {}
+            }          
+        }else{
+            throw new Error("resetable option is not enabled")
+        }
+    }
 
     log(message:LogMessageArgs,level?:LogLevel){
         if(this._options.debug){

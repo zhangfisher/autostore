@@ -105,6 +105,15 @@ export interface AutoStoreOptions<State extends Dict> {
      */
     log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
     /**
+     * 启用重置功能
+     * 
+     * @description
+     * 
+     * 当启用resetable=true时，会记录数据的首次变化，然后在store.reset()方法调用时，将数据恢复到初始状态
+     * 
+     */
+    resetable?:boolean
+    /**
      * 计算函数是否允许重入     
      */
     reentry?:boolean
