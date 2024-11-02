@@ -243,6 +243,17 @@ const { Form } = useForm({
 
 <demo react="form/formSplitArrayField.tsx"/>
 
+:::warning 提示
+数组拆分是一种快速的拆分方式，适用于数组内容，拆分时会识别数据类型，自动转换为对应的数据类型。
+:::
+
+### 对象拆分
+
+当状态值是一个`{...}`时，可以指定`data-field-part="<Key>"`进行快速拆分。
+
+<demo react="form/formSplitObjField.tsx"/>
+
+ 
 
 ## 表单字段
 
