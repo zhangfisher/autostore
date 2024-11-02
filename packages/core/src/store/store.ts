@@ -97,6 +97,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             lazy          : false,            
             enableComputed: true,
             reentry       : true, 
+            resetable     : false,
             log, 
         },options) as Required<AutoStoreOptions<State>>        
         this.computedObjects = new ComputedObjects<State>(this)
@@ -133,14 +134,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     get peeping(){return this._peeping} 
     get resetable(){return this._options.resetable}
     set resetable(value:boolean){
-        if(!this._options.resetable) return 
-        if(value && !this._updatedWatcher){
+        if(value){
+            if(this._updatedWatcher) return 
             this._updatedState = {}
-            this._updatedWatcher = this.watch(({path,value})=>{
+            this._updatedWatcher = this.watch(({path,oldValue})=>{
                 if(path.length===0) return              
                 const pathKey = path.join(PATH_DELIMITER)
                 if(!(pathKey in this._updatedState!)){
-                    this._updatedState![pathKey] = value
+                    this._updatedState![pathKey] = oldValue
                 }
             },{operates:'write'})
         }else{
@@ -148,8 +149,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 this._updatedWatcher.off()
                 this._updatedWatcher = undefined
             }
-            this._updatedState = undefined
+            this._updatedState = {}
         }
+        this._options.resetable = value
     }
     /**
      * 重置store恢复到状态的原始状态
