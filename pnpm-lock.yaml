@@ -292,49 +292,6 @@ importers:
         specifier: ^5.6.2
         version: 5.6.2
 
-  website:
-    dependencies:
-      '@autostorejs/devtools':
-        specifier: workspace:*
-        version: link:../packages/devTools
-      '@autostorejs/react':
-        specifier: workspace:*
-        version: link:../packages/react
-      '@lite-tree/icons':
-        specifier: ^1.0.6
-        version: 1.0.6
-      '@lite-tree/vue':
-        specifier: ^1.1.4
-        version: 1.1.4(vue@3.5.12(typescript@5.6.2))
-      autostore:
-        specifier: workspace:*
-        version: link:../packages/core
-      flex-tools:
-        specifier: ^1.4.9
-        version: 1.4.9
-      flexstyled:
-        specifier: ^2.1.2
-        version: 2.1.2(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      x-react-components:
-        specifier: workspace:*
-        version: link:../packages/components
-    devDependencies:
-      '@types/react':
-        specifier: ^18.3.12
-        version: 18.3.12
-      '@types/react-dom':
-        specifier: ^18.3.1
-        version: 18.3.1
-      vitepress-demo-plugin:
-        specifier: ^1.0.4
-        version: 1.0.4(vitepress@1.4.1(@algolia/client-search@4.24.0)(@types/node@22.8.1)(@types/react@18.3.12)(less@4.2.0)(lightningcss@1.22.1)(nprogress@0.2.0)(postcss@8.4.47)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.79.2)(search-insights@2.17.2)(terser@5.36.0)(typescript@5.6.2))(vue@3.5.12(typescript@5.6.2))
-
 packages:
 
   '@adobe/css-tools@4.4.0':
@@ -4225,12 +4182,6 @@ packages:
         optional: true
       terser:
         optional: true
-
-  vitepress-demo-plugin@1.0.4:
-    resolution: {integrity: sha512-bQpMqZh1PjimFSw3AjJ5rgQMCjdS8iyX0wd+o1bABuxbRiO8HPKEq6xY4VcShprg+wUDabu2dIkC4y6UbQhVFg==}
-    peerDependencies:
-      vitepress: '*'
-      vue: ^3.2.0
 
   vitepress-demo-plugin@1.0.5:
     resolution: {integrity: sha512-uD6/593ClASZAavOMBkoj1q6B+VmQWrXkmhIoJiDoLlflbBWDPNXv2BdS1kOgsIAY1MunGpC/jzTFwod3sagrA==}
@@ -8734,11 +8685,6 @@ snapshots:
       lightningcss: 1.22.1
       sass: 1.79.2
       terser: 5.36.0
-
-  vitepress-demo-plugin@1.0.4(vitepress@1.4.1(@algolia/client-search@4.24.0)(@types/node@22.8.1)(@types/react@18.3.12)(less@4.2.0)(lightningcss@1.22.1)(nprogress@0.2.0)(postcss@8.4.47)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.79.2)(search-insights@2.17.2)(terser@5.36.0)(typescript@5.6.2))(vue@3.5.12(typescript@5.6.2)):
-    dependencies:
-      vitepress: 1.4.1(@algolia/client-search@4.24.0)(@types/node@22.8.1)(@types/react@18.3.12)(less@4.2.0)(lightningcss@1.22.1)(nprogress@0.2.0)(postcss@8.4.47)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.79.2)(search-insights@2.17.2)(terser@5.36.0)(typescript@5.6.2)
-      vue: 3.5.12(typescript@5.6.2)
 
   vitepress-demo-plugin@1.0.5(vitepress@1.4.1(@algolia/client-search@4.24.0)(@types/node@22.8.1)(@types/react@18.3.12)(less@4.2.0)(lightningcss@1.22.1)(nprogress@0.2.0)(postcss@8.4.47)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.79.2)(search-insights@2.17.2)(terser@5.36.0)(typescript@5.6.2))(vue@3.5.12(typescript@5.6.2)):
     dependencies:

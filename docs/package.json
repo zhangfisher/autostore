@@ -1,7 +1,8 @@
 {
-  "name": "@autostorejs/website",
+  "name": "autostore-docs",
   "version": "1.0.0",
   "description": "",
+  "private": true,
   "main": "index.js",
   "type": "module",
   "scripts": {
