@@ -1,10 +1,10 @@
 import React from 'react';
 import { useForm } from '@autostorejs/react';
-import {  ColorBlock,Input,JsonView, Layout } from 'x-react-components';
+import {  Button, ColorBlock,Input,JsonView, Layout } from 'x-react-components';
 
 
 export  default () => {
-		const { Form, useReactive,valid,dirty } = useForm({
+		const { Form, useReactive,valid,dirty,reset } = useForm({
 			net: {
 				ip:"127.1.2.3",                
 			},
@@ -30,7 +30,8 @@ export  default () => {
                                 <Input data-field-part="\d{1,3}\.\d{1,3}\.\d{1,3}\.(\d{1,3})" inline width={60}/>
                             </div>
                         </div>
-                    </Form>
+                    </Form>                    
+                    <Button onClick={()=>reset()}>Reset</Button>
                 </div>
                 <div>
                     <JsonView data={state} />

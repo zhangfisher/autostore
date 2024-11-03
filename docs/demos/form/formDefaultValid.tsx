@@ -1,10 +1,10 @@
 import React from 'react';
 import { useForm } from '@autostorejs/react';
-import { CheckBox, Color, ColorBlock, Input, JsonView, Layout } from 'x-react-components';
+import { Button, CheckBox, Color, ColorBlock, Input, JsonView, Layout } from 'x-react-components';
 
 
 export  default () => {
-		const { Form, useReactive,valid,dirty } = useForm({
+		const { Form, useReactive,valid,dirty,reset } = useForm({
 			user: {
 				name: "x",
 				age: 18,
@@ -42,6 +42,8 @@ export  default () => {
                         <Input name="user.birthday" label="Birthday" type="date" min="2000-1-1" />
                         <CheckBox name="user.vip" label="VIP" />
                     </Form>
+                    <Button onClick={()=>reset()}>Reset</Button>
+
                 </div>
                 <div>
                     <JsonView data={state} />

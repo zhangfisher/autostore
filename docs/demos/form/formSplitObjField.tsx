@@ -1,10 +1,10 @@
 import React from 'react';
 import { useForm } from '@autostorejs/react';
-import {  ColorBlock,Input,JsonView, Layout } from 'x-react-components';
+import {  Button, ColorBlock,Input,JsonView, Layout } from 'x-react-components';
 
 
 export  default () => {
-		const { Form, useReactive,valid,dirty } = useForm({
+		const { Form, useReactive,valid,dirty,reset } = useForm({
 			net: {
 				ip:"127.1.2.3",                
                 gateway:"192.168.1.1",
@@ -28,6 +28,7 @@ export  default () => {
                             <Input label="DNS" data-field-part="dns"/>
                         </div>
                     </Form>
+                    <Button onClick={()=>reset()}>Reset</Button>
                 </div>
                 <div>
                     <JsonView data={state} />

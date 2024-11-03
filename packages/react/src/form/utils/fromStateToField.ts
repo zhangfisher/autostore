@@ -7,7 +7,7 @@ import { getInputValue } from "./getInputValue"
 import { setInputValue } from "./setInputValue"
 
 
-function defaultFromState(_:string,value:any,part:string | undefined){
+function defaultFromState(_:string,value:any,part:string | undefined,options:UseFormOptions<any>){
     if(!part) return value
     if(Array.isArray(value) && isNumber(part)){
         return value[part]
@@ -22,20 +22,7 @@ function defaultFromState(_:string,value:any,part:string | undefined){
     return value
 }
 
-function getStatePartValue(value:any,part:string | undefined){
-    if(!part) return value
-    if(Array.isArray(value) && isNumber(part)){
-        return value[part]
-    }else if(typeof(value) === "object"){
-        return value[part]
-    }else if(typeof(value)==='string'){ // 视为正则表达式，从字符串中提取
-        const matched = value.match(new RegExp(part))
-        if(matched){ // 如果有匹配组，则返回第一个匹配组
-            return matched.length===1 ? matched[0] : matched[1]   
-        } 
-    }
-    return value
-}
+
 
 /**
  * 将表单状态转换为字段值，并更新对应的表单元素。
@@ -79,3 +66,18 @@ export function fromStateToField(fieldInfo:AutoFormFieldContext,value:any,option
     })
     return changed
 }
+
+// function getStatePartValue(value:any,part:string | undefined){
+//     if(!part) return value
+//     if(Array.isArray(value) && isNumber(part)){
+//         return value[part]
+//     }else if(typeof(value) === "object"){
+//         return value[part]
+//     }else if(typeof(value)==='string'){ // 视为正则表达式，从字符串中提取
+//         const matched = value.match(new RegExp(part))
+//         if(matched){ // 如果有匹配组，则返回第一个匹配组
+//             return matched.length===1 ? matched[0] : matched[1]   
+//         } 
+//     }
+//     return value
+// }

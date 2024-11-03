@@ -1,11 +1,11 @@
 import React from "react"
 import { useForm } from "@autostorejs/react";
-import {Layout,JsonView,ColorBlock } from "x-react-components"
+import {Layout,JsonView,ColorBlock, Button } from "x-react-components"
 import { FieldStyle } from "./fieldStyles";
  
 export default ()=> { 
 	
-    const { Form, useReactive,valid,dirty } = useForm({
+    const { Form, useReactive,valid,dirty,reset } = useForm({
         user: {
             name   : "x",
             age    : 8,
@@ -66,6 +66,7 @@ export default ()=> {
 								</div>
 							</div>
 						</Form> 
+						<Button onClick={()=>reset()}>Reset</Button>
 					</div>
 					<div>
 						<JsonView data={state} />
