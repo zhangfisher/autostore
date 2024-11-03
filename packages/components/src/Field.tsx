@@ -64,7 +64,8 @@ export type FieldProps = Partial<FieldRenderProps<any>> & {memo?:string}
 export const Field:ReactFC<FieldProps> = (props)=>{
     const {enable=true,visible=true,label='',children='',memo,labelWidth="128px"} = props 
     return  (
-        <div  className="field"  style={{
+        <div  className="field" 
+         style={{
             position:'relative',
             display: visible===false ? 'none' : 'flex',
             boxSizing:"border-box",

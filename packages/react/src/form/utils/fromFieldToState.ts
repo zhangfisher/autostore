@@ -52,7 +52,7 @@ export function fromFieldToState<State extends Dict>(store:ReactAutoStore<State>
 
     const typedValue = toTypedValue(value,dataType)
     
-    let newValue = toState.call(input,name,typedValue,part)
+    let newValue = toState.call(input,name,typedValue,stateValue,part)
 
     if(part){        
         if(Array.isArray(stateValue)){
@@ -65,6 +65,8 @@ export function fromFieldToState<State extends Dict>(store:ReactAutoStore<State>
             newValue = replaceWithRegex(stateValue,part,value)       
             store.update((state) => { setVal(state, path, newValue); },{ peep: true });    
             return [name,newValue]   
+        }else{
+            store.update((state) => { setVal(state, path, newValue); },{ peep: true });    
         }        
     }else{
         store.update((state) => { setVal(state, path, newValue); },{ peep: true });

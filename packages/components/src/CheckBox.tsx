@@ -6,12 +6,13 @@ import React from "react"
 export type CheckBoxProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
     label?:string
     labelPos?: 'left' | 'right'
+    inline?:boolean
 }
 
 const CheckBoxStyle = styled<CheckBoxProps>({
     padding:"4px",
     margin:"4px",
-    display:"flex",
+    display:(props)=>props.inline ? "inline-flex" : "flex",
     alignItems:"center",
     cursor:"pointer",
     "&>label":{
