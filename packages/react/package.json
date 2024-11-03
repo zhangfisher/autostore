@@ -1,6 +1,6 @@
 {
   "name": "@autostorejs/react",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Very easy and elegant state management library for react",
   "type": "module",
   "main": "src/index.tsx",
