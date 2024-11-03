@@ -7,7 +7,7 @@ import { getInputValue } from "./getInputValue"
 import { setInputValue } from "./setInputValue"
 
 
-function defaultFromState(_:string,value:any,part:string | undefined,options:UseFormOptions<any>){
+function defaultFromState(_:string,value:any,part:string | undefined){
     if(!part) return value
     if(Array.isArray(value) && isNumber(part)){
         return value[part]
@@ -18,6 +18,8 @@ function defaultFromState(_:string,value:any,part:string | undefined,options:Use
         if(matched){ // 如果有匹配组，则返回第一个匹配组
             return matched.length===1 ? matched[0] : matched[1]   
         } 
+    }else{
+        return part
     }
     return value
 }
@@ -41,10 +43,10 @@ export function fromStateToField(fieldInfo:AutoFormFieldContext,value:any,option
         if(initial){
             // 在初始化时，如果是checkbox或radio，则需要设置默认值
             if(input.type==='checkbox'){
-                if(isEmpty(input.value) && !isBool(value)){
-                    input.value = `${value},`
+                if(isEmpty(input.value) && !isBool(newVal)){
+                    input.value = `${newVal}`
                 }                 
-            }else if(input.type==='radio'){
+            }else if(input.type==='radio'){ 
                 if(isBool(value)){
                     const form = options.ref?.current
                     if(form){

@@ -253,7 +253,12 @@ const { Form } = useForm({
 
 <demo react="form/formSplitObjField.tsx"/>
 
- 
+### 自定义拆分
+
+如果上述的拆分方式不能满足需求，也可以通过`fromState`来自定义拆分方式。
+
+<demo react="form/formSplitCustom.tsx"/>
+
 
 ## 表单字段
 

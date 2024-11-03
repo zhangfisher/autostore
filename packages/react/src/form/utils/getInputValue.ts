@@ -39,7 +39,7 @@ export function getInputValue(input:HTMLInputElements):any{
     }
     if(datatype){
         if(datatype==='boolean'){
-            value = value ==='true'
+            value = value || value ==='true'
         }else if(datatype==='number'){
             value = parseFloat(value)
         }else if(datatype==='object'){

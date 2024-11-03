@@ -28,6 +28,7 @@ function defaultToState(this:HTMLInputElement,path:string,value:any,part:string 
     if(!part) return value
     return value
 }
+
 function toTypedValue(val:any,datatype:string | undefined){
     if(!datatype) return val
     if(datatype==='number'){
