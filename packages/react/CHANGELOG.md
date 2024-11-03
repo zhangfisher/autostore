@@ -1,5 +1,14 @@
 # @autostorejs/react
 
+## 1.1.1
+
+### Patch Changes
+
+- [`167c0f2`](https://github.com/zhangfisher/autostore/commit/167c0f21817911883479f6f7b58826b1f89bf2cb) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix field split
+
+- Updated dependencies [[`167c0f2`](https://github.com/zhangfisher/autostore/commit/167c0f21817911883479f6f7b58826b1f89bf2cb)]:
+  - autostore@1.1.1
+
 ## 1.1.0
 
 ### Minor Changes
