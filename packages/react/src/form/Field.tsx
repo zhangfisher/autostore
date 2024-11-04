@@ -77,7 +77,7 @@ export type AutoFieldRenderProps<State extends Dict,Value> = {
 } & SignalComponentRenderArgs<Value> 
 
 export type AutoFieldProps<State extends Dict,Value> = {
-    name     : string | UseStateGetter<Value,State>
+    name     : string  
     required?: boolean | ObserverBuilder<boolean,State>
     validate?: boolean | ObserverBuilder<boolean,State>
     visible? : boolean | ObserverBuilder<boolean,State>
@@ -121,10 +121,11 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
     return React.memo<AutoField<State>>(<Value=any>(props:AutoFieldProps<State,Value>)=>{
         
         const { name } = props
-
+        
+        
         const [value] = store.useState(name as any)
 
-        const validate  = useComputed<boolean>(props.validate,{id:`${name}.validate`})  as ComputedObject<boolean>
+        const validate  = useComputed<boolean>(props.validate,{id:`#${name.replaceAll(".","_")}.validate`})  as ComputedObject<boolean>
 
          const [renderProps,setRenderProps] = useState(()=>{
 
@@ -140,6 +141,9 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
 
 
         useEffect(()=>{
+            store.watch("#{name}.*",({path,value})=>{
+                
+            })
             validate && validate.watch(({value})=>{
                 setRenderProps({...renderProps,validate:value})
             })

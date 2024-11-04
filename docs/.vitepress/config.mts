@@ -90,7 +90,18 @@ export default defineConfig({
               { text: 'bind', link: '/guide/form/bind' },
               { text: 'useField', link: '/guide/form/use-field' },
               { text: 'useFields', link: '/guide/form/use-fields' },
-              { text: 'useForm', link: '/guide/form/use-form' },
+              { 
+                text: 'useForm', 
+                link: '/guide/form/use-form',
+                collapsed: false,
+                items:[
+                  { text:"关于",link:"/guide/form/useform/about"},
+                  { text:"快速入门",link:"/guide/form/useform/quick-start"},
+                  { text:"基本用法",link:"/guide/form/useform/basic"},
+                  { text:"表单校验",link:"/guide/form/useform/validate"},
+                  { text:"字段拆分",link:"/guide/form/useform/split-field"}, 
+                ]
+              },
             ]
           },
           {

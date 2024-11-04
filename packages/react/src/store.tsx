@@ -25,7 +25,7 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
     useFields       : UseFieldsType<State>
     useReactive     : UseReactiveType<State>
     useAsyncReactive
-    useComputed     : UseComputedType<State>
+    useComputed     : UseComputedType<State> 
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,Object.assign({
             signalErrorBoundary : ()=><>ERROR</>

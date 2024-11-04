@@ -1,4 +1,4 @@
-import { ComputedOptions, Dict } from "autostore"
+import {  ComputedOptions, Dict } from "autostore"
 import { ReactAutoStore } from "../store"
 import { createUseObserver } from "./useObserver"
 import { UseComputedType } from "./types"
@@ -6,6 +6,6 @@ import { UseComputedType } from "./types"
  
 export function createUseComputed<State extends Dict>(store:ReactAutoStore<State>){
     return ((params:any,computedOptions?:ComputedOptions)=>{
-        return createUseObserver(store as any)(params)
+        return createUseObserver(store as any)(params,computedOptions)
     })  as UseComputedType<State>
 } 

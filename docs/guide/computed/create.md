@@ -162,7 +162,7 @@ store.computedObjects.create(computed(async (order)=>order.price * order.count,
 ```
 
 使用`computed`可以进行更多的配置，比如`options`等。
-
+ 
 
 ## 小结
 
