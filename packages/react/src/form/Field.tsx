@@ -60,7 +60,6 @@ import { ComputedObject, ComputedState, Dict, ObserverBuilder } from "autostore"
 import React, { useCallback, useEffect, useState } from "react"
 import { ReactAutoStore } from "../store"
 import {  UseFormOptions } from "./types"
-import { UseStateGetter } from "../hooks/types"
 import { AutoFormContext } from "./Form"
 import { SignalComponentRenderArgs } from "../types"
 
@@ -125,13 +124,26 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
         
         const [value] = store.useState(name as any)
 
-        const validate  = useComputed<boolean>(props.validate,{id:`#${name.replaceAll(".","_")}.validate`})  as ComputedObject<boolean>
+        const validate  = useComputed<boolean>(props.validate,{id:`#${name}.validate`})  as ComputedObject<boolean>
+        const required  = useComputed<boolean>(props.required,{id:`#${name}.required`})  as ComputedObject<boolean>
+        const visible   = useComputed<boolean>(props.visible,{id:`#${name}.visible`})   as ComputedObject<boolean>
+        const readonly  = useComputed<boolean>(props.readonly,{id:`#${name}.readonly`}) as ComputedObject<boolean>
+        const enable    = useComputed<boolean>(props.enable,{id:`#${name}.enable`})     as ComputedObject<boolean>
+        const select    = useComputed<any[]>(props.select,{id:`#${name}.select`})        as ComputedObject<any[]>
+        const help      = useComputed<string>(props.help,{id:`#${name}.help`})           as ComputedObject<string>
+
 
          const [renderProps,setRenderProps] = useState(()=>{
 
             return buildFieldRenderProps({
                 value,
                 validate: validate ? validate.val: true,
+                required: required ? required.val: false,
+                visible : visible ? visible.val: true,
+                readonly: readonly ? readonly.val: false,
+                enable  : enable ? enable.val: true,
+                select  : select ? select.val: [],
+                help    : help ? help.val: undefined,
             })
         })
 
@@ -141,7 +153,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
 
 
         useEffect(()=>{
-            store.watch("#{name}.*",({path,value})=>{
+            store.watch(`#${name}.*`,({path,value})=>{
                 
             })
             validate && validate.watch(({value})=>{
