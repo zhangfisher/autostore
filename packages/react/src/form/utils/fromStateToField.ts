@@ -38,7 +38,8 @@ export function fromStateToField(fieldInfo:AutoFormFieldContext,value:any,option
     const fromState = options.fromState || defaultFromState    
     let changed:boolean = false
     fieldInfo.inputs.forEach(input=>{
-        const part = input.dataset.fieldPart        
+        const part = input.dataset.fieldPart     
+  
         const newVal = fromState(fieldInfo.path,value,part)     
         if(initial){
             // 在初始化时，如果是checkbox或radio，则需要设置默认值

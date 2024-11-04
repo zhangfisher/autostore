@@ -83,12 +83,9 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 
 	const [valid, setValid] = useState<boolean>(true);
 	const [dirty, setDirty] = useState<boolean>(false);
+	const [submiting, setSubmiting] = useState<boolean>(false);
+	const [error, setError] = useState<any>(null);
 
-
-
-	const submit = useCallback(()=>{
-
-	},[])
  
 	const store = storeRef.current!  
 	
@@ -96,11 +93,17 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 		store.reset()		
 	},[])
 
+	const submit = useCallback(()=>{
+		formRef.current?.dispatchEvent(new Event('submit'))
+	},[])
+
 	if(!formComponentRef.current){ 
 		formContext.current = {
 			options:opts, 
 			setDirty: (val:boolean=true) => setDirty(val),
 			setValid,
+			setSubmiting,
+			setError,
 			state:getVal(store.state,opts.entry || []),
 			formRef 
 		}
@@ -126,6 +129,9 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 		Field: fieldComponentRef.current!,
 		valid,
 		dirty,
+		error,
+		submiting,
+		submit,
 		reset
 	} as unknown as UseFormResult<State>
 }   

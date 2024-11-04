@@ -255,18 +255,61 @@ const { Form } = useForm({
 
 ### 自定义拆分
 
-如果上述的拆分方式不能满足需求，也可以通过`fromState`来自定义拆分方式。
+如果上述的拆分方式不能满足需求，也可以通过自定义`toState`和`fromState`这两个配置参数来自定义拆分方式。
+
+- `toState`: 用于将`input`的输入值转换为状态值。
+- `fromState`: 用于将状态值转换为`input`的输入值。
 
 <demo react="form/formSplitCustom.tsx"/>
+
+
+:::warning 注意
+如果指定了`toState`、`fromState`，则需要开发者自行处理数组和对象的拆分逻辑。
+:::
 
 
 ## 表单字段
 
 
 
+## Field组件
+
+`Field`组件是`useForm`提供的一个用于封装表单字段的高级组件，可以用于更加灵活的表单字段封装。
+
+`Field`组件的基本用法如下：
+
+```tsx
+
+const { Field, Form } = useForm({...})
+
+<Form onSubmit={}>
+    <Field 
+        name="user.firstName"     // 使用绑定的状态路径
+        validate={validate}       // 自定义校验规则
+        render={({value,timeout,....,bind})=>{
+          // 在此渲染表单字段
+          return <div>
+              <label>First Name</label>
+              <input {...bind} />
+            </div>
+        }} 
+    />
+</Form>
+```
+
+
+
+
 
 ## 提交表单
 
+`useForm`提供了`submit`方法，用于提交表单。
 
- 
+- `submit`方法会触发`submit`事件，可以通过`onSubmit`监听该事件。
+- 然后在`onSubmit`事件中，使用`AJAX/fetch`将表单数据提交到服务器即可。
+- `submiting`属性用于标识表单是否正在提交中，可以用于控制提交按钮的状态。
+
+**示例如下：**
+
+<demo react="form/formSubmit.tsx"/>
 

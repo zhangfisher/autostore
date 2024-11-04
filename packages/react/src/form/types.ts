@@ -82,6 +82,8 @@ export type UseFormResult<State extends Dict>={
     Field       : MemoExoticComponent<AutoField<State>>  
     valid       : boolean
     dirty       : boolean
+    submiting   : boolean
+    submit      : (e?:any)=>Promise<any>
 } & Pick<ReactAutoStore<State>,
     '$' |'signal' | 'useState' | 'useAsyncState' | 'useDeps'
     | 'useWatch' 

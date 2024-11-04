@@ -17,6 +17,7 @@ export type AutoFormProps<State extends Dict>  = React.PropsWithChildren<
     React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>,HTMLFormElement>
     & {
 		onValidate?:(state:State)=>boolean
+		onSubmit?:(state:ComputedState<State>)=>void
 	}
 >
 
@@ -36,6 +37,8 @@ export type AutoFormFieldContexts = Record<string,AutoFormFieldContext[]>
 export type AutoFormContext<State extends Dict> = {
     setDirty 	: (val?:boolean)=>void
     setValid 	: (val:boolean)=>void    
+	setSubmiting: (val:boolean)=>void
+	setError	: (val:any)=>void
 	state       : ComputedState<State>
 	options     : UseFormOptions<State>
 	formRef     : React.MutableRefObject<HTMLFormElement | null>
@@ -104,15 +107,35 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 					ctx.setDirty()  
 				}                                          
 			};
-            // 3. 侦听来自表单输入的变更
+            // 4. 侦听来自表单输入的变更
 			form.addEventListener("input", onChange); 
+
+			// 5.
+			options.ref?.current?.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				try{
+					ctx.setSubmiting(true)
+					await props.onSubmit?.(store.state)
+				}catch(err){
+					ctx.setError(err)
+				}finally{
+					ctx.setSubmiting(false)
+				}
+			})
+
 			return () => {
 				watcher.off();
 				form.removeEventListener("input", onChange);
 				initial.current=false
 			};
+		
 		},[]);
-		return <form {...props} ref={options.ref}>
+
+		
+		
+		return <form {...props} 
+			ref={options.ref}
+		>
             {props.children}
         </form>
 	} 
