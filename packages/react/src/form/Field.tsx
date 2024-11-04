@@ -15,10 +15,10 @@
  *          validate={(value)=>boolean}         // 这是一个计算属性，可以是同步或异步的
  *          validate={async (value)=>boolean}   // 这是一个计算属性，可以是同步或异步的
  *          validate={computed(....)}           // 创建一个计算属性
- *          
- *          requ    
- * 
- *          render={({name,value,error,onChange})=>{ 
+ *          help="请输入价格"                    // 提示信息
+ *          visible={true}                      // 是否可见
+ *          visible={computed(....)}            // 创建一个计算属性
+ *          render={({visible,name,value,loading,error,onChange,validate,dirty,help})=>{ 
  *              return <input name={name} onChange={onChange}/>
  *          })
  *      >
@@ -39,7 +39,8 @@
  * <Form>
  *      <Field
  *          name={(state)=>state.price+state.count}
- *          render={({value,onChange,loading,timeout})=>{
+ * 
+ *          render={({value,onChange,loading,timeout,.....})=>{
  *               当price或count变化时，会自动更新
  *              return <span onClick={
  *                  (e)=>{
@@ -55,13 +56,14 @@
  * 
  */
 
-import { ComputedState, Dict, ObserverBuilder } from "autostore"
-import React, { useEffect, useRef } from "react"
+import { ComputedObject, ComputedState, Dict, ObserverBuilder } from "autostore"
+import React, { useCallback, useEffect, useState } from "react"
 import { ReactAutoStore } from "../store"
 import {  UseFormOptions } from "./types"
 import { UseStateGetter } from "../hooks/types"
 import { AutoFormContext } from "./Form"
-import { isInputElement } from "./utils"
+import { SignalComponentRenderArgs } from "../types"
+
 
 export type AutoFieldRenderProps<State extends Dict,Value> = {
     value   : Value
@@ -72,56 +74,95 @@ export type AutoFieldRenderProps<State extends Dict,Value> = {
     enable  : boolean
     select  : any[]
     onChange: (e:MouseEvent,updaterOrValue:Value | ((state:ComputedState<State>)=>void))=>void
+} & SignalComponentRenderArgs<Value> 
 
-}
 export type AutoFieldProps<State extends Dict,Value> = {
     name     : string | UseStateGetter<Value,State>
-    required?: ObserverBuilder<boolean,State>
-    validate?: ObserverBuilder<boolean,State>
-    visible? : ObserverBuilder<boolean,State>
-    readonly?: ObserverBuilder<boolean,State>
-    enable?  : ObserverBuilder<boolean,State>
-    select?  : ObserverBuilder<any[],State>
+    required?: boolean | ObserverBuilder<boolean,State>
+    validate?: boolean | ObserverBuilder<boolean,State>
+    visible? : boolean | ObserverBuilder<boolean,State>
+    readonly?: boolean | ObserverBuilder<boolean,State>
+    enable?  : boolean | ObserverBuilder<boolean,State>
+    select?  : boolean | ObserverBuilder<any[],State>
+    help?    : string | ObserverBuilder<string,State>
     render   : (props:AutoFieldRenderProps<State,Value>)=>React.ReactNode
+}
+
+function buildFieldRenderProps(props:Partial<AutoFieldRenderProps<any,any>>){
+    return Object.assign({
+        value   : undefined,
+        required: false,
+        validate: true,
+        visible : true,
+        readonly: false,
+        enable  : true,
+        select  : [],
+        timeout : 0,
+        loading : false,
+        retry   : 0,
+        error   : undefined,
+        dirty   : false,
+        help    : undefined,
+        progress: 0,    
+        onChange:()=>{},
+        run     :()=>{},
+        cancel  :()=>{}
+    },props) as AutoFieldRenderProps<any,any>
 }
 
 export type AutoField<State extends Dict> = <Value>(props:AutoFieldProps<State,Value>)=>React.ReactNode
 
+const ComputedFieldPropNames = ['required','validate','visible','readonly','enable','select'] as const
+
 export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoField<State>>{
     const ctx = formCtx.current!
     const options:UseFormOptions<State> = formCtx.current!.options
-
+    const { useComputed } = store
     return React.memo<AutoField<State>>(<Value=any>(props:AutoFieldProps<State,Value>)=>{
-        const { render,name } = props
-        const ref = useRef<HTMLDivElement>(null)
-        const [ value ] = store.useReactive(props.name as any,true)
+        
+        const { name } = props
+
+        const [value] = store.useState(name as any)
+
+        const validate  = useComputed<boolean>(props.validate,{id:`${name}.validate`})  as ComputedObject<boolean>
+
+         const [renderProps,setRenderProps] = useState(()=>{
+
+            return buildFieldRenderProps({
+                value,
+                validate: validate ? validate.val: true,
+            })
+        })
+
+
+
+        
+
 
         useEffect(()=>{
-            
+            validate && validate.watch(({value})=>{
+                setRenderProps({...renderProps,validate:value})
+            })
+           
+            return 
+        },[])
+
+        const render = useCallback((props:AutoFieldRenderProps<State,Value>)=>{
+
+            const renderProps = buildFieldRenderProps(props)
+            return props.render!(renderProps)
+        },[])
+
+
+        useEffect(()=>{
+              
+
+
 
         },[])
 
-        const renderProps = {    
-            value,        
-            onChange:(e,updater)=>{
-                const inputEle = e.target as HTMLElement
-                if(typeof(updater)==='function'){
-                    store.batchUpdate((state)=>{
-                        (updater as any)(state)
-                    })
-                }else if(typeof(name)==='string'){
-                    // 因为不是输入元素，所以需要手动触发input事件，以便Form组件可以侦听到进行处理
-                    if(isInputElement(inputEle)){
 
-                    }else{                   
-                        const inputEv = new CustomEvent('input', {
-                            detail: { value: updater }
-                        }); 
-                        inputEle.dispatchEvent(inputEv)
-                    }
-                }                
-            }
-        } as AutoFieldRenderProps<State,Value>
+       
         return <>{render(renderProps)}</>
     },()=>true)
 }

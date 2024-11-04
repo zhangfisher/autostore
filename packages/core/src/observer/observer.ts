@@ -194,9 +194,11 @@ export class ObserverObject<
      * @returns 
      */
     watch(listener:(operate:StateOperate)=>void,options?:WatchListenerOptions){
-        return this.store.watch(this.getValueWatchPath(),(operate)=>{
+        const watcher  = this.store.watch(this.getValueWatchPath(),(operate)=>{
             listener.call(this,operate)
         },options)
+        this._subscribers.push(watcher)
+        return watcher
     } 
     /**
      * 供子类重写，用来获取当前对象值的依赖路径
@@ -244,10 +246,13 @@ export class ObserverObject<
         if(!this._attached) return 
         this._subscribers.forEach(subscriber=>subscriber.off())
         this._attached=false
-    }
+        this._subscribers = []
+        this.store.watchObjects.delete(this.id)
+    } 
     /**
      * 供子类重写 
-     */
+     * 
+     *///  eslint-disable-next-line @typescript-eslint/no-unused-vars
     run(...args:any[]):any{
 
     }

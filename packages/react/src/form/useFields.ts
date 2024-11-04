@@ -2,7 +2,6 @@ import {  Dict, getVal,isPrimitive, isPlainObject, setVal, PATH_DELIMITER, pathS
 import { ReactAutoStore } from "../store";
 import { useState, useSyncExternalStore } from "react";
 import type { UseFieldsOptions, UseFieldsType } from "./types";  
-import { getInputValueFromEvent } from "../utils/getInputValueFromEvent";
 import { createFieldBinding } from "./useField";
 
 export const FAKE_BINDINGS = Symbol('FAKE_BINDINGS')
@@ -35,17 +34,6 @@ export function createFakeObjectBindings<State extends Dict>(store:ReactAutoStor
     return bindings
 }
 
- 
-
-// export function createFieldBinding<State extends Dict>(store:ReactAutoStore<State>,path:string[],val:any){    
-//     return {
-//         value:val,
-//         onChange:(e:any)=>{
-//             const inputValue = getInputValueFromEvent(e)
-//             store.update(state=>setVal(state, path,inputValue))
-//         }
-//     }   
-// }
 
 function createProxy<State extends Dict>(target: any, parentPath: string[],proxyCache:Map<any,any>,store:ReactAutoStore<State>,options:Required<UseFieldsOptions>):any{
     const entry:string[] = Array.isArray(options.entry) ? options.entry : options.entry.split(PATH_DELIMITER)
@@ -108,7 +96,7 @@ export function createUseFields<State extends Dict>(store:ReactAutoStore<State>)
             const entry = getStateEntry(opts.entry)
             const watcher = store.watch((op)=>{   
                 if(op.reply) return
-                const ops =  (op.type =='batch' ? op.value   : [op]) as StateOperate[]
+                const ops =  (op.type =='batch' ? op.value : [op]) as StateOperate[]
                 ops.forEach(({path,value})=>{
                     if(!pathStartsWith(entry,path)) return     
                     const relPath =path.slice(entry.length)

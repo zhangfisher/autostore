@@ -44,7 +44,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	 * @param options 
 	 */
 	protected onInitOptions(options: Required<RuntimeComputedOptions>) {
-		 if(options.reentry===undefined) options.reentry = this.store.options.reentry
+		 if(options.reentry===undefined) options.reentry = this.store.options.reentry		 
 	}
 
 	protected onInitial() {

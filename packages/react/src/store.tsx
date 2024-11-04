@@ -7,10 +7,11 @@ import type { SignalComponentType } from "./signal/types";
 import { createInputBinding } from './form/bind';
 import { InputBindingsType } from './form/types';
 import { createUseField } from './form/useField';
-import { UseDepsType,  UseStateType, UseWatchType, UseReactiveType } from './hooks/types';
+import { UseDepsType,  UseStateType, UseWatchType, UseReactiveType, UseComputedType } from './hooks/types';
 import { UseFieldType, UseFieldsType } from "./form/types"
 import { createUseWatch } from './hooks/useWatch';
 import { createUseFields } from './form/useFields';
+import { createUseComputed } from "./hooks/useComputed";
 
 export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
     useState        : UseStateType<State>
@@ -24,6 +25,7 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
     useFields       : UseFieldsType<State>
     useReactive     : UseReactiveType<State>
     useAsyncReactive
+    useComputed     : UseComputedType<State>
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,Object.assign({
             signalErrorBoundary : ()=><>ERROR</>
@@ -38,6 +40,7 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
         this.useFields        = createUseFields(this).bind(this)
         this.useReactive      = this.useState
         this.useAsyncReactive = this.useAsyncState.bind(this)
+        this.useComputed      = createUseComputed(this).bind(this) 
         this.reset            = this.reset.bind(this)
     }  
 } 

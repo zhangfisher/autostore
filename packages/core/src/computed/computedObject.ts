@@ -22,6 +22,10 @@ export class ComputedObject<Value=any> extends ObserverObject<Value,ComputedOpti
         descriptor.options.depends  = calcDependPaths(this.path,this.options.depends )         
     }    
     toString(){ return `ComputedObject<${joinValuePath(this.path)}>` }  
+    
+    get val():Value{
+        return this.async ? (this.value as any).value :  this.value
+    }
     /**
      * 检查计算函数是否被禁用
      * 
