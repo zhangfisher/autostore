@@ -69,3 +69,7 @@ export type Primitive = string | number | boolean | null | undefined | symbol | 
 export type ObserverBuilder<Value=any,Scope=any> = 
     ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<any> | AsyncComputedGetter<any>
     | WatchDescriptorBuilder<Value>
+
+
+export type ComputedDescriptorParameter<Value=any,Scope=any> =  ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<any> | AsyncComputedGetter<any>
+ 

@@ -64,9 +64,7 @@ export function getValueScope<Value=any,Scope=any,Options extends ComputedOption
         scope = rootDraft;
       }else if (scopeOption === ObserverScopeRef.Depends) {        
         scope = computedObject.depends?.map((dep:any) => getValueByPath(rootDraft, dep));
-      }else if (scopeOption === ObserverScopeRef.FirstDepend) {        
-        scope = getValueByPath(rootDraft, computedObject.depends[0])
-      }else{
+      } else{
        if (typeof scopeOption === "string") {       
           // 当scope是以@开头的字符串时，代表是一个路径指向，如：@./user，代表其scope是由user属性值指向的对象路径
           if(scopeOption.startsWith("@")){ // 

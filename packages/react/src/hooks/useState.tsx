@@ -35,16 +35,7 @@ import { UseStateType } from './types';
  * 但是在某些情况下，比如想为该计算属性提供一个初始值，或者在异步计算时，想先提供一个乐观的值，然后等计算完成后再更新，这些先更新，然后再计算也是可行的。
  * 如果要重新计算，则可以通过run()方法重新计算 
  * 
- * 
- * @example
- * 
- * 如果输入路径所指向的状态是一个异步计算属性
- * 
- * 例如："book.orders"是一个异步计算属性，则此值是book.orders== { value,loading,timeout, run, cancel,.....}
- * 
- * const [ orders ] = useState("book.orders",true)
- * 
- * 此时 orders = { value,loading,timeout,.... }
+ *  
  * 
  */
 export function createUseState<State extends Dict>(store:ReactAutoStore<State>){

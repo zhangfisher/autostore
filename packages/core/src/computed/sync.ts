@@ -35,6 +35,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       first:false,
       operate:undefined
     },options)
+ 
     // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
     if(!first && this.isDisable(options?.enable)){
       this.store.log(`Sync computed <${this.toString()}> is disabled`,'warn')
@@ -62,7 +63,7 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
       !first && this.emitStoreEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
     } catch (e: any) {
       !first && this.emitStoreEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
-      throw e
+      if(this.options.throwError) throw e
     }
   } 
   /**

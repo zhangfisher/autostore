@@ -6,8 +6,7 @@ export enum  ObserverScopeRef{
     Root        = 'ROOT',
     Current     = 'CURRENT',
     Parent      = 'PARENT',  
-    Depends     = 'DEPENDS',                // 指向依赖数组
-    FirstDepend = 'FIRST-DEPENDS',          // 指向第一个依赖
+    Depends     = 'DEPENDS',                // 指向依赖数组 
     Self        = 'SELF'                    // 指向自身，默认值
 } 
 
@@ -137,4 +136,10 @@ export type ObserverOptions<Value=any> = {
     * 
     */
    objectify?:boolean   
+   /**
+    * 当执行计算函数时，如果出错时，是否抛出错误，
+    * 默认为true，即抛出错误
+    * =false，则不会抛出错误，但是可以通过.error属性获取错误信息
+    */
+   throwError?:boolean
 }

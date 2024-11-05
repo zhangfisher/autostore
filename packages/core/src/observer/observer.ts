@@ -36,7 +36,7 @@ export class ObserverObject<
     private _depends: string[][] = []
     private _options: Required<Options> 
     private _subscribers:Watcher[] = []              // 保存订阅者的ID
-    private _strPath?:string  
+    private _strPath?:string   
     /**
      *  构造函数。
      * 
@@ -50,7 +50,8 @@ export class ObserverObject<
         this._options    = Object.assign({
             enable: true,
             group: "",
-            depends: []
+            depends: [],
+            throwError:true
         }, descriptor.options) as unknown as Required<Options>
         this._id         = this._options.id || (this._associated ? joinValuePath(context?.path) : getId())
         this._path       = context?.path || [`#${this._id}`]
@@ -77,7 +78,7 @@ export class ObserverObject<
     get depends(){return this._depends}
     set depends(value:string[][]){ this._depends = value }
     get getter(){ return this._getter}
-    set getter(value){ this._getter= value  }   
+    set getter(value){ this._getter= value  }    
     get strPath(){ 
         if(!this._strPath){
             this._strPath= this._path.join(PATH_DELIMITER) 
@@ -98,8 +99,9 @@ export class ObserverObject<
         if(this._associated){ 
             setVal(this.store.state,this._path, value)     
         }else{            
+            const oldValue = this._value
             this._value = value          
-            this.store._notify({type:'set',path:this.path,value})
+            this.store._notify({type:'set',path:this.path,value,oldValue})
         }
     }  
     

@@ -119,8 +119,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			return;
 		} 
 
-		this._firstRun = true;
-		
+		this._firstRun = true; 
 		!first && this.store.log(() => `Run async computed for : ${this.toString()}`); 
 
 		// 2. 合成最终的配置参数
@@ -326,8 +325,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			} catch (e: any) { 
 				ctx.hasError = true;
 				ctx.error = e 				
-				if (!ctx.hasTimeout) afterUpdated.error = getError(e).message;		
-				// if(ctx.hasAbort) afterUpdated.error = 'ABORT'
+				if (!ctx.hasTimeout) afterUpdated.error = getError(e).message;		 
 			} finally {
 				timeout.clear()				
 				if(i === retryCount) {// 最后一次执行时
@@ -353,7 +351,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			this.emitStoreEvent("computed:done", { path: this.path, id:this.id, value: computedResult,computedObject:this});		
 		} 
 		this.onDoneCallback(options,ctx.error,ctx.hasAbort,ctx.hasTimeout,scope,computedResult)
-
 	}
 	
 	/**

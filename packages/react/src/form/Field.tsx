@@ -56,14 +56,17 @@
  * 
  */
 
-import { ComputedObject,  Dict, ObserverBuilder, ObserverScopeRef, PATH_DELIMITER } from "autostore"
-import React, {  useEffect, useState } from "react"
+import { ComputedObject,  Dict, ObserverBuilder, ObserverScopeRef, PATH_DELIMITER, setVal, Watcher } from "autostore"
+import React, {  useCallback, useEffect, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
 import { SignalComponentRenderArgs } from "../types"
+import { pickValue } from "./utils/pickValue"
+import { getInputValueFromEvent } from "../utils"
 
 
 export type AutoFieldRenderProps<State extends Dict,Value> = {
+    name    : string
     value   : Value
     required: boolean
     validate: boolean
@@ -114,31 +117,31 @@ function buildFieldRenderProps(props:Partial<AutoFieldRenderProps<any,any>>){
 
 export type AutoField<State extends Dict> = <Value=any>(props:AutoFieldProps<State,Value>)=>React.ReactNode
 
-const ComputedFieldPropNames = ['required','validate','visible','readonly','enable','select'] as const
 
 export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoField<State>>{
     const { useComputed } = store
     return React.memo(<Value=any>(props:AutoFieldProps<State,Value>)=>{
         
         const { name } = props
-        const prefix = `#${name}.`
+        const prefix = `${name}.`
         
-        const [value] = store.useState(name as any)
+        const value = store.useAsyncState(name as any)
 
         const validate  = useComputed<boolean>(props.validate,{id:`${prefix}validate`,
-            depends:[name],                          // 依赖name指向的值   
-            scope:ObserverScopeRef.FirstDepend       // 作为第一个参数传入validate
+            depends:[name],                          // 依赖<name>
+            scope:name,        
+            initial:true,
+            throwError:false
         })  as ComputedObject<boolean>
+        const required  = useComputed<boolean>(props.required,{id:`${prefix}required`,initial:false,throwError:false}) as ComputedObject<boolean> | undefined
+        const visible   = useComputed<boolean>(props.visible,{id:`${prefix}visible`,initial:true,throwError:false})   as ComputedObject<boolean> | undefined
+        const readonly  = useComputed<boolean>(props.readonly,{id:`${prefix}readonly`,initial:false,throwError:false}) as ComputedObject<boolean> | undefined
+        const enable    = useComputed<boolean>(props.enable,{id:`${prefix}enable`,initial:true,throwError:false})     as ComputedObject<boolean> | undefined
+        const select    = useComputed<any[]>(props.select,{id:`${prefix}select`,initial:[],throwError:false})       as ComputedObject<any[]> | undefined
+        const help      = useComputed<string>(props.help,{id:`${prefix}help`,initial:'',throwError:false})          as ComputedObject<string> | undefined
+        const label     = useComputed<string>(props.label,{id:`${prefix}label`,initial:'',throwError:false})        as ComputedObject<string> | undefined
 
-        const required  = useComputed<boolean>(props.required,{id:`${prefix}required`}) as ComputedObject<boolean> | undefined
-        const visible   = useComputed<boolean>(props.visible,{id:`${prefix}visible`})   as ComputedObject<boolean> | undefined
-        const readonly  = useComputed<boolean>(props.readonly,{id:`${prefix}readonly`}) as ComputedObject<boolean> | undefined
-        const enable    = useComputed<boolean>(props.enable,{id:`${prefix}enable`})     as ComputedObject<boolean> | undefined
-        const select    = useComputed<any[]>(props.select,{id:`${prefix}select`})       as ComputedObject<any[]> | undefined
-        const help      = useComputed<string>(props.help,{id:`${prefix}help`})          as ComputedObject<string> | undefined
-        const label     = useComputed<string>(props.label,{id:`${prefix}label`})        as ComputedObject<string> | undefined
-
-        const computedPropObjs = {
+        const fieldPropObjs = {
             validate,
             required,
             visible,
@@ -149,43 +152,66 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             label
         } as Dict<ComputedObject<any> | undefined>
 
-        const [renderProps,setRenderProps] = useState(()=>{
+        const onChange = useCallback((e:React.ChangeEvent<HTMLInputElement>)=>{
+            let inputValue = getInputValueFromEvent(e)            
+            if(name){
+                store.update(state => setVal(state, name.split(PATH_DELIMITER), inputValue));
+            }            
+            e.stopPropagation()
+        },[name])
 
+        const [renderProps,setRenderProps] = useState(()=>{
             return buildFieldRenderProps({
-                value,
-                validate: validate ? validate.val: true,
-                required: required ? required.val: false,
-                visible : visible ? visible.val: true,
-                readonly: readonly ? readonly.val: false,
-                enable  : enable ? enable.val: true,
-                select  : select ? select.val: [],
-                help    : help ? help.val: '',
-                label   : label ? label.val: '',
+                name,
+                validate: validate ? validate.val: pickValue<boolean>(props.validate as boolean,true),
+                required: required ? required.val: pickValue<boolean>(props.required as boolean,false),
+                visible : visible ? visible.val: pickValue<boolean>(props.visible as boolean,true),
+                readonly: readonly ? readonly.val: pickValue<boolean>(props.readonly as boolean,false),
+                enable  : enable ? enable.val:  pickValue<boolean>(props.enable as boolean,true),
+                select  : select ? select.val: pickValue<any[]>(props.select as unknown as any[],[]),
+                help    : help ? help.val: pickValue<string>(props.help as string,''),
+                label   : label ? label.val: pickValue<string>(props.label as string,''),
+                ...value,
+                onChange
             })
         }) 
 
+        const getFieldPropObj = useCallback((path:string[]):[string | undefined,ComputedObject<any> | undefined]=>{
+            const spath = path.join(PATH_DELIMITER)
+            if(spath.startsWith("#"+prefix)){
+                const [propKey] = spath.substring(("#"+prefix).length).split(PATH_DELIMITER)
+                return  [propKey,fieldPropObjs[propKey]]
+            }
+            return [undefined,undefined]
+        },[]) 
+
         useEffect(()=>{
-            // 侦听所有字段计算属性的变化，当变化时，重新渲染字段
-            const watcher = store.watch(`#${name}.*`,({path,value})=>{
-                const name = path.join(PATH_DELIMITER)
-                if(name.startsWith(prefix)){
-                    const [propKey] = name.substring(prefix.length).split(PATH_DELIMITER)
-                    const propObj = computedPropObjs[propKey ]
-                    if(propObj){
-                        if(propObj.async && path[path.length-1] === 'value'){
-                            setRenderProps({...renderProps,[propKey]: value.value})
-                        }else{
-                            setRenderProps({...renderProps,[propKey]:value})
-                        }                        
-                    }
+            const watchers:Watcher[] =[]
+            watchers.push(store.on("computed:error",({path,error})=>{
+                const [propKey,propObj] = getFieldPropObj(path)
+                if(propObj && propKey){                    
+                    setRenderProps({...renderProps,error:error.message})
                 }
-            },{operates:'write'})            
-            return ()=>watcher.off()
+            }))
+            watchers.push(store.watch(name,({path,value})=>{
+                setRenderProps({...renderProps,value})
+            }))
+            // 侦听所有字段计算属性的变化，当变化时，重新渲染字段
+            watchers.push(store.watch(`#${name}.*`,({path,value})=>{
+                const [propKey,propObj] = getFieldPropObj(path)
+                if(propObj && propKey){
+                    if(propObj.async && path[path.length-1] === 'value'){
+                        setRenderProps({...renderProps,[propKey]: value.value})
+                    }else{
+                        setRenderProps({...renderProps,[propKey]:value})
+                    }                        
+                }
+            }))      
+            watchers.push(store.watch(name,({value})=>{
+                setRenderProps({...renderProps,value})
+            }))   
+            return ()=>watchers.forEach(w=>w.off())
         },[])
- 
-
-
-       
         return <>{props.render(renderProps)}</>
     },()=>true)
 }

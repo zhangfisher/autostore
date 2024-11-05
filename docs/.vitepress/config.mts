@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig } from 'vitepress'
 import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
+import { codeInspectorPlugin } from 'code-inspector-plugin';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -100,6 +101,7 @@ export default defineConfig({
                   { text:"基本用法",link:"/guide/form/useform/basic"},
                   { text:"表单校验",link:"/guide/form/useform/validate"},
                   { text:"字段拆分",link:"/guide/form/useform/split-field"}, 
+                  { text:"字段组件",link:"/guide/form/useform/field"}, 
                 ]
               },
             ]
@@ -141,5 +143,8 @@ export default defineConfig({
         whitespace: 'preserve'
       }
     }
+  },
+  vite:{
+    plugins: [codeInspectorPlugin({ bundler: 'vite'})]
   }
 })

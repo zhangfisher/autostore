@@ -50,7 +50,8 @@ export function createFieldBinding<State extends Dict,Value=any>(
             }        
         },
         name: fieldName,
-        checked: getCheckedValue(value)
+        checked: getCheckedValue(value),
+        'data-field':true
     },{
         get(target, key:string,receiver){             
             if(isNumber(key) && options.type==='radio' && options.values){

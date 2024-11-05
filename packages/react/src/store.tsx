@@ -7,15 +7,17 @@ import type { SignalComponentType } from "./signal/types";
 import { createInputBinding } from './form/bind';
 import { InputBindingsType } from './form/types';
 import { createUseField } from './form/useField';
-import { UseDepsType,  UseStateType, UseWatchType, UseReactiveType, UseComputedType } from './hooks/types';
+import { UseDepsType,  UseStateType, UseWatchType, UseReactiveType, UseComputedType, UseAsyncStateType } from './hooks/types';
 import { UseFieldType, UseFieldsType } from "./form/types"
 import { createUseWatch } from './hooks/useWatch';
 import { createUseFields } from './form/useFields';
 import { createUseComputed } from "./hooks/useComputed";
+import { createUseAsyncState } from "./hooks/useAsyncState";
 
 export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
     useState        : UseStateType<State>
-    useAsyncState   
+    useAsyncState   : UseAsyncStateType
+    useAsyncReactive
     useDeps         : UseDepsType<State>
     $               : SignalComponentType<State>
     signal          : SignalComponentType<State>
@@ -24,7 +26,6 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
     useField        : UseFieldType<State>
     useFields       : UseFieldsType<State>
     useReactive     : UseReactiveType<State>
-    useAsyncReactive
     useComputed     : UseComputedType<State> 
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,Object.assign({
@@ -33,8 +34,8 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
         this.signal           = this.$ = createSignalComponent(this).bind(this)
         this.useState         = createUseState(this).bind(this)
         this.useReactive      = this.useState
-        this.useAsyncState    = (selector:any)=>this.useState<State>(selector,true)[0]        
-        this.useAsyncReactive = this.useAsyncState.bind(this)
+        this.useAsyncState    = createUseAsyncState(this).bind(this)   
+        this.useAsyncReactive = this.useAsyncState
         this.useDeps          = createUseDeps(this).bind(this)
         this.useWatch         = createUseWatch(this).bind(this)  
         this.bind             = createInputBinding(this).bind(this)

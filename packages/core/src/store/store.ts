@@ -116,8 +116,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.collectDependencies = this.collectDependencies.bind(this)
         this.trace = this.trace.bind(this)
         this.installExtends()                     
-        if(!this._options.lazy) forEachObject(this._data)           
-        if(this._options.resetable) this.resetable = true 
+        if(!this._options.lazy) forEachObject(this._data)       
+        if(this._options.resetable) this.resetable = true     
         // @ts-ignore
         if(this._options.debug && typeof(globalThis.__AUTOSTORE_DEVTOOLS__) === 'object') {                    
             // @ts-ignore
@@ -140,7 +140,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             this._updatedWatcher = this.watch(({path,oldValue})=>{
                 if(path.length===0) return              
                 const pathKey = path.join(PATH_DELIMITER)
-                if(!(pathKey in this._updatedState!)){
+                if(!pathKey.startsWith("#") && !(pathKey in this._updatedState!)){
                     this._updatedState![pathKey] = oldValue
                 }
             },{operates:'write'})

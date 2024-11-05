@@ -39,8 +39,8 @@ export class ComputedObject<Value=any> extends ObserverObject<Value,ComputedOpti
     *  手动触发计算属性getter函数的重新执行，重新计算计算属性的值
     * 
     * @description
-    * eslint-disable-next-line @typescript-eslint/no-unused-vars
-    */
+    * 
+    *///eslint-disable-next-line @typescript-eslint/no-unused-vars
     run(options?:RuntimeComputedOptions){
         throw new Error("Method not implemented.");
     } 
