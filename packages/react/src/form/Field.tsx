@@ -214,7 +214,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 }
             }))
             watchers.push(store.watch(name,({path,value})=>{
-                Object.assign(renderProps.current!,value)
+                Object.assign(renderProps.current!,{value})
                 setRefresh(++count)
             }))
             // 侦听所有字段计算属性的变化，当变化时，重新渲染字段
