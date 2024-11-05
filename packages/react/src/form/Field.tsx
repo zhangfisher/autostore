@@ -56,10 +56,9 @@
  * 
  */
 
-import { ComputedObject, ComputedState, Dict, ObserverBuilder } from "autostore"
-import React, { useCallback, useEffect, useState } from "react"
+import { ComputedObject,  Dict, ObserverBuilder, ObserverScopeRef, PATH_DELIMITER } from "autostore"
+import React, {  useEffect, useState } from "react"
 import { ReactAutoStore } from "../store"
-import {  UseFormOptions } from "./types"
 import { AutoFormContext } from "./Form"
 import { SignalComponentRenderArgs } from "../types"
 
@@ -72,11 +71,14 @@ export type AutoFieldRenderProps<State extends Dict,Value> = {
     readonly: boolean
     enable  : boolean
     select  : any[]
-    onChange: (e:MouseEvent,updaterOrValue:Value | ((state:ComputedState<State>)=>void))=>void
+    help    : string
+    label   : string
+    onChange: (e:React.ChangeEvent<HTMLInputElement>)=>void
 } & SignalComponentRenderArgs<Value> 
 
 export type AutoFieldProps<State extends Dict,Value> = {
     name     : string  
+    label?   : string | ObserverBuilder<string,State>
     required?: boolean | ObserverBuilder<boolean,State>
     validate?: boolean | ObserverBuilder<boolean,State>
     visible? : boolean | ObserverBuilder<boolean,State>
@@ -91,6 +93,7 @@ function buildFieldRenderProps(props:Partial<AutoFieldRenderProps<any,any>>){
     return Object.assign({
         value   : undefined,
         required: false,
+        label   : '',
         validate: true,
         visible : true,
         readonly: false,
@@ -101,7 +104,7 @@ function buildFieldRenderProps(props:Partial<AutoFieldRenderProps<any,any>>){
         retry   : 0,
         error   : undefined,
         dirty   : false,
-        help    : undefined,
+        help    : '',
         progress: 0,    
         onChange:()=>{},
         run     :()=>{},
@@ -109,31 +112,44 @@ function buildFieldRenderProps(props:Partial<AutoFieldRenderProps<any,any>>){
     },props) as AutoFieldRenderProps<any,any>
 }
 
-export type AutoField<State extends Dict> = <Value>(props:AutoFieldProps<State,Value>)=>React.ReactNode
+export type AutoField<State extends Dict> = <Value=any>(props:AutoFieldProps<State,Value>)=>React.ReactNode
 
 const ComputedFieldPropNames = ['required','validate','visible','readonly','enable','select'] as const
 
 export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoField<State>>{
-    const ctx = formCtx.current!
-    const options:UseFormOptions<State> = formCtx.current!.options
     const { useComputed } = store
-    return React.memo<AutoField<State>>(<Value=any>(props:AutoFieldProps<State,Value>)=>{
+    return React.memo(<Value=any>(props:AutoFieldProps<State,Value>)=>{
         
         const { name } = props
-        
+        const prefix = `#${name}.`
         
         const [value] = store.useState(name as any)
 
-        const validate  = useComputed<boolean>(props.validate,{id:`#${name}.validate`})  as ComputedObject<boolean>
-        const required  = useComputed<boolean>(props.required,{id:`#${name}.required`})  as ComputedObject<boolean>
-        const visible   = useComputed<boolean>(props.visible,{id:`#${name}.visible`})   as ComputedObject<boolean>
-        const readonly  = useComputed<boolean>(props.readonly,{id:`#${name}.readonly`}) as ComputedObject<boolean>
-        const enable    = useComputed<boolean>(props.enable,{id:`#${name}.enable`})     as ComputedObject<boolean>
-        const select    = useComputed<any[]>(props.select,{id:`#${name}.select`})        as ComputedObject<any[]>
-        const help      = useComputed<string>(props.help,{id:`#${name}.help`})           as ComputedObject<string>
+        const validate  = useComputed<boolean>(props.validate,{id:`${prefix}validate`,
+            depends:[name],                          // 依赖name指向的值   
+            scope:ObserverScopeRef.FirstDepend       // 作为第一个参数传入validate
+        })  as ComputedObject<boolean>
 
+        const required  = useComputed<boolean>(props.required,{id:`${prefix}required`}) as ComputedObject<boolean> | undefined
+        const visible   = useComputed<boolean>(props.visible,{id:`${prefix}visible`})   as ComputedObject<boolean> | undefined
+        const readonly  = useComputed<boolean>(props.readonly,{id:`${prefix}readonly`}) as ComputedObject<boolean> | undefined
+        const enable    = useComputed<boolean>(props.enable,{id:`${prefix}enable`})     as ComputedObject<boolean> | undefined
+        const select    = useComputed<any[]>(props.select,{id:`${prefix}select`})       as ComputedObject<any[]> | undefined
+        const help      = useComputed<string>(props.help,{id:`${prefix}help`})          as ComputedObject<string> | undefined
+        const label     = useComputed<string>(props.label,{id:`${prefix}label`})        as ComputedObject<string> | undefined
 
-         const [renderProps,setRenderProps] = useState(()=>{
+        const computedPropObjs = {
+            validate,
+            required,
+            visible,
+            readonly,
+            enable,
+            select,
+            help,
+            label
+        } as Dict<ComputedObject<any> | undefined>
+
+        const [renderProps,setRenderProps] = useState(()=>{
 
             return buildFieldRenderProps({
                 value,
@@ -143,43 +159,34 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 readonly: readonly ? readonly.val: false,
                 enable  : enable ? enable.val: true,
                 select  : select ? select.val: [],
-                help    : help ? help.val: undefined,
+                help    : help ? help.val: '',
+                label   : label ? label.val: '',
             })
-        })
-
-
-
-        
-
+        }) 
 
         useEffect(()=>{
-            store.watch(`#${name}.*`,({path,value})=>{
-                
-            })
-            validate && validate.watch(({value})=>{
-                setRenderProps({...renderProps,validate:value})
-            })
-           
-            return 
+            // 侦听所有字段计算属性的变化，当变化时，重新渲染字段
+            const watcher = store.watch(`#${name}.*`,({path,value})=>{
+                const name = path.join(PATH_DELIMITER)
+                if(name.startsWith(prefix)){
+                    const [propKey] = name.substring(prefix.length).split(PATH_DELIMITER)
+                    const propObj = computedPropObjs[propKey ]
+                    if(propObj){
+                        if(propObj.async && path[path.length-1] === 'value'){
+                            setRenderProps({...renderProps,[propKey]: value.value})
+                        }else{
+                            setRenderProps({...renderProps,[propKey]:value})
+                        }                        
+                    }
+                }
+            },{operates:'write'})            
+            return ()=>watcher.off()
         },[])
-
-        const render = useCallback((props:AutoFieldRenderProps<State,Value>)=>{
-
-            const renderProps = buildFieldRenderProps(props)
-            return props.render!(renderProps)
-        },[])
-
-
-        useEffect(()=>{
-              
-
-
-
-        },[])
+ 
 
 
        
-        return <>{render(renderProps)}</>
+        return <>{props.render(renderProps)}</>
     },()=>true)
 }
 

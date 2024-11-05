@@ -3,11 +3,12 @@ import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts"
 export type  ObserverType = 'watch' | 'computed'
 
 export enum  ObserverScopeRef{
-    Root    = 'ROOT',
-    Current = 'CURRENT',
-    Parent  = 'PARENT',  
-    Depends = 'DEPENDS',                // 指向依赖数组
-    Self    = 'SELF'                    // 指向自身，默认值
+    Root        = 'ROOT',
+    Current     = 'CURRENT',
+    Parent      = 'PARENT',  
+    Depends     = 'DEPENDS',                // 指向依赖数组
+    FirstDepend = 'FIRST-DEPENDS',          // 指向第一个依赖
+    Self        = 'SELF'                    // 指向自身，默认值
 } 
 
   

@@ -79,7 +79,7 @@ export type ValidateResult = {
 
 export type UseFormResult<State extends Dict>={ 
     Form        : AutoForm<State>
-    Field       : MemoExoticComponent<AutoField<State>>  
+    Field       : AutoField<State>  
     valid       : boolean
     dirty       : boolean
     submiting   : boolean

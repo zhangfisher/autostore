@@ -390,10 +390,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 	}
 	/**
 	 * 
-	 * 由于异步计算是一个对象，所以我们需要侦听的是对象的变化，而不仅是对象的值
-	 * 
-	 * 
-	 * 
+	 * 由于异步计算是一个对象，所以我们需要侦听的是对象的变化，而不仅是对象的值 
 	 * 
 	 */
 	protected getValueWatchPath(){

@@ -21,7 +21,7 @@ export function createObserverObject<State extends Dict,Value=any,Scope=any>(
         }else if(descriptor.type==='watch'){
             return store.watchObjects.create(descriptor as any)
         }
-    }else{
+    }else if(typeof(descriptor)==='function'){
         const builder = computed(descriptor as any)
         const descr = builder()
         descr.options.objectify = false

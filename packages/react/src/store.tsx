@@ -32,14 +32,14 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
         },options))
         this.signal           = this.$ = createSignalComponent(this).bind(this)
         this.useState         = createUseState(this).bind(this)
-        this.useAsyncState    = (selector:any)=>this.useState<State>(selector,true)[0]
+        this.useReactive      = this.useState
+        this.useAsyncState    = (selector:any)=>this.useState<State>(selector,true)[0]        
+        this.useAsyncReactive = this.useAsyncState.bind(this)
         this.useDeps          = createUseDeps(this).bind(this)
         this.useWatch         = createUseWatch(this).bind(this)  
         this.bind             = createInputBinding(this).bind(this)
         this.useField         = createUseField(this).bind(this)
         this.useFields        = createUseFields(this).bind(this)
-        this.useReactive      = this.useState
-        this.useAsyncReactive = this.useAsyncState.bind(this)
         this.useComputed      = createUseComputed(this).bind(this) 
         this.reset            = this.reset.bind(this)
     }  
