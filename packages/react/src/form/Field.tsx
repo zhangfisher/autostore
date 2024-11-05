@@ -56,8 +56,8 @@
  * 
  */
 
-import { ComputedObject,  Dict, ObserverBuilder, ObserverScopeRef, PATH_DELIMITER, setVal, Watcher } from "autostore"
-import React, {  useCallback, useEffect, useState } from "react"
+import { ComputedObject,  Dict, getAsyncVal, getVal, ObserverBuilder, ObserverScopeRef, PATH_DELIMITER, setVal, Watcher } from "autostore"
+import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
 import { SignalComponentRenderArgs } from "../types"
@@ -159,9 +159,12 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             }            
             e.stopPropagation()
         },[name])
+        
+        const [ refresh,setRefresh ] = useState(0)
 
-        const [renderProps,setRenderProps] = useState(()=>{
-            return buildFieldRenderProps({
+        const renderProps = useRef<AutoFieldRenderProps<State,Value>>()
+        if(!renderProps.current){
+            renderProps.current=buildFieldRenderProps({
                 name,
                 validate: validate ? validate.val: pickValue<boolean>(props.validate as boolean,true),
                 required: required ? required.val: pickValue<boolean>(props.required as boolean,false),
@@ -174,7 +177,22 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 ...value,
                 onChange
             })
-        }) 
+        } 
+        // const [renderProps,setRenderProps] = useState(()=>{
+        //     return buildFieldRenderProps({
+        //         name,
+        //         validate: validate ? validate.val: pickValue<boolean>(props.validate as boolean,true),
+        //         required: required ? required.val: pickValue<boolean>(props.required as boolean,false),
+        //         visible : visible ? visible.val: pickValue<boolean>(props.visible as boolean,true),
+        //         readonly: readonly ? readonly.val: pickValue<boolean>(props.readonly as boolean,false),
+        //         enable  : enable ? enable.val:  pickValue<boolean>(props.enable as boolean,true),
+        //         select  : select ? select.val: pickValue<any[]>(props.select as unknown as any[],[]),
+        //         help    : help ? help.val: pickValue<string>(props.help as string,''),
+        //         label   : label ? label.val: pickValue<string>(props.label as string,''),
+        //         ...value,
+        //         onChange
+        //     })
+        // }) 
 
         const getFieldPropObj = useCallback((path:string[]):[string | undefined,ComputedObject<any> | undefined]=>{
             const spath = path.join(PATH_DELIMITER)
@@ -187,32 +205,41 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
 
         useEffect(()=>{
             const watchers:Watcher[] =[]
+            let count:number = 0
             watchers.push(store.on("computed:error",({path,error})=>{
                 const [propKey,propObj] = getFieldPropObj(path)
-                if(propObj && propKey){                    
-                    setRenderProps({...renderProps,error:error.message})
+                if(propObj && propKey){   
+                    Object.assign(renderProps.current!,{error:error.message})      
+                    setRefresh(++count)
                 }
             }))
             watchers.push(store.watch(name,({path,value})=>{
-                setRenderProps({...renderProps,value})
+                Object.assign(renderProps.current!,value)
+                setRefresh(++count)
             }))
             // 侦听所有字段计算属性的变化，当变化时，重新渲染字段
             watchers.push(store.watch(`#${name}.*`,({path,value})=>{
                 const [propKey,propObj] = getFieldPropObj(path)
                 if(propObj && propKey){
+                    const updated:Dict  = {}
                     if(propObj.async && path[path.length-1] === 'value'){
-                        setRenderProps({...renderProps,[propKey]: value.value})
+                        Object.assign({[propKey]: value.value})
                     }else{
-                        setRenderProps({...renderProps,[propKey]:value})
-                    }                        
+                        Object.assign({[propKey]:value})
+                    }       
+                    if(propKey === 'validate' && value === true){
+                        updated.error = null
+                    }
+                    Object.assign(renderProps.current!,updated)
+                    setRefresh(++count)
+                    
                 }
-            }))      
-            watchers.push(store.watch(name,({value})=>{
-                setRenderProps({...renderProps,value})
-            }))   
+            }))  
             return ()=>watchers.forEach(w=>w.off())
         },[])
-        return <>{props.render(renderProps)}</>
+
+        return <>{props.render(renderProps.current!)}</>
+
     },()=>true)
 }
 

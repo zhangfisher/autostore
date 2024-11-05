@@ -1,7 +1,7 @@
 import path from 'path';
 import { defineConfig } from 'vitepress'
 import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
-import { codeInspectorPlugin } from 'code-inspector-plugin';
+// import { codeInspectorPlugin } from 'code-inspector-plugin';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -144,7 +144,7 @@ export default defineConfig({
       }
     }
   },
-  vite:{
-    plugins: [codeInspectorPlugin({ bundler: 'vite'})]
-  }
+  // vite:{
+  //   plugins: [codeInspectorPlugin({ bundler: 'vite'})]
+  // }
 })
