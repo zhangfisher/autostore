@@ -19,6 +19,7 @@ import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions,  Observ
 import { StateOperate } from "../store/types"
 import { ComputedObject } from "./computedObject" 
 import { Dict } from "../types"
+import { ValueOf } from "flex-tools"
 
 
 /**
@@ -276,20 +277,29 @@ export type ComputedSyncReturns<T=any> = (...args: any) => Exclude<T,Promise<any
 export type AsyncReturnType<T extends (...args: any) => any> = T extends (...args: any) => Promise<infer R> ? R : (
     T extends (...args: any) => infer R ? R : any)
  
- 
-
-
-export type ComputedDescriptor<Value=any,Scope=any> = ObserverDescriptor<      
+  
+export type SyncComputedDescriptor<Value=any,Scope=any> = ObserverDescriptor<      
     'computed',         
     Value,
     Scope, 
     ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>,
     ComputedOptions
 >
-
-export type ComputedDescriptorBuilder<Value=any,Scope=any> 
-    = ObserverDescriptorBuilder<'computed',Value,Scope,ComputedDescriptor<Value,Scope>>
-
+export type SyncComputedDescriptorBuilder<Value=any,Scope=any> 
+    = ObserverDescriptorBuilder<'computed',Value,Scope,SyncComputedDescriptor<Value,Scope>>
 
 
+export type AsyncComputedDescriptor<Value=any,Scope=any> = ObserverDescriptor<      
+    'computed',         
+    Value,
+    Scope, 
+    AsyncComputedGetter<Value,Scope>,
+    ComputedOptions
+>
 
+export type AsyncComputedDescriptorBuilder<Value=any,Scope=any> 
+    = ObserverDescriptorBuilder<'computed',Value,Scope,AsyncComputedDescriptor<Value,Scope>>
+
+
+export type ComputedDescriptor<Value=any,Scope=any> = SyncComputedDescriptor<Value,Scope> | AsyncComputedDescriptor<Value,Scope>
+export type ComputedDescriptorBuilder<Value=any,Scope=any> = SyncComputedDescriptorBuilder<Value,Scope> | AsyncComputedDescriptorBuilder<Value,Scope>

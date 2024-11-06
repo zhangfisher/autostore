@@ -67,6 +67,4 @@ export default ()=>{
         </div>
     </Layout>
 }
-
- 
  

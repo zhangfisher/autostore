@@ -56,7 +56,7 @@
  * 
  */
 
-import { computed, ComputedObject,  Dict,  ObserverBuilder, PATH_DELIMITER, PickComputedResult, PickComputedResult2, setVal, Watcher } from "autostore"
+import { ComputedObject,  Dict,  ObserverBuilder, PATH_DELIMITER, PickComputedResult, setVal, Watcher } from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
@@ -65,30 +65,24 @@ import { pickValue } from "./utils/pickValue"
 import { getInputValueFromEvent } from "../utils"
 
 
-export interface AutoFieldRenderProps<State extends Dict,Value, 
-    Validate extends FiledComputedBooleanProp<State> =  FiledComputedBooleanProp<State>,    
-    Required extends FiledComputedBooleanProp<State> =  FiledComputedBooleanProp<State>,
-    Visible extends FiledComputedBooleanProp<State> =  FiledComputedBooleanProp<State>,
-    Enable extends FiledComputedBooleanProp<State> =  FiledComputedBooleanProp<State>, 
-    Label extends FiledComputedStringProp<State> =  FiledComputedStringProp<State>,   
-    Help extends FiledComputedStringProp<State> =  FiledComputedStringProp<State>,
-    Readonly extends FiledComputedBooleanProp<State> =  FiledComputedBooleanProp<State>,
-    Select extends FiledComputedArrayProp<State> =  FiledComputedArrayProp<State>
-> extends SignalComponentRenderArgs<Value> {
-    name    : string 
-    validate: PickComputedResult<Validate> 
-    required: PickComputedResult<Required> 
-    visible : PickComputedResult<Visible> 
-    readonly: PickComputedResult<Readonly> 
-    enable  : PickComputedResult<Enable> 
-    select  : PickComputedResult<Select> 
-    help    : PickComputedResult<Help> 
-    label   : PickComputedResult<Label>
+export type AutoFieldRenderProps<State extends Dict,Value,
+    ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State> > 
+= {
+    name    : string
+    value   : Value
+    required: boolean
+    validate: PickComputedResult<ComputedProps['validate']>
+    visible : boolean
+    readonly: boolean
+    enable  : boolean
+    select  : any[]
+    help    : string
+    label   : string
     onChange: (e:React.ChangeEvent<HTMLInputElement>)=>void
-}  
+} & SignalComponentRenderArgs<Value> 
 
 
-export type AutoFieldComputedProps<State extends Dict> = {
+export interface AutoFieldComputedProps<State extends Dict> {
     label   : string | ObserverBuilder<string,State>
     required: boolean | ObserverBuilder<boolean,State>
     validate: boolean | ObserverBuilder<boolean,State>
@@ -99,52 +93,27 @@ export type AutoFieldComputedProps<State extends Dict> = {
     help    : string  | ObserverBuilder<string,State>
 }
 
- 
-export type FiledComputedBooleanProp<State extends Dict,Scope = State> = boolean| ObserverBuilder<boolean,Scope>  
-export type FiledComputedStringProp<State extends Dict,Scope  = State> = string | ObserverBuilder<string,Scope>  
-export type FiledComputedNumberProp<State extends Dict,Scope  = State> = number | ObserverBuilder<number,Scope>  
-export type FiledComputedArrayProp<State extends Dict,Scope   = State> = Array<any> | ObserverBuilder<Array<any>,Scope>  
-
+export type AutoFieldRender<State extends Dict,Value,
+    ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State>> 
+= (props:AutoFieldRenderProps<State,Value,ComputedProps>)=>React.ReactNode
 
 
 export interface AutoFieldProps<State extends Dict,
-    Value, 
-    Validate extends FiledComputedBooleanProp<State> = FiledComputedBooleanProp<State>,    
-    Required extends FiledComputedBooleanProp<State> = FiledComputedBooleanProp<State>,
-    Visible extends FiledComputedBooleanProp<State>  = FiledComputedBooleanProp<State>,
-    Enable extends FiledComputedBooleanProp<State>   = FiledComputedBooleanProp<State>, 
-    Label extends FiledComputedStringProp<State>     = FiledComputedStringProp<State>,   
-    Help extends FiledComputedStringProp<State>      = FiledComputedStringProp<State>,
-    Readonly extends FiledComputedBooleanProp<State> = FiledComputedBooleanProp<State>,
-    Select extends FiledComputedArrayProp<State>     = FiledComputedArrayProp<State>
-> {
-    name      : string  
-    validate? : Validate 
-    required? : Required
-    visible?  : Visible
-    readonly? : Readonly
-    enable?   : Enable
-    select?   : Select
-    help?     : Help
-    label?    : Label
-    render    : (props:AutoFieldRenderProps<State,Value,Validate,Required,Visible,Enable,Label,Help,Readonly,Select>)=>React.ReactNode
-}  
+    Value,
+    ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State> 
+>   {
+    name     : string  
+    render   : AutoFieldRender<State,Value,ComputedProps> 
+} 
+
 
 export type AutoField<State extends Dict> = <
-    Value,
-    Validate extends FiledComputedBooleanProp<State> = FiledComputedBooleanProp<State>,    
-    Required extends FiledComputedBooleanProp<State> = FiledComputedBooleanProp<State>,
-    Visible extends FiledComputedBooleanProp<State>  = FiledComputedBooleanProp<State>,
-    Enable extends FiledComputedBooleanProp<State>   = FiledComputedBooleanProp<State>, 
-    Label extends FiledComputedStringProp<State>     = FiledComputedStringProp<State>,   
-    Help extends FiledComputedStringProp<State>      = FiledComputedStringProp<State>,
-    Readonly extends FiledComputedBooleanProp<State> = FiledComputedBooleanProp<State>,
-    Select extends FiledComputedArrayProp<State>     = FiledComputedArrayProp<State>
+    Value=any,
+    ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State> 
 >(
-    props:AutoFieldProps<State,Value,Validate,Required,Visible,Enable,Label,Help,Readonly,Select>
+    props:AutoFieldProps<State,Value,ComputedProps>
 )=>React.ReactNode
  
-
 
 function buildFieldRenderProps(props:any){
     return Object.assign({
@@ -171,7 +140,12 @@ function buildFieldRenderProps(props:any){
 
 export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoField<State>>{
     const { useComputed } = store
-    return React.memo((props)=>{
+    return React.memo(<
+        Value=any,
+        ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State> 
+    >(
+            props:AutoFieldProps<State,Value,ComputedProps>
+    )=>{
         
         const { name } = props
         const prefix = `${name}.`
@@ -213,7 +187,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
         
         const [ _,setRefresh ] = useState(0)
 
-        const renderProps = useRef<AutoFieldRenderProps<State,any>>()
+        const renderProps = useRef<AutoFieldRenderProps<State,Value,ComputedProps>>()
         if(!renderProps.current){
             renderProps.current=buildFieldRenderProps({
                 name,
@@ -228,7 +202,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 ...value, 
                 error: validate?.error?.message ?? '',
                 onChange
-            }) as AutoFieldRenderProps<State,any>
+            }) as AutoFieldRenderProps<State,Value,ComputedProps>
         }  
 
         const getFieldPropObj = useCallback((path:string[]):[string | undefined,ComputedObject<any> | undefined]=>{
@@ -274,40 +248,9 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             return ()=>watchers.forEach(w=>w.off())
         },[])
 
-        return <>{props.render(renderProps.current as any)}</>
+        return <>{props.render(renderProps.current!)}</>
 
     },()=>true)
 }
 
-//         //************************************* */
-
-
-interface FieldProps<State extends Dict,
-    T extends ObserverBuilder<boolean,State> = ObserverBuilder<boolean,State>>  {
-    validate: T;
-    render: (props: {validate:PickComputedResult2<T>}) => React.ReactNode;
-  }
-  
-
-const Field = <
-  State extends Dict,
-  T extends ObserverBuilder<boolean,State>   = ObserverBuilder<boolean,State>  
->( { validate, render }: FieldProps<State,T>):React.ReactNode =>{ 
-   
-    return <>{render({validate:true } as any)}</>;
-
-}
-
-
-  <>
-  <Field validate={()=>true} render={value => value ? <div>True</div> : <div>False</div>} />
-
-  <Field validate={()=>true} render={value => value ? <div>True</div> : <div>False</div>} />
-  <Field validate={computed(()=>true)} render={value => value ? <div>True</div> : <div>False</div>} />
-  <Field validate={async ()=>true} render={value => value ? <div>True</div> : <div>False</div>} />
-  <Field validate={computed(async ()=>true,[])} render={value => value ? <div>True</div> : <div>False</div>} />
-  </>
-// //************************************* */
-
- 
- 
+        

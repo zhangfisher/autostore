@@ -6,11 +6,12 @@ import { getDefaultComputedOptions } from "../utils/getDefaultComputedOptions";
 import {
 	AsyncComputedGetter,
 	ComputedDepends,
-	ComputedDescriptorBuilder,
 	ComputedDescriptor,
 	ComputedGetter,
 	ComputedOptions,
-	SyncComputedOptions
+	SyncComputedOptions,
+	AsyncComputedDescriptorBuilder,
+	SyncComputedDescriptorBuilder
 } from "./types";
 
 /**
@@ -26,8 +27,8 @@ import {
  * @returns
  *
  */
-export function computed<Value = any, Scope = any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>): ComputedDescriptorBuilder<Value,Scope>;
-export function computed<Value = any, Scope = any >(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>): Value;
+export function computed<Value = any, Scope = any>(getter: AsyncComputedGetter<Value,Scope>,depends: ComputedDepends,options?: ComputedOptions<Value,Scope>):AsyncComputedDescriptorBuilder<Value,Scope>;
+export function computed<Value = any, Scope = any >(getter: ComputedGetter<Value,Scope>,options?: SyncComputedOptions<Value,Scope>): SyncComputedDescriptorBuilder<Value,Scope>;
 export function computed<Value = any, Scope = any>(): any {
   const getter = arguments[0];
 	if (typeof getter !== "function") throw new Error("computed getter must be a function");

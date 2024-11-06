@@ -1,4 +1,4 @@
-import { AsyncComputed, AsyncComputedGetter, AsyncComputedValue, Computed, ComputedDescriptorBuilder, ComputedGetter } from "./computed";
+import { AsyncComputed, AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, Computed, ComputedDescriptorBuilder, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
 import type  { AutoStore } from "./store";
 import { WatchDescriptorBuilder } from "./watch/types";
 
@@ -24,23 +24,17 @@ export type AsyncFunction<R=any> =  (...args: any) => Promise<R>;
 //     )                              
 // ) 
 
-export type PickComputedResult<T> = T extends ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
-( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
-    ( T extends  Computed<infer X> ? X :                                           // 同步函数
-        (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
-            T
-        )
-    )                              
-)  
+export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
+    ( T extends SyncComputedDescriptorBuilder<infer X> ? X :  ( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
+        ( T extends  Computed<infer X> ? X :                                           // 同步函数
+            (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
+                T
+            )
+        )                              
+    )  
+)
+
  
-export type PickComputedResult2<T> = T extends ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
-( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
-    ( T extends  Computed<infer X> ? X :                                           // 同步函数
-        (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
-            T
-        )
-    )                              
-) 
 
  
 /**
@@ -82,3 +76,12 @@ export type ObserverBuilder<Value=any,Scope=any> =
 
 export type ComputedDescriptorParameter<Value=any,Scope=any> =  ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<any> | AsyncComputedGetter<any>
  
+export type PickComputedResult2<T> = T extends ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
+( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
+    ( T extends  ComputedGetter<infer X> ? X :                                           // 同步函数
+        (T extends AsyncComputedGetter<infer X> ? AsyncComputedValue<X> :                // 异步函数
+            T
+        )
+    )                              
+)  
+
