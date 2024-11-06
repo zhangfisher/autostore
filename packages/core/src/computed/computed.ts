@@ -16,10 +16,7 @@ import {
 
 /**
  * 用来封装状态的计算函数，使用计算函数的传入的是当前对象
- *
- *  类型声明：
- *   R: 计算函数的返回值类型,该值会回写入声明的计算属性中，如果是异步计算函数，会回写入AsyncComputedObject.value中
- *   ExtraAttrs: 额外的属性，会合并到AsyncComputedObject中
+ * 
  *
  * @param getter
  * @param depends

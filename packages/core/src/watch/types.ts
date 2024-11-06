@@ -30,9 +30,9 @@ export type WatchScope<Value=any> = {
 export type WatchGetter<Value=any,DependValue= any> = (
     scope: {path:string[],value:DependValue},
     watchObject : WatchObject<Value>
-)=>Exclude<any,Promise<any>> | undefined
+)=>Exclude<Value,Promise<any>> //| undefined
 
-export type WatchDescriptor<Value=any, Scope extends WatchScope=WatchScope> = ObserverDescriptor<
+export type WatchDescriptor<Value=any, Scope extends WatchScope<Value>=WatchScope<Value>> = ObserverDescriptor<
   'watch',
   Value,
   Scope,

@@ -14,28 +14,19 @@ export type AsyncFunction<R=any> =  (...args: any) => Promise<R>;
     
 // **************  以下实现将计算属性函数的返回值类型提取出来  **************
 
-
-// export type PickComputedResult<T> = T extends Computed<infer X> ? X : 
-// ( T extends  AsyncComputed<infer X> ? AsyncComputedValue<X> :                                  
-//     ( T extends ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> :                                              // 同步函数
-//         (T extends WatchDescriptorBuilder<infer X> ? X :                // 异步函数
-//             T
-//         )
-//     )                              
-// ) 
+ 
 
 export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
-    ( T extends SyncComputedDescriptorBuilder<infer X> ? X :  ( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
-        ( T extends  Computed<infer X> ? X :                                           // 同步函数
-            (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
-                T
+    ( T extends SyncComputedDescriptorBuilder<infer X> ? X : 
+         ( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
+            ( T extends  Computed<infer X> ? X :                                           // 同步函数
+                (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
+                    T
             )
         )                              
     )  
 )
-
  
-
  
 /**
 
@@ -70,18 +61,17 @@ export type Primitive = string | number | boolean | null | undefined | symbol | 
 
 
 export type ObserverBuilder<Value=any,Scope=any> = 
-    ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<Value> | AsyncComputedGetter<Value>
+    ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
     | WatchDescriptorBuilder<Value>
 
 
-export type ComputedDescriptorParameter<Value=any,Scope=any> =  ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<any> | AsyncComputedGetter<any>
+export type ComputedDescriptorParameter<Value=any,Scope=any> =  
+    ComputedDescriptorBuilder<Value,Scope> 
+    | ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
  
-export type PickComputedResult2<T> = T extends ComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
-( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
-    ( T extends  ComputedGetter<infer X> ? X :                                           // 同步函数
-        (T extends AsyncComputedGetter<infer X> ? AsyncComputedValue<X> :                // 异步函数
-            T
-        )
-    )                              
-)  
+
+
+export type ComputedBuilder<Value=any,Scope=any> = 
+    ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope> 
+ 
 

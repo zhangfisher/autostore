@@ -1,5 +1,5 @@
 import React from "react"
-import { useForm } from "@autostorejs/react";
+import { computed, useForm, watch } from "@autostorejs/react";
 import { Button,Input,Layout, JsonView } from "x-react-components"
 
 function assert(value:any,help:string){
@@ -29,7 +29,7 @@ export default ()=>{
                     label="FirstName"
                     name="user.firstName"
                     validate={(value)=>{
-                        return assert(value.length>3,"长度必须大于3")
+                        return true //assert(value.length>3,"长度必须大于3")
                     }} 
                     render={({name,label,value,onChange,error,validate,loading})=>{
                         return <div>
@@ -46,9 +46,9 @@ export default ()=>{
                 <Field<string>
                     label="LastName"
                     name="user.lastName"
-                    validate={(value)=>{
+                    validate={computed(async (value)=>{
                         return assert(value.length>5,"长度必须大于5")
-                    }}
+                    })}
                     render={({name,label,value,onChange,error})=>{
                         return <div>
                             <Input name={name} label={label} value={value} onChange={onChange}/>
