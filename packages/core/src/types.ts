@@ -1,4 +1,4 @@
-import { AsyncComputed, AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, Computed, ComputedDescriptorBuilder, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
+import { AsyncComputed, AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, Computed, ComputedDescriptorBuilder, ComputedGetter, IAsyncComputedGetter, IComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
 import type  { AutoStore } from "./store";
 import { WatchDescriptorBuilder } from "./watch/types";
 
@@ -19,8 +19,8 @@ export type AsyncFunction<R=any> =  (...args: any) => Promise<R>;
 export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
     ( T extends SyncComputedDescriptorBuilder<infer X> ? X : 
          ( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
-            ( T extends  Computed<infer X> ? X :                                           // 同步函数
-                (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
+            ( T extends  ComputedGetter<infer X> ? X :                                           // 同步函数
+                (T extends AsyncComputedGetter<infer X> ? AsyncComputedValue<X> :                // 异步函数
                     T
             )
         )                              
@@ -28,6 +28,17 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
 )
  
  
+export type PickComputedResult3<T> = T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
+( T extends SyncComputedDescriptorBuilder<infer X> ? X : 
+     ( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
+        ( T extends  Computed<infer X> ? X :                                           // 同步函数
+            (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
+                T
+        )
+    )                              
+)  
+)
+
 /**
 
 转换状态中的计算属性函数的类型
@@ -71,7 +82,7 @@ export type ComputedDescriptorParameter<Value=any,Scope=any> =
  
 
 
-export type ComputedBuilder<Value=any,Scope=any> = 
-    ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope> 
- 
+export type ComputedBuilder<Value,Scope> = 
+    ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope> | ComputedDescriptorBuilder<Value,Scope> 
+  
 

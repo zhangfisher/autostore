@@ -18,8 +18,7 @@
 import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions,  ObserverScopeRef } from "../observer/types"
 import { StateOperate } from "../store/types"
 import { ComputedObject } from "./computedObject" 
-import { Dict } from "../types"
-import { ValueOf } from "flex-tools"
+import { Dict } from "../types" 
 
 
 /**
@@ -303,3 +302,7 @@ export type AsyncComputedDescriptorBuilder<Value=any,Scope=any>
 
 export type ComputedDescriptor<Value=any,Scope=any> = SyncComputedDescriptor<Value,Scope> | AsyncComputedDescriptor<Value,Scope>
 export type ComputedDescriptorBuilder<Value=any,Scope=any> = SyncComputedDescriptorBuilder<Value,Scope> | AsyncComputedDescriptorBuilder<Value,Scope>
+
+
+export type IComputedGetter<Value=any,Scope=any> = (scope:Scope,...args:any[]) => Exclude<Value,Promise<any>>
+export type IAsyncComputedGetter<Value=any,Scope=any> = (scope:Scope,...args:any[]) => Promise<Value>
