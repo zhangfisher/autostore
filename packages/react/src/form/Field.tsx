@@ -56,7 +56,7 @@
  * 
  */
 
-import { ComputedObject,  Dict, getAsyncVal, getVal, ObserverBuilder, ObserverScopeRef, PATH_DELIMITER, setVal, Watcher } from "autostore"
+import { ComputedObject,  Dict,  ObserverBuilder, PATH_DELIMITER, PickComputedResult, setVal, Watcher } from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
@@ -65,11 +65,13 @@ import { pickValue } from "./utils/pickValue"
 import { getInputValueFromEvent } from "../utils"
 
 
-export type AutoFieldRenderProps<State extends Dict,Value> = {
+export type AutoFieldRenderProps<State extends Dict,Value,
+    ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State> > 
+= {
     name    : string
     value   : Value
     required: boolean
-    validate: boolean
+    validate: ComputedProps['validate'] extends boolean ? boolean : Exclude<PickComputedResult<ComputedProps['validate']>,boolean>
     visible : boolean
     readonly: boolean
     enable  : boolean
@@ -79,20 +81,41 @@ export type AutoFieldRenderProps<State extends Dict,Value> = {
     onChange: (e:React.ChangeEvent<HTMLInputElement>)=>void
 } & SignalComponentRenderArgs<Value> 
 
-export type AutoFieldProps<State extends Dict,Value> = {
-    name     : string  
-    label?   : string | ObserverBuilder<string,State>
-    required?: boolean | ObserverBuilder<boolean,State>
-    validate?: boolean | ObserverBuilder<boolean,State>
-    visible? : boolean | ObserverBuilder<boolean,State>
-    readonly?: boolean | ObserverBuilder<boolean,State>
-    enable?  : boolean | ObserverBuilder<boolean,State>
-    select?  : boolean | ObserverBuilder<any[],State>
-    help?    : string | ObserverBuilder<string,State>
-    render   : (props:AutoFieldRenderProps<State,Value>)=>React.ReactNode
+
+export type AutoFieldComputedProps<State extends Dict> = {
+    label   : string | ObserverBuilder<string,State>
+    required: boolean | ObserverBuilder<boolean,State>
+    validate: boolean | ObserverBuilder<boolean,State>
+    visible : boolean | ObserverBuilder<boolean,State>
+    readonly: boolean | ObserverBuilder<boolean,State>
+    enable  : boolean | ObserverBuilder<boolean,State>
+    select  : boolean | ObserverBuilder<any[],State>
+    help    : string | ObserverBuilder<string,State>
 }
 
-function buildFieldRenderProps(props:Partial<AutoFieldRenderProps<any,any>>){
+export type AutoFieldRender<State extends Dict,Value,
+    ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State>> 
+= (props:AutoFieldRenderProps<State,Value,ComputedProps>)=>React.ReactNode
+
+
+export type AutoFieldProps<State extends Dict,
+    Value,
+    ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State> 
+> = {
+    name     : string  
+    render   : AutoFieldRender<State,Value,ComputedProps> 
+} & Partial<ComputedProps>
+
+
+export type AutoField<State extends Dict> = <
+    Value=any,
+    ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State> 
+>(
+    props:AutoFieldProps<State,Value,ComputedProps>
+)=>React.ReactNode
+ 
+
+function buildFieldRenderProps(props:any){
     return Object.assign({
         value   : undefined,
         required: false,
@@ -106,21 +129,23 @@ function buildFieldRenderProps(props:Partial<AutoFieldRenderProps<any,any>>){
         loading : false,
         retry   : 0,
         error   : undefined,
-        dirty   : false,
         help    : '',
         progress: 0,    
         onChange:()=>{},
         run     :()=>{},
         cancel  :()=>{}
-    },props) as AutoFieldRenderProps<any,any>
+    },props)  
 }
-
-export type AutoField<State extends Dict> = <Value=any>(props:AutoFieldProps<State,Value>)=>React.ReactNode
 
 
 export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>): React.MemoExoticComponent<AutoField<State>>{
     const { useComputed } = store
-    return React.memo(<Value=any>(props:AutoFieldProps<State,Value>)=>{
+    return React.memo(<
+        Value=any,
+        ComputedProps extends AutoFieldComputedProps<State> = AutoFieldComputedProps<State> 
+    >(
+            props:AutoFieldProps<State,Value,ComputedProps>
+    )=>{
         
         const { name } = props
         const prefix = `${name}.`
@@ -160,9 +185,9 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             e.stopPropagation()
         },[name])
         
-        const [ refresh,setRefresh ] = useState(0)
+        const [ _,setRefresh ] = useState(0)
 
-        const renderProps = useRef<AutoFieldRenderProps<State,Value>>()
+        const renderProps = useRef<AutoFieldRenderProps<State,Value,ComputedProps>>()
         if(!renderProps.current){
             renderProps.current=buildFieldRenderProps({
                 name,
@@ -174,25 +199,11 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 select  : select ? select.val: pickValue<any[]>(props.select as unknown as any[],[]),
                 help    : help ? help.val: pickValue<string>(props.help as string,''),
                 label   : label ? label.val: pickValue<string>(props.label as string,''),
-                ...value,
+                ...value, 
+                error: validate?.error?.message ?? '',
                 onChange
-            })
-        } 
-        // const [renderProps,setRenderProps] = useState(()=>{
-        //     return buildFieldRenderProps({
-        //         name,
-        //         validate: validate ? validate.val: pickValue<boolean>(props.validate as boolean,true),
-        //         required: required ? required.val: pickValue<boolean>(props.required as boolean,false),
-        //         visible : visible ? visible.val: pickValue<boolean>(props.visible as boolean,true),
-        //         readonly: readonly ? readonly.val: pickValue<boolean>(props.readonly as boolean,false),
-        //         enable  : enable ? enable.val:  pickValue<boolean>(props.enable as boolean,true),
-        //         select  : select ? select.val: pickValue<any[]>(props.select as unknown as any[],[]),
-        //         help    : help ? help.val: pickValue<string>(props.help as string,''),
-        //         label   : label ? label.val: pickValue<string>(props.label as string,''),
-        //         ...value,
-        //         onChange
-        //     })
-        // }) 
+            }) as AutoFieldRenderProps<State,Value,ComputedProps>
+        }  
 
         const getFieldPropObj = useCallback((path:string[]):[string | undefined,ComputedObject<any> | undefined]=>{
             const spath = path.join(PATH_DELIMITER)
@@ -213,7 +224,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                     setRefresh(++count)
                 }
             }))
-            watchers.push(store.watch(name,({path,value})=>{
+            watchers.push(store.watch(name,({value})=>{
                 Object.assign(renderProps.current!,{value})
                 setRefresh(++count)
             }))
@@ -231,8 +242,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                         updated.error = null
                     }
                     Object.assign(renderProps.current!,updated)
-                    setRefresh(++count)
-                    
+                    setRefresh(++count)                    
                 }
             }))  
             return ()=>watchers.forEach(w=>w.off())

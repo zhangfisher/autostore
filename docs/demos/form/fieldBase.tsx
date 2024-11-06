@@ -13,7 +13,7 @@ export default ()=>{
 
     const { Form,Field,useReactive,reset,useField } = useForm({        
         user:{
-            firstName:"Zhang",
+            firstName:"z",
             lastName:"Fisher"  
         }
     })
@@ -30,8 +30,8 @@ export default ()=>{
                     name="user.firstName"
                     validate={(value)=>{
                         return assert(value.length>3,"长度必须大于3")
-                    }}
-                    render={({name,label,value,onChange,error})=>{
+                    }} 
+                    render={({name,label,value,onChange,error,validate,loading})=>{
                         return <div>
                             <Input 
                                 name={name} 
@@ -67,3 +67,6 @@ export default ()=>{
         </div>
     </Layout>
 }
+
+ 
+ 

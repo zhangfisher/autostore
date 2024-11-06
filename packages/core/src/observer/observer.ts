@@ -37,6 +37,7 @@ export class ObserverObject<
     private _options: Required<Options> 
     private _subscribers:Watcher[] = []              // 保存订阅者的ID
     private _strPath?:string   
+    private _error?:Error                            // 记录最后一次运行时的错误
     /**
      *  构造函数。
      * 
@@ -85,6 +86,8 @@ export class ObserverObject<
         } 
         return  this._strPath!
     }
+    get error(){return this._error}
+    set error(value){ this._error = value }
     toString(){ return `ObserverObject<${this.strPath}>` }
 
     get value(){ 

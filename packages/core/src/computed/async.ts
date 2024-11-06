@@ -118,7 +118,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 			this.store.log(() => `Async computed <${this.toString()}> is disabled`, "warn");
 			return;
 		} 
-
+		this.error = undefined
 		this._firstRun = true; 
 		!first && this.store.log(() => `Run async computed for : ${this.toString()}`); 
 
@@ -346,6 +346,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		if (ctx.hasAbort ) {
 			this.emitStoreEvent("computed:cancel", { path: this.path, id:this.id,computedObject:this});
 		} else if (ctx.hasError || ctx.hasTimeout) {
+			this.error = ctx.error
 			this.emitStoreEvent("computed:error", { path: this.path, id:this.id, error: ctx.error,computedObject:this });
 		} else {
 			this.emitStoreEvent("computed:done", { path: this.path, id:this.id, value: computedResult,computedObject:this});		
