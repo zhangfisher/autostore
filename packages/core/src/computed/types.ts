@@ -18,7 +18,7 @@
 import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions,  ObserverScopeRef } from "../observer/types"
 import { StateOperate } from "../store/types"
 import { ComputedObject } from "./computedObject" 
-import { Dict } from "../types" 
+import { Dict } from "../types"  
 
 
 /**
@@ -90,7 +90,7 @@ export interface AsyncComputedGetterArgs{
 
 }
 
-export type AsyncComputedGetter<Value,Scope=any,P extends Dict = Dict> = (scope:Scope,args:Required<AsyncComputedGetterArgs> & P) => Promise<Value>
+export type AsyncComputedGetter<Value,Scope=any> = (scope:Scope,args:Required<AsyncComputedGetterArgs>) => Promise<Value>
  
 
     
@@ -304,5 +304,6 @@ export type ComputedDescriptor<Value=any,Scope=any> = SyncComputedDescriptor<Val
 export type ComputedDescriptorBuilder<Value=any,Scope=any> = SyncComputedDescriptorBuilder<Value,Scope> | AsyncComputedDescriptorBuilder<Value,Scope>
 
 
-export type IComputedGetter<Value=any,Scope=any> = (scope:Scope,...args:any[]) => Exclude<Value,Promise<any>>
-export type IAsyncComputedGetter<Value=any,Scope=any> = (scope:Scope,...args:any[]) => Promise<Value>
+export type IComputedGetter<Value=any,Scope=any> = (scope:Scope,args:Required<ComputedGetterArgs>) =>  Value 
+export type IAsyncComputedGetter<Value=any,Scope=any> = (scope:Scope,args:Required<AsyncComputedGetterArgs>) => Promise<Value>
+ 

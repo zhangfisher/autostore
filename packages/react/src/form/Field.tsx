@@ -56,7 +56,7 @@
  * 
  */
 
-import { AsyncComputedGetter, computed, ComputedBuilder, ComputedDescriptorBuilder, ComputedGetter, ComputedObject,  ComputedState,  Dict,  IAsyncComputedGetter,  IComputedGetter,  ObserverBuilder, PATH_DELIMITER, PickComputedResult, setVal, Watcher } from "autostore"
+import { AsyncComputedGetterArgs, ComputedBuilder, ComputedGetterArgs, ComputedObject,  ComputedState,  Dict, ObserverBuilder, PATH_DELIMITER, PickComputedResult, setVal, Watcher } from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
@@ -71,10 +71,9 @@ export type ComputedNumberProp<State extends Dict,Scope  = ComputedState<State>>
 export type ComputedArrayProp<State extends Dict,Scope   = ComputedState<State>> = Array<any> |  ObserverBuilder<Array<any>,Scope>  
 
 export interface AutoFieldRenderProps<
-    State extends Dict,
     Value, 
     Validate,    
-    Required,
+    Required2,
     Visible,
     Enable, 
     Label,   
@@ -83,8 +82,8 @@ export interface AutoFieldRenderProps<
     Select
 > extends SignalComponentRenderArgs<Value> {
     name    : string 
-    validate: PickComputedResult<Validate> 
-    required: PickComputedResult<Required> 
+    validate: PickComputedResult<Validate>
+    required: PickComputedResult<Required2> 
     visible : PickComputedResult<Visible> 
     readonly: PickComputedResult<Readonly> 
     enable  : PickComputedResult<Enable> 
@@ -95,41 +94,45 @@ export interface AutoFieldRenderProps<
 }  
 
 export interface AutoFieldProps<
-    State extends Dict,
     Value, 
-    Validate ,    
-    Required ,
+    Validate,    
+    Required2,
     Visible,
     Enable, 
-    Label ,   
-    Help ,
+    Label,   
+    Help,
     Readonly,
     Select
 > {
     name      : string  
     validate? : Validate 
-    required? : Required
+    required? : Required2
     visible?  : Visible
     readonly? : Readonly
     enable?   : Enable
     select?   : Select
     help?     : Help
     label?    : Label
-    render    : (props:AutoFieldRenderProps<State,Value,Validate,Required,Visible,Enable,Label,Help,Readonly,Select>)=>React.ReactNode
+    render    : (props:AutoFieldRenderProps<Value,Validate,Required2,Visible,Enable,Label,Help,Readonly,Select>)=>React.ReactNode
 }  
 
 export type AutoField<State extends Dict> = <
-    Value,
-    Validate extends ComputedBooleanProp<Value> = ComputedBooleanProp<Value>,    
-    Required extends ComputedBooleanProp<State>       = ComputedBooleanProp<State>,
-    Visible extends ComputedBooleanProp<State>        = ComputedBooleanProp<State>,
-    Enable extends ComputedBooleanProp<State>         = ComputedBooleanProp<State>, 
-    Label extends ComputedStringProp<State>           = ComputedStringProp<State>,   
-    Help extends ComputedStringProp<State>            = ComputedStringProp<State>,
-    Readonly extends ComputedBooleanProp<State>       = ComputedBooleanProp<State>,
-    Select extends ComputedArrayProp<State>           = ComputedArrayProp<State>
+    Value = any, 
+    // Validate extends ((scope: Value,args:Required<AsyncComputedGetterArgs>) => Promise<boolean>) 
+    //                 |  ((scope: Value,args:Required<ComputedGetterArgs>) => boolean)   
+    //     = ((scope: Value,args:Required<AsyncComputedGetterArgs>) => Promise<boolean>) 
+    //     |  ((scope: Value,args:Required<ComputedGetterArgs>) => boolean),    
+        Validate extends ((...args:any[]) => Promise<boolean>) |  ((...args:any[]) => boolean)   
+            = ((...args:any[]) => Promise<boolean>) | ((...args:any[]) => boolean)   ,    
+    Required2 extends ComputedBooleanProp<State> = ComputedBooleanProp<State>,
+    Visible extends ComputedBooleanProp<State>  = ComputedBooleanProp<State>,
+    Enable extends ComputedBooleanProp<State>   = ComputedBooleanProp<State>, 
+    Label extends ComputedStringProp<State>     = ComputedStringProp<State>,   
+    Help extends ComputedStringProp<State>      = ComputedStringProp<State>,
+    Readonly extends ComputedBooleanProp<State> = ComputedBooleanProp<State>,
+    Select extends ComputedArrayProp<State>     = ComputedArrayProp<State>
 >(
-    props: AutoFieldProps<State,Value,Validate,Required,Visible,Enable,Label,Help,Readonly,Select>
+    props: AutoFieldProps<Value,Validate,Required2,Visible,Enable,Label,Help,Readonly,Select>
 )=>React.ReactNode
 
  
@@ -170,13 +173,13 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             initial:true,
             throwError:false
         })  as ComputedObject<boolean>
-        const required  = useComputed<boolean>(props.required,{id:`${prefix}required`,initial:false,throwError:false}) as ComputedObject<boolean> | undefined
-        const visible   = useComputed<boolean>(props.visible,{id:`${prefix}visible`,initial:true,throwError:false})   as ComputedObject<boolean> | undefined
-        const readonly  = useComputed<boolean>(props.readonly,{id:`${prefix}readonly`,initial:false,throwError:false}) as ComputedObject<boolean> | undefined
-        const enable    = useComputed<boolean>(props.enable,{id:`${prefix}enable`,initial:true,throwError:false})     as ComputedObject<boolean> | undefined
-        const select    = useComputed<any[]>(props.select,{id:`${prefix}select`,initial:[],throwError:false})       as ComputedObject<any[]> | undefined
-        const help      = useComputed<string>(props.help,{id:`${prefix}help`,initial:'',throwError:false})          as ComputedObject<string> | undefined
-        const label     = useComputed<string>(props.label,{id:`${prefix}label`,initial:'',throwError:false})        as ComputedObject<string> | undefined
+        const required  = useComputed<boolean>(props.required,{id:`${prefix}required`,initial:false,throwError:false})  as ComputedObject<boolean> | undefined
+        const visible   = useComputed<boolean>(props.visible,{id:`${prefix}visible`,initial:true,throwError:false})     as ComputedObject<boolean> | undefined
+        const readonly  = useComputed<boolean>(props.readonly,{id:`${prefix}readonly`,initial:false,throwError:false})  as ComputedObject<boolean> | undefined
+        const enable    = useComputed<boolean>(props.enable,{id:`${prefix}enable`,initial:true,throwError:false})       as ComputedObject<boolean> | undefined
+        const select    = useComputed<any[]>(props.select,{id:`${prefix}select`,initial:[],throwError:false})           as ComputedObject<any[]> | undefined
+        const help      = useComputed<string>(props.help,{id:`${prefix}help`,initial:'',throwError:false})              as ComputedObject<string> | undefined
+        const label     = useComputed<string>(props.label,{id:`${prefix}label`,initial:'',throwError:false})            as ComputedObject<string> | undefined
 
         const fieldPropObjs = {
             validate,
@@ -261,40 +264,6 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
         },[])
 
         return <>{props.render(renderProps.current as any)}</> 
-
     
     }
 }
-
-//         //************************************* */
-
-
-interface FieldProps<
-    Validate ,
->  {
-    validate: Validate;
-    render: (props: {validate:PickComputedResult<Validate>}) => React.ReactNode;
-  }
-  
-
-function Field<
-    Value=any,
-    Validate extends IComputedGetter<boolean,Value> | IAsyncComputedGetter<boolean,Value> |  ComputedDescriptorBuilder<boolean,Value> = IComputedGetter<boolean,Value> | IAsyncComputedGetter<boolean,Value> |  ComputedDescriptorBuilder<boolean,Value> 
-    >( props: FieldProps<Validate>):React.ReactNode {    
-        return <>{props.render({} as any)}</>;
-    }
-
-
-  <>
-  <Field validate={()=>true} render={value => value ? <div>True</div> : <div>False</div>} />
-
-  <Field<string> validate={(value)=>value.length>0} render={value => value ? <div>True</div> : <div>False</div>} />
-  <Field validate={computed(()=>true)} render={value => value ? <div>True</div> : <div>False</div>} />
-  <Field validate={async ()=>true} render={value => value ? <div>True</div> : <div>False</div>} />
-  <Field validate={computed<boolean>(async ()=>true,[])} render={value => value ? <div>True</div> : <div>False</div>} />
-  <Field validate={computed(async ()=>true,[])} render={value => value ? <div>True</div> : <div>False</div>} />
-
-  </>
-// //************************************* */
-
- 

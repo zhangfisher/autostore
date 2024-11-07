@@ -25,19 +25,7 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
             )
         )                              
     )  
-)
- 
- 
-export type PickComputedResult3<T> = T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
-( T extends SyncComputedDescriptorBuilder<infer X> ? X : 
-     ( T extends  WatchDescriptorBuilder<infer X> ? X :                                  
-        ( T extends  Computed<infer X> ? X :                                           // 同步函数
-            (T extends AsyncComputed<infer X> ? AsyncComputedValue<X> :                // 异步函数
-                T
-        )
-    )                              
-)  
-)
+) 
 
 /**
 
@@ -72,17 +60,25 @@ export type Primitive = string | number | boolean | null | undefined | symbol | 
 
 
 export type ObserverBuilder<Value=any,Scope=any> = 
-    ComputedDescriptorBuilder<Value,Scope> | ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
-    | WatchDescriptorBuilder<Value>
+                                        ComputedDescriptorBuilder<Value,Scope> 
+                                        | ComputedGetter<Value,Scope> 
+                                        | AsyncComputedGetter<Value,Scope>
+                                        | WatchDescriptorBuilder<Value>
 
 
 export type ComputedDescriptorParameter<Value=any,Scope=any> =  
-    ComputedDescriptorBuilder<Value,Scope> 
-    | ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>
+                                        ComputedDescriptorBuilder<Value,Scope> 
+                                        | ComputedGetter<Value,Scope> 
+                                        | AsyncComputedGetter<Value,Scope>
  
 
 
-export type ComputedBuilder<Value,Scope> = 
-    ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope> | ComputedDescriptorBuilder<Value,Scope> 
+export type ComputedBuilder<Value,Scope> = | AsyncComputedGetter<Value,Scope> 
+                                           | ComputedDescriptorBuilder<Value,Scope> 
+                                           | ComputedGetter<Value,Scope> 
+                                           
   
 
+
+
+ 

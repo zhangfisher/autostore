@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig } from 'vitepress'
 import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 // import { codeInspectorPlugin } from 'code-inspector-plugin';
 
 // https://vitepress.dev/reference/site-config
@@ -136,6 +137,9 @@ export default defineConfig({
         },
       });
     },
+    codeTransformers: [
+      transformerTwoslash() 
+    ]
   },
   vue: {
     template: {

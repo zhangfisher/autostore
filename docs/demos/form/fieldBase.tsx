@@ -28,9 +28,7 @@ export default ()=>{
                 <Field<string>
                     label="FirstName"
                     name="user.firstName"
-                    validate={(value)=>{
-                        return assert(value.length>3,"长度必须大于3")
-                    }} 
+                    validate={(val)=>true} 
                     render={({name,label,value,onChange,error,validate,loading})=>{
                         
                         return <div>
@@ -47,9 +45,9 @@ export default ()=>{
                 <Field<string>
                     label="LastName"
                     name="user.lastName"
-                    validate={computed<boolean>(async (value)=>{
+                    validate={computed<boolean>((value)=>{
                         return assert(value.length>5,"长度必须大于5")
-                    },[])}
+                    })}
                     render={({name,label,value,onChange,error,validate})=>{
                         return <div>
                             <Input name={name} label={label} value={value} onChange={onChange}/>

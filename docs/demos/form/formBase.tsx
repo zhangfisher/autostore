@@ -11,12 +11,10 @@ export default ()=>{
             phone:"1234567890",
             email:"fisher@china.com",
             vip:false,
-            resume:"非常优秀的员工"
-            
+            resume:"非常优秀的员工"            
         }
       })
       const [ state ] = useReactive()
-
       return (
         <Layout>        
             <div> 

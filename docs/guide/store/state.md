@@ -42,7 +42,8 @@ interface UseStateType<State extends Dict> {
 
 其使用方式与`React`的`useState`方法类似，返回一个`state`和`setState`的元组。
 
-```tsx
+```tsx twoslash
+import { createStore } from "@autostorejs/react"
 const { state,useReactive,$ } = createStore({
   user:{
     firstName:"Zhang",
@@ -51,9 +52,10 @@ const { state,useReactive,$ } = createStore({
   }
 })
 // 使用方式1
-const [age,setAge] = useReactive('user.age')  
+const [age,setAge] = useReactive<number>('user.age')  
+
 // 使用方式2
-const [age,setAge] = useReactive(['user','age'])  
+const [firstName,setFirstName] = useReactive<string>(['user','firstName'])  
 
 ```   
 

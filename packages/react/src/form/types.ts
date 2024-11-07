@@ -1,5 +1,4 @@
-import { AutoStore, AutoStoreOptions, ComputedState, Dict, WatchListenerOptions } from "autostore"
-import { MemoExoticComponent } from "react"
+import { AutoStore, AutoStoreOptions, ComputedState, Dict } from "autostore"
 import { AutoForm } from "./Form"
 import { ReactAutoStore } from '../store';
 import { AutoField } from "./Field";

@@ -56,7 +56,7 @@
  * 
  */
 
-import { ComputedObject,  Dict,  ObserverBuilder, PATH_DELIMITER, PickComputedResult, setVal, Watcher } from "autostore"
+import { ComputedObject,  Dict,  ObserverBuilder, PATH_DELIMITER,  setVal, Watcher } from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
