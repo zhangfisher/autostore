@@ -56,7 +56,7 @@
  * 
  */
 
-import { AsyncComputedGetterArgs, ComputedBuilder, ComputedGetterArgs, ComputedObject,  ComputedState,  Dict, ObserverBuilder, PATH_DELIMITER, PickComputedResult, setVal, Watcher } from "autostore"
+import { ComputedBuilder,  ComputedObject,  ComputedState,  Dict, ObserverBuilder, PATH_DELIMITER, PickComputedResult, setVal, Watcher } from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
@@ -118,12 +118,7 @@ export interface AutoFieldProps<
 
 export type AutoField<State extends Dict> = <
     Value = any, 
-    // Validate extends ((scope: Value,args:Required<AsyncComputedGetterArgs>) => Promise<boolean>) 
-    //                 |  ((scope: Value,args:Required<ComputedGetterArgs>) => boolean)   
-    //     = ((scope: Value,args:Required<AsyncComputedGetterArgs>) => Promise<boolean>) 
-    //     |  ((scope: Value,args:Required<ComputedGetterArgs>) => boolean),    
-        Validate extends ((...args:any[]) => Promise<boolean>) |  ((...args:any[]) => boolean)   
-            = ((...args:any[]) => Promise<boolean>) | ((...args:any[]) => boolean)   ,    
+    Validate extends ComputedBooleanProp<State> = ComputedBooleanProp<State>,      
     Required2 extends ComputedBooleanProp<State> = ComputedBooleanProp<State>,
     Visible extends ComputedBooleanProp<State>  = ComputedBooleanProp<State>,
     Enable extends ComputedBooleanProp<State>   = ComputedBooleanProp<State>, 
@@ -267,3 +262,6 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
     
     }
 }
+
+
+

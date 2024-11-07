@@ -29,6 +29,7 @@ export default ()=>{
                     label="FirstName"
                     name="user.firstName"
                     validate={(val)=>true} 
+                    visible={(val)=>true}                     
                     render={({name,label,value,onChange,error,validate,loading})=>{
                         
                         return <div>
