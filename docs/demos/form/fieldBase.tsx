@@ -25,13 +25,10 @@ export default ()=>{
     return <Layout>    
         <div>
             <Form>
-                <Field<string>
-                    label="FirstName"
+                <Field
                     name="user.firstName"
-                    validate={(val)=>true} 
-                    visible={(val)=>true}                     
-                    render={({name,label,value,onChange,error,validate,loading})=>{
-                        
+                    validate={val=>true}                  
+                    render={({name,label,value,onChange,error,visible,validate,loading})=>{                        
                         return <div>
                             <Input 
                                 name={name} 
@@ -43,12 +40,26 @@ export default ()=>{
                         </div>
                     }}
                 />
-                <Field<string>
-                    label="LastName"
+                <Field
+                    name="user.firstName"
+                    validate={async val=>true}                  
+                    render={({name,label,value,onChange,error,visible,validate,loading})=>{                        
+                        return <div>
+                            <Input 
+                                name={name} 
+                                label={label}
+                                onChange={onChange}
+                                value={value}
+                            />
+                            {error ? <span style={{color:'red'}}>{error}</span> : null}
+                        </div>
+                    }}
+                />
+                <Field  
                     name="user.lastName"
-                    validate={computed<boolean>((value)=>{
+                    validate={computed(async (value)=>{
                         return assert(value.length>5,"长度必须大于5")
-                    })}
+                    },[])}
                     render={({name,label,value,onChange,error,validate})=>{
                         return <div>
                             <Input name={name} label={label} value={value} onChange={onChange}/>

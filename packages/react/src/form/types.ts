@@ -1,7 +1,7 @@
 import { AutoStore, AutoStoreOptions, ComputedState, Dict } from "autostore"
 import { AutoForm } from "./Form"
-import { ReactAutoStore } from '../store';
-import { AutoField } from "./Field";
+import { ReactAutoStore } from '../store'; 
+import { AutoField, createAutoFieldComponent } from "./Field";
 
 export type InputBindings<Value=any>={ 
     value?   : Value
@@ -78,7 +78,7 @@ export type ValidateResult = {
 
 export type UseFormResult<State extends Dict>={ 
     Form        : AutoForm<State>
-    Field       : AutoField<State>  
+    Field       : AutoField<State>
     valid       : boolean
     dirty       : boolean
     submiting   : boolean
