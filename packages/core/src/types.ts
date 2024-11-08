@@ -79,6 +79,18 @@ export type ComputedBuilder<Value,Scope> = | AsyncComputedGetter<Value,Scope>
                                            
   
 
-
-
  
+
+type GenNode<K extends string | number, IsRoot extends boolean> = IsRoot extends true
+  ? `${K}`
+  : `.${K}` | (K extends number ? `[${K}]` | `.[${K}]` : never);
+
+export type ObjectKeyPaths<T extends object, IsRoot extends boolean = true, K extends keyof T = keyof T> = K extends (
+  T extends unknown[] ? number : string | number
+)
+  ?
+      | GenNode<K, IsRoot>
+      | (NonNullable<T[K]> extends Record<string, any>
+          ? `${GenNode<K, IsRoot>}${ObjectKeyPaths<NonNullable<T[K]>, false>}`
+          : never)
+  : never;

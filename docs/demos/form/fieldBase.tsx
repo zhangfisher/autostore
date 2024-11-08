@@ -29,20 +29,19 @@ export default ()=>{
     return <Layout>    
         <div>
             <Form>
-                <Field<string>
+                <Field
                     name="user.firstName"
                     validate={(value)=>assert(value.length>3,"长度必须大于3")}  
                     enable={()=>true}     
-                    visible={()=>true}
-                    readonly={()=>false}
-                    required={()=>false}  
-                    select={prop(async ()=>([1,2,3]))}  
+                    visible={computed(async (val)=>true,[])}
+                    readonly={computed((val)=>false)}
+                    required={false}   
                     // eslint-disable-next-line no-unused-vars    
                     render={({name,label,value,onChange,error,select,enable,visible,validate,required,readonly,loading})=>{                        
                         return <div>
                             <Input 
                                 name={name} 
-                                label={label}
+                                label={label.value}
                                 onChange={onChange}
                                 value={value}
                             />
@@ -54,11 +53,11 @@ export default ()=>{
                     name="user.firstName"
                     validate={computed(async val=>true,[])}         
                     // eslint-disable-next-line no-unused-vars         
-                    render={({name,label,value,onChange,error,visible,validate,loading})=>{                        
+                    render={({name,label,value,onChange,error,select,enable,visible,validate,required,readonly,loading})=>{                        
                         return <div>
                             <Input 
                                 name={name} 
-                                label={label}
+                                label={label.value}
                                 onChange={onChange}
                                 value={value}
                             />
@@ -66,14 +65,30 @@ export default ()=>{
                         </div>
                     }}
                 />
-                <Field  
+                <Field
+                    name="user.firstName"
+                    validate={computed(val=>true)}         
+                    // eslint-disable-next-line no-unused-vars         
+                    render={({name,label,value,onChange,error,select,enable,visible,validate,required,readonly,loading})=>{                        
+                        return <div>
+                            <Input 
+                                name={name} 
+                                label={label.value}
+                                onChange={onChange}
+                                value={value}
+                            />
+                            {error ? <span style={{color:'red'}}>{error}</span> : null}
+                        </div>
+                    }}
+                />
+                <Field<string>  
                     name="user.lastName"
                     validate={computed(async (value)=>{
                         return assert(value.length>5,"长度必须大于5")
                     },[])}
                     render={({name,label,value,onChange,error,validate})=>{
                         return <div>
-                            <Input name={name} label={label} value={value} onChange={onChange}/>
+                            <Input name={name} label={label.value} value={value} onChange={onChange}/>
                         {error ? <span style={{color:'red'}}>{error}</span> : null}
                     </div>
                     }}

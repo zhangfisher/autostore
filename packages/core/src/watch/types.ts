@@ -45,7 +45,7 @@ export type WatchDescriptor<Value=any, Scope extends WatchScope<Value>=WatchScop
  * @template Scope 监听函数的第一个参数的类型
  */
 export type WatchDescriptorBuilder<Value = any>
-  = ObserverDescriptorBuilder<'watch',Value,WatchScope,WatchDescriptor<Value,WatchScope>> 
+  = ObserverDescriptorBuilder<'watch',Value,WatchScope,WatchDescriptor<Value,WatchScope>>
 
 
 

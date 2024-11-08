@@ -39,6 +39,7 @@ export interface ComputedGetterArgs{
  
 export type ComputedGetter<Value,Scope=any> = (scope: Scope,args:Required<ComputedGetterArgs>) => Exclude<Value,Promise<any>>
 
+
 export interface ComputedProgressbar{
     value: (num:number)=>void
     end  : ()=>void
@@ -304,6 +305,6 @@ export type ComputedDescriptor<Value=any,Scope=any> = SyncComputedDescriptor<Val
 export type ComputedDescriptorBuilder<Value=any,Scope=any> = SyncComputedDescriptorBuilder<Value,Scope> | AsyncComputedDescriptorBuilder<Value,Scope>
 
 
-export type IComputedGetter<Value=any,Scope=any> = (scope:Scope,args:Required<ComputedGetterArgs>) =>  Value 
+export type IComputedGetter<Value=any,Scope=any> = (scope:Scope) =>  Value 
 export type IAsyncComputedGetter<Value=any,Scope=any> = (scope:Scope,args:Required<AsyncComputedGetterArgs>) => Promise<Value>
  

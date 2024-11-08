@@ -34,7 +34,7 @@ export interface ObserverDescriptor<
     }
 
 export interface ObserverDescriptorBuilder<
-    Type extends string= string,
+    Type extends string=  string,
     Value=any,
     Scope=any,
     descriptor extends ObserverDescriptor<Type,Value,Scope> = ObserverDescriptor<Type,Value,Scope>>
