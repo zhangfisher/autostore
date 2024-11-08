@@ -1,5 +1,5 @@
 import React from "react"
-import { computed, useForm, watch } from "@autostorejs/react";
+import { computed, ComputedGetter, useForm, watch } from "@autostorejs/react";
 import { Button,Input,Layout, JsonView } from "x-react-components"
 
 function assert(value:any,help:string){
@@ -9,6 +9,10 @@ function assert(value:any,help:string){
     return true
 }
 
+
+function prop(fn:()=>any | Promise<any>){
+    return computed(fn,[]) as ComputedGetter<any>
+}
 export default ()=>{
 
     const { Form,Field,useReactive,reset,useField } = useForm({        
@@ -25,10 +29,16 @@ export default ()=>{
     return <Layout>    
         <div>
             <Form>
-                <Field
+                <Field<string>
                     name="user.firstName"
-                    validate={val=>true}                  
-                    render={({name,label,value,onChange,error,visible,validate,loading})=>{                        
+                    validate={(value)=>assert(value.length>3,"长度必须大于3")}  
+                    enable={()=>true}     
+                    visible={()=>true}
+                    readonly={()=>false}
+                    required={()=>false}  
+                    select={prop(async ()=>([1,2,3]))}  
+                    // eslint-disable-next-line no-unused-vars    
+                    render={({name,label,value,onChange,error,select,enable,visible,validate,required,readonly,loading})=>{                        
                         return <div>
                             <Input 
                                 name={name} 
@@ -40,9 +50,10 @@ export default ()=>{
                         </div>
                     }}
                 />
-                <Field
+                <Field<string>
                     name="user.firstName"
-                    validate={async val=>true}                  
+                    validate={computed(async val=>true,[])}         
+                    // eslint-disable-next-line no-unused-vars         
                     render={({name,label,value,onChange,error,visible,validate,loading})=>{                        
                         return <div>
                             <Input 
