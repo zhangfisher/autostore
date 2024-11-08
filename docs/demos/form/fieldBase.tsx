@@ -30,7 +30,7 @@ export default ()=>{
         <div>
             <Form>
                 <Field
-                    name="user.firstName"
+                    name="user.lastName"
                     validate={(value)=>assert(value.length>3,"长度必须大于3")}  
                     enable={()=>true}     
                     visible={computed(async (val)=>true,[])}
@@ -49,7 +49,7 @@ export default ()=>{
                         </div>
                     }}
                 />
-                <Field<string>
+                <Field
                     name="user.firstName"
                     validate={computed(async val=>true,[])}         
                     // eslint-disable-next-line no-unused-vars         
@@ -81,7 +81,7 @@ export default ()=>{
                         </div>
                     }}
                 />
-                <Field<string>  
+                <Field
                     name="user.lastName"
                     validate={computed(async (value)=>{
                         return assert(value.length>5,"长度必须大于5")
