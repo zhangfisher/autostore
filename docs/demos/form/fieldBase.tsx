@@ -9,16 +9,15 @@ function assert(value:any,help:string){
     return true
 }
 
-
-function prop(fn:()=>any | Promise<any>){
-    return computed(fn,[]) as ComputedGetter<any>
-}
+ 
 export default ()=>{
 
     const { Form,Field,useReactive,reset,useField } = useForm({        
         user:{
-            firstName:"z",
-            lastName:"Fisher"  
+            name:"fisher",
+            age:12,
+            vip:true,
+            tags:['Nodejs','React','Vue','Angular','TypeScript','JavaScript','CSS','HTML']
         }
     })
 
@@ -30,7 +29,7 @@ export default ()=>{
         <div>
             <Form>
                 <Field
-                    name="user.lastName"
+                    name="user.name"
                     validate={(value)=>assert(value.length>3,"长度必须大于3")}  
                     enable={()=>true}     
                     visible={computed(async (val)=>true,[])}
@@ -50,8 +49,8 @@ export default ()=>{
                     }}
                 />
                 <Field
-                    name="user.firstName"
-                    validate={computed(async val=>true,[])}         
+                    name="user.age"
+                    validate={async val=>true}         
                     // eslint-disable-next-line no-unused-vars         
                     render={({name,label,value,onChange,error,select,enable,visible,validate,required,readonly,loading})=>{                        
                         return <div>
@@ -59,14 +58,14 @@ export default ()=>{
                                 name={name} 
                                 label={label.value}
                                 onChange={onChange}
-                                value={value}
+                                value={String(value)}
                             />
                             {error ? <span style={{color:'red'}}>{error}</span> : null}
                         </div>
                     }}
                 />
                 <Field
-                    name="user.firstName"
+                    name="user.vip"
                     validate={computed(val=>true)}         
                     // eslint-disable-next-line no-unused-vars         
                     render={({name,label,value,onChange,error,select,enable,visible,validate,required,readonly,loading})=>{                        
@@ -75,24 +74,25 @@ export default ()=>{
                                 name={name} 
                                 label={label.value}
                                 onChange={onChange}
-                                value={value}
+                                value={String(value)}
                             />
                             {error ? <span style={{color:'red'}}>{error}</span> : null}
                         </div>
                     }}
                 />
                 <Field
-                    name="user.lastName"
+                    name="user.tags"
                     validate={computed(async (value)=>{
                         return assert(value.length>5,"长度必须大于5")
                     },[])}
-                    render={({name,label,value,onChange,error,validate})=>{
+                    // eslint-disable-next-line no-unused-vars         
+                    render={({name,label,value,onChange,error,select,enable,visible,validate,required,readonly,loading})=>{                 
                         return <div>
-                            <Input name={name} label={label.value} value={value} onChange={onChange}/>
+                            <Input name={name} label={label.value} value={String(value)} onChange={onChange}/>
                         {error ? <span style={{color:'red'}}>{error}</span> : null}
                     </div>
                     }}
-                />
+                />                  
                 <Input  label="FirstName" {...firstNameField} />
                 <Button onClick={()=>{
                     reset()    

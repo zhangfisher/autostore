@@ -1,20 +1,12 @@
-import { AsyncComputed, AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, Computed, ComputedDescriptorBuilder, ComputedGetter, IAsyncComputedGetter, IComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
+import { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
 import type  { AutoStore } from "./store";
 import { WatchDescriptorBuilder } from "./watch/types";
-
- 
-export type Dict<T=any> = Record<string,T>
-
-export type SyncFunction<R=any> =  (...args: any) => Exclude<R,Promise<any>>;  
-
-export type AsyncFunction<R=any> =  (...args: any) => Promise<R>;  
 
 
 
     
 // **************  以下实现将计算属性函数的返回值类型提取出来  **************
 
- 
 
 export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> : 
     ( T extends SyncComputedDescriptorBuilder<infer X> ? X : 
@@ -54,43 +46,26 @@ declare global {
     var __AUTOSTORE_EXTENDS__: (<S extends AutoStore<any>>(store:S)=>void)[]
 }
 
+// ***************** 一些工具类型 *****************
 
 export type Primitive = string | number | boolean | null | undefined | symbol | bigint;
-
-
-
-export type ObserverBuilder<Value=any,Scope=any> = 
-                                        ComputedDescriptorBuilder<Value,Scope> 
-                                        | ComputedGetter<Value,Scope> 
-                                        | AsyncComputedGetter<Value,Scope>
-                                        | WatchDescriptorBuilder<Value>
-
-
-export type ComputedDescriptorParameter<Value=any,Scope=any> =  
-                                        ComputedDescriptorBuilder<Value,Scope> 
-                                        | ComputedGetter<Value,Scope> 
-                                        | AsyncComputedGetter<Value,Scope>
  
+export type Dict<T=any> = Record<string,T>
 
+export type SyncFunction<R=any> =  (...args: any) => Exclude<R,Promise<any>>;  
 
-export type ComputedBuilder<Value,Scope> = | AsyncComputedGetter<Value,Scope> 
-                                           | ComputedDescriptorBuilder<Value,Scope> 
-                                           | ComputedGetter<Value,Scope> 
-                                           
-  
-
- 
+export type AsyncFunction<R=any> =  (...args: any) => Promise<R>;  
 
 type GenNode<K extends string | number, IsRoot extends boolean> = IsRoot extends true
-  ? `${K}`
-  : `.${K}` | (K extends number ? `[${K}]` | `.[${K}]` : never);
+? `${K}`
+: `.${K}` | (K extends number ? `[${K}]` | `.[${K}]` : never);
 
 export type ObjectKeyPaths<T extends object, IsRoot extends boolean = true, K extends keyof T = keyof T> = K extends (
-  T extends unknown[] ? number : string | number
+T extends unknown[] ? number : string | number
 )
-  ?
-      | GenNode<K, IsRoot>
-      | (NonNullable<T[K]> extends Record<string, any>
-          ? `${GenNode<K, IsRoot>}${ObjectKeyPaths<NonNullable<T[K]>, false>}`
-          : never)
-  : never;
+?
+    | GenNode<K, IsRoot>
+    | (NonNullable<T[K]> extends Record<string, any>
+        ? `${GenNode<K, IsRoot>}${ObjectKeyPaths<NonNullable<T[K]>, false>}`
+        : never)
+: never;

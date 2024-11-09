@@ -282,8 +282,8 @@ export type SyncComputedDescriptor<Value=any,Scope=any> = ObserverDescriptor<
     'computed',         
     Value,
     Scope, 
-    ComputedGetter<Value,Scope> | AsyncComputedGetter<Value,Scope>,
-    ComputedOptions
+    ComputedGetter<Value,Scope>,
+    ComputedOptions<Value,Scope>
 >
 export type SyncComputedDescriptorBuilder<Value=any,Scope=any> 
     = ObserverDescriptorBuilder<'computed',Value,Scope,SyncComputedDescriptor<Value,Scope>>
@@ -294,7 +294,7 @@ export type AsyncComputedDescriptor<Value=any,Scope=any> = ObserverDescriptor<
     Value,
     Scope, 
     AsyncComputedGetter<Value,Scope>,
-    ComputedOptions
+    ComputedOptions<Value,Scope>
 >
 
 export type AsyncComputedDescriptorBuilder<Value=any,Scope=any> 
@@ -308,3 +308,19 @@ export type ComputedDescriptorBuilder<Value=any,Scope=any> = SyncComputedDescrip
 export type IComputedGetter<Value=any,Scope=any> = (scope:Scope) =>  Value 
 export type IAsyncComputedGetter<Value=any,Scope=any> = (scope:Scope,args:Required<AsyncComputedGetterArgs>) => Promise<Value>
  
+
+
+
+
+export type ComputedDescriptorParameter<Value=any,Scope=any> =  
+                                        ComputedDescriptorBuilder<Value,Scope> 
+                                        | ComputedGetter<Value,Scope> 
+                                        | AsyncComputedGetter<Value,Scope>
+ 
+
+
+export type ComputedBuilder<Value,Scope> =  ComputedDescriptorBuilder<Value,Scope> 
+                                            | AsyncComputedGetter<Value,Scope> 
+                                            | ComputedGetter<Value,Scope> 
+                                           
+  

@@ -1,4 +1,6 @@
+import { AsyncComputedGetter, ComputedDescriptorBuilder, ComputedGetter } from "../computed/types"
 import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts"  
+import { WatchDescriptorBuilder } from "../watch/types"
 
 export type  ObserverType = 'watch' | 'computed'
 
@@ -22,9 +24,9 @@ export type ObserverScope = string | string[] | 'SELF'  | 'CURRENT' | 'ROOT' | '
 export type ObserverDescriptorGetter<Value,Scope> = ((scope:Scope,args:any)=>Value) | ((scope:Scope,args:any)=>Promise<Value>)
 
 export interface ObserverDescriptor<
-    T extends string = string,
-    Value = any,
-    Scope =any,
+    T extends string,//, = string,
+    Value,// = any,
+    Scope, //= any,
     Getter = ObserverDescriptorGetter<Value,Scope>,
     Options extends ObserverOptions<Value> = ObserverOptions<Value>
     >{
@@ -144,3 +146,11 @@ export type ObserverOptions<Value=any> = {
     */
    throwError?:boolean
 }
+
+
+
+export type ObserverBuilder<Value=any,Scope=any> = 
+                                        ComputedDescriptorBuilder<Value,Scope> 
+                                        | ComputedGetter<Value,Scope> 
+                                        | AsyncComputedGetter<Value,Scope>
+                                        | WatchDescriptorBuilder<Value>
