@@ -47,7 +47,7 @@ export function createCustomRender<State extends Dict>(store:ReactAutoStore<Stat
             return isAsync ? value : { value } as AsyncComputedValue
         },[value])
 
-        const deps = store.useDeps(path,'none')
+        const deps = store.useDeps(path as any,'none')
 
         useEffect(()=>{ 
             const watchPath = isAsync ? `${Array.isArray(path) ? path.join(PATH_DELIMITER) : path}.*` : deps

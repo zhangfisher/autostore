@@ -2,17 +2,18 @@ import React from "react"
 import { createStore } from '@autostorejs/react';
 import { Layout,Button,Input,JsonView } from "x-react-components" 
 
-const { bind, useReactive } = createStore({
+const { bind, useReactive,state } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
     vip:false,
     fullName: (user)=>{
-      return user.firstName+user.lastName
+      return user.firstName+user.lastName  
     } 
   }
 })
 
+ 
 export default ()=>{
   const [firstName,setFirstName] = useReactive("user.firstName")
   const [lastName,setLastName] = useReactive("user.lastName")

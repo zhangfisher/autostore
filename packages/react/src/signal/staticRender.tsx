@@ -1,4 +1,4 @@
-import { Dict } from "autostore"
+import { Dict, ObjectKeyPaths } from "autostore"
 import type { ReactAutoStore } from "../store"
 import React, { ComponentType, useEffect, useState } from "react"
 import { getValueBySelector } from "../utils/getValueBySelector"
@@ -51,11 +51,11 @@ import { StateGetter } from "../hooks/types"
  */
 export function createStaticRender<State extends Dict>(
     store:ReactAutoStore<State>,
-    selector:string | StateGetter<State>
+    selector:ObjectKeyPaths<State> | StateGetter<State>
 ,options:SignalComponentOptions){
     const ErrorBoundary:ComponentType<{error:any}>= options.errorBoundary || store.options.signalErrorBoundary 
     return React.memo(()=>{
-        const deps = store.useDeps(selector)  // 收集依赖的路径
+        const deps = store.useDeps(selector as any)  // 收集依赖的路径
         const [ error,setError] = useState<any>(null)
         const [ value,setValue ] = useState(()=>{
             return getValueBySelector(store,selector,true,setError)

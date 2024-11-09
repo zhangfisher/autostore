@@ -1,4 +1,4 @@
-import { ComputedState, Dict, ObserverDescriptorBuilder, AsyncComputedValue, ComputedGetter, AsyncComputedGetter} from "autostore";
+import { ComputedState, Dict, ObserverDescriptorBuilder, AsyncComputedValue, ComputedGetter, AsyncComputedGetter, ObjectKeyPaths} from "autostore";
 import React from "react";
 import { ComponentType } from "react";
 import { StateGetter } from "../hooks/types";
@@ -24,7 +24,7 @@ export type SignalComponentRender<Value=any> =(value:SignalComponentRenderArgs<V
 export type SignalComponentGetter<State extends Dict = Dict,Value=any> = StateGetter<State,Value>
 
 export interface SignalComponentType<State extends Dict>{
-    (selector: string,options?:SignalComponentOptions):React.ReactNode
+    (selector: ObjectKeyPaths<ComputedState<State>>,options?:SignalComponentOptions):React.ReactNode
     (selector: (state:ComputedState<State>)=>React.ReactNode,options?:SignalComponentOptions):React.ReactNode
     // 自定义渲染
     <Value=any>(render:SignalComponentRender<Value>,getter:AsyncComputedGetter<Value,ComputedState<State>>,options?:SignalComponentOptions):React.ReactNode

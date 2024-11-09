@@ -23,7 +23,7 @@ export default ()=>{
 
     const [ state ] = useReactive()
     
-    const firstNameField = useField("user.firstName")
+    const nameField = useField("user.name")
 
     return <Layout>    
         <div>
@@ -93,7 +93,7 @@ export default ()=>{
                     </div>
                     }}
                 />                  
-                <Input  label="FirstName" {...firstNameField} />
+                <Input  label="FirstName" {...nameField} />
                 <Button onClick={()=>{
                     reset()    
                 }}>Reset</Button> 

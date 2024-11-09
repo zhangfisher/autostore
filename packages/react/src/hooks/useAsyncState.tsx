@@ -41,7 +41,7 @@ export function createUseAsyncState<State extends Dict>(store:ReactAutoStore<Sta
             return ()=>watcher.off()
         },[deps])     
         return result
-    }) as UseAsyncStateType 
+    }) as UseAsyncStateType<State>
 }
 
  

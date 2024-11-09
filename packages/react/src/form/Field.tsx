@@ -56,7 +56,7 @@
  * 
  */
 
-import { ComputedObject,  ComputedState,  Dict,ComputedGetter ,PATH_DELIMITER, setVal, Watcher,ComputedOptions, computed, AsyncComputedGetter, AsyncComputedValue, IComputedGetter, IAsyncComputedGetter, ComputedBuilder, ObjectKeyPaths, SyncComputedDescriptorBuilder, AsyncComputedDescriptorBuilder, WatchDescriptorBuilder } from "autostore"
+import { ComputedObject,  ComputedState,  Dict,ComputedGetter ,PATH_DELIMITER, setVal, Watcher,ComputedOptions, computed, AsyncComputedGetter, AsyncComputedValue, IComputedGetter, IAsyncComputedGetter, ComputedBuilder, ObjectKeyPaths, SyncComputedDescriptorBuilder, AsyncComputedDescriptorBuilder, WatchDescriptorBuilder, GetTypeByPath } from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
@@ -108,7 +108,7 @@ export interface AutoFieldProps<
 export interface AutoField<State extends Dict>  {    
     < 
         NAME extends ObjectKeyPaths<ComputedState<State>>             = ObjectKeyPaths<ComputedState<State>>,
-        VALUE extends Get<ComputedState<State>,NAME>                  = Get<ComputedState<State>,NAME>,
+        VALUE extends GetTypeByPath<ComputedState<State>,NAME>                  = Get<ComputedState<State>,NAME>,
         VALIDATE extends SyncComputedDescriptorBuilder<boolean,VALUE> = SyncComputedDescriptorBuilder<boolean,VALUE>
     >(props:AutoFieldProps<State,NAME,VALUE,VALIDATE>):React.ReactNode
     < 

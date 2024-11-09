@@ -9,7 +9,8 @@ const { batchUpdate, useField,useReactive } = createStore({
     vip:false, 
     job:2,
     sex:'男',
-    pets:""
+    pets:"",
+    tags:['Nodejs','React','Vue','Angular','TypeScript','JavaScript','CSS','HTML'],    
   }
 })
 
@@ -19,7 +20,7 @@ export default ()=>{
     const fieldLastName = useField("user.lastName")
     const fieldVip = useField("user.vip")
     const fieldJob = useField("user.job")
-    const fieldSex = useField("user.sex",{type:'radio',values:['男','女']})
+    const fieldSex = useField("user.sex",{type:'radio',values:['男','女']})    
 
     return <Layout>    
         <div>

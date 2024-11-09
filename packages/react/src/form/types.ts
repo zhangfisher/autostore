@@ -1,15 +1,15 @@
-import { AutoStore, AutoStoreOptions, ComputedState, Dict } from "autostore"
+import { AutoStore, AutoStoreOptions, ComputedState, Dict, ObjectKeyPaths } from "autostore"
 import { AutoForm } from "./Form"
 import { ReactAutoStore } from '../store'; 
-import { AutoField, createAutoFieldComponent } from "./Field";
+import { AutoField } from "./Field";
 
 export type InputBindings<Value=any>={ 
     value?   : Value
     onChange?: (e:any)=>void 
 }
  
-export interface InputBindingsType{
-    <Value=any>(selector: string):InputBindings<Value>    
+export interface InputBindingsType<State extends Dict>{
+    <Value=any>(selector: ObjectKeyPaths<ComputedState<State>>):InputBindings<Value>    
     <Value=any>(selector: string[]):InputBindings<Value>
 }
 
@@ -39,9 +39,9 @@ export type UseFieldSetter<Value,State extends Dict>= (input:{value:Value,path:s
 
 export interface UseFieldType<State extends Dict> {
     (): UseFieldBindings<ComputedState<State>>
-    <Value>(selector: string,options?:UseFieldOptions<Value>): UseFieldBindings<Value>
+    <Value>(selector: ObjectKeyPaths<ComputedState<State>>,options?:UseFieldOptions<Value>): UseFieldBindings<Value>
     <Value>(getter: UseFieldGetter<Value,State>,setter:UseFieldSetter<Value,State>,options?:UseFieldOptions<Value>):UseFieldBindings<Value>
-    <Value>(getters: (string | string[] | UseFieldGetter<Value,State>)[],setter:UseFieldSetter<Value,State>,options?:UseFieldOptions<Value>):UseFieldBindings<Value>[]
+    <Value>(getters: (ObjectKeyPaths<ComputedState<State>> | string[] | UseFieldGetter<Value,State>)[],setter:UseFieldSetter<Value,State>,options?:UseFieldOptions<Value>):UseFieldBindings<Value>[]
 }
 
 // ********** UseFields **********  
@@ -164,7 +164,4 @@ export type UseFormType<State extends Dict>  = {
     (state:State,options?:UseFormOptions<State>): UseFormResult<State>
 }
 
-
  
-
-export type NonFunction<T> = T extends Function ? never : T;

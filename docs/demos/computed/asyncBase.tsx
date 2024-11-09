@@ -1,11 +1,11 @@
 import React from 'react';
-import { delay,createStore,computed } from '@autostorejs/react';
+import { delay,createStore,computed  } from '@autostorejs/react';
 import { Input,ColorBlock } from "x-react-components"
 
-const { useAsyncReactive, useReactive,state, bind } = createStore({
+const { useAsyncReactive,useReactive, bind } = createStore({
   user:{
     firstName:"Zhang",
-    lastName:"Fisher",
+    lastName:"fisher",
     fullName: computed(async (user)=>{
       await delay(1000)       // 模拟异步计算
       return user.firstName+' '+user.lastName  
@@ -21,11 +21,13 @@ const { useAsyncReactive, useReactive,state, bind } = createStore({
 
 export default ()=>{ 
   const [firstName] =  useReactive("user.firstName") 
-  const [lastName] =  useReactive("user.lastName") 
-  const fullName = useAsyncReactive("user.fullName")  
+  const [lastName] =  useReactive("user.lastName")   
+  const fullName = useAsyncReactive("user.fullName")   
+
   return <>
     <Input label="firstName" value={firstName} {...bind('user.firstName')} />
     <Input label="lastName" value={lastName} {...bind('user.lastName')} />
     <ColorBlock name="FullName" loading={fullName.loading}>{fullName.value}</ColorBlock>
     </>
 }
+

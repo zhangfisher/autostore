@@ -7,7 +7,7 @@ import type { SignalComponentType } from "./signal/types";
 import { createInputBinding } from './form/bind';
 import { InputBindingsType } from './form/types';
 import { createUseField } from './form/useField';
-import { UseDepsType,  UseStateType, UseWatchType, UseReactiveType, UseComputedType, UseAsyncStateType } from './hooks/types';
+import { UseDepsType,  UseStateType, UseWatchType, UseReactiveType, UseComputedType, UseAsyncStateType, UseAsyncReactiveType } from './hooks/types';
 import { UseFieldType, UseFieldsType } from "./form/types"
 import { createUseWatch } from './hooks/useWatch';
 import { createUseFields } from './form/useFields';
@@ -16,13 +16,13 @@ import { createUseAsyncState } from "./hooks/useAsyncState";
 
 export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
     useState        : UseStateType<State>
-    useAsyncState   : UseAsyncStateType
-    useAsyncReactive
+    useAsyncState   : UseAsyncStateType<State>
+    useAsyncReactive: UseAsyncReactiveType<State>
     useDeps         : UseDepsType<State>
     $               : SignalComponentType<State>
     signal          : SignalComponentType<State>
-    useWatch        : UseWatchType
-    bind            : InputBindingsType
+    useWatch        : UseWatchType<State>
+    bind            : InputBindingsType<State>
     useField        : UseFieldType<State>
     useFields       : UseFieldsType<State>
     useReactive     : UseReactiveType<State>
