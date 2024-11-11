@@ -1,13 +1,3 @@
----
-group:
-  title: 开始
-  order: 0
-order: 1   
-demo:
-  tocDepth: 5
-toc: content
----
-
 # 安装
 
 `AutoStore`共包括三个包：

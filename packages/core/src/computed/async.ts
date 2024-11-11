@@ -7,7 +7,7 @@
  *
  *
  */
-import { isPathEq, markRaw} from "../utils";
+import { isFunction, isPathEq, markRaw} from "../utils";
 import { delay } from "flex-tools/async/delay";
 import { getValueScope } from "../scope";
 import { ComputedProgressbar } from "./types";
@@ -285,10 +285,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		let timeout = {clear:()=>{},enable:false}
 		let computedResult: any;
 		const updateCtx = (values:Partial<GetterRunContext>)=>Object.assign(ctx,values)
- 
-
 		for (let i = 0; i < retryCount + 1; i++) {
-
 			const afterUpdated: Partial<AsyncComputedValue>  = {}; // 保存执行完成后需要更新的内容，以便在最后一次执行后更新状态
 			try {
 				// 1. 初始化数据
@@ -326,6 +323,10 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 				ctx.hasError = true;
 				ctx.error = e 				
 				if (!ctx.hasTimeout) afterUpdated.error = getError(e).message;		 
+				if(isFunction(options.onError)){
+					const errValue = options.onError(e)
+					if(errValue !==undefined) afterUpdated.value = errValue
+				}
 			} finally {
 				timeout.clear()				
 				if(i === retryCount) {// 最后一次执行时

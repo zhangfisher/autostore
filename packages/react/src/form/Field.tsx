@@ -56,7 +56,7 @@
  * 
  */
 
-import { ComputedObject,  ComputedState,  Dict,ComputedGetter ,PATH_DELIMITER, setVal, Watcher,ComputedOptions, computed, AsyncComputedGetter, AsyncComputedValue, IComputedGetter, IAsyncComputedGetter, ComputedBuilder, ObjectKeyPaths, SyncComputedDescriptorBuilder, AsyncComputedDescriptorBuilder, WatchDescriptorBuilder, GetTypeByPath } from "autostore"
+import { ComputedObject,  ComputedState,  Dict,ComputedGetter ,PATH_DELIMITER, setVal, Watcher,ComputedOptions, computed, AsyncComputedGetter, AsyncComputedValue, IComputedGetter, IAsyncComputedGetter, ComputedBuilder, ObjectKeyPaths, SyncComputedDescriptorBuilder, AsyncComputedDescriptorBuilder, WatchDescriptorBuilder, GetTypeByPath, createAsyncComptuedValue } from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
@@ -71,20 +71,32 @@ export type ComputedStringProp<State extends Dict,Scope  = ComputedState<State>>
 export type ComputedNumberProp<State extends Dict,Scope  = ComputedState<State>> = number |  ComputedBuilder<number,Scope>  
 export type ComputedArrayProp<State extends Dict,Scope   = ComputedState<State>> = Array<any> |  ComputedBuilder<Array<any>,Scope>  
 
+export type AutoFieldRenderBindProps<
+    NAME,   
+    VALUE, 
+> = {
+    name        : NAME 
+    onChange    : (e:React.ChangeEvent<HTMLInputElement>)=>void
+    value       : SignalComponentRenderArgs<VALUE>['value']
+    placeHolder : string
+}
+
 export interface AutoFieldRenderProps<
     NAME,   
     VALUE, 
 > extends SignalComponentRenderArgs<VALUE> {
-    name    : NAME 
-    validate: AsyncComputedValue<boolean>
-    required: AsyncComputedValue<boolean>
-    visible : AsyncComputedValue<boolean> 
-    enable  : AsyncComputedValue<boolean>
-    readonly: AsyncComputedValue<boolean> 
-    label   : AsyncComputedValue<string>
-    help    : AsyncComputedValue<string>
-    select  : AsyncComputedValue<any[]>
-    onChange: (e:React.ChangeEvent<HTMLInputElement>)=>void
+    name       : NAME 
+    validate   : AsyncComputedValue<boolean>
+    required   : AsyncComputedValue<boolean>
+    visible    : AsyncComputedValue<boolean> 
+    enable     : AsyncComputedValue<boolean>
+    readonly   : AsyncComputedValue<boolean> 
+    label      : AsyncComputedValue<string>
+    help       : AsyncComputedValue<string>
+    placeHolder: AsyncComputedValue<string>
+    select     : AsyncComputedValue<any[]>
+    onChange   : (e:React.ChangeEvent<HTMLInputElement>)=>void
+    bind       : AutoFieldRenderBindProps<NAME,VALUE>
 }   
 
 export interface AutoFieldProps<
@@ -93,22 +105,23 @@ export interface AutoFieldProps<
     VALUE,
     VALIDATE
 > {
-    name      : NAME  
-    validate? : VALIDATE
-    required? : ComputedBooleanProp<State>
-    visible?  : ComputedBooleanProp<State>
-    readonly? : ComputedBooleanProp<State>
-    enable?   : ComputedBooleanProp<State>
-    help?     : ComputedStringProp<State>
-    label?    : ComputedStringProp<State>
-    select?   : ComputedArrayProp<State>
-    render    : (props:AutoFieldRenderProps<NAME,VALUE>)=>React.ReactNode
+    name        : NAME  
+    validate?   : VALIDATE
+    required?   : ComputedBooleanProp<State>
+    visible?    : ComputedBooleanProp<State>
+    readonly?   : ComputedBooleanProp<State>
+    enable?     : ComputedBooleanProp<State>
+    help?       : ComputedStringProp<State>
+    label?      : ComputedStringProp<State>
+    placeHolder?: ComputedStringProp<State>
+    select?     : ComputedArrayProp<State>
+    render      : (props:AutoFieldRenderProps<NAME,VALUE>)=>React.ReactNode
 }  
 
 export interface AutoField<State extends Dict>  {    
     < 
         NAME extends ObjectKeyPaths<ComputedState<State>>             = ObjectKeyPaths<ComputedState<State>>,
-        VALUE extends GetTypeByPath<ComputedState<State>,NAME>                  = Get<ComputedState<State>,NAME>,
+        VALUE extends GetTypeByPath<ComputedState<State>,NAME>        = Get<ComputedState<State>,NAME>,
         VALIDATE extends SyncComputedDescriptorBuilder<boolean,VALUE> = SyncComputedDescriptorBuilder<boolean,VALUE>
     >(props:AutoFieldProps<State,NAME,VALUE,VALIDATE>):React.ReactNode
     < 
@@ -171,16 +184,18 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             depends:[name],                          // 依赖<name>
             scope:name,        
             initial:true,
-            throwError:false
+            throwError:false,
+            onError:()=>false,      //出错时返回false
         })  as ComputedObject<boolean>
-        const required  = useComputed<boolean>(props.required,{id:`${prefix}required`,initial:false,throwError:false})  as ComputedObject<boolean> | undefined
-        const visible   = useComputed<boolean>(props.visible,{id:`${prefix}visible`,initial:true,throwError:false})     as ComputedObject<boolean> | undefined
-        const readonly  = useComputed<boolean>(props.readonly,{id:`${prefix}readonly`,initial:false,throwError:false})  as ComputedObject<boolean> | undefined
-        const enable    = useComputed<boolean>(props.enable,{id:`${prefix}enable`,initial:true,throwError:false})       as ComputedObject<boolean> | undefined
-        const select    = useComputed<any[]>(props.select,{id:`${prefix}select`,initial:[],throwError:false})           as ComputedObject<any[]> | undefined
-        const help      = useComputed<string>(props.help,{id:`${prefix}help`,initial:'',throwError:false})              as ComputedObject<string> | undefined
-        const label     = useComputed<string>(props.label,{id:`${prefix}label`,initial:'',throwError:false})            as ComputedObject<string> | undefined
-
+        const required    = useComputed<boolean>(props.required,{id:`${prefix}required`,initial:false,throwError:false})   as ComputedObject<boolean> | undefined
+        const visible     = useComputed<boolean>(props.visible,{id:`${prefix}visible`,initial:true,throwError:false})      as ComputedObject<boolean> | undefined
+        const readonly    = useComputed<boolean>(props.readonly,{id:`${prefix}readonly`,initial:false,throwError:false})   as ComputedObject<boolean> | undefined
+        const enable      = useComputed<boolean>(props.enable,{id:`${prefix}enable`,initial:true,throwError:false})        as ComputedObject<boolean> | undefined
+        const select      = useComputed<any[]>(props.select,{id:`${prefix}select`,initial:[],throwError:false})            as ComputedObject<any[]> | undefined
+        const help        = useComputed<string>(props.help,{id:`${prefix}help`,initial:'',throwError:false})               as ComputedObject<string> | undefined
+        const label       = useComputed<string>(props.label,{id:`${prefix}label`,initial:'',throwError:false})             as ComputedObject<string> | undefined
+        const placeHolder = useComputed<string>(props.placeHolder,{id:`${prefix}placeHolder`,initial:'',throwError:false}) as ComputedObject<string> | undefined
+        
         const fieldPropObjs = {
             validate,
             required,
@@ -189,7 +204,8 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             enable,
             select,
             help,
-            label
+            label,
+            placeHolder
         } as Dict<ComputedObject<any> | undefined>
 
         const onChange = useCallback((e:React.ChangeEvent<HTMLInputElement>)=>{
@@ -197,6 +213,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             if(name){
                 store.update(state => setVal(state, name.split(PATH_DELIMITER), inputValue));
             }            
+            formCtx.current?.setDirty(true)
             e.stopPropagation()
         },[name])
         
@@ -204,19 +221,25 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
 
         const renderProps = useRef<any>()
         if(!renderProps.current){
+            const bind = {
+                name,onChange,
+                value:value.value,
+                placeHolder: placeHolder ? placeHolder.val: pickValue<string>(props.placeHolder as any,'')
+            }
             renderProps.current=buildFieldRenderProps({
                 name,
-                validate: validate ? validate.val: pickValue<boolean>(props.validate as any,true),
-                required: required ? required.val: pickValue<boolean>(props.required as any,false),
-                visible : visible ? visible.val: pickValue<boolean>(props.visible as any,true),
-                readonly: readonly ? readonly.val: pickValue<boolean>(props.readonly as any,false),
-                enable  : enable ? enable.val:  pickValue<boolean>(props.enable as any,true),
-                select  : select ? select.val: pickValue<any[]>(props.select as any,[]),
-                help    : help ? help.val: pickValue<string>(props.help as any,''),
-                label   : label ? label.val: pickValue<string>(props.label as any,''),
-                ...value, 
-                error: validate?.error?.message ?? '',
-                onChange
+                validate   : createAsyncComptuedValue(validate ? validate.value : false),     
+                required   : createAsyncComptuedValue(required ? required.value : false),                
+                visible    : createAsyncComptuedValue(visible ? visible.value : true),                     
+                readonly   : createAsyncComptuedValue(readonly ? readonly.value : false),     
+                enable     : createAsyncComptuedValue(enable ? enable.value : true),     
+                select     : createAsyncComptuedValue(select ? select.value : undefined),     
+                help       : createAsyncComptuedValue(help ? help.value : undefined),     
+                label      : createAsyncComptuedValue(label ? label.value : undefined),     
+                placeHolder: createAsyncComptuedValue(placeHolder ? placeHolder.value : undefined),     
+                error      : validate?.error?.message ?? '',
+                onChange,
+                bind                
             })   
         }  
 

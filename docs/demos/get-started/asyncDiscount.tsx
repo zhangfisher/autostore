@@ -2,7 +2,7 @@ import React from "react"
 import { createStore,delay,computed } from '@autostorejs/react';
 import { Button,Table } from "x-react-components"
 
-const {state,$,useReactive} = createStore({
+const {$,useReactive} = createStore({
   orders: [
     {
       book: 'AutoStore最佳实践',

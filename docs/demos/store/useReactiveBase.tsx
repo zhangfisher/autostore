@@ -16,7 +16,7 @@ const { state,useReactive,$ } = createStore({
 })
  
 export default () => {
-  const [age,setAge] = useReactive<number>('user.age') 
+  const [age,setAge] = useReactive('user.age') 
   const [lastName,setLastName] = useReactive((state)=>state.user.lastName,(name,state)=>state.user.lastName=name) 
 
   return <div>    

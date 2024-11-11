@@ -52,10 +52,10 @@ const { state,useReactive,$ } = createStore({
   }
 })
 // 使用方式1
-const [age,setAge] = useReactive<number>('user.age')  
+const [age,setAge] = useReactive('user.age')  
 
 // 使用方式2
-const [firstName,setFirstName] = useReactive<string>(['user','firstName'])  
+const [firstName,setFirstName] = useReactive(['user','firstName'])  
 
 ```   
 

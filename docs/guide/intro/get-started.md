@@ -1,13 +1,3 @@
----
-group:
-  title: 开始
-  order: 0
-order: 2   
-demo:
-  tocDepth: 5
-toc: content
----
-
 # 快速入门
 
 `AutoStore`功能强大，易于使用。以下通过构建一个简单书店商城的例子来展示如何使用`AutoStore`，体验`AutoStore`极致优雅和强大的功能。

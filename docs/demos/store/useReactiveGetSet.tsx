@@ -4,7 +4,7 @@ import { ColorBlock } from "x-react-components"
 import { Button } from "x-react-components"
 
  
-const { useReactive,state,$ } = createStore( {
+const { useReactive } = createStore( {
   firstName:"Zhang",
   lastName:"Fisher",
   fullName:(state)=>state.firstName+state.lastName,

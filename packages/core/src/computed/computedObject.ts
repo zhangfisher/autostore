@@ -8,6 +8,7 @@ import { calcDependPaths } from "../utils/calcDependPaths";
 import { joinValuePath } from "../utils/joinValuePath";
 import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedOptions } from './types';
 import { ObserverObject } from "../observer/observer";
+import { isFunction } from "../utils/isFunction";
 
 export class ComputedObject<Value=any> extends ObserverObject<Value,ComputedOptions<Value>>{     
     /**
@@ -23,6 +24,9 @@ export class ComputedObject<Value=any> extends ObserverObject<Value,ComputedOpti
     }    
     toString(){ return `ComputedObject<${joinValuePath(this.path)}>` }  
     
+    /**
+     * 返回计算属性的值,如果是异步计算属性，则返回value.value
+     */
     get val():Value{
         return this.async ? (this.value as any).value :  this.value
     }

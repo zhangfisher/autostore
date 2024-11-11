@@ -45,7 +45,7 @@ export class ObserverObject<
      * @param {ComputedContext} context - 动态值上下文，指该动态值所有的路径、值、父路径和父对象引用。
      * @param {ComputedDescriptor<Options>} descriptor - 动态值描述符，包含了动态值的元数据。
      */
-    constructor(public store:AutoStore<any>,public descriptor:ObserverDescriptor,public context?:ComputedContext<Value>){        
+    constructor(public store:AutoStore<any>,public descriptor:ObserverDescriptor<any,any,any>,public context?:ComputedContext<Value>){        
         this._associated    =  context!==undefined
         this._getter     = descriptor.getter                 
         this._options    = Object.assign({
@@ -103,8 +103,10 @@ export class ObserverObject<
             setVal(this.store.state,this._path, value)     
         }else{            
             const oldValue = this._value
-            this._value = value          
-            this.store._notify({type:'set',path:this.path,value,oldValue})
+            if(value!==oldValue){
+                this._value = value  
+                this.store._notify({type:'set',path:this.path,value,oldValue})
+            }
         }
     }  
     

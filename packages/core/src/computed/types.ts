@@ -225,15 +225,19 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
      */
     extras?:any
     /**
-     * 当执行计算getter函数出错时的回调
+     * 当执行计算getter函数出错时的回调，如果返回值==undefined，则返回值会作为出错时的计算结果
+     * 
+     * @description     
+     * 
+     * 比如，有一个validate计算属性，其类型是true/false
+     * 当计算出错时抛出异常，此时就可以返回false, 这样就可以实现当计算出错时，validate返回false
+     * 
      */
-    onError?:(e:Error)=>void                         
+    onError?:(e:Error)=>any                         
     /**
      * 当计算完成后的回调函数
      */
     onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,value:any}):void
-
-
 
 }
 

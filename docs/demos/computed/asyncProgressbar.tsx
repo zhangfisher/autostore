@@ -1,6 +1,6 @@
 import React from "react"
 import {delay,createStore,computed,ObserverScopeRef } from '@autostorejs/react';
-import { Button,Table, Box, Loading, RichLabel, JsonView } from "x-react-components"
+import { Button,Table, Loading, RichLabel, JsonView } from "x-react-components"
 
  
 const {  state,useAsyncState } = createStore({
@@ -10,14 +10,12 @@ const {  state,useAsyncState } = createStore({
     count:1,
     total: computed(async ([count,price],{getProgressbar})=>{
       const progressbar = getProgressbar()
-      return new Promise(async (resolve)=>{
         for(let i=1;i<=100;i++){
           await delay(30)
           progressbar.value(i)
         }
         progressbar.end()
-        resolve(count*price)
-      }) 
+        return count*price
     },
     ["order.count","order.price"],
     {scope:ObserverScopeRef.Depends}) 

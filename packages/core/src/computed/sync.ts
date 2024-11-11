@@ -7,6 +7,7 @@ import { ComputedObject } from "./computedObject";
 import { StateOperate } from "../store/types";
 import { noRepeat } from "../utils/noRepeat";
 import { calcDependPaths } from '../utils/calcDependPaths';
+import { isFunction } from '../utils/isFunction';
 
 /**
  * 
@@ -55,20 +56,32 @@ export class SyncComputedObject<Value=any,Scope=any>  extends ComputedObject<Val
     // 4. 执行getter函数
     let computedResult = finalComputedOptions.initial;
     try {
-      computedResult = (this.getter).call(this,scope,{operate,first});
-      
-      if(first) this.initial = computedResult
-      // 将结果回写入store,且不触发get事件
-      this.store.peep(()=>{
-          this.value = computedResult  
-       })
-      !first && this.emitStoreEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
+      computedResult = (this.getter).call(this,scope,{operate,first});            
     } catch (e: any) {
-      this.error = e
-      !first && this.emitStoreEvent("computed:error", { id: this.id, path: this.path, error: e ,computedObject:this as unknown as ComputedObject});
-      if(this.options.throwError) throw e      
+      this.error = e    
     }
+    this.onDone(first,computedResult,finalComputedOptions)
   } 
+  
+  private onDone(first:boolean,value:any,options:ComputedOptions){
+    let computedResult = value
+        // 如果指定onError，允许在计算出错时，进行一些处理，如指定一个默认值
+    if(this.error && isFunction(options.onError)){      
+        const errValue = options.onError(this.error)        
+        if(errValue !==undefined) computedResult = errValue
+    }
+
+    if(first) this.initial = computedResult      
+    this.store.peep(()=>{           // 将结果回写入store,且不触发get事件
+        this.value = computedResult  
+    })
+    if(this.error){
+        !first && this.emitStoreEvent("computed:error", { id: this.id, path: this.path, error: this.error ,computedObject:this as unknown as ComputedObject});
+        if(this.options.throwError) throw this.error
+    }else{
+        !first && this.emitStoreEvent("computed:done", { id:this.id,path:this.path,value:computedResult,computedObject:this as unknown as ComputedObject})
+    }
+}
   /**
    * 自动收集同步依赖
    * 

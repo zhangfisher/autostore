@@ -18,109 +18,114 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: '首页', link: '/' },
-      { text: '指南', link: '/guide/' },
+      { text: '指南', link: '/guide/' }, 
+      { text: '开源推荐', link: 'https://zhangfisher.github.io/repos/' },
     ],
-    sidebar: [
-      {
-        text: '关于',
-        items: [
-          { text: '安装', link: '/intro/install' },
-          { text: '快速入门', link: '/intro/get-started' },
-          { text: '更新历史', link: '/intro/history' },
-          { text: '常见问题', link: '/intro/question' },
-        ]
-      },
-      {
-        text: '指南',
-        items: [
-          {
-            text: 'Store',
-            collapsed: false,
-            items: [
-              { text: '关于', link: '/guide/store/about' },
-              { text: 'Store', link: '/guide/store/store' },
-              { text: 'State', link: '/guide/store/state' },
-              { text: '渲染优化', link: '/guide/store/render' },
-              { text: '事件', link: '/guide/store/events' },
-            ]
-          },
-          {
-            text: '计算属性',
-            collapsed: false,
-            items: [
-              { text: '关于', link: '/guide/computed/about' },
-              { text: '创建', link: '/guide/computed/create' },
-              { text: '计算函数', link: '/guide/computed/getter' },
-              { text: '依赖收集', link: '/guide/computed/deps' },
-              { text: '作用域', link: '/guide/computed/scope' },
-              { text: '同步计算', link: '/guide/computed/sync' },
-              { text: '异步计算', link: '/guide/computed/async' },
-              { text: '计算选项', link: '/guide/computed/options' },
-              { text: '计算对象', link: '/guide/computed/objects' },
-              { text: '手动执行', link: '/guide/computed/run' }
-            ]
-          },
-          {
-            text: '监视',
-            collapsed: false,
-            items: [
-              { text: '关于', link: '/guide/watch/about' },
-              { text: '全局监视', link: '/guide/watch/store-watch' },
-              { text: '状态内监视', link: '/guide/watch/watch' },
-              { text: 'useWatch', link: '/guide/watch/use-watch' },
-              { text: '监视对象', link: '/guide/watch/objects' }
-            ]
-          },
-          {
-            text: '信号',
-            collapsed: false,
-            items: [
-              { text: '关于', link: '/guide/signal/about' },
-              { text: '信号组件', link: '/guide/signal/component' },
-              { text: '状态信号组件', link: '/guide/signal/state-render' },
-              { text: '自定义渲染', link: '/guide/signal/custom-render' },
-              { text: '计算信号组件', link: '/guide/signal/computed-render' },
-              { text: '监听信号组件', link: '/guide/signal/watch' },
-              { text: '错误处理', link: '/guide/signal/error-boundary' }
-            ]
-          },
-          {
-            text: '表单',
-            collapsed: false,
-            items: [
-              { text: '关于', link: '/guide/form/about' },
-              { text: 'bind', link: '/guide/form/bind' },
-              { text: 'useField', link: '/guide/form/use-field' },
-              { text: 'useFields', link: '/guide/form/use-fields' },
-              { 
-                text: 'useForm', 
-                link: '/guide/form/use-form',
-                collapsed: false,
-                items:[
-                  { text:"关于",link:"/guide/form/useform/about"},
-                  { text:"快速入门",link:"/guide/form/useform/quick-start"},
-                  { text:"基本用法",link:"/guide/form/useform/basic"},
-                  { text:"表单校验",link:"/guide/form/useform/validate"},
-                  { text:"字段拆分",link:"/guide/form/useform/split-field"}, 
-                  { text:"字段组件",link:"/guide/form/useform/field"}, 
-                ]
-              },
-            ]
-          },
-          {
-            text: '调试与诊断',
-            collapsed: false,
-            items: [
-              { text: 'DevTools', link: '/guide/debug/devtools' },
-              { text: 'trace', link: '/guide/debug/trace' },
-              { text: '依赖收集', link: '/guide/debug/deps' },
-              { text: '日志', link: '/guide/debug/log' },
-              { text: '循环依赖', link: '/guide/debug/circular-dependency' },
-            ]
-          }
-        ]
-      }
-    ],
+    sidebar: {
+      "/guide/":[
+        {
+          text: '关于',          
+          collapsed: false,
+          items: [
+            { text: '安装', link: '/guide/intro/install' },
+            { text: '快速入门', link: '/guide/intro/get-started' },
+            { text: '更新历史', link: '/guide/intro/history' },
+            { text: '示例', link: '/guide/intro/examples' },
+            { text: '常见问题', link: '/guide/intro/question' },
+          ]
+        },
+        {
+          text: '指南',
+          items: [
+            {
+              text: 'Store',
+              collapsed: false,
+              items: [
+                { text: '关于', link: '/guide/store/about' },
+                { text: 'Store', link: '/guide/store/store' },
+                { text: 'State', link: '/guide/store/state' },
+                { text: '渲染优化', link: '/guide/store/render' },
+                { text: '事件', link: '/guide/store/events' },
+              ]
+            },
+            {
+              text: '计算属性',
+              collapsed: false,
+              items: [
+                { text: '关于', link: '/guide/computed/about' },
+                { text: '创建', link: '/guide/computed/create' },
+                { text: '计算函数', link: '/guide/computed/getter' },
+                { text: '依赖收集', link: '/guide/computed/deps' },
+                { text: '作用域', link: '/guide/computed/scope' },
+                { text: '同步计算', link: '/guide/computed/sync' },
+                { text: '异步计算', link: '/guide/computed/async' },
+                { text: '计算选项', link: '/guide/computed/options' },
+                { text: '计算对象', link: '/guide/computed/objects' },
+                { text: '手动执行', link: '/guide/computed/run' }
+              ]
+            },
+            {
+              text: '监视',
+              collapsed: false,
+              items: [
+                { text: '关于', link: '/guide/watch/about' },
+                { text: '全局监视', link: '/guide/watch/store-watch' },
+                { text: '状态内监视', link: '/guide/watch/watch' },
+                { text: 'useWatch', link: '/guide/watch/use-watch' },
+                { text: '监视对象', link: '/guide/watch/objects' }
+              ]
+            },
+            {
+              text: '信号',
+              collapsed: false,
+              items: [
+                { text: '关于', link: '/guide/signal/about' },
+                { text: '信号组件', link: '/guide/signal/component' },
+                { text: '状态信号组件', link: '/guide/signal/state-render' },
+                { text: '自定义渲染', link: '/guide/signal/custom-render' },
+                { text: '计算信号组件', link: '/guide/signal/computed-render' },
+                { text: '监听信号组件', link: '/guide/signal/watch' },
+                { text: '错误处理', link: '/guide/signal/error-boundary' }
+              ]
+            },
+            {
+              text: '表单',
+              collapsed: false,
+              items: [
+                { text: '关于', link: '/guide/form/about' },
+                { text: 'bind', link: '/guide/form/bind' },
+                { text: 'useField', link: '/guide/form/use-field' },
+                { text: 'useFields', link: '/guide/form/use-fields' },
+                { 
+                  text: 'useForm', 
+                  link: '/guide/form/use-form',
+                  collapsed: false,
+                  items:[
+                    { text:"关于",link:"/guide/form/useform/about"},
+                    { text:"快速入门",link:"/guide/form/useform/quick-start"},
+                    { text:"基本用法",link:"/guide/form/useform/basic"},
+                    { text:"表单校验",link:"/guide/form/useform/validate"},
+                    { text:"字段拆分",link:"/guide/form/useform/split-field"}, 
+                    { text:"字段组件",link:"/guide/form/useform/field"}, 
+                  ]
+                },
+              ]
+            },
+            {
+              text: '调试与诊断',
+              collapsed: false,
+              items: [
+                { text: 'DevTools', link: '/guide/debug/devtools' },
+                { text: 'trace', link: '/guide/debug/trace' },
+                { text: '依赖收集', link: '/guide/debug/deps' },
+                { text: '日志', link: '/guide/debug/log' },
+                { text: '循环依赖', link: '/guide/debug/circular-dependency' },
+              ]
+            }
+          ]
+        }
+      ]
+    }, 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/zhangfisher/autostore/' }
     ]

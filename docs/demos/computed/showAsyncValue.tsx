@@ -1,6 +1,6 @@
 import React from "react"
 import { createStore,computed,AsyncComputedObject } from "@autostorejs/react"
-import { Box, JsonView } from "x-react-components"
+import { Box } from "x-react-components"
 
 const store = createStore({
   order:{

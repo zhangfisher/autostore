@@ -11,7 +11,7 @@ const store = createStore({
 })
 
 export default ()=>{
-  const [state,setState] = store.useReactive()
+  const [state] = store.useReactive()
   return <Table 
     cols={[
         '书名','作者','单价','数量','小计'

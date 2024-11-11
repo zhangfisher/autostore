@@ -1,9 +1,6 @@
 # Field组件
 
-如果您想要对字段进行更精细的控制，则推荐使用`Field`组件。
-
-`Field`组件是创建表单自定义字段组件的终极武器，允许您完全控制字段的渲染、校验、可视、使能等等，并且所有字段特性属性均可以使用计算属性声明，这使用`Field`组件具有超强的自定义能力，还可以很轻松地实现表单字段之间的联动。
-
+如果您想要对字段进行更精细的控制，则推荐使用`Field`组件。**`Field`组件是创建表单自定义字段组件的终极武器**，允许您完全控制字段的渲染、校验、可视、使能等等，并且所有字段特性属性均可以使用计算属性声明，这使用`Field`组件具有超强的自定义能力，还可以很轻松地实现表单字段之间的联动。
 
 ## 快速上手
 
@@ -67,9 +64,36 @@ const { Form,Field } = useForm({
 
 `render`属性的值是一个函数，该函数接收一个`AutoFieldRenderProps`类型的参数，负责渲染`Field`组件。
 
+```tsx {3-7}
+<Field
+    name="user.firstName"
+    render={
+        ({name, value, onChange,validate }) => {
+            return <input name={name} value={value} onChange={onChange} />
+        }
+    }/>
+```
+
 `AutoFieldRenderProps`类型包含以下属性：
 
- 
+ ```ts
+ export interface AutoFieldRenderProps<
+    NAME,   
+    VALUE, 
+> extends SignalComponentRenderArgs<VALUE> {
+    name       : NAME 
+    validate   : AsyncComputedValue<boolean>
+    required   : AsyncComputedValue<boolean>
+    visible    : AsyncComputedValue<boolean> 
+    enable     : AsyncComputedValue<boolean>
+    readonly   : AsyncComputedValue<boolean> 
+    label      : AsyncComputedValue<string>
+    help       : AsyncComputedValue<string>
+    placeHolder: AsyncComputedValue<string>
+    select     : AsyncComputedValue<any[]>
+    onChange   : (e:React.ChangeEvent<HTMLInputElement>)=>void
+}   
+```
 
 
  

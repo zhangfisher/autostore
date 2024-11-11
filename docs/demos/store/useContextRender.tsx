@@ -1,5 +1,5 @@
 import React,{createContext,useContext,useState} from "react"
-import { ColorBlock,Button,Divider,Box } from "x-react-components"
+import { ColorBlock,Button,Box } from "x-react-components"
 
 const ctx = createContext({
   firstName:"Zhang",

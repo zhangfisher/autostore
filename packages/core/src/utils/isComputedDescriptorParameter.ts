@@ -1,4 +1,4 @@
-import { ComputedDescriptorParameter } from "../types";
+import { ComputedDescriptorParameter } from "../computed/types";
 import { isObserverDescriptor } from "./isObserverDescriptor";
 import { isObserverDescriptorBuilder } from "./isObserverDescriptorBuilder";
 

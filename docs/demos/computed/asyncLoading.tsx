@@ -1,6 +1,6 @@
 import React from "react"
 import { useStore,computed,delay } from '@autostorejs/react';
-import { ColorBlock,Button, Box, JsonView } from "x-react-components"
+import { ColorBlock,Button, JsonView } from "x-react-components"
  
 
 export default ()=>{

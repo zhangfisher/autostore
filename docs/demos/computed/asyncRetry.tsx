@@ -1,6 +1,6 @@
 import React from "react"
 import { createStore,computed,ObserverScopeRef,delay } from '@autostorejs/react';
-import { Button,Loading,JsonView,RichLabel,Table, Box } from "x-react-components"
+import { Button,Loading,JsonView,RichLabel,Table } from "x-react-components"
   
 const { state,useAsyncReactive } = createStore({
   order:{

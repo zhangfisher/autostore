@@ -68,9 +68,9 @@ const { Form } = useForm({
 
 ### 第2步：声明字段
 
-声明字段有几个方式：
+声明字段有`3`种方式：
 
-- **简单字段**
+#### 简单字段
 
 只需要为`input`、`textarea`、`select`元素设置`name`属性，且`name`为一个`字符串路径`指向状态即可。
 
@@ -78,7 +78,7 @@ const { Form } = useForm({
 <input name="user.firstName" />
 ```
 
-- **封装字段**
+#### 封装字段
 
 当然，实际中的输入字段我们一般会进行封装，以便可以进行更多的控制。
 
@@ -93,6 +93,29 @@ const { Form } = useForm({
 ```
 
 - 使用`data-field-name`标识表单字段可以让表单能进行更多的控制。
+
+#### Field字段组件
+
+使用`Field`字段组件可以实现更复杂的控制，如校验、字段联动等等
+
+```tsx {1,3}
+const { Form,Field } = useForm({...})
+
+<Field 
+  name="user.name"
+  validate={(value)=>value.length>=3}
+  render={({value,validate,onChange,name,error})=>{
+    return <>
+      <label>First Name</label>
+      <input name={name} value={value} onChange={onChange}/>  
+      <span className="invalid"></span>
+      </>
+  }}
+>  
+</Field>
+```
+
+
 
 ### 第3步：提交表单
 

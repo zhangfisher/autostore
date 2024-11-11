@@ -1,6 +1,6 @@
 import React from 'react';
 import { useForm,isNumber, isPlainObject } from '@autostorejs/react';
-import {  CheckBox,Button, ColorBlock,JsonView, Layout, Field, Input } from 'x-react-components';
+import {  Button, ColorBlock,JsonView, Layout, Field, Input } from 'x-react-components';
 
 
 export  default () => {

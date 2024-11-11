@@ -17,7 +17,7 @@ export function createUseObserver<State extends Dict>(store:ReactAutoStore<State
                 ref.current?.detach()
                 ref.current = undefined
             }
-        },[params]) 
+        },[]) 
         return ref.current
     }
 } 
