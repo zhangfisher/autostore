@@ -10,7 +10,7 @@ export type InputProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLI
     visible? : boolean
     enable?  : boolean
     validate?: boolean | null
-    value?   : string
+    value?   : any
     style?   : Partial<CSSProperties>
     onAction?: (id:string,value:any,e:any)=>void,
     actions? : string[]
@@ -92,7 +92,7 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
         <div         
             className={InputStyle.className}
             style={InputStyle.getStyle(props,style as any)}
-            // data-field-name={props.name}
+            data-field-name={props.name}
         >
             { label ? <label htmlFor={id}>{label}</label> : null }
             <div style={{

@@ -58,16 +58,14 @@
 
 import { ComputedObject,  ComputedState,  Dict,ComputedGetter ,PATH_DELIMITER, setVal, 
     Watcher,ComputedOptions, computed, AsyncComputedGetter, AsyncComputedValue, 
-    ObjectKeyPaths,createAsyncComptuedValue, 
-    ObserverBuilder,
-    AsyncComputedDescriptorBuilder
+    ObjectKeyPaths, AsyncComputedDescriptorBuilder
 } from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
 import { SignalComponentRenderArgs } from "../types"
 import { getInputValueFromEvent } from "../utils" 
-import { Get } from "type-fest"
+import { Get } from "type-fest" 
 
 
 export type BooleanComputedGetter<State extends Dict,Scope = ComputedState<State>> = boolean | ComputedGetter<boolean,Scope>
@@ -184,12 +182,16 @@ export function prop(getter:ComputedGetter<any> | AsyncComputedGetter<any>,optio
     return computed(getter as any,options) as ComputedGetter<any>
 }
 
+ 
+export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>):AutoField<State>{
+    const { useAsyncState, useComputedObject} = store
+       
+    return (props:any)=>{        
+        const { name } = props
+        const prefix = `${name}.`        
 
-function useFieldComputedProps<State extends Dict>(store: ReactAutoStore<State>,name:string,props:any){
-    const objs = useRef<Dict<ComputedObject<any> | undefined>>()
-    if(!objs.current){
-        const { useComputedObject } = store
-        const prefix = `${name}.`      
+        const value = useAsyncState(name as any)
+            
         const validate  = useComputedObject<boolean>(props.validate,{id:`${prefix}validate`,
             depends:[name],                          // 依赖<name>
             scope:name,        
@@ -197,6 +199,7 @@ function useFieldComputedProps<State extends Dict>(store: ReactAutoStore<State>,
             throwError:false,
             onError:()=>false,      //出错时返回false
         })  as ComputedObject<boolean>
+
         const required    = useComputedObject<boolean>(props.required,{id:`${prefix}required`,initial:false,throwError:false})   as ComputedObject<boolean> | undefined
         const visible     = useComputedObject<boolean>(props.visible,{id:`${prefix}visible`,initial:true,throwError:false})      as ComputedObject<boolean> | undefined
         const readonly    = useComputedObject<boolean>(props.readonly,{id:`${prefix}readonly`,initial:false,throwError:false})   as ComputedObject<boolean> | undefined
@@ -205,7 +208,8 @@ function useFieldComputedProps<State extends Dict>(store: ReactAutoStore<State>,
         const help        = useComputedObject<string>(props.help,{id:`${prefix}help`,initial:'',throwError:false})               as ComputedObject<string> | undefined
         const label       = useComputedObject<string>(props.label,{id:`${prefix}label`,initial:'',throwError:false})             as ComputedObject<string> | undefined
         const placeholder = useComputedObject<string>(props.placeholder,{id:`${prefix}placeholder`,initial:'',throwError:false}) as ComputedObject<string> | undefined            
-        objs.current = {
+
+        const fieldPropObjs = {
             validate,
             required,
             visible,
@@ -215,29 +219,16 @@ function useFieldComputedProps<State extends Dict>(store: ReactAutoStore<State>,
             help,
             label,
             placeholder
-        }
-    }
-    return objs.current
-}
+        } as Dict<ComputedObject<any> | undefined>
 
-export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>):AutoField<State>{
-    const { useAsyncState } = store
-       
-    return (props:any)=>{        
-        const { name } = props
-        const prefix = `${name}.`        
-
-        const value = useAsyncState(name as any)
-        const fieldPropObjs = useFieldComputedProps(store,name,props)
-        const { validate,required,visible,readonly,enable,select,help,label,placeholder } = fieldPropObjs 
 
         const onChange = useCallback((e:React.ChangeEvent<HTMLInputElement>)=>{
-            e.stopPropagation()
             let inputValue = getInputValueFromEvent(e)            
             if(name){
                 store.update(state => setVal(state, name.split(PATH_DELIMITER), inputValue));
             }            
-            formCtx.current?.setDirty(true)            
+            formCtx.current?.setDirty(true)     
+            e.stopPropagation()       
         },[name])
         
         const [ _,setRefresh ] = useState(0)
@@ -248,23 +239,24 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 name,
                 onChange,
                 value:value.value,
-                placeholder: placeholder ? placeholder.value : undefined
+                placeholder: placeholder ? placeholder.value : props.placeholder ?? ''
             }
             renderProps.current = buildFieldRenderProps({
                 name,
-                validate   : validate ? validate.val : false,     
-                required   : required ? required.val : false,                
-                visible    : visible ? visible.val : true,                     
-                readonly   : readonly ? readonly.val : false,     
-                enable     : enable ? enable.value : true,     
-                select     : select ? select.value : undefined,     
-                help       : help ? help.value : undefined,     
-                label      : label ? label.value : undefined,     
-                placeholder: placeholder ? placeholder.value : undefined,     
+                validate   : validate ? validate.val : props.validate ?? true,     
+                required   : required ? required.val : props.required ?? false,                
+                visible    : visible ? visible.val : props.visible ?? true,                     
+                readonly   : readonly ? readonly.val : props.readonly ?? false,     
+                enable     : enable ? enable.value : props.enable ?? true,     
+                select     : select ? select.value : props.select,     
+                help       : help ? help.value : props.help,     
+                label      : label ? label.value : props.label ,     
+                placeholder: placeholder ? placeholder.value : props.placeholder ?? '',     
                 error      : validate?.error?.message ?? '',
-                onChange,
                 bind,
-                ...value                
+                ...value,                
+                onChange
+
             })   
         }  
 

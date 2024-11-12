@@ -111,7 +111,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				}                                          
 			};
             // 4. 侦听来自表单输入的变更
-			form.addEventListener("input", onChange,{capture:true}); 
+			form.addEventListener("input", onChange); 
 
 			// 5.
 			options.ref?.current?.addEventListener('submit', async (e) => {

@@ -90,6 +90,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	const store = storeRef.current!  
 	
 	const reset = useCallback(()=>{
+		setDirty(false)		
 		store.reset()		
 	},[])
 

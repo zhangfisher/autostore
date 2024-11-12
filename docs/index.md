@@ -9,7 +9,7 @@ hero:
   actions:
     - theme: brand
       text: 快速入门
-      link: /intro/get-started
+      link: /guide/intro/get-started
     - theme: alt
       text: Github
       link: https://github.com/zhangfisher/autostore
