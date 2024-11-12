@@ -1,4 +1,4 @@
-import { ObjectKeyPaths,AsyncComputedGetter, AsyncComputedObject, AsyncComputedValue, ComputedDescriptorBuilder, ComputedGetter, ComputedOptions, ComputedState, Dict, ExtendAsyncOptions, SyncComputedObject, WatchListener, WatchListenerOptions, GetTypeByPath, Primitive } from "autostore"
+import { ObjectKeyPaths,AsyncComputedGetter, AsyncComputedObject, AsyncComputedValue, ComputedDescriptorBuilder, ComputedGetter, ComputedOptions, ComputedState, Dict, ExtendAsyncOptions, SyncComputedObject, WatchListener, WatchListenerOptions, GetTypeByPath, Primitive, WatchObject, WatchGetter, WatchDescriptorBuilder, WatchOptions } from "autostore"
 
  
 export type StateGetter<State extends Dict,Value=any> =  (state:ComputedState<State>)=>Value
@@ -37,7 +37,6 @@ export interface UseStateType<State extends Dict> {
 export type UseReactiveResult<Value,State extends Dict>=UseStateResult<Value,State>
 export type UseReactiveGetter<Value,State extends Dict>= UseStateGetter<Value,State>
 export type UseReactiveSetter<SetValue,State extends Dict>=UseStateSetter<SetValue,State>
-export type UseReactiveComposeResult<Value,SetValue,State extends Dict>=UseStateResult<Value,State>
 
 export interface UseReactiveType<State extends Dict> {
     <Path extends StatePaths<State> = StatePaths<State>>(selector: Path): UseReactiveResult<GetTypeByPath<ComputedState<State>,Path> ,State>
@@ -54,7 +53,6 @@ export interface UseReactiveType<State extends Dict> {
 
 export interface UseAsyncStateType<State extends Dict>{
     <Path extends StatePaths<State> = StatePaths<State>>(selector: Path): StateValue<State,Path>
-    // <Value=any>(selector: ObjectKeyPaths<ComputedState<State>>): AsyncComputedValue<Value>
     <Value=any>(selector: string[]): AsyncComputedValue<Value>
 }
 
@@ -69,12 +67,31 @@ export interface UseWatchType<State extends Dict> {
     <Value>(selector: string[],listener:WatchListener<Value>,options?:WatchListenerOptions): void  
 }
 
+// ********** UseObserverObject **********
+export interface UseObserverObjectType<State extends Dict>{
+    <Value=any,Scope=ComputedState<State>>(getter:ComputedGetter<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | undefined
+    <Value=any,Scope=ComputedState<State>>(getter: AsyncComputedGetter<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope> ):AsyncComputedObject<Value,Scope> | undefined
+    <Value=any,Scope=ComputedState<State>>(builder:ComputedDescriptorBuilder<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | AsyncComputedObject<Value,Scope> | undefined
+    <Value=any,Scope=ComputedState<State>>(args:any,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | AsyncComputedObject<Value,Scope> | undefined
+    <Value=any>(builder:WatchDescriptorBuilder<Value>,options?:WatchOptions<Value>):WatchObject<Value>
+} 
+
+
+
+// ********** useComputedObject **********
+export interface UseComputedObjectType<State extends Dict>{
+    <Value=any,Scope=ComputedState<State>>(getter:ComputedGetter<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | undefined
+    <Value=any,Scope=ComputedState<State>>(getter: AsyncComputedGetter<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope> ):AsyncComputedObject<Value,Scope> | undefined
+    <Value=any,Scope=ComputedState<State>>(builder:ComputedDescriptorBuilder<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | AsyncComputedObject<Value,Scope> | undefined
+    <Value=any,Scope=ComputedState<State>>(args:any,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | AsyncComputedObject<Value,Scope> | undefined
+} 
 
 
 // ********** useComputed **********
 export interface UseComputedType<State extends Dict>{
-    <Value=any,Scope=any>(getter:ComputedGetter<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | undefined
-    <Value=any,Scope=any>(getter: AsyncComputedGetter<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope> ):AsyncComputedObject<Value,Scope> | undefined
-    <Value=any,Scope=any>(builder:ComputedDescriptorBuilder<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | AsyncComputedObject<Value,Scope> | undefined
-    <Value=any,Scope=any>(args:any,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | AsyncComputedObject<Value,Scope> | undefined
+    <Value=any,Scope=ComputedState<State>>(getter:ComputedGetter<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):AsyncComputedValue<Value> 
+    <Value=any,Scope=ComputedState<State>>(getter: AsyncComputedGetter<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope> ):AsyncComputedValue<Value>
+    <Value=any,Scope=ComputedState<State>>(builder:ComputedDescriptorBuilder<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):AsyncComputedValue<Value>
+    <Value=any,Scope=ComputedState<State>>(args:any,computedOptions?:ComputedOptions<Value,Scope>):AsyncComputedValue<Value> 
 } 
+ 

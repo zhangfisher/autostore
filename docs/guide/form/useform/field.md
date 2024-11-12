@@ -68,8 +68,8 @@ const { Form,Field } = useForm({
 <Field
     name="user.firstName"
     render={
-        ({name, value, onChange,validate }) => {
-            return <input name={name} value={value} onChange={onChange} />
+        ({name, value, bind }) => {
+            return <input {...bind} />
         }
     }/>
 ```

@@ -1,5 +1,5 @@
 import React from "react"
-import {  useForm,assert} from "@autostorejs/react";
+import {  useForm,assert } from "@autostorejs/react";
 import { Button,Input,Layout, JsonView } from "x-react-components"
 
 
@@ -27,19 +27,17 @@ export default ()=>{
                     name="user.name"
                     validate={(value)=>assert(value.length>3,"长度必须大于3")}  
                     // eslint-disable-next-line no-unused-vars    
-                    render={({name,label,value,onChange,error,select,enable,visible,validate,required,readonly,loading})=>{                        
+                    render={({name,value,bind,label,onChange,error,select,enable,visible,placeholder,validate,required,readonly,loading,help})=>{                         
                         return <div>
                             <Input 
-                                name={name}
-                                label={label.value}
-                                onChange={onChange}
-                                value={value}
+                                label={label}
+                                {...bind}
                             />
                             {error ? <span style={{color:'red'}}>{error}</span> : null}
                         </div>
                     }}
                 />            
-                <Input  label="FirstName" {...nameField} />
+                {/* <Input  label="FirstName" {...nameField} /> */}
                 <Button onClick={()=>{
                     reset()    
                 }}>Reset</Button> 
@@ -50,4 +48,3 @@ export default ()=>{
         </div>
     </Layout>
 }
- 

@@ -242,7 +242,7 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
 }
 
 
-export type AsyncComputedValue<Value = any,ExtAttrs extends Dict = {}> ={
+export type AsyncComputedValue<Value = any> ={
     loading : boolean;
     progress: number;                // 进度值    
     timeout : number ;               // 超时时间，单位ms，当启用超时时进行倒计时
@@ -251,7 +251,7 @@ export type AsyncComputedValue<Value = any,ExtAttrs extends Dict = {}> ={
     value   : Value;                // 计算结果保存到此处
     run     : (options?:RuntimeComputedOptions) => void ;     // 重新执行任务
     cancel  : ()=>void                                        // 中止正在执行的异步计算
-  } & ExtAttrs
+  }  
 
   
 
@@ -309,8 +309,8 @@ export type ComputedDescriptor<Value=any,Scope=any> = SyncComputedDescriptor<Val
 export type ComputedDescriptorBuilder<Value=any,Scope=any> = SyncComputedDescriptorBuilder<Value,Scope> | AsyncComputedDescriptorBuilder<Value,Scope>
 
 
-export type IComputedGetter<Value=any,Scope=any> = (scope:Scope) =>  Value 
-export type IAsyncComputedGetter<Value=any,Scope=any> = (scope:Scope,args:Required<AsyncComputedGetterArgs>) => Promise<Value>
+export type IComputedGetter<Value=any,Scope=any> = (...args:any[]) =>  Exclude<Value,Promise<any>> 
+export type IAsyncComputedGetter<Value=any,Scope=any> = (...args:any[]) => Promise<Value>
  
 
 

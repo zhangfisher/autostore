@@ -56,20 +56,24 @@
  * 
  */
 
-import { ComputedObject,  ComputedState,  Dict,ComputedGetter ,PATH_DELIMITER, setVal, Watcher,ComputedOptions, computed, AsyncComputedGetter, AsyncComputedValue, IComputedGetter, IAsyncComputedGetter, ComputedBuilder, ObjectKeyPaths, SyncComputedDescriptorBuilder, AsyncComputedDescriptorBuilder, WatchDescriptorBuilder, GetTypeByPath, createAsyncComptuedValue } from "autostore"
+import { ComputedObject,  ComputedState,  Dict,ComputedGetter ,PATH_DELIMITER, setVal, 
+    Watcher,ComputedOptions, computed, AsyncComputedGetter, AsyncComputedValue, 
+    ObjectKeyPaths,createAsyncComptuedValue, 
+    ObserverBuilder,
+    AsyncComputedDescriptorBuilder
+} from "autostore"
 import React, {  useCallback, useEffect, useRef, useState } from "react"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext } from "./Form"
 import { SignalComponentRenderArgs } from "../types"
-import { pickValue } from "./utils/pickValue"
 import { getInputValueFromEvent } from "../utils" 
 import { Get } from "type-fest"
 
 
-export type ComputedBooleanProp<State extends Dict,Scope  = ComputedState<State>> = boolean | ComputedBuilder<boolean,Scope>  
-export type ComputedStringProp<State extends Dict,Scope  = ComputedState<State>> = string | ComputedBuilder<string,Scope>  
-export type ComputedNumberProp<State extends Dict,Scope  = ComputedState<State>> = number |  ComputedBuilder<number,Scope>  
-export type ComputedArrayProp<State extends Dict,Scope   = ComputedState<State>> = Array<any> |  ComputedBuilder<Array<any>,Scope>  
+export type BooleanComputedGetter<State extends Dict,Scope = ComputedState<State>> = boolean | ComputedGetter<boolean,Scope>
+export type NumberComputedGetter<State extends Dict,Scope = ComputedState<State>> = number | ComputedGetter<number,Scope>
+export type StringComputedGetter<State extends Dict,Scope = ComputedState<State>> = string | ComputedGetter<string,Scope>
+export type ArrayComputedGetter<State extends Dict,Scope = ComputedState<State>> = any[] | ComputedGetter<any[],Scope>
 
 export type AutoFieldRenderBindProps<
     NAME,   
@@ -78,93 +82,100 @@ export type AutoFieldRenderBindProps<
     name        : NAME 
     onChange    : (e:React.ChangeEvent<HTMLInputElement>)=>void
     value       : SignalComponentRenderArgs<VALUE>['value']
-    placeHolder : string
+    placeholder : string
 }
 
 export interface AutoFieldRenderProps<
     NAME,   
-    VALUE, 
+    VALUE 
 > extends SignalComponentRenderArgs<VALUE> {
     name       : NAME 
-    validate   : AsyncComputedValue<boolean>
-    required   : AsyncComputedValue<boolean>
-    visible    : AsyncComputedValue<boolean> 
-    enable     : AsyncComputedValue<boolean>
-    readonly   : AsyncComputedValue<boolean> 
-    label      : AsyncComputedValue<string>
-    help       : AsyncComputedValue<string>
-    placeHolder: AsyncComputedValue<string>
+    validate   : boolean
+    required   : boolean
+    visible    : boolean
+    enable     : boolean
+    readonly   : boolean
+    label      : string
+    placeholder: string
+    help       : string
     select     : AsyncComputedValue<any[]>
     onChange   : (e:React.ChangeEvent<HTMLInputElement>)=>void
     bind       : AutoFieldRenderBindProps<NAME,VALUE>
 }   
 
 export interface AutoFieldProps<
-    State extends Dict,
     NAME ,
     VALUE,
-    VALIDATE
+    VALIDATE,    
+    VISIBLE,
+    REQUIRED,
+    READONLY,
+    ENABLE,
+    HELP,
+    LABEL,
+    PLACEHOLDER,
+    SELECT 
 > {
     name        : NAME  
     validate?   : VALIDATE
-    required?   : ComputedBooleanProp<State>
-    visible?    : ComputedBooleanProp<State>
-    readonly?   : ComputedBooleanProp<State>
-    enable?     : ComputedBooleanProp<State>
-    help?       : ComputedStringProp<State>
-    label?      : ComputedStringProp<State>
-    placeHolder?: ComputedStringProp<State>
-    select?     : ComputedArrayProp<State>
+    visible?    : VISIBLE
+    required?   : REQUIRED
+    readonly?   : READONLY
+    enable?     : ENABLE
+    help?       : HELP
+    label?      : LABEL
+    placeholder?: PLACEHOLDER
+    select?     : SELECT
     render      : (props:AutoFieldRenderProps<NAME,VALUE>)=>React.ReactNode
 }  
+ 
 
-export interface AutoField<State extends Dict>  {    
+export interface AutoField<State extends Dict>  {             
     < 
-        NAME extends ObjectKeyPaths<ComputedState<State>>             = ObjectKeyPaths<ComputedState<State>>,
-        VALUE extends GetTypeByPath<ComputedState<State>,NAME>        = Get<ComputedState<State>,NAME>,
-        VALIDATE extends SyncComputedDescriptorBuilder<boolean,VALUE> = SyncComputedDescriptorBuilder<boolean,VALUE>
-    >(props:AutoFieldProps<State,NAME,VALUE,VALIDATE>):React.ReactNode
-    < 
-        NAME extends ObjectKeyPaths<ComputedState<State>>              = ObjectKeyPaths<ComputedState<State>>,
-        VALUE extends Get<ComputedState<State>,NAME>                   = Get<ComputedState<State>,NAME>,
-        VALIDATE extends AsyncComputedDescriptorBuilder<boolean,VALUE> = AsyncComputedDescriptorBuilder<boolean,VALUE>
-    >(props:AutoFieldProps<State,NAME,VALUE,VALIDATE>):React.ReactNode
-    < 
-        NAME extends ObjectKeyPaths<ComputedState<State>> = ObjectKeyPaths<ComputedState<State>>,
-        VALUE extends Get<ComputedState<State>,NAME>      = Get<ComputedState<State>,NAME>,
-        VALIDATE extends  ComputedGetter<boolean,VALUE>   = ComputedGetter<boolean,VALUE> 
-    >(props:AutoFieldProps<State,NAME,VALUE,VALIDATE>):React.ReactNode
-    < 
-        NAME extends ObjectKeyPaths<ComputedState<State>>   = ObjectKeyPaths<ComputedState<State>>,
-        VALUE extends Get<ComputedState<State>,NAME>        = Get<ComputedState<State>,NAME>,
-        VALIDATE extends AsyncComputedGetter<boolean,VALUE> = AsyncComputedGetter<boolean,VALUE>
-    >(props:AutoFieldProps<State,NAME,VALUE,VALIDATE>):React.ReactNode
-    < 
-        NAME extends ObjectKeyPaths<ComputedState<State>>   = ObjectKeyPaths<ComputedState<State>>,
-        VALUE extends Get<ComputedState<State>,NAME>        = Get<ComputedState<State>,NAME>,
-        VALIDATE extends WatchDescriptorBuilder<boolean> = WatchDescriptorBuilder<boolean>
->(props:AutoFieldProps<State,NAME,VALUE,VALIDATE>):React.ReactNode
+        NAME extends ObjectKeyPaths<ComputedState<State>>           = ObjectKeyPaths<ComputedState<State>>,
+        VALUE extends Get<ComputedState<State>,NAME>                = Get<ComputedState<State>,NAME>,
+        VALIDATE extends  BooleanComputedGetter<State,VALUE>        = BooleanComputedGetter<State,VALUE>, 
+        VISIBLE extends  BooleanComputedGetter<State,VALUE>         = BooleanComputedGetter<State,VALUE>,
+        REQUIRED extends  BooleanComputedGetter<State,VALUE>        = BooleanComputedGetter<State,VALUE>,
+        READONLY extends  BooleanComputedGetter<State,VALUE>        = BooleanComputedGetter<State,VALUE>,
+        ENABLE extends  BooleanComputedGetter<State,VALUE>          = BooleanComputedGetter<State,VALUE>,
+        LABEL extends  StringComputedGetter<State,VALUE>            = StringComputedGetter<State,VALUE>,
+        PLACEHOLDER extends  StringComputedGetter<State,VALUE>      = StringComputedGetter<State,VALUE>,
+        HELP extends  StringComputedGetter<State,VALUE>             = StringComputedGetter<State,VALUE>,
+        SELECT extends  AsyncComputedDescriptorBuilder<any[],VALUE> = AsyncComputedDescriptorBuilder<any[],VALUE>
+    >(props:AutoFieldProps<NAME,VALUE,
+        VALIDATE,
+        VISIBLE,
+        REQUIRED,
+        READONLY,
+        ENABLE,
+        HELP,
+        LABEL,
+        PLACEHOLDER,
+        SELECT
+    >):React.ReactNode
 }
     
 function buildFieldRenderProps(props:any){
     return Object.assign({
-        value   : undefined,
-        required: false,
-        label   : '',
-        validate: true,
-        visible : true,
-        readonly: false,
-        enable  : true,
-        select  : [],
-        timeout : 0,
-        loading : false,
-        retry   : 0,
-        error   : undefined,
-        help    : '',
-        progress: 0,    
-        onChange:()=>{},
-        run     :()=>{},
-        cancel  :()=>{}
+        value      : undefined,
+        required   : false,
+        label      : '',
+        validate   : true,
+        visible    : true,
+        readonly   : false,
+        placeholder: '',
+        enable     : true,
+        select     : [],
+        timeout    : 0,
+        loading    : false,
+        retry      : 0,
+        error      : undefined,
+        help       : '',
+        progress   : 0,    
+        onChange   : ()=>{},
+        run        : ()=>{},
+        cancel     : ()=>{}
     },props)  
 }
 
@@ -173,30 +184,28 @@ export function prop(getter:ComputedGetter<any> | AsyncComputedGetter<any>,optio
     return computed(getter as any,options) as ComputedGetter<any>
 }
 
-export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>):AutoField<State>{
-    const { useComputed } = store
-       
-    return (props:any)=>{        
-        const { name } = props
-        const prefix = `${name}.`        
-        const value = store.useAsyncState(name as any)
-        const validate  = useComputed<boolean>(props.validate,{id:`${prefix}validate`,
+
+function useFieldComputedProps<State extends Dict>(store: ReactAutoStore<State>,name:string,props:any){
+    const objs = useRef<Dict<ComputedObject<any> | undefined>>()
+    if(!objs.current){
+        const { useComputedObject } = store
+        const prefix = `${name}.`      
+        const validate  = useComputedObject<boolean>(props.validate,{id:`${prefix}validate`,
             depends:[name],                          // 依赖<name>
             scope:name,        
             initial:true,
             throwError:false,
             onError:()=>false,      //出错时返回false
         })  as ComputedObject<boolean>
-        const required    = useComputed<boolean>(props.required,{id:`${prefix}required`,initial:false,throwError:false})   as ComputedObject<boolean> | undefined
-        const visible     = useComputed<boolean>(props.visible,{id:`${prefix}visible`,initial:true,throwError:false})      as ComputedObject<boolean> | undefined
-        const readonly    = useComputed<boolean>(props.readonly,{id:`${prefix}readonly`,initial:false,throwError:false})   as ComputedObject<boolean> | undefined
-        const enable      = useComputed<boolean>(props.enable,{id:`${prefix}enable`,initial:true,throwError:false})        as ComputedObject<boolean> | undefined
-        const select      = useComputed<any[]>(props.select,{id:`${prefix}select`,initial:[],throwError:false})            as ComputedObject<any[]> | undefined
-        const help        = useComputed<string>(props.help,{id:`${prefix}help`,initial:'',throwError:false})               as ComputedObject<string> | undefined
-        const label       = useComputed<string>(props.label,{id:`${prefix}label`,initial:'',throwError:false})             as ComputedObject<string> | undefined
-        const placeHolder = useComputed<string>(props.placeHolder,{id:`${prefix}placeHolder`,initial:'',throwError:false}) as ComputedObject<string> | undefined
-        
-        const fieldPropObjs = {
+        const required    = useComputedObject<boolean>(props.required,{id:`${prefix}required`,initial:false,throwError:false})   as ComputedObject<boolean> | undefined
+        const visible     = useComputedObject<boolean>(props.visible,{id:`${prefix}visible`,initial:true,throwError:false})      as ComputedObject<boolean> | undefined
+        const readonly    = useComputedObject<boolean>(props.readonly,{id:`${prefix}readonly`,initial:false,throwError:false})   as ComputedObject<boolean> | undefined
+        const enable      = useComputedObject<boolean>(props.enable,{id:`${prefix}enable`,initial:true,throwError:false})        as ComputedObject<boolean> | undefined
+        const select      = useComputedObject<any[]>(props.select,{id:`${prefix}select`,initial:[],throwError:false})            as ComputedObject<any[]> | undefined
+        const help        = useComputedObject<string>(props.help,{id:`${prefix}help`,initial:'',throwError:false})               as ComputedObject<string> | undefined
+        const label       = useComputedObject<string>(props.label,{id:`${prefix}label`,initial:'',throwError:false})             as ComputedObject<string> | undefined
+        const placeholder = useComputedObject<string>(props.placeholder,{id:`${prefix}placeholder`,initial:'',throwError:false}) as ComputedObject<string> | undefined            
+        objs.current = {
             validate,
             required,
             visible,
@@ -205,16 +214,30 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             select,
             help,
             label,
-            placeHolder
-        } as Dict<ComputedObject<any> | undefined>
+            placeholder
+        }
+    }
+    return objs.current
+}
+
+export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>,formCtx:React.MutableRefObject<AutoFormContext<State> | null>):AutoField<State>{
+    const { useAsyncState } = store
+       
+    return (props:any)=>{        
+        const { name } = props
+        const prefix = `${name}.`        
+
+        const value = useAsyncState(name as any)
+        const fieldPropObjs = useFieldComputedProps(store,name,props)
+        const { validate,required,visible,readonly,enable,select,help,label,placeholder } = fieldPropObjs 
 
         const onChange = useCallback((e:React.ChangeEvent<HTMLInputElement>)=>{
+            e.stopPropagation()
             let inputValue = getInputValueFromEvent(e)            
             if(name){
                 store.update(state => setVal(state, name.split(PATH_DELIMITER), inputValue));
             }            
-            formCtx.current?.setDirty(true)
-            e.stopPropagation()
+            formCtx.current?.setDirty(true)            
         },[name])
         
         const [ _,setRefresh ] = useState(0)
@@ -222,24 +245,26 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
         const renderProps = useRef<any>()
         if(!renderProps.current){
             const bind = {
-                name,onChange,
-                value:value.value,
-                placeHolder: placeHolder ? placeHolder.val: pickValue<string>(props.placeHolder as any,'')
-            }
-            renderProps.current=buildFieldRenderProps({
                 name,
-                validate   : createAsyncComptuedValue(validate ? validate.value : false),     
-                required   : createAsyncComptuedValue(required ? required.value : false),                
-                visible    : createAsyncComptuedValue(visible ? visible.value : true),                     
-                readonly   : createAsyncComptuedValue(readonly ? readonly.value : false),     
-                enable     : createAsyncComptuedValue(enable ? enable.value : true),     
-                select     : createAsyncComptuedValue(select ? select.value : undefined),     
-                help       : createAsyncComptuedValue(help ? help.value : undefined),     
-                label      : createAsyncComptuedValue(label ? label.value : undefined),     
-                placeHolder: createAsyncComptuedValue(placeHolder ? placeHolder.value : undefined),     
+                onChange,
+                value:value.value,
+                placeholder: placeholder ? placeholder.value : undefined
+            }
+            renderProps.current = buildFieldRenderProps({
+                name,
+                validate   : validate ? validate.val : false,     
+                required   : required ? required.val : false,                
+                visible    : visible ? visible.val : true,                     
+                readonly   : readonly ? readonly.val : false,     
+                enable     : enable ? enable.value : true,     
+                select     : select ? select.value : undefined,     
+                help       : help ? help.value : undefined,     
+                label      : label ? label.value : undefined,     
+                placeholder: placeholder ? placeholder.value : undefined,     
                 error      : validate?.error?.message ?? '',
                 onChange,
-                bind                
+                bind,
+                ...value                
             })   
         }  
 
@@ -264,6 +289,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             }))
             watchers.push(store.watch(name,({value}:any)=>{
                 Object.assign(renderProps.current!,{value})
+                Object.assign(renderProps.current!.bind,{value})
                 setRefresh(++count)
             }))
             // 侦听所有字段计算属性的变化，当变化时，重新渲染字段
