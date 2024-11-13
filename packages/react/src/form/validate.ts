@@ -11,11 +11,14 @@ import { addClass } from './utils/addClass';
 export class Validator<State extends Dict>{
     private _onInvalid
     private _invalids:string[] = []                   // 保存无效字段名称列表 
+    private _value:boolean = true
     constructor(public store: ReactAutoStore<State>,public formCtx:AutoFormContext<State>){
         this._onInvalid = this.onInvalid.bind(this)
     } 
     get form(){return this.formCtx.formRef.current!}
     get options(){return this.formCtx.options}
+    get value(){return this._value}
+    set value(value:boolean){this._value = value}
     get fields(){ return this.formCtx.fields!}
     attach(){
         this.form.addEventListener('invalid',this._onInvalid,true)
@@ -27,8 +30,8 @@ export class Validator<State extends Dict>{
     /**
      * 当元素校验无效时调用
      */
-    onInvalid(e:any){
-        const input = e.target
+    private onInvalid(e:any){
+        //const input = e.target
         //this.updateInvalids(input.name,false)
     }   
 
@@ -44,12 +47,14 @@ export class Validator<State extends Dict>{
      * @returns 无返回值，但会更新组件的有效状态。
      */
     updateInvalids(path:string,value:boolean){
+        if(this._value===value) return 
         if(value){
             removeArrayItem(this._invalids,path)
         }else{
             if(!this._invalids.includes(path)) this._invalids.push(path)
         }
-        this.setValid(this._invalids.length===0)
+        this._value = this._invalids.length===0
+        this.setValid(this._value)
     }
     /**
      * 对所有字段执行校验
@@ -138,8 +143,6 @@ export class Validator<State extends Dict>{
         })
         return els
     }
-
-
     /**
      * 获取一个元素用来显示校验错误信息
      */

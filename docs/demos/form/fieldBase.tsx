@@ -32,13 +32,7 @@ export default ()=>{
                     // eslint-disable-next-line no-unused-vars    
                     render={({name,value,bind,label,onChange,error,select,enable,visible,placeholder,validate,required,readonly,loading,help})=>{                         
                         return <div>
-                            <Input 
-                                // name={name}
-                                // value={value}
-                                // onChange={onChange}
-                                label={label}
-                                {...bind}
-                            />
+                            <Input label={label} {...bind}/>
                             {error ? <span style={{color:'red'}}>{error}</span> : null}
                         </div>
                     }}
@@ -50,14 +44,7 @@ export default ()=>{
                     // eslint-disable-next-line no-unused-vars    
                     render={({name,value,bind,label,onChange,error,select,enable,visible,placeholder,validate,required,readonly,loading,help})=>{                         
                         return <div>
-                            <Input 
-                                type="number"
-                                // name={name}
-                                // value={value}
-                                // onChange={onChange}
-                                label={label}
-                                {...bind}
-                            />
+                            <Input  label={label} {...bind}/>
                             {error ? <span style={{color:'red'}}>{error}</span> : null}
                         </div>
                     }}

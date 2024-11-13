@@ -241,9 +241,10 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 value:value.value,
                 placeholder: placeholder ? placeholder.value : props.placeholder ?? ''
             }
+            const isValid = validate ? validate.val : props.validate ?? true
             renderProps.current = buildFieldRenderProps({
                 name,
-                validate   : validate ? validate.val : props.validate ?? true,     
+                validate   : isValid,     
                 required   : required ? required.val : props.required ?? false,                
                 visible    : visible ? visible.val : props.visible ?? true,                     
                 readonly   : readonly ? readonly.val : props.readonly ?? false,     
@@ -257,7 +258,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 error      : validate?.error?.message,
                 onChange
             })   
-            formCtx.current?.validator!.updateInvalids(name, validate ? validate.val : props.validate ?? true)
+            // formCtx.current?.validator!.updateInvalids(name, isValid)
         }  
 
         const getFieldPropObj = useCallback((path:string[]):[string | undefined,ComputedObject<any> | undefined]=>{
@@ -307,7 +308,6 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             }))  
             return ()=>watchers.forEach(w=>w.off())
         },[])
-
         return <>{props.render(renderProps.current as any)}</> 
     
     } 

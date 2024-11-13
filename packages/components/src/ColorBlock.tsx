@@ -33,10 +33,10 @@ let colorIndex = 0;
  */
 function getRandomColor() {
 	colorIndex++
-	if(colorIndex >= presetColors.length-1) {
+	if(colorIndex > presetColors.length-1) {
 		colorIndex = 0
 	}
-	return presetColors[colorIndex] 
+	return presetColors[colorIndex] || presetColors[0]
 }
 
 export type ColorBlockProps = React.PropsWithChildren<
@@ -62,12 +62,12 @@ export const ColorBlock: React.FC<ColorBlockProps> =(props) => {
 		return (
 			<div 
 				style={{
-					backgroundColor,
 					padding: "6px",
 					color: textColor,
 					display: inline ? "inline-flex ": "flex",
 					...props.style,
 					alignItems: "center",
+					backgroundColor,
 				}}
 			>
 				<span style={{display:"flex",alignItems: "center",flexGrow:1}}>
