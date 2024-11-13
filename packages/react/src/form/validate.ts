@@ -37,6 +37,12 @@ export class Validator<State extends Dict>{
         this.formCtx.setValid(value)
     }
 
+    /**
+     * 更新表单字段的无效状态。
+     * @param path - 表单字段的路径。
+     * @param value - 如果为true，则从无效列表中移除该字段；如果为false，则将该字段添加到无效列表中（如果尚未存在）。
+     * @returns 无返回值，但会更新组件的有效状态。
+     */
     updateInvalids(path:string,value:boolean){
         if(value){
             removeArrayItem(this._invalids,path)
@@ -56,10 +62,13 @@ export class Validator<State extends Dict>{
         }        
     }
     /**
-     * 对单个字段执行校验，返回校验结果{value:boolean,error:string | null}
-     * 
-     * 本方法在
-     * 
+     * 对表单字段进行验证的方法。
+     * @param fieldEle - 需要验证的表单元素。
+     * @returns ValidationResult - 包含验证结果的对象，包括字段路径、验证值和错误信息。
+     * 该方法首先执行表单控件的标准校验，然后根据配置决定是否执行自定义校验函数。
+     * 标准校验包括检查input控件的max、min、pattern等属性。
+     * 自定义校验通过调用options.validate方法进行，支持返回布尔值或字符串错误信息。
+     * 验证结果会更新无效状态并报告。
      */
     validate(fieldEle: HTMLElement){
         const validateFn = this.options.validate
@@ -208,8 +217,7 @@ export class Validator<State extends Dict>{
         }
     }
     reportAll(){
-        this.form.reportValidity()
-        
+        this.form.reportValidity()        
     }
 
 }
