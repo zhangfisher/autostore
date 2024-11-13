@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 1.1.1
+
+### Patch Changes
+
+- [`9c5a1b8`](https://github.com/zhangfisher/autostore/commit/9c5a1b8c9f70103cd6f254385edabb4087ab29c9) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 更新表单字段组件
+
 ## 1.1.0
 
 ### Minor Changes

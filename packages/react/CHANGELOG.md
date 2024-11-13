@@ -1,5 +1,14 @@
 # @autostorejs/react
 
+## 1.1.2
+
+### Patch Changes
+
+- [`9c5a1b8`](https://github.com/zhangfisher/autostore/commit/9c5a1b8c9f70103cd6f254385edabb4087ab29c9) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 更新表单字段组件
+
+- Updated dependencies [[`9c5a1b8`](https://github.com/zhangfisher/autostore/commit/9c5a1b8c9f70103cd6f254385edabb4087ab29c9)]:
+  - autostore@1.1.2
+
 ## 1.1.1
 
 ### Patch Changes
