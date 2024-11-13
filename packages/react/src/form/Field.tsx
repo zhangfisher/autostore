@@ -252,12 +252,12 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 help       : help ? help.value : props.help,     
                 label      : label ? label.value : props.label ,     
                 placeholder: placeholder ? placeholder.value : props.placeholder ?? '',     
-                error      : validate?.error?.message ?? '',
                 bind,
                 ...value,                
+                error      : validate?.error?.message,
                 onChange
-
             })   
+            formCtx.current?.validator!.updateInvalids(name, validate ? validate.val : props.validate ?? true)
         }  
 
         const getFieldPropObj = useCallback((path:string[]):[string | undefined,ComputedObject<any> | undefined]=>{
@@ -276,6 +276,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 const [propKey,propObj] = getFieldPropObj(path)
                 if(propObj && propKey){   
                     Object.assign(renderProps.current!,{error:error.message})      
+                    formCtx.current?.validator!.updateInvalids(name, false)
                     setRefresh(++count)
                 }
             }))
@@ -294,8 +295,11 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                     }else{
                         Object.assign({[propKey]:value})
                     }       
-                    if(propKey === 'validate' && value === true){
-                        updated.error = null
+                    if(propKey === 'validate'){
+                        if(value === true){
+                            updated.error = null                            
+                        }
+                        formCtx.current?.validator!.updateInvalids(name, value)
                     }
                     Object.assign(renderProps.current!,updated)
                     setRefresh(++count)                    

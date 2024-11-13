@@ -13,7 +13,6 @@ export class Validator<State extends Dict>{
     private _invalids:string[] = []                   // 保存无效字段名称列表 
     constructor(public store: ReactAutoStore<State>,public formCtx:AutoFormContext<State>){
         this._onInvalid = this.onInvalid.bind(this)
-        this.attach()
     } 
     get form(){return this.formCtx.formRef.current!}
     get options(){return this.formCtx.options}
@@ -38,7 +37,7 @@ export class Validator<State extends Dict>{
         this.formCtx.setValid(value)
     }
 
-    private updateInvalids(path:string,value:boolean){
+    updateInvalids(path:string,value:boolean){
         if(value){
             removeArrayItem(this._invalids,path)
         }else{
@@ -79,8 +78,8 @@ export class Validator<State extends Dict>{
                 validResult.value = false
                 validResult.error = inputEle.validationMessage                 
             }else{
-                validResult.value=true
-                validResult.error=null
+                validResult.value = true
+                validResult.error = null
             }
             this.updateInvalids(path,validResult.value)
             this.report(fieldEle,validResult)

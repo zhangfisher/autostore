@@ -4,6 +4,7 @@ import { ReactAutoStore } from "../store";
 import { UseFormOptions, UseFormResult } from "./types";
 import { AutoForm, AutoFormContext, createAutoFormComponent } from "./Form";
 import { createAutoFieldComponent,AutoField } from "./Field";
+import { Validator } from "./validate";
 
 
 
@@ -110,6 +111,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 		}
 		formComponentRef.current = createAutoFormComponent<State>(store,formContext)
 		fieldComponentRef.current = createAutoFieldComponent<State>(store, formContext)
+		formContext.current.validator = new Validator(store,formContext.current!)		
 	}
 
 	useEffect(()=>{			
@@ -133,6 +135,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 		error,
 		submiting,
 		submit,
-		reset
+		reset,
+		validator:formContext.current!.validator
 	} as unknown as UseFormResult<State>
 }   

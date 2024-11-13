@@ -61,7 +61,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				store.log('No fields found in the autoform', 'warn')
 				return
 			}			
-			ctx.validator = new Validator(store,ctx)			
+			ctx.validator.attach()
 			// 初始化表单控件的值: 从state读取数据更新到表单控件
 			initFormFields(store,ctx.fields,options)            
             // 初始化时是否进行数据校验
@@ -113,7 +113,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             // 4. 侦听来自表单输入的变更
 			form.addEventListener("input", onChange); 
 
-			// 5.
+			// 5.侦听来自表单的提交
 			options.ref?.current?.addEventListener('submit', async (e) => {
 				e.preventDefault();
 				try{
