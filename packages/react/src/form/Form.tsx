@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { ComputedState, Dict,  PATH_DELIMITER, pathStartsWith  } from "autostore";
 import type { ReactAutoStore } from "../store";
 import { UseFormOptions } from "./types";
-import { Validator } from './validate';
+import { Validator } from './validator';
 import { findAutoFields } from "./utils/findAutoFields";
 import React from "react"; 
 import { isEmpty } from "../utils/isEmpty"; 

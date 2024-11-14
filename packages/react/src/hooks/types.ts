@@ -1,4 +1,11 @@
-import { ObjectKeyPaths,AsyncComputedGetter, AsyncComputedObject, AsyncComputedValue, ComputedDescriptorBuilder, ComputedGetter, ComputedOptions, ComputedState, Dict, ExtendAsyncOptions, SyncComputedObject, WatchListener, WatchListenerOptions, GetTypeByPath, Primitive, WatchObject, WatchGetter, WatchDescriptorBuilder, WatchOptions } from "autostore"
+import { ObjectKeyPaths,AsyncComputedGetter, 
+    AsyncComputedObject, AsyncComputedValue, ComputedDescriptorBuilder, ComputedGetter, 
+    ComputedOptions, ComputedState, Dict, ExtendAsyncOptions, SyncComputedObject, WatchListener, 
+    WatchListenerOptions, GetTypeByPath, 
+    WatchObject, WatchGetter, WatchDescriptorBuilder, WatchOptions, 
+    WatchDependFilter,
+    StateOperate
+} from "autostore"
 
  
 export type StateGetter<State extends Dict,Value=any> =  (state:ComputedState<State>)=>Value
@@ -60,12 +67,6 @@ export interface UseAsyncStateType<State extends Dict>{
 
 export type UseAsyncReactiveType<State extends Dict> = UseAsyncStateType<State>
 
-//  ********** useWatch **********
-   
-export interface UseWatchType<State extends Dict> {
-    <Value>(selector: ObjectKeyPaths<ComputedState<State>>,listener:WatchListener<Value>,options?:WatchListenerOptions): void
-    <Value>(selector: string[],listener:WatchListener<Value>,options?:WatchListenerOptions): void  
-}
 
 // ********** UseObserverObject **********
 export interface UseObserverObjectType<State extends Dict>{
@@ -75,8 +76,6 @@ export interface UseObserverObjectType<State extends Dict>{
     <Value=any,Scope=ComputedState<State>>(args:any,computedOptions?:ComputedOptions<Value,Scope>):SyncComputedObject<Value,Scope> | AsyncComputedObject<Value,Scope> | undefined
     <Value=any>(builder:WatchDescriptorBuilder<Value>,options?:WatchOptions<Value>):WatchObject<Value>
 } 
-
-
 
 // ********** useComputedObject **********
 export interface UseComputedObjectType<State extends Dict>{
@@ -94,4 +93,19 @@ export interface UseComputedType<State extends Dict>{
     <Value=any,Scope=ComputedState<State>>(builder:ComputedDescriptorBuilder<Value,Scope>,computedOptions?:ComputedOptions<Value,Scope>):AsyncComputedValue<Value>
     <Value=any,Scope=ComputedState<State>>(args:any,computedOptions?:ComputedOptions<Value,Scope>):AsyncComputedValue<Value> 
 } 
+
  
+ 
+//  ********** useWatch **********
+
+export type UseWatchGetter<Value,DependValue> = (operate:StateOperate<DependValue>)=>Value | undefined | Promise<Value | undefined>
+export type UseWatchSetter<Value> = (value:Value)=>void
+export type UseWatchOptions<Value> = WatchListenerOptions & { 
+    initial?:Value         // 提供初始值    
+}
+
+export interface UseWatchType<State extends Dict> {
+    <Value=any,DependValue=any>(selector: ObjectKeyPaths<ComputedState<State>>,getter:UseWatchGetter<Value,DependValue>,options?:UseWatchOptions<Value>): [Value,UseWatchSetter<Value>]
+    <Value=any,DependValue=any>(selector: string[],getter:UseWatchGetter<Value,DependValue>,options?:UseWatchOptions<Value>): [Value,UseWatchSetter<Value>]
+    <Value=any,DependValue=any>(getter:UseWatchGetter<Value,DependValue>,options?:UseWatchOptions<Value>): [Value,UseWatchSetter<Value>]
+}

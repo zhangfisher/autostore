@@ -49,7 +49,6 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
         this.useObserverObject = createUseObserverObject(this).bind(this)
         this.useComputedObject = createUseComputedObject(this).bind(this) 
         this.useComputed       = createUseComputed(this).bind(this) 
-
         this.reset             = this.reset.bind(this)
     }  
 } 

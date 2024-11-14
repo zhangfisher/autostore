@@ -23,7 +23,7 @@ import { Divider,ColorBlock,Button,Box,Input } from "x-react-components"
 } )
 
 export default ()=>{
-  const bindings = useFields<typeof state.user>('user')
+  const bindings = useFields({entry:'user'})
   return (<div>
     <Input label="FirstName" {...bindings.firstName}/>
     <Input label="lastName" {...bindings.lastName}/> 

@@ -26,7 +26,7 @@ export default ()=>{
     const watcher = watch((operate)=>{      
         ref.current!.insertAdjacentHTML("beforeend",`<p style='margin:2px;'}>${operate.type} ${operate.path.join('.')}</p>`)
       },{
-        operates:ops
+        operates:ops as any
       })
     return ()=>watcher.off()
   },[ops])  

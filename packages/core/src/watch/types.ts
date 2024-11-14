@@ -32,11 +32,11 @@ export type WatchGetter<Value=any,DependValue= any> = (
     watchObject : WatchObject<Value>
 )=>Exclude<Value,Promise<any>> //| undefined
 
-export type WatchDescriptor<Value=any, Scope extends WatchScope<Value>=WatchScope<Value>> = ObserverDescriptor<
+export type WatchDescriptor<Value=any, DependValue=any> = ObserverDescriptor<
   'watch',
   Value,
-  Scope,
-  WatchGetter<Value,Scope>,
+  WatchScope<DependValue>,
+  WatchGetter<Value,DependValue>,
   WatchOptions<Value>
 >
 
@@ -44,8 +44,8 @@ export type WatchDescriptor<Value=any, Scope extends WatchScope<Value>=WatchScop
  * @template Value  监听函数的返回值类型
  * @template Scope 监听函数的第一个参数的类型
  */
-export type WatchDescriptorBuilder<Value = any>
-  = ObserverDescriptorBuilder<'watch',Value,WatchScope,WatchDescriptor<Value,WatchScope>>
+export type WatchDescriptorBuilder<Value = any,DependValue=any>
+  = ObserverDescriptorBuilder<'watch',Value,WatchScope<DependValue>,WatchDescriptor<Value,DependValue>>
 
 
 

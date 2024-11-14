@@ -4,7 +4,7 @@ import { ReactAutoStore } from "../store";
 import { UseFormOptions, UseFormResult } from "./types";
 import { AutoForm, AutoFormContext, createAutoFormComponent } from "./Form";
 import { createAutoFieldComponent,AutoField } from "./Field";
-import { Validator } from "./validate";
+import { Validator } from "./validator";
 
 
 
