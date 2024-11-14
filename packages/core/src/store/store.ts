@@ -144,6 +144,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                     this._updatedState![pathKey] = oldValue
                 }
             },{operates:'write'})
+
         }else{
             if(this._updatedWatcher){
                 this._updatedWatcher.off()
@@ -171,9 +172,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 })  
             }finally{
                 this._updatedState = {}
+                this.emit("reset",this)
             }          
         }else{
-            throw new Error("resetable option is not enabled")
+            this.log("resetable option is not enabled","warn")
         }
     }
 

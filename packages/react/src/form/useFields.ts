@@ -58,10 +58,10 @@ function createProxy<State extends Dict>(target: any, parentPath: string[],proxy
             const relPathKey = [...parentPath, String(key)].join(PATH_DELIMITER)     
             const value = getVal(store.state,path);    
             if(isPrimitive(value)){
-                const  fieldOpts =relPathKey in options ? options[relPathKey] : {}
+                const  fieldOpts = (relPathKey in options ? options[relPathKey] : {}) as any
                 return createFieldBinding(store,path,0,value,undefined,undefined,fieldOpts)
             }else if(isAsyncComputedValue(value)){
-                const  fieldOpts =relPathKey in options ? options[relPathKey] : {}
+                const  fieldOpts = (relPathKey in options ? options[relPathKey] : {}) as any
                 return createFieldBinding(store,[...path,'value'],0,value,undefined,undefined,fieldOpts)
             }else{
                 return createProxy(value, path,proxyCache,store,options);     

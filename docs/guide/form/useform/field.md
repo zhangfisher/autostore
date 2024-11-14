@@ -73,41 +73,9 @@ const { Form,Field } = useForm({
         }
     }/>
 ```
+  
 
-`AutoFieldRenderProps`类型包含以下属性：
-
- ```ts
- export interface AutoFieldRenderProps<
-    NAME,   
-    VALUE, 
-> extends SignalComponentRenderArgs<VALUE> {
-    name       : NAME 
-    validate   : AsyncComputedValue<boolean>
-    required   : AsyncComputedValue<boolean>
-    visible    : AsyncComputedValue<boolean> 
-    enable     : AsyncComputedValue<boolean>
-    readonly   : AsyncComputedValue<boolean> 
-    label      : AsyncComputedValue<string>
-    help       : AsyncComputedValue<string>
-    placeHolder: AsyncComputedValue<string>
-    select     : AsyncComputedValue<any[]>
-    onChange   : (e:React.ChangeEvent<HTMLInputElement>)=>void
-}   
-```
-
-
- 
-
-
-:::warning 提示
-`validate`异步计算属性的依赖可不用指定，其会自动指定为当前字段。
-:::
-
-
-
-
-
-
+### 小结
 
 <demo react="form/fieldBase.tsx" />
 
@@ -116,7 +84,7 @@ const { Form,Field } = useForm({
 `Field`组件可以与`useField/useFields`混用。
 :::
 
-## 校验
+## 字段校验
 
 `Field`组件支持通过`validate`参数进行校验。
 
@@ -124,11 +92,6 @@ const { Form,Field } = useForm({
 
 
 因为`validate`属性是用于创建计算属性，所以可以使用`computed`、`watch`等方法来动态声明`validate`属性。
-
-## 字段计算属性
-
-字段组件的属性支持如果下：
-
 
 
 - **简单的同步计算校验**
@@ -176,3 +139,9 @@ import { watch } from "@autostorejs/react"
     // ...
 />
 ```
+
+
+## 字段组件属性
+
+字段组件的属性支持如果下：
+

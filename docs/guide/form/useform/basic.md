@@ -1,7 +1,11 @@
 
 # 基本用法
 
-`useForm`返回一个`Form`组件，该组件是对标准`form`元素的封装。
+`useForm`返回`Form`或`Field`等组件，该组件是对标准`form`元素的封装。
+
+## 全新表单
+
+可以通过`useForm`创建一个全新的表单，如下：
 
 ```tsx
 import { useForm } from "@autostorejs/react"
@@ -26,10 +30,17 @@ const { Form } = useForm({
 
 **下面是一个简单的示例：**
 
-<demo react="form/formBase.tsx"/>
+demo react="form/formBase.tsx"
 
-
-
-:::info 提示
-配置`input`元素的`name=<状态数据路径>`即可。
+:::warning 提示
+`useForm`内部会创建一个`Store`实例，用于存储表单数据。
 ::: 
+
+
+## 基于现有Store
+
+`useForm`还可以基于现有的`Store`实例创建表单，如下：
+
+<demo react="form/formStore.tsx" />
+
+

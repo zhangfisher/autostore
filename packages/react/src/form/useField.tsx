@@ -31,8 +31,7 @@ export function createFieldBinding<State extends Dict,Value=any>(
         }
     }
     
-    const fieldName = options.name ? options.name : (Array.isArray(path) ? path.join(PATH_DELIMITER) : path || '')    
-    
+    const fieldName = options.name ? options.name : (Array.isArray(path) ? path.join(PATH_DELIMITER) : path || '')        
 
     return new Proxy({
         value,

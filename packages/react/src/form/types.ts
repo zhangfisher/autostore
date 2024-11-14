@@ -2,6 +2,7 @@ import { AutoStore, AutoStoreOptions, ComputedState, Dict, ObjectKeyPaths } from
 import { AutoForm } from "./Form"
 import { ReactAutoStore } from '../store'; 
 import { AutoField } from "./Field";
+import { Get } from "type-fest";
 
 export type InputBindings<Value=any>={ 
     value?   : Value
@@ -54,16 +55,16 @@ export type UseFieldsState<T extends Dict> = {
                                             : Required<UseFieldBindings<T[K]>>
                                         )
 };
-export type UseFieldsOptions = {
-    entry?: string | string[]    
+export type UseFieldsOptions<E extends string = string> = {
+    [key:string]: UseFieldOptions | string 
 } & {
-    [key:string]: UseFieldOptions
-}
+    entry?: E  
+} 
 
  
 export interface UseFieldsType<State extends Dict> {
-    <EntryState extends Dict = State>(options?:UseFieldsOptions)
-        : UseFieldsState<ComputedState<EntryState>> 
+    <Entry extends string>(options?:UseFieldsOptions<Entry>)
+        : UseFieldsState<Get<ComputedState<State>,Entry>> 
 }
 
 
@@ -114,7 +115,7 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * 当使用外部store时，可以指定entry来限定表单的数据范围
      * 可选
      */
-    entry?: string[]
+    entry?: string | string[]
     /**
      * 在初始化时是否进行数据校验
      * 默认=true
@@ -159,9 +160,17 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
     toState?:(this:HTMLInputElement,path:string,inputValue:any,stateValue:any,part:string | undefined)=>any
 }
 
-export type UseFormType<State extends Dict>  = {
-    (store:ReactAutoStore<State> | AutoStore<State>,options?:UseFormOptions<State>): UseFormResult<State>
-    (state:State,options?:UseFormOptions<State>): UseFormResult<State>
+
+export type AutoFormStore<State extends Dict> = ReactAutoStore<State> & {
+    entry: ComputedState<State>         // 入口路径
 }
+
+// export type UseFormType<State extends Dict>  = {
+//     <OState extends Dict = Dict,EntryPath extends ObjectKeyPaths<ComputedState<OState>> = ObjectKeyPaths<ComputedState<OState>>>(
+//         store:ReactAutoStore<OState> | AutoStore<OState>,
+//         options?:UseFormOptions<State,EntryPath>
+//     ): UseFormResult<State>
+//     (state:State,options?:UseFormOptions<State>): UseFormResult<State>
+// }
 
  

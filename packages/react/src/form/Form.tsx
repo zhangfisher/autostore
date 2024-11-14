@@ -2,10 +2,9 @@ import { useCallback, useEffect, useRef } from "react";
 import { ComputedState, Dict,  PATH_DELIMITER, pathStartsWith  } from "autostore";
 import type { ReactAutoStore } from "../store";
 import { UseFormOptions } from "./types";
-import { Validator } from './validate';
+import { Validator } from './validator';
 import { findAutoFields } from "./utils/findAutoFields";
 import React from "react"; 
-import { isEmpty } from "../utils/isEmpty"; 
 import { fromStateToField } from "./utils/fromStateToField";
 import { fromFieldToState } from "./utils";
 import { isFalse } from "./utils/isFalse";
@@ -51,17 +50,14 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 	const options:UseFormOptions<State> = formCtx.current!.options	
     return (props:AutoFormProps<State>)=>{        		
 		const initial = useRef<boolean>(false);
+		
         // 仅在初始化时执行一次
         const initForm = useCallback(()=>{
             const form = options.ref!.current;            
 			if (!form) return;             
             let initValid:boolean	= true
-			ctx.fields = findAutoFields(form,options.findFields);            
-			if(isEmpty(ctx.fields)){
-				store.log('No fields found in the autoform', 'warn')
-				return
-			}			
-			ctx.validator = new Validator(store,ctx)			
+			ctx.fields = findAutoFields(form,options.findFields);       	
+			ctx.validator.attach()
 			// 初始化表单控件的值: 从state读取数据更新到表单控件
 			initFormFields(store,ctx.fields,options)            
             // 初始化时是否进行数据校验
@@ -76,7 +72,8 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 		useEffect(() => {
 			const form = options.ref!.current;
 			if (!form) return;
-			const { entry = [] } = options;
+			const { entry =[] } = options;
+			const entryPath = Array.isArray(entry) ? entry :  entry.split(PATH_DELIMITER) 
             // 1. 初始化表单控件
 			if (!initial.current && form) {
 				initForm()
@@ -84,7 +81,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 			// 2. 侦听来自变更
 			const watcher = store.watch(({path, value }) => {
 				// 2.1 如果变更的路径不是表单的路径，则忽略
-				if (!pathStartsWith(entry, path)) return;
+				if (!pathStartsWith(entryPath, path)) return;
 				// 2.2 更新到表单的输入控件
 				const spath = path.join(PATH_DELIMITER);
 				if (spath in ctx.fields) {
@@ -113,7 +110,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             // 4. 侦听来自表单输入的变更
 			form.addEventListener("input", onChange); 
 
-			// 5.
+			// 5.侦听来自表单的提交
 			options.ref?.current?.addEventListener('submit', async (e) => {
 				e.preventDefault();
 				try{
@@ -133,8 +130,6 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 			};
 		
 		},[]);
-
-		
 		
 		return <form {...props} 
 			ref={options.ref}
