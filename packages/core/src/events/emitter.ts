@@ -44,9 +44,7 @@ type EventDefines = {
     [key:string]:any    
 }
 
-export class EventEmitter<
-    Events extends EventDefines
->{     
+export class EventEmitter<Events extends EventDefines>{     
     private _listeners = new Map< keyof Events,EventHandlerList>()
     
     get listeners(){ return this._listeners }
@@ -208,8 +206,74 @@ export class EventEmitter<
             })
         }
     }
-    
+    /**
+     * 
+     * 构建一个事件作用域，在该作用域内的事件都会被添加指定的前缀
+     * 
+     * const scope = emitter.scope("prefix")
+     * 
+     * scope.on("*",(payload,type)=>{...type===event }) == emitter.on("prefix.*",(payload,type)=>{ type==="prefix.event"}) })
+     * scope.on("event",(payload,type)=>{...type===event }) == emitter.on("prefix.event",(payload,type)=>{ type==="prefix.event"}) })
+     * scope.emit("event") == emitter.emit("prefix.event")
+     * scope.off("event") == emitter.off("prefix.event")
+     * scope.wait("event") == emitter.wait("prefix.event")
+     * 
+     * @param prefix 
+     * @returns 
+     */
+    scope(prefix:string){
+        const self = this
+        const scope = new Proxy(this,{
+            get(target,key,receiver){
+                const value = Reflect.get(target,key,receiver)
+                if(key==='on' || key==='once'){
+                    return (type:string,handler: EventHandler<any,any>,prepend ?:boolean)=>{
+                        return (value as any).call(scope,`${prefix}${PATH_DELIMITER}${type}`,
+                            (payload:any,type:string)=>{
+                                handler(payload,type.slice(prefix.length+1))
+                            },
+                            prepend)
+                    }
+                }else if(key==='off'){
+                    return (type:string)=>(value as any).call(scope,`${prefix}${PATH_DELIMITER}${type}`)
+                }else if(key==='emit'){
+                    return (type:string,payload:any)=>(value as any).call(scope,`${prefix}${PATH_DELIMITER}${type}`,payload)
+                }else if(key==='wait'){
+                    return (...args:any[])=>{
+                        if(typeof(args[0])==='string'){
+                            args[0] = `${prefix}${PATH_DELIMITER}${args[0]}` as string
+                            (value as any).call(scope,...args)
+                        }else if(typeof(args[0])==='function'){
+                            const filter = args[0]
+                            args[0] = (type:string,payload:any)=>{
+                                if(type.startsWith(prefix)){
+                                    filter(type.slice(prefix.length+1),payload)
+                                }
+                            }
+                            (value as any).call(scope,...args)
+                        }                        
+                    }
+                }else if(key ==='offAll'){
+                    return ()=>{ // 移除所有以prefix.开头的事件                       
+                        for( let [type] of self._listeners.entries()){
+                            if(type ==='*') continue
+                            if(typeof(type)==='string' && type.startsWith(`${prefix}.`)){
+                                self._listeners.delete(type)
+                            }
+                        }
+                    }
+                }else if(key ==='onAny'){
+                    return (handler:EventHandler<string,any>)=>{
+                        return self.on(`${prefix}${PATH_DELIMITER}**`,handler)
+                    }
+                }else if(key ==='scope'){
+                    return undefined
+                }
+                return value
+            }
+        })
+        return scope
+    }
+
 
 }
-
- 
