@@ -76,34 +76,10 @@ declare global {
 
 export type Primitive = string | number | boolean | null | undefined | symbol | bigint;
  
-export type Dict<T=any> = Record<string,T>
- 
-
+export type Dict<T=any> = T extends (...args:any[])=>any ? never : Record<string,T>
+   
  
 export type ObjectKeyPaths<T> =Exclude<Paths<T,{maxRecursionDepth:30}>,number>
 
-export type GetTypeByPath<State extends Dict,Path extends string> = Get<State,Path>
+export type GetTypeByPath<State extends Dict,Path extends string> = Path extends '' | undefined ? State : Get<State,Path>
 
-
-
-// type Project = {
-// 	filename: string;
-// 	listA: string[];
-// 	listB: [{filename: string}];
-// 	folder: {
-// 		subfolder: {
-// 			filename: string;
-// 		};
-// 	};
-// };
-
-// type ProjectPaths = Paths<Project>;
-
-// type G<
-//     State extends Dict,
-//     Name extends Exclude<Paths<State>,number>,
-//     VALUE extends  GetTypeByPath<State,Name> // string
-//     >={
-//     name:Name,
-//     value:VALUE
-// }

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Dict, getVal  } from "autostore";
+import { AutoStore, ComputedState, Dict, getVal, ObjectKeyPaths  } from "autostore";
 import { ReactAutoStore } from "../store";
-import { UseFormOptions, UseFormResult } from "./types";
+import { AutoFormStore, UseFormOptions, UseFormResult } from "./types";
 import { AutoForm, AutoFormContext, createAutoFormComponent } from "./Form";
 import { createAutoFieldComponent,AutoField } from "./Field";
 import { Validator } from "./validator";
+import { GetTypeByPath } from '../../../core/src/types';
 
 
 
@@ -64,7 +65,10 @@ import { Validator } from "./validator";
  * @param options - 可选的配置对象，用于自定义 useForm 的行为。
  * @returns 一个包含表单状态和操作结果的对象。
  */
-export function useForm<State extends Dict>(store:ReactAutoStore<State>,options?:UseFormOptions<State>):UseFormResult<State>
+
+
+
+export function useForm<State extends Dict>(store:ReactAutoStore<any> | AutoStore<any>,options?:UseFormOptions<State>):UseFormResult<State>
 export function useForm<State extends Dict>(state:State,options?:UseFormOptions<State>): UseFormResult<State>
 export function useForm<State extends Dict>(): UseFormResult<State>{
 	
@@ -72,14 +76,16 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	const fieldComponentRef = useRef<AutoField<State>>()
 	const formRef = useRef<HTMLFormElement | null>(null);				
 	const formContext = useRef<AutoFormContext<State> | null>(null)
-	const storeRef = useRef<ReactAutoStore<State> | null>(null)
+	const storeRef = useRef<AutoFormStore<State> | null>(null)
 	
 	const opts = arguments[1] || {}
 	if(!opts.ref) opts.ref = formRef;
 	
 	if(!storeRef.current){
-		storeRef.current = arguments[0] instanceof ReactAutoStore ? arguments[0] : new ReactAutoStore(arguments[0],arguments[1])
-		storeRef.current.resetable = true
+		const formStore =  (arguments[0] instanceof ReactAutoStore ? arguments[0] : new ReactAutoStore(arguments[0],arguments[1])) as AutoFormStore<State>
+		formStore.resetable = true
+		formStore.entry = getVal(formStore.state,opts.entry)
+		storeRef.current = formStore
 	} 	
 
 	const [valid, setValid] = useState<boolean>(true);
@@ -106,7 +112,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 			setValid,
 			setSubmiting,
 			setError,
-			state:getVal(store.state,opts.entry || []),
+			state:store.entry,
 			formRef 
 		}
 		formComponentRef.current = createAutoFormComponent<State>(store,formContext)
@@ -127,7 +133,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 
 	return {
 		...store,
-		state:store.state,
+		state:store.entry,
 		Form: formComponentRef.current,
 		Field: fieldComponentRef.current!,
 		valid,

@@ -37,10 +37,15 @@ export interface UseWatchType<State extends Dict> {
 
 ## 基本用法
 
-同样的`diray`功能实现如下:
+同样的`diray`检测功能实现如下:
 
 <demo react="watch/useWatchDirty.tsx"/>
 
+
+- `useWatch`创建的侦听会在组件销毁时自动取消订阅，不需要手动取消订阅。
+- `useWatch`不会创建`WatchObject`.
+- `useWatch`的`getter`函数可以返回一个值作为`React`状态，该状态会在`selector`所指向的状态变化后自动更新。
+- 如果没有指定`selector`，则会侦听`store`对象的所有变化。
 
 
 :::warning 提示

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {  Dict, isFunction, Watcher } from "autostore" 
 import type { ReactAutoStore } from "../store"
-import { UseWatchOptions } from "./types"
+import { UseWatchOptions, UseWatchType } from "./types"
 
 /**
  * 
@@ -17,7 +17,7 @@ import { UseWatchOptions } from "./types"
  * @returns 
  */
 export function createUseWatch<State extends Dict>(store:ReactAutoStore<State>){
-    return (...args:any[])=>{        
+    return ((...args:any[])=>{        
         const deps = isFunction(args[0]) ? undefined : args[0]
         const getter = isFunction(args[0]) ? args[0] : undefined
         const options = Object.assign({},
@@ -28,20 +28,29 @@ export function createUseWatch<State extends Dict>(store:ReactAutoStore<State>){
             ) as UseWatchOptions<any>
             
         const [ value,setValue ] = useState(options?.initial)
+        const ref = useRef<any>()
         const executeGetter = useCallback((operate:any)=>{
             Promise.resolve(getter(operate)).then((result)=>{
                 if(result!==undefined) setValue(result)
             })
+            ref.current = setValue
         },[value])
         useEffect(() => { 
             let watcher :Watcher
+            let resetWatcher:Watcher
             if(getter){
                 watcher = store.watch((operate)=>executeGetter(operate),options)
             }else{
                 watcher = store.watch(deps,(operate)=>executeGetter(operate),options)
             }            
-            return ()=>watcher.off()
+            resetWatcher = store.on("reset",()=>{
+                setTimeout(()=>ref.current(options?.initial),0)
+            })
+            return ()=>{
+                watcher.off()
+                resetWatcher.off()
+            }
         },[])        
         return [value,setValue]
-    } 
+    }) as UseWatchType<State>
 }

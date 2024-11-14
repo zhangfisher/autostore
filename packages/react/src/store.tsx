@@ -34,7 +34,8 @@ export class ReactAutoStore<State extends Dict > extends AutoStore<State>{
 
     constructor(initial: State,options?:AutoStoreOptions<State>){
         super(initial,Object.assign({
-            signalErrorBoundary : ()=><>ERROR</>
+            signalErrorBoundary : ()=><>ERROR</>,
+            resetable:true
         },options))
         this.signal            = this.$ = createSignalComponent(this).bind(this)
         this.useState          = createUseState(this).bind(this)

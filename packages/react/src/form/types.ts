@@ -115,7 +115,7 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      * 当使用外部store时，可以指定entry来限定表单的数据范围
      * 可选
      */
-    entry?: string[]
+    entry?: string | string[]
     /**
      * 在初始化时是否进行数据校验
      * 默认=true
@@ -160,9 +160,17 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
     toState?:(this:HTMLInputElement,path:string,inputValue:any,stateValue:any,part:string | undefined)=>any
 }
 
-export type UseFormType<State extends Dict>  = {
-    (store:ReactAutoStore<State> | AutoStore<State>,options?:UseFormOptions<State>): UseFormResult<State>
-    (state:State,options?:UseFormOptions<State>): UseFormResult<State>
+
+export type AutoFormStore<State extends Dict> = ReactAutoStore<State> & {
+    entry: ComputedState<State>         // 入口路径
 }
+
+// export type UseFormType<State extends Dict>  = {
+//     <OState extends Dict = Dict,EntryPath extends ObjectKeyPaths<ComputedState<OState>> = ObjectKeyPaths<ComputedState<OState>>>(
+//         store:ReactAutoStore<OState> | AutoStore<OState>,
+//         options?:UseFormOptions<State,EntryPath>
+//     ): UseFormResult<State>
+//     (state:State,options?:UseFormOptions<State>): UseFormResult<State>
+// }
 
  

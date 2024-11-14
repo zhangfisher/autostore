@@ -258,7 +258,6 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 error      : validate?.error?.message,
                 onChange
             })   
-            // formCtx.current?.validator!.updateInvalids(name, isValid)
         }  
 
         const getFieldPropObj = useCallback((path:string[]):[string | undefined,ComputedObject<any> | undefined]=>{
@@ -273,6 +272,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
         useEffect(()=>{
             const watchers:Watcher[] =[]
             let count:number = 0
+            // 当validate字段校验失败时触发错误导致计算出错，此处可以捕获进行更新
             watchers.push(store.on("computed:error",({path,error})=>{
                 const [propKey,propObj] = getFieldPropObj(path)
                 if(propObj && propKey){   
@@ -281,12 +281,13 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                     setRefresh(++count)
                 }
             }))
+            // 侦听字段的变化，当变化时，重新渲染字段
             watchers.push(store.watch(name,({value}:any)=>{
                 Object.assign(renderProps.current!,{value})
                 Object.assign(renderProps.current!.bind,{value})
                 setRefresh(++count)
             }))
-            // 侦听所有字段计算属性的变化，当变化时，重新渲染字段
+            // 侦听所有字段相关的计算属性(validate,visible等)的变化，当变化时，重新渲染字段
             watchers.push(store.watch(`#${name}.*`,({path,value})=>{
                 const [propKey,propObj] = getFieldPropObj(path)
                 if(propObj && propKey){
@@ -305,7 +306,12 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                     Object.assign(renderProps.current!,updated)
                     setRefresh(++count)                    
                 }
-            }))  
+            })) 
+            // 侦听Field字段的validate属性的变化，当变化里需要更新校验结果 
+            // Field字段的validate属性是一个计算属性，其path="#name.validate"形式，具有以#开头，以validate结尾的特点
+            watchers.push(store.watch(`#${name}.validate`,({value})=>{
+
+            }))
             return ()=>watchers.forEach(w=>w.off())
         },[])
         return <>{props.render(renderProps.current as any)}</> 
