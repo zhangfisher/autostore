@@ -3,7 +3,7 @@
 
 `useForm`返回`Form`或`Field`等组件，该组件是对标准`form`元素的封装。
 
-## 全新表单
+## 创建表单
 
 可以通过`useForm`创建一个全新的表单，如下：
 
@@ -30,7 +30,7 @@ const { Form } = useForm({
 
 **下面是一个简单的示例：**
 
-demo react="form/formBase.tsx"
+<demo react="form/formBase.tsx"/>
 
 :::warning 提示
 `useForm`内部会创建一个`Store`实例，用于存储表单数据。

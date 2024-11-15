@@ -1,6 +1,6 @@
 import React from "react"
 import { createStore, useForm } from "@autostorejs/react";
-import { Button, CheckBox, Input, JsonView, Layout, TextArea } from "x-react-components";
+import {Spin, Button, CheckBox, Input, JsonView, Layout, TextArea } from "x-react-components";
 
 const store = createStore({
     users:[
@@ -20,19 +20,20 @@ const store = createStore({
 
 export default ()=>{
     
-    const { Form,reset } = useForm<typeof store.state.users[0]>(store,{entry:'users.0'})
+    const { Form,reset } = useForm(store)
     const [ state ] = store.useReactive()
       return (
         <Layout>        
             <div> 
                 <Form>
-                    <Input name="user.name" label="Name"/>
-                    <Input name="user.age" label="Age" type="number"/>
-                    <Input name="user.address" label="Address"/>
-                    <Input name="user.phone" label="Phone"/>
-                    <Input name="user.email" label="Email" type="email"/>
-                    <TextArea name="user.resume" label="Resume"/> 
-                    <CheckBox name='user.vip' label="VIP"/>
+                    <Spin value="10"/>
+                    <Input name="users.0.name" label="Name"/>
+                    <Input name="users.0.age" label="Age" type="number"/>
+                    <Input name="users.0.address" label="Address"/>
+                    <Input name="users.0.phone" label="Phone"/>
+                    <Input name="users.0.email" label="Email" type="email"/>
+                    <TextArea name="users.0.resume" label="Resume"/> 
+                    <CheckBox name='users.0.vip' label="VIP"/>
                 </Form>  
                 <Button onClick={()=>reset()}>Reset</Button>
             </div>

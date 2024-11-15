@@ -5,8 +5,8 @@ import { UseFormOptions } from "./types";
 import { Validator } from './validator';
 import { findAutoFields } from "./utils/findAutoFields";
 import React from "react"; 
-import { fromStateToField } from "./utils/fromStateToField";
-import { fromFieldToState } from "./utils";
+import { stateToField } from "./utils/stateToField";
+import { fieldToState } from "./utils";
 import { isFalse } from "./utils/isFalse";
 import { getInputValue } from "./utils/getInputValue";
 import { initFormFields } from "./utils/initFormFields";
@@ -15,8 +15,9 @@ import { initFormFields } from "./utils/initFormFields";
 export type AutoFormProps<State extends Dict>  = React.PropsWithChildren<
     React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>,HTMLFormElement>
     & {
-		onValidate?:(state:State)=>boolean
-		onSubmit?:(state:ComputedState<State>)=>void
+		entry?     : string
+		onValidate?: (state:State)=>boolean
+		onSubmit?  : (state:ComputedState<State>)=>void
 	}
 >
 
@@ -56,7 +57,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             const form = options.ref!.current;            
 			if (!form) return;             
             let initValid:boolean	= true
-			ctx.fields = findAutoFields(form,options.findFields);       	
+			ctx.fields = findAutoFields(form,options);       	
 			ctx.validator.attach()
 			// 初始化表单控件的值: 从state读取数据更新到表单控件
 			initFormFields(store,ctx.fields,options)            
@@ -71,9 +72,8 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
  
 		useEffect(() => {
 			const form = options.ref!.current;
-			if (!form) return;
-			const { entry =[] } = options;
-			const entryPath = Array.isArray(entry) ? entry :  entry.split(PATH_DELIMITER) 
+			if (!form) return; 
+			const entryPath =    ctx.options.entry ? ctx.options.entry.split(PATH_DELIMITER) : []
             // 1. 初始化表单控件
 			if (!initial.current && form) {
 				initForm()
@@ -87,7 +87,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				if (spath in ctx.fields) {
 					const fields = ctx.fields![spath]
 					fields && fields.forEach(fieldInfo=>{
-						if(fromStateToField(fieldInfo,value,ctx.options)){
+						if(stateToField(fieldInfo,value,ctx.options)){
 							ctx.validator.validate(fieldInfo.el);
 						}
 					})
@@ -103,7 +103,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				}
 				const newVal = getInputValue(input)
 				if(ctx.validator.validate(input)?.value){
-					fromFieldToState(store, input,path, newVal, ctx.options);
+					fieldToState(store, input,path, newVal, ctx.options);
 					ctx.setDirty()  
 				}                                          
 			};

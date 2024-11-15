@@ -86,7 +86,7 @@ const InputStyle = styled<InputProps>({
 
 export const Input:ReactFC<InputProps> = (props:InputProps)=>{
     const { id=Math.random().toString(36).slice(2), enable = true, style={},value, actions,...restProps } = props;
-    const label = props.label || props.name || props.id
+    const label = props.label  || props.name || props.id
     const ref = useRef<HTMLInputElement>(null)
     return (
         <div         

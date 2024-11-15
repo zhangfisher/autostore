@@ -5,7 +5,7 @@ import type { WatchObject } from "../watch/watchObject";
 export type StoreEvents = {
     'load'              : AutoStore<any>;                               // 响应对象创建后
     'unload'            : AutoStore<any>                                // 响应对象销毁后
-    'reset'             : AutoStore<any>                                // 对象重置后
+    'reset'             : string | undefined                            // 对象重置时触发，入参为重置的路径字符串
     'computed:created'  : ComputedObject                                // 当计算对象创建时
     'computed:done'     : {id:string,path:string[],value:any,computedObject:ComputedObject}           // 当计算函数执行成功后
     'computed:error'    : {id:string,path:string[],error:any,computedObject:ComputedObject}           // 当计算函数执行出错时
@@ -15,3 +15,6 @@ export type StoreEvents = {
     'watch:error'       : {error:any,watchObject:WatchObject}
 };
  
+export type EventDefines = {
+    [key:string]:any    
+}

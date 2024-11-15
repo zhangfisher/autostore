@@ -1,4 +1,6 @@
 import { PATH_DELIMITER } from "../consts";
+import { createEventEmitterScope } from "./scope";
+import { EventDefines } from "./types";
 
 const Delimiter = PATH_DELIMITER
 
@@ -21,7 +23,9 @@ export type EventHandlerList = Array<EventHandler<any,any>>;
  * isEventMatched("a.b.c","a.*.*") == true
  * isEventMatched("a.b.c","a.*.c") == true
  * isEventMatched("a.b.c","a.*.d") == false
- * isEventMatched("a.b.c","**") == true
+ * isEventMatched("a.b.c","**") == true  
+ * isEventMatched("a.b.c.d","a.**") == true
+ * isEventMatched("a.b","a.**") == true
  * 
  * @param type 
  * @param pattern 
@@ -35,14 +39,12 @@ export function isEventMatched(type:string,pattern:string){
     if(eventParts.length !== patternParts.length) return false
     for(let i=0;i<patternParts.length;i++){
         if(patternParts[i] === '*') continue
+        if(patternParts[i] === '**') break
         if(patternParts[i] !== eventParts[i]) return false
     }
     return true
 }
 
-type EventDefines = {
-    [key:string]:any    
-}
 
 export class EventEmitter<Events extends EventDefines>{     
     private _listeners = new Map< keyof Events,EventHandlerList>()
@@ -208,7 +210,13 @@ export class EventEmitter<Events extends EventDefines>{
     }
     /**
      * 
-     * 构建一个事件作用域，在该作用域内的事件都会被添加指定的前缀
+     * 构建一个独立的事件域
+     * 
+     * @description
+     * 
+     * 在该作用域内的事件域内，
+     * - 触发事件时，都会被添加指定的前缀
+     * - 侦听事件时，都会移除指定的前缀
      * 
      * const scope = emitter.scope("prefix")
      * 
@@ -218,61 +226,12 @@ export class EventEmitter<Events extends EventDefines>{
      * scope.off("event") == emitter.off("prefix.event")
      * scope.wait("event") == emitter.wait("prefix.event")
      * 
+     * 
      * @param prefix 
      * @returns 
      */
     scope(prefix:string){
-        const self = this
-        const scope = new Proxy(this,{
-            get(target,key,receiver){
-                const value = Reflect.get(target,key,receiver)
-                if(key==='on' || key==='once'){
-                    return (type:string,handler: EventHandler<any,any>,prepend ?:boolean)=>{
-                        return (value as any).call(scope,`${prefix}${PATH_DELIMITER}${type}`,
-                            (payload:any,type:string)=>{
-                                handler(payload,type.slice(prefix.length+1))
-                            },
-                            prepend)
-                    }
-                }else if(key==='off'){
-                    return (type:string)=>(value as any).call(scope,`${prefix}${PATH_DELIMITER}${type}`)
-                }else if(key==='emit'){
-                    return (type:string,payload:any)=>(value as any).call(scope,`${prefix}${PATH_DELIMITER}${type}`,payload)
-                }else if(key==='wait'){
-                    return (...args:any[])=>{
-                        if(typeof(args[0])==='string'){
-                            args[0] = `${prefix}${PATH_DELIMITER}${args[0]}` as string
-                            (value as any).call(scope,...args)
-                        }else if(typeof(args[0])==='function'){
-                            const filter = args[0]
-                            args[0] = (type:string,payload:any)=>{
-                                if(type.startsWith(prefix)){
-                                    filter(type.slice(prefix.length+1),payload)
-                                }
-                            }
-                            (value as any).call(scope,...args)
-                        }                        
-                    }
-                }else if(key ==='offAll'){
-                    return ()=>{ // 移除所有以prefix.开头的事件                       
-                        for( let [type] of self._listeners.entries()){
-                            if(type ==='*') continue
-                            if(typeof(type)==='string' && type.startsWith(`${prefix}.`)){
-                                self._listeners.delete(type)
-                            }
-                        }
-                    }
-                }else if(key ==='onAny'){
-                    return (handler:EventHandler<string,any>)=>{
-                        return self.on(`${prefix}${PATH_DELIMITER}**`,handler)
-                    }
-                }else if(key ==='scope'){
-                    return undefined
-                }
-                return value
-            }
-        })
-        return scope
+        return createEventEmitterScope(this,prefix)
     }
 
 

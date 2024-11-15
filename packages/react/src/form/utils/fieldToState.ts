@@ -41,10 +41,11 @@ function toTypedValue(val:any,datatype:string | undefined){
     return val
 
 }
-export function fromFieldToState<State extends Dict>(store:ReactAutoStore<State>,input:HTMLInputElement,name:string,value:any,options:UseFormOptions<any>):[string,any] | undefined{
+export function fieldToState<State extends Dict>(store:ReactAutoStore<State>,input:HTMLInputElement,name:string,value:any,options:UseFormOptions<any>):[string,any] | undefined{
     const toState = options.toState || defaultToState
+    const entry = options.entry ? options.entry.split(PATH_DELIMITER) : []
     const part = input.dataset.fieldPart
-    const path = name.split(PATH_DELIMITER)
+    const path = [...entry,...name.split(PATH_DELIMITER)]
     // 在执行fromStateToField时会将dataType写入data-typeof属性，记住这个属性的原始类型
     const dataType = input.dataset.typeof
 

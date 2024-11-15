@@ -7,6 +7,6 @@ export * from './addElementStyleOrClass';
 export * from './removeStyleOrClass'; 
 export * from './isInputElement';
 export * from './findAutoFields'
-export * from './fromFieldToState'
-export * from './fromStateToField'
+export * from './fieldToState'
+export * from './stateToField'
 export * from './getInputElements'

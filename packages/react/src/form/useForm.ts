@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AutoStore, ComputedState, Dict, getVal, ObjectKeyPaths  } from "autostore";
+import { AutoStore,  Dict } from "autostore";
 import { ReactAutoStore } from "../store";
 import { AutoFormStore, UseFormOptions, UseFormResult } from "./types";
 import { AutoForm, AutoFormContext, createAutoFormComponent } from "./Form";
 import { createAutoFieldComponent,AutoField } from "./Field";
 import { Validator } from "./validator";
-import { GetTypeByPath } from '../../../core/src/types';
 
 
 
@@ -78,13 +77,12 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	const formContext = useRef<AutoFormContext<State> | null>(null)
 	const storeRef = useRef<AutoFormStore<State> | null>(null)
 	
-	const opts = arguments[1] || {}
+	const opts:UseFormOptions<State> = arguments[1] || {}
 	if(!opts.ref) opts.ref = formRef;
 	
 	if(!storeRef.current){
 		const formStore =  (arguments[0] instanceof ReactAutoStore ? arguments[0] : new ReactAutoStore(arguments[0],arguments[1])) as AutoFormStore<State>
 		formStore.resetable = true
-		formStore.entry = getVal(formStore.state,opts.entry)
 		storeRef.current = formStore
 	} 	
 
@@ -98,7 +96,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 	
 	const reset = useCallback(()=>{
 		setDirty(false)		
-		store.reset()		
+		store.reset(opts.entry)		
 	},[])
 
 	const submit = useCallback(()=>{
@@ -112,7 +110,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 			setValid,
 			setSubmiting,
 			setError,
-			state:store.entry,
+			state:store.state,
 			formRef 
 		}
 		formComponentRef.current = createAutoFormComponent<State>(store,formContext)
@@ -133,7 +131,7 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 
 	return {
 		...store,
-		state:store.entry,
+		state:store.state,
 		Form: formComponentRef.current,
 		Field: fieldComponentRef.current!,
 		valid,

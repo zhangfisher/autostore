@@ -1,3 +1,4 @@
+import { PATH_DELIMITER } from "autostore";
 import { FIELD_DATA_INVALID_TIPS } from "../consts";
 import type { AutoFormFieldContext, AutoFormFieldContexts } from "../Form";
 import { UseFormOptions } from "../types";
@@ -77,10 +78,13 @@ function defaultFindFields(form:HTMLFormElement){
  *  @param form - 表单元素
  * @param fieldSelector - 字段选择器
  */
-export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<any>['findFields']):AutoFormFieldContexts{
+export function findAutoFields(form:HTMLFormElement,options:UseFormOptions<any>):AutoFormFieldContexts{
+    const { findFields,entry } = options
     const fieldEles = findFields ? findFields(form) : defaultFindFields(form)    
+    const entryPrefix = entry ? `${entry}${PATH_DELIMITER}` : undefined
     return fieldEles.reduce((fields,fieldEle)=>{ 
-        const fieldName = fieldEle.getAttribute('name') || fieldEle.getAttribute('data-field-name')
+        let fieldName = fieldEle.getAttribute('name') || fieldEle.getAttribute('data-field-name')
+        const fieldKey = entryPrefix ? entryPrefix+fieldName  : fieldName!
         if(fieldName){
             const inputs = Array.from(isInputElement(fieldEle) ? 
                 [fieldEle] 
@@ -90,17 +94,18 @@ export function findAutoFields(form:HTMLFormElement,findFields:UseFormOptions<an
             inputs.forEach(input=>{
                 input.setAttribute('name',fieldName) 
             })            
-            if(!fields[fieldName]) fields[fieldName]=[]
-            const fieldCtxs = fields[fieldName]
+            if(!fields[fieldKey]) fields[fieldKey]=[]
+            const fieldCtxs = fields[fieldKey]
             // 如果输入元素已经存在于某个x-field的普通元素中则不需要添加
             if( fieldCtxs.length>0 
                 && isInputElement(fieldEle) 
-                && fieldCtxs.some(fieldCtx=>!isInputElement(fieldCtx.el) && fieldCtx.inputs.findIndex(input=>input===fieldEle)>=0)
+                && fieldCtxs.some(fieldCtx=>!isInputElement(fieldCtx.el) 
+                                            && fieldCtx.inputs.findIndex(input=>input===fieldEle)>=0)
             ){
                 return fields
             }
                 
-            fields[fieldName].push({
+            fields[fieldKey].push({
                 path:fieldName,
                 el:fieldEle,
                 inputs,

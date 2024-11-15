@@ -162,17 +162,23 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 当启用resetable=true选项时，可以调用此方法将store恢复到初始状态
      *   
      */
-    reset(){
+    reset(entry?:string){
         if(this._options.resetable && this._updatedState){
             try{
                 this.batchUpdate(state=>{
+                    const prefix = entry ? `${entry}${PATH_DELIMITER}` : ''                    
                     Object.entries(this._updatedState!).forEach(([key,value])=>{
-                        setVal(state,key.split(PATH_DELIMITER),value)
+                        if(key.startsWith(prefix)){
+                            setVal(state,key.split(PATH_DELIMITER),value)
+                            delete this._updatedState![key]
+                        }                        
                     })
                 })  
             }finally{
-                this._updatedState = {}
-                this.emit("reset",this)
+                if(!entry){
+                    this._updatedState = {}
+                }                
+                this.emit("reset",entry)
             }          
         }else{
             this.log("resetable option is not enabled","warn")

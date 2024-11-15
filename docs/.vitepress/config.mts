@@ -107,6 +107,8 @@ export default defineConfig({
                     { text:"表单校验",link:"/guide/form/useform/validate"},
                     { text:"字段拆分",link:"/guide/form/useform/split-field"}, 
                     { text:"字段组件",link:"/guide/form/useform/field"}, 
+                    { text:"多表单",link:"/guide/form/useform/mulit-form"}, 
+                    
                   ]
                 },
               ]

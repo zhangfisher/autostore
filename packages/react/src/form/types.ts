@@ -112,10 +112,16 @@ export type UseFormOptions<State extends Dict> = AutoStoreOptions<State> & {
      */
     ref?:React.RefObject<HTMLFormElement>
     /**
-     * 当使用外部store时，可以指定entry来限定表单的数据范围
-     * 可选
+     * 
+     * 可选，表单元素的入口路径
+     * 
+     * 当指定时进行表单提交时只提交入口路径下的数据
+     * 并且重置时也只重置入口路径下的数据
+     * 
+     * 当在多个表单元素中使用时，可以指定不同的入口路径
+     * 
      */
-    entry?: string | string[]
+    entry?:string
     /**
      * 在初始化时是否进行数据校验
      * 默认=true

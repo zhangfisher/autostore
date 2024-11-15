@@ -34,12 +34,11 @@ function defaultFromState(_:string,value:any,part:string | undefined){
  * @param initial - 是否为初始化状态调用
  * @returns 如果字段值发生变化则返回 true，否则返回 false。
  */
-export function fromStateToField(fieldInfo:AutoFormFieldContext,value:any,options:UseFormOptions<any>,initial?:boolean){
+export function stateToField(fieldInfo:AutoFormFieldContext,value:any,options:UseFormOptions<any>,initial?:boolean){
     const fromState = options.fromState || defaultFromState    
     let changed:boolean = false
     fieldInfo.inputs.forEach(input=>{
-        const part = input.dataset.fieldPart     
-  
+        const part = input.dataset.fieldPart       
         const newVal = fromState(fieldInfo.path,value,part)     
         if(initial){
             // 在初始化时，如果是checkbox或radio，则需要设置默认值
@@ -69,18 +68,3 @@ export function fromStateToField(fieldInfo:AutoFormFieldContext,value:any,option
     })
     return changed
 }
-
-// function getStatePartValue(value:any,part:string | undefined){
-//     if(!part) return value
-//     if(Array.isArray(value) && isNumber(part)){
-//         return value[part]
-//     }else if(typeof(value) === "object"){
-//         return value[part]
-//     }else if(typeof(value)==='string'){ // 视为正则表达式，从字符串中提取
-//         const matched = value.match(new RegExp(part))
-//         if(matched){ // 如果有匹配组，则返回第一个匹配组
-//             return matched.length===1 ? matched[0] : matched[1]   
-//         } 
-//     }
-//     return value
-// }

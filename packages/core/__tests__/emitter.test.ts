@@ -146,5 +146,101 @@ describe("EventEmitter",()=>{
             await expect(promise).rejects.toThrow('timeout');
         });
     });
-     
+
 })
+
+describe('EventEmitter scope', () => {
+    it("Scope事件触发与订阅",()=>{
+        const types:string[] = []
+        const emitter = new EventEmitter();
+        const scope = emitter.scope("x")
+        scope.on('a', (payload,type)=>{
+            expect(payload).toBe('test')
+            expect(type).toBe('a')            
+            types.push(type)
+        })
+        emitter.on('x.a', (payload,type)=>{
+            expect(payload).toBe('test')
+            expect(type).toBe('x.a')
+            types.push(type)
+        })
+        emitter.emit('x.a', 'test')
+        scope.emit('a', 'test')
+
+        expect(types).toEqual(['a','x.a','a','x.a'])
+
+        
+    })
+    it("Scope事件只订阅一次",()=>{
+        return new Promise<void>((resolve)=>{
+            const types:string[] = []
+            const emitter = new EventEmitter();
+            const scope = emitter.scope("x")
+            scope.once('a', (payload,type)=>{
+                expect(payload).toBe('test')
+                expect(type).toBe('a')            
+                types.push(type)
+            })
+            emitter.once('x.a', (payload,type)=>{
+                expect(payload).toBe('test')
+                expect(type).toBe('x.a')
+                types.push(type)
+            })
+            for(let i=0;i<5;i++){
+                scope.emit('a', 'test')
+            }
+            setTimeout(()=>{
+                expect(types).toStrictEqual(['a','x.a'])
+                resolve()
+            },0)        
+        })
+        
+    })
+    it("订阅所有Scope事件",()=>{
+        const types:string[] = []
+        const emitter = new EventEmitter();
+        const scope = emitter.scope("x")
+        scope.onAny((payload,type)=>{
+            types.push(type)
+        })
+        scope.emit('a', 'test')
+        scope.emit('b', 'test')
+        scope.emit('c', 'test')
+        scope.emit('d', 'test')
+        expect(types).toEqual(['a','b','c','d'])
+    })
+    it("取消订阅所有Scope事件",()=>{
+        const types:string[] = []
+        const emitter = new EventEmitter();
+        const scope = emitter.scope("x")
+        const listener = scope.onAny((payload,type)=>{
+            types.push(type)
+        })
+        scope.emit('a', 'test')
+        scope.emit('b', 'test')
+        scope.emit('c', 'test')
+        scope.emit('d', 'test')
+        expect(types).toEqual(['a','b','c','d'])
+        listener.off()
+        scope.emit('a', 'test')
+        scope.emit('b', 'test')
+        scope.emit('c', 'test')
+        scope.emit('d', 'test')
+        expect(types).toEqual(['a','b','c','d'])
+    })
+    it("使用offAll取消订阅所有Scope事件",()=>{
+        const types:string[] = []
+        const emitter = new EventEmitter();
+        const scope = emitter.scope("x")
+        scope.onAny((payload,type)=>{
+            types.push(type)
+        })
+        scope.emit('a', 'test')
+        scope.emit('b', 'test')
+        scope.emit('c', 'test')
+        scope.emit('d', 'test')
+        expect(types).toEqual(['a','b','c','d'])
+        scope.offAll()
+        expect(types).toEqual(['a','b','c','d'])
+    })
+});
