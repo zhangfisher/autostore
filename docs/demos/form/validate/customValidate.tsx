@@ -1,7 +1,7 @@
 import React from "react"
 import { useForm } from "@autostorejs/react";
 import {Layout,JsonView,ColorBlock, Button } from "x-react-components"
-import { FieldStyle } from "./styles";
+import { FieldStyle } from "../styles";
  
 export default ()=> { 
 	

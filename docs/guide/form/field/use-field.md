@@ -32,7 +32,7 @@ interface UseFieldType<State extends Dict> {
 
 可以直接通过`useField(<状态路径>)`来创建一个双向字段绑定对象，然后解构到`input`控件即可。
 
-<demo react="form/useFieldBase.tsx"/>
+<demo react="form/field/useFieldBase.tsx"/>
  
 - `状态路径`可以是任意深度的字符串或字符串数组，如`useField("order.user.name")`。
 - `input[type='radio']`的字段需要指定`{type:'radio',values:['男','女']})`选项，然后在每一个`radio`上指定`value`值绑定。
@@ -42,7 +42,7 @@ interface UseFieldType<State extends Dict> {
 
 可以实现将多个状态值合并后绑定到一个`input`
 
-<demo react="form/useFieldCombo.tsx"/>
+<demo react="form/field/useFieldCombo.tsx"/>
 
 - 上例中，我们通过`getter`和`setter`方法，将`firstName & lastName`合并后绑定到`1`个`input`。
 - `getter`方法用于将状态值合并成一个值。
@@ -68,7 +68,7 @@ useField<Value>(
 
 以下是简单的示例：
 
-<demo react="form/useFieldIpAddress.tsx"/>
+<demo react="form/field/useFieldIpAddress.tsx"/>
 
 ## 转换状态值
 
@@ -76,6 +76,6 @@ useField<Value>(
 
 - **下例中输入的字符会被转换为大写再更新到状态**
 
-<demo react="form/useFieldToState.tsx"
+<demo react="form/field/useFieldToState.tsx"
   title="将输入字符全部转换为大写"
 />

@@ -170,14 +170,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                     Object.entries(this._updatedState!).forEach(([key,value])=>{
                         if(key.startsWith(prefix)){
                             setVal(state,key.split(PATH_DELIMITER),value)
-                            delete this._updatedState![key]
                         }                        
                     })
                 })  
-            }finally{
-                if(!entry){
-                    this._updatedState = {}
-                }                
+            }finally{               
                 this.emit("reset",entry)
             }          
         }else{

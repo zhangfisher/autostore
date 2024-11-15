@@ -30,7 +30,7 @@ const { Form } = useForm({
 
 **下面是一个简单的示例：**
 
-<demo react="form/formBase.tsx"/>
+<demo react="form/form/base.tsx"/>
 
 :::warning 提示
 `useForm`内部会创建一个`Store`实例，用于存储表单数据。
@@ -41,6 +41,6 @@ const { Form } = useForm({
 
 `useForm`还可以基于现有的`Store`实例创建表单，如下：
 
-<demo react="form/formStore.tsx" />
+<demo react="form/form/fromStore.tsx" />
 
 

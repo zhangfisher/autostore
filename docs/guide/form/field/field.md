@@ -77,7 +77,7 @@ const { Form,Field } = useForm({
 
 ### 小结
 
-<demo react="form/fieldBase.tsx" />
+<demo react="form/field/fieldBase.tsx" />
 
 
 :::warning 提示

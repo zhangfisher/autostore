@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { ComputedState, Dict,  PATH_DELIMITER, pathStartsWith  } from "autostore";
+import { ComputedState, Dict,  getVal,  PATH_DELIMITER, pathStartsWith  } from "autostore";
 import type { ReactAutoStore } from "../store";
 import { UseFormOptions } from "./types";
 import { Validator } from './validator';
@@ -83,14 +83,26 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 				// 2.1 如果变更的路径不是表单的路径，则忽略
 				if (!pathStartsWith(entryPath, path)) return;
 				// 2.2 更新到表单的输入控件
-				const spath = path.join(PATH_DELIMITER);
-				if (spath in ctx.fields) {
+				const spath = path.join(PATH_DELIMITER);				
+				if ((spath in ctx.fields)) {
 					const fields = ctx.fields![spath]
 					fields && fields.forEach(fieldInfo=>{
 						if(stateToField(fieldInfo,value,ctx.options)){
 							ctx.validator.validate(fieldInfo.el);
 						}
 					})
+				}else{
+					// 针对数组或对象字段拆分时一个字段， 
+					const objPath = path.slice(0,-1).join(PATH_DELIMITER);
+					if(objPath in ctx.fields){
+						value =  getVal(store.state,objPath)
+						const fields = ctx.fields![objPath]
+						fields && fields.forEach(fieldInfo=>{
+							if(stateToField(fieldInfo,value,ctx.options)){
+								ctx.validator.validate(fieldInfo.el);
+							}
+						})						
+					} 
 				}
 			});
 			// 3. 输入控件变更时的响应

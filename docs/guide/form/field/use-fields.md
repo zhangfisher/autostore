@@ -5,7 +5,7 @@
 ## 基本用法
 
 
-<demo react="form/useFieldsBase.tsx"/>
+<demo react="form/field/useFieldsBase.tsx"/>
 
 
 - 使用`UseFields`创建的嵌套绑定对象，可以支持嵌套成员,直接根据路径绑定到表单控件上即可。

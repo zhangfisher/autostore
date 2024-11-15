@@ -23,7 +23,7 @@
 </div>
 ```
 
-<demo react="form/formSplitField.tsx"/>
+<demo react="form/field/splitField.tsx"/>
 
 
 - `data-field-part="<正则表达式>"`只适用于**指向的状态值是字符串**的情况。
@@ -39,7 +39,7 @@
 
 当状态值是一个数组时，可以指定`data-field-part="<索引>"`进行快速拆分。
 
-<demo react="form/formSplitArrayField.tsx"/>
+<demo react="form/field/splitArrayField.tsx"/>
 
 :::warning 提示
 数组拆分是一种快速的拆分方式，适用于数组内容，拆分时会识别数据类型，自动转换为对应的数据类型。
@@ -49,7 +49,7 @@
 
 当状态值是一个`{...}`时，可以指定`data-field-part="<Key>"`进行快速拆分。
 
-<demo react="form/formSplitObjField.tsx"/>
+<demo react="form/field/splitObjField.tsx"/>
 
 ## 自定义拆分
 
@@ -58,7 +58,7 @@
 - `toState`: 用于将`input`的输入值转换为状态值。
 - `fromState`: 用于将状态值转换为`input`的输入值。
 
-<demo react="form/formSplitCustom.tsx"/>
+<demo react="form/field/splitCustomField.tsx"/>
 
 
 :::warning 注意

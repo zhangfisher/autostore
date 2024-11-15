@@ -39,7 +39,7 @@ export default defineConfig({
           items: [
             {
               text: 'Store',
-              collapsed: false,
+              collapsed: true,
               items: [
                 { text: '关于', link: '/guide/store/about' },
                 { text: 'Store', link: '/guide/store/store' },
@@ -50,7 +50,7 @@ export default defineConfig({
             },
             {
               text: '计算属性',
-              collapsed: false,
+              collapsed: true,
               items: [
                 { text: '关于', link: '/guide/computed/about' },
                 { text: '创建', link: '/guide/computed/create' },
@@ -66,7 +66,7 @@ export default defineConfig({
             },
             {
               text: '监视',
-              collapsed: false,
+              collapsed: true,
               items: [
                 { text: '关于', link: '/guide/watch/about' },
                 { text: '全局监视', link: '/guide/watch/store-watch' },
@@ -77,7 +77,7 @@ export default defineConfig({
             },
             {
               text: '信号',
-              collapsed: false,
+              collapsed: true,
               items: [
                 { text: '关于', link: '/guide/signal/about' },
                 { text: '信号组件', link: '/guide/signal/component' },
@@ -90,32 +90,48 @@ export default defineConfig({
             },
             {
               text: '表单',
-              collapsed: false,
+              collapsed: true,
               items: [
                 { text: '关于', link: '/guide/form/about' },
-                { text: 'bind', link: '/guide/form/bind' },
-                { text: 'useField', link: '/guide/form/use-field' },
-                { text: 'useFields', link: '/guide/form/use-fields' },
-                { 
-                  text: 'useForm', 
-                  link: '/guide/form/use-form',
-                  collapsed: false,
+                { text:"快速入门",link:"/guide/form/get-started"},
+                { text:"字段",
+                  collapsed:false,
                   items:[
-                    { text:"关于",link:"/guide/form/useform/about"},
-                    { text:"快速入门",link:"/guide/form/useform/quick-start"},
-                    { text:"基本用法",link:"/guide/form/useform/basic"},
-                    { text:"表单校验",link:"/guide/form/useform/validate"},
-                    { text:"字段拆分",link:"/guide/form/useform/split-field"}, 
-                    { text:"字段组件",link:"/guide/form/useform/field"}, 
-                    { text:"多表单",link:"/guide/form/useform/mulit-form"}, 
-                    
+                      { text: '关于', link: '/guide/form/field/about' },
+                      { text: 'bind', link: '/guide/form/field/bind' },
+                      { text: 'useField', link: '/guide/form/field/use-field' },
+                      { text: 'useFields', link: '/guide/form/field/use-fields' },
+                      { text:"字段拆分",link:"/guide/form/field/split-field"}, 
+                      { text:"字段组件",link:"/guide/form/field/field"}, 
+                  ]
+                },                
+                { 
+                  text: '表单', 
+                  collapsed: true,
+                  items:[
+                    { text:"关于",link:"/guide/form/form/about"},                    
+                    { text:"基本用法",link:"/guide/form/form/basic"},  
+                    { text:"useForm",link:"/guide/form/form/use-form"},                                      
+                    { text:"多表单",link:"/guide/form/form/mulit-form"},                     
                   ]
                 },
+                { 
+                  text:"校验",
+                  collapsed:false,
+                  items:[
+                    { text:"字段校验",link:"/guide/form/validate/field"},
+                    { text:"表单校验",link:"/guide/form/validate/form"},
+                  ]
+                }, 
+                { 
+                  text:"脏检查",
+                  link:"/guide/form/dirty"
+                } 
               ]
             },
             {
               text: '调试与诊断',
-              collapsed: false,
+              collapsed: true,
               items: [
                 { text: 'DevTools', link: '/guide/debug/devtools' },
                 { text: 'trace', link: '/guide/debug/trace' },

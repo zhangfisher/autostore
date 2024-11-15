@@ -62,6 +62,18 @@ export  default () => {
                                 <Input data-field-part="3" inline width={50}/>
                             </Field>    
                         </div>
+                        
+                        <div  data-field-name="net.gateway">
+                            <Field label="Gateway" data-field-name="net.gateway">
+                                <Input data-field-part="0" inline width={50} /> 
+                                <span>.</span>
+                                <Input data-field-part="1" inline width={50}/>
+                                <span>.</span>
+                                <Input data-field-part="2" inline width={50}/>
+                                <span>.</span>
+                                <Input data-field-part="3" inline width={50}/>
+                            </Field>    
+                        </div>
                     </Form>
                     <Button onClick={()=>reset()}>Reset</Button>
                 </div>

@@ -4,4 +4,4 @@
 
 
 
-<demo react="form/formMulti.tsx" />
+<demo react="form/form/multiForm.tsx" />
