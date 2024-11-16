@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AutoStore,  Dict } from "autostore";
 import { ReactAutoStore } from "../store";
-import { AutoFormStore, UseFormOptions, UseFormResult } from "./types";
+import { AutoFormStore, UseFormOptions, AutoFormObject } from "./types";
 import { AutoForm, AutoFormContext, createAutoFormComponent } from "./Form";
 import { createAutoFieldComponent,AutoField } from "./Field";
 import { Validator } from "./validator";
@@ -67,9 +67,9 @@ import { Validator } from "./validator";
 
 
 
-export function useForm<State extends Dict>(store:ReactAutoStore<any> | AutoStore<any>,options?:UseFormOptions<State>):UseFormResult<State>
-export function useForm<State extends Dict>(state:State,options?:UseFormOptions<State>): UseFormResult<State>
-export function useForm<State extends Dict>(): UseFormResult<State>{
+export function useForm<State extends Dict>(store:ReactAutoStore<any> | AutoStore<any>,options?:UseFormOptions<State>):AutoFormObject<State>
+export function useForm<State extends Dict>(state:State,options?:UseFormOptions<State>): AutoFormObject<State>
+export function useForm<State extends Dict>(): AutoFormObject<State>{
 	
 	const formComponentRef = useRef<AutoForm<State>>()
 	const fieldComponentRef = useRef<AutoField<State>>()
@@ -141,5 +141,5 @@ export function useForm<State extends Dict>(): UseFormResult<State>{
 		submit,
 		reset,
 		validator:formContext.current!.validator
-	} as unknown as UseFormResult<State>
+	} as unknown as AutoFormObject<State>
 }   

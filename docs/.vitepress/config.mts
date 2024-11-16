@@ -92,7 +92,7 @@ export default defineConfig({
               text: '表单绑定',
               collapsed: true,
               items: [
-                { text: '关于', link: '/guide/form/form/about' },
+                { text: '关于', link: '/guide/form/about' },
                 { text:"快速入门",link:"/guide/form/get-started"},              
                 { 
                   text: '表单', 

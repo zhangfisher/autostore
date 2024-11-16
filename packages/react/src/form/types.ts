@@ -73,7 +73,7 @@ export type ValidateResult = {
 
 // ********** useForm **********  
 
-export type UseFormResult<State extends Dict>={ 
+export type AutoFormObject<State extends Dict>={ 
     Form        : AutoForm<State>
     Field       : AutoField<State>
     valid       : boolean
@@ -81,15 +81,19 @@ export type UseFormResult<State extends Dict>={
     submiting   : boolean
     submit      : (e?:any)=>Promise<any>
 } & Pick<ReactAutoStore<State>,
-    '$' |'signal' | 'useState' | 'useAsyncState' | 'useDeps'
-    | 'useWatch' 
+    | 'id' | 'options' | 'operates'| 'peeping' | 'batching' | 'silenting'
+    | '$' |'signal'
+    | 'useDeps'
+    | 'state' | 'useReactive' | 'useAsyncReactive' | 'useState' | 'useAsyncState'
+    | 'watch' | 'useWatch'  | 'watchObjects'
     | 'useField' | 'useFields'  
-    | 'watch' | 'update' | 'batchUpdate' | 'silentUpdate'
+    | 'update' | 'batchUpdate' | 'silentUpdate' 
     | 'peep' | 'collectDependencies' | 'trace'
-    | 'id' | 'operates' | 'state' | 'peeping' | 'batching' | 'silenting'
-    | 'log' | 'destroy' | 'getSnap' 
-    | 'useReactive' | 'useAsyncReactive'
-    | 'reset' 
+    | 'operates' | 'peeping' | 'batching' | 'silenting'        
+    | 'computedObjects' | 'useComputed' | 'useComputedObject'    
+    | 'reset' | 'resetable'
+    | 'useObserverObject' 
+    | 'log' | 'destroy' | 'getSnap'     
 >
 
 

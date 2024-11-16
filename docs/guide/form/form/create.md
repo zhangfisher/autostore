@@ -1,7 +1,7 @@
 
 # 创建表单
 
-使用`useForm`返回`Form`或`Field`等来创建组件。
+使用`useForm`用于创建基于`AutoStore`的表单,可以实现表单与`AutoStore`状态之间的双向绑定。
 
 ## 创建表单
 
@@ -38,9 +38,9 @@ const { Form } = useForm({
 </Form>
 ```
 
-### 第3步：`Field`组件
+### 第3步：声明`Field`
 
-在`Form`组件内部，可以使用三种方式来创建`Field`组件。
+在`Form`组件内部，可以使用三种方式来创建`Field`。
 
 ```tsx
 <Form>
