@@ -4,6 +4,8 @@
 
 基于`AutoStore`的表单解决方案包括：
 
-- `useForm`：基于`AutoStore`创建表单
-- `useField`：用于简单的表单场景
+- `useForm`：基于`AutoStore`创建`AutoFormObject`实例
+- `Form`：表单组件
+- `Field`: 自定义表单字段
+- `useField`：用于单字段的表单场景
 - `useFields`：用于多字段的表单场景

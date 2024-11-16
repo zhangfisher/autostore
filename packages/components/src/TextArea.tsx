@@ -43,7 +43,11 @@ export const TextArea:React.FC<TextAreaProps> = (props)=>{
 
      // @ts-ignore
     const label = props.label || props.name || props.id
-    return <div className={TextAreaStyle.className} style={TextAreaStyle.getStyle(props)}>
+    return <div 
+            className={TextAreaStyle.className} 
+            style={TextAreaStyle.getStyle(props)}
+            data-field-name={props.name}
+        >
                <label htmlFor={id}>{label}</label>    
               {/* @ts-ignore */}
               <textarea {...props} id={id}>                      

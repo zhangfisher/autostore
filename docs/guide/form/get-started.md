@@ -30,29 +30,7 @@ const { Form } = useForm({
 ## 第2步：声明字段
 
 
-声明字段有`3`种方式：
-
-#### 简单字段
-
-只需要为`input`、`textarea`、`select`元素设置`name`属性，且`name`为一个`字符串路径`指向状态即可。
-
-```tsx
-<input name="user.firstName" />
-```
-
-#### 封装字段
-
-当然，实际中的输入字段我们一般会进行封装，以便可以进行更多的控制。
-
-我们也可以在封装元素上通过`data-field-name='<状态路径>'`标识这是一个表单字段。
-
-```tsx {1,3}
-<div data-field-name="user.name" >
-  <label>First Name</label>
-  <input/>  
-  <span className="invalid"></span>
-</div>
-```
+ 
 
 - 使用`data-field-name`标识表单字段可以让表单能进行更多的控制。
 

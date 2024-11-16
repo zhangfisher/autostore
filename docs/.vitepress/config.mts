@@ -107,6 +107,7 @@ export default defineConfig({
                   collapsed:false,
                   items:[
                       { text: '关于', link: '/guide/form/field/about' },
+                      { text: '简单字段', link: '/guide/form/field/simple-field' },
                       { text: 'useField', link: '/guide/form/field/use-field' },
                       { text: 'useFields', link: '/guide/form/field/use-fields' },
                       { text:"字段拆分",link:"/guide/form/field/split-field"}, 

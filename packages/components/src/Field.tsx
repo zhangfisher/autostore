@@ -65,6 +65,7 @@ export const Field:ReactFC<FieldProps> = (props)=>{
     const {enable=true,visible=true,label='',children='',memo,labelWidth="128px"} = props 
     return  (
         <div  className="field" 
+            data-field-name={props['data-field-name']}
          style={{
             position:'relative',
             display: visible===false ? 'none' : 'flex',
