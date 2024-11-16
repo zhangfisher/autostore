@@ -12,7 +12,7 @@ import { isObserverDescriptorBuilder } from "./isObserverDescriptorBuilder"
 export function getObserverDescriptor(value:any): ComputedDescriptor | WatchDescriptor | undefined{
     let descriptor : WatchDescriptor | ComputedDescriptor | undefined
     if(isObserverDescriptorBuilder(value)){    
-        descriptor = value()
+        descriptor = value() as WatchDescriptor | ComputedDescriptor
     }else if(typeof value === 'function'){    
         // 只是简单的函数，没有任何配置参数，属性简化的计算属性，具有默认的属性            
         descriptor = {

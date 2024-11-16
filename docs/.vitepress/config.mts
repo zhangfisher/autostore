@@ -89,22 +89,11 @@ export default defineConfig({
               ]
             },
             {
-              text: '表单',
+              text: '表单绑定',
               collapsed: true,
               items: [
-                { text: '关于', link: '/guide/form/about' },
-                { text:"快速入门",link:"/guide/form/get-started"},
-                { text:"字段",
-                  collapsed:false,
-                  items:[
-                      { text: '关于', link: '/guide/form/field/about' },
-                      { text: 'bind', link: '/guide/form/field/bind' },
-                      { text: 'useField', link: '/guide/form/field/use-field' },
-                      { text: 'useFields', link: '/guide/form/field/use-fields' },
-                      { text:"字段拆分",link:"/guide/form/field/split-field"}, 
-                      { text:"字段组件",link:"/guide/form/field/field"}, 
-                  ]
-                },                
+                { text: '关于', link: '/guide/form/form/about' },
+                { text:"快速入门",link:"/guide/form/get-started"},              
                 { 
                   text: '表单', 
                   collapsed: true,
@@ -115,6 +104,17 @@ export default defineConfig({
                     { text:"提交表单",link:"/guide/form/form/submit"},                     
                   ]
                 },
+                { text:"字段",
+                  collapsed:false,
+                  items:[
+                      { text: '关于', link: '/guide/form/field/about' },
+                      { text: 'useField', link: '/guide/form/field/use-field' },
+                      { text: 'useFields', link: '/guide/form/field/use-fields' },
+                      { text:"字段拆分",link:"/guide/form/field/split-field"}, 
+                      { text:"字段组件",link:"/guide/form/field/component"}, 
+                      { text:"渲染字段",link:"/guide/form/field/render-field"}, 
+                  ]
+                },  
                 { 
                   text:"校验",
                   collapsed:false,

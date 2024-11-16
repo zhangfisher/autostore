@@ -1,9 +1,7 @@
-import { AutoStore, AutoStoreOptions, ComputedState, Dict, ObjectKeyPaths } from "autostore"
+import { AutoStoreOptions, ComputedState, Dict, ObjectKeyPaths } from "autostore"
 import { AutoForm } from "./Form"
 import { ReactAutoStore } from '../store'; 
-import { AutoField } from "./Field";
-import { Get } from "type-fest";
-import { GetTypeByPath } from '../../../core/src/types';
+import { AutoField } from "./Field"; 
 
 export type InputBindings<Value=any>={ 
     value?   : Value
@@ -85,7 +83,7 @@ export type UseFormResult<State extends Dict>={
 } & Pick<ReactAutoStore<State>,
     '$' |'signal' | 'useState' | 'useAsyncState' | 'useDeps'
     | 'useWatch' 
-    | 'useField' | 'useFields' | 'bind'
+    | 'useField' | 'useFields'  
     | 'watch' | 'update' | 'batchUpdate' | 'silentUpdate'
     | 'peep' | 'collectDependencies' | 'trace'
     | 'id' | 'operates' | 'state' | 'peeping' | 'batching' | 'silenting'

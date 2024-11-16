@@ -1,5 +1,5 @@
 import { styled } from "flexstyled"
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useRef, useState } from "react"
 import { Button } from "./Button"
 
 
@@ -51,11 +51,15 @@ const SpinStyle = styled<SpinProps>({
 
 export const Spin:React.FC<SpinProps> = (props)=>{    
     const label = props.label  || props.name || props.id
-    const { onChange=()=>{},value:inputValue=1} = props
-    const [value,setValue ] = useState<number>(Number(inputValue))
+    const { onChange=()=>{} } = props
+    const ref = useRef<HTMLInputElement>(null)
+    
     const setCount = useCallback((n:number)=>{
-       setValue(value + n)    
-    },[value])
+        const v = Number(ref.current!.value)
+        ref.current!.value = String(v+n)    
+        const changeEvent = new Event('input', { bubbles: true });
+        ref.current!.dispatchEvent(changeEvent);   
+    },[])
     return <div 
         className={SpinStyle.className} 
         style={SpinStyle.getStyle(props)}
@@ -64,10 +68,11 @@ export const Spin:React.FC<SpinProps> = (props)=>{
         <div>
             <Button className="before" onClick={()=>setCount(-1)}>-</Button>
             {/* @ts-ignore */}
-            <input             
-                value={value}
+            <input            
+                ref={ref}
                 onChange={onChange}
                 type="number"
+                data-field-name={props.name}
                 {...props}         
             /> 
             <Button className="after"  onClick={()=>setCount(1)}>+</Button>

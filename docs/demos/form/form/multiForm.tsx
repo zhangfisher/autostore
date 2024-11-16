@@ -1,6 +1,6 @@
 import React from "react"
 import { createStore, useForm } from "@autostorejs/react";
-import { Button, Box, Input, JsonView, Layout, Spin, Field, ColorBlock } from "x-react-components";
+import { Button, Box, Input, JsonView, Layout, ColorBlock } from "x-react-components";
 
 
 const sumOrder = (order)=>order.price * order.count

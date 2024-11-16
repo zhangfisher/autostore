@@ -2,31 +2,46 @@
 
 ## 关于
 
-`bind`绑定控件的功能比较简单，`useField`进行双向绑定更加简单。
+`useField`用来创建一个表单控件绑定对象，用来建立状态数据与`input`控件之间的双向绑定。
 
 **`useField`签名如下：**
 
 ```ts
-type UseFieldBindings<Value> = Value extends Dict ? Record<keyof Value,{
-    value:any
-    onChange:(e:any)=>void
-}> : Value
 
-type UseFieldOptions={}
-
-type UseFieldGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
-type UseFieldSetter<Value,State extends Dict>= (input:Value,state:ComputedState<State>)=>void
-
-interface UseFieldType<State extends Dict> {
+export interface UseFieldType<State extends Dict> {
     (): UseFieldBindings<ComputedState<State>>
-    <Value>(selector: string,options?:UseFieldOptions): UseFieldBindings<Value>
+    <Value>(
+        selector: ObjectKeyPaths<ComputedState<State>>,
+        options?:UseFieldOptions<Value>
+    ): UseFieldBindings<Value>
     <Value>(
         getter: UseFieldGetter<Value,State>,
         setter:UseFieldSetter<Value,State>,
-        options?:UseFieldOptions
+        options?:UseFieldOptions<Value>
     ):UseFieldBindings<Value>
+    <Value>(
+        getters: (ObjectKeyPaths<ComputedState<State>> | string[] | UseFieldGetter<Value,State>)[],
+        setter:UseFieldSetter<Value,State>,
+        options?:UseFieldOptions<Value>
+    ):UseFieldBindings<Value>[]
 }
 ```
+
+`useField`支持如下的调用签名：
+
+- **useField(selector,options?)**
+
+通过`selector`指定一个状态路径，创建一个双向字段绑定对象。
+
+- **useField(getter,setter,options?)**
+
+通过`getter`和`setter`方法，创建一个动态字段绑定对象。
+当要实现将多个状态值合并后绑定到一个`input`时使用。
+
+- **useField(getters,setter,options?)**
+ 
+当要实现将多个状态值绑定到多个`input`上或者进行单个状态数据的拆分时使用。
+ 
 
 ## 基本用法
 
@@ -79,3 +94,23 @@ useField<Value>(
 <demo react="form/field/useFieldToState.tsx"
   title="将输入字符全部转换为大写"
 />
+
+
+## 配置字段
+
+`useField`支持如下的配置选项：
+
+```ts 
+type UseFieldOptions<Value=any>={
+    name?       : string      // 可选的字段名称    
+    type?       : 'radio' | 'checkbox' | 'select' | 'textarea' | 'input'
+    // 仅当type = radio或checkbox时有效时有效
+    values?     : any[] 
+    toState?    : (value:string,options?:{path:string[] | undefined,part:number})=>Value    // 将数据更新到状态中时调用进行转换
+}
+```
+
+- `name`:  可选的字段名称，用于标识字段。
+- `type`:  控件类型，支持`radio`、`checkbox`、`select`、`textarea`、`input`。
+- `values`:  仅当`type = radio`或`checkbox`时有效时有效，用于指定`radio`或`checkbox`的值。
+- `toState`:  用于将`input`值转换为状态值的函数。

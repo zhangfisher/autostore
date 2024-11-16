@@ -49,12 +49,12 @@ const { Form } = useForm({
 
 表单绑定的数据状态来源于：
 
-- 全新创建的`Store`实例
-- 绑定到现有的`Store`实例
+- 新创建的`AutoStore`实例
+- 绑定到现有的`AutoStore`实例
 
 ### 新建Store
 
-使用`useForm(state)`创建一个全新的表单，内部会创建一个`Store`实例。所有`AutoStore`的API都可以使用。
+使用`useForm(<state>)`创建一个全新的表单，内部会创建一个`Store`实例。所有`AutoStore`的API都可以使用。
 
 ```ts
 import { useForm } from "@autostorejs/react"
@@ -97,6 +97,36 @@ const {
 
 ## 多表单
 
-`useForm`提供了一个`entry`参数，允许截取`AutoStore`中的局部状态来创建表单。
+基于一个复杂的数据结构，`useForm`提供了一个`entry`参数，用来指向状态数据中的某个节点，并基于该节点创建表单。
+
+```tsx {17-28}
+const store = createStore({
+    orders:[
+        {
+            name:"精通AutoStore",
+            price:18,
+            count:2,
+        },
+        {
+            name:"AutoStore最佳实践",
+            price:98,
+            count:1,
+        }
+    ],
+}) 
+
+// 通过entry参数，可以创建多个表单
+const { Form,reset } = useForm(store,{
+  entry:`orders.0`        // 指向orders数组中的第一个元素
+})
+const { Form,reset } = useForm(store,{
+  entry:`orders.1`       // 指向orders数组中的第二个元素
+})
+```
+
+- 当使用`useForm`的`entry`参数时，会基于`entry`指向的节点创建表单。
+- `entry`参数的值是一个状态`path`字符串。
+
+**示例：**
 
 <demo react="form/form/multiForm.tsx" />
