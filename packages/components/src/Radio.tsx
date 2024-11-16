@@ -34,17 +34,18 @@ const RadioStyle = styled<RadioProps>({
 
 export const Radio:React.FC<RadioProps> = (props)=>{    
     // @ts-ignore
-    const { id=Math.random().toString(36).slice(2) } = props
+    const { id=Math.random().toString(36).slice(2),inline,...restProps } = props
      // @ts-ignore
     const label = props.label || props.name || props.id
     return <div 
         className={RadioStyle.className} 
-        style={RadioStyle.getStyle(props)}
+        style={RadioStyle.getStyle({inline})}
     >
         {/* @ts-ignore */}
-        <input {...props} id={id} 
+        <input id={id} 
+            {...restProps} 
             checked={props.checked}                     
-            value={props.value}
+            value={String(props.value)}
             type="radio"
         /> 
         <label htmlFor={id}>{label}</label> 

@@ -26,7 +26,7 @@ export default ()=>{
         <Layout>        
             <div> 
                 <Form>
-                    <Spin value="10"/>
+                    <Spin name="users.0.age" label="Age"/>
                     <Input name="users.0.name" label="Name"/>
                     <Input name="users.0.age" label="Age" type="number"/>
                     <Input name="users.0.address" label="Address"/>

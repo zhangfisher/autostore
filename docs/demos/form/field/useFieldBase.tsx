@@ -2,7 +2,7 @@ import React from "react"
 import { createStore } from '@autostorejs/react';
 import { Button,Input,Layout, JsonView, Select, Radio } from "x-react-components"
 
-const { batchUpdate, useField,useReactive } = createStore({
+const { reset, useField,useReactive } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
@@ -37,10 +37,7 @@ export default ()=>{
             <Radio label="男" {...fieldSex[0]}/>
             <Radio label="女" {...fieldSex[1]}/>         
             <Button onClick={()=>{
-                batchUpdate((state)=>{
-                    state.user.firstName = "Zhang"
-                    state.user.lastName = "Fisher"
-                })      
+                reset()     
             }}>Reset</Button> 
         </div>
         <div>

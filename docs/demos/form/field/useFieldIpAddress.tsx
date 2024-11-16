@@ -2,7 +2,7 @@ import React from 'react';
 import { createStore } from '@autostorejs/react';
 import { Field,Button,Input, Layout, JsonView } from "x-react-components"
 
-const { batchUpdate,useReactive,useField } = createStore({
+const { reset,useReactive,useField } = createStore({
   net:{
     ip:"127.0.0.1"
   }
@@ -33,9 +33,7 @@ export default ()=>{
             <Input type="number"  inline center width={60}  max={255}  {...ipParts[3]}/>
             </Field>
             <Button onClick={()=>{
-                batchUpdate(state=>{
-                    state.net.ip= "127.0.0.1"
-                })            
+                reset()         
             }}>Reset</Button>
         </div>
         <div>

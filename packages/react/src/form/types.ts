@@ -3,6 +3,7 @@ import { AutoForm } from "./Form"
 import { ReactAutoStore } from '../store'; 
 import { AutoField } from "./Field";
 import { Get } from "type-fest";
+import { GetTypeByPath } from '../../../core/src/types';
 
 export type InputBindings<Value=any>={ 
     value?   : Value
@@ -55,16 +56,13 @@ export type UseFieldsState<T extends Dict> = {
                                             : Required<UseFieldBindings<T[K]>>
                                         )
 };
-export type UseFieldsOptions<E extends string = string> = {
+export type UseFieldsOptions  = {
     [key:string]: UseFieldOptions | string 
-} & {
-    entry?: E  
 } 
 
  
 export interface UseFieldsType<State extends Dict> {
-    <Entry extends string>(options?:UseFieldsOptions<Entry>)
-        : UseFieldsState<Get<ComputedState<State>,Entry>> 
+    (options?:UseFieldsOptions): UseFieldsState<ComputedState<State>>
 }
 
 

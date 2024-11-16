@@ -5,7 +5,7 @@
 
 <demo react="form/field/bindField.tsx"/>
 
-- `bind(<状态路径>)`返回`input`的`onChange`方法，将之直接`{...bind("")}`解构到`input`元素上即可。
+- `bind(<状态路径>)`返回`input`的`onChange`方法，将之直接`{...bind("状态路径")}`解构到`input`元素上即可。
 - `bind`参数可以是任意深度的路径，如`bind("user.name")`。
 - `bind`事实上仅仅是返回一个`onChange`而已，其功能代码非常简单，如下：
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { createStore } from '@autostorejs/react';
 import { Button,Input, Layout, JsonView } from "x-react-components"
 
-const { batchUpdate,useReactive,useField } = createStore({
+const { reset,useReactive,useField } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher" 
@@ -24,10 +24,7 @@ export default ()=>{
         <div>
             <Input label="FullName" {...bindFullName}/>         
             <Button onClick={()=>{
-                batchUpdate(state=>{
-                    state.user.firstName= "Zhang"
-                    state.user.lastName = "Fisher"
-                })            
+                reset()           
             }}>Reset</Button>
         </div>
         <div>

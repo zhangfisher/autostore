@@ -1,4 +1,4 @@
-import {  Dict, getVal,isPrimitive, isPlainObject, setVal, PATH_DELIMITER, pathStartsWith, isAsyncComputedValue, StateOperate } from "autostore";
+import {  Dict, getVal,isPrimitive, isPlainObject, setVal, PATH_DELIMITER, isAsyncComputedValue, StateOperate } from "autostore";
 import { ReactAutoStore } from "../store";
 import { useState, useSyncExternalStore } from "react";
 import type { UseFieldsOptions, UseFieldsType } from "./types";  
@@ -36,7 +36,6 @@ export function createFakeObjectBindings<State extends Dict>(store:ReactAutoStor
 
 
 function createProxy<State extends Dict>(target: any, parentPath: string[],proxyCache:Map<any,any>,store:ReactAutoStore<State>,options:Required<UseFieldsOptions>):any{
-    const entry:string[] = Array.isArray(options.entry) ? options.entry : options.entry.split(PATH_DELIMITER)
     if (typeof target !== 'object' || target === null) {
         return target;
     }    
@@ -54,7 +53,7 @@ function createProxy<State extends Dict>(target: any, parentPath: string[],proxy
     const proxyObj = new Proxy(fakeTarget, {             
         get: (obj, key, receiver) => { 
             if(typeof(key)!=='string') return Reflect.get(obj, key, receiver);            
-            const path = [...entry,...parentPath, String(key)];      
+            const path = [...parentPath, String(key)];      
             const relPathKey = [...parentPath, String(key)].join(PATH_DELIMITER)     
             const value = getVal(store.state,path);    
             if(isPrimitive(value)){
@@ -77,31 +76,25 @@ export function createBindingsState<State extends Dict>(store:ReactAutoStore<Sta
     const proxyCache = new Map();
     return createProxy<State>({}, [],proxyCache,store,options)  
 }
-
-function getStateEntry(entry:string | string[]){
-    return Array.isArray(entry) ? entry : entry.split(PATH_DELIMITER)
-}
+ 
 
 export function createUseFields<State extends Dict>(store:ReactAutoStore<State>): UseFieldsType<State>{ 
     return function (options?:UseFieldsOptions){
         const opts = Object.assign({entry:[]},options) as Required<UseFieldsOptions>        
 
         const [ snap,setSnap ] = useState(()=>{
-            return store.getSnap({entry:getStateEntry(opts.entry)})
+            return store.getSnap()
         })
 
         const [ bindingsState ] = useState(()=>createBindingsState(store,opts))
 
         useSyncExternalStore((callback)=>{
-            const entry = getStateEntry(opts.entry)
             const watcher = store.watch((op)=>{   
                 if(op.reply) return
                 const ops =  (op.type =='batch' ? op.value : [op]) as StateOperate[]
-                ops.forEach(({path,value})=>{
-                    if(!pathStartsWith(entry,path)) return     
-                    const relPath =path.slice(entry.length)
-                    setVal(snap,relPath,value)
-                    setVal(bindingsState,[...relPath,'value'],value)
+                ops.forEach(({path,value})=>{ 
+                    setVal(snap,path,value)
+                    setVal(bindingsState,[...path,'value'],value)
                 })
                 setSnap({...snap})
                 callback()

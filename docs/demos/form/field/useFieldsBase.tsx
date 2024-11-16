@@ -4,7 +4,7 @@ import { Layout,JsonView,Button,Input, Select, Radio } from "x-react-components"
  
 export default ()=>{
 
-  const { batchUpdate,useFields,useReactive } = useStore({
+  const { reset,useFields,useReactive } = useStore({
     user:{
       firstName:"Zhang",
       lastName:"Fisher",
@@ -40,12 +40,7 @@ export default ()=>{
         <Radio label="Cat" {...fields.user.pets[1]}/>
         <Radio label="Fish" {...fields.user.pets[2]}/>
         <Button onClick={()=>{
-            batchUpdate(state=>{
-                state.user.firstName= "Zhang"
-                state.user.lastName = "Fisher"
-                state.user.age = 18
-                state.user.vip = false
-            })          
+            reset()      
         }}>Reset</Button>
       </div>
       <div>    

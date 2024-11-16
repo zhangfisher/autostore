@@ -35,15 +35,15 @@ const CheckBoxStyle = styled<CheckBoxProps>({
 export const CheckBox:React.FC<CheckBoxProps> = (props)=>{
     
     // @ts-ignore
-    const { id=Math.random().toString(36).slice(2),labelPos='right' } = props
+    const { id=Math.random().toString(36).slice(2),labelPos='right',inline,...restProp } = props
      // @ts-ignore
     const label = props.label || props.name || props.id
     return <div className={CheckBoxStyle.className} style={CheckBoxStyle.getStyle(props)}>
               { labelPos==='left' ? <label htmlFor={id}>{label}</label> : null}   
               {/* @ts-ignore */}
-              <input {...props} id={id} 
+              <input {...restProp} id={id} 
                     checked={props.checked}                     
-                    value={props.value}
+                    value={String(props.value)}
                     type="checkbox"
                 />
               { labelPos==='right' ? <label htmlFor={id}>{label}</label> : null}   

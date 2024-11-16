@@ -5,7 +5,7 @@ import { Button } from "./Button"
 
 
 export type SpinProps = React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
-     label?:string
+    label?:string
 }
 
 const SpinStyle = styled<SpinProps>({
@@ -51,8 +51,8 @@ const SpinStyle = styled<SpinProps>({
 
 export const Spin:React.FC<SpinProps> = (props)=>{    
     const label = props.label  || props.name || props.id
-
-    const [value,setValue ] = useState<number>(Number(props.value))
+    const { onChange=()=>{},value:inputValue=1} = props
+    const [value,setValue ] = useState<number>(Number(inputValue))
     const setCount = useCallback((n:number)=>{
        setValue(value + n)    
     },[value])
@@ -64,9 +64,11 @@ export const Spin:React.FC<SpinProps> = (props)=>{
         <div>
             <Button className="before" onClick={()=>setCount(-1)}>-</Button>
             {/* @ts-ignore */}
-            <input {...props}                      
+            <input             
                 value={value}
+                onChange={onChange}
                 type="number"
+                {...props}         
             /> 
             <Button className="after"  onClick={()=>setCount(1)}>+</Button>
         </div>
