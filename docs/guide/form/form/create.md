@@ -29,20 +29,45 @@ const { Form } = useForm({
 ### 第2步：使用`Form`组件
 
 ```tsx
-<Form>
-  <input name="user.firstName" />
-  <input name="user.lastName" />
-  <input name="user.age" />
-  <input name="user.vip" />
+<Form  
+  onSubmit={(e)=>{
+    // 提交表单
+  }}
+>
+    {/*  字段 */}
 </Form>
 ```
 
+### 第3步：`Field`组件
+
+在`Form`组件内部，可以使用三种方式来创建`Field`组件。
+
+```tsx
+<Form>
+  {/* 简单输入受控字段 */}
+  <input name="user.firstName" />
+  {/* 封装受控字段 */}
+  <div data-field-name="user.lastName">
+    <input/>
+  </div>
+  {/* 自定义字段 */}
+  <Field name="user.age" render={({bind})=>{
+    return <input {...bind}/>
+  }}/>
+</Form>
+```
+
+更多的`Field`组件的用法请参考[Field组件](/guide/form/field/component.md)。
+
+### 第4步：提交表单
+
 就这么简单，轻松实现`表单`与`store.state`之间的双向绑定了，输入的数据会自动同步到`state`中，反之亦然。
+
+### 小结
 
 **下面是一个简单的示例：**
 
 <demo react="form/form/base.tsx"/>
-
 
 
 ## 绑定表单

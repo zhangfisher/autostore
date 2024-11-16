@@ -93,52 +93,7 @@ const { Form,Field } = useForm({
 
 因为`validate`属性是用于创建计算属性，所以可以使用`computed`、`watch`等方法来动态声明`validate`属性。
 
-
-- **简单的同步计算校验**
-
-```tsx
-<Field
-    validate={(value)=>{
-        return assert(value.length>3,"长度必须大于3")
-    }}
-    //...
-/>
-```
-
-- **简单的异步计算校验**
-
-```tsx
-<Field
-    validate={async (value)=>{
-        return assert(value.length>3,"长度必须大于3")
-    }}
-    //...    
-/>
-```
-
-- **异步计算校验**
-
-```tsx
-import { computed } from "@autostorejs/react"
-<Field
-    validate={computed(async (value)=>{
-        return assert(value.length>3,"长度必须大于3")
-    },[])}
-    // ...
-/>
-```
-
-- **监听校验**
-
-```tsx
-import { watch } from "@autostorejs/react"
-<Field
-    validate={watch(async ({path,value})=>{
-        return assert(value.length>3,"长度必须大于3")
-    },()=>{...})}
-    // ...
-/>
-```
+ 
 
 
 ## 字段组件属性

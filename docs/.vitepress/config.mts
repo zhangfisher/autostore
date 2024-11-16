@@ -98,7 +98,6 @@ export default defineConfig({
                   text: '表单', 
                   collapsed: true,
                   items:[
-                    { text:"关于",link:"/guide/form/form/about"},                    
                     { text:"创建",link:"/guide/form/form/create"},                      
                     { text:"useForm",link:"/guide/form/form/use-form"},                                      
                     { text:"提交表单",link:"/guide/form/form/submit"},                     

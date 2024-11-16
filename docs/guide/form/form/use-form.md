@@ -36,111 +36,14 @@
 - **监听`state`的变化**
 
 使用`store.watch`监听`state`的变化，当`state`变化时，将数据更新到`name=<path>`的表单元素上即可。
-
-
-## 快速入门
-
-### 第1步： 创建表单
-
-首先，我们需要使用`useForm`创建一个表单。
-
-```tsx
-import { useForm } from "@autostorejs/react"
-
-const { Form } = useForm({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    age:18,
-    vip:false 
-  }  
-})
-```
-
-
-- `useForm`内部调用`createStore`来创建一个`AutoStore`，所以其本质上`useForm`是一个`useStore`超集。所以`useForm`返回的对象中包含了`useStore`返回的对象。
-
-  ```tsx
-  const { useReactive,watch,$,.... } = useForm({...})
-  ```
-- `useForm`返回值中最主要的是`Form`组件，该组件是对标准`form`的封装。
-
-
-### 第2步：声明字段
-
-
-
-
-### 第3步：提交表单
-
-
-
-
-## 基本用法
-
-`useForm`返回一个`Form`组件，该组件是对标准`form`元素的封装。
-
-```tsx
-import { useForm } from "@autostorejs/react"
-const { Form } = useForm({
-  user:{
-    firstName:"Zhang",
-    lastName:"Fisher",
-    age:18,
-    vip:false 
-  }  
-}) 
-<Form>
-  <input name="user.firstName" />
-  <input name="user.lastName" />
-  <input name="user.age" />
-  <input name="user.vip" />
-</Form>
-```
-
-就这么简单，轻松实现`表单`与`store.state`之间的双向绑定了，输入的数据会自动同步到`state`中，反之亦然。
-
-
-**下面是一个简单的示例：**
-
-<demo react="form/form/base.tsx"/>
-
-
-
-:::info 提示
-配置`input`元素的`name=<状态数据路径>`即可。
-::: 
-
+ 
+ 
 
 
 ## 表单字段
 
 
 
-## Field组件
-
-`Field`组件是`useForm`提供的一个用于封装表单字段的高级组件，可以用于更加灵活的表单字段封装。
-
-`Field`组件的基本用法如下：
-
-```tsx
-
-const { Field, Form } = useForm({...})
-
-<Form onSubmit={}>
-    <Field 
-        name="user.firstName"     // 使用绑定的状态路径
-        validate={validate}       // 自定义校验规则
-        render={({value,timeout,....,bind})=>{
-          // 在此渲染表单字段
-          return <div>
-              <label>First Name</label>
-              <input {...bind} />
-            </div>
-        }} 
-    />
-</Form>
-```
 
 
 

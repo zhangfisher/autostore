@@ -28,26 +28,23 @@ const store = createStore({
 export default ()=>{
     
     const [ state ] = store.useReactive()
-      return (
-        <Layout direction="column">        
-            <div>   
-                    {state.orders.map((order,index)=>{
-                        const { Form,reset } = useForm(store,{entry:`orders.${index}`})
-                        return <Box key={index}>
-                                <Form>
-                                    <ColorBlock name="Order Total">{order.total}</ColorBlock>   
-                                    <Input label="Name" name="name" />
-                                    <Input label="Price"  name="price" type="number" />
-                                    <Input label="count"  name="count" type="number" />                                                                  
-                                    <Button onClick={()=>{}}>Submit</Button>
-                                    <Button onClick={()=>reset()}>Reset</Button>
-                                </Form>
-                            </Box>  
-                    })}                
-            </div>
-            <div>
+      return (<div>        
+            {state.orders.map((order,index)=>{
+                const { Form,reset } = useForm(store,{entry:`orders.${index}`})
+                return <Box key={index}>
+                        <Form>
+                            <ColorBlock name="Order Total">{order.total}</ColorBlock>   
+                            <Input label="Name" name="name" />
+                            <Input label="Price"  name="price" type="number" />
+                            <Input label="count"  name="count" type="number" />                                                                  
+                            <Button onClick={()=>{}}>Submit</Button>
+                            <Button onClick={()=>reset()}>Reset</Button>
+                        </Form>
+                    </Box>  
+            })}     
+            <Box>
                 <JsonView data={state}/>
-            </div>
-        </Layout>
+            </Box>
+        </div>
       )
 }
