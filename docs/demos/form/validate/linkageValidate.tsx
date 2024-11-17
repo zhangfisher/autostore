@@ -20,30 +20,30 @@ export default ()=>{
             <Field 
                 name="order.name" 
                 label="Name"
-                render={({ bind })=>{
-                    return <Input {...bind} />
+                render={({ label,bind,validate  })=>{
+                    return <Input label={label} {...bind}  validate={validate} />
                 }}
-            />    
+            />
             <Field 
                 name="order.price" 
                 label="Price"
-                render={({ bind })=>{
-                    return <Input {...bind} />
+                render = {({ label,bind,validate  })=>{
+                    return <Input label={label} {...bind}  validate={validate} />
                 }}
-            />    
+            />
             <Field 
                 name="order.count" 
                 label="Count"
-                validate={(value)=>{
-                    if(state.order.price > 10){
-                        return value>0 && value<10 
-                    }
-                    return value>0
+                validate = {(value)=>{
+                    return value>0 && state.order.price > 9
                 }}
-                render={({ bind })=>{
-                    return <Input {...bind} />
+                render = {({ label,bind,validate })=>{
+                    return <>
+                        <Input label={label} {...bind}/>
+                        {!validate && <span style={{color:'red'}}>count must be greater than 0 and price must be greater than 9</span>}
+                    </>
                 }}
-            />    
+            />
             <Button onClick={()=>{
                 reset()           
             }}>Reset</Button>

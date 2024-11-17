@@ -293,9 +293,9 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                 if(propObj && propKey){
                     const updated:Dict  = {}
                     if(propObj.async && path[path.length-1] === 'value'){
-                        Object.assign({[propKey]: value.value})
+                        Object.assign(updated,{[propKey]: value.value})
                     }else{
-                        Object.assign({[propKey]:value})
+                        Object.assign(updated,{[propKey]:value})
                     }       
                     if(propKey === 'validate'){
                         if(value === true){

@@ -121,9 +121,8 @@ export const Input:ReactFC<InputProps> = (props:InputProps)=>{
                         })
                     }
                 </div>
-                <span className="error" data-validate-field={props.name}></span>            
+                <span className="error" data-validate-field={props.name}></span>
             </div>
-
         </div>
     );
 };

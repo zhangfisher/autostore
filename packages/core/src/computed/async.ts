@@ -18,7 +18,7 @@ import { getSnap } from "../utils/getSnap";
 import { getError } from "../utils/getError";
 import { StateOperate } from '../store/types';
 import { updateObjectVal } from "../utils/updateObjectVal";
-import { ASYNC_COMPUTED_VALUE, PATH_DELIMITER } from "../consts";
+import { ASYNC_COMPUTED_VALUE, BATCH_UPDATE_EVENT, PATH_DELIMITER } from "../consts";
 import { AbortError } from "../errors";  
 
 type GetterRunContext = {
@@ -96,12 +96,16 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 		}else{
 			Object.assign(this.value as object,values)		
 			const isBatch = updatedCount > 1
+			const ops:StateOperate[] = []
 			Object.entries(values).forEach(([key,value])=>{
-				const op:StateOperate = {type:"set",path:[this.strPath,key],value:value,parent:this.value}
+				const op:StateOperate = {type:"set",path:[...this.path,key],value:value,parent:this.value}
 				if(isBatch) op.reply = true
 				this.store.operates.emit(`${this.strPath}.${key}`,op)
+				ops.push(op)
 			})
-			if(isBatch) this.store.operates.emit(batchEvent,{type:"batch",path:this.path,value:this.value})	
+			if(isBatch) {
+				this.store.operates.emit(this.strPath,{type:"batch",path:this.path,value:ops})	
+			}
 		}		
   	} 
 	/**

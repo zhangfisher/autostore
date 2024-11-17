@@ -24,7 +24,7 @@
 
 **简单的`Field`组件示例：**
 
-<demo react="form/field/fieldBase.tsx" />
+demo react="form/field/fieldBase.tsx" 
 
 
 ## 字段校验
@@ -79,15 +79,79 @@
 
 <demo react="form/validate/linkageValidate.tsx" />
 
- 
-
-
-## 字段组件属性
-
-字段组件的属性支持如果下：
-
-
+在上例中，`count`的校验依赖于`count>0 && order.price > 9`，即`count`的同步计算`validate`属性依赖于`order.price`和`count`的值，所以
+当`count`和`order.price`更新时会触发`validate`属性重新计算，从而触发校验。
 
 :::warning 提示
-`Field`组件可以与`useField/useFields`混用。
+`validate`属性是一个同步计算属性，具备依赖自动收集功能，当字段值发生变化时，会重新计算该属性的值，从而会触发校验。
 :::
+
+
+## 字段计算属性
+
+除了`validate`属性，则字段组件还支持以下常用的计算属性：
+
+| 属性 | 类型 | 默认值 |计算属性 |  说明 |
+| --- | :---: | :---: | :---: | --- |
+| `required` | `boolean` | false | 同步 |  是否必填 |
+| `visible` |  `boolean` | true | 同步 | 是否可见 |
+| `enable` |  `boolean` | true | 同步 | 是否可用 |
+| `readonly` |  `boolean` | false | 同步 | 是否只读 |
+| `label` |  `string` | - |同步 | 字段标签 |
+| `placeholder` |  `string` | - | 同步 | 字段占位符 |
+| `help` |  `string` | - | 同步 | 字段帮助信息 |
+| `select` | `any[]` | - | 异步 | 字段选择项 |
+
+以上这些属性都是同步计算属性，当字段值发生变化时，会重新计算该属性的值，从而会触发字段的重新渲染。同时也支持计算属性的相关特性。
+
+以上这些属性会**在更新时触发字段的重新渲染,并传递给字段组件的`render`函数**。
+
+```tsx {3-10,12}
+<Field
+    name="user.firstName"
+    required={(state)=>{ ... }}
+    visible={(state)=>{ ... }}
+    enable={(state)=>{ ... }}
+    readonly={(state)=>{ ... }}
+    label={(state)=>{ ... }}
+    placeholder={(state)=>{ ... }}
+    help={(state)=>{ ... }}
+    select={async (state)=>{ ... }}
+    render={
+        ({name, value, bind, required, visible, enable, readonly, label, placeholder, help, select }) => {
+            return (
+                <div>
+                    {/* ... */}
+                </div>
+            )
+        }
+    }
+/>
+```
+
+## 异步字段计算属性
+
+以上的计算属性除了`select`外，其他均是同步计算属性，当字段值发生变化时，会重新计算该属性的值，从而会触发字段的重新渲染。
+
+但是有时候我们需要的计算属性是异步的，如我们想进行异步校验时，则需要使用`useComputed`异步计算属性。
+
+ 
+```tsx  
+<Field
+    name="user.firstName" 
+    render={
+        ({name, value, bind }) => {
+            const { value} = useComputed(async () => {
+                return value
+            },[value])
+            return (
+                <div>
+                    {/* ... */}
+                </div>
+            )
+        }
+    }
+/>
+```
+
+ <demo react="form/validate/fieldAsyncValid.tsx" />
