@@ -54,5 +54,3 @@ export default ()=>{
 **实际效果如下：**
 
 <demo react="form/field/simpleFieldWrapper.tsx"/>
-
- 

@@ -111,7 +111,7 @@ export default defineConfig({
                       { text: 'useField', link: '/guide/form/field/use-field' },
                       { text: 'useFields', link: '/guide/form/field/use-fields' },
                       { text:"字段拆分",link:"/guide/form/field/split-field"}, 
-                      { text:"字段组件",link:"/guide/form/field/component"}, 
+                      { text:"字段组件",link:"/guide/form/field/field-component"}, 
                       { text:"渲染字段",link:"/guide/form/field/render-field"}, 
                   ]
                 },  

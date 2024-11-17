@@ -2,7 +2,7 @@ import { isEmpty } from "../../utils"
 import { HTMLInputElements } from "../types"
 import { isHtmlInputElement, isHtmlSelectElement } from "./isInputElement"
 
-export function getInputValue(input:HTMLInputElements):any{    
+export function getInputValue(input:HTMLInputElements,form:HTMLFormElement):any{    
     let value:any
     const datatype = input.dataset.typeof    
     if(isHtmlInputElement(input)){
@@ -15,7 +15,7 @@ export function getInputValue(input:HTMLInputElements):any{
             }
         }else if(input.type==='radio'){
             const name = input.name
-            const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`) as NodeListOf<HTMLInputElement>
+            const radios = form.querySelectorAll(`:scope input[type="radio"][name="${name}"]`) as NodeListOf<HTMLInputElement>
             if(radios.length>1){
                 let index = Array.from(radios).findIndex(radio=>radio.checked)
                 value = index>=0 ? (

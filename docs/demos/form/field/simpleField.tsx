@@ -1,6 +1,7 @@
 import React from "react"
 import {  useForm } from "@autostorejs/react";
 import { Button,Layout, JsonView, ColorBlock, Field } from "x-react-components"
+import { LiteFieldStyle } from "../styles";
 
 
 
@@ -12,7 +13,9 @@ export default ()=>{
             name:"fisher",
             age:12,
             job: 2,
-            vip:true
+            resume:"非著名开源开发者",
+            vip:true,
+            sex: '男'
         }
     })
 
@@ -22,23 +25,36 @@ export default ()=>{
         <div>
             <ColorBlock name="IsDirty">{String(dirty)}</ColorBlock>            
             <Form>
-                <Field label="Name">
+                <div className={LiteFieldStyle.className}>
+                    <label>Name</label>
                     <input data-field-name="user.name"/>
-                </Field>
-                <Field label="Age">
+                </div>
+                <div  className={LiteFieldStyle.className}>
+                    <label>Age</label>
                     <input  data-field-name="user.age" type="number"/>
-                </Field>
-                <Field label="Job">
-                    <select data-field-name="user.job">
+                </div>
+                <div className={LiteFieldStyle.className}>
+                    <label>Job</label>
+                    <select data-field-name="user.job" >
                         <option value="1">程序员</option>
                         <option value="2">教师</option>
                         <option value="3">公务员</option>
                         <option value="4">外卖员</option>
                     </select>
-                </Field>
-                <Field label="Vip">
+                </div>
+                <div className={LiteFieldStyle.className}>
+                    <label>Sex</label>
+                    <textarea data-field-name="user.resume"/>
+                </div>
+                <div className={LiteFieldStyle.className}>
+                    <label>Sex</label>                     
+                    <label><input data-field-name="user.sex" type="radio" value='男'/>男</label>                    
+                    <label><input data-field-name="user.sex" type="radio" value='女'/>女</label> 
+                </div>                        
+                <div className={LiteFieldStyle.className}>
+                    <label>Vip</label>
                     <input data-field-name="user.vip" type="checkbox"/>
-                </Field>
+                </div>
                 <Button onClick={()=>{
                     reset()    
                 }}>Reset</Button> 

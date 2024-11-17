@@ -37,6 +37,7 @@ function defaultFromState(_:string,value:any,part:string | undefined){
 export function stateToField(fieldInfo:AutoFormFieldContext,value:any,options:UseFormOptions<any>,initial?:boolean){
     const fromState = options.fromState || defaultFromState    
     let changed:boolean = false
+    const form = options.ref?.current
     fieldInfo.inputs.forEach(input=>{
         const part = input.dataset.fieldPart       
         const newVal = fromState(fieldInfo.path,value,part)     
@@ -47,8 +48,7 @@ export function stateToField(fieldInfo:AutoFormFieldContext,value:any,options:Us
                     input.value = `${newVal}`
                 }                 
             }else if(input.type==='radio'){ 
-                if(isBool(value)){
-                    const form = options.ref?.current
+                if(isBool(value)){ 
                     if(form){
                         const radios = form.querySelectorAll(`:scope input[type="radio"][name="${input.name}"]`) as NodeListOf<HTMLInputElement>
                         if(radios.length>1){
@@ -60,9 +60,9 @@ export function stateToField(fieldInfo:AutoFormFieldContext,value:any,options:Us
             }
             input.dataset.typeof = Array.isArray(newVal) ? 'array' : typeof newVal
         }
-        const oldVal = getInputValue(input)
+        const oldVal = getInputValue(input,form!)
         if(initial || oldVal !== newVal){
-            setInputValue(input,newVal)
+            setInputValue(input,newVal,form!)
             changed=true
         }
     })

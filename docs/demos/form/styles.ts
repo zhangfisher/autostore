@@ -124,6 +124,15 @@ export const LiteFieldStyle = styled({
 			color:"red"
 		}
 	},    
+	"& input[type=checkbox]": {
+		cursor: "pointer",
+	},
+	"& input[type=radio]": {
+		cursor: "pointer",
+	},
+	"& label:has(input[type=radio])":{
+		cursor: "pointer",
+	},
     "&>label":{
         color: "#666",
         fontSize: "14px",

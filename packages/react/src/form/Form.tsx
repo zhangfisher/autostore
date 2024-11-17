@@ -113,7 +113,7 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
 					store.log('Input element does not have specified <name> attribute', 'warn')
 					return
 				}
-				const newVal = getInputValue(input)
+				const newVal = getInputValue(input,form)
 				if(ctx.validator.validate(input)?.value){
 					fieldToState(store, input,path, newVal, ctx.options);
 					ctx.setDirty()  

@@ -1,16 +1,20 @@
-import { isEmpty } from "../../utils"
+import { isBool, isEmpty } from "../../utils"
 
-export function setInputValue(input:HTMLInputElement,value:any){
+export function setInputValue(input:HTMLInputElement,value:any,form:HTMLFormElement){
     if(input.type==='checkbox'){      
         if(isEmpty(input.value) ){
             input.checked = value
         }else{
-            const [trueVal,_] = String(input.value).split(",")
-            input.checked = trueVal == value
+            if(isBool(value)){
+                input.checked = value
+            }else{
+                const [trueVal,_] = String(input.value).split(",")
+                input.checked = trueVal == String(value)
+            }            
         }         
     }else if(input.type==='radio'){ 
         const name = input.name
-        const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`) as NodeListOf<HTMLInputElement> 
+        const radios = form.querySelectorAll(`:scope input[type="radio"][name="${name}"]`) as NodeListOf<HTMLInputElement> 
         for(let radio of radios){
             const datatype = radio.dataset.typeof
             if(datatype){

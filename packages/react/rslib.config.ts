@@ -6,11 +6,17 @@ export default defineConfig({
   lib: [
     {     
         format: 'esm',
-        dts: true 
+        dts: true,
+        autoExternal:{
+          dependencies:false,
+        }
     },
     {        
         format: 'cjs',
-        dts: true
+        dts: true,
+        autoExternal:{
+          dependencies:false,
+        }
     }
   ],
   output: {

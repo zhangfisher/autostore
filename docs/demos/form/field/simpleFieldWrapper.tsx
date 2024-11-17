@@ -1,6 +1,6 @@
 import React from "react"
 import {  useForm } from "@autostorejs/react";
-import { Button,Layout, JsonView, ColorBlock, Field } from "x-react-components"
+import { Button,Layout, JsonView, ColorBlock } from "x-react-components"
 import { LiteFieldStyle } from "../styles"
  
 export default ()=>{
@@ -10,7 +10,10 @@ export default ()=>{
             name:"fisher",
             age:12,
             job: 2,
-            vip:true
+            resume:"非著名开源开发者",
+            vip:true,
+            sex: '男',
+
         }
     })
 
@@ -37,6 +40,15 @@ export default ()=>{
                         <option value="4">外卖员</option>
                     </select>
                 </div>
+                <div data-field-name="user.resume" className={LiteFieldStyle.className}>
+                    <label>Sex</label>
+                    <textarea/>
+                </div>
+                <div data-field-name="user.sex" className={LiteFieldStyle.className}>
+                    <label>Sex</label>                        
+                    <label><input type="radio" value='男'/>男</label>                        
+                    <label><input type="radio" value='女'/>女</label>
+                </div>                        
                 <div data-field-name="user.vip" className={LiteFieldStyle.className}>
                     <label>Vip</label>
                     <input type="checkbox"/>

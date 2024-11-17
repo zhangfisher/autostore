@@ -25,7 +25,7 @@ export default ()=>{
     return <Layout>    
         <div>
             <Input label="First Name" {...fieldFirstName}/>
-            <Input label="last Name" {...fieldLastName} />
+            <Input label="Last Name" {...fieldLastName} />
             <Input type="checkbox" label="VIP" {...fieldVip}/>
             <Select {...fieldJob}  label ="Job" style={{color:'#333'}}
                 items={[
