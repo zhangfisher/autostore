@@ -24,7 +24,7 @@
 
 **简单的`Field`组件示例：**
 
-demo react="form/field/fieldBase.tsx" 
+<demo react="form/field/fieldBase.tsx"  />
 
 
 ## 字段校验
@@ -79,8 +79,8 @@ demo react="form/field/fieldBase.tsx"
 
 <demo react="form/validate/linkageValidate.tsx" />
 
-在上例中，`count`的校验依赖于`count>0 && order.price > 9`，即`count`的同步计算`validate`属性依赖于`order.price`和`count`的值，所以
-当`count`和`order.price`更新时会触发`validate`属性重新计算，从而触发校验。
+在上例中，`count`的校验规则是`count>0 && order.price > 9`，由于其`validate`是同步计算属性，根据计算属性的依赖收集规则，其自动依赖于`order.price`和`count`的值，所以当`count`和`order.price`更新时会触发`validate`属性重新计算，从而触发校验。
+
 
 :::warning 提示
 `validate`属性是一个同步计算属性，具备依赖自动收集功能，当字段值发生变化时，会重新计算该属性的值，从而会触发校验。
@@ -141,9 +141,14 @@ demo react="form/field/fieldBase.tsx"
     name="user.firstName" 
     render={
         ({name, value, bind }) => {
-            const { value} = useComputed(async () => {
-                return value
-            },[value])
+            const valid = useComputed<boolean>(async (name:string)=>{
+                await delay(1000) // 模拟异步验证
+                return assert(name.length>3,"name长度必须大于3")
+            },{
+                depends:["user.name"],
+                scope:'user.name',
+                onError:()=>false
+            })
             return (
                 <div>
                     {/* ... */}
@@ -154,4 +159,15 @@ demo react="form/field/fieldBase.tsx"
 />
 ```
 
- <demo react="form/validate/fieldAsyncValid.tsx" />
+- `useComputed`用于动态创建一个异步计算属性。
+-  上例中，指定了`useComputed`的`depends=["user.name"]`和`scope:'user.name`,代表了其依赖于`user.name`的值，当`user.name`更新时，会重新计算该属性的值。并且`useComputed`的`scope`也指向`user.name`的值。
+- 当校验失败时不是只返回`false`，而是触发错误,通过`error.message`来错误信息。
+- 指定`onError:()=>false`的目的是当校验失败时，将计算值重置为`false`。
+
+**实际示例如下：**
+
+<demo react="form/validate/fieldAsyncValid.tsx" />
+
+:::warning 配置`onError:()=>false`的原因？
+计算属性具有一个`onError`回调函数，用于处理计算属性的错误，当计算属性发生错误时，会触发`onError`回调函数,`onError`的返回值会被作为计算结果写入。
+:::

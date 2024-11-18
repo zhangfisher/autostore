@@ -1,14 +1,3 @@
----
-group:
-  title: 调试与诊断
-  order: 6
-order: 4 
-title: 循环依赖
-demo:
-  tocDepth: 5
-toc: content
----
-
 # 循环依赖
 
 在复杂的状态中，有时会不经意间会产生循环依赖，这是响应式状态管理中的一个常见问题。
@@ -20,7 +9,7 @@ toc: content
 
 以下示例中就存在循环依赖，构建`store`时会抛出异常。
 
-```tsx | pure
+```tsx 
 /**
  * title: 循环依赖
  * description: 存在循环依赖时会抛出异常

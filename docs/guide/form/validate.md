@@ -1,8 +1,6 @@
 # 表单校验
 
-## 表单校验
-
-### 标准校验
+## 标准校验
 
 当指定`customReport=false`时使用标准的`HTML`表单校验功能，只需要在`input`元素上设置`maxLength`、`minLength`、`required`、`pattern`等属性即可。
 
@@ -13,7 +11,7 @@
 - 关于`input`元素的属性请参考：[input](https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/Input)
 
 
-### 自定义校验显示
+## 自定义校验显示
 
 多数情况下，我们并不满足于默认的校验显示方式，我们希望自定义校验显示，比如在输入控件下方显示红色错误提示。
 
@@ -29,39 +27,95 @@
 :::
      	 
 
-### 自定义校验规则
+## 校验规则
 
 上述两个例子中，我们使用的是标准的`HTML5`表单校验规则功能（`pattern`、`minLength`等等），这存在几个问题
 
 - 校验规则比较单一，无法满足复杂的校验需求。
 - 不同浏览器的校验行为存在细微差异。  
 
-为此，我们需要在使用`useForm`时，传入一个`validate`函数，该函数用于自定义校验规则,实现更复杂的校验逻辑。
+为此，我们可以在使用`useForm`时，传入一个`validate`函数，该函数用于自定义校验规则,实现更复杂的校验逻辑。
 
 `validate`函数的签名如下：
 
-```ts | pure
-{
-  validate?:(path:string,value:any,part:string | null,fieldEle:HTMLElement)=>boolean | string
-}
+```ts
+validate?:(path:string,value:any,part:string | null,fieldEle:HTMLElement)=>boolean | string
 ```
 
 | 参数 | 说明 |
 | --- | --- |
-| path | 字段元素的`name`属性，即状态路径 |
-| value | 字段值 |
-| part | 将字段值分解为几部分时的标识，详见下文分解字段 |
-| fieldEle | 字段元素 |
+| `path` | 字段元素的`name`属性，即状态路径 |
+| `value` | 字段值 |
+| `part` | 将字段值分解为几部分时的标识，详见字段拆分 |
+| `fieldEle` | 字段元素，即指定`data-field-name`的元素或`input` |
 
 
 <demo react="form/validate/customValidate.tsx" />
 
 
 - `validate`函数返回`true`代表校验成功，返回`false`代表校验失败。返回`string`代表校验失败时的提示信息。
-- 当校验失败时，会在`field`元素，`input`元素以信`data-field-name`元素自动添加`invalid`类。
+- 当校验失败时，会在`field`元素，`input`元素以及`data-field-name`元素自动添加`invalid`类。
+
 
 :::info 提示
-对比上例浏览器的默认行为，`user.name`在初始化时会显示校验错误
+对比上述浏览器的默认校验行为，`user.name`在初始化时会显示校验错误
 :::
 
-### 校验样式控制
+
+## 校验信息容器
+
+当采用自定义校验时时， `data-validate-field`属性用于指定校验信息容器，该属性的值为字段的状态路径。
+当校验失败时，会将校验失败信息写入到该元素中。
+
+```html {6}
+      <div data-field-name="user.address">
+        <label>Address</label>
+        <div>
+          <input type="text"/>
+            <span 
+              data-validate-field="user.address" >
+            </span>
+        </div>
+      </div>
+```
+
+
+
+## 校验样式控制
+
+为了控制字段的样式,当校验失败时会为当前字段和`input`元素自动添加`invalid`类，可以通过`invalid`类来控制校验失败时的样式。
+
+
+```html {2,7}
+      <div data-field-name="user.address" 
+        class="invalid"
+      >
+        <label>Address</label>
+        <div>
+          <input type="text" 
+            class='invalid'
+          />
+            <span 
+              data-validate-field="user.address" >
+            </span>
+        </div>
+      </div>
+```
+
+## 自定义校验
+
+当使用`Field`组件时，则可以完全控制校验规则和显示方式，详见字段组件。
+
+## 校验状态
+
+`useForm`会返回一个`valid`的状态，用于表示当前表单是否通过校验。
+
+```ts {2}
+		const { 
+      valid
+    } = useForm({
+      // ...
+    })
+```
+
+`valid`是一个响应式状态，当变化时会触发自动重新渲染。

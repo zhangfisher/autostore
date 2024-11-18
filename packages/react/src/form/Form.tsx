@@ -10,6 +10,7 @@ import { fieldToState } from "./utils";
 import { isFalse } from "./utils/isFalse";
 import { getInputValue } from "./utils/getInputValue";
 import { initFormFields } from "./utils/initFormFields";
+import { createSubmit } from "./submit";
 
 
 export type AutoFormProps<State extends Dict>  = React.PropsWithChildren<
@@ -17,7 +18,7 @@ export type AutoFormProps<State extends Dict>  = React.PropsWithChildren<
     & {
 		entry?     : string
 		onValidate?: (state:State)=>boolean
-		onSubmit?  : (state:ComputedState<State>)=>void
+		onSubmit?  : (state:ComputedState<State>,e: SubmitEvent)=>void | Promise<void> | Promise<boolean> | boolean
 	}
 >
 
@@ -122,30 +123,19 @@ export function createAutoFormComponent<State extends Dict>(store: ReactAutoStor
             // 4. 侦听来自表单输入的变更
 			form.addEventListener("input", onChange); 
 
-			// 5.侦听来自表单的提交
-			options.ref?.current?.addEventListener('submit', async (e) => {
-				e.preventDefault();
-				try{
-					ctx.setSubmiting(true)
-					await props.onSubmit?.(store.state)
-				}catch(err){
-					ctx.setError(err)
-				}finally{
-					ctx.setSubmiting(false)
-				}
-			})
+			const submit = createSubmit(store,props,formCtx,options)
 
 			return () => {
 				watcher.off();
 				form.removeEventListener("input", onChange);
+				submit.off()
 				initial.current=false
 			};
 		
 		},[]);
+ 
 		
-		return <form {...props} 
-			ref={options.ref}
-		>
+		return <form {...props}  ref={options.ref}>
             {props.children}
         </form>
 	} 

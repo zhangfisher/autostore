@@ -39,7 +39,7 @@ import `@autostorejs/devtools`
 
 然后在创建`AutoStore`时,指定`debug=true`
 
-```tsx
+```tsx {12-13}
 import { createStore,computed } from '@autostorejs/react';
 import { Button,ColorBlock } from "x-react-components"
 const { state,useState,$ } = createStore({
@@ -54,23 +54,10 @@ const { state,useState,$ } = createStore({
   debug:true,  // 配置调试模式
   id:"user"   // 配置id便以在devTools中显示
 })
- 
-
-export default () => {
-  const [age,setAge] = useState('age') 
-  const [salary,setSalary] = useState('salary') 
-  const [lastName,setLastName] = useState((state)=>state.lastName,(name,user)=>user.lastName=name) 
-
-  return <div>    
-      <ColorBlock>Fullname :{state.firstName}{' '}{lastName}</ColorBlock>
-      <ColorBlock>Age :{age}</ColorBlock>
-      <ColorBlock>Salary: {$('salary')}</ColorBlock>
-      <Button onClick={()=>setAge(age+1)}>Age++</Button> 
-      <Button onClick={()=>setLastName(lastName+'.')}>Change lastName</Button>
-    </div>
-}
-
+  
 ``` 
+
+<demo react="debug/devTool.tsx" />
 
 - 启用`debug=true`后，`AutoStore`会自动连接到`Redux DevTools Extension`。
 - 每个`Store`均具有一个`id`，如果没有传入则会随机生成。在使用`Redux DevTools Extension`时，建议为`store`取个有意义的名称。

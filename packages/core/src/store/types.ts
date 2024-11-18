@@ -103,7 +103,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param level 
      * @returns 
      */
-    log?:(message:any,level?:'log' | 'error' | 'warn')=>void  
+    log?:(message:any,level?:'info' | 'error' | 'warn')=>void  
     /**
      * 启用重置功能
      * 

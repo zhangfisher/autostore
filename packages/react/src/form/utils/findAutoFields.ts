@@ -8,7 +8,7 @@ function defaultFindFields(form:HTMLFormElement){
     const nodes = form.querySelectorAll(':scope ' + "input[name][data-field],textarea[name][data-field],textarea[name][data-field],select[name][data-field],select[name][data-field],[data-field-name]");    
     // 过滤中选择的元素节点
     const fieldEles = Array.from(nodes).filter(field => {
-        return field.nodeType && field.nodeType === 1;
+        return field.nodeType && field.nodeType === 1            
     }) as unknown as HTMLElement[]
     return fieldEles
 } 
@@ -99,8 +99,8 @@ export function findAutoFields(form:HTMLFormElement,options:UseFormOptions<any>)
             // 如果输入元素已经存在于某个x-field的普通元素中则不需要添加
             if( fieldCtxs.length>0 
                 && isInputElement(fieldEle) 
-                && fieldCtxs.some(fieldCtx=>!isInputElement(fieldCtx.el) 
-                                            && fieldCtx.inputs.findIndex(input=>input===fieldEle)>=0)
+                && fieldCtxs.some(fieldCtx=>!isInputElement(fieldCtx.el) && fieldCtx.inputs.findIndex(input=>input===fieldEle)>=0)
+                && (!['submit','reset'].includes(fieldEle.type))
             ){
                 return fields
             }

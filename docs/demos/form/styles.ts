@@ -147,3 +147,16 @@ export const LiteFieldStyle = styled({
 
 
 
+export const Fit = styled({
+	display:"flex",
+	position:'absolute',
+	top:"0px",
+	left:"0px",
+	width:"100%",
+	height:"100%",
+	color:"white",
+	justifyContent: "center",
+	alignItems:'center',
+	flexDirection:"column",
+	background:"rgba(100,100,100,0.6)"
+})	

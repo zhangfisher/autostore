@@ -1,5 +1,14 @@
 # useField
 
+尽管只需要指定`data-field-name`属性就可以实现双向绑定。但是在实际开发中，我们通常需要更多的控制和功能，此时就需要使用`useField`来创建一个双向字段绑定对象。
+
+`useField`可以实现如下功能：
+
+- **支持多个状态值绑定到一个`input`上。**
+- **支持将一个状态值拆分绑定到多个`input`上。**
+- 支持在`input`和状态值之间进行双向转换。
+
+
 ## 关于
 
 `useField`用来创建一个表单控件绑定对象，用来建立状态数据与`input`控件之间的双向绑定。
@@ -87,9 +96,9 @@ useField<Value>(
 
 ## 转换状态值
 
-通过指定`options.toState`和`options.fromState`参数，可以在`input`和状态值之间进行转换。
+通过指定`options.toState`参数，可以将`input`值转换后写入状态。
 
-- **下例中输入的字符会被转换为大写再更新到状态**
+**下例中输入的字符会被转换为大写再更新到状态**
 
 <demo react="form/field/useFieldToState.tsx"
   title="将输入字符全部转换为大写"
@@ -114,3 +123,5 @@ type UseFieldOptions<Value=any>={
 - `type`:  控件类型，支持`radio`、`checkbox`、`select`、`textarea`、`input`。
 - `values`:  仅当`type = radio`或`checkbox`时有效时有效，用于指定`radio`或`checkbox`的值。
 - `toState`:  用于将`input`值转换为状态值的函数。
+
+

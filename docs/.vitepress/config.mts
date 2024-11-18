@@ -111,17 +111,13 @@ export default defineConfig({
                       { text: 'useField', link: '/guide/form/field/use-field' },
                       { text: 'useFields', link: '/guide/form/field/use-fields' },
                       { text:"字段拆分",link:"/guide/form/field/split-field"}, 
-                      { text:"字段组件",link:"/guide/form/field/field-component"}, 
-                      { text:"渲染字段",link:"/guide/form/field/render-field"}, 
+                      { text:"字段组件",link:"/guide/form/field/field-component"}
                   ]
                 },  
                 { 
-                  text:"校验",
+                  text:"表单校验",
                   collapsed:false,
-                  items:[
-                    { text:"字段校验",link:"/guide/form/validate/field"},
-                    { text:"表单校验",link:"/guide/form/validate/form"},
-                  ]
+                  link:"/guide/form/validate"
                 }, 
                 { 
                   text:"脏检查",
@@ -135,7 +131,7 @@ export default defineConfig({
               items: [
                 { text: 'DevTools', link: '/guide/debug/devtools' },
                 { text: 'trace', link: '/guide/debug/trace' },
-                { text: '依赖收集', link: '/guide/debug/deps' },
+                { text: '依赖收集', link: '/guide/debug/collectDeps' },
                 { text: '日志', link: '/guide/debug/log' },
                 { text: '循环依赖', link: '/guide/debug/circular-dependency' },
               ]

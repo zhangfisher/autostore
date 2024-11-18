@@ -11,6 +11,7 @@ export type BoxProps = React.PropsWithChildren<{
   visible?: boolean;
   title?: string;
   enable?: boolean;
+  ref?:any
 }>;
 
 export const Box: ReactFC<BoxProps> = forwardRef<HTMLDivElement, BoxProps>((props, ref) => {

@@ -5,7 +5,7 @@
  * @param input - 要检查的 HTML 元素。
  * @returns 如果元素是输入元素，则返回 true；否则返回 false。
  */
-export function isInputElement(input: HTMLElement) {
+export function isInputElement(input: Element):input is HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement {
 	return ["input", "textarea", "select"].includes(input.tagName.toLowerCase());
 }
 export function isHtmlInputElement(input: HTMLElement):input is HTMLInputElement {
