@@ -57,7 +57,7 @@ const { Form } = useForm({
 </Form>
 ```
 
-更多的`Field`组件的用法请参考[Field组件](/guide/form/field/component.md)。
+更多的`Field`组件的用法请参考[Field组件](/guide/form/field/field-component.md)。
 
 ### 第4步：提交表单
 

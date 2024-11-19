@@ -212,6 +212,29 @@ const store = createStore({
 `AutoStore`提供了非常强大的表单双向绑定能力，详见[表单绑定](/guide/form/about)查看更多内容.
 :::
 
+## 第7步: 调试与诊断
+
+在开发与调试过程中，`AutoStore`支持使用[Redux DevTools Extension](https://github.com/reduxjs/redux-devtools)来调试`AutoStore`的状态。
+
+只需要在你的项目的最开始处导入`@autostorejs/devtools`，然后配置`{debug:true}`即可。
+
+```ts {3,6}
+//main.ts | app.ts | index.ts
+
+import `@autostorejs/devtools`
+
+// 创建store时，配置debug:true
+const store = createStore({...},{
+  debug:true,
+  id:"user"   // 配置id便以在devTools中显示
+})
+
+```
+
+使用效果如下：
+
+![devTools](../debug/devtools.png)
+
 
 ## 小结
 

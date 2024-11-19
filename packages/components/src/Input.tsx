@@ -85,15 +85,15 @@ const InputStyle = styled<InputProps>({
 })
 
 export const Input:ReactFC<InputProps> = (props:InputProps)=>{
-    const { id=Math.random().toString(36).slice(2), enable = true, style={},value, actions,...restProps } = props;
+    const { id=Math.random().toString(36).slice(2), enable = true, style={},value, actions,validate,...restProps } = props;
     const label = props.label  || props.name || props.id
     const ref = useRef<HTMLInputElement>(null)
-    Object.entries(restProps).forEach(([key,value])=>{
-        if(typeof(value)==='boolean'){
-            // @ts-ignore
-            restProps[key] = value ? "true" : "false"
-        }
-    })
+    // Object.entries(restProps).forEach(([key,value])=>{
+    //     if(typeof(value)==='boolean'){
+    //         // @ts-ignore
+    //         restProps[key] = value ? "true" : "false"
+    //     }
+    // })
     return (
         <div         
             className={InputStyle.className}

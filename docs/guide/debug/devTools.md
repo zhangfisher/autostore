@@ -42,7 +42,7 @@ import `@autostorejs/devtools`
 ```tsx {12-13}
 import { createStore,computed } from '@autostorejs/react';
 import { Button,ColorBlock } from "x-react-components"
-const { state,useState,$ } = createStore({
+const { state,$ } = createStore({
   firstName:"Zhang",
   lastName:"Fisher",
   age:18,
