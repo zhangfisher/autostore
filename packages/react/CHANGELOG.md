@@ -1,5 +1,16 @@
 # @autostorejs/react
 
+## 1.2.0
+
+### Minor Changes
+
+- [`48800d3`](https://github.com/zhangfisher/autostore/commit/48800d34ee1843ac8a7892337ab4cf8d7697d91e) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 实现了完整的表单功能
+
+### Patch Changes
+
+- Updated dependencies [[`48800d3`](https://github.com/zhangfisher/autostore/commit/48800d34ee1843ac8a7892337ab4cf8d7697d91e)]:
+  - autostore@1.2.0
+
 ## 1.1.2
 
 ### Patch Changes
