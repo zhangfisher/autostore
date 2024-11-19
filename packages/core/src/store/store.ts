@@ -73,6 +73,7 @@ import { EventEmitter, EventListener } from "../events";
 import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
+import { ObjectKeyPaths, GetTypeByPath } from '../types';
  
 
 
@@ -503,7 +504,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * 
      */
     peep<Value=any>(getter:(state:State)=>Value):Value
-    peep<Value=any>(path:string | string[]):Value
+    peep<
+        PATH extends ObjectKeyPaths<ComputedState<State>> = ObjectKeyPaths<ComputedState<State>>,
+        VALUE extends GetTypeByPath<ComputedState<State>,PATH> = GetTypeByPath<ComputedState<State>,PATH>,
+    >(path:PATH):VALUE
+    peep<Value=any>(path:string[]):Value
     peep(){
         const getter = typeof(arguments[0])==='function' ? 
             ()=>arguments[0](this.state) 

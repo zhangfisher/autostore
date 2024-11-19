@@ -1,6 +1,6 @@
 import React from "react"
 import { createStore } from '@autostorejs/react';
-import {  ColorBlock,Button,Divider,Layout,JsonView } from "x-react-components"
+import { Table, Button,JsonView } from "x-react-components"
 
 const {state,$,useState} = createStore({
   orders: [
@@ -9,7 +9,7 @@ const {state,$,useState} = createStore({
       price: 39.9,
       count: 1,
       // 小计
-      total: (scope)=>scope.price*scope.count
+      total: (scope)=> Math.floor(scope.price*scope.count)
     }
   ],
   // 总计
@@ -18,21 +18,29 @@ const {state,$,useState} = createStore({
 });
 export default ()=>{
   const [orders] = useState()
-  return <Layout>
-    <div>
-      <ColorBlock name="书名">{$('orders.0.book')}</ColorBlock>
-      <ColorBlock name="单价">{$('orders.0.price')}</ColorBlock>
-      <ColorBlock name="数量">
-        <Button onClick={()=>state.orders[0].count--}>-</Button>
-        {$('orders.0.count')}
-        <Button onClick={()=>state.orders[0].count++}>+</Button>
-      </ColorBlock>
-      <ColorBlock name="小计">{$('orders.0.total')}</ColorBlock>
-      <Divider/>
-      <ColorBlock name="总计">{$('total')}</ColorBlock>
+
+  const orderRows = state.orders.map(order=>{
+    return [
+        order.book,
+        order.price,
+        ()=>{
+          return <><Button onClick={()=>order.count--}>-</Button>
+            {order.count}
+            <Button onClick={()=>order.count++}>+</Button>
+            </>
+        },
+        order.total
+      ]
+  })
+
+  return <div>
+      <Table
+          cols={['书名','单价','数量','小计']}
+          rows={[
+            ...orderRows,
+            ['总计','','',()=>$('total')]
+          ]}
+      />      
+      <JsonView data={orders} border/>
     </div>
-    <div>
-      <JsonView data={orders}/>
-    </div>
-  </Layout>  
 }

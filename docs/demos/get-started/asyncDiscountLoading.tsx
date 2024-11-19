@@ -2,7 +2,7 @@ import React from "react"
 import { createStore,delay,computed } from '@autostorejs/react';
 import {  Button,Loading,Table } from "x-react-components"
 
-const {useReactive} = createStore({
+const { useReactive } = createStore({
   orders: [
     {
       book: 'AutoStore最佳实践',
@@ -25,7 +25,8 @@ const {useReactive} = createStore({
     await delay(2000)
     return (scope.orders.reduce((acc,cur)=>acc+cur.total,0)*scope.discount.value).toFixed(2)
   },['discount'])  
-
+},{
+  debug:true
 });
 export default ()=>{
   const [cashDesk] = useReactive()

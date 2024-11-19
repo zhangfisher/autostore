@@ -46,6 +46,8 @@ export default defineConfig({
                 { text: 'State', link: '/guide/store/state' },
                 { text: '渲染优化', link: '/guide/store/render' },
                 { text: '事件', link: '/guide/store/events' },
+                { text: '批量更新', link: '/guide/store/batchUpdate' },
+                
               ]
             },
             {

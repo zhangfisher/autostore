@@ -24,7 +24,7 @@ export type CycleDetectExtendOptions = {
      * 指定仅作用于指定的store
      * =[]代表所有store均生效
      */
-    stores:string[]
+    stores?:string[]
     /**
      * 
      */

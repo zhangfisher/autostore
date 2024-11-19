@@ -9,52 +9,18 @@
 
 以下示例中就存在循环依赖，构建`store`时会抛出异常。
 
-```tsx 
-/**
- * title: 循环依赖
- * description: 存在循环依赖时会抛出异常
- * defaultShowCode: true 
- */
-import { useStore } from '@autostorejs/react';
-import { Box } from "x-react-components"
-import { useState,useRef } from "react"
- 
-export default ()=>{  
-  const [error, setError] = useState(null);
-  
-  const ref = useRef(false)
-  try{
-    store = useStore({ 
-      a: 1,
-      b: (scope:any)=>scope.h + 1,
-      c: (scope:any)=>scope.b + 1,
-      d: (scope:any)=>scope.c + 1,
-      e: (scope:any)=>scope.d + 1,
-      f: (scope:any)=>scope.e + 1,
-      g: (scope:any)=>scope.f + 1,
-      h: (scope:any)=>scope.g + 1,
-    });
-  }catch(e){
-      if(!ref.current){
-        setError(e.message)
-        ref.current=true
-      }
-  }
-  return <div style={{color:'red'}}>{error}</div>
-}
-
-```            
+<demo react="debug/syncCycleDetect.tsx" /> 
 
 ## 异步循环依赖检测
 
 异步循环依赖就比较麻烦，无法像同步循环一样构建时自动检测。因为异步计算属性的计算函数是异步的，很容易在多个异步计算时形成很复杂的循环调用链。
 
-`AutoStore`提供了`cycleDetect`扩展，用来帮助检测异步计算属性的循环依赖。但是由于进行循环依赖检测需要一定的成本开消，
+`AutoStore`提供了`cycleDetect`扩展，用来帮助检测异步计算属性的循环依赖。但是由于进行循环依赖检测需要一定的成本开销，
 所以该功能是作为一个扩展，需要手动安装。
  
 ### 启用检测
 
-```ts | pure
+```ts
  import { installCycleDetectExtend }  from '@autostorejs/devtools'
  
 installCycleDetectExtend({
@@ -68,51 +34,9 @@ installCycleDetectExtend({
 
 ### 示例
 
-```tsx
-/**
- * title: 打开控制台观察信息
- * description: 由于`a`,`b`存在循环依赖，内部会忽略`a`,`b`的计算，导致`a`,`b`的值为无法计算。
- * defaultShowCode: false
- */
-import { useStore,computed } from '@autostorejs/react';
-import { Box,ColorBlock,Button,JsonView } from "x-react-components"
-import { useState,useRef } from "react"
-import { installCycleDetectExtend }  from '@autostorejs/devtools'
- 
-installCycleDetectExtend({
-  onDetected:(paths)=>{
-    console.error("发现循环依赖:",paths)
-    return 'disable'
-  }  
-})
+由于`a`,`b`存在循环依赖，内部会忽略`a`,`b`的计算，导致`a`,`b`的值为无法计算。
 
-export default ()=>{  
-  const [error, setError] = useState(null);
-  
-  let store  = useStore({ 
-      x:1,
-      a: computed(async (scope:any)=>{
-        return scope.b.value + scope.x
-      },['b','x']),
-      b: computed(async (scope:any)=>{
-        return scope.a.value + + scope.x
-      },['a','x'])
-    },{
-      debug:true
-    }) 
-  const [ data ] = store.useState()
-  return <div>
-    <ColorBlock name="x">
-        <Button onClick={()=>store.state.x--}>-</Button>
-        {store.$('x')}
-        <Button onClick={()=>store.state.x++}>+</Button>
-    </ColorBlock>
-    <div style={{color:'red'}}>{error}</div>
-    <JsonView data={data}/>
-    </div>
-}
-
-```          
+<demo react="debug/cycleDetect.tsx" />
 
 - 在控制台可以发现`发现循环依赖: a->b->a.loading->a.timeout->a.retry->a.error->a.value->a.progress->b.loading->b.timeout->b.retry->b.error->b.value->b.progress->x`的信息，这是循环依赖的路径。
 - `onDetected`回调函数返回`disable`代表当检测到循环依赖后，会禁用该计算属性，这样就可以避免循环依赖导致的问题。

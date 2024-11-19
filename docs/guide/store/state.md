@@ -14,27 +14,19 @@
 当读写`store.state`时，会触发内部的依赖收集，相关计算属性的运行，配合`signal`机制可以自动触发组件的细粒度重新渲染。
 
 ## useReactive
- 
 
 `Store`对象提供了`useReactive`方法，用来在组件中访问和更新`Store`的状态数据。
-
-
 
 ### 函数签名
 
 ```ts
-type UseStateResult<Value,State extends Dict>=[Value extends Dict ? ComputedState<Value> : Value,(value:Value | ((state:ComputedState<State>)=>void))=>void]
-type UseStateGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
-type UseStateSetter<SetValue,State extends Dict>= (value:SetValue,state:ComputedState<State>)=>void
-
-
-interface UseStateType<State extends Dict> {
-    <Value=any>(selector: string): UseStateResult<Value,State>
-    <Value=any>(selector: string[]): UseStateResult<Value,State>
-    <Value=any>(selector: string,async:boolean): UseStateResult<AsyncComputedValue<Value>,State>
-    <Value=any>(selector: string[],async:boolean): UseStateResult<AsyncComputedValue<Value>,State>
-    <Value=any,SetValue=any>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateResult<Value,State>
-    (): UseStateResult<State,State>
+export interface UseReactiveType<State extends Dict> {
+    <Path extends StatePaths<State> = StatePaths<State>>(selector: Path): UseReactiveResult<GetTypeByPath<ComputedState<State>,Path> ,State>
+    <Path extends StatePaths<State> = StatePaths<State>>(selector: Path,async:boolean): UseReactiveResult<AsyncComputedValue<GetTypeByPath<State,Path>> ,State>
+    <Value=any>(selector: string[]): UseReactiveResult<Value,State>
+    <Value=any>(selector: ObjectKeyPaths<ComputedState<State>>,async:boolean): UseReactiveResult<AsyncComputedValue<Value>,State>
+    <Value=any,SetValue=any>(getter: UseReactiveGetter<Value,State>,setter?:UseReactiveSetter<SetValue,State>): UseStateComposeResult<Value,SetValue,State>
+    (): UseReactiveResult<State,State>
 }
 ```
 
@@ -51,10 +43,10 @@ const { state,useReactive,$ } = createStore({
     age:18,
   }
 })
-// 使用方式1
+// 使用方式1 ： 能age自动推断类型
 const [age,setAge] = useReactive('user.age')  
 
-// 使用方式2
+// 使用方式2  不能自动推断类型
 const [firstName,setFirstName] = useReactive(['user','firstName'])  
 
 ```   
@@ -64,7 +56,8 @@ const [firstName,setFirstName] = useReactive(['user','firstName'])
 <demo react="store/useReactiveBase.tsx" />
 
 :::warning
-当更新`Age`时会重新渲染整个组件,其行为与`React`的`useState`类似。
+- 当更新`Age`时会重新渲染整个组件,其行为与`React`的`useState`类似。
+- 在早期版本中，`useReactive`叫`useState`，其API设计尽可能保持与`React`的`useState`一致，减少用户的学习成本。但是很快发现`useState`与`React`内置名称冲突，导致需要进行重命名，所以后续版本中更名为`useReactive`。
 :::
 
 
@@ -98,7 +91,8 @@ setFullName(["Hello","Voerkai18n❤️"]) // [!code ++]
 
 
 :::warning 提示
-useReactive<`string`,`[string,string]`>可以指定`getter`和`setter`的泛型类型，这样在使用时会有更好的代码提示。
+- useReactive<`string`,`[string,string]`>可以指定`getter`和`setter`的泛型类型，这样在使用时会有更好的代码提示。
+- useReactive(`<path string>`)能自动类型推断，但是`getter`和`setter`需要手动指定泛型类型。
 :::
 
 **简单示例如下：**
@@ -110,6 +104,16 @@ useReactive<`string`,`[string,string]`>可以指定`getter`和`setter`的泛型�
 `useReactive`还有一个别名`useState`，但是由于`useState`与`React`内置名称相同，使用时经常需要重命名，所以在`AutoStore`中使用`useReactive`来代替。
 :::
 
+
+## useAsyncReactive
+
+如果状态是一个异步计算属性，也可以使用`useAsyncReactive`来处理。
+
+`useAsyncReactive`返回是一个`AsyncComputedValue`对象，其包含了异步计算属性的状态信息。
+
+<demo react="computed/asyncReactiveBase.tsx" />
+
+更多异步计算的特性见[异步计算属性](/guide/computed/async.md)。
 
 ## 直接读写
 
@@ -146,11 +150,64 @@ state.age=100  // [!code ++]
 :::
 
 
-## useAsyncReactive
 
-如果状态是一个异步计属性，也可以使用`useAsyncReactive`来处理。
+## 静默更新
 
-详见[异步计算属性](/guide/computed/async.md)。
+对状态进行读取时，会触发相应的`StateOperateType`类型的事件，如`get`或`set`等。
+
+在某些场景下，我们可能不希望触发这些事件，可以使用`silentUpdate`方法。
+
+```tsx
+store.silentUpdate(()=>{
+  store.state.age=100
+})
+```
+
+## 批量更新
+
+一般情况下，更新多个状态时会触发多个更新事件。在`React`场景中，为了优化渲染，我们可能希望一次性更新多个状态，只触发一次渲染。此时就可以使用`batchUpdate`方法。
+
+```tsx
+store.batchUpdate(()=>{
+  store.state.age=100
+  store.state.name="Fisher"
+})
+```
+
+关于更多的批量更新的技术细节见[批量更新](/guide/store/batchUpdate.md)。
+
+## 静默读取
+
+正常访问状态时会触发`get`事件，如果不希望触发`get`事件，可以使用`peep`方法。
+
+```tsx
+store.peep((state)=>{
+  return state.age
+})
+// 读取age不会触发get事件
+store.peep("age") // 100
+```
+
+以上方法不会触发`get <age>`事件。
+
+
+## update
+
+`update`方法用来更新状态，其函数签名如下：
+
+```tsx
+type UpdateOptions = {
+    batch?:boolean | string,         
+    silent?:boolean,        
+    peep?:boolean           
+    reply?:boolean
+}
+update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions)
+```
+
+- `batchUpdate`仅是`update((state)=>{....},{batch:true})`的快捷方式。
+- `silentUpdate`仅是`update((state)=>{....},{silent:true})`的快捷方式。
+
 
 ## 小结
 

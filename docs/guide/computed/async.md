@@ -100,8 +100,7 @@ function computed<Value = any, Scope = any>(
 - 依赖可以使用绝对路径或相对路径，使用`.`作为路径分割符，`./`指的是当前对象，`../`指的是父对象,详见[依赖收集](./deps)。
 - 当在输入框架中修改`firstName`或`lastName`时，`fullName`会自动重新计算。
 - 计算属性的结果保存在`state.user.fullName.value`中。
-- 当计算属性正在计算时，`state.user.fullName.loading`为`true`。计算完成后，`state.user.fullName.loading`为`false`。
-- 关于`...bind('user.firstName')`的用法详见[表单绑定](../form/bind)。
+- 当计算属性正在计算时，`state.user.fullName.loading`为`true`。计算完成后，`state.user.fullName.loading`为`false`
 
 
 

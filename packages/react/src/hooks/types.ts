@@ -32,8 +32,6 @@ export type UseStateComposeResult<Value,SetValue,State extends Dict>=[Value exte
 export interface UseStateType<State extends Dict> {
     <Path extends StatePaths<State> = StatePaths<State>>(selector: Path): UseStateResult<GetTypeByPath<State,Path> ,State>
     <Path extends StatePaths<State> = StatePaths<State>>(selector: Path,async:boolean): UseStateResult<AsyncComputedValue<GetTypeByPath<State,Path>> ,State>
-    // <Value=any>(selector: ObjectKeyPaths<ComputedState<State>>,async:boolean): UseStateResult<AsyncComputedValue<Value>,State>
-    // <Value=any>(selector: ObjectKeyPaths<ComputedState<State>>): UseStateResult<Value,State>
     <Value=any>(selector: string[]): UseStateResult<Value,State>
     <Value=any>(selector: string[],async:boolean): UseStateResult<AsyncComputedValue<Value>,State>
     <Value=any,SetValue=any>(getter: UseStateGetter<Value,State>,setter?:UseStateSetter<SetValue,State>): UseStateComposeResult<Value,SetValue,State>
@@ -48,8 +46,6 @@ export type UseReactiveSetter<SetValue,State extends Dict>=UseStateSetter<SetVal
 export interface UseReactiveType<State extends Dict> {
     <Path extends StatePaths<State> = StatePaths<State>>(selector: Path): UseReactiveResult<GetTypeByPath<ComputedState<State>,Path> ,State>
     <Path extends StatePaths<State> = StatePaths<State>>(selector: Path,async:boolean): UseReactiveResult<AsyncComputedValue<GetTypeByPath<State,Path>> ,State>
-    // <Value=any>(selector: ObjectKeyPaths<ComputedState<State>>): UseReactiveResult<Value,State>
-    // <Value=any>(selector: string[],async:boolean): UseReactiveResult<AsyncComputedValue<Value>,State>
     <Value=any>(selector: string[]): UseReactiveResult<Value,State>
     <Value=any>(selector: ObjectKeyPaths<ComputedState<State>>,async:boolean): UseReactiveResult<AsyncComputedValue<Value>,State>
     <Value=any,SetValue=any>(getter: UseReactiveGetter<Value,State>,setter?:UseReactiveSetter<SetValue,State>): UseStateComposeResult<Value,SetValue,State>

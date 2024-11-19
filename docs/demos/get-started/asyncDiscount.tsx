@@ -45,7 +45,7 @@ export default ()=>{
                 `￥${order.total}`
             ]),
             ['折扣',null,null,()=><>{$('discount')}</>],
-            ['总计',null,null,()=><>￥{$('total')}</>]
+            ['总计',null,null,()=><>👉{$('total')}</>]
           ]
         }         
     /> 

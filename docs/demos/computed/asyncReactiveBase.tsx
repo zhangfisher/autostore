@@ -14,20 +14,20 @@ const { useAsyncReactive,useField } = createStore({
       initial:"ZhangFisher"
     }) 
   }
-},{
-  id:"async-base", 
-  debug:true // 打开Redux devtools
-})
+} )
 
 export default ()=>{ 
   const firstNameField =  useField("user.firstName") 
   const lastNameField =  useField("user.lastName")   
-  const fullName = useAsyncReactive("user.fullName")   
+  const {
+    value:fullName,
+    loading
+  } = useAsyncReactive("user.fullName")   
 
   return <>
     <Input label="firstName" {...firstNameField} />
     <Input label="lastName" {...lastNameField} />
-    <ColorBlock name="FullName" loading={fullName.loading}>{fullName.value}</ColorBlock>
+    <ColorBlock name="FullName" loading={loading}>{fullName}</ColorBlock>
     </>
 }
 

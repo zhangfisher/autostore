@@ -307,11 +307,6 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
                     setRefresh(++count)                    
                 }
             })) 
-            // 侦听Field字段的validate属性的变化，当变化里需要更新校验结果 
-            // Field字段的validate属性是一个计算属性，其path="#name.validate"形式，具有以#开头，以validate结尾的特点
-            watchers.push(store.watch(`#${name}.validate`,({value})=>{
-
-            }))
             return ()=>watchers.forEach(w=>w.off())
         },[])
         return <>{props.render(renderProps.current as any)}</> 

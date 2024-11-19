@@ -28,7 +28,7 @@ pnpm add @autostorejs/devtools
 
 使用`createStore`来创建一个`Store`。
 
-```ts | pure
+```ts
 import { createStore } from '@autostorejs/react';
 
 const store = createStore({
@@ -49,7 +49,7 @@ const store = createStore({
 
 接下为，我们需要计算订单的`小结`和`总计`，只需要使用同步计算即可。
 
-```ts | pure {9-10,13-14}
+```ts {9-10,13-14}
 import { createStore } from '@autostorejs/react';
 
 const store = createStore({
@@ -59,7 +59,7 @@ const store = createStore({
       price: 39.9,
       count: 1,
       // 小计
-      total: (scope)=>scope.price*scope.count
+      total: (order)=>order.price*order.count
     }
   ],
   // 总计
@@ -70,8 +70,7 @@ const store = createStore({
 
 
 - `total`是一个计算属性，其值是`orders`的`total`的和，在创建时会自动收集依赖，当`price`或`count`变化时会自动重新计算。
-- 使用`$('状态路径')`来创建一个信号组件，当状态变化时，会自动更新。详见[信号组件](/guide/signal/about)。
-
+- `total`计算属性的第一个参数`scope`默认是指向所在的对象，因此`(order)=>order.price*order.count`就可能计算出`total`的值，然后写入`store.state.orders.[index].total`。
 
 **运行效果如下：**
 
@@ -84,7 +83,7 @@ const store = createStore({
 
 订单的折扣是动态的，其计算很复杂，由后台的业务逻辑决定，可能会根据订单的数量、种类、时间、用户是否是VIP等来决定，因此我们设计`折扣(discount)`字段为一个异步计算属性。
 
-```ts | pure {13-22}
+```ts
 import { createStore } from '@autostorejs/react';
 
 const store = createStore({
@@ -127,7 +126,7 @@ const store = createStore({
 - `total`则依赖`discount`，即依赖了`discount`的值。当`discount`变化时，触发`total`的计算函数，重新计算总计。
 
  
-::: warning
+:::warning 注意
 上例中异步计算`discount`需要`2000ms`才可以看到`discount`和`total`的变化。期间界面没有任何变化，显然这是不友好的。一般最好是在计算折扣过程中时，显示一个`loading`状态，告诉用户正在请求折扣。当折扣请求完成时，再显示折扣值。
 因此， `AutoStore`提供了`loading`、`error`、`timeout`、`retry`、`cancel`、`progress`等高级功能。
 :::

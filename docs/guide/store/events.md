@@ -239,9 +239,11 @@ store.on('watch:error',({error,watchObject}:any)=>{
 })
 ```
 
-## 状态变更触发器
+## 状态变更事件
 
 `AutoStore`对象实例提供了一个状态变更事件触发器`operates`，用来监听状态的读写变化。
+
+**当读写状态时，会触发相应的事件，`store.operates`就是一个普通的事件触发器对象，可以通过`operates`的`on/once/onAny/wait`方法订阅事件。所以`AutoStore`的所有依赖收集以及事件响应均是基于`store.operates`实现的。**
 
 
 ### 触发状态读写事件

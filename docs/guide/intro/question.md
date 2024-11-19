@@ -11,7 +11,7 @@
 
 **加入方式：**
 
-![](https://zhangfisher.github.io/voerka-i18n/zh/guide/intro/wx.jpg)
+![](./wx.jpg)
 
 扫描上方二维码，备注`AutoStore`即可加入。
 
