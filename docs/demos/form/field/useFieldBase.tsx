@@ -27,7 +27,7 @@ export default ()=>{
             <Input label="First Name" {...fieldFirstName}/>
             <Input label="Last Name" {...fieldLastName} />
             <Input type="checkbox" label="VIP" {...fieldVip}/>
-            <Select {...fieldJob}  label ="Job" style={{color:'#333'}}
+            <Select {...fieldJob}  label ="Job" 
                 items={[
                     {value:1,title:"Engineer"},
                     {value:2,title:"Doctor"},

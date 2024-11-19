@@ -151,3 +151,86 @@
     content: '👉';
     margin-left: -1em;
 }
+
+.dark .vp-code .line.highlighted{
+  background-color: #333; 
+} 
+
+
+.dark .x-input input{
+  background-color: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+.dark .x-layout > div {
+  border-color: #333;
+}
+
+.dark .x-button{
+  background-color: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+.dark .x-table th{
+  background-color: #333;
+  color: #fff;
+  border-color: #333;
+}
+.dark .x-table td{
+  
+  color: #fff;
+  border-color: #333;
+}
+
+.dark .x-box{
+  background-color: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+.dark .x-json-view{
+  border-color: #333;
+}
+
+.dark .x-json-view .json-mark{
+  color: #999;
+}
+.dark .x-json-view .json-number{
+  color: yellow;
+}
+.dark .x-json-view .json-string{
+  color: rgb(13, 158, 230);
+}
+
+.dark .x-json-view .json-key{
+  color: rgb(20, 151, 22);
+}
+
+.dark .x-lite-field input{
+  background-color: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+.dark .x-lite-field select{
+  background-color: #333;
+  color: #fff;
+  border-color: #333;
+}
+.dark .x-lite-field textarea{
+  background-color: #333;
+  color: #fff;
+  border-color: #333;
+}
+.dark .x-select select{
+  background-color: #333; 
+  border-color: #333;
+  color: white;
+}
+.dark .x-select select option{
+  background-color: #333; 
+  border-color: #333;
+  color: white;
+}

@@ -24,7 +24,7 @@ const ButtonStyle =styled<ButtonProps>({
     "&:active": {
         transform: "scale(0.95)",
         transition: "transform 0.1s"
-    }
+    }    
 },{
     className:"x-button"
 })

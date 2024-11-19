@@ -132,7 +132,7 @@ export const JsonView:React.FC<JsonViewProps> =(props:JsonViewProps)=>{
         }
     },[jsonData])
     return <pre className={JSONStyle.className} style={JSONStyle.getStyle(props)}>        
-      <span
+      {props.title  ? <span
         style={{
           position: 'absolute',
           padding: "2px 4px 2px 4px",
@@ -142,8 +142,8 @@ export const JsonView:React.FC<JsonViewProps> =(props:JsonViewProps)=>{
           color: 'gray'
         }}
       >
-        {props.title || ''}
-      </span>
+        {props.title}
+      </span> : null }
         <span ref={ref} className="json-container"/>
         </pre> 
     

@@ -19,6 +19,7 @@ export const Box: ReactFC<BoxProps> = forwardRef<HTMLDivElement, BoxProps>((prop
   return (
     <div
       ref={ref}
+      className="x-box"
       style={{
         display: visible ? 'flex' : 'none',
         position: "relative",
