@@ -38,7 +38,7 @@ pnpm add @autostorejs/react
 
 import { createStore } from '@autostorejs/react';
 
-const { $, state,useState } = createStore({
+const { $, state,useReactive } = createStore({
   user: {
     firstName: 'zhang',
     lastName: 'fisher',
@@ -50,8 +50,8 @@ const { $, state,useState } = createStore({
 
 // use in component
 const Card = () => {
-    const [ firstName,setFirstName ] = useState('user.firstName');
-    const [ lastName,setLastName ] = useState('user.lastName');
+    const [ firstName,setFirstName ] = useReactive('user.firstName');
+    const [ lastName,setLastName ] = useReactive('user.lastName');
     return <div>
       <div>FirstName:{firstName}</div>
       <div>LastName:{lastName}</div>
@@ -105,10 +105,7 @@ const Card = () => {
 
 ```
 
-async computed with [loading](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8A%A0%E8%BD%BD%E7%8A%B6%E6%80%81),[timeout](https://zhangfisher.github.io/autostore/guide/computed-async#%E8%B6%85%E6%97%B6%E5%A4%84%E7%90%86), [retry](https://zhangfisher.github.io/autostore/guide/computed-async#%E9%87%8D%E8%AF%95), [cancel](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8F%96%E6%B6%88), [countdown](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%80%92%E8%AE%A1%E6%97%B6), [progress](https://zhangfisher.github.io/autostore/guide/computed-async#%E6%89%A7%E8%A1%8C%E8%BF%9B%E5%BA%A6).
-
-
-
+async computed with [loading](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8A%A0%E8%BD%BD%E7%8A%B6%E6%80%81),[timeout](https://zhangfisher.github.io/autostore/guide/computed-async#%E8%B6%85%E6%97%B6%E5%A4%84%E7%90%86), [retry](https://zhangfisher.github.io/autostore/guide/computed-async#%E9%87%8D%E8%AF%95), [cancel](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8F%96%E6%B6%88), [countdown](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%80%92%E8%AE%A1%E6%97%B6), [progress](https://zhangfisher.github.io/autostore/guide/computed-async#%E6%89%A7%E8%A1%8C%E8%BF%9B%E5%BA%A6). 
 
 
 - **Form Two-way Binding**
@@ -118,21 +115,19 @@ Form two-way binding is very simple.
 ```ts
 
 import { createStore,computed } from '@autostorejs/react';
-
-const { $, state,useForm } = createStore({
-  user: {
-    firstName: 'zhang',
-    lastName: 'fisher',
-  }
-});
-
+ 
 // simple two-way form binding
 const Card = () => { 
-    const user = useForm()
-    return <div {...user}>
-      <input name="user.firstName" />
-      <input name="user.lastName" />
-    </div>
+    const { Form } = useForm({
+      user: {
+        firstName: 'zhang',
+        lastName: 'fisher',
+      }
+    })
+    return <Form>
+      <input data-field-name="user.firstName" />
+      <input data-field-name="user.lastName" />
+    </Form>
 }
 
 ```
