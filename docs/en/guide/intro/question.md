@@ -1,22 +1,21 @@
-# 常见问题
+# Common problem
+
+ `AutoStore` the function is powerful, the API design is elegant, and the document examples are very complete. Reading the official website document can solve most problems.
+
+- - ❓也欢迎大家提 [problemue](https://github.com/zhangfisher/autostore/issues) let's feedback the question.
+- - 🌟如果你觉得 `AutoStore` good use, welcome to give me a [sTAR](https://github.com/zhangfisher/autostore) 
+- - 📦如果你有好的建议或者需求,欢迎提 [PR](https://github.com/zhangfisher/autostore/) 
+
+Welcome everyone to join `AutoStore` weChat communication groups, discuss issues together and share experience.
+
+ **Add method:** 
+
+ ![](./wx.jpg) 
+
+Scan the QR code above, note `AutoStore` you can join.
 
 
-`AutoStore`功能强大，API设计优雅，文档示例也很齐全，认真阅读官网文档可以解决大多数问题。
-
-- ❓也欢迎大家提[issue](https://github.com/zhangfisher/autostore/issues)来反馈问题。
-- 🌟如果你觉得`AutoStore`好用，欢迎给个[star](https://github.com/zhangfisher/autostore)
-- 📦如果你有好的建议或者需求，欢迎提[PR](https://github.com/zhangfisher/autostore/)
-
-也欢迎大家加入`AutoStore`的微信交流群，一起讨论问题，分享经验。
-
-**加入方式：**
-
-![](./wx.jpg)
-
-扫描上方二维码，备注`AutoStore`即可加入。
-
-
-以下我们整理了一些常见问题，希望能帮助你更好的使用`AutoStore`。
+Below we have sorted some common problems, hoping to help you better use it `AutoStore`.
 
 
  

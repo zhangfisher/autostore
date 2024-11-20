@@ -1,50 +1,49 @@
-# useForm
+# useform
+Let's briefly introduce `useForm`.
+ `useForm` can be used to create `AutoStore` form `AutoFormObject` and implement the form and the form and `AutoStore` the two -way binding function between the state.
 
-下面我们简单介绍一下`useForm`。
-`useForm`可以用来创建基于`AutoStore`的表单`AutoFormObject`，并实现表单与`AutoStore`状态之间的双向绑定功能。
+## Basic principle
 
-## 基本原理
+ `useForm` the basic principles are as follows:
 
-`useForm`的基本原理如下：
+### 1. Create `Form` component
 
-### 1. 创建`Form`组件
+ `useForm` will create one `AutoStore` example, then return one `Form` component, this component is a counterfeit standard `form` packaging.
 
-`useForm`会创建一个`AutoStore`实例，然后返回一个`Form`组件，该组件是对标准`form`的封装。
+### 2. Initialize the form
 
-### 2. 初始化表单
+ `useForm` internal `useEffect` it will automatically initialize the form.
 
-`useForm`内部的`useEffect`会自动初始化表单.
-
-然后在初始化时，调用`querySelectorAll`获取到所有表单内部的`input`,`textarea`,`select`元素
-,依次遍历这些元素，根据`name`属性，从`state`中获取对应的值，并设置绑定到表单元素上。
-
-
-### 3. 订阅变更事件
-
-要实现双向绑定，我们需要：
-
-- **监听表单元素的`change`事件**
-
-由于表单事件`onchange`会冒泡，所以我们只需要在`form`元素上监听`change`事件即可。
-
-所以通过`form.addEventListener('input',onChange)`就可以在表单元素变化时触发捕获到`onChange`事件。
-
-然后在`onChange`事件中，我们可以通过`event.target`获取到表单元素.
-
-最后将表单元素的值更新到`state[event.target.name]`。
-
-- **监听`state`的变化**
-
-使用`store.watch`监听`state`的变化，当`state`变化时，将数据更新到`name=<path>`的表单元素上即可。
+Then when initialization, call `querySelectorAll` get all inside all forms `input`,`textarea`,`select` element
+, Traverse these elements in turn, according to `name` attribute, from `state` get the corresponding value and set it to the table unit element.
 
 
-:::warning 注意
-以上仅是`useForm`的基本原理，实际实现中还有很多细节未能完全描述。
+### 3. Subscribe to change event
+
+To achieve two -way binding, we need:
+
+- **Monitoring table unit`change`event** 
+
+Due to form events `onchange` will bubbling, so we only need to `form` element monitoring `change` in the event.
+
+So through `form.addEventListener('input',onChange)` you can trigger the capture when the table elements change `onChange` event.
+
+Then `onChange` in the event, we can pass `event.target` get the form element.
+
+Finally, update the value of the table element to `state[event.target.name]`.
+
+- **monitor`state`Change** 
+
+use `store.watch` monitor `state` change, should `state` when changing, update the data to `name=<path>` just on the table element.
+
+
+:::warning Note
+The above is just `useForm` the basic principles, there are many details that have not been fully described in the actual implementation.
 :::
  
-## 函数签名
+## Function signature
 
-`useForm`支持两种函数签名如下：
+ `useForm` the signatures of the two functions are supported as follows:
 
 ```tsx
 function useForm<State extends Dict>(
@@ -58,66 +57,66 @@ function useForm<State extends Dict>(
 
 ```
 
-`useForm`支持两种签名：
+ `useForm` support two signs:
 
-- `useForm(state,options)`：通过`state`创建一个`AutoStore`实例，然后创建一个`AutoFormObject`实例。
-- `useForm(store,options)`：通过已有的`AutoStore`创建一个`AutoFormObject`实例。## 选项
+- `useForm(state,options)`:pass `state` create a `AutoStore` example, and then create a `AutoFormObject` example.
+- `useForm(store,options)`: Pass the existing `AutoStore` create a `AutoFormObject` example.## Option
 
-`useForm`的`options`支持以下选项：
+ `useForm` of `options` support the following options:
 
-因为`useForm`内部会创建一个`AutoStore`实例，所以`UseFormOptions`继承自`AutoStoreOptions`，用于创建`AutoStore`。参考[AutoStoreOptions](/guide/store/store#配置)。
+because `useForm` create one inside `AutoStore` example, so `UseFormOptions` inherit `AutoStoreOptions`, Used to create `AutoStore` essence refer to [AutostoreOptions](/guide/store/store#配置).
 
-除此之外，`UseFormOptions`还支持以下选项：
+besides,`UseFormOptions` it also supports the following options:
 
-### ref
+### reF
 
-用来引手表单元素的`ref`
+Used to attract watch unit elements `ref` 
 
 ### entry
 
-表单元素的入口路径，当创建多个表单时，可以指定不同的入口路径。
+The entrance path of the table unit element can specify different entrance paths when creating multiple forms.
 
 
-参考[创建多个表单](/guide/form/form/create.md#多表单)
+refer to [Create multiple forms](/guide/form/form/create.md#多表单) 
 
-    fromState?:(path:string,stateValue:any,part:string | undefined)=>any
-    /**
-     * 当表单输入控件变化时，调用本方法将数据转换后再写入状态
-     * 
-     * 例：将上例中的是/否转换为true/false
-     * 
-     */
-    toState?:(this:HTMLInputElement,path:string,inputValue:any,stateValue:any,part:string | undefined)=>any
+FromState?: (PATH: String, StateValue: Any, Part: String|UNDEFINED) => ANY
+/ /**
+* When the form input control changes, call this method to convert the data before writing
+*
+* Example: Convert the in the above example to True/False
+*
+*/
+Tostate?: (this: htmlinputelement, path: string, inputValue: Any, stateValue: Any, part: string|UNDEFINED) => ANY
 
-### customReport
+### CUSTOMREPORT
 
-当校验出错时，如何报告错误。
+How to report errors when you check the error.
 
-- `default`:  采用浏览器默认的校验错误提示方式
-- `custom`:   自定义方式，校验信息将写入到`[data-validate-field=xxxx]`所在的元素
+- `default`: Use the default verification error prompt method of the browser
+- `custom`: Customized method, the verification information will be written `[data-validate-field=xxxx]` the element
 
-### validAtInit
+### Validatinit
 
-在初始化时是否进行数据校验，默认为`true`。
+Whether the data verification is performed during initialization, the default `true`.
 
-### validate
+### Validate
 
-自定义校验函数，用于校验表单数据。
+Custom school test function is used to verify form data.
 
 ```ts
 (path:string,value:any,part:string | null,fieldEle:HTMLElement) => boolean | string
 ```
 
-### fromState
+### FromState
 
-当状态数据变化时，调用本方法将数据转换为表单输入控制使用的数据
+When the state data changes, call this method to convert the data into the data used in the form input control used
 
 ```ts
 (path:string,stateValue:any,part:string | undefined)=>any
 ```
 
-### toState
-当表单输入控件变化时，调用本方法将数据转换后再写入状态
+### tostate
+When the form input control changes, call this method to convert the data before writing the state
 
 ```ts
 (this:HTMLInputElement,path:string,inputValue:any,stateValue:any,part:string | undefined)=>any

@@ -1,11 +1,10 @@
-# 关于
+# about
+ `AutoStore` provides a powerful form binding function, which can implement the form and `AutoStore` the two -way binding function between the state can make you more convenient to collect data from the form `AutoStore` provide a strong response form solution.
 
-`AutoStore`提供了强大的表单绑定功能，可以实现表单与`AutoStore`状态之间的双向绑定功能，可以让你更方便的从表单收集数据到`AutoStore`，提供强大的响应式表单解决方案。
+based on `AutoStore` form solutions include::
 
-基于`AutoStore`的表单解决方案包括：
-
-- `useForm`：基于`AutoStore`创建`AutoFormObject`实例
-- `Form`：表单组件
-- `Field`: 自定义表单字段
-- `useField`：用于单字段的表单场景
-- `useFields`：用于多字段的表单场景
+- `useForm`:based on `AutoStore` create `AutoFormObject` instance
+- `Form`: Form component
+- `Field`: Custom Form Field
+- `useField`: Form scene for single fields
+- `useFields`: Form scene for multi -field

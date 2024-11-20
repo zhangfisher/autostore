@@ -1,21 +1,19 @@
-# 提交表单
+# Submit form
 
-
-## 标准提交
+## Standard submission
  
-只需要在`form`元素上添加`<input type='submit'/>`或者`<button type='submit'>`即可。
+Only need to be `form` add to element `<input type='submit'/>` or `<button type='submit'>` just accept it.
 
-所有行为都是浏览器默认行为。
+All behaviors are the default behavior of the browser.
 
-## AJAX提交
+## Ajax submission
 
-`useForm`提供了`submit`方法用于进行`AJAX`提交表单。
+ `useForm` provide `submit` method for progress `AJAX` submit the form.
 
-- `submit`方法会触发`submit`事件，可以通过`onSubmit`监听该事件。
-- 然后在`onSubmit`事件中，使用`AJAX/fetch`将表单数据提交到服务器即可。
-- `submiting`属性用于标识表单是否正在提交中，可以用于控制提交按钮的状态。
+- `submit` method trigger `submit` event, you can pass `onSubmit` supervise the incident.
+- Then `onSubmit` in the event, use `AJAX/fetch` just submit the form data to the server.
+- `submiting` the attribute is used to identify whether the form is being submitted, and it can be used to control the state of the submission button.
 
-**示例如下：**
+ **The example is as follows:** 
 
-<demo react="form/form/formSubmit.tsx"/>
-
+<demo react ="form/form/formSubmit.tsx"/>

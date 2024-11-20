@@ -1,10 +1,9 @@
-# useWatch
+# usewatch
+## about
 
-## 关于
+ `useWatch` the function is used to listen to `store` the object changes and returns a value as the calculation state. When the component is destroyed, the subscription is automatically canceled, which is essentially `store.watch` packaging.
 
-`useWatch`函数用来侦听`store`对象的变化并返回一个值作为计算状态,当组件销毁自动取消订阅，本质上是对`store.watch`的封装。
-
-`useWatch`函数签名如下：
+ `useWatch` the signature of the function is as follows:
 
 ```ts  
 export type UseWatchGetter<Value,DependValue> = (operate:StateOperate<DependValue>)=>Value | undefined | Promise<Value | undefined>
@@ -31,23 +30,23 @@ export interface UseWatchType<State extends Dict> {
 }
 ```
 
-- 使用方法与`store.watch`一致，只是`useWatch`函数会在组件销毁时自动取消订阅。
-- `getter`函数可以返回一个值作`React`状态
+- How to use and `store.watch` consistent, just `useWatch` the function will automatically cancel the subscription when the component is destroyed.
+- `getter` the function can return a value `React` state
 
 
-## 基本用法
+## Basic usage
 
-同样的`diray`检测功能实现如下:
+Same `diray` the detection function is implemented as follows:
 
-<demo react="watch/useWatchDirty.tsx"/>
-
-
-- `useWatch`创建的侦听会在组件销毁时自动取消订阅，不需要手动取消订阅。
-- `useWatch`不会创建`WatchObject`.
-- `useWatch`的`getter`函数可以返回一个值作为`React`状态，该状态会在`selector`所指向的状态变化后自动更新。
-- 如果没有指定`selector`，则会侦听`store`对象的所有变化。
+<demo react ="watch/useWatchDirty.tsx"/>
 
 
-:::warning 提示
-`useWatch`会在组件销毁时自动取消订阅，不需要手动取消订阅。
+- `useWatch` the created listening will automatically cancel the subscription when the component is destroyed, and the subscription is not required manually.
+- `useWatch` will not create `WatchObject`.
+- `useWatch` of `getter` the function can return a value as a value `React` status, this state will be in `selector` the direction of the state is updated automatically after changes.
+- If not specified `selector`, Will listen to `store` all changes in the object.
+
+
+:::warning reminder
+ `useWatch` the subscription will be automatically canceled when the component is destroyed, and the subscription is not required manually.
 :::

@@ -1,19 +1,18 @@
-# 安装
+# Install
+ `AutoStore` there are three packages: in total:
 
-`AutoStore`共包括三个包：
-
-- `autostore`: 核心包
-- `@autostorejs/react`: 面向`React`开发者
-- `@autostorejs/devtools`: 使用`Redux DevTools`调试`AutoStore`
+- `autostore`: Core package
+- `@autostorejs/react`: Face -oriented `React` developer
+- `@autostorejs/devtools`: use `Redux DevTools` debug `AutoStore` 
 
 
 ## autostore
 
-`autostore`是核心包，提供了`AutoStore`的核心功能。
+ `autostore` it is the core package, provided `AutoStore` core function.
 
-如果你是`Vue`等其他框架的开发者，可以直接使用`autostore`。
+If you are `Vue` waiting for developers of other frameworks, you can use it directly `autostore`.
 
-该包使用`new AutoStore`来创建`AutoStore`实例。
+This package is used `new AutoStore` create `AutoStore` example.
 
 
 :::code-group
@@ -32,13 +31,13 @@ pnpm add autostore
 :::
 
 
-## @autostorejs/react
+## @AutoStorejs/React
 
-:::warning 
-如果您是`React`开发者，只需要安装`@autostorejs/react`即可。
+:::warning
+If you are `React` developers only need to install `@autostorejs/react` just accept it.
 :::
 
-`@autostorejs/react`已经集成了`autostore`包的所有功能，**不需要额外安装`autostore`**。
+ `@autostorejs/react` already integrated `autostore` all the functions of the package,**No additional installation`autostore`**.
 
 :::code-group
 
@@ -55,11 +54,11 @@ pnpm add @autostorejs/react
 ``` 
 :::
 
-## @autostorejs/devtools
+## @AutoStorejs/DEVTools
 
-`@autostorejs/devtools`是`AutoStore`的调试工具包，基于`chrome`的[Redux DevTools Extension](https://github.com/reduxjs/redux-devtools)来调试`AutoStore`的状态。
+ `@autostorejs/devtools` yes `AutoStore` debugging tool package, based on `chrome` of [Redux DevTools Extension](https://github.com/reduxjs/redux-devtools) come to debug `AutoStore` state.
 
- :::code-group
+:::code-group
 
 ```bash [npm]
 npm install  @autostorejs/devtools
@@ -75,8 +74,10 @@ pnpm add @autostorejs/devtools
 :::
 
 
-## @autostorejs/vue
+## @AutoStorejs/Vue
 
-目前还没有实现，可以通过封装`autostore`实现`Vue`的集成。
+It has not been realized yet, you can use the package `autostore` accomplish `Vue` integration.
 
-`@autostorejs/react`也仅是`autostore`的封装，代码量很少，有兴趣的同学可以尝试一下。
+ `@autostorejs/react` it's just `autostore` there are very few encapsulation, and interested students can try it.
+
+

@@ -1,12 +1,3 @@
----
-Group:
-title: Calculation attribute
-Order: 2
-Order: 4
-demo:
-TOCDEPTH: 5
-toc: content
----
 # Scope
  
 
@@ -33,7 +24,7 @@ const store = createStore( {
     firstName:"Zhang",
     lastName:"Fisher",
     fullName: computed((scope)=>{
-      //  scope指向user
+      //  scope = user
     },["user.firstName","user.lastName"])
   }
 } )
@@ -62,7 +53,7 @@ const store = createStore( {
     firstName:"Zhang",
     lastName:"Fisher",
     fullName: computed((scope)=>{
-      //  scope指向root
+      //  scope = <root>
       return scope.user.firstName+scope.user.lastName
     })
   }

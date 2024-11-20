@@ -1,21 +1,20 @@
-# 监视对象
+# Monitoring object
+## about
 
-## 关于
+as `ComputedObject` the same, all in the state directly use `watch` any declaration will create a correspondence `WatchObject` object.
 
-如同`ComputedObject`一样，所有在状态中直接使用`watch`声明的均会创建一个对应`WatchObject`对象。
+pass `Store.watchObjects` you can access all the statements `WatchObject` objects can perform related dynamic removal/disable and other operations.
 
-通过`Store.watchObjects`可以访问所有声明的`WatchObject`对象，可以进行相关的动态移除/禁用等操作。
+The following is a simple example of dirty prosecution of the form data:
 
-以下是实现表单数据的脏检察的简单示例：
-
-<demo react="watch/watchDirty.tsx"/>
+<demo react ="watch/watchDirty.tsx"/>
  
 
-## 动态创建监听对象
+## Dynamic creation monitoring object
 
-同`computed`一样，不在状态中声明`watch`，也可以使用`store.watchObjects.create`动态创建监听对象
+same `computed` the same, not in the state declaration `watch` you can also use it `store.watchObjects.create` dynamic creation monitoring object
 
-`create`方法签名如下：
+ `create` the method signature is as follows:
 
 ```ts
   create<Value=any,DependValue=any>(
@@ -25,7 +24,7 @@
 ):WatchObject<Value>   
 ```
 
-示例如下：
+The example is as follows:
 
 ```ts {11-16}
 import { createStore } from '@autostorejs/react';
@@ -33,7 +32,7 @@ import { createStore } from '@autostorejs/react';
 const store = createStore({
   user:{
     firstName:"Zhang",
-    lastName:"Fisher"
+    lastName:"Fisher" 
   }
 })
 
@@ -47,15 +46,15 @@ const obj = store.watchObjects.create(
   {...options....}                             // 参数
 )
 
-```**动态创建监听对象时与在状态中声明监听对象相比，存在以下区别**：
+``` **Compared with the statement of monitoring objects in the state when dynamic creation of monitoring objects, there is the following differences** the
 
-- 动态创建监听对象不存在状态上下文，指依赖时不使用相对依赖，只能使用绝对依赖，即`./`、`./`、`PARENT`等依赖是无效的。
-- 动态创建监听对象的`associated=false`
-- 动态创建监听对象的功能与在状态中声明创建的功能基本相同，但计算结果没有存储在状态中，而是存储在监听对象中。可以通过`obj.value`来获取计算结果。
+- Dynamic creation monitoring objects do not exist in the context of the state, referring to the dependence when dependence is not used, and can only use absolute dependence, that is,`./`,`./`,`PARENT` the dependencies are invalid.
+- Dynamic creation of monitoring objects `associated=false` 
+- The function of dynamic creation monitoring objects is basically the same as the function created in the state, but the calculation result is not stored in the state, but is stored in the monitoring object. Can pass `obj.value` to get the calculation results.
  
 
 
-## 手动执行
+## Manually execute
 
-同`ComputedObject`一样，`WatchObject`也可以手动执行，通过`store.watchObjects.get("<id>").run()`来执行监听函数。
+same `ComputedObject` same,`WatchObject` you can also execute manually, pass `store.watchObjects.get("<id>").run()` let's execute the monitoring function.
  

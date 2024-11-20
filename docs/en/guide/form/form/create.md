@@ -1,16 +1,15 @@
 
-# 创建表单
+# Create a form
+use `useForm` used to create `AutoStore` forms can implement forms and `AutoStore` two -way binding between state.
 
-使用`useForm`用于创建基于`AutoStore`的表单,可以实现表单与`AutoStore`状态之间的双向绑定。
+## Create a form
 
-## 创建表单
+Can pass `useForm` create a new form, as follows:
 
-可以通过`useForm`创建一个全新的表单，如下：
-
-### 第1步：引入`useForm`
+### Step 1: Introduction `useForm` 
 
 ```tsx
-import { useForm } from "@autostorejs/react"
+import { useForm } from "@autostorejs/react" 
 const { Form } = useForm({
   user:{
     firstName:"Zhang",
@@ -21,12 +20,12 @@ const { Form } = useForm({
 }) 
 ```
 
-:::warning 提示
-`useForm`内部会创建一个`AutoStore`实例，用于存储表单数据。
-::: 
+:::warning reminder
+ `useForm` create one inside `AutoStore` examples are used to store form data.
+:::
 
 
-### 第2步：使用`Form`组件
+### Step 2: Use `Form` component
 
 ```tsx
 <Form  
@@ -38,9 +37,9 @@ const { Form } = useForm({
 </Form>
 ```
 
-### 第3步：声明`Field`
+### Step 3: Statement `Field` 
 
-在`Form`组件内部，可以使用三种方式来创建`Field`。
+exist `Form` inside the component, you can use three ways to create `Field`.
 
 ```tsx
 <Form>
@@ -57,32 +56,32 @@ const { Form } = useForm({
 </Form>
 ```
 
-更多的`Field`组件的用法请参考[Field组件](/guide/form/field/field-component.md)。
+More `Field` please refer to the usage of components [Fieeld component](/guide/form/field/field-component.md).
 
-### 第4步：提交表单
+### Step 4: Submit the form
 
-就这么简单，轻松实现`表单`与`store.state`之间的双向绑定了，输入的数据会自动同步到`state`中，反之亦然。
+It's so simple, easy to achieve `Form` and `store.state` the two -way binding between the between, the input data will automatically synchronize `state` in the instead, vice versa.
 
-### 小结
+### summary
 
-**下面是一个简单的示例：**
+ **The following is a simple example:** 
 
-<demo react="form/form/base.tsx"/>
+<demo react ="form/form/base.tsx"/>
 
 
-## 绑定表单
+## Binding form
 
-表单绑定的数据状态来源于：
+The data status bound by the form is from:
 
-- 新创建的`AutoStore`实例
-- 绑定到现有的`AutoStore`实例
+- Newly created `AutoStore` instance
+- Bind to existing `AutoStore` instance
 
-### 新建Store
+### New Store
 
-使用`useForm(<state>)`创建一个全新的表单，内部会创建一个`Store`实例。所有`AutoStore`的API都可以使用。
+use `useForm(<state>)` create a brand new form, and will create one internally `Store` example. all `AutoStore` aPIs can be used.
 
 ```ts
-import { useForm } from "@autostorejs/react"
+import { useForm } from "@autostorejs/react" 
 const { 
   Form,
   state,
@@ -113,16 +112,16 @@ const {
 }) 
 ```
 
-### 绑定现有Store
+### Bind the existing store
 
-`useForm`还可以基于现有的`Store`实例创建表单，如下：
+ `useForm` can also be based on existing `Store` create a form for example, as follows:
 
-<demo react="form/form/fromStore.tsx" />
+<demo react ="form/form/fromStore.tsx"/>
 
 
-## 多表单
+## Multi -form
 
-基于一个复杂的数据结构，`useForm`提供了一个`entry`参数，用来指向状态数据中的某个节点，并基于该节点创建表单。
+Based on a complex data structure,`useForm` one `entry` parameters are used to point to a node in the status data and create forms based on the node.
 
 ```tsx {17-28}
 const store = createStore({
@@ -149,9 +148,9 @@ const { Form,reset } = useForm(store,{
 })
 ```
 
-- 当使用`useForm`的`entry`参数时，会基于`entry`指向的节点创建表单。
-- `entry`参数的值是一个状态`path`字符串。
+- Use `useForm` of `entry` when parameter, it will be based on `entry` create a form at the node.
+- `entry` the value of the parameter is a state `path` string.
 
-**示例：**
+ **Example:** 
 
-<demo react="form/form/multiForm.tsx" />
+<demo react ="form/form/multiForm.tsx"/>

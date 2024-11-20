@@ -1,13 +1,5 @@
----
-Group:
-title: Calculation attribute
-Order: 2
-title: Manually execute
-Order: 8
-demo:
-TOCDEPTH: 5
-toc: content
----
+# Run
+
 ## about
 
 In general, the calculation of the calculation attribute is automatically carried out. When the dependencies change, the calculation attribute will automatically recalculate.
@@ -141,6 +133,9 @@ export default ()=>{
 - Can be used `computed` when creating calculation attributes, pass in `enable` to specify the default state of the calculation attribute.
 - Can pass `ComputedObjects.get (<way name>)` let's enable/disable calculations.
 - Can pass `ComputedObjects.enableGroup(<true/false>)` let's enable/disable the calculation of a group.```tsx 
+
+
+```tsx
 import { createStore,computed,delay } from '@autostorejs/react';
 import { Divider,ColorBlock,Button,Input } from "x-react-components" 
 

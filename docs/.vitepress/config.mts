@@ -4,11 +4,25 @@ import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 // import { codeInspectorPlugin } from 'code-inspector-plugin';
 
+// import enThemeConfig from '../en/config.mts'
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "AutoStore",
   description: "极致优雅的全自动React状态库",
   base: '/autostore/',
+  // locales: {
+  //   root: {
+  //     label: '简体中文',
+  //     lang: 'cn', 
+  //   },
+  //   en:{
+  //     label: 'English',
+  //     lang: 'en',
+  //     link:"/en/",
+  //     themeConfig: enThemeConfig
+  //   }
+  // },
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     outline: {

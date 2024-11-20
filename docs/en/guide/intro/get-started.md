@@ -1,8 +1,7 @@
-# 快速入门
+# Get started quickly
+ `AutoStore` powerful and easy to use. The following is the example of building a simple bookstore mall to display how to use it `AutoStore`, Experience `AutoStore` extremely elegant and powerful functions.
 
-`AutoStore`功能强大，易于使用。以下通过构建一个简单书店商城的例子来展示如何使用`AutoStore`，体验`AutoStore`极致优雅和强大的功能。
-
-## 第1步: 安装
+## Step 1: Installation
 
 :::code-group
 
@@ -22,11 +21,11 @@ pnpm add @autostorejs/devtools
 ``` 
 :::
 
-安装`@autostorejs/devtools`可以让开发者使用`chrome`的[Redux DevTools Extension](https://github.com/reduxjs/redux-devtools)来调试`AutoStore`的状态。
+Install `@autostorejs/devtools` can be used for developers `chrome` of [Redux DevTools Extension](https://github.com/reduxjs/redux-devtools) come to debug `AutoStore` state.
 
-## 第2步: 创建Store
+## Step 2: Create Store
 
-使用`createStore`来创建一个`Store`。
+use `createStore` come to create a `Store`.
 
 ```ts
 import { createStore } from '@autostorejs/react';
@@ -42,12 +41,12 @@ const store = createStore({
 });
 ```
 
-- 通过`store.state`可以访问状态树，自动进行类型推断。
+- pass `store.state` you can access the state tree and automatically infer.
 
 
-## 第3步: 创建计算属性
+## Step 3: Create calculation attributes
 
-接下为，我们需要计算订单的`小结`和`总计`，只需要使用同步计算即可。
+Next, we need to calculate the order `summary` and `total` just use synchronous calculations.
 
 ```ts {9-10,13-14}
 import { createStore } from '@autostorejs/react';
@@ -69,19 +68,19 @@ const store = createStore({
 ```
 
 
-- `total`是一个计算属性，其值是`orders`的`total`的和，在创建时会自动收集依赖，当`price`或`count`变化时会自动重新计算。
-- `total`计算属性的第一个参数`scope`默认是指向所在的对象，因此`(order)=>order.price*order.count`就可能计算出`total`的值，然后写入`store.state.orders.[index].total`。
+- `total` it is a calculation attribute, and its value is `orders` of `total` harmony, it will automatically collect dependencies when created.`price` or `count` the change will be automatically re -calculated.
+- `total` the first parameter of the calculation attribute `scope` the default refers to the object where it is, so `(order)=>order.price*order.count` it may be calculated `total` value, then write `store.state.orders.[index].total`.
 
-**运行效果如下：**
+ **The running effect is as follows:** 
 
-<demo react="get-started/createComputed.tsx"/>
+<demo react ="get-started/createComputed.tsx"/>
  
 
-## 第4步: 创建异步计算属性
+## Step 4: Create asynchronous computing attributes
 
-接下我们为订单增加一个`折扣(discount)`字段。
+Next we add one to the order `Discount (discount)` field.
 
-订单的折扣是动态的，其计算很复杂，由后台的业务逻辑决定，可能会根据订单的数量、种类、时间、用户是否是VIP等来决定，因此我们设计`折扣(discount)`字段为一个异步计算属性。
+The discount of orders is dynamic, and its calculation is complicated. It is determined by the business logic of the background. It may be determined based on the number of orders, types, time, and whether the user is VIP, etc. Therefore, we design `Discount (discount)` the field is an asynchronous computing attribute.
 
 ```ts
 import { createStore } from '@autostorejs/react';
@@ -110,35 +109,35 @@ const store = createStore({
 });
 ```
 
-**注意**： 
+ **Notice** the
 
-- `discount`是一个异步计算属性，其计算函数是一个异步函数，其返回值会写入`store.state.discount`，这就是`AutoStore`与其他状态库最大不同之处，即**原地计算**。
+- `discount` it is an asynchronous calculation attribute. The calculation function is an asynchronous function, and its return value will be written `store.state.discount` this is `AutoStore` the biggest difference from other status libraries is **In -site calculation**.
 
 
-**运行效果如下：**
+ **The running effect is as follows:** 
 
- <demo react="get-started/asyncDiscount.tsx"/>
+<demo react ="get-started/asyncDiscount.tsx"/>
  
 
-在以上示例中，我们声明了两个异步计算属性`discount`和`total`
+In the above example, we declare two asynchronous computing attributes `discount` and `total` 
 
-- `discount`依赖`orders.*.total`，即依赖了`orders`数组中的`total`属性。当订单的数量变化时，触发`discount`的计算函数，计算函数会向后台请求折扣，然后返回新的折扣值。(在上例中，我们模拟请求折扣的过程，使用了`delay`函数，实际项目中，我们可能会使用`fetch`或`axios`等来请求折扣)。
-- `total`则依赖`discount`，即依赖了`discount`的值。当`discount`变化时，触发`total`的计算函数，重新计算总计。
+- `discount` rely `orders.*.total`, That is, dependence `orders` array `total` property. When the number of orders changes, trigger `discount` the calculation function, the calculation function will request discounts from the background, and then return the new discount value. (In the above example, we simulated the process of request discounts, and used it.`delay` functions, in actual projects, we may use `fetch` or `axios` wait for the request discount).
+- `total` depend on `discount`, That is, dependence `discount` value. when `discount` during the change, trigger `total` calculating function, re -calculate the total.
 
  
-:::warning 注意
-上例中异步计算`discount`需要`2000ms`才可以看到`discount`和`total`的变化。期间界面没有任何变化，显然这是不友好的。一般最好是在计算折扣过程中时，显示一个`loading`状态，告诉用户正在请求折扣。当折扣请求完成时，再显示折扣值。
-因此， `AutoStore`提供了`loading`、`error`、`timeout`、`retry`、`cancel`、`progress`等高级功能。
+:::warning Note
+Asynchronous calculation in the above example `discount` need `2000ms` you can see `discount` and `total` changes. During the interface, there was no change in the interface. Obviously, this was unfriendly. Generally, it is best to display one when calculating the discount process `loading` state, tell users that they are asking for discounts. When the discount request is completed, the discount value is displayed.
+therefore,`AutoStore` provide `loading`,`error`,`timeout`,`retry`,`cancel`,`progress` wait for advanced functions.
 :::
 
 
-## 第5步: 控制异步计算
+## Step 5: Control asynchronous calculation
 
-在上一步中，当我们调节订单数量`count`时，需要`2000ms`才可以看到`discount`和`total`的变化。期间界面没有任何变化，显然这是不友好的，我们需要在请求折扣时，显示一个`loading`状态，告诉用户正在请求折扣。当折扣请求完成时，再显示折扣值。
+In the previous step, when we adjust the number of orders `count` need, need `2000ms` you can see `discount` and `total` changes. During the period, there was no change in the interface. Obviously this is unfriendly, we need to display a `loading` state, tell users that they are asking for discounts. When the discount request is completed, the discount value is displayed.
 
-这时，我们就可以开始引入`异步计算`的各种高级功能。**让我们先在计算时显示`loading`状态。**
+At this time, we can start introducing `Asynchronous calculation` various advanced functions.**Let's display it first when calculating`loading`state.** 
 
-与同步计算属性相比，创建异步计算属性`discount`时，会转换为一个`AsyncComputedValue`对象回写到`state.state.discount`，此时访问`state.state.discount`，其值如下:
+Compared with synchronous calculation attributes, creating asynchronous computing attributes `discount` when, it will be converted to one `AsyncComputedValue` objects back to `state.state.discount` at this time `state.state.discount` the value is as follows:
 
 ```ts
 {
@@ -152,34 +151,34 @@ const store = createStore({
 }
 ```
 
-也就是说，任何异步计算属性，均会有一个`loading`字段，当计算函数运行时，`loading`为`true`，当计算函数运行完成时，`loading`为`false`。
+In other words, there will be one asynchronous calculation attribute `loading` field, when the calculation function runs,`loading` for `true` when the calculation function is running,`loading` for `false`.
 
-因此，在本例中，我们可以通过`discount.loading`来判断是否正在请求折扣，如果是，则显示`loading`状态。
+Therefore, in this example, we can pass `discount.loading` let's judge whether it is asking for discount, if so, display it `loading` state.
 
-**运行效果如下：**
+ **The running effect is as follows:** 
 
-<demo 
-  react="get-started/asyncDiscountLoading.tsx"
-  title="请调节订单数量"
+<demo
+react ="get-started/asyncDiscountLoading.tsx" 
+Title = "Please adjust the number of orders" 
 />
 
-调节订单数量时，可以看到`discount`和`total`的变化，同时显示了`loading`状态。当折扣请求完成时，`loading`状态消失，显示折扣值。
+When adjusting the number of orders, you can see `discount` and `total` the change, it shows at the same time `loading` state. When the discount request is completed,`loading` the state disappears and shows the discount value.
 
-一切都如预期工作。当然，实际项目只显示`loading`状态是不够的，一般我们还需要增加以下功能：
-- **超时处理**：向服务器请求折扣可能会出错。
-- **倒计时**: 可能我们想显示一个倒计时，告诉用户还有多久请求完成。
-- **重试机制**：如果请求折扣失败，我们可能会重试请求。
-- **错误处理**：如果请求折扣失败，我们需要显示错误信息。
-- **可取消**：如果用户取消了订单，我们需要取消请求。
-- **处理进度**：可能我们想提供一个请求进度`0-100%`，告诉用户请求进度。
+Everything is as expected. Of course, the actual project is only displayed `loading` the state is not enough. Generally, we need to add the following functions:
+- **Overtime**: The discount from the server may make an error.
+- **Countdown**: Maybe we want to show a countdown and tell the user how long to request to complete.
+- **Review mechanism**: If the request fails, we may take a look at the request.
+- **Error treatment**: If the request fails, we need to display the error message.
+- **Cancel**: If the user cancels the order, we need to cancel the request.
+- **Processing progress**: Maybe we want to provide a request progress `0-100%`, Tell the user to request progress.
 
-所有这些功能`AutoStore`均为你准备好了，开箱即用，简单快捷，详见[异步计算](/guide/computed/async)
+All these functions `AutoStore` you are ready for you, use the box and use it, simple and fast, see [Asynchronous calculation](/guide/computed/async) 
 
-## 第6步: 增加订单
+## Step 6: Add orders
 
-以上我们只有一条订单，接下来我们增加多条订单，看看`AutoStore`是如何处理多条订单的。
+We have only one order above, then we add multiple orders to see `AutoStore` how to handle multiple orders.
 
-1. 首先使用`useForm`创建一个表单用来收集用户输入。
+1. First use `useForm` create a form to collect user input.
 
 ```tsx
   const { state:newOrder, Form:NewOrderForm } = useForm({
@@ -189,9 +188,9 @@ const store = createStore({
   })   
 ```
 
-- `useForm`内部也创建了一个`AutoStore`用来保存新订单的数据。
+- `useForm` an interior also created one `AutoStore` it is used to save new orders.
 
-2. 使用`store.state.orders.push`将新订单添加到`orders`数组中。
+2. use `store.state.orders.push` add new orders to `orders` in an array.
 
 ```tsx
   <Button onClick={()=>{
@@ -203,25 +202,25 @@ const store = createStore({
 ```
 
 
-**运行效果如下：**
+ **The running effect is as follows:** 
 
-<demo react="get-started/addOrder.tsx"/>
+<demo react ="get-started/addOrder.tsx"/>
 
 
 :::warning
-`AutoStore`提供了非常强大的表单双向绑定能力，详见[表单绑定](/guide/form/about)查看更多内容.
+ `AutoStore` provided very powerful forms of two -way binding capabilities. For details, please refer to [Form binding](/guide/form/about) view more content.
 :::
 
-## 第7步: 调试与诊断
+## Step 7: Debugging and diagnosis
 
-在开发与调试过程中，`AutoStore`支持使用[Redux DevTools Extension](https://github.com/reduxjs/redux-devtools)来调试`AutoStore`的状态。
+During the development and debugging process,`AutoStore` support [Redux DevTools Extension](https://github.com/reduxjs/redux-devtools) come to debug `AutoStore` state.
 
-只需要在你的项目的最开始处导入`@autostorejs/devtools`，然后配置`{debug:true}`即可。
+You only need to import at the beginning of your project `@autostorejs/devtools`, Then configure `{debug:true}` just accept it.
 
 ```ts {3,6}
 //main.ts | app.ts | index.ts
 
-import `@autostorejs/devtools`
+import `@autostorejs/devtools` 
 
 // 创建store时，配置debug:true
 const store = createStore({...},{
@@ -231,16 +230,16 @@ const store = createStore({...},{
 
 ```
 
-使用效果如下：
+The effect is as follows:
 
-![devTools](../debug/devtools.png)
+ ![devtools](../debug/devtools.png) 
 
 
-## 小结
+## summary
 
-- 使用`createStore`或`useStore`可以创建任意嵌套的响应式状态对象。
-- 在组件中使用`useReactive`可以访问状态数据，并在状态变化时自动重新渲染。
-- 使用`$('状态路径')`可以创建一个信号组件，将渲染更新限制在较细的范围内。
-- 使用`computed`可以创建一个计算属性，其值是根据其他状态计算而来，当依赖状态变化时，会自动重新计算。
-- 异步计算支持`loading`、`error`、`timeout`、`retry`、`cancel`、`progress`等高级功能。
-- `useForm`可以将表单元素与`store`双向绑定，非常方便。
+- use `createStore` or `useStore` you can create an arbitrary nested response state object.
+- Use in components `useReactive` you can access status data and automatically renders it when the state changes.
+- use `$ ('Status path')` A signal component can be created, which limits the rendering update to a thinner range.
+- use `computed` it can create a calculation attribute, which is calculated based on other states. When the dependency state changes, it will automatically re -calculate.
+- Asynchronous computing support `loading`,`error`,`timeout`,`retry`,`cancel`,`progress` wait for advanced functions.
+- `useForm` can put the table unit element and `store` two -way binding is very convenient.

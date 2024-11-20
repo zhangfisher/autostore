@@ -1,9 +1,8 @@
-# 信号组件
+# Signal component
+## about
 
-## 关于
-
-`AutoStore`可以使用`$`或`signal`来创建信号组件。
-支持多种方式创建信号组件，创建信号组件的函数`$`或`signal`签名如下：
+ `AutoStore` be available `$` or `signal` create signal components.
+Support multiple ways to create signal components, and functions of creating signal components `$` or `signal` the signature is as follows:
 
 ```ts
 interface SignalComponentType<State extends Dict>{
@@ -34,37 +33,37 @@ interface SignalComponentType<State extends Dict>{
 }
 ```
 
-`AutoStore`支持非常灵活的信号组件创建方式。
+ `AutoStore` support very flexible signal component creation methods.
 
-## 封装单个状态
+## Packaged single state
 
-即将单个状态数据直接封装为信号组件，这是最简单的信号组件创建方式。
+The upcoming single state data is directly encapsulated into a signal component, which is the simplest way to create a signal component.
 
-![](./images/signal-from-state.drawio.png)
-
-
-## 组合多个状态
-
-即将多个状态数据组合创建为一个信号组件。
-
-![](./images/signal-combind-state.drawio.png)
+ ![](./images/signal-from-state.drawio.png) 
 
 
-## 自定义渲染
+## Combine multiple states
 
-提供自定义渲染函数，对状态数据进行更复杂的外观或样式控制。
+The combination of multiple status data is created as a signal component.
 
-![](./images/signal-custom-render.drawio.png)
+ ![](./images/signal-combind-state.drawio.png) 
 
 
-## 动态计算信号组件
+## Custom rendering
 
-不需要预先在`State`中声明计算属性，动态创建计算属性，然后将计算属性对象（`computedObject`）封装为信号组件。
+Provide custom rendering functions to control status data more complex appearance or style control.
 
-![](./images/signal-computed.drawio.png)
+ ![](./images/signal-custom-render.drawio.png) 
 
-- 由于计算属性对象（`computedObject`）支持丰富特性，特别是异步计算属性，支持`retry`、`timeout`、`loading`、`error`等属性，因此可以让信号组件具有更加丰富的表现力功能。
-- 使用`$(render,ObserverDescriptorBuilder)`方式将计算属性对象（`computedObject`）封装为信号组件。创建函数的签名如下：
+
+## Dynamic calculation signal component
+
+No need to be in advance `State` declarse the calculation attribute, create the calculation attribute dynamically, and then use the computing attribute object (`computedObject`) The package is a signal component.
+
+ ![](./images/signal-computed.drawio.png) 
+
+- Due to the calculation attribute object (`computedObject`) Support rich features, especially asynchronous computing attributes, support `retry`,`timeout`,`loading`,`error` equilities, so signal components can have a richer expressive function.
+- use `$(render,ObserverDescriptorBuilder)` method to calculate the attribute object (`computedObject`) The package is a signal component. The signature of the creation function is as follows:
 
 
 ```ts
@@ -82,18 +81,17 @@ interface SignalComponentType<State extends Dict>{
 ):React.ReactNode;
 ```
 
-:::info 提醒
-阅读前文[计算属性](/guide/computed/about)章节，了解计算属性的基本概念。
+::: info reminder
+Reading earlier [Calculation property](/guide/computed/about) chapters to understand the basic concept of calculating attributes.
 :::
 
-## 监听信号组件
+## Surveying signal component
 
-即将监听属性对象（`watchObject`）封装为信号组件。
+The object of listening to the attribute (`watchObject`) The package is a signal component.
 
-![](./images/signal-watch.drawio.png)
+ ![](./images/signal-watch.drawio.png) 
 
-:::warning 提醒 
-`watch`和`computed`均是`AutoStore`中的`ObserverObject`的子类，但是功能是不一样的。
-阅读前文于[监听属性](/guide/watch/about)章节，了解监听属性的基本概念。
+:::warning reminder
+ `watch` and `computed` all `AutoStore` medium `ObserverObject` the subclass, but the function is different.
+Reading before [Listening attribute](/guide/watch/about) chapters to understand the basic concepts of monitoring attributes.
 :::
-

@@ -1,30 +1,29 @@
-# 示例
+# Exemplary example
+ `AutoStore` provide rich examples to help you better understand how to use it `AutoStore`.
 
-`AutoStore`提供了丰富的示例，以帮助您更好地了解如何使用`AutoStore`。
-
-- 所有示例均是在文档里面，这里统一列出方便查找。
-- 所有示例的源码都可以在[这里](https://github.com/zhangfisher/autostore/tree/master/docs/demos)找到。
+- All examples are in the document, which is uniformly listed here for easy search.
+- - 所有示例的源码都可以在 [here](https://github.com/zhangfisher/autostore/tree/master/docs/demos) turn up.
 
 <Tree>
-get-started
-    addOrder.tsx
-    asyncDiscount.tsx
-    asyncDiscountLoading.tsx
-    createComputed.tsx    
+get-Started
+    addorder.tsx
+    asyncdiscount.tsx
+    asyncdiscountLoading.tsx
+    createComputed.tsx
 store
-    readWriteState.tsx
+    ReadwriteState.tsx
     useContextRender.tsx
-    useReactiveBase.tsx
-    useReactiveGetSet.tsx
-    useReactiveMemo.tsx
-    useSignalRender.tsx
+    Usereactivebase.tsx
+    useReactivegetSet.tsx
+    UsereactiveMemo.tsx
+    useSignalrender.tsx
 computed
-    asyncBase.tsx               // [源码](https://github.com/zhangfisher/autostore/tree/master/docs/demos/computed/asyncBase.tsx)
-    asyncCancel.tsx
-    asyncCountDown.tsx          // 倒计时 [源码](https://github.com/zhangfisher/autostore/tree/master/docs/demos/computed/asyncCountDown.tsx)
-    asyncLoading.tsx
-    asyncProgressbar.tsx
-    asyncRetry.tsx
+    asyncbase.tsx               // [Source code](https://github.com/zhangfisher/autostore/tree/master/docs/demos/computed/asyncBase.tsx) 
+    asynccancel.tsx
+    asynccountdown.tsx          // Countdown time [Source code](https://github.com/zhangfisher/autostore/tree/master/docs/demos/computed/asyncCountDown.tsx) 
+    asyncloading.tsx
+    asyncprogressbar.tsx
+    asyncretry.tsx
     asyncTimeout.tsx
     computedObject.tsx
     createSyncBase.tsx
@@ -44,7 +43,7 @@ form
     formSplitCustom.tsx
     formSplitField.tsx
     formSplitObjField.tsx
-    formSubmit.tsx 
+    formSubmit.tsx
     useFieldBase.tsx
     useFieldCombo.tsx
     useFieldIpAddress.tsx

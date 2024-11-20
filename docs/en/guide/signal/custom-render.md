@@ -1,12 +1,11 @@
-# 自定义渲染
+# Custom rendering
+## introduce
 
-## 介绍
+The function of the status data into a signal component is relatively simple before, so it also provides a custom rendering function. You can perform a more complex appearance or style control when packaging status data packaging as a signal component, and return one to a one.`ReactNode` type components.
 
-前文将状态数据封装为信号组件的功能相对简单，因此也提供自定义渲染函数，可以在将状态数据封装为信号组件时进行更复杂的外观或样式控制，返回一个`ReactNode`类型的组件。
+ ![](./images/signal-custom-render.drawio.png) 
 
-![](./images/signal-custom-render.drawio.png)
-
-可以在将**状态数据直接直接封装为信号组件时指定自定义渲染函数**，方法函数签名如下：
+Can **Specify the custom rendering function when the status data is directly encapsulated as a signal component** the method function signature is as follows:
 
 ```ts
 interface SignalComponentType<State extends Dict>{
@@ -18,7 +17,7 @@ interface SignalComponentType<State extends Dict>{
 }
 ```
 
-自定义渲染函数`SignalComponentRender`的声明如下：
+Custom rendering function `SignalComponentRender` the statement is as follows:
 
 ```ts
 type SignalComponentRenderArgs<Value=any> = AsyncComputedValue<Value>
@@ -27,7 +26,7 @@ type SignalComponentRender<Value=any> =(
 )=>React.ReactNode
 ```
 
-**示例如下：**
+ **The example is as follows:** 
 
 ```ts
 $(
@@ -39,18 +38,18 @@ $(
     'user.age'
   )
 ```
-如果是状态指向的是一个异步计算对象`AsyncComputedValue`，则会传入`loading`,`timeout`,`retry`,`progress`,`error`等参数，因此我们可以进行更多的渲染控制。
+If it is a state pointing to an asynchronous calculation object `AsyncComputedValue`, Will be introduced in `loading`,`timeout`,`retry`,`progress`,`error` waiting for parameters, so we can perform more rendering control.
 
 
-## 状态信号组件
+## Status signal component
 
-前文中，我们使用`$('<状态路径>')`将**状态数据直接直接封装为信号组件**，但是缺少更多的控制，此时也可以指定一个自定义渲染函数。
+In the previous article, we use `$ ('<State Path>')` will **Status data is directly encapsulated as signal components**, But lack more control, you can also specify a custom rendering function at this time.
 
 ```tsx 
 <Value=any>(render:SignalComponentRender,path:string | string[]):React.ReactNode
 ```
 
-将**状态数据直接直接封装为信号组件**指定自定义渲染函数的方式如下：
+Will **Status data is directly encapsulated as signal components** the method of specifying a custom rendering function is as follows:
 
 ```ts  {3-5,7}
 $(
@@ -63,29 +62,29 @@ $(
   )
 ```
 
-以下是一个`$(render,'<状态路径>')`自定义渲染函数的示例：
+The following is one `$ (Render, '<State Path>')` example of custom rendering function:
 
-<demo react="signals/signalCustomRender.tsx"/>
+<demo react ="signals/signalCustomRender.tsx"/>
 
 
-## 异步状态信号组件
+## Asynchronous state signal component
 
-如果状态数据路径所指向的是一个异步计算对象`AsyncComputedValue`时，该对象包含了`loading`、`error`、`value`等属性。
+If the status data path is directed to an asynchronous computing object `AsyncComputedValue` at that time, the object contains `loading`,`error`,`value` properties.
 
-此时同样支持使用`$('<异步计算属性的路径>')`创建一个信号组件。
+Support for use at this time `$ ('<Tiles of asynchronous calculation attributes>')` create a signal component.
  
-<demo react="signals/signalAsyncCustomRender.tsx"/>
+<demo react ="signals/signalAsyncCustomRender.tsx"/>
  
 
-:::warning 提醒
-`$('order.count')`和`$('order.total.value')`是等价的，创建信号组件时，如果发现目标是`AsyncComputedValue`则自动添加`value`。
+:::warning reminder
+ `$('order.count')` and `$('order.total.value')` it is equivalent. When creating a signal component, if the target is found `AsyncComputedValue` automatically add `value`.
 :::
  
 
-## 高级异步信号组件
+## Advanced asynchronous signal component
 
-如果目标路径是一个异步计算属性，也采用同样的`$(<render>,<path>)`的方式自定义渲染，但此时渲染函数的参数是一个对象`AsyncComputedValue`，包含了`value`、`loading`、`error`、`timeout`、`retry`等属性。
+If the target path is an asynchronous calculation attribute, the same one is also used `$(<render>,<path>)` the method of customizing the rendering, but the parameters of the rendering function at this time are an object `AsyncComputedValue` including `value`,`loading`,`error`,`timeout`,`retry` properties.
 
-因此，我们可以根据`loading`、`error`等属性进行更多的自定义渲染控制。
+Therefore, we can follow `loading`,`error` for more attributes, more custom rendering control.
 
-<demo react="signals/signalAsyncCustomRenderPro.tsx"/>
+<demo react ="signals/signalAsyncCustomRenderPro.tsx"/>

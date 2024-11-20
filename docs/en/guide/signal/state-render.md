@@ -1,10 +1,11 @@
-# 状态信号组件
+# Status signal component
+## about
 
-## 关于
+The state data is encapsulated into a signal component. When the state data changes, the redirect component is automatically rendered.
 
-将状态数据封装为信号组件，当状态数据变化时，自动触发信号组件的重新渲染。
-
-![](./images/signal-from-state.drawio.png)```ts 
+ ![](./images/signal-from-state.drawio.png) 
+ 
+```ts 
 interface SignalComponentType<State extends Dict>{
     // 指定状态数据路径
     (selector: string):React.ReactNode   
@@ -13,38 +14,38 @@ interface SignalComponentType<State extends Dict>{
 }
 ```
 
-:::info 提示
-只需要指定状态数库的路径或者提供一个返回状态数据的函数即可。
+::: info prompt
+You only need to specify the path of the status digital library or provide a function that returns the status data.
 :::
 
 
-## 同步信号组件
+## Synchronous signal component
 
-使用`$('<状态路径>')`将**状态数据直接直接封装为信号组件**，当状态数据变化时，自动触发信号组件的重新渲染。
+use `$ ('<State Path>')` will **Status data is directly encapsulated as signal components** when the status data changes, the re -rendering of the signal component is automatically triggered.
 
-<demo react="signals/signalStateBase.tsx"/>
+<demo react ="signals/signalStateBase.tsx"/>
 
-:::warning 注意
-当更新`Age`时，整个色块不会变化重新渲染⚡。
+:::warning Note
+Be updated `Age` at the same time, the entire color block will not change to re -renders.
 :::
 
-## 组合同步信号组件
+## Combination synchronous signal component
 
-使用`$((state)=>{.....})`将多个状态数据组合创建为一个信号组件，当依赖的状态数据变化时，该信号组件会自动触发重新渲染。
+use `$((state)=>{.....})` the combination of multiple status data is created as a signal component. When the dependent state data changes, the signal component will automatically trigger re -rendering.
 
-<demo react="signals/signalComboState.tsx"/>
+<demo react ="signals/signalComboState.tsx"/>
 
-## 异步计算信号组件
+## Asynchronous computing signal component
 
-当使用`$('<状态路径>')`将**状态数据直接直接封装为信号组件**时，如果状态数据是异步数据对象`AsyncComputedValue`时，该对象包含了`loading`、`error`、`value`等属性。
+Use `$ ('<State Path>')` will **Status data is directly encapsulated as signal components** at this time, if the status data is an asynchronous data object `AsyncComputedValue` at that time, the object contains `loading`,`error`,`value` properties.
  
-<demo react="signals/signalAsyncState.tsx"/>
+<demo react ="signals/signalAsyncState.tsx"/>
  
 
-- 当路径指定的是一个异步计算属性时，创建的信号组件时会自动添加`value`属性。因此，以上`$('order.total')`和`$('order.total.value')`是等价的。
+- When the path specifies an asynchronous computing attribute, the signal component created will automatically add `value` property. Therefore, the above `$('order.total')` and `$('order.total.value')` it's equivalent.
 
 
-:::warning 注意 
-- `$('order.count')`和`$('order.total.value')`是等价的，创建信号组件时，如果发现目标是`AsyncComputedValue`则自动添加`value`。
-- 您可能已经注意到了，当前页面的渲染色块组件都不会变化⚡。这就是信号组件细粒度更新的魅力所在，状态变化时，组件的渲染被限制在信号组件内部。
+:::warning Note
+- `$('order.count')` and `$('order.total.value')` it is equivalent. When creating a signal component, if the target is found `AsyncComputedValue` automatically add `value`.
+- You may have noticed that the rendering color block components on the current page will not change. This is the charm of the fine particle -level update of the signal component. When the state changes, the rendering of the component is limited inside the signal component.
 :::

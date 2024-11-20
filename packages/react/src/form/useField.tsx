@@ -1,5 +1,5 @@
 
-import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq, isPlainObject, isFunction, getId } from "autostore";
+import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPathEq, isPlainObject, isFunction } from "autostore";
 import { type ReactAutoStore } from '../store';
 import { useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';

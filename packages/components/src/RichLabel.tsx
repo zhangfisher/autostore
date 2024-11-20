@@ -56,12 +56,12 @@ export const RichLabel:React.FC<RichLabelProps> =(props:RichLabelProps)=>{
     }
     return (
         <div
-            className ={props.className}
+            className={'x-richlabel ' + (props.className || '')}
             style={{ 
                 display:props.inline ? "inline-block" : "block",
                 boxSizing: "border-box",
-                padding: "8px",
-                margin:"4px",
+                padding: "2px 0px 2px 0px",
+                margin:"0px",
                 color:"#222",
                 ...props.style
         }}>

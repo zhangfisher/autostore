@@ -13,7 +13,7 @@ import { ColorBlock,Button,Input, Layout } from "x-react-components"
 } )
 
 export default ()=>{
-  const bindings = useFields({entry:'user'})
+  const fields = useFields()
 
   const [ dirty ]  = useWatch<boolean>(({path})=>{   
             if(['firstName','lastName'].includes(path[path.length-1])){
@@ -23,8 +23,8 @@ export default ()=>{
   return (
     <Layout>
     <div>
-      <Input label="FirstName" {...bindings.firstName}/>
-      <Input label="lastName" {...bindings.lastName}/>
+      <Input label="FirstName" {...fields.user.firstName}/>
+      <Input label="lastName" {...fields.user.lastName}/>
       <Button onClick={()=>{
           reset()        
       }}>Reset</Button>

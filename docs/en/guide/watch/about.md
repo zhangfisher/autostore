@@ -1,11 +1,10 @@
-## 关于
+## about
 
-根据`AutoStore`的[基本原理](../store/about)，其内置了一个状态变化事件系统，用于监视`State`中的数据变化，当状态数据变化时会触发相应的事件。
-通过侦听事件就可以使用`watch`用来监视`State`数据的变化,当所监视的数据发生时，可以执行侦听器函数。
+according to `AutoStore` of [Basic principle](../store/about), It has a built -in state change event system for monitoring `State` the changes in the data in the state will trigger the corresponding event when the state data changes.
+You can use it through listening events `watch` to monitor `State` data changes can execute the listener function when the monitored data occurs.
 
-提供三种使用`watch`的方式：
+Provide three uses `watch` how to:
 
-- 调用`store.watch`函数，用来侦听`State`中的数据变化。
-- 直接在`State`中声明`watch`函数,然后将侦听器返回值写入声明`watch`函数所在的位置。
-- 在组件中调用`store.useWatch`函数，用来侦听`store`对象的变化,当组件销毁自动取消订阅。
-
+- Call `store.watch` function, used to listen to `State` data change.
+- Directly `State` statement `watch` function, and then write the return value of the listener to the statement `watch` the position where the function is located.
+- Called in the component `store.useWatch` function, used to listen to `store` the change of the object is automatically canceled when the component is destroyed.

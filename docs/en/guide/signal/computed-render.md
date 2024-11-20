@@ -1,13 +1,12 @@
-# 计算信号组件
- 
-:::warning 提示
-阅读本节时请先理解`computed`和`watch`章节。
+# Calculating signal component 
+:::warning reminder
+Please understand first when reading this section `computed` and `watch` chapter.
 :::
 
-## 关于
+## about
 
-前文中，我们介绍了如何将状态数据封装为信号组件，无论状态数据路径所指向的是一个普通状态数据还是一个计算属性，都可以通过`$`或`signal`函数将其封装为信号组件。
-但是前提是需要在状态中预先声明`computed`计算属性。如下：
+In the previous article, we introduced how to encapsulate status data as signal components. Whether the state data path is directed to a normal state data or a calculation attribute, you can pass `$` or `signal` the function encapsulates it as a signal component.
+But the premise is that you need to declare in advance in the state `computed` calculate attributes. as follows:
 
 ```ts {20-26}
 import { createStore } from '@autostorejs/react';
@@ -40,12 +39,12 @@ const { state , $ } = store
 }
 ```
 
-以上方法的前提是需要在`State`中预先声明`computed`计算属性，然后指定状态数据的路径来创建信号组件。
+The premise of the above method is to need to be `State` pre -state statement `computed` calculate the attribute, and then specify the path of the status data to create a signal component.
 
-这种方法在组件中使用时，会有一定的局限性，因此我们提供了一种更加灵活的方式来创建信号组件，即**动态创建计算信号组件**。
+This method will have a certain limitations when used in the component, so we provide a more flexible way to create a signal component, that is,**Dynamic creation calculation signal component**.
  
 
-**方法函数签名如下：**
+ **The method function signature is as follows:** 
 
 ```ts 
 interface SignalComponentType<State extends Dict>{
@@ -67,9 +66,9 @@ interface SignalComponentType<State extends Dict>{
 }
 ```
 
-## 简单计算信号组件
+## Simple calculation signal component
 
-我们先从一个简单的同步计算函数来创建一个计算信号组件。
+Let's create a computing signal component from a simple synchronous calculation function.
 
 
 ```ts   {3-5,7-9}
@@ -85,19 +84,19 @@ $(
 ) 
 ```
 
--  以上代码中，我们创建了一个计算信号组件，提供了一个渲染函数和一个`computed getter`函数，当`getter`函数返回的状态数据变化时，会自动触发渲染函数。
--  在创建信息组件时，会`computed getter`函数自动创建一个`computedObject`对象，然后再基于此创建信号组件。以下是一个同步信号组件的示例：
+- In the above code, we created a computing signal component, providing a rendering function and a `computed getter` function,`getter` when the status data returns by the function, the rendering function is automatically triggered.
+- When creating information components, it will `computed getter` function automatically create a `computedObject` object, and then create signal components based on this.The following is an example of a synchronous signal component:
 
-<demo react="signals/signalDynamicBase.tsx"/>
+<demo react ="signals/signalDynamicBase.tsx"/>
 
-:::warning 提示
-以上创建的是一个同步计算信号组件，当所依赖的状态数据变化时，会自动触发渲染函数。其工作原理与`computed`计算属性相同。
+:::warning reminder
+The above is created by a synchronous calculation signal component. When the state data is changed, the rendering function will be automatically triggered. Its working principle and `computed` the calculation attributes are the same.
 :::
 
 
-## 同步计算信号组件
+## Synchronous calculation signal component
 
-对于同步信号组件，可以使用`computed`函数封装同步计算函数，以上例功能是一样的，差别在于当使用`computed`时，可以配置`computed`参数。
+For synchronous signal components, you can use it `computed` the function packaging synchronization calculation function. The above example is the same, the difference is that it should be used `computed` when you can configure `computed` parameter.
 
 ```ts   {3-5,7-9}
 $<number>(
@@ -113,26 +112,26 @@ $<number>(
 ```
  
 
-以下是一个同步信号组件的示例：
+The following is an example of a synchronous signal component:
 
-<demo react="signals/signalDynamicComputed.tsx"/>
+<demo react ="signals/signalDynamicComputed.tsx"/>
 
-## 异步计算信号组件
+## Asynchronous computing signal component
 
-也可以创建一个异步计算信号组件，但是异步计算信号组件的创建方式与同步计算信号组件有所不同。
+You can also create an asynchronous computing signal component, but the creation method of the asynchronous calculation signal component is different from the synchronous calculation signal component.
 
 ```ts 
 <Value=any, Scope=any >(render:SignalComponentRender,builder: ObserverDescriptorBuilder<string,Value,Scope>):React.ReactNode;
 ```
 
-需要传入一个`ObserverDescriptorBuilder`，`computed(....)`可以构建一个`ObserverDescriptorBuilder`对象，其使用方法与计算属性相同。 
+Need to pass one `ObserverDescriptorBuilder`,`computed(....)` can build one `ObserverDescriptorBuilder` object, the method of use is the same as the calculation attribute.
 
-以下是一个异步计算信号组件的示例：
+The following is an example of an asynchronous computing signal component:
 
-<demo react="signals/signalDynamicAsync.tsx"/>
+<demo react ="signals/signalDynamicAsync.tsx"/>
  
 
-:::warning 提示
-创建异步信号组件时，可以使用`computed`创建的异步计算的所有特性，包括`loading`、超时控制、重试、错误处理、进度等等。
+:::warning reminder
+When creating asynchronous signal components, you can use it `computed` all the characteristics created asynchronous computing, including `loading`, Timeout control, retry, error handling, progress, etc.
 :::
  

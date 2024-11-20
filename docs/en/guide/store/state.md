@@ -1,23 +1,22 @@
 # State
+## introduction
 
-## 引言
+Create `AutoStore` after the example, you can access the status.
 
-当创建好`AutoStore`实例后就可以存取状态。
+- **use`useReactive`** 
 
-- **使用`useReactive`**
+Used to access and update in components `Store` status data will lead to re -rendering when updating.
 
-用来在组件中访问和更新`Store`的状态数据，更新时会导致重新渲染。
+- **Directly read and write`store.state`** 
 
-- **直接读写`store.state`**
-
-`store.state`返回的是一个响应式对象`reactive`，其实质是通过`Proxy`实现的。
-当读写`store.state`时，会触发内部的依赖收集，相关计算属性的运行，配合`signal`机制可以自动触发组件的细粒度重新渲染。
+ `store.state` the response object returns `reactive` the essence is through `Proxy` realized.
+Read and write `store.state` at this time, it will trigger the internal dependence collection, the operation of the relevant calculation attribute, cooperate `signal` the mechanism can automatically trigger the fine particle size of the component.
 
 ## useReactive
 
-`Store`对象提供了`useReactive`方法，用来在组件中访问和更新`Store`的状态数据。
+ `Store` object provides `useReactive` methods to access and update in components `Store` status data.
 
-### 函数签名
+### Function signature
 
 ```ts
 export interface UseReactiveType<State extends Dict> {
@@ -30,12 +29,12 @@ export interface UseReactiveType<State extends Dict> {
 }
 ```
 
-### 基础使用
+### Basic use
 
-其使用方式与`React`的`useState`方法类似，返回一个`state`和`setState`的元组。
+The way of use and `React` of `useState` method similar, return one `state` and `setState` the meta -group.
 
 ```tsx twoslash
-import { createStore } from "@autostorejs/react"
+import { createStore } from "@autostorejs/react" 
 const { state,useReactive,$ } = createStore({
   user:{
     firstName:"Zhang",
@@ -51,22 +50,22 @@ const [firstName,setFirstName] = useReactive(['user','firstName'])
 
 ```   
 
-**简单示例如下：**
+ **Simple examples are as follows:** 
 
-<demo react="store/useReactiveBase.tsx" />
+<demo react ="store/useReactiveBase.tsx"/>
 
 :::warning
-- 当更新`Age`时会重新渲染整个组件,其行为与`React`的`useState`类似。
-- 在早期版本中，`useReactive`叫`useState`，其API设计尽可能保持与`React`的`useState`一致，减少用户的学习成本。但是很快发现`useState`与`React`内置名称冲突，导致需要进行重命名，所以后续版本中更名为`useReactive`。
+- Be updated `Age` the entire component will be rendered again, and its behavior and `React` of `useState` similar.
+- In the early version,`useReactive` call `useState`, Its API design is maintained as much as possible `React` of `useState` consistent, reduce user learning costs. But soon discover `useState` and `React` the built -in name conflict leads to renamed it, so the subsequent version is renamed `useReactive`.
 :::
 
 
-### getter & setter
+### Getter & Setter
 
-`useReactive`还可以接受`getter` 和`setter`两个函数参数，用来获取和设置`State`中的组合属性。
+ `useReactive` acceptable `getter` and `setter` two function parameters, used to get and set `State` the combined attribute in the middle.
 
-- `getter`：用来获取`State`中的组合属性。
-- `setter`：用来设置`State`中的组合属性。
+- `getter`: Used to get `State` the combined attribute in the middle.
+- `setter`: Used to set `State` the combined attribute in the middle.
 
 ```tsx 
  
@@ -90,34 +89,34 @@ setFullName(["Hello","Voerkai18n❤️"]) // [!code ++]
 ``` 
 
 
-:::warning 提示
-- useReactive<`string`,`[string,string]`>可以指定`getter`和`setter`的泛型类型，这样在使用时会有更好的代码提示。
-- useReactive(`<path string>`)能自动类型推断，但是`getter`和`setter`需要手动指定泛型类型。
+:::warning reminder
+- Usereactive <`string`,`[string,string]`> You can specify `getter` and `setter` the generic type, so that there will be better code prompts when used.
+- Usereactive (`<path string>`) Can automatically infer, but `getter` and `setter` you need to manually specify the generic type.
 :::
 
-**简单示例如下：**
+ **Simple examples are as follows:** 
 
-<demo react="store/useReactiveGetSet.tsx" />
+<demo react ="store/useReactiveGetSet.tsx"/>
 
 
-:::warning 提示
-`useReactive`还有一个别名`useState`，但是由于`useState`与`React`内置名称相同，使用时经常需要重命名，所以在`AutoStore`中使用`useReactive`来代替。
+:::warning reminder
+ `useReactive` there is also an alias `useState`, But due to `useState` and `React` the built -in name is the same, and it often needs to be renamed when used, so `AutoStore` use `useReactive` come instead.
 :::
 
 
-## useAsyncReactive
+## useasyncream
 
-如果状态是一个异步计算属性，也可以使用`useAsyncReactive`来处理。
+If the state is an asynchronous calculation attribute, it can also be used `useAsyncReactive` come to handle.
 
-`useAsyncReactive`返回是一个`AsyncComputedValue`对象，其包含了异步计算属性的状态信息。
+ `useAsyncReactive` return is a `AsyncComputedValue` the object contains the status information of the asynchronous calculation attribute.
 
-<demo react="computed/asyncReactiveBase.tsx" />
+<demo react ="computed/asyncReactiveBase.tsx"/>
 
-更多异步计算的特性见[异步计算属性](/guide/computed/async.md)。
+See more about the characteristics of more asynchronous computing [Asynchronous calculation attribute](/guide/computed/async.md).
 
-## 直接读写
+## Directly read and write
 
-除了使用`useReactive`方法读写状态外，`sotre.state`返回的是一个响应式`Proxy`对象，可以直接读写也会触发内部的依赖收集和事件响应。
+Except `useReactive` method read and write,`sotre.state` return is a response type `Proxy` objects can directly read and write and trigger internal dependence collection and event response.
 
 
 ```ts
@@ -130,28 +129,28 @@ state.age=100  // [!code ++]
 
 ```
 
-**特殊注意：**
+ **Special attention:** 
 
-- 直接修改状态`state.age=100`会触发内部的依赖收集和事件响应，但是不会触发重新渲染整个组件。因为`state`是一个响应式对象（即经过`proxy`处理过的对象），对其的读写会触发内部的依赖收集和事件响应。但是并没有通知`React`组件，所以不会触发组件的重新渲染。
-- 如果要让直接读写状态时触发重新渲染，就需要对`state`进行包装，让状态变化时通知`React`组件重新渲染。这需要使用：
-  - 使用`useReactive`
-  - 使用`signal`信号组件
+- Directly modify the status `state.age=100` it will trigger internal dependency collection and event response, but it will not trigger the re -rendering the entire component. because `state` it is a response object (that is, pass by `proxy` the processing objects) will trigger the internal dependence collection and event response to its read and write. But there is no notice `React` components, so it will not trigger the re -rendering of the component.
+- If you want to trigger a re -rendering when you want direct reading and writing state, you need to `state` package to let the state change `React` the component is re -rendered. This needs to be used:
+  - 使用 `useReactive` 
+  - 使用 `signal` signal component
 
-无论是使用`useReactive`或`信号组件`均原理均是会拦截`state`读写事件，然后通知`React`组件重新渲染。
+Whether it is used `useReactive` or `Signal component` the principle of the balance is intercepted `state` read and write events, and then notify `React` the component is re -rendered.
 
-**简单演示如下：**
+ **The simple demonstration is as follows:** 
 
-<demo react="store/readWriteState.tsx" />
+<demo react ="store/readWriteState.tsx"/>
 
 
 :::warning
-此例中更新`Age`时并不会重新渲染整个组件,而只会渲染`$('age')`，这就是信号组件的功能，其可以提供细粒度的更新渲染。
-`$('age')`本质上返回的是一个经过`React.memo`包装的`ReactNode`。
-:::## 静默更新
+Update in this example `Age` it will not render the entire component, but only render `$('age')` this is the function of the signal component, which can provide fine -grained rendering.
+ `$('age')` in essence, a passing is `React.memo` packed `ReactNode`.
+:::## Silent update
 
-对状态进行读取时，会触发相应的`StateOperateType`类型的事件，如`get`或`set`等。
+When reading the state, it will trigger the corresponding `StateOperateType` types, such as `get` or `set` wait.
 
-在某些场景下，我们可能不希望触发这些事件，可以使用`silentUpdate`方法。
+In some scenarios, we may not want to trigger these events, we can use `silentUpdate` method.
 
 ```tsx
 store.silentUpdate(()=>{
@@ -159,22 +158,22 @@ store.silentUpdate(()=>{
 })
 ```
 
-## 批量更新
+## Batch update
 
-一般情况下，更新多个状态时会触发多个更新事件。在`React`场景中，为了优化渲染，我们可能希望一次性更新多个状态，只触发一次渲染。此时就可以使用`batchUpdate`方法。
+Under normal circumstances, multiple update events are triggered when updating multiple states. exist `React` in the scene, in order to optimize the rendering, we may want to update multiple states at one time and only trigger once. You can use it at this time `batchUpdate` method.
 
 ```tsx
 store.batchUpdate(()=>{
   store.state.age=100
-  store.state.name="Fisher"
+  store.state.name="Fisher" 
 })
 ```
 
-关于更多的批量更新的技术细节见[批量更新](/guide/store/batchUpdate.md)。
+For more batch update technical details [Batch update](/guide/store/batchUpdate.md).
 
-## 静默读取
+## Read silently
 
-正常访问状态时会触发`get`事件，如果不希望触发`get`事件，可以使用`peep`方法。
+It will be triggered when the normal access state `get` incidents, if you don't want to trigger `get` event, can be used `peep` method.
 
 ```tsx
 store.peep((state)=>{
@@ -184,12 +183,12 @@ store.peep((state)=>{
 store.peep("age") // 100
 ```
 
-以上方法不会触发`get <age>`事件。
+The above method will not be triggered `get <age>` event.
 
 
 ## update
 
-`update`方法用来更新状态，其函数签名如下：
+ `update` the method is used to update the status, the function signature is as follows:
 
 ```tsx
 type UpdateOptions = {
@@ -201,13 +200,12 @@ type UpdateOptions = {
 update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions)
 ```
 
-- `batchUpdate`仅是`update((state)=>{....},{batch:true})`的快捷方式。
-- `silentUpdate`仅是`update((state)=>{....},{silent:true})`的快捷方式。
+- `batchUpdate` only `update((state)=>{....},{batch:true})` shortcurring.
+- `silentUpdate` only `update((state)=>{....},{silent:true})` shortcurring.
 
 
-## 小结
+## summary
 
-- 更新`Store`的状态可以不需要使用`useReactive`返回的`setXXXXX`,直接使用`state.xxxx=xxx`即可更新状态触发响应。
-- 如果要提供细粒度的更新，可以使用`signal`机制，通过`$`方法创建一个信号组件，用来触发局部更新。
-
+- renew `Store` the state can not be used `useReactive` return `setXXXXX` used directly `state.xxxx=xxx` you can update the state to trigger the response.
+- If you want to provide fine -grained updates, you can use it `signal` mechanism, pass `$` methods Create a signal component to trigger local updates.
 

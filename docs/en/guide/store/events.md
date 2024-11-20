@@ -1,14 +1,13 @@
  
-# 事件
+# event
+use `createStore` or `useStore` created `AutoStore` after the object instance, the instance provides two events triggers:
 
-使用`createStore`或`useStore`创建的`AutoStore`对象实例后，实例提供两个事件触发器：
+- **Example event trigger** the
+- **Status event trigger** 
 
-- **实例事件触发器**：
-- **状态事件触发器**
+## Store event
 
-## Store事件
-
-`AutoStore`对象实例本身就是一个事件触发器，提供了一些事件用来监听实例的生命周期、状态变化以及计算属性等事件。
+ `AutoStore` the object instance itself is an event trigger, which provides some events to monitor the life cycle, state changes, and calculation attributes that monitor the instance.
 
 ```ts
 class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
@@ -37,23 +36,23 @@ export type StoreEvents = {
 
 ```
 
-### 方法
+### method
 
-`AutoStore`提供了一些方法用来监听和触发事件：
+ `AutoStore` it provides some ways to monitor and trigger events:
 
-| 方法 |  说明 |
-| :---: |  --- |
-| `on` | 监听事件 |
-| `onAny`  | 订阅所有事件 |
-| `once` | 只监听一次事件 |
-| `off`  | 取消监听事件订阅 |
-| `offAll`  | 取消所有订阅 |
-| `emit` | 触发事件 |
-| `wait` | 等待事件触发 |
+|method|illustrate|
+|: ---:|  --- |
+|`on`|Listening incident|
+|`onAny`|Subscribe to all events|
+|`once`|Only monitor once|
+|`off`|Subscribe to cancel the monitoring event|
+|`offAll`|Cancel all subscriptions|
+|`emit`|Trigger event|
+|`wait`|Waiting event trigger|
 
 #### on
 
-订阅事件，返回一个`EventListener`用来取消订阅。
+Subscribe to the event, return one `EventListener` used to cancel subscriptions.
 
 ```ts
 export type EventListener = { off:()=>void }
@@ -69,22 +68,22 @@ on<P=any>(
 ):EventListener
 ```
 
-- `type`：事件类型，可以是具体的事件名，也可以是`**`，表示监听所有事件。
-- `handler`：事件处理函数。
-- `prepend`：是否在事件订阅队列头部插入，订阅队列是一个数组，`prepend`为`true`时会在头部插入，`false`时在尾部插入。这样可以使得事件处理函数的执行顺序发生变化。
+- `type`: Event type, it can be a specific event name, or it can be `**`, Express all incidents.
+- `handler`: Event processing function.
+- `prepend`: Whether to insert the head of the event subscription queue, the subscription queue is a array,`prepend` for `true` I will insert it on the head,`false` insert at the tail. This can make the execution order of the event processing function change.
 
-#### onAny
-订阅所有事件，返回一个`EventListener`用来取消订阅。
+#### onany
+Subscribe to all events and return one `EventListener` used to cancel subscriptions.
 
 ```ts
 onAny(handler:EventHandler<string,any>):EventHandler
 ```
 
-- `onAny(handler)`等效于`on('**',handler)`
+- `onAny(handler)` equivalent `on('**',handler)` 
 
 #### once
 
-只订阅一次事件，事件触发后会自动取消订阅。
+Subscribe only once, and the subscription will be automatically canceled after the incident is triggered.
 
 ```ts
 once<T extends  keyof Events>(
@@ -93,9 +92,9 @@ once<T extends  keyof Events>(
 ) :EventListener
 ```
 
-#### off
+#### OFF
 
-取消订阅事件。
+Cancel the subscription event.
 
 ```ts
 off<T extends  keyof Events>(
@@ -104,9 +103,9 @@ off<T extends  keyof Events>(
 )
 ```
 
-#### offAll
+#### Office
 
-取消所有订阅。
+Cancel all subscriptions.
 
 ```ts
 offAll()
@@ -114,7 +113,7 @@ offAll()
 
 #### emit
 
-触发事件。
+Trigger an event.
 
 ```ts
 emit<T extends keyof Events>(type:T,payload:Events[T])
@@ -122,7 +121,7 @@ emit<T extends keyof Events>(type:T,payload:Events[T])
 
 #### wait
 
-等待事件触发。
+Waiting for the event to trigger.
 
 ```ts
 wait<T extends  keyof Events >(
@@ -135,8 +134,8 @@ wait<T extends  keyof Events>(
 ):Promise<Events[T]>
 ```
 
-- `filter`：过滤器，当返回`true`时触发，当返回`undefined`时触发，当返回`void`时不触发。
-- `timeout`：超时时间，单位毫秒。
+- `filter`: Filter, should be returned `true` time to trigger, should return `undefined` time to trigger, should return `void` do not trigger.
+- `timeout`: Timeout time, unit in milliseconds.
 
 ```ts
 // 等待load事件触发
@@ -146,13 +145,13 @@ await store.wait('computed:done',2000)
 
 ```
 
-### 事件
+### event
 
-`AutoStore`提供了以下事件：
+ `AutoStore` provided the following events:
 
 #### load
 
-当`AutoStore`对象实例创建后触发。
+when `AutoStore` the object instance is triggered after creation.
 
 ```ts
 store.on('load',(store:AutoStore)=>{
@@ -160,27 +159,27 @@ store.on('load',(store:AutoStore)=>{
 })
 ```
 
-#### unload
+#### unloaded
 
-当调用`store.destory()`销毁`AutoStore`对象实例后触发。
+Deepen `store.destory()` destroy `AutoStore` triggered after the object instance.
 
 ```ts
 store.on('unload',(store:AutoStore)=>{
     console.log('store loaded:',store)
 })
 ```
-#### computed:created
+#### Computed: Created
 
-当计算属性对象创建时触发。
+Triggered when the calculation attribute object is created.
 
 ```ts
 store.on('computed:created',(computedObject:ComputedObject)=>{
     console.log('computedObject created:',computedObject)
 })
 ```
-#### computed:done
+#### computed: done
 
-当计算函数执行成功时触发。
+When the calculation function is executed successfully, it is triggered.
 
 ```ts
 store.on('computed:done',({id,path,value,computedObject}:any)=>{
@@ -188,9 +187,9 @@ store.on('computed:done',({id,path,value,computedObject}:any)=>{
 })
 ```
 
-#### computed:error
+#### computed: error
 
-当计算函数执行出错时触发。
+Triggered when the calculation function executes errors.
 
 ```ts
 store.on('computed:error',({id,path,error,computedObject}:any)=>{
@@ -198,20 +197,20 @@ store.on('computed:error',({id,path,error,computedObject}:any)=>{
 })
 ```
 
-#### computed:cancel
+#### Computed: Cancel
 
-当异步计算函数被取消时触发。
+When the asynchronous computing function is canceled.
 
 ```ts
 store.on('computed:cancel',({id,path,reason,computedObject}:any)=>{
     console.log('computedObject cancel:',id,path,reason,computedObject)
 })
 ```
-- `reason`是计算被取消的原因，取值:`timeout` | `abort` | `reentry` | `error`
+- `reason` it is the reason for calculating the cancellation, the value:`timeout`|`abort`|`reentry`|`error` 
 
-#### watch:created
+#### Watch: Created
 
-当`watch`对象创建时触发。
+when `watch` triggered when the object was created.
 
 ```ts
 store.on('watch:created',(watchObject:WatchObject)=>{
@@ -219,9 +218,9 @@ store.on('watch:created',(watchObject:WatchObject)=>{
 })
 ```
 
-#### watch:done
+#### Watch: Done
 
-当`watch`函数执行成功时触发。
+when `watch` the function is triggered when the function executes.
 
 ```ts
 store.on('watch:done',({value,watchObject}:any)=>{
@@ -229,9 +228,9 @@ store.on('watch:done',({value,watchObject}:any)=>{
 })
 ```
 
-#### watch:error
+#### Watch: error
 
-当`watch`函数执行出错时触发。
+when `watch` the function is triggered when an error is performed.
 
 ```ts
 store.on('watch:error',({error,watchObject}:any)=>{
@@ -239,16 +238,16 @@ store.on('watch:error',({error,watchObject}:any)=>{
 })
 ```
 
-## 状态变更事件
+## State change event
 
-`AutoStore`对象实例提供了一个状态变更事件触发器`operates`，用来监听状态的读写变化。
+ `AutoStore` object instance provides a state change event trigger `operates`, Reading and writing changes to monitor the state.
 
-**当读写状态时，会触发相应的事件，`store.operates`就是一个普通的事件触发器对象，可以通过`operates`的`on/once/onAny/wait`方法订阅事件。所以`AutoStore`的所有依赖收集以及事件响应均是基于`store.operates`实现的。**
+ **When the read and write state, the corresponding event will be triggered,`store.operates`It is an ordinary event trigger object that can pass`operates`of`on/once/onAny/wait`Method subscription event. so`AutoStore`All dependent collection and event response are based`store.operates`Realized.** 
 
 
-### 触发状态读写事件
+### Trigger status read and write event
 
-当对状态进行读写操作时，会在`operates`触发名称为`<状态路径>`的事件。
+When read and write operations on the status, it will be in `operates` trigger name is `<State path>` event.
 
 ```ts
 const store = createStore({
@@ -260,19 +259,19 @@ const store = createStore({
 
 ```
 
-**例如:**
+ **For example:** 
 
-- **读操作：** `console.log(store.state.user.name)`：
+- **Read operation:**  `console.log(store.state.user.name)` the
 
-触发名称为`user.name`的事件。相当于`store.operates.emit('user.name',<operate>)`。
+Trigger name is `user.name` event. Equivalent to `store.operates.emit('user.name',<operate>)`.
 
-- **写操作：** `store.state.user.name='jack'`：
+- **Writing operation:**  `store.state.user.name='jack'` the
 
-触发名称为`user.name`的事件。相当于`store.operates.emit('user.name',<operate>)`。
+Trigger name is `user.name` event. Equivalent to `store.operates.emit('user.name',<operate>)`.
 
-### 事件操作参数
+### Event operation parameters
 
-`operates`触发的事件的参数是一个`StateOperate`对象，用来描述状态的读写操作。
+ `operates` the parameters of the trigger event are one `StateOperate` object, read and write operations used to describe status.
 
 ```ts
 type StateOperate<Value=any,Parent=any> = {
@@ -294,29 +293,29 @@ type StateOperateType = 'get' | 'set' | 'delete'      // 用于对象
                             | 'batch'      // 批量操作
 ```
 
-**`StateOperate`对象包含以下属性：**
+ **`StateOperate`The object contains the following attributes:** 
 
-| 属性 | 类型 | 说明 |
-| :---: | :---: | --- |
-| `type` | `StateOperateType` | 操作类型，取值`get`、`set`、`delete`、`insert`、`update`、`remove`、`batch`。 |
-| `path` | `string[]` | 状态路径。 |
-| `value` | `Value` | 状态值。 |
-| `indexs` | `number[]` | 数组操作时的索引。 |
-| `oldValue` | `Value` | 旧值。 |
-| `parentPath` | `string[]` | 父路径。 |
-| `parent` | `Parent` | 父对象。 |
-| `reply` | `boolean` | 是否回放操作。 |
+|Attribute|type|illustrate|
+|: ---:|: ---:| --- |
+|`type`|`StateOperateType`|Operation type, value `get`,`set`,`delete`,`insert`,`update`,`remove`,`batch` essence|
+|`path`|`string[]`|Status path.|
+|`value`|`Value`|Status value.|
+|`indexs`|`number[]`|Index during array operation.|
+|`oldValue`|`Value`|Old value.|
+|`parentPath`|`string[]`|Father's path.|
+|`parent`|`Parent`|Father.|
+|`reply`|`boolean`|Whether to play back.|
 
-- `type`：操作类型，`get`表示读操作，`set`表示写操作，`delete`表示删除操作，`insert`表示插入操作，`update`表示更新操作，`remove`表示删除操作，`batch`表示批量操作。
-- `insert`、`update`、`remove`用于表示数组的插入、更新、删除操作。操作时还提供`indexs`属性用来表示操作的索引。
-- `get`、`set`、`delete`用于表示对象的读、写、删除操作。
-- `batch`用于表示批量操作。
-- `get`代表所有读操作
+- `type`: Operation type,`get` indicates reading operation,`set` indicates writing operation,`delete` explain the deletion operation,`insert` indicates insert operation,`update` express the update operation,`remove` explain the deletion operation,`batch` represents batch operations.
+- `insert`,`update`,`remove` it is used to represent the insertion, update, and deletion of the array. Provide during operation `indexs` the attribute is used to represent the index of operation.
+- `get`,`set`,`delete` it is used to represent the reading, writing, and deleting operation of the object.
+- `batch` used to represent batch operations.
+- `get` represents all reading operations
 
 
-### 监听状态操作
+### Monitoring state operation
 
-要监听状态读写操作，可以通过`operates`的`on/once/onAny/wait`方法订阅事件。
+To monitor the status read and write operation, you can pass `operates` of `on/once/onAny/wait` method subscription event.
 
 ```ts
 const store = createStore({
@@ -327,22 +326,21 @@ const store = createStore({
 })
 ```
 
-- **监听user.name操作**
+- **Surveillance User.Name operation** 
 
-`store.operates.on('user.name',(operate:StateOperate)=>{...})`
+ `store.operates.on('user.name',(operate:StateOperate)=>{...})` 
 
-- **监听所有操作**
+- **Surveying all operations** 
 
-`store.operates.onAny((operate:StateOperate)=>{...})`
+ `store.operates.onAny((operate:StateOperate)=>{...})` 
 
-- **使用通配符**
+- **Use a compatriots** 
 
-支持`*`通配符，可以监听所有`user`下的操作。
+support `*` passing the match, you can listen to everything `user` operation.
 
-`store.operates.on('user.*',(operate:StateOperate)=>{...})`
+ `store.operates.on('user.*',(operate:StateOperate)=>{...})` 
 
 
-:::warning 提示
-`AutoStore`的所有依赖收集以及事件响应均是基于`store.operates`实现的，所以`store.operates`是一个非常重要的事件触发器对象。
+:::warning reminder
+ `AutoStore` all dependent collection and event response are based `store.operates` realize, so `store.operates` it is a very important event trigger object.
 :::
-

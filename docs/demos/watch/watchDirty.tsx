@@ -1,8 +1,8 @@
 import React from 'react';
 import { createStore,watch } from '@autostorejs/react';
-import { Divider,ColorBlock,Button,Box,Input } from "x-react-components"
+import { RichLabel,Divider,ColorBlock,Button,Box,Input } from "x-react-components"
 
- const { state,useFields,watchObjects,$  } = createStore({
+ const { state,useFields,watchObjects,$,reset  } = createStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
@@ -23,26 +23,22 @@ import { Divider,ColorBlock,Button,Box,Input } from "x-react-components"
 } )
 
 export default ()=>{
-  const bindings = useFields({entry:'user'})
+  const bindings = useFields()
   return (<div>
-    <Input label="FirstName" {...bindings.firstName}/>
-    <Input label="lastName" {...bindings.lastName}/> 
+    <Input label="FirstName" {...bindings.user.firstName}/>
+    <Input label="lastName" {...bindings.user.lastName}/> 
     <Divider/>
     <Box>
       <ColorBlock name="FullName">{$('user.fullName')}</ColorBlock>
       <ColorBlock name="Dirty">{$('user.dirty')}</ColorBlock>
       <Button onClick={()=>{
-          state.user.firstName = "Zhang"
-          state.user.lastName = "Fisher"
-          // 重置dirty
-          watchObjects.get("user.dirty")!.reset()
+          reset()
       }}>Reset</Button>
     </Box>
-    <Box>
-    <div>typeof(store.watchObjects)=={typeof(watchObjects)}</div>
-    <div>store.watchObjects.size={watchObjects.size}</div>
-    <div>store.watchObjects.size={watchObjects.size}</div>
-    <div>store.watchObjects.keys()={[...watchObjects.keys()].join(" , ")}</div>
+    <Box>     
+      <RichLabel text={`typeof(store.watchObjects) == {${typeof(watchObjects)}}`}/>
+      <RichLabel text={`store.watchObjects.size = {${watchObjects.size}}`}/>
+      <RichLabel text={`store.watchObjects.keys() = {${[...watchObjects.keys()].join(" , ")}}`}/>
     </Box> 
   </div>)
 }

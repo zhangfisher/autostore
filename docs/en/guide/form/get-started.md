@@ -1,12 +1,11 @@
 
-#  快速入门
+# Get started quickly
+## Step 1: Create a form
 
-## 第1步： 创建表单
-
-首先，我们需要使用`useForm`创建一个表单。
+First, we need to use `useForm` create a form.
 
 ```tsx
-import { useForm } from "@autostorejs/react"
+import { useForm } from "@autostorejs/react" 
 
 const { Form } = useForm({
   user:{
@@ -19,30 +18,30 @@ const { Form } = useForm({
 ```
 
 
-- `useForm`内部调用`createStore`来创建一个`AutoStore`，所以其本质上`useForm`是一个`useStore`超集。所以`useForm`返回的对象中包含了`useStore`返回的对象。
+- `useForm` internal call `createStore` come to create a `AutoStore` so it is essentially `useForm` one `useStore` super set. so `useForm` the return object contains `useStore` the object returned.
 
-  ```tsx
+```tsx
   const { useReactive,watch,$,.... } = useForm({...})
   ```
-- `useForm`返回值中最主要的是`Form`组件，该组件是对标准`form`的封装。
+- `useForm` the most important thing in the return value is `Form` component, this component is a counterfeit standard `form` packaging.
 
 
-## 第2步：声明字段
+## Step 2: Declaration field
 
 
  
 
-- 使用`data-field-name`标识表单字段可以让表单能进行更多的控制。
+- use `data-field-name` the identification form section allows the form to make the form more control.
 
-#### Field字段组件
+#### FIELD field component
 
-使用`Field`字段组件可以实现更复杂的控制，如校验、字段联动等等
+use `Field` field components can achieve more complicated control, such as verification, field linkage, etc.
 
 ```tsx {3}
 const { Form,Field } = useForm({...})
 
 <Field 
-  name="user.name"
+  name="user.name" 
   validate={(value)=>value.length>=3}
   render={({value,validate,onChange,name,error})=>{
     return <>
@@ -55,4 +54,4 @@ const { Form,Field } = useForm({...})
 ```
 
 
-## 第3步：提交表单
+## Step 3: Submit the form
