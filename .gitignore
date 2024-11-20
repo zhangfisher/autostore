@@ -66,5 +66,4 @@ templates/*/node_modules
 .clinic
 
 
-docs/docs-dist
-website/.vitepress/cache
+docs/docs-dist 
