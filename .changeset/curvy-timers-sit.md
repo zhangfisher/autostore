@@ -2,4 +2,6 @@
 "autostore": patch
 ---
 
-修复使用 markRaw 时类型推导出错的问题
+[BUG🐛] 修复当状态中存在`markRaw`标识的成员时类型推导出错的问题
+
+
