@@ -1,5 +1,11 @@
 # autostore
 
+## 1.2.1
+
+### Patch Changes
+
+- [`10463d9`](https://github.com/zhangfisher/autostore/commit/10463d959cc312fa54ea0e329527cce9c1c985f6) Thanks [@zhangfisher](https://github.com/zhangfisher)! - [BUG🐛] 修复当状态中存在`markRaw`标识的成员时类型推导出错的问题
+
 ## 1.2.0
 
 ### Minor Changes
