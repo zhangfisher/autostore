@@ -1,5 +1,6 @@
 import { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
 import type  { AutoStore } from "./store";
+import { RawObject } from "./utils";
 import { WatchDescriptorBuilder } from "./watch/types";
 import { Get,Paths} from "type-fest"
 
@@ -31,21 +32,23 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
 
 
 export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[] 
-    : ( 
-        T extends (...args:any) => any ? PickComputedResult<T> 
+    : 
+        T extends RawObject<T> ? T 
         : (
-            T extends Dict  ? {
-                [K in keyof T]: T[K] extends (...args:any[]) => any ? PickComputedResult<T[K]> 
-                    : (  
-                        T[K] extends Record<string, any> ? ComputedState<T[K]> 
-                        :   ( 
-                                T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
-                            )
-                        )        
-                }  
-            : T
-        )
-        
+            T extends (...args:any) => any ? PickComputedResult<T> 
+            : (
+                T extends Dict  ? {
+                    [K in keyof T]: T[K] extends (...args:any[]) => any ? PickComputedResult<T[K]> 
+                        : (  
+                            T[K] extends Record<string, any> ? ComputedState<T[K]> 
+                            :   ( 
+                                    T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
+                                )
+                            )        
+                    }  
+                : T
+            )
+        )        
     )
 
 // export type ComputedStateBak<T extends Record<string, any>> = {
