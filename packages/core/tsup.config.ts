@@ -14,6 +14,7 @@ export default defineConfig(
         clean: true,
         treeshake:true,  
         minify: true,
-        noExternal:['flex-tools','mitt']
-    }  )
+        noExternal:['flex-tools']
+    }  
+)
  
