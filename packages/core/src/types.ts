@@ -32,7 +32,7 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
 
 
 export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[] 
-    : 
+    : ( 
         T extends RawObject<T> ? T 
         : (
             T extends (...args:any) => any ? PickComputedResult<T> 
