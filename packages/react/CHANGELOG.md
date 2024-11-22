@@ -1,5 +1,12 @@
 # @autostorejs/react
 
+## 1.2.1
+
+### Patch Changes
+
+- Updated dependencies [[`10463d9`](https://github.com/zhangfisher/autostore/commit/10463d959cc312fa54ea0e329527cce9c1c985f6)]:
+  - autostore@1.2.1
+
 ## 1.2.0
 
 ### Minor Changes
