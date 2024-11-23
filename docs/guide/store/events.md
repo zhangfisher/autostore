@@ -346,3 +346,25 @@ const store = createStore({
 `AutoStore`的所有依赖收集以及事件响应均是基于`store.operates`实现的，所以`store.operates`是一个非常重要的事件触发器对象。
 :::
 
+### markRaw
+
+当读写状态时，会触发相应的事件，但是有时候我们并不希望触发事件，可以使用`markRaw`标识。
+
+```ts
+import { isRaw,markRaw } from '@autostorejs/react'
+
+const store = createStore({
+    order:markRaw({
+        price:9.9,
+        count:5,
+        total:(order)=>order.price*order.count
+    })
+})
+
+isRaw(store.state.order)  // true
+typeof(state.order.total) // 'function'
+```
+
+- **`markRaw`标识的对象不会触发事件，也不会创建Proxy，不具备响应式**
+- `isRaw`函数用来判断对象是否被`markRaw`标识。
+- 上例中的`total`也不会创建计算属性，因为`order`对象是`markRaw`标识的。
