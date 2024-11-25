@@ -1,5 +1,6 @@
 import { describe,  expect, test } from 'vitest';
 import { AutoStore, isRaw,markRaw } from '../src';
+import { Dict } from 'flex-tools';
 
 // 测试 isEventMatched 函数
 describe("reactive",()=>{
@@ -34,3 +35,4 @@ describe("reactive",()=>{
         store.state.total
     })
 })
+ 
