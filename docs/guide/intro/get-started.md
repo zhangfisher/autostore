@@ -218,7 +218,7 @@ const store = createStore({
 
 只需要在你的项目的最开始处导入`@autostorejs/devtools`，然后配置`{debug:true}`即可。
 
-```ts {3,6}
+```ts {3,7,8}
 //main.ts | app.ts | index.ts
 
 import `@autostorejs/devtools`
