@@ -81,4 +81,5 @@ export type RuntimeComputedOptions = ComputedOptions & {
 - 可以通过`ComputedObjects.get(<路径名称>).enable=<true/false>`来启用/禁用计算。
 - 可以通过`ComputedObjects.enableGroup(<true/false>)`来启用/禁用某个组的计算。
 
-<demo react="computed/enableAndDisableRun.tsx"/> 
+<demo react="computed/enableAndDisableRun.tsx"/> 、
+
