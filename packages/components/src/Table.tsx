@@ -56,6 +56,7 @@ export type TableProps =React.PropsWithChildren<{
     title?:string,
     cols:(string | TableCol | (()=>ReactNode))[],                      // 声明列        
     rows?:any[][]
+    showHeader?:boolean
 }> 
 
 export const Table:React.FC<TableProps> = (props)=>{
@@ -78,22 +79,24 @@ export const Table:React.FC<TableProps> = (props)=>{
     return (<table
             className={TableStyle.className}
             style={TableStyle.getStyle(props)} >
-                <thead>                    
-                    { props.title ? 
-                    <tr>
-                        <th colSpan={cols.length}>{props.title}</th>
-                    </tr> : null
-                    }
-                    <tr>
-                        {cols?.map((col,i)=><th 
-                            key={i}
-                            style={{
-                                width: col.width ? col.width : undefined,
-                                textAlign: col.align ? col.align : undefined
-                            }}
-                        >{col.name}</th>)}
-                    </tr>
-                </thead>
+                {props.showHeader===false ? null :
+                    <thead>                    
+                        { props.title ? 
+                        <tr>
+                            <th colSpan={cols.length}>{props.title}</th>
+                        </tr> : null
+                        }
+                        <tr>
+                            {cols?.map((col,i)=><th 
+                                key={i}
+                                style={{
+                                    width: col.width ? col.width : undefined,
+                                    textAlign: col.align ? col.align : undefined
+                                }}
+                            >{col.name}</th>)}
+                        </tr>
+                    </thead>
+                }
                 <tbody>
                     {props.rows?.map((row,i)=><tr key={i}>
                         {                            

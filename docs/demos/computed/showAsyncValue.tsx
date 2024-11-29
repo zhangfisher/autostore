@@ -1,6 +1,6 @@
 import React from "react"
 import { createStore,computed,AsyncComputedObject } from "@autostorejs/react"
-import { Box } from "x-react-components"
+import { Box,JsonView } from "x-react-components"
 
 const store = createStore({
   order:{
@@ -15,7 +15,9 @@ const store = createStore({
 export default ()=>{
   return (<>
   <Box title="store.state=">
-        {JSON.stringify(store.state)} 
+    <JsonView data={store.state}
+      highlightKeys={['total','loading','error','value','progress','retry','timeout']}
+    />
   </Box>
   <Box title={`store.computedObjects.get("order.total")=`}>
         store.computedObjects.get("order.total")! instanceof AsyncComputedObject = {String(store.computedObjects.get("order.total")! instanceof AsyncComputedObject)}

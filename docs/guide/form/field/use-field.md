@@ -125,3 +125,8 @@ type UseFieldOptions<Value=any>={
 - `toState`:  用于将`input`值转换为状态值的函数。
 
 
+
+
+:::warning 提示
+**不需要`Form`组件包装**，`useField`也可以独立使用，用来实现表单控件（`radio/checkbox/select/textarea/input`）与状态之间的双向绑定。这在某些场景下会更加灵活方便。
+:::
