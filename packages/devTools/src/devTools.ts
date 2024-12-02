@@ -79,10 +79,12 @@ export class AutoStoreDevTools{
 }
 
 export function install(){
+    // @ts-ignore
     if(!globalThis.__AUTOSTORE_DEVTOOLS__) globalThis.__AUTOSTORE_DEVTOOLS__ = new AutoStoreDevTools()    
 } 
 
 declare global{
+    // @ts-ignore
     var __AUTOSTORE_DEVTOOLS__ : AutoStoreDevTools
 }
 
