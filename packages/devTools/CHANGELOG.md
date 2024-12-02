@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 1.2.1
+
+### Patch Changes
+
+- [`e3072e3`](https://github.com/zhangfisher/autostore/commit/e3072e34762656794101488b11e1e21e8aff72f0) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 修复循环依赖检测结果显示方向问题
+
 ## 1.2.0
 
 ### Minor Changes
