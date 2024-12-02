@@ -6,7 +6,7 @@
 
 当创建`AutoStore`时设置`debug`为`true`时，`AutoStore`会记录内部发生的事件,打印在控制台中，如下：
 
-```ts {6}
+```ts {7}
 import { createStore } from "@autostorejs/react"
 
 const store = createStore({
