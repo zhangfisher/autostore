@@ -145,7 +145,7 @@ export default defineConfig({
               text: '调试与诊断',
               collapsed: true,
               items: [
-                { text: 'DevTools', link: '/guide/debug/devtools' },
+                { text: 'DevTools', link: '/guide/debug/devTools' },
                 { text: 'trace', link: '/guide/debug/trace' },
                 { text: '依赖收集', link: '/guide/debug/collectDeps' },
                 { text: '日志', link: '/guide/debug/log' },
