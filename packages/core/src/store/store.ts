@@ -61,7 +61,7 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal, setVal } from "../utils";
+import { forEachObject, getSnapshot, getVal, isPlainObject, pathStartsWith, setVal } from "../utils";
 import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
@@ -74,6 +74,7 @@ import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
 import { ObjectKeyPaths, GetTypeByPath } from '../types';
+import { getValueByPath } from "../utils/getValueByPath";
  
 
 
@@ -88,8 +89,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _batching = false                                           // 是否批量更新中
     private _batchOperates:StateOperate[] = []                          // 暂存批量操作
     private _peeping:boolean = false 
-    private _updatedState?:Dict                                           // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
-    private _updatedWatcher:Watcher | undefined                          // 脏状态侦听器
+    private _updatedState?:Dict                                         // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
+    private _updatedWatcher:Watcher | undefined                         // 脏状态侦听器
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
@@ -660,6 +661,64 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const { reserveAsync,entry } =Object.assign({reserveAsync:true},options)        
         return getSnapshot(entry ? getVal(this._data,entry) : this._data,reserveAsync)
     }
+
+    clone<Entry extends string,CloneState extends Record<string, any> = GetTypeByPath<State,Entry>>(options?:AutoStoreOptions<State> & {entry?: Entry,sync?:boolean}){    
+        const { sync,entry } = Object.assign({sync:true},this._options,options)
+        const state = getValueByPath(this.getSnap() ,entry) as CloneState
+        if(!isPlainObject(state)){
+            throw new Error(`The entry path must be an object, but got ${typeof(state)}`)
+        }
+        const clonedOptions = Object.assign({}, this._options, options) as unknown as AutoStoreOptions<CloneState>
+        const clonedStore = new AutoStore<CloneState>(state,clonedOptions)
+
+        if(sync){
+            clonedStore.watch("*",({type,path,value,oldValue})=>{
+                this.update(state=>{                    
+                    setVal(state,path,value)
+                })
+            })
+        }         
+        return clonedStore
+    }
+    /**
+     * 同步两个Store，使用两个Store的状态数据同步
+     * 
+     * const store1 = new AutoStore({ a: {
+     *     x:1, y:2, z:3
+     * }})
+     * 
+     * const store2 = new AutoStore({ b: {
+     *    x:2, y:3, z:4
+     * }})
+     * 
+     * store1.sync(store2,{
+     *  from:'a',
+     *  to:'b'
+     * })   ----> store1的a对象的值会同步到store2的b对象上
+     * 
+     * 
+     * 
+     * 
+     * @param store 
+     * @param entry 
+     */
+    sync(store:AutoStore<any>,options?:{from?:string,to?:string,filter:(path:string[],value:any)=>boolean,}){
+        const { from,to } = Object.assign({filter:()=>true},options)
+        const fromEntry = from ? from.split(PATH_DELIMITER) : []
+        const toEntry = to ? to.split(PATH_DELIMITER) : []
+
+        this.watch(({type,path,value,oldValue})=>{   
+            if(!pathStartsWith(fromEntry,path)) return 
+            store.update(state=>{
+                setVal(state,entry ? [...entry,path] : path,value)
+            })
+        },{
+            operates:"write"
+        })
+
+    }
+
+
 }
 
 
