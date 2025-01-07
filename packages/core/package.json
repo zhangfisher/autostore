@@ -22,7 +22,15 @@
     "readme.md",
     "dist"
   ],
-  "keywords": [],
+  "keywords": [
+    "autostore",
+    "state",
+    "store",
+    "state management",
+    "react",
+    "redux",
+    "mobx"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {

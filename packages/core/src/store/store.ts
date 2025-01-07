@@ -706,12 +706,24 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const { from,to } = Object.assign({filter:()=>true},options)
         const fromEntry = from ? from.split(PATH_DELIMITER) : []
         const toEntry = to ? to.split(PATH_DELIMITER) : []
-
-        this.watch(({type,path,value,oldValue})=>{   
+        this.watch(({type,path,value})=>{   
             if(!pathStartsWith(fromEntry,path)) return 
-            store.update(state=>{
-                setVal(state,entry ? [...entry,path] : path,value)
-            })
+            const toPath = [...toEntry,...path.slice(fromEntry.length)]
+            if(type==='set' || type==='update'){
+                store.update(state=>{
+                    setVal(state,toPath,value)
+                })
+            }else if(type==='delete'){
+                store.update(state=>{
+                    setVal(state,toPath,undefined)
+                })
+            }else if(type==='insert'){
+                store.update(state=>{
+                    setVal(state,toPath,value)
+                })
+            }else if(type==='remove'){
+                
+            }
         },{
             operates:"write"
         })

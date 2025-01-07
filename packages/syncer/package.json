@@ -1,0 +1,22 @@
+{
+  "name": "@autostorejs/sync",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhangfisher/autostore.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs",
+    "module": "dist/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest"
+  },
+  "main": "src/index.ts", 
+  "keywords": ["autostore","state"],
+  "author": "",
+  "license": "ISC"
+}
