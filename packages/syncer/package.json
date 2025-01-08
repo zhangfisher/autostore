@@ -1,6 +1,7 @@
 {
-  "name": "@autostorejs/sync",
+  "name": "@autostorejs/syncer",
   "version": "1.0.0",
+  "main": "src/index.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/zhangfisher/autostore.git"
@@ -15,8 +16,16 @@
     "build": "tsup",
     "test": "vitest"
   },
-  "main": "src/index.ts", 
-  "keywords": ["autostore","state"],
-  "author": "",
-  "license": "ISC"
+  "keywords": [
+    "autostore",
+    "state"
+  ],
+  "author": "zhangfisher",
+  "license": "MIT",
+  "peerDependencies": {
+    "autostore": "workspace:*"
+  },
+  "dependencies": {
+    "flex-tools": "^1.4.9"
+  }
 }
