@@ -1,5 +1,11 @@
 # autostore
 
+## 1.2.3
+
+### Patch Changes
+
+- [`9c86dd4`](https://github.com/zhangfisher/autostore/commit/9c86dd4c4c60de5d978c833a6b1e2898e2fdcc2b) Thanks [@zhangfisher](https://github.com/zhangfisher)! - use `store.watch("*",listener)` not work
+
 ## 1.2.2
 
 ### Patch Changes
