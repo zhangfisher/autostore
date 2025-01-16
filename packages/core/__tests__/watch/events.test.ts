@@ -336,7 +336,7 @@ describe("watch events",()=>{
             watcher.off();
         })
 
-        test("watch events * ",()=>{
+        test("default watch all events ",()=>{
             const ops:string[] = []
             watcher = store.watch((op)=>{
                 ops.push(`${op.type} ${op.path.join(".")}`)
@@ -352,7 +352,21 @@ describe("watch events",()=>{
             ])
         })
 
-
+        test("use watch all events",()=>{
+            const ops:string[] = []
+            watcher = store.watch("*",(op)=>{
+                ops.push(`${op.type} ${op.path.join(".")}`)
+            },{
+                operates:"*"
+            })            
+            store.state.order.count++
+            expect(ops).toStrictEqual([
+                'get order',
+                'get order.count',
+                'set order.count',
+                'set order.total'
+            ])
+        })
     })
 
 })

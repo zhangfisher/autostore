@@ -249,7 +249,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     watch(paths:'*' | string | (string|string[])[],listener:WatchListener,options?:WatchListenerOptions):Watcher
     watch():Watcher{
         const isWatchAll = typeof(arguments[0])==='function' || arguments[0]==='*'
-        const listener = isWatchAll ? arguments[0] : arguments[1]
+        const listener = typeof(arguments[0])==='function' ? arguments[0] : arguments[1]
+        const options = arguments.length >=2 && typeof(arguments[arguments.length-1])==='object' ? arguments[arguments.length-1] : undefined
+
 
         const createEventHandler = (operates:WatchListenerOptions['operates'],filter:WatchListenerOptions['filter'])=>{
             return (operate:StateOperate)=>{                            
@@ -277,13 +279,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             }        
         }
         if(isWatchAll){ // 侦听全部
-            const {operates,filter} = Object.assign({once:false,operates:'write'},arguments[1])  as Required<WatchListenerOptions>
+            const {operates,filter} = Object.assign({once:false,operates:'write'},options)  as Required<WatchListenerOptions>
             const handler = createEventHandler(operates,filter)
             return this.operates.onAny(handler) 
         }else{ // 只侦听指定路径
             const keyPaths = arguments[0] as string | (string|string[])[]
             const paths:string[] = Array.isArray(keyPaths) ? keyPaths.map(v=>typeof(v)==='string'? v : v.join(PATH_DELIMITER)) : [keyPaths]
-            const {once,operates,filter} = Object.assign({once:false,operates:'write'},arguments[2]) as Required<WatchListenerOptions>
+            const {once,operates,filter} = Object.assign({once:false,operates:'write'},options) as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.operates.once.bind(this.operates) : this.operates.on.bind(this.operates)
             const listeners:EventListener[]=[]
             const handler = createEventHandler(operates,filter)
