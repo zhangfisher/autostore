@@ -1,5 +1,11 @@
 # autostore
 
+## 1.2.4
+
+### Patch Changes
+
+- [`fee6526`](https://github.com/zhangfisher/autostore/commit/fee652668930bc5fa8c44afad87ba56d0ed2e86c) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix release
+
 ## 1.2.3
 
 ### Patch Changes
