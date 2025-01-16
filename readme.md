@@ -132,6 +132,25 @@ const Card = () => {
 
 ```
 
+
+## Recommendation
+
+- [Internationalization Solution for React/Vue/Nodejs/Solidjs - VoerkaI18n](https://zhangfisher.github.io/voerka-i18n/)
+- [React State Library - AutoStore](https://zhangfisher.github.io/autostore/)
+- [Terminal Interface Development Enhancement Library - Logsets](https://zhangfisher.github.io/logsets/)
+- [Log Output Library  - VoerkaLogger](https://zhangfisher.github.io/voerkalogger/)
+- [Decorator Development - FlexDecorators](https://zhangfisher.github.io/flex-decorators/)
+- [Finite State Machine Library  - FlexState](https://zhangfisher.github.io/flexstate/)
+- [Universal Function Tool Library - FlexTools](https://zhangfisher.github.io/flex-tools/)
+- [CSS-IN-JS Library  - FlexStyled](https://zhangfisher.github.io/flexstyled/)
+- [VSCode Plugin for Adding Comments to JSON Files - json_comments_extension](https://github.com/zhangfisher/json_comments_extension)
+- [Library for Developing Interactive Command Line Programs  - mixcli](https://github.com/zhangfisher/mixcli)
+- [Powerful String Interpolation Variable Processing Tool Library - flexvars](https://github.com/zhangfisher/flexvars)
+- [Frontend Link Debugging Assistant Tool - yald](https://github.com/zhangfisher/yald)
+- [Asynchronous Signal - asyncsignal](https://github.com/zhangfisher/asyncsignal)
+- [bundle Vue styles into JavaScript - vite-plugin-vue-style-bundler ](https://github.com/zhangfisher/vite-plugin-vue-style-bundler)
+- [Tree Component- LiteTree](https://github.com/zhangfisher/lite-tree)
+ 
 ## License
 
 [MIT](./LICENSE)
