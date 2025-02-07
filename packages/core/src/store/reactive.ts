@@ -51,7 +51,7 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
                             isComputedCreating.delete(pathKey)
                         }                            
                     }else{
-                        return value
+                        return value.bind(obj)
                     }
                 }else{
                     return value
