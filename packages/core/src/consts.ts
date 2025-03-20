@@ -5,3 +5,4 @@ export const PATH_DELIMITER = '.'
 export const BATCH_UPDATE_EVENT = '__batch_update__'
 export const ASYNC_COMPUTED_VALUE = Symbol("AsyncComputedValue")
 export const EMPTY = Symbol("EMPTY")
+export const VALUE_SCHEMA = Symbol("ValueSchema")
