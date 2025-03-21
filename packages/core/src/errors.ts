@@ -7,4 +7,4 @@ export class InvalidComputedArgumentsError extends AutoStoreError{}
 export class InvalidScopeError extends AutoStoreError{}
 export class InvalidDependsError extends AutoStoreError{}
 
-
+export class ValidateError  extends AutoStoreError{}

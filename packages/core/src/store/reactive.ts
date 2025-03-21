@@ -1,8 +1,12 @@
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
 import { StateOperateType } from './types'; 
-import { CyleDependError } from '../errors'; 
-import { ComputedState } from '../types';
+import { CyleDependError, ValidateError } from '../errors'; 
+import { ComputedState, Dict } from '../types';
+import type { AutoStore } from './store';
+import { isValidator } from '../utils';
+import { PATH_DELIMITER } from '../consts'; 
+import type { ValidatorObject } from '../validate/validator';
 
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -20,7 +24,38 @@ type CreateReactiveObjectOptions = {
 };
  
 
-function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,any>,isComputedCreating:Map<any,any>,options: CreateReactiveObjectOptions):any{
+function isValidPass(this:AutoStore<any>,proxyObj:any,key:string,newValue:any,oldValue:any,parentPath: string[]){
+    if(proxyObj.__validators && key in proxyObj.__validators){
+        const validator = proxyObj.__validators[key]  as ValidatorObject
+        const path = [...parentPath,key]
+        const strPath = path.join(PATH_DELIMITER)
+        let isValid:boolean = true
+        let errorTips:string = validator.errorTips || 'invalid value'
+        let isPass:boolean = true
+        try{
+            isValid =  validator.validate?.call(this,newValue,oldValue,strPath) || true
+        }catch(e:any){
+            if(e instanceof ValidateError){
+                errorTips = e.message
+            }
+        }finally{
+            if(isValid){
+                if(strPath  in this.validators.errors){
+                    delete this.validators.errors[strPath]
+                }
+            }else{
+                this.validators.errors[strPath] = errorTips!
+                this.emit("invalid",{path,newValue,oldValue,error:errorTips})    
+                isPass = validator.pass??true             
+            }            
+        }
+        return isPass
+    } 
+    return true
+}
+
+
+function createProxy(this:AutoStore<any>,target: any, parentPath: string[],proxyCache:WeakMap<any,any>,isComputedCreating:Map<any,any>,options: CreateReactiveObjectOptions):any{
     if(isRaw(target)) return target
     if (typeof target !== 'object' || target === null) {
         return target;
@@ -49,32 +84,37 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
                             return options.createComputedObject(path,value,parentPath,obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
                         }finally{
                             isComputedCreating.delete(pathKey)
-                        }                            
+                        }
                     }else{
                         return value
                     }
                 }else{
                     return value
                 }                   
+            }else if(isValidator(value)){
+                if(!proxyObj.__validators)proxyObj.__validators = {}
+                const pathKey = [...parentPath, String(key)].join(PATH_DELIMITER)
+                const validator = Object.assign({pass:false},this.options.validator,value,{path:pathKey})
+                proxyObj.__validators[key] = validator        
+                this.validators.set(pathKey,validator)
+                return value.value
             }                
             options.notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});                        
-            return  createProxy(value, path,proxyCache,isComputedCreating,options); 
+            return  createProxy.call(this,value, path,proxyCache,isComputedCreating,options); 
         },
-        set: (obj, prop, value, receiver) => {
-            const oldValue = Reflect.get(obj, prop, receiver);
-            let success = Reflect.set(obj, prop, value, receiver);
-            if(prop === __NOTIFY__) return true  
-            if (success && prop!==__NOTIFY__ && value!==oldValue) {
-                // if(Array.isArray(obj)){
-                //     options.notify({type: 'update', path:parentPath,indexs: [Number(prop)], value, oldValue, parentPath, parent:obj});                  
-                // }else{
-                //     const path = [...parentPath, String(prop)];
-                //     options.notify({type:'set', path,indexs: [], value, oldValue, parentPath, parent:obj});                  
-                // }   
-                const path = [...parentPath, String(prop)];
-                options.notify({type:Array.isArray(obj) ? 'update' : 'set', path,indexs: [], value, oldValue, parentPath, parent:obj});
+        set: (obj, key, value, receiver) => {
+            const oldValue = Reflect.get(obj, key, receiver);            
+            if(isValidPass.call(this,proxyObj,key as string,value,oldValue,parentPath)){
+                let success = Reflect.set(obj, key, value, receiver);
+                if(key === __NOTIFY__) return true  
+                if (success && key!==__NOTIFY__ && value!==oldValue) {
+                    const path = [...parentPath, String(key)];
+                    options.notify({type:Array.isArray(obj) ? 'update' : 'set', path,indexs: [], value, oldValue, parentPath, parent:obj});
+                }
+                return success;
+            }else{
+                return false
             }
-            return success;
         },
         deleteProperty: (obj, prop) => {
             const value = obj[prop];
@@ -102,9 +142,9 @@ function createProxy(target: any, parentPath: string[],proxyCache:WeakMap<any,an
  * @param {CreateReactiveObjectOptions.createDynamicValueObject} [options.createDynamicValueObject] - 用于创建动态值对象的函数。
  * @returns {State} - 返回一个响应式对象。
  */
-export function createReactiveObject<State extends object>(state:State,options?: CreateReactiveObjectOptions): ComputedState<State> {
+export function createReactiveObject<State extends Dict>(this:AutoStore<any>,state:State,options?: CreateReactiveObjectOptions): ComputedState<State> {
     const isComputedCreating = new Map()
     const proxyCache = new WeakMap();
-    return createProxy(state, [],proxyCache,isComputedCreating,options!) as ComputedState<State>
+    return createProxy.call(this,state, [],proxyCache,isComputedCreating,options!) as ComputedState<State>
 } 
  

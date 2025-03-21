@@ -3,6 +3,7 @@ import type  { AutoStore } from "./store";
 import { RawObject } from "./utils";
 import { WatchDescriptorBuilder } from "./watch/types";
 import { Get,Paths} from "type-fest"
+import { ValidatorObject } from './validate/validator';
 
 
     
@@ -32,37 +33,50 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
 
 
 export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[] 
-    : ( 
-        T extends RawObject<T> ? T 
+    :
+    (        
+        T extends ValidatorObject<infer V> ?  V
         : (
-            T extends (...args:any) => any ? PickComputedResult<T> 
+            T extends RawObject<T> ? T 
             : (
-                T extends Dict  ? {
-                    [K in keyof T]: T[K] extends (...args:any[]) => any ? PickComputedResult<T[K]> 
-                        : (  
-                            T[K] extends Record<string, any> ? ComputedState<T[K]> 
-                            :   ( 
-                                    T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
-                                )
-                            )        
-                    }  
-                : T
-            )
-        )        
+                T extends (...args:any) => any ? PickComputedResult<T> 
+                : (
+                    T extends Dict  ? {
+                        [K in keyof T]: T[K] extends (...args:any[]) => any ? PickComputedResult<T[K]> 
+                            : (  
+                                T[K] extends Record<string, any> ? ComputedState<T[K]> 
+                                :   ( 
+                                        T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
+                                    )
+                                )        
+                        }  
+                    : T
+                )
+            )      
+        ) 
     )
+    
 
-// export type ComputedStateBak<T extends Record<string, any>> = {
-//         [K in keyof T]: T[K] extends (...args:any) => any 
-//              ?   PickComputedResult<T[K]> : 
-//                 (  
-//                      T[K] extends Record<string, any> ? ComputedState<T[K]> : 
-//                      (
-//                         T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
-//                      )
-//                 )
-            
-// };
- 
+
+    // export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[] 
+    // : ( 
+    //     T extends RawObject<T> ? T 
+    //     : (
+    //         T extends (...args:any) => any ? PickComputedResult<T> 
+    //         : (
+    //             T extends Dict  ? {
+    //                 [K in keyof T]: T[K] extends (...args:any[]) => any ? PickComputedResult<T[K]> 
+    //                     : (  
+    //                         T[K] extends Record<string, any> ? ComputedState<T[K]> 
+    //                         :   ( 
+    //                                 T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
+    //                             )
+    //                         )        
+    //                 }  
+    //             : T
+    //         )
+    //     )        
+    // )
 
 // 在ComputedState的基础上，排除了undefined的类型
 export type RequiredComputedState<T extends Record<string, any>> = {

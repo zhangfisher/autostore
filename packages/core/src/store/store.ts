@@ -75,9 +75,7 @@ import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
 import { ObjectKeyPaths, GetTypeByPath } from '../types';
 import { getValueByPath } from "../utils/getValueByPath";
- 
-
-
+import { ValidatorManager } from "../validate";
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
@@ -91,6 +89,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _peeping:boolean = false 
     private _updatedState?:Dict                                         // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
     private _updatedWatcher:Watcher | undefined                         // 脏状态侦听器
+    private _validators: ValidatorManager<State> | undefined                   // 验证器管理器
     constructor(state: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
@@ -105,10 +104,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.computedObjects = new ComputedObjects<State>(this)
         this.watchObjects  =  new WatchObjects<State>(this)
         this.subscribeCallbacks()
-        this._data = createReactiveObject(state,{
+        this._data = createReactiveObject.call(this as any,state,{
             notify:this._notify.bind(this),
             createComputedObject:this.createObserverObject.bind(this)
-        })    
+        })    as ComputedState<State>
         this.getSnap = this.getSnap.bind(this)
         this.watch = this.watch.bind(this)
         this.update = this.update.bind(this)
@@ -135,6 +134,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     get batching(){return this._batching}
     get peeping(){return this._peeping} 
     get resetable(){return this._options.resetable}
+    get validators(){
+        if(!this._validators){
+            this._validators = new ValidatorManager<State>(this)
+        } 
+        return this._validators 
+    }
     set resetable(value:boolean){
         if(value){
             if(this._updatedWatcher) return 

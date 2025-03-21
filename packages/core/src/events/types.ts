@@ -13,6 +13,7 @@ export type StoreEvents = {
     'watch:created'     : WatchObject
     'watch:done'        : {value:any,watchObject:WatchObject}
     'watch:error'       : {error:any,watchObject:WatchObject}
+    'invalid'           : {path:string[],newValue:any,oldValue:any,error:string}     // 当验证器验证失败时触发
 };
  
 export type EventDefines = {
