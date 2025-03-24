@@ -199,7 +199,7 @@ The following is `AutoStore` medium `signal` A simple example:
 :::warning Note
 - Signal component is just analog `signal` achieve `Fine granularity update`, It is essentially used `React.memo` wrapped `ReactNode` components.
 - create `$` when creating a signal component,`$` yes `signal` the fast name. So above `{$('age')}` equivalent `{signal("age")}`.
-- - 更多的 `Signal component` for usage, please refer to [signal](/guide/signal/component).
+- - 更多的 `Signal component` for usage, please refer to [signal](../signal/component).
 :::
 
 

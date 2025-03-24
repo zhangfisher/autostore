@@ -1,4 +1,4 @@
-# Get started quickly
+# Get started
  `AutoStore` powerful and easy to use. The following is the example of building a simple bookstore mall to display how to use it `AutoStore`, Experience `AutoStore` extremely elegant and powerful functions.
 
 ## Step 1: Installation
@@ -172,7 +172,7 @@ Everything is as expected. Of course, the actual project is only displayed `load
 - **Cancel**: If the user cancels the order, we need to cancel the request.
 - **Processing progress**: Maybe we want to provide a request progress `0-100%`, Tell the user to request progress.
 
-All these functions `AutoStore` you are ready for you, use the box and use it, simple and fast, see [Asynchronous calculation](/guide/computed/async) 
+All these functions `AutoStore` you are ready for you, use the box and use it, simple and fast, see [Asynchronous calculation](../computed/async) 
 
 ## Step 6: Add orders
 
@@ -208,7 +208,7 @@ We have only one order above, then we add multiple orders to see `AutoStore` how
 
 
 :::warning
- `AutoStore` provided very powerful forms of two -way binding capabilities. For details, please refer to [Form binding](/guide/form/about) view more content.
+ `AutoStore` provided very powerful forms of two -way binding capabilities. For details, please refer to [Form binding](../form/about) view more content.
 :::
 
 ## Step 7: Debugging and diagnosis

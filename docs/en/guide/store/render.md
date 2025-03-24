@@ -43,6 +43,6 @@ Learn more about about `Signal` content, you can read [In -depth analysis: signa
 <demo react ="store/useSignalRender.tsx"/>
 
 - In the above example, a finer granularity update is provided. When the state changes, only `$(....)` internal rendering will be re -rendered, and other parts will not be re -rendered. Never need `React.memo` it's right.
-- - 关于 `Signal` for more uses, you can refer to [Signal component](/guide/signal/about) ::: info prompt
+- - 关于 `Signal` for more uses, you can refer to [Signal component](../signal/about) ::: info prompt
 Poly block components used in this document demonstration `ColorBlock` the number of components will be displayed on the far right. Each rendering is +1 to facilitate the rendering update of the component.
 :::

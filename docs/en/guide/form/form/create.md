@@ -56,7 +56,7 @@ exist `Form` inside the component, you can use three ways to create `Field`.
 </Form>
 ```
 
-More `Field` please refer to the usage of components [Fieeld component](/guide/form/field/field-component.md).
+More `Field` please refer to the usage of components [Fieeld component](../../form/field/field-component.md).
 
 ### Step 4: Submit the form
 

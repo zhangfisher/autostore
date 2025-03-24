@@ -35,7 +35,7 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
 export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[] 
     :
     (        
-        T extends ValidatorObject<infer V> ?  V
+        T extends ValidatorObject<infer V> ? V
         : (
             T extends RawObject<T> ? T 
             : (

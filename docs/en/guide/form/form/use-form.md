@@ -64,7 +64,7 @@ function useForm<State extends Dict>(
 
  `useForm` of `options` support the following options:
 
-because `useForm` create one inside `AutoStore` example, so `UseFormOptions` inherit `AutoStoreOptions`, Used to create `AutoStore` essence refer to [AutostoreOptions](/guide/store/store#配置).
+because `useForm` create one inside `AutoStore` example, so `UseFormOptions` inherit `AutoStoreOptions`, Used to create `AutoStore` essence refer to [AutostoreOptions](../../store/store).
 
 besides,`UseFormOptions` it also supports the following options:
 
@@ -77,7 +77,7 @@ Used to attract watch unit elements `ref`
 The entrance path of the table unit element can specify different entrance paths when creating multiple forms.
 
 
-refer to [Create multiple forms](/guide/form/form/create.md#多表单) 
+refer to [Create multiple forms](../../form/form/create.md) 
 
 FromState?: (PATH: String, StateValue: Any, Part: String|UNDEFINED) => ANY
 / /**

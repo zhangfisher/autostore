@@ -9,7 +9,7 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/intro/get-started
+      link: /en/guide/intro/get-started
     - theme: alt
       text: Github
       link: https://github.com/zhangfisher/autostore

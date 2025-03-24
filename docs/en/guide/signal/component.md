@@ -82,7 +82,7 @@ No need to be in advance `State` declarse the calculation attribute, create the 
 ```
 
 ::: info reminder
-Reading earlier [Calculation property](/guide/computed/about) chapters to understand the basic concept of calculating attributes.
+Reading earlier [Calculation property](../computed/about) chapters to understand the basic concept of calculating attributes.
 :::
 
 ## Surveying signal component
@@ -93,5 +93,5 @@ The object of listening to the attribute (`watchObject`) The package is a signal
 
 :::warning reminder
  `watch` and `computed` all `AutoStore` medium `ObserverObject` the subclass, but the function is different.
-Reading before [Listening attribute](/guide/watch/about) chapters to understand the basic concepts of monitoring attributes.
+Reading before [Listening attribute](../watch/about) chapters to understand the basic concepts of monitoring attributes.
 :::

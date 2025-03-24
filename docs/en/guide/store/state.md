@@ -112,7 +112,7 @@ If the state is an asynchronous calculation attribute, it can also be used `useA
 
 <demo react ="computed/asyncReactiveBase.tsx"/>
 
-See more about the characteristics of more asynchronous computing [Asynchronous calculation attribute](/guide/computed/async.md).
+See more about the characteristics of more asynchronous computing [Asynchronous calculation attribute](../computed/async.md).
 
 ## Directly read and write
 
@@ -169,7 +169,7 @@ store.batchUpdate(()=>{
 })
 ```
 
-For more batch update technical details [Batch update](/guide/store/batchUpdate.md).
+For more batch update technical details [Batch update](../store/batchUpdate.md).
 
 ## Read silently
 

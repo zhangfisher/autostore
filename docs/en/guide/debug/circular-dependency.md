@@ -1,65 +1,65 @@
-# Circular dependency
+# Circular Dependency
 
-在复杂的状态中，有时会不经意间会产生循环依赖，这是响应式状态管理中的一个常见问题。
-`AutoStore`提供了相应的`循环依赖检测`和`调试跟踪能力`功能,帮助开发者发现和解决循环依赖问题。
+In complex states, circular dependencies can sometimes occur unintentionally, which is a common issue in reactive state management.
+`AutoStore` provides `circular dependency detection` and `debug tracking capabilities` to help developers discover and resolve circular dependency issues.
 
-## 同步循环依赖检测
+## Synchronous Circular Dependency Detection
 
-构建`AutoStore`时如果存在循环依赖，会抛出异常，开发者可以通过异常信息快速定位问题。
+When building an `AutoStore` with circular dependencies, an exception will be thrown, allowing developers to quickly locate the issue through the exception message.
 
-以下示例中就存在循环依赖，构建`store`时会抛出异常。
+The following example contains a circular dependency, and an exception will be thrown when building the `store`.
 
 <demo react="debug/syncCycleDetect.tsx" /> 
 
-## 异步循环依赖检测
+## Asynchronous Circular Dependency Detection
 
-异步循环依赖就比较麻烦，无法像同步循环一样构建时自动检测。因为异步计算属性的计算函数是异步的，很容易在多个异步计算时形成很复杂的循环调用链。
+Asynchronous circular dependencies are more complicated and cannot be automatically detected during construction like synchronous ones. This is because asynchronous computed properties have asynchronous computation functions, which can easily form complex circular call chains during multiple asynchronous calculations.
 
-`AutoStore`提供了`cycleDetect`扩展，用来帮助检测异步计算属性的循环依赖。但是由于进行循环依赖检测需要一定的成本开销，
-所以该功能是作为一个扩展，需要手动安装。
+`AutoStore` provides the `cycleDetect` extension to help detect circular dependencies in asynchronous computed properties. However, since circular dependency detection incurs some overhead,
+this functionality is provided as an extension that needs to be manually installed.
  
-### 启用检测
+### Enable Detection
 
 ```ts
  import { installCycleDetectExtend }  from '@autostorejs/devtools'
  
 installCycleDetectExtend({
   onDetected:(paths)=>{
-    console.error("发现循环依赖:",paths)
+    console.error("Circular dependency detected:",paths)
     return 'disable'
   }  
 })
 
 ```
 
-### 示例
+### Example
 
-由于`a`,`b`存在循环依赖，内部会忽略`a`,`b`的计算，导致`a`,`b`的值为无法计算。
+Due to the circular dependency between `a` and `b`, their calculations will be ignored internally, resulting in uncalculatable values for `a` and `b`.
 
 <demo react="debug/cycleDetect.tsx" />
 
-- 在控制台可以发现`发现循环依赖: a->b->a.loading->a.timeout->a.retry->a.error->a.value->a.progress->b.loading->b.timeout->b.retry->b.error->b.value->b.progress->x`的信息，这是循环依赖的路径。
-- `onDetected`回调函数返回`disable`代表当检测到循环依赖后，会禁用该计算属性，这样就可以避免循环依赖导致的问题。
+- In the console, you can find the message `Circular dependency detected: a->b->a.loading->a.timeout->a.retry->a.error->a.value->a.progress->b.loading->b.timeout->b.retry->b.error->b.value->b.progress->x`, which shows the path of the circular dependency.
+- The `onDetected` callback function returning `disable` means that when a circular dependency is detected, the computed property will be disabled to avoid issues caused by the circular dependency.
 
-### 基本原理
+### Basic Principles
 
-异步循环依赖检测比较复杂，特别是在异步计算属性中，很容易形成很复杂的循环调用链。
+Asynchronous circular dependency detection is complex, especially in asynchronous computed properties where complex circular call chains can easily form.
 
-循环依赖检测的基本原理如下：
+The basic principles of circular dependency detection are as follows:
 
-- 安装`cycleDetect`扩展后，会对每个异步计算属性的`run`函数进行包装。
-- 当计算属性第一次运行时，执行`store.wath`记录侦听所有的`get`读操作事件。如果存在循环依赖，就会执行计算属性的`run`函数，从而可以收集到大量的`get`事件。
-- 当侦听到指定`maxOperates`数量的`get`事件后,进行分析，找出事件列表中的循环依赖路径即可。
-- 然后执行`onDetected`回调函数，由开发者决定如何处理：
-  - `return 'disable'`： 代表禁用该计算属性。
-  - `return 'ignore'`:  代表忽略
-  - 其他会触发错误
+- After installing the `cycleDetect` extension, the `run` function of each asynchronous computed property is wrapped.
+- When a computed property runs for the first time, `store.watch` is executed to record all `get` read operation events. If there's a circular dependency, the computed property's `run` function will execute, allowing collection of numerous `get` events.
+- When the specified `maxOperates` number of `get` events is detected, analysis begins to find circular dependency paths in the event list.
+- Then the `onDetected` callback function is executed, letting developers decide how to handle it:
+  - `return 'disable'`: Disables the computed property.
+  - `return 'ignore'`: Ignores the circular dependency.
+  - Other returns will trigger an error.
 
-### 配置参数
+### Configuration Parameters
 
-`installCycleDetectExtend`具有以下配置参数：
+`installCycleDetectExtend` has the following configuration parameters:
 
-| 参数        | 类型     | 默认值 | 说明                                                        |
-| ----------- | -------- | ------ | ----------------------------------------------------------- |
-| `maxOperates` | `number`   | `200`    | 最大操作数，从开始运行计算函数后，当收集到此数量的操作事件后开如分析。|
-| `onDetected`  | `(paths:string)=>'disable' \| 'ignore' \| void` | -      | 当检测到循环依赖时的回调函数，返回`disable`代表禁用该计算属性，返回`ignore`代表忽略,其他触发错误。|
+| Parameter | Type | Default | Description |
+| ----------- | -------- | ------ | --------------- |
+| `maxOperates` | `number` | `200` | Maximum number of operations. Analysis begins after collecting this many operation events from the start of computation. |
+| `onDetected` | `(paths:string)=>'disable' \| 'ignore' \| void` | - | Callback function when a circular dependency is detected. Returning `disable` disables the computed property, `ignore` ignores it, other returns trigger an error. |

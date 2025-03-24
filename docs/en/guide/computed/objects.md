@@ -1,4 +1,4 @@
-# Calculation object
+# Compouted object
 ## about
 
 Use `computed` after creating the calculation attribute, we can pass `store.computedObjects` to manage `store` all the computing properties, including synchronous calculation objects and asynchronous calculation objects.

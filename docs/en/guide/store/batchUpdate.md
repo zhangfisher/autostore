@@ -1,10 +1,10 @@
-# 批量更新
+# Batch Update
 
-一般情况下，更新多个状态时会触发多个`set`事件。在`React`场景中，为了优化渲染，我们可能希望一次性更新多个状态，只触发一次渲染。
+Generally, when updating multiple states, multiple `set` events will be triggered. In `React` scenarios, for rendering optimization, we might want to update multiple states at once, triggering only one render.
 
-`AutoStore`内置`批量更新机制`,以下介绍其工作机制，以及如何使用。
+`AutoStore` has a built-in `batch update mechanism`. Below we'll introduce its working mechanism and how to use it.
 
-## 工作机制
+## Working Mechanism
 
 ```ts
 const sore = new AutoStore({
@@ -13,7 +13,7 @@ const sore = new AutoStore({
 })
 ```
 
-1. 首先当执行`store.state.name='Wang'`和`store.state.age=20`时，会触发两次`set`事件。
+1. First, when executing `store.state.name='Wang'` and `store.state.age=20`, two `set` events will be triggered.
 
 ```tsx
 {
@@ -28,7 +28,7 @@ const sore = new AutoStore({
 }
 ```
 
-2. 正常情况下，`set`事件会触发`React`组件的重新渲染，但是如果我们希望一次性更新多个状态，只触发一次渲染，此时使用`batchUpdate`方法。
+2. Normally, `set` events will trigger `React` component re-rendering, but if we want to update multiple states at once and trigger only one render, we can use the `batchUpdate` method.
 
 ```tsx
 store.batchUpdate(state=>{
@@ -37,11 +37,11 @@ store.batchUpdate(state=>{
 })
 ```
 
-- `batchUpdate`方法会设置`store._batching`为`true`，然后执行`store.state.name='Wang'`和`store.state.age=20`，q这导致触发两次`set`事件。
-- 但是由于`store._batching=true`，所以两次`set`事件会被拦截收集到`store._batchOperates`中。
-- 执行`state`的更新操作后，再将`store.batching`设置为`false`。
-- 重点来了：此时做了两个操作：
-    - 将`store._batchOperates`中的所有`set`事件设置`reply=true`，**代表这是一批量更新操作后的事件回放**。这样可以保证正常订阅者可以收到`set`事件，而批量更新优化时，可以通过判定`reply=true`来忽略此事件。
+- The `batchUpdate` method sets `store._batching` to `true`, then executes `store.state.name='Wang'` and `store.state.age=20`, which triggers two `set` events.
+- However, since `store._batching=true`, these two `set` events will be intercepted and collected in `store._batchOperates`.
+- After executing the state updates, `store.batching` is set back to `false`.
+- Here comes the key part: two operations are performed:
+    - All `set` events in `store._batchOperates` are marked with `reply=true`, **indicating these are replay events after a batch update operation**. This ensures normal subscribers receive `set` events, while during batch update optimization, these events can be ignored by checking `reply=true`.
     ```ts {5,11}
     {
         "type":"set",
@@ -56,7 +56,7 @@ store.batchUpdate(state=>{
         "reply":true
     }
     ```
-    - 然后将`store._batchOperates`中的所有`set`事件合并一个`batch`类型的事件,如下
+    - Then all `set` events in `store._batchOperates` are merged into one `batch` type event, as follows:
 
     ```ts
     {
@@ -79,7 +79,7 @@ store.batchUpdate(state=>{
     }
     ```
 
-3. 按照以上原理，当执行批量更新操作时：
+3. Following the above principle, when executing a batch update operation:
 
 ```ts
 store.batchUpdate(state=>{
@@ -88,24 +88,24 @@ store.batchUpdate(state=>{
 })
 ```
 
-就会触发三个事件，如下:
+Three events will be triggered, as follows:
 
 ```ts
-    // 回放事件
+    // Replay event
     {
         "type":"set",
         "path":["name"],
         "value":"Wang",
         "reply":true
     }
-    // 回放事件
+    // Replay event
     {
         "type":"set",
         "path":["age"],
         "value":20,
         "reply":true
     }
-    // 合并批量事件
+    // Merged batch event
     {
         "type":"batch",
         "path":["__batch_update__"],
@@ -126,13 +126,13 @@ store.batchUpdate(state=>{
     }
 ``` 
 
-优化渲染时就只需要:`忽略批量更新后的回放事件`和`响应批量更新后的合并后的batch事件`，如下：
+For rendering optimization, you just need to: `ignore replay events after batch update` and `respond to the merged batch event after batch update`, as follows:
 
 ```tsx
     store.watch((operate)=>{
-        if(operate.reply) return  // 是批量更新后的回放事件，忽略
+        if(operate.reply) return  // This is a replay event after batch update, ignore it
         if(operate.type==='batch'){ 
-            // 此时触发一次渲染
+            // Trigger one render here
         }
     })
 ```

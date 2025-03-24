@@ -1,21 +1,20 @@
 # Scope
- 
 
- `Calculation scope` refers to the computing function passed to the calculation function `Getter` the first parameter.
+The `Calculation scope` refers to the first parameter passed to the computation function `Getter`.
 
- `@autostorejs/react` creation `Store` support configuration `scope` parameters to specify the first parameter of the calculating property function, as follows:
+When creating a `Store` in `@autostorejs/react`, you can configure the `scope` parameter to specify the first parameter of the computed property function, as follows:
 
 ```ts {20}
 export enum ObserverScopeRef{
-  Root    = 'root',                   // 指向State根对象
-  Current = 'current',                // 指向计算属性所在的对象
-  Parent  = 'parent',                 // 指向计算属性所在对象的父对象
-  Depends = 'depends'                 // 指向异步计算的依赖数组，仅在异步计算时生效
-  Self    = 'self'                    // 指向自身，默认值   
+  Root    = 'root',                   // Points to the root object of State
+  Current = 'current',                // Points to the object where the computed property is located
+  Parent  = 'parent',                 // Points to the parent object of where the computed property is located
+  Depends = 'depends'                 // Points to the dependency array of async computation, only effective in async computation
+  Self    = 'self'                    // Points to itself, default value   
 }
 
-// 指定Store中计算函数的上下文,如果是字符串代表是当前对象的指定键
-// 如果是string[]，则代表是当前Store对象的完整路径
+// Specifies the context of computation functions in Store. If it's a string, it represents a specific key of the current object
+// If it's string[], it represents the complete path of the current Store object
 export type ComputedScope  =  ObserverScopeRef | string | string[] 
             | ((state:any)=>string | string[] | ObserverScopeRef)
  
@@ -28,24 +27,22 @@ const store = createStore( {
     },["user.firstName","user.lastName"])
   }
 } )
+```
 
-``` 
+- The `scope` parameter type is `ComputedScope`, which can be an `ObserverScopeRef` enumeration value, a string, a string array, or a function.
+- The default value of the `scope` parameter is `ObserverScopeRef.Current`, which refers to the object where the computed property is located.
 
-- `scope` the type of the parameter is `ComputedScope`, It can be `ObserverScopeRef` the enumeration value can also be a string or string array, or a function.
-- `scope` the default value of the parameter is `ObserverScopeRef.Current`, That is, the object where the calculation attribute is located.
+## Specifying Scope
 
-## Specify scope
+The `computed` function's `Getter` can specify `scope` parameters by default, as follows:
 
-Under default `computed` calculating function `Getter` can specify `scope` parameters, as follows:
+- **Default Value**
 
-- **default value** 
+By default, `scope` points to the object where the computation function is located. As in the above example, `scope` points to the `user` object where `fullName` is located.
 
-By default,`scope` point to the object where the calculation function is located. As in the above example,`scope` point `fullName` where `user` object.
+- **Global Specification**
 
-
-- **Global designation** 
-
-Can be created `Store` time, pass `scope` parameters to specify the default of the calculation attribute global `scope`,as follows:
+You can specify the default global `scope` for computed properties when creating the `Store` by passing the `scope` parameter, as follows:
 
 ```tsx  {6,11}
 const store = createStore( {
@@ -58,13 +55,13 @@ const store = createStore( {
     })
   }
 },{
-  scope: ObserverScopeRef.Root  // 所有计算属性的默认scope指向状态根
+  scope: ObserverScopeRef.Root  // Default scope for all computed properties points to the state root
 } )
-
 ```
-- **Local specification** 
 
-You can also specify the computing attribute local `scope`,as follows:
+- **Local Specification**
+
+You can also specify the local `scope` for a computed property, as follows:
 
 ```tsx  {6,9}
 const store = createStore( {
@@ -72,20 +69,20 @@ const store = createStore( {
     firstName:"Zhang",
     lastName:"Fisher",
     fullName: computed((scope)=>{
-      //  scope指向root
+      //  scope points to root
       return scope.user.firstName+scope.user.lastName
     },{
-      scope: ObserverScopeRef.Root   // 仅指定当前计算属性的scope
+      scope: ObserverScopeRef.Root   // Specifies scope only for the current computed property
     })
   }
 } )
 ```
 
-## Range
+## Scope Types
 
 ### Current
 
-By default,`scope==ObserverScopeRef.Current` when, calculate the function `scope` point to the object where the calculation function is located.
+By default, when `scope==ObserverScopeRef.Current`, the computation function's `scope` points to the object where the computation function is located.
 
 ```tsx  {16}
 import { ObserverScopeRef,useStore } from '@autostorejs/react'; 
@@ -98,11 +95,11 @@ export default ()=>{
       firstName:"Zhang",
       lastName:"Fisher",
       fullName: function(scope){
-        // scope指向user对象  
+        // scope points to user object  
         return scope.firstName+scope.lastName 
       }
     }},{
-    // 指定计算属性的默认上下文指向计算函数所有的当前对象
+    // Specifies that the default context of computed properties points to the current object where the computation function is located
     scope: ()=>ObserverScopeRef.Current
   })
   return <div> 
@@ -111,16 +108,15 @@ export default ()=>{
 }
 ```
 
-- In the code above,`fullName` functional `scope` pointing `user` object, that is,`state.user`.
+- In the code above, the `fullName` function's `scope` points to the `user` object, which is `state.user`.
 
-
-:::warning Note ar
- `scope==ObserverScopeRef.Current` the default value is generally not specified, the above is just an example.
+:::warning Note
+`scope==ObserverScopeRef.Current` is the default value and generally doesn't need to be specified. The above is just an example.
 :::
 
 ### Root
 
- `@autostorejs/react` will calculate the function function `scope` point `ObserverScopeRef.Root` the current `State` the root object is as follows:
+`@autostorejs/react` will make the computation function's `scope` point to `ObserverScopeRef.Root`, which is the current `State` root object, as follows:
 
 ```tsx   {15}
 import { useStore,ObserverScopeRef } from '@autostorejs/react'; 
@@ -133,7 +129,7 @@ export default ()=>{
       firstName:"Zhang",
       lastName:"Fisher",
       fullName: function(scope){ 
-        // scope指向root对象  
+        // scope points to root object  
         return scope.user.firstName+scope.user.lastName 
       }
     }},{
@@ -143,11 +139,11 @@ export default ()=>{
     <ColorBlock name='FullName'>{state.user.fullName}</ColorBlock>
   </div> 
 }
-``` 
+```
 
 ### Parent
 
-when `scope==ObserverScopeRef.Parent` at the time, the father of the object of the calculation function is located.
+When `scope==ObserverScopeRef.Parent`, it points to the parent object of where the computation function is located.
 
 ```tsx  {10-11,17}
 import { createStore,ObserverScopeRef } from '@autostorejs/react'; 
@@ -159,13 +155,13 @@ const { state } = createStore({
       firstName:"Zhang",
       lastName:"Fisher",
       fullName: function(scope){
-        // scope指向user对象的父对象，即parent
+        // scope points to user object's parent, which is parent
         return scope.user.firstName+scope.user.lastName
       }
     }
   }
 } ,{
-  // 指定计算属性的默认上下文指向计算函数所有的当前对象
+  // Specifies that the default context of computed properties points to the parent object of where the computation function is located
     scope: ObserverScopeRef.Parent,
 })
 
@@ -176,10 +172,9 @@ export default ()=>{
 }
 ```
 
-
 ### String
 
-when `store.options.scope == <star>` at this time `<String>` it means the absolute path.
+When `store.options.scope == <string>`, `<string>` represents an absolute path.
 
 ```tsx  {9-10,17}
 import { createStore } from '@autostorejs/react'; 
@@ -190,7 +185,7 @@ const { state } = createStore({
     firstName:"Zhang",
     lastName:"Fisher",
     fullName: function(scope){
-      // this指向user.address.city
+      // this points to user.address.city
       return scope
     },
     address:{
@@ -206,14 +201,13 @@ export default ()=>{
     <ColorBlock name='FullName'>{state.user.fullName}</ColorBlock>
   </div>
 }
-
 ```
 
-:::warning reminder
- `scope === < -string>` the absolute path is used when it is used, adopted `.` as a path separator, such as `user.address.city`.
+:::warning Note
+When using `scope === <string>`, it uses absolute paths with `.` as the path separator, such as `user.address.city`.
 :::
 
-### String array
+### String Array
 
 ```tsx  {9-10,17}
 import { createStore } from '@autostorejs/react'; 
@@ -224,7 +218,7 @@ const { state } = createStore({
     firstName:"Zhang",
     lastName:"Fisher",
     fullName: function(scope){
-      // this指向user.address['main.city']
+      // this points to user.address['main.city']
       return scope
     },
     address:{
@@ -242,16 +236,14 @@ export default ()=>{
 }
 ```
 
-:::warning reminder
-When the state path is included `.` when characters, you can use a string array to specify the path to avoid ambiguity.
+:::warning Note
+When the state path includes `.` characters, you can use a string array to specify the path to avoid ambiguity.
 :::
-
 
 ### Depends
 
-when `scope==ObserverScopeRef.Depends` at the time, point to the value of the dependencies of the calculation function.
+When `scope==ObserverScopeRef.Depends`, it points to the values of the computation function's dependencies.
 
- 
 ```tsx
 import { createStore,computed,ObserverScopeRef  } from '@autostorejs/react'; 
 import { ColorBlock } from "x-react-components"  
@@ -263,7 +255,7 @@ const { state } = createStore({
     fullName: computed(async (deps)=>{ 
       return deps[0] + deps[1]
     },      
-      ['user.firstName','user.lastName'],  // 声明依赖
+      ['user.firstName','user.lastName'],  // Declare dependencies
     {      
       async:true,
       scope:ObserverScopeRef.Depends
@@ -276,9 +268,8 @@ export default ()=>{
     <ColorBlock name='FullName'>{state.user.fullName.value}</ColorBlock>
   </div>
 }
+```
 
-```  
-   
-:::warning reminder
- **`ObserverScopeRef.Depends`It takes effect only when calculating asynchronous, and the asynchronous calculation must be passed`computed`Function to specify dependencies** 
+:::warning Note
+**`ObserverScopeRef.Depends` only takes effect in asynchronous computation, and asynchronous computation must specify dependencies using the `computed` function**
 :::

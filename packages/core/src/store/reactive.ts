@@ -6,7 +6,8 @@ import { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
 import { isValidator } from '../utils';
 import { PATH_DELIMITER } from '../consts'; 
-import type { ValidatorObject } from '../validate/validator';
+import type { AutoStoreValidate } from '../validate/validator';
+import { getErrorTips } from '../validate/utils';
 
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -25,33 +26,48 @@ type CreateReactiveObjectOptions = {
  
 
 function isValidPass(this:AutoStore<any>,proxyObj:any,key:string,newValue:any,oldValue:any,parentPath: string[]){
-    if(proxyObj.__validators && key in proxyObj.__validators){
-        const validator = proxyObj.__validators[key]  as ValidatorObject
-        const path = [...parentPath,key]
-        const strPath = path.join(PATH_DELIMITER)
-        let isValid:boolean = true
-        let errorTips:string = validator.errorTips || 'invalid value'
-        let isPass:boolean = true
-        try{
-            isValid =  validator.validate?.call(this,newValue,oldValue,strPath) || true
-        }catch(e:any){
-            if(e instanceof ValidateError){
-                errorTips = e.message
-            }
-        }finally{
-            if(isValid){
-                if(strPath  in this.validators.errors){
-                    delete this.validators.errors[strPath]
-                }
-            }else{
-                this.validators.errors[strPath] = errorTips!
-                this.emit("invalid",{path,newValue,oldValue,error:errorTips})    
-                isPass = validator.pass??true             
-            }            
+    const validators = this.validators
+    const validator =  validators.get(key) 
+
+    let validFn: AutoStoreValidate
+    if(validator && typeof(validator.validate)==='function'){
+        validFn = validator.validate!
+    }else if(typeof(this.options.onValidate)==='function'){
+        validFn = this.options.onValidate
+    }
+    let isValid:boolean = true
+    let errorTips:string | undefined  = getErrorTips.call(this,
+        validator?.errorTips || this.options.validator?.errorTips,
+        key,newValue,oldValue
+    ) 
+    let isPass:boolean = true
+    let behavior = validator?.behavior || this.options.validator || 'throw'
+
+    try{
+        isValid =  validFn!.call(this,newValue,oldValue,key)  
+    }catch(e:any){
+        if(e instanceof ValidateError){
+            errorTips = e.message
         }
-        return isPass
-    } 
-    return true
+    }finally{
+        errorTips = isValid ? undefined : errorTips
+        if(isValid){
+            delete validators.errors[key]                    
+        }else{
+            validators.errors[key] = errorTips!       
+        }            
+        this.emit("validate",{path:[...parentPath,key] ,newValue,oldValue,error:errorTips})    
+    }     
+    if(!isValid){
+        if(behavior ==='throw') {
+            throw new ValidateError(errorTips!)
+        }else if(behavior ==='ignore'){
+            isPass = false
+        }else{
+            isPass = true
+        }            
+    }
+    return isPass    
 }
 
 
@@ -92,10 +108,8 @@ function createProxy(this:AutoStore<any>,target: any, parentPath: string[],proxy
                     return value
                 }                   
             }else if(isValidator(value)){
-                if(!proxyObj.__validators)proxyObj.__validators = {}
                 const pathKey = [...parentPath, String(key)].join(PATH_DELIMITER)
-                const validator = Object.assign({pass:false},this.options.validator,value,{path:pathKey})
-                proxyObj.__validators[key] = validator        
+                const validator = Object.assign({},this.options.validator,value,{path:pathKey})
                 this.validators.set(pathKey,validator)
                 return value.value
             }                
@@ -104,11 +118,11 @@ function createProxy(this:AutoStore<any>,target: any, parentPath: string[],proxy
         },
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);            
-            if(isValidPass.call(this,proxyObj,key as string,value,oldValue,parentPath)){
+            const path = [...parentPath, String(key)]
+            if(isValidPass.call(this,proxyObj,path.join(PATH_DELIMITER) as string,value,oldValue,parentPath)){
                 let success = Reflect.set(obj, key, value, receiver);
                 if(key === __NOTIFY__) return true  
                 if (success && key!==__NOTIFY__ && value!==oldValue) {
-                    const path = [...parentPath, String(key)];
                     options.notify({type:Array.isArray(obj) ? 'update' : 'set', path,indexs: [], value, oldValue, parentPath, parent:obj});
                 }
                 return success;
@@ -119,8 +133,9 @@ function createProxy(this:AutoStore<any>,target: any, parentPath: string[],proxy
         deleteProperty: (obj, prop) => {
             const value = obj[prop];
             const path = [...parentPath, String(prop)];
-            const success = Reflect.deleteProperty(obj, prop);
+            const success = Reflect.deleteProperty(obj, prop);            
             if (success && prop!==__NOTIFY__) {
+                this.validators.delete(path.join(PATH_DELIMITER));
                 options.notify({type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
             }
             return success;
@@ -144,7 +159,7 @@ function createProxy(this:AutoStore<any>,target: any, parentPath: string[],proxy
  */
 export function createReactiveObject<State extends Dict>(this:AutoStore<any>,state:State,options?: CreateReactiveObjectOptions): ComputedState<State> {
     const isComputedCreating = new Map()
-    const proxyCache = new WeakMap();
+    const proxyCache = new WeakMap(); 
     return createProxy.call(this,state, [],proxyCache,isComputedCreating,options!) as ComputedState<State>
 } 
  

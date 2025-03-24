@@ -1,12 +1,13 @@
-## 关于
+# Synchronous Computed 
+## About
   
-同步计算属性直接声明在状态中，本质上是一个普通的函数，,当`State`中的数据变化时，会自动触发计算属性的重新计算，将计算结果赋值给`State`中的对应属性。
+Synchronous computed properties are directly declared in the state. Essentially, they are regular functions that automatically trigger recalculation when data in the `State` changes, assigning the computed result to the corresponding property in the `State`.
 
-## 创建方式
+## Creation Methods
 
-### 快速创建
+### Quick Creation
 
-可以直接在`State`中声明普通同步计算函数。
+You can directly declare regular synchronous computation functions in the `State`.
 
 ```ts {6-8}
 import { createStore } from '@autostorejs/react';
@@ -20,18 +21,18 @@ const state = createStore({
   }
 })
 ```
-- `fullName`是一个同步计算属性，依赖于`firstName`和`lastName`，当`firstName`或`lastName`变化时，会自动重新计算`fullName`的值。
-- `fullName`的第一个参数(即`作用域`)是由`createStore`时指定的`scope`指定的,默认指定的`ObserverScopeRef.Current`。因此，`fullName`的第一个参数是`user`对象。
-- 如果同步计算函数是一个普通函数而不是箭头函数，那么`this`指向是根据当前计算属性创建的`computedObject`对象，详见[计算对象](./objects)。
-- 同步计算属性的依赖收集是自动的，无需手动指定依赖。
+- `fullName` is a synchronous computed property that depends on `firstName` and `lastName`. When either `firstName` or `lastName` changes, `fullName` will automatically recalculate.
+- The first parameter (i.e., the `scope`) of `fullName` is specified by the `scope` parameter in `createStore`, which defaults to `ObserverScopeRef.Current`. Therefore, the first parameter of `fullName` is the `user` object.
+- If the synchronous computation function is a regular function rather than an arrow function, the `this` context points to the `computedObject` created for the current computed property. See [Computed Objects](./objects) for details.
+- Dependency collection for synchronous computed properties is automatic, requiring no manual specification.
 
 
 <demo react="computed/syncBase.tsx" /> 
 
 
-### 使用`computed`
+### Using `computed`
 
-创建同步计算属性的标准方式是`computed(<getter>,<options>)`函数，通过为`computed`指定`options`来进行一些更灵活的控制计算属性的行为。
+The standard way to create synchronous computed properties is using the `computed(<getter>,<options>)` function. By specifying `options`, you can have more flexible control over the behavior of computed properties.
 
 
 ```ts {6,8}
@@ -42,27 +43,27 @@ const state = {
     fullName:computed<string>((state)=>{
       return state.user.firstName+state.user.lastName
     },{ 
-      scope:ObserverScopeRef.Root               // 计算函数的第一个参数
+      scope:ObserverScopeRef.Root               // First parameter of the computation function
     }) 
   }
 } 
 ```
 
-由于可以指定`computedScope`,因此计算函数就可以实现相对计算。
+Since `computedScope` can be specified, the computation function can achieve relative computation.
 
 <demo react="computed/syncBookOrder.tsx" />
 
 
-- 在上面的例子，计算订单的小计只需要` {...,total:(book)=>book.price*book.count}`即可计算出小计，看起来非常简洁。
+- In the example above, calculating the subtotal of an order only requires ` {...,total:(book)=>book.price*book.count}`, which looks very concise.
 
 
-## 配置参数
+## Configuration Parameters
 
-使用`computed(<getter>,<options>)`创建同步计算属性时，可以指定以下参数：
+When creating synchronous computed properties using `computed(<getter>,<options>)`, you can specify the following parameters:
 
-| 参数 | 类型 | 默认值 |说明 | 
+| Parameter | Type | Default Value | Description | 
 | --- | --- | --- | --- |
-| `id` | `string` |  | 计算属性的唯一标识，用于在`computedObjects`中查找计算属性对象。 |
-| `scope` | `ObserverScopeRef` | `ObserverScopeRef.Current` | 计算函数的第一个参数，即`作用域`。 |
-| `group` | `string` |  | 用于计算属性对象进行分组，可以`computedObjects.runGroup(name)`来运行一组计算属性。 |
-| `objectify` | `boolean` | `true` | 是否将计算属性对象保存在`store.computedObjects` |
+| `id` | `string` |  | Unique identifier for the computed property, used to find the computed property object in `computedObjects`. |
+| `scope` | `ObserverScopeRef` | `ObserverScopeRef.Current` | The first parameter of the computation function, i.e., the `scope`. |
+| `group` | `string` |  | Used to group computed property objects, allowing execution of a group of computed properties using `computedObjects.runGroup(name)`. |
+| `objectify` | `boolean` | `true` | Whether to save the computed property object in `store.computedObjects` |

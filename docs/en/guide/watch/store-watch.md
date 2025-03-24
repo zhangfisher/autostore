@@ -1,30 +1,29 @@
-# 全局监视
+# Global Watch
 
-使用`store.watch`方法用于全局监视`State`中的数据变化，当所监视的数据发生变化时，可以执行侦听器函数。
+The `store.watch` method is used to globally monitor data changes in `State`. When the monitored data changes, a listener function can be executed.
 
-## 监听方法
+## Watch Method
 
-`watch`方法的签名如下：
+The signature of the `watch` method is as follows:
 
 ```ts
-// 监听全部
+// Watch all
 watch(listener:WatchListener,options?:WatchListenerOptions):Watcher
-// 只监听指定路径
+// Watch specified paths only
 watch(paths:'*' | string | (string|string[])[],
     listener:WatchListener,options?:WatchListenerOptions
 ):Watcher
 ```
 
-返回`Watcher`类型，用于取消监听。
+Returns `Watcher` type, used to cancel the watch.
 
 ```ts
 type Watcher = { off:()=>void }
 ```
 
+### Watch Listener
 
-### 监听函数
-
-`WatchListener`是一个函数，用来处理监视到的数据变化，其签名如下：
+`WatchListener` is a function used to handle monitored data changes, with the following signature:
 
 ```ts
 type WatchListener<Value=any,Parent=any> = 
@@ -42,59 +41,57 @@ type StateOperate<Value=any,Parent=any> = {
 } 
 ```
 
-- 当侦听到数据变化时，`watch`会调用`WatchListener`函数，并传入一个`StateOperate`对象。
-- `StateOperate`对象包括了变化的类型`type`，`path`，`value`等信息。
+- When data changes are detected, `watch` will call the `WatchListener` function and pass a `StateOperate` object.
+- The `StateOperate` object includes information such as the change type `type`, `path`, `value`, etc.
 
-`StateOperate`对象的属性如下：
+The properties of the `StateOperate` object are as follows:
 
-| 属性       | 类型   | 说明                                                         |
+| Property | Type | Description |
 | :----------: | :------: | ------------------------------------------------------------ |
-| `type`       | `string` | 状态操作类型，取值`get`,`set`,`delete`,`insert`,`update`,`remove`,`batch`  |
-| `path`       | `string[]` | 状态路径 |
-| `value`      | `any`    | 值 |
-| `indexs`     | `number[]` | 数组操作时的索引 |
-| `oldValue`   | `any`    | 旧值 |
-| `parentPath` | `string[]` | 父路径 |
-| `parent`     | `any`    | 父值 |
-| `reply`      | `boolean` | 批量操作时是否回放 |
+| `type` | `string` | State operation type, values: `get`,`set`,`delete`,`insert`,`update`,`remove`,`batch` |
+| `path` | `string[]` | State path |
+| `value` | `any` | Value |
+| `indexs` | `number[]` | Array operation indices |
+| `oldValue` | `any` | Old value |
+| `parentPath` | `string[]` | Parent path |
+| `parent` | `any` | Parent value |
+| `reply` | `boolean` | Whether it's a replay during batch operations |
 
+- `watch` can monitor state read and write operations, including `get`,`set`,`delete`,`insert`,`update`,`remove`,`batch` operations.
+- `get`,`set`,`delete` are suitable for object value read/write
+- `insert`,`update`,`remove` are suitable for array operations
+- `batch` is suitable for batch operations, triggered when using `batchUpdate`, see [Batch Operations](../store/state)
+- The `reply` parameter indicates whether the operation is an event replay during batch updates.
 
-- `watch`能状态的读写操作,包括`get`,`set`,`delete`,`insert`,`update`,`remove`,`batch`等操作进行监听。
-- `get`,`set`,`delete`适于对象的值的读写
-- `insert`,`update`,`remove`适于数组的操作
-- `batch`适于批量操作,当使用`batchUpdate`会触发此类型的操作事件，详见[批量操作](../store/state)
-- `reply`参数用于标识该操作是否是在批量更新时的事件回放。
-
-
-:::warning 注意
-监听函数只能是一个同步函数
+:::warning Note
+The listener function must be synchronous
 :::
 
-### 监听选项
+### Watch Options
 
 ```ts  
 type WatchListenerOptions = {
     once?    : boolean                                        
-    operates?: '*' | 'read' | 'write' | StateOperateType[]     // 只侦听的操作类型
-    filter?  : (args:StateOperate)=>boolean                // 过滤器
+    operates?: '*' | 'read' | 'write' | StateOperateType[]     // Operation types to watch
+    filter?  : (args:StateOperate)=>boolean                // Filter
 }
 ```
 
-| 属性       | 类型   | 说明                                                         |
+| Property | Type | Description |
 | :----------: | :------: | ------------------------------------------------------------ |
-| `once`       | `boolean` | 是否只监听一次 |
-| `operates`   | `'*'\| 'read' \| 'write' \| StateOperateType[]` | 只侦听的操作类型 |
-| `filter`     | `(args:StateOperate)=>boolean` | 过滤器函数，返回`true`则执行监听函数，否则不执行 |
+| `once` | `boolean` | Whether to watch only once |
+| `operates` | `'*'\| 'read' \| 'write' \| StateOperateType[]` | Operation types to watch |
+| `filter` | `(args:StateOperate)=>boolean` | Filter function, executes listener if returns `true` |
 
-- 监听函数最重要的参数是`operates`，用来配置要监听的操作类型，可以是`'*'`，`'read'`，`'write'`，或者一个操作类型数组。
-- 默认`operates='write'`，即监听所有写操作。
-- `operates='get`代表监听所有读操作。
-- `operates='*'`代表监听所有读写删除操作。
-- `operates`也可以是一个操作类型数组，比如`['set','delete']`，代表监听`set`和`delete`操作。
-- `once`属性用来配置是否只监听一次。
-- `filter`函数用来过滤监听的操作，返回`true`则执行监听函数，否则不执行。
+- The most important parameter of the watch function is `operates`, used to configure which operation types to watch. Can be `'*'`, `'read'`, `'write'`, or an array of operation types.
+- Default `operates='write'`, watches all write operations.
+- `operates='get'` watches all read operations.
+- `operates='*'` watches all read/write/delete operations.
+- `operates` can also be an array of operation types, like `['set','delete']`, watching `set` and `delete` operations.
+- The `once` property configures whether to watch only once.
+- The `filter` function filters watched operations, executes listener if returns `true`.
 
-**示例：**
+**Example:**
 
 ```tsx
 store.watch((operate)=>{
@@ -104,56 +101,53 @@ store.watch((operate)=>{
 })
 ```
 
-## 全局监听
+## Global Watching
 
-使用`watch(listener,options?)`方法用来全局监听`State`中的数据变化，对状态的任何操作均会执行监听函数。
+Use `watch(listener,options?)` method to globally watch data changes in `State`. The listener function will execute for any state operation.
 
 <demo react="watch/watchAll.tsx"/>
 
+- Monitor all data changes through the `watch` method. When data changes, the listener function will execute.
+- `watch.options` supports specifying which operation types to watch, like `watch(listener,{operates:['set','delete']})`.
 
-- 通过`watch`方法监听所有的数据变化，当数据发生变化时，会执行监听函数。
-- `watch.options`支持指定要监听的哪些操作类型，比如`watch(listener,{operates:['set','delete']})`。
+## Local Watching
 
-
-## 局部监听
-
-除了全局监听外，还可以使用`watch(paths,listener,options?)`方法用来**只监听指定路径的状态数据变化**。
+Besides global watching, you can also use `watch(paths,listener,options?)` method to **watch state data changes only at specified paths**.
 
 <demo react="watch/watchByPath.tsx"/>
  
-- 可以一次监听多个路径，比如`watch(['order.price','order.count'],listener)`。
-- 甚至可以监听路径中包含通配符，比如`watch('order.*'],listener)`。
+- You can watch multiple paths at once, like `watch(['order.price','order.count'],listener)`.
+- You can even watch paths containing wildcards, like `watch('order.*'],listener)`.
 
-## 数组监听
+## Array Watching
 
-`watch`也可以支持数组的监听，比如`watch('order.books',listener)`，当`order.books`数组发生变化时，会执行监听函数。
+`watch` also supports array watching, like `watch('order.books',listener)`. When the `order.books` array changes, the listener function will execute.
 
-区别于普通对的是监听事件#️⃣
+The difference from normal watching is in the events #️⃣
 
-- 数组的监听事件有`insert`,`update`,`remove`三种。
-- 对数组成员的操作参数会多一个`indexs`属性，用来标识数组的索引。
-- `get`操作事件也适用于数组
-
+- Array watch events have three types: `insert`, `update`, `remove`.
+- Array member operation parameters have an additional `indexs` property to mark array indices.
+- The `get` operation event also applies to arrays
 
 <demo react="watch/watchArray.tsx"/>
  
-## 依赖收集
+## Dependency Collection
 
-`AutoStore`的依赖收集功能就是基于`watch`功能实现。
+`AutoStore`'s dependency collection functionality is implemented based on the `watch` feature.
 
-以下是同步计算属性在初始化时的依赖收集的代码：
+Here's the code for dependency collection during synchronous computed property initialization:
 
 ```ts
 function collectDependencies(){
       let dependencies:string[][] = []       
-      // 1. 侦听所有的get操作
+      // 1. Watch all get operations
       const watcher = this.store.watch((event)=>{      
-          // 将依赖路径保存起来
+          // Save dependency paths
           dependencies.push(event.path)            
       },{operates:['get']})   
-      // 2. 运行一次同步计算的getter函数
+      // 2. Run the synchronous computed getter function once
       this.run({first:true})   
-      // 3. 依赖收集完成后就结束监听
+      // 3. End watching after dependency collection is complete
       watcher.off() 
       // .......
       return dependencies
@@ -161,6 +155,5 @@ function collectDependencies(){
 ```
 
 :::info
-`store.watch`方法用于全局监视`State`中的数据变化，计算属性的实现也是基于`watch`方法。
+The `store.watch` method is used to globally monitor data changes in `State`, and computed properties are also implemented based on the `watch` method.
 :::
-

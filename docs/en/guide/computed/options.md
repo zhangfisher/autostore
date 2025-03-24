@@ -1,4 +1,4 @@
-# Calculation option
+# Computed Options
 ## about
 
 It is recommended to use both synchronous or asynchronous computing attributes `computed` function to declare.
