@@ -3,7 +3,7 @@ import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 // import { codeInspectorPlugin } from 'code-inspector-plugin';
 export default {
-    base: '/voerka-i18n/',
+    base: '/autostore/',
     title: "AutoStore",
     description: "极致优雅的全自动React状态库",
     vue: {
