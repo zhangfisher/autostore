@@ -1,5 +1,11 @@
 # autostore
 
+## 1.3.0
+
+### Minor Changes
+
+- [`6e2e8ec`](https://github.com/zhangfisher/autostore/commit/6e2e8ec1f3dec54b2cc5f1349f84846a6192713e) Thanks [@zhangfisher](https://github.com/zhangfisher)! - add validate feature
+
 ## 1.2.4
 
 ### Patch Changes
