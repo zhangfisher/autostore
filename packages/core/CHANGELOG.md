@@ -1,5 +1,13 @@
 # autostore
 
+## 1.3.2
+
+### Patch Changes
+
+- [`83a040e`](https://github.com/zhangfisher/autostore/commit/83a040ef0c4af568e6d0aff7dd2b1a45978d9707) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix schema types exports
+
+- [`e51c9d6`](https://github.com/zhangfisher/autostore/commit/e51c9d671c418b1d156c8923f8896872f38143fe) Thanks [@zhangfisher](https://github.com/zhangfisher)! - add alias configurable for schema
+
 ## 1.3.1
 
 ### Patch Changes
