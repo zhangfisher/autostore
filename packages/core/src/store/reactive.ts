@@ -4,10 +4,10 @@ import { StateOperateType } from './types';
 import { CyleDependError, ValidateError } from '../errors'; 
 import { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
-import { isValidator } from '../utils';
+import { isValueSchema } from '../utils';
 import { PATH_DELIMITER } from '../consts'; 
-import type { AutoStoreValidate } from '../validate/validator';
-import { getErrorTips } from '../validate/utils';
+import type { AutoStoreValidate } from '../schema/schema';
+import { getErrorTips } from '../schema/utils';
 
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -26,7 +26,7 @@ type CreateReactiveObjectOptions = {
  
 
 function isValidPass(this:AutoStore<any>,proxyObj:any,key:string,newValue:any,oldValue:any,parentPath: string[]){
-    const validators = this.validators
+    const validators = this.schemas
     const validator =  validators.get(key) 
 
     let validFn: AutoStoreValidate
@@ -37,11 +37,11 @@ function isValidPass(this:AutoStore<any>,proxyObj:any,key:string,newValue:any,ol
     }
     let isValid:boolean = true
     let errorTips:string | undefined  = getErrorTips.call(this,
-        validator?.errorTips || this.options.validator?.errorTips,
+        validator?.errorTips || this.options.valueSchema?.errorTips,
         key,newValue,oldValue
     ) 
     let isPass:boolean = true
-    let behavior = validator?.behavior || this.options.validator || 'throw'
+    let behavior = validator?.behavior || this.options.valueSchema || 'throw'
 
     try{
         isValid =  validFn!.call(this,newValue,oldValue,key)  
@@ -107,10 +107,10 @@ function createProxy(this:AutoStore<any>,target: any, parentPath: string[],proxy
                 }else{
                     return value
                 }                   
-            }else if(isValidator(value)){
+            }else if(isValueSchema(value)){
                 const pathKey = [...parentPath, String(key)].join(PATH_DELIMITER)
-                const validator = Object.assign({},this.options.validator,value,{path:pathKey})
-                this.validators.set(pathKey,validator)
+                const validator = Object.assign({},this.options.valueSchema,value,{path:pathKey})
+                this.schemas.set(pathKey,validator)
                 return value.value
             }                
             options.notify({type:'get', path,indexs:[], value,oldValue: undefined, parentPath,parent: obj});                        
@@ -135,7 +135,7 @@ function createProxy(this:AutoStore<any>,target: any, parentPath: string[],proxy
             const path = [...parentPath, String(prop)];
             const success = Reflect.deleteProperty(obj, prop);            
             if (success && prop!==__NOTIFY__) {
-                this.validators.delete(path.join(PATH_DELIMITER));
+                this.schemas.delete(path.join(PATH_DELIMITER));
                 options.notify({type:'delete', path,indexs: [],value,oldValue: undefined, parentPath,parent: obj});
             }
             return success;

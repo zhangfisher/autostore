@@ -39,7 +39,7 @@ export default {
                 { text: 'Render', link: '/en/guide/store/render' },
                 { text: 'Events', link: '/en/guide/store/events' },
                 { text: 'Batch Update', link: '/en/guide/store/batchUpdate' },
-                { text: 'Validate', link: '/en/guide/store/validate' },                
+                { text: 'Value Schema', link: '/en/guide/store/schema' },                
               ]
             },
             {

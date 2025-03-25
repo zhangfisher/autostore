@@ -3,7 +3,7 @@ import type  { AutoStore } from "./store";
 import { RawObject } from "./utils";
 import { WatchDescriptorBuilder } from "./watch/types";
 import { Get,Paths} from "type-fest"
-import { ValidatorObject } from './validate/validator';
+import { SchemaObject } from './schema/schema';
 
 
     
@@ -35,7 +35,7 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
 export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[] 
     :
     (        
-        T extends ValidatorObject<infer V> ? V
+        T extends SchemaObject<infer V> ? V
         : (
             T extends RawObject<T> ? T 
             : (

@@ -39,7 +39,7 @@ export default {
                 { text: '渲染优化', link: '/zh/guide/store/render' },
                 { text: '事件', link: '/zh/guide/store/events' },
                 { text: '批量更新', link: '/zh/guide/store/batchUpdate' },
-                { text: '校验', link: '/zh/guide/store/validate' },                
+                { text: '校验模式', link: '/zh/guide/store/schema' },                
               ]
             },
             {

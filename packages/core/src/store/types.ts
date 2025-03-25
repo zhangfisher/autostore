@@ -3,7 +3,7 @@ import type { ComputedScope  } from "../computed/types"
 import type { ObserverObject } from '../observer/observer';
 import { ObserverType } from "../observer/types"
 import { Dict } from "../types"
-import type { ValidatorObjectArgs } from '../validate';
+import type { SchemaObjectArgs } from '../schema';
 import type { AutoStore } from "./store" 
 
 export type BatchChangeEvent= '__batch_update__'
@@ -177,9 +177,9 @@ export interface AutoStoreOptions<State extends Dict> {
      */
     onObserverCreated?:(observerObject:ObserverObject<any,any>)=>void
     /**
-     * 默认的校验对象对象参数
+     * 默认的値模式
      */
-    validator?: Partial<ValidatorObjectArgs<any>>
+    valueSchema?: Partial<SchemaObjectArgs<any>>
     /**
      * 当写入时状态时执行此校验函数
      */

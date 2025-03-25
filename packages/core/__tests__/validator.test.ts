@@ -1,5 +1,5 @@
 import { describe,  expect, test } from 'vitest'; 
-import { v } from '../src/validate'
+import { s } from '../src/schema'
 import { AutoStore } from '../src/store';
 import { ValidateError } from '../src';
 
@@ -9,16 +9,16 @@ describe("validator",()=>{
     test("number initial",()=>{
         const store = new AutoStore({
             order:{
-                price: v.number(100,(val)=>val>10)
+                price: s.number(100,(val)=>val>10)
             }
         })
         expect(store.state.order.price).toBe(100)
-        store.validators.has("order.price")
+        store.schemas.has("order.price")
     })
     test("赋值时校验出错默认触发ValidateError",()=>{
         const store = new AutoStore({
             order:{
-                price: v.number(100,(val)=>val>10)
+                price: s.number(100,(val)=>val>10)
             }
         })
         expect(store.state.order.price).toBe(100)
@@ -28,10 +28,10 @@ describe("validator",()=>{
     test("赋值时校验出错时不触发错误忽略",()=>{
         const store = new AutoStore({
             order:{
-                price: v.number(100,(val)=>val>10)
+                price: s.number(100,(val)=>val>10)
             }
         },{
-            validator:{
+            valueSchema:{
                 behavior:'ignore'
             }
         })
@@ -43,67 +43,67 @@ describe("validator",()=>{
     test("赋值时校验出错时不触发错误放行",()=>{
         const store = new AutoStore({
             order:{
-                price: v.number(100,(val)=>val>10)
+                price: s.number(100,(val)=>val>10)
             }
         },{
-            validator:{
+            valueSchema:{
                 behavior:'pass'
             }
         })
         expect(store.state.order.price).toBe(100)
         expect(()=>store.state.order.price=10).not.toThrow(ValidateError)
         expect(store.state.order.price).toBe(10)
-        expect("order.price" in store.validators.errors).toBe(true)
+        expect("order.price" in store.schemas.errors).toBe(true)
     })
     test("自定义校验提示",()=>{
         const store = new AutoStore({
             order:{
-                price: v.number(100,(val)=>val>10,{errorTips:"价格必须大于10"})
+                price: s.number(100,(val)=>val>10,{errorTips:"价格必须大于10"})
             }
         })
         expect(store.state.order.price).toBe(100)
-        store.validators.has("order.price")
+        store.schemas.has("order.price")
         try{
             store.state.order.price = 10
             
         }catch(e:any){
             expect(e).toBeInstanceOf(ValidateError)
             expect(e.message).toBe("价格必须大于10")
-            expect(store.validators.errors["order.price"]).toBe("价格必须大于10")
+            expect(store.schemas.errors["order.price"]).toBe("价格必须大于10")
         }        
     })
     test("自定义校验提示",()=>{
         const store = new AutoStore({
             order:{
-                price: v.number(100,(val)=>val>10,"价格必须大于10")
+                price: s.number(100,(val)=>val>10,"价格必须大于10")
             }
         })
         expect(store.state.order.price).toBe(100)
-        store.validators.has("order.price")
+        store.schemas.has("order.price")
         try{
             store.state.order.price = 10
             
         }catch(e:any){
             expect(e).toBeInstanceOf(ValidateError)
             expect(e.message).toBe("价格必须大于10")
-            expect(store.validators.errors["order.price"]).toBe("价格必须大于10")
+            expect(store.schemas.errors["order.price"]).toBe("价格必须大于10")
         }        
     })
     test("使用函数自定义校验提示",()=>{
         const store = new AutoStore({
             order:{
-                price: v.number(100,(val)=>val>10,{errorTips:(path)=>path+":价格必须大于10"})
+                price: s.number(100,(val)=>val>10,{errorTips:(path)=>path+":价格必须大于10"})
             }
         })
         expect(store.state.order.price).toBe(100)
-        store.validators.has("order.price")
+        store.schemas.has("order.price")
         try{
             store.state.order.price = 10
             
         }catch(e:any){
             expect(e).toBeInstanceOf(ValidateError)
             expect(e.message).toBe("order.price:价格必须大于10")
-            expect(store.validators.errors["order.price"]).toBe("order.price:价格必须大于10")
+            expect(store.schemas.errors["order.price"]).toBe("order.price:价格必须大于10")
         }        
     })
     test("使用onValidate校验",()=>{
@@ -124,7 +124,7 @@ describe("validator",()=>{
             store.state.order.price= 5
         }catch(e:any){
             expect(e).toBeInstanceOf(ValidateError)
-            expect("order.price" in store.validators.errors).toBe(true)
+            expect("order.price" in store.schemas.errors).toBe(true)
         }
     })
 })

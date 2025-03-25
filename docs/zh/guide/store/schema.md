@@ -1,89 +1,73 @@
 # 校验
 
-`AutoStore`支持在写入状态时对数据进行校验。
+`AutoStore`支持为状态成员指定`Schema`数据，包括校验行为以及其他描述元数据。
 
 ## 使用方法
 
-### 方法1： 声明校验器
+可以通过`schema`函数为状态成员指定`Schema`：
 
-直接在状态中声明校验器。
-
-```ts 
-import { v } from "autostore"
+```ts {1,5}
+import { schema } from "autostore"
 
 const store = new AutoStore({
     order:{
-        // 只指定错误信息        
-        price: v.number(100,(val)=>val>10,"价格必须大于10")
-        // 指定校验选项等额外的数据
-        price: v.number(100,(val)=>val>10,{
+        price: schema(100,{  
+            validate:(val)=>val>10
             errorTips:"价格必须大于10",
             title:"价格",
             required:true
-            description:"产品价格",
+            help:"产品价格",
             tags:["价格"]
         })
     }
 });
 ```
 
-- `v`是`AutoStore`提供的校验器工厂函数，用于创建校验器。
-- `v.number`是`AutoStore`提供的数字校验器，用于校验数字，第一个参数是默认值，第二个参数是校验函数。
-- 当写入数据到状态时，会对数据进行校验。
+`Schema`函数签名如下：
 
+```ts
+function schema<Value=any> (value:Value,options?:SchemaObjectArgs ): SchemaObject<Value>
+function schema<Value=any> (value:Value,validate?:AutoStoreValidate<Value>,options?:SchemaObjectArgs):SchemaObject<Value>
+function schema<Value=any> (value:Value,validate?:AutoStoreValidate<Value>,errorTips?:SchemaObjectArgs['errorTips']):SchemaObject<Value>
 
-### 方法2： 全局校验
-
-在构建`AutoStore`实例时，传入`onValidate`回调函数,当写入数据到状态时，会调用此函数进行校验，成功返回`true`,失败返回`false`。
-
-```ts 
-import { v,ValidateError } from "autostore"
-
-const store = new AutoStore({
-    order:{
-        price: 100
-    }
-},{
-    onValidate(path:string[],newValue:any,oldValue:any){
-        // 返回true/false
-        return <true/false>;  // [!code ++]
-        // 触发错误
-        throw new ValidateError("错误信息");
-    }
-});
 ```
 
-:::warning 提示
-当写入状态时触发校验！
-:::
 
 ## 指南
 
-### 内置校验器
+### 内置校验模式
 
-`AutoStore`内置了以下校验器：
+`AutoStore`内置了以下：
 
-- `v.number` 数字校验器
-- `v.string` 字符串校验器
-- `v.boolean` 布尔校验器
-- `v.array` 数组校验器
-- `v.object` 对象校验器
-- `v.date` 日期校验器
+- `s.number` 数字校验器
+- `s.string` 字符串校验器
+- `s.boolean` 布尔校验器
+- `s.array` 数组校验器
+- `s.object` 对象校验器
+- `s.date` 日期校验器
 - `v.bigint` 大整数校验器
 
-**校验器的参数声明如下：**
+**声明如下：**
 
-```ts 
-v.<
-    number|string|boolean|array|object|date|bigint  // [!code ++]
->(
+```ts {1,3-9}
+import { schemas } from "autostore"
+
+schemas.number
+schemas.string
+schemas.boolean
+schemas.array
+schemas.object
+schemas.date
+schemas.bigint   
+(
     // 初始值
     initial:number,                 
     // 校验函数
     validate:AutoStoreValidate,     
     // 校验选项
-    options?:ValidatorObjectArgs | ValidatorObjectArgs[errorTips] 
+    options?:SchemaObjectArgs | SchemaObjectArgs['errorTips'] 
 )
+
 export type AutoStoreValidate<Value=any> = (
     newValue:Value,
     oldValue:Value,
@@ -91,11 +75,11 @@ export type AutoStoreValidate<Value=any> = (
 )=>boolean
 ```
 
-示例：
+**示例：**
 
 ```ts
-v.number(100,(val)=>val>10,"价格必须大于10")
-v.number(100,(val)=>val>10,{
+s.number(100,(val)=>val>10,"价格必须大于10")
+s.number(100,(val)=>val>10,{
     errorTips:"价格必须大于10",
     title:"价格",
     required:true
@@ -103,14 +87,18 @@ v.number(100,(val)=>val>10,{
     tags:["价格"]
 })
 
-v.string("1234",(val)=>val.length>3,"密码长度必须大于3")
-v.string("1234",{
+s.string("1234",(val)=>val.length>3,"密码长度必须大于3")
+s.string("1234",{
     errorTips:"密码长度必须大于3",
     title:"密码",
     required:true,
     placeholder:"请输入密码"
 })
 ```
+
+:::warning 提示
+`s`是`schemas`的简写，用于简化代码。
+:::
 
 ### 校验信息
 
@@ -201,39 +189,67 @@ const store = new AutoStore({
 可以通过`store.validators.errors`读取所有的校验错误信息。
 :::
 
-### 自定校验
-
+### 自定义模式
 
 ```ts 
-import { v,validator } from "autostore"
+import { s,schema } from "autostore"
 const store = new AutoStore({
     order:{
-        price: validator<number>(100,(val)=>val>10,"价格必须大于10")
+        price: schema<number>(100,(val)=>val>10,"价格必须大于10")
     }
 });
 ```
 
-- `validator`用于自定义校验器，第一个参数为校验值，第二个参数为校验函数，第三个参数为校验信息或参数。
+- `schema`用于自定义校验器，第一个参数为校验值，第二个参数为校验函数，第三个参数为校验信息或参数。
 - 必须为`validator`指定一个泛型类型，用于指定校验值的类型。
 
 ### 额外信息
 
-校验器支持指定额外信息，用于在错误信息或者渲染UI时使用。
+支持指定额外信息，用于在错误信息或者渲染UI时使用。
 
 ```ts
-export type ValidatorObject<Value=any> = {
-    [VALIDATOR_SCHEMA]: true
+export type SchemaObject<Value=any> = {
+    [VALUE_SCHEMA]    : true
     value?            : Value
     validate?         : AutoStoreValidate<Value>
+    behavior?         : 'pass' | 'ignore' | 'throw'   
     required?         : boolean
     enable?           : boolean 
     path?             : string
-    behavior?         : 'pass' | 'ignore' | 'throw'
+    // 提供一些元数据
     title?            : string
-    descripotion?     : string
+    help?             : string
     placeholder?      : string
+    select?           : string[] | number[] | boolean[] | ({
+        label?        : string
+        value         : Value
+        default?      : boolean
+        icon?         : string
+    })[]
     widget?           : string          
-    errorTips?        : string | ((this:ValidatorObject<Value>,path:string,newValue:Value,oldValue:Value)=>string )
-    tags?             : string[]         
+    errorTips?        : string | ((this:SchemaObject<Value>,path:string,newValue:Value,oldValue:Value)=>string )
+    tags?             : string[]            
 } 
 ```
+
+
+### 全局校验
+
+在构建`AutoStore`实例时，传入`onValidate`回调函数,当写入数据到状态时，会调用此函数进行校验，成功返回`true`,失败返回`false`。
+
+```ts 
+import { v,ValidateError } from "autostore"
+
+const store = new AutoStore({
+    order:{
+        price: 100
+    }
+},{
+    onValidate(path:string[],newValue:any,oldValue:any){
+        // 返回true/false
+        return <true/false>;  // [!code ++]
+        // 触发错误
+        throw new ValidateError("错误信息");
+    }
+});
+``` 

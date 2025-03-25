@@ -1,11 +1,11 @@
 import { Equal, Expect }  from "@type-challenges/utils"
 import { ComputedState } from "../src/types";
-import { v } from "../src/validate";
+import { s } from "../src/schema";
 
 const obj = {
-    price     : v.number(100),
-    tags      : v.array(["a","b"]),
-    address   : v.object({
+    price     : s.number(100),
+    tags      : s.array(["a","b"]),
+    address   : s.object({
         city  : "QuanZhou",
         post  : 1234,
         street: "FenZhei"

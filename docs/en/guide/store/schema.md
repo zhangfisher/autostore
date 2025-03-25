@@ -1,88 +1,71 @@
-# Validation
+# Schema
 
-`AutoStore` supports data validation when writing to state.
+`AutoStore` supports specifying `Schema` data for state members, including validation behavior and other descriptive metadata.
 
 ## Usage
 
-### Method 1: Declare Validators
+You can specify `Schema` for state members using the `schema` function:
 
-Declare validators directly in the state.
-
-```ts 
-import { v } from "autostore"
+```ts {1,5}
+import { schema } from "autostore"
 
 const store = new AutoStore({
     order:{
-        // Only specify error message        
-        price: v.number(100,(val)=>val>10,"Price must be greater than 10")
-        // Specify validation options and additional data
-        price: v.number(100,(val)=>val>10,{
+        price: schema(100,{  
+            validate:(val)=>val>10
             errorTips:"Price must be greater than 10",
             title:"Price",
             required:true
-            description:"Product price",
+            help:"Product price",
             tags:["price"]
         })
     }
 });
 ```
 
-- `v` is a validator factory function provided by `AutoStore` for creating validators.
-- `v.number` is a number validator provided by `AutoStore` for validating numbers. The first parameter is the default value, and the second parameter is the validation function.
-- When writing data to state, the data will be validated.
+The `Schema` function signature is as follows:
 
-### Method 2: Global Validation
-
-Pass an `onValidate` callback function when building the `AutoStore` instance. When writing data to state, this function will be called for validation, returning `true` for success and `false` for failure.
-
-```ts 
-import { v,ValidateError } from "autostore"
-
-const store = new AutoStore({
-    order:{
-        price: 100
-    }
-},{
-    onValidate(path:string[],newValue:any,oldValue:any){
-        // Return true/false
-        return <true/false>;  // [!code ++]
-        // Throw error
-        throw new ValidateError("Error message");
-    }
-});
+```ts
+function schema<Value=any> (value:Value,options?:SchemaObjectArgs ): SchemaObject<Value>
+function schema<Value=any> (value:Value,validate?:AutoStoreValidate<Value>,options?:SchemaObjectArgs):SchemaObject<Value>
+function schema<Value=any> (value:Value,validate?:AutoStoreValidate<Value>,errorTips?:SchemaObjectArgs['errorTips']):SchemaObject<Value>
 ```
-
-:::warning Note
-Validation is triggered when writing to state!
-:::
 
 ## Guide
 
-### Built-in Validators
+### Built-in Schema Types
 
-`AutoStore` includes the following built-in validators:
+`AutoStore` includes the following built-in types:
 
-- `v.number` Number validator
-- `v.string` String validator
-- `v.boolean` Boolean validator
-- `v.array` Array validator
-- `v.object` Object validator
-- `v.date` Date validator
+- `s.number` Number validator
+- `s.string` String validator
+- `s.boolean` Boolean validator
+- `s.array` Array validator
+- `s.object` Object validator
+- `s.date` Date validator
 - `v.bigint` BigInt validator
 
-**Validator parameter declaration:**
+**Declaration:**
 
-```ts 
-v.<
-    number|string|boolean|array|object|date|bigint  // [!code ++]
->(
+```ts {1,3-9}
+import { schemas } from "autostore"
+
+schemas.number
+schemas.string
+schemas.boolean
+schemas.array
+schemas.object
+schemas.date
+schemas.bigint   
+(
     // Initial value
     initial:number,                 
     // Validation function
     validate:AutoStoreValidate,     
     // Validation options
-    options?:ValidatorObjectArgs | ValidatorObjectArgs[errorTips] 
+    options?:SchemaObjectArgs | SchemaObjectArgs['errorTips'] 
 )
+
 export type AutoStoreValidate<Value=any> = (
     newValue:Value,
     oldValue:Value,
@@ -90,11 +73,11 @@ export type AutoStoreValidate<Value=any> = (
 )=>boolean
 ```
 
-Examples:
+**Examples:**
 
 ```ts
-v.number(100,(val)=>val>10,"Price must be greater than 10")
-v.number(100,(val)=>val>10,{
+s.number(100,(val)=>val>10,"Price must be greater than 10")
+s.number(100,(val)=>val>10,{
     errorTips:"Price must be greater than 10",
     title:"Price",
     required:true
@@ -102,8 +85,8 @@ v.number(100,(val)=>val>10,{
     tags:["price"]
 })
 
-v.string("1234",(val)=>val.length>3,"Password must be longer than 3 characters")
-v.string("1234",{
+s.string("1234",(val)=>val.length>3,"Password must be longer than 3 characters")
+s.string("1234",{
     errorTips:"Password must be longer than 3 characters",
     title:"Password",
     required:true,
@@ -111,9 +94,13 @@ v.string("1234",{
 })
 ```
 
+:::warning Note
+`s` is shorthand for `schemas`, used to simplify code.
+:::
+
 ### Validation Messages
 
-Each validator supports specifying validation messages for display when validation fails.
+Each schema supports specifying validation messages for display when validation fails.
 
 Validation error messages can be provided in the following ways:
 
@@ -199,38 +186,66 @@ const store = new AutoStore({
 All validation error messages can be read through `store.validators.errors`.
 :::
 
-### Custom Validation
+### Custom Schema
 
 ```ts 
-import { v,validator } from "autostore"
+import { s,schema } from "autostore"
 const store = new AutoStore({
     order:{
-        price: validator<number>(100,(val)=>val>10,"Price must be greater than 10")
+        price: schema<number>(100,(val)=>val>10,"Price must be greater than 10")
     }
 });
 ```
 
-- `validator` is used for custom validators. The first parameter is the validation value, the second parameter is the validation function, and the third parameter is the validation message or parameters.
+- `schema` is used for custom validators. The first parameter is the validation value, the second parameter is the validation function, and the third parameter is the validation message or parameters.
 - A generic type must be specified for `validator` to indicate the type of the validation value.
 
 ### Additional Information
 
-Validators support specifying additional information for use in error messages or UI rendering.
+Schemas support specifying additional information for use in error messages or UI rendering.
 
 ```ts
-export type ValidatorObject<Value=any> = {
-    [VALIDATOR_SCHEMA]: true
+export type SchemaObject<Value=any> = {
+    [VALUE_SCHEMA]    : true
     value?            : Value
     validate?         : AutoStoreValidate<Value>
+    behavior?         : 'pass' | 'ignore' | 'throw'   
     required?         : boolean
     enable?           : boolean 
     path?             : string
-    behavior?         : 'pass' | 'ignore' | 'throw'
+    // Metadata
     title?            : string
-    descripotion?     : string
+    help?             : string
     placeholder?      : string
+    select?           : string[] | number[] | boolean[] | ({
+        label?        : string
+        value         : Value
+        default?      : boolean
+        icon?         : string
+    })[]
     widget?           : string          
-    errorTips?        : string | ((this:ValidatorObject<Value>,path:string,newValue:Value,oldValue:Value)=>string )
-    tags?             : string[]         
+    errorTips?        : string | ((this:SchemaObject<Value>,path:string,newValue:Value,oldValue:Value)=>string )
+    tags?             : string[]            
 } 
+```
+
+### Global Validation
+
+Pass an `onValidate` callback function when building the `AutoStore` instance. When writing data to state, this function will be called for validation, returning `true` for success and `false` for failure.
+
+```ts 
+import { v,ValidateError } from "autostore"
+
+const store = new AutoStore({
+    order:{
+        price: 100
+    }
+},{
+    onValidate(path:string[],newValue:any,oldValue:any){
+        // Return true/false
+        return <true/false>;  // [!code ++]
+        // Throw error
+        throw new ValidateError("Error message");
+    }
+});
 ```
