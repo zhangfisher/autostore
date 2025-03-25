@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 // import copy from "esbuild-copy-files-plugin";
 
 
-export default defineConfig( 
+export default defineConfig([
     {
         entry: [
             'src/index.tsx'
@@ -15,5 +15,7 @@ export default defineConfig(
         treeshake:true,  
         minify: true, 
         noExternal:["autostore"]
-    }  )
+    },
+]
+)
  

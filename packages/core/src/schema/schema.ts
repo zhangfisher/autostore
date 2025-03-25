@@ -54,12 +54,15 @@ export type SchemaObject<Value=any> = {
     })[]
     widget?           : string          
     errorTips?        : string | ((this:SchemaObject<Value>,path:string,newValue:Value,oldValue:Value)=>string )
-    tags?             : string[]         
+    tags?             : string[]        
+    group?            : string
+    advanced?        : boolean 
 }
 
 
 export type SchemaObjectArgs<Value=any> = Pick<SchemaObject<Value>,
-    'required' 
+    'value'
+    | 'required' 
     | 'validate' 
     | 'behavior' 
     | 'enable' 
@@ -68,9 +71,10 @@ export type SchemaObjectArgs<Value=any> = Pick<SchemaObject<Value>,
     | 'tags' 
     | 'help' 
     | 'title' 
-    | 'value' 
     | 'widget' 
     | 'select'
+    | 'group'
+    | 'advanced'
 > & Record<string,any>
 
 
