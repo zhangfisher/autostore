@@ -78,57 +78,62 @@ export type SchemaObjectArgs<Value=any> = Pick<SchemaObject<Value>,
 > & Record<string,any>
 
 
-export function schema<Value=any> (value:Value,options?:SchemaObjectArgs ): SchemaObject<Value>
-export function schema<Value=any> (value:Value,validate?:AutoStoreValidate<Value>,options?:SchemaObjectArgs):SchemaObject<Value>
-export function schema<Value=any> (value:Value,validate?:AutoStoreValidate<Value>,errorTips?:SchemaObjectArgs['errorTips']):SchemaObject<Value>
-export function schema<Value=any> ():SchemaObject<Value>{
-    const initial = arguments[0]
-    const options = Object.assign({
-        validate : ()=>true,
-        },isPlainObject(arguments[1]) ? arguments[1] : undefined) as SchemaObjectArgs
-    if(typeof(arguments[1])==='function'){
-        options.validate = arguments[1]
+function getSchemaOptions(args:any[]){
+    const options = Object.assign({ },(
+        args.length === 1 && isPlainObject(args[0])) ? args[0] : 
+            (args.length>=2 && isPlainObject(args[args.length-1]) ? args[args.length-1] : undefined)
+        ) as SchemaObjectArgs
+    options.value = args.length >=2 ? args[0] : undefined
+    if(args.length >=2 && typeof(args[1]) === 'function'){
+        options.validate = args[1] 
     }
-    const arg2 = arguments[2]
-    if(isPlainObject(arg2)){
-        Object.assign(options,arg2)
-    }else if(typeof(arguments[2])==='string' || typeof(arguments[2])==='function'){
-        options.errorTips = arguments[2]
-    }
-    return Object.assign({
-        value             : initial,
-        pass              : false,
-        [VALUE_SCHEMA]: true        
-    },options) as SchemaObject<Value>
+    if(args.length >=3 && ['string','function'].includes(typeof(args[2]))){
+        options.errorTips = args[2] 
+    }    
+    return options
 }
 
+export interface SchemaBuilder<Value=any>{
+    <T=Value>(options:SchemaObjectArgs ): SchemaObject<T>
+    <T=Value>(value:T,options:SchemaObjectArgs ): SchemaObject<T>
+    <T=Value>(value:T,validate:AutoStoreValidate<T>,options?:SchemaObjectArgs):SchemaObject<T>
+    <T=Value>(value:T,validate:AutoStoreValidate<T>,errorTips?:SchemaObjectArgs['errorTips']):SchemaObject<T>
+}
 
-export function createTypeSchema<Value=any>(isType:(val:any)=>boolean,defaultTips:string){
-    return <T=Value>(initial:T,validate?:AutoStoreValidate<T>,optionsOrTips?:SchemaObjectArgs<T> | SchemaObjectArgs['errorTips'])=>{
-        if(!isType(initial)) throw new ValidateError(defaultTips)
-        const optType = typeof(optionsOrTips)
-        const opts = Object.assign({},optType==='string' || optType==='function' ? {errorTips:optionsOrTips} : optionsOrTips) as SchemaObjectArgs
-        return schema<T>(initial,function(this:AutoStore<any>,newValue:T,oldValue:T,path:string){    
-            const errorTips = getErrorTips.call(this,opts?.errorTips || this.options.valueSchema?.errorTips, path,newValue,oldValue)
-            if(!isType(newValue)) throw new ValidateError(errorTips)
-            if(typeof(validate)==='function'){
-                return validate(newValue,oldValue,path) 
-            } 
+export const schema =  function() {
+    const options = getSchemaOptions([...arguments])
+    return Object.assign({
+        pass          : false,
+        validate      : () => true,
+        [VALUE_SCHEMA]: true
+    }, options)
+} as unknown as SchemaBuilder
+
+export function createTypeSchemaBuilder<Value=any>(isType:(val:any)=>boolean,defaultTips:string){
+    return function typeSchema():SchemaObject<Value>{
+        const options = getSchemaOptions([...arguments])
+        if(!isType(options.value)) throw new ValidateError(defaultTips)        
+        return schema<Value>(options.value,function (this: AutoStore<any>, newValue: Value, oldValue: Value, path: string){
+            const errorTips = getErrorTips.call(this, options.errorTips || this.options.valueSchema?.errorTips, path, newValue, oldValue)
+            if (!isType(newValue)) throw new ValidateError(errorTips)
+            if (typeof (options.validate) === 'function') {
+                return options.validate(newValue, oldValue, path)
+            }
             return true
-        },opts)
-    }
+        }, options) as SchemaObject<Value>
+    } as SchemaBuilder
 } 
 
 export const schemas = {
-    number : createTypeSchema<number>((val)=>typeof(val)==='number','must be a number'),
-    string : createTypeSchema<string>((val)=>typeof(val)==='string','must be a string'),
-    boolean: createTypeSchema<boolean>((val)=>typeof(val)==='boolean','must be a boolean'),
-    date   : createTypeSchema<Date>((val)=>val instanceof Date,'must be a date'),    
-    bigint : createTypeSchema<bigint>((val)=>typeof(val)==='bigint','must be a bigint'),
-    array  : createTypeSchema((val)=>Array.isArray(val),'must be an array'),
-    object : createTypeSchema((val)=>typeof(val)==='object','must be an object'),
+    number : createTypeSchemaBuilder<number>((val)=>typeof(val)==='number','must be a number'),
+    string : createTypeSchemaBuilder<string>((val)=>typeof(val)==='string','must be a string'),
+    boolean: createTypeSchemaBuilder<boolean>((val)=>typeof(val)==='boolean','must be a boolean'),
+    date   : createTypeSchemaBuilder<Date>((val)=>val instanceof Date,'must be a date'),    
+    bigint : createTypeSchemaBuilder<bigint>((val)=>typeof(val)==='bigint','must be a bigint'),
+    array  : createTypeSchemaBuilder<Array<any>>((val)=>Array.isArray(val),'must be an array'),
+    object : createTypeSchemaBuilder<Record<string,any>>((val)=>typeof(val)==='object','must be an object')
 }
 
-export const s = schemas 
-
+export const s = schemas
 export const configurable = schema
+ 
