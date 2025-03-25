@@ -1,5 +1,14 @@
 # @autostorejs/react
 
+## 1.3.3
+
+### Patch Changes
+
+- [`d69558d`](https://github.com/zhangfisher/autostore/commit/d69558d45c4877206e0802468f555bd807d0525f) Thanks [@zhangfisher](https://github.com/zhangfisher)! - update schemaobject
+
+- Updated dependencies [[`d69558d`](https://github.com/zhangfisher/autostore/commit/d69558d45c4877206e0802468f555bd807d0525f)]:
+  - autostore@1.3.3
+
 ## 1.3.2
 
 ### Patch Changes
