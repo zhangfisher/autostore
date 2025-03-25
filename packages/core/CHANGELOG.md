@@ -1,5 +1,11 @@
 # autostore
 
+## 1.3.1
+
+### Patch Changes
+
+- [`261841b`](https://github.com/zhangfisher/autostore/commit/261841b1b04c0a86aefbd126723d88442a796f75) Thanks [@zhangfisher](https://github.com/zhangfisher)! - rename validator to schema
+
 ## 1.3.0
 
 ### Minor Changes
