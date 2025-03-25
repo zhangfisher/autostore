@@ -1,5 +1,11 @@
 # autostore
 
+## 1.3.4
+
+### Patch Changes
+
+- [`2a6e9ab`](https://github.com/zhangfisher/autostore/commit/2a6e9abfd06db09a81c6c3240f65460d2d734b60) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix schema builder
+
 ## 1.3.3
 
 ### Patch Changes
