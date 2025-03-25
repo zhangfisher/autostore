@@ -127,4 +127,4 @@ export const schemas = {
 
 export const s = schemas 
 
- 
+export const configurable = schema
