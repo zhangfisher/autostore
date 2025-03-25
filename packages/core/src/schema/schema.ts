@@ -98,6 +98,7 @@ export function schema<Value=any> ():SchemaObject<Value>{
     },options) as SchemaObject<Value>
 }
 
+
 export function createTypeSchema<Value=any>(isType:(val:any)=>boolean,defaultTips:string){
     return <T=Value>(initial:T,validate?:AutoStoreValidate<T>,optionsOrTips?:SchemaObjectArgs<T> | SchemaObjectArgs['errorTips'])=>{
         if(!isType(initial)) throw new ValidateError(defaultTips)
