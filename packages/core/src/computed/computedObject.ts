@@ -8,8 +8,7 @@ import { calcDependPaths } from "../utils/calcDependPaths";
 import { joinValuePath } from "../utils/joinValuePath";
 import {  ComputedContext, ComputedDescriptor, ComputedOptions, RuntimeComputedOptions } from './types';
 import { ObserverObject } from "../observer/observer";
-import { isFunction } from "../utils/isFunction";
-
+ 
 export class ComputedObject<Value=any> extends ObserverObject<Value,ComputedOptions<Value>>{     
     /**
      *  构造函数。

@@ -52,7 +52,7 @@
  
 import { ComputedObjects } from "../computed/computedObjects";  
 import { assignObject } from "flex-tools/object/assignObject"
-import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from "./types";
+import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, StoreSyncer, StoreSyncOptions, UpdateOptions } from "./types";
 import type { Dict } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log"; 
 import { getId } from "../utils/getId";  
@@ -61,8 +61,8 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal, isPlainObject, pathStartsWith, setVal } from "../utils";
-import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from "../consts";
+import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPlainObject, pathStartsWith, setVal } from "../utils";
+import { BATCH_UPDATE_EVENT, CYCLE_OPERATE_FLAG, PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects"; 
@@ -75,7 +75,7 @@ import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
 import { ObjectKeyPaths, GetTypeByPath } from '../types';
 import { getValueByPath } from "../utils/getValueByPath";
-import { SchemaManager } from "../schema";
+import { SchemaManager } from "../schema"; 
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _data: ComputedState<State>;
@@ -86,11 +86,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _silenting = false                                          // 是否静默更新，不触发事件
     private _batching = false                                           // 是否批量更新中
     private _batchOperates:StateOperate[] = []                          // 暂存批量操作
+    private _updateFlags:number | symbol | undefined                    // 额外的更新标识
     private _peeping:boolean = false 
     private _updatedState?:Dict                                         // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
     private _updatedWatcher:Watcher | undefined                         // 脏状态侦听器
     private _schemas: SchemaManager<State> | undefined                  
-    constructor(state: State,options?:AutoStoreOptions<State>) { 
+    constructor(state?: State,options?:AutoStoreOptions<State>) { 
         super()
         this._options = assignObject({
             id            : getId(),
@@ -104,7 +105,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         this.computedObjects = new ComputedObjects<State>(this)
         this.watchObjects  =  new WatchObjects<State>(this)
         this.subscribeCallbacks()
-        this._data = createReactiveObject.call(this as any,state,{
+        this._data = createReactiveObject.call(this as any,state || {},{
             notify:this._notify.bind(this),
             createComputedObject:this.createObserverObject.bind(this)
         }) as ComputedState<State>
@@ -221,6 +222,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             this._batchOperates.push(params)
         }
         if(this._silenting) return        
+        params.flags = this._updateFlags
         this.operates.emit(params.path.join(PATH_DELIMITER),params)       
     } 
     // ************* Watch **************/
@@ -448,7 +450,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @param {function(ComputedState<State>): void} fn - 用于更新状态的函数,只能是同步函数
      * @param {Object} [options] - 可选参数
      * @param {boolean} [options.batch=true] -  是否批量更新，=false 不批量更新，=true 批量更新，批量更新事件名称为__batch_update__，=<批量更新事件名称> 指定一个字符串
-     * @param {boolean} [options.silent=false] - 是否静默更新，默认为 false
+     * @param {boolean} [options.silent=false] - 是否静默更新不触发事件，默认为 false
      * @param {boolean} [options.peep=false] - 是否偷看，即读取状态值但不触发事件，默认为 false
      * @param {boolean} [options.reply=false] - 当更新完成回放所有依赖的变化事件，默认为true，即回放所有依赖的变化事件，=false 不回放依赖的变化事件
      *  比如update(state=>{
@@ -456,8 +458,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      *  })
      */
     update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions){
-        const {batch=false,reply=true,silent=false,peep=false} = Object.assign({},options)        
+        const {batch=false,reply=true,silent=false,peep=false,flags} = Object.assign({},options)        
         if(typeof(fn)==='function'){                        
+            this._updateFlags = flags
             if(silent) this._silenting=true
             if(batch) {
                 this._batching = true
@@ -471,6 +474,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 this._silenting = false
                 this._batching = false
                 this._peeping = false
+                this._updateFlags = 0
                 this.replyBatchOperates(reply,batch)                
             }            
         }else{
@@ -669,8 +673,21 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         return getSnapshot(entry ? getVal(this._data,entry) : this._data,reserveAsync)
     }
 
-    clone<Entry extends string,CloneState extends Record<string, any> = GetTypeByPath<State,Entry>>(options?:AutoStoreOptions<State> & {entry?: Entry,sync?:boolean}){    
-        const { sync,entry } = Object.assign({sync:true},this._options,options)
+    /**
+     * 克隆当前 store 的一个子状态树,创建新的 store 实例
+     * @param options 配置选项
+     * @param options.entry 子状态树的路径
+     * @param options.sync 是否同步更新到父 store,默认为 true
+     * @returns 新的 store 实例
+     * @throws 当 entry 路径对应的值不是普通对象时抛出错误
+     * @example
+     * const store = new AutoStore({ foo: { bar: 1 } })
+     * const subStore = store.clone({ entry: 'foo' }) 
+     */
+    clone<Entry extends string, CloneState extends Record<string, any> = GetTypeByPath<State, Entry>>(
+        options?: AutoStoreOptions<State> & { entry?: Entry, sync?: boolean }
+    ){
+        const { sync, entry } = Object.assign({ sync: true }, this._options, options)
         const state = getValueByPath(this.getSnap() ,entry) as CloneState
         if(!isPlainObject(state)){
             throw new Error(`The entry path must be an object, but got ${typeof(state)}`)
@@ -679,10 +696,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const clonedStore = new AutoStore<CloneState>(state,clonedOptions)
 
         if(sync){
-            clonedStore.watch("*",({type,path,value,oldValue})=>{
-                this.update(state=>{                    
-                    setVal(state,path,value)
-                })
+            this.sync(clonedStore,{
+                from:entry,
+                immediate:false
             })
         }         
         return clonedStore
@@ -703,38 +719,86 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      *  to:'b'
      * })   ----> store1的a对象的值会同步到store2的b对象上
      * 
-     * 
-     * 
-     * 
-     * @param store 
+     * @param toStore 
      * @param entry 
      */
-    sync(store:AutoStore<any>,options?:{from?:string,to?:string,filter:(path:string[],value:any)=>boolean,}){
-        const { from,to } = Object.assign({filter:()=>true},options)
+    sync(toStore:AutoStore<any>,options?:StoreSyncOptions):StoreSyncer{
+        const { from,to,filter,immediate  } = Object.assign({
+            immediate:true
+        },options) as StoreSyncOptions
         const fromEntry = from ? from.split(PATH_DELIMITER) : []
         const toEntry = to ? to.split(PATH_DELIMITER) : []
-        this.watch(({type,path,value})=>{   
-            if(!pathStartsWith(fromEntry,path)) return 
-            const toPath = [...toEntry,...path.slice(fromEntry.length)]
+
+        let watchers: Watcher[] = []
+        // const filter = options?.filter || (()=>true)
+
+        const syncToStore = (store:AutoStore<any>,relPath:string[],operate:StateOperate)=>{
+            const {type,path,value,flags,indexs} = operate
+            if(!pathStartsWith(relPath,path)) return 
+            const silent = flags===CYCLE_OPERATE_FLAG 
+            if(flags === CYCLE_OPERATE_FLAG) return 
             if(type==='set' || type==='update'){
                 store.update(state=>{
-                    setVal(state,toPath,value)
-                })
+                    if(isAsyncComputedValue(getVal(state,relPath))){
+                        setVal(state,relPath.concat('value'),value)
+                    }else{
+                        setVal(state,relPath,value)
+                    }
+                },{flags:CYCLE_OPERATE_FLAG,silent})
             }else if(type==='delete'){
                 store.update(state=>{
-                    setVal(state,toPath,undefined)
-                })
+                    setVal(state,relPath,undefined)
+                },{flags:CYCLE_OPERATE_FLAG,silent})
             }else if(type==='insert'){
                 store.update(state=>{
-                    setVal(state,toPath,value)
-                })
-            }else if(type==='remove'){
-                
+                    setVal(state,relPath,value)
+                },{flags:CYCLE_OPERATE_FLAG,silent})
+            }else if(type==='remove'){ 
+                store.update(state=>{
+                    const arr = getVal(state,relPath)                    
+                    if(indexs){
+                        arr.splice(indexs[0],indexs.length)
+                    }
+                },{flags:CYCLE_OPERATE_FLAG,silent})
             }
-        },{
-            operates:"write"
-        })
+        }
 
+        // 马上进行同步
+        if(immediate){            
+            const toEntryValue = getVal(toStore.state,toEntry)
+            const fromEntryValue = this.getSnap({entry:fromEntry})
+            if(typeof(fromEntryValue)==='object'){
+                Object.assign(toEntryValue,fromEntryValue)
+            }else{
+                setVal(toStore,toEntry,fromEntryValue)    
+            }
+        }
+
+        const syncer ={
+            on:()=>{
+                if(watchers.length===0) return 
+                watchers.push(toStore.watch('*',(operate)=>{   
+                    const fromPath = [...fromEntry,...operate.path.slice(toEntry.length)]
+                    operate.path = [...fromEntry,...operate.path]
+                    syncToStore(this,fromPath,operate) 
+                },{ operates:"write" }))
+        
+                watchers.push(this.watch('*', (operate)=>{   
+                    if(typeof(filter)==='function'){
+                        if(filter.call(this,operate)===false) return
+                    }
+                    const toPath = [...toEntry,...operate.path.slice(fromEntry.length)]
+                    operate.path = operate.path.slice(fromEntry.length)
+                    syncToStore(toStore,toPath,operate) 
+                },{ operates:"write" }))
+            },
+            off: ()=>{
+                watchers.forEach(watcher=>watcher.off())
+                watchers =[]
+            }
+        }
+        syncer.on()
+        return syncer
     }
 
 

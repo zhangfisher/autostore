@@ -24,7 +24,8 @@ export type StateOperate<Value=any,Parent=any> = {
     /**
      * 是否是批量操作时的回放事件
      */
-    reply?     : boolean               
+    reply?     : boolean      
+    flags?     : number | symbol         
 }
  
 
@@ -194,9 +195,16 @@ export type UpdateOptions = {
      *  =true  执行批量更新操作，批量更新事件名称为__batch_update__
      *  <string> 执行批量更新操作，批量更新事件名称为指定的字符串
      */
-    batch?:boolean | string,         
-    silent?:boolean,        // 执行更新操作时，静默，不会触发任何事件
-    peep?:boolean           // 执行更新操作时，不会触发GET事件
+    batch?:boolean | string,   
+    /**
+     * 执行更新操作时，静默，不会触发任何事件
+     */      
+    silent?:boolean,        
+    /**
+     * 执行读取操作时，不会触发GET事件
+     * 即偷听
+     */
+    peep?:boolean           
     /**
      * 在批量更新结束后，会自动回放update(()=>{...})之间的所有操作事件
      * 然后再触发一个__batch_update__事件
@@ -207,10 +215,29 @@ export type UpdateOptions = {
      * =false 不会回放操作事件,仅会触发__batch_update__事件
      */
     reply?:boolean
+    /**
+     * 额外的更新标识
+     * 用在执行更新操作时传递额外的标识
+     * 
+     * store.update(()=>{...},{flags:8})
+     * 
+     * 在update期间触发的事件operate中会包含此值，可以通过operate.flags获取到此值
+     * 
+     */
+    flags?:number | symbol
 }
 
 
 export type StateTracker= {
     stop:()=>void,
     start(isStop?:(operate:StateOperate)=>boolean):Promise<StateOperate[]>
+}
+
+export type StoreSyncer = {on:()=>void,off:()=>void}
+
+export type StoreSyncOptions ={
+    from?     : string
+    to?       : string
+    filter?   : (this:AutoStore<any>,operate:StateOperate)=>boolean
+    immediate?: boolean      // 初始化时立刻同步一次
 }

@@ -6,7 +6,7 @@ import { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
 import { isValueSchema } from '../utils';
 import { PATH_DELIMITER } from '../consts'; 
-import type { SchemaObjectValidate } from '../schema/schema';
+import type { SchemaObjectValidate } from '../schema/types';
 import { getErrorTips } from '../schema/utils';
 
 

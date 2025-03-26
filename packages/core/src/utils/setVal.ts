@@ -39,22 +39,4 @@ export function setVal(obj: any, keyPath: string[], val: any,toAsyncValue?:boole
 
     }
     
-}
-
-// keyPath.forEach((key, index) => {
-//   const isMapObj = isMap(parent);
-//   if (index === lastIdx) {
-//     // 当keyPath是AsyncComputedValue时，是否更新到.value值。
-//     if(toAsyncValue===true){
-//       const curValue = isMapObj ? getMapVal(parent, key) : parent[key];
-//       if(isAsyncComputedValue(curValue)){
-//           parent = curValue;     
-//           key='value'
-//       }      
-//     }
-//     isMapObj ? parent.set(key, val) : (parent[key] = val);
-//     return;
-//   }
-//   const subVal = isMapObj ? getMapVal(parent, key) : parent[key];
-//   parent = subVal; 
-// });
+} 

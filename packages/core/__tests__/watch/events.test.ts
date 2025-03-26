@@ -42,12 +42,18 @@ describe("watch events",()=>{
             store.state.address[0].city;
             store.state.job.title;    
             expect(events).toStrictEqual([
-                { type: 'get', path: ['firstName'], indexs:[],value: data.firstName,parent:data,parentPath:[],oldValue:undefined },
-                { type: 'get', path: ['address'], indexs:[], value: data.address,parent:data,parentPath:[],oldValue:undefined },
-                { type: 'get', path: ['address','0'], indexs:[], value: data.address[0] ,parent:data.address,parentPath:["address"],oldValue:undefined},
-                { type: 'get', path: ['address', '0', 'city'], indexs:[], value: data.address[0].city,parent:data.address[0],parentPath:["address",'0'],oldValue:undefined },
-                { type: 'get', path: ['job'], indexs:[], value: data.job,parent:data,parentPath:[],oldValue:undefined },
-                { type: 'get', path: ['job', 'title'], indexs:[], value: data.job.title,parent:data.job,parentPath:["job"],oldValue:undefined }
+                { type: 'get', path: ['firstName'], indexs:[],value: data.firstName,parent:data,parentPath:[],oldValue:undefined ,
+                    flags:undefined},
+                { type: 'get', path: ['address'], indexs:[], value: data.address,parent:data,parentPath:[],oldValue:undefined,
+                    flags:undefined },
+                { type: 'get', path: ['address','0'], indexs:[], value: data.address[0] ,parent:data.address,parentPath:["address"],oldValue:undefined,
+                    flags:undefined},
+                { type: 'get', path: ['address', '0', 'city'], indexs:[], value: data.address[0].city,parent:data.address[0],parentPath:["address",'0'],oldValue:undefined,
+                    flags:undefined },
+                { type: 'get', path: ['job'], indexs:[], value: data.job,parent:data,parentPath:[],oldValue:undefined ,
+                    flags:undefined},
+                { type: 'get', path: ['job', 'title'], indexs:[], value: data.job.title,parent:data.job,parentPath:["job"],oldValue:undefined,
+                    flags:undefined }
             ])
         })
         test("Write operage events",()=>{
@@ -58,9 +64,12 @@ describe("watch events",()=>{
             store.state.firstName = "Li";
             store.state.address[0].city = "Shanghai";
             store.state.job.title = "Frontend Engineer";
-            expect(events[0]).toStrictEqual({ type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:store.state,parentPath:[] ,oldValue: 'John'})
-            expect(events[1]).toStrictEqual({ type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:store.state.address[0],parentPath:["address",'0'],oldValue: 'New York' })
-            expect(events[2]).toStrictEqual({ type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:store.state.job,parentPath:["job"],oldValue: 'Software Engineer'})
+            expect(events[0]).toStrictEqual({ type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:store.state,parentPath:[] ,oldValue: 'John',
+                flags:undefined})
+            expect(events[1]).toStrictEqual({ type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:store.state.address[0],parentPath:["address",'0'],oldValue: 'New York',
+                flags:undefined })
+            expect(events[2]).toStrictEqual({ type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:store.state.job,parentPath:["job"],oldValue: 'Software Engineer',
+                flags:undefined})
         })
         test("delete object items",()=>{
             const events:any[] = [];
@@ -75,10 +84,13 @@ describe("watch events",()=>{
             delete store.state.job.title;
             // @ts-ignore
             delete store.state.job;
-            expect(events[0]).toStrictEqual({ type: 'delete', path: ['firstName'], indexs:[], value: 'John',parent:store.state,parentPath:[] ,oldValue: undefined})
-            expect(events[1]).toStrictEqual({ type: 'delete', path: ['address', '0', 'city'], indexs:[], value:'New York',parent:store.state.address[0],parentPath:["address",'0'],oldValue: undefined})
+            expect(events[0]).toStrictEqual({ type: 'delete', path: ['firstName'], indexs:[], value: 'John',parent:store.state,parentPath:[] ,oldValue: undefined,
+                flags:undefined})
+            expect(events[1]).toStrictEqual({ type: 'delete', path: ['address', '0', 'city'], indexs:[], value:'New York',parent:store.state.address[0],parentPath:["address",'0'],oldValue: undefined,
+                flags:undefined})
             expect(events[2]).toStrictEqual({ type: 'delete', path: ['job', 'title'], indexs:[], value: 'Software Engineer',parent:{company: 'Google',
-                salary: 100000},parentPath:["job"],oldValue: undefined})
+                salary: 100000},parentPath:["job"],oldValue: undefined,
+                flags:undefined})
         })
     
     })
@@ -109,7 +121,8 @@ describe("watch events",()=>{
                 value     : newItems,
                 parent    : state.state.address,
                 parentPath: ['address'],
-                oldValue  : undefined
+                oldValue  : undefined,
+                flags:undefined
             })  
         })
         test("array splice operage event",()=>{
@@ -127,7 +140,8 @@ describe("watch events",()=>{
                 value     : newItems,
                 parent    : [data.address[0],...newItems,...data.address.slice(1)],
                 parentPath: ['address'],
-                oldValue  : undefined
+                oldValue  : undefined,
+                flags:undefined
             })  
         })
         test("array splice with delete operage event",()=>{
@@ -146,7 +160,8 @@ describe("watch events",()=>{
                 value     : data.address.slice(1,3),     // 删除的值
                 parent    : [data.address[0],...newItems,...data.address.slice(3)],
                 parentPath: ['address'],
-                oldValue  : undefined
+                oldValue  : undefined,
+                flags:undefined
             })  
             expect(events[1]).toStrictEqual({ 
                 type      : 'insert', 
@@ -155,7 +170,8 @@ describe("watch events",()=>{
                 value     : newItems,
                 parent    : [data.address[0],...newItems,...data.address.slice(3)],
                 parentPath: ['address'],
-                oldValue  : undefined
+                oldValue  : undefined,
+                flags:undefined
             })            
         })
     
@@ -174,7 +190,8 @@ describe("watch events",()=>{
                 value     : newItems,
                 parent    : [...newItems,...data.address],
                 parentPath: ['address'],
-                oldValue  : undefined
+                oldValue  : undefined,
+                flags:undefined
             })  
         })
     
@@ -193,7 +210,8 @@ describe("watch events",()=>{
                 value     : {city:"QuanZhou",street:"TongYang"},
                 parent    : state.state.address,
                 parentPath: ['address'],
-                oldValue  : data.address[0]
+                oldValue  : data.address[0],
+                flags:undefined
             })  
         })
         test("remove array member",()=>{
@@ -211,7 +229,8 @@ describe("watch events",()=>{
                 value     : [data.address[1]],
                 parent    : [data.address[0],...data.address.slice(2)],
                 parentPath: ['address'],
-                oldValue  : undefined
+                oldValue  : undefined,
+                flags:undefined
             })  
         })
         test("remove array multi member",()=>{
@@ -229,7 +248,8 @@ describe("watch events",()=>{
                 value     : data.address.slice(1),
                 parent    : [data.address[0]],
                 parentPath: ['address'],
-                oldValue  : undefined
+                oldValue  : undefined, 
+                flags:undefined
             })  
         })
     })
@@ -241,6 +261,7 @@ describe("watch events",()=>{
             state = new AutoStore(deepClone(data));
         })
         afterEach(() => {
+            // @ts-ignore
             watcher && watcher.off();
         })
      
@@ -260,9 +281,9 @@ describe("watch events",()=>{
             state.state.address[0].city = "Shanghai";
             state.state.job.title = "Frontend Engineer";
             expect(events).toStrictEqual([
-                { type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:state.state,parentPath:[] ,oldValue: 'John'},
-                { type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:state.state.address[0],parentPath:["address",'0'],oldValue: 'New York' },
-                { type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:state.state.job,parentPath:["job"],oldValue: 'Software Engineer'}
+                { type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:state.state,parentPath:[] ,oldValue: 'John',flags:undefined},
+                { type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:state.state.address[0],parentPath:["address",'0'],oldValue: 'New York' ,flags:undefined},
+                { type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:state.state.job,parentPath:["job"],oldValue: 'Software Engineer',flags:undefined}
             ])
     
         })

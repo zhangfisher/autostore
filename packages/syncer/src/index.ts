@@ -1,16 +1,17 @@
 /**
  * 
  * import { Syncer } from '@autostore/sync';
-import { AutoStore } from '../../core/src/store/store';
+ * import { AutoStore } from 'autostore';
  * 
  * const syncer = new AutoStoreSyncer(store);
- * 
  * 
  * const store1 = syncer.fork(path1,{});
  * const store2 = syncer.fork(path2,"");
  * 
- * 
- * 
+ * store1.sync(store2,{
+ *     from: path1,
+ *     to  : path2,
+ * });
  * 
  * - 将fromStore1的数据同步到tostore
  * - store1的数据也会同步到fromStore1
@@ -18,8 +19,23 @@ import { AutoStore } from '../../core/src/store/store';
  * 
  * syncer.sync();
  * 
- *
+ * const store1 = new AutoStore();
+ * const store2 = new AutoStore(); 
  * 
+* new AutoStoreSyncer(store1).join(store2) 
+* new AutoStoreSyncer(store1).use(websocketTransport).sync({
+ *    send:({path,value},transport)=>{
+ *      transport.send({path,value})
+ *    },
+ *    receive:(store,{path,value},transport)=>{
+ *      store.set(path,value)
+ *    }
+ * },{
+ *  transport,      // 提供一个transport对象，用于发送和接收数据
+ *  entry     : ['a','b']
+ * })
+ *  
+ *  new AutoStoreSyncer(store1).use(EventTransport).sync()
  * 
  */
 
