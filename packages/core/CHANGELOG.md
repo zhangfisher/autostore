@@ -1,5 +1,11 @@
 # autostore
 
+## 1.3.5
+
+### Patch Changes
+
+- [`c872c68`](https://github.com/zhangfisher/autostore/commit/c872c688a6b91138c72f7404fe46adeecd79f4c5) Thanks [@zhangfisher](https://github.com/zhangfisher)! - add store.schemas.getState() method and types
+
 ## 1.3.4
 
 ### Patch Changes
