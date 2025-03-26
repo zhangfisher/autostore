@@ -6,7 +6,7 @@ import { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
 import { isValueSchema } from '../utils';
 import { PATH_DELIMITER } from '../consts'; 
-import type { AutoStoreValidate } from '../schema/schema';
+import type { SchemaObjectValidate } from '../schema/schema';
 import { getErrorTips } from '../schema/utils';
 
 
@@ -29,7 +29,7 @@ function isValidPass(this:AutoStore<any>,proxyObj:any,key:string,newValue:any,ol
     const validators = this.schemas
     const validator =  validators.get(key) 
 
-    let validFn: AutoStoreValidate
+    let validFn: SchemaObjectValidate
     if(validator && typeof(validator.validate)==='function'){
         validFn = validator.validate!
     }else if(typeof(this.options.onValidate)==='function'){

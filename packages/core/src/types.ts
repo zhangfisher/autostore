@@ -1,9 +1,9 @@
 import { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
+import { SchemaObject } from "./schema";
 import type  { AutoStore } from "./store";
 import { RawObject } from "./utils";
 import { WatchDescriptorBuilder } from "./watch/types";
-import { Get,Paths} from "type-fest"
-import { SchemaObject } from './schema/schema';
+import { Get,Paths} from "type-fest" 
 
 
     
@@ -83,7 +83,7 @@ export type RequiredComputedState<T extends Record<string, any>> = {
     [K in keyof T]-?: Exclude<T[K],undefined> extends (...args:any) => any ? PickComputedResult<Exclude<T[K],undefined>> : Required<T[K]>extends Record<string, any> ? ComputedState<Exclude<T[K],undefined> > : Exclude<T[K],undefined> ;
 };
 
-
+  
 
 declare global {
     var __AUTOSTORE_EXTENDS__: (<S extends AutoStore<any>>(store:S)=>void)[]

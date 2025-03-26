@@ -238,7 +238,7 @@ export type SchemaObject<Value=any> = {
 在构建`AutoStore`实例时，传入`onValidate`回调函数,当写入数据到状态时，会调用此函数进行校验，成功返回`true`,失败返回`false`。
 
 ```ts 
-import { v,ValidateError } from "autostore"
+import { ValidateError } from "autostore"
 
 const store = new AutoStore({
     order:{
@@ -253,3 +253,28 @@ const store = new AutoStore({
     }
 });
 ``` 
+
+
+### 访问数据
+
+`store.schemas.getState()`用来提取出所以`schema`标注过的所有数据。
+
+```ts 
+import { s,schema } from "autostore"
+const store = new AutoStore({
+    order:{
+        name: schema<string>("张三"),
+        price: schema<number>(100),
+        count: schema<number>(3),
+    }
+});
+
+store.schemas.getState()
+
+// {
+//     "order.name": "张三",
+//     "order.price": 100,
+//     "order.count": 3
+// }
+
+```

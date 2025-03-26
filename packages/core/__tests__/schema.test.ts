@@ -25,6 +25,7 @@ describe("validator",()=>{
         expect(()=>store.state.order.price=10).toThrow(ValidateError)
         expect(store.state.order.price).toBe(100)
     })
+    
     test("赋值时校验出错时不触发错误忽略",()=>{
         const store = new AutoStore({
             order:{
