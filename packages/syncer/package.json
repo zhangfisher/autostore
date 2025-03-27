@@ -17,7 +17,7 @@
   },
   "keywords": [
     "autostore",
-    "state"
+    "sync"
   ],
   "author": "zhangfisher",
   "license": "MIT",
@@ -26,5 +26,9 @@
   },
   "dependencies": {
     "flex-tools": "^1.4.9"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.1",
+    "autostore": "workspace:*"
   }
 }

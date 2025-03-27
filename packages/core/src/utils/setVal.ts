@@ -19,7 +19,10 @@ import { isMap } from "./isMap"
 export function setVal(obj: any, keyPath: string[], val: any,toAsyncValue?:boolean) {
     let parent = obj;
     const lastIdx = keyPath.length - 1;
-    for(let i=0;i<keyPath.length;i++){
+    if(keyPath.length===0){   // 更新到了根节点
+        Object.assign(obj,val)
+    }else{
+      for(let i=0;i<keyPath.length;i++){
         let key = keyPath[i]
         const isMapObj = isMap(parent);
         if (i === lastIdx) {
@@ -37,6 +40,6 @@ export function setVal(obj: any, keyPath: string[], val: any,toAsyncValue?:boole
         const subVal = isMapObj ? getMapVal(parent, key) : parent[key];
         parent = subVal; 
 
+      }
     }
-    
 } 

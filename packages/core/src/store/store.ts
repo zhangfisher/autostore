@@ -255,7 +255,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     watch(listener:WatchListener,options?:WatchListenerOptions):Watcher
     watch(paths:'*' | string | (string|string[])[],listener:WatchListener,options?:WatchListenerOptions):Watcher
     watch():Watcher{
-        const isWatchAll = typeof(arguments[0])==='function' || arguments[0]==='*'
+        const isWatchAll = typeof(arguments[0])==='function' || arguments[0]==='*' || (Array.isArray(arguments[0]) && arguments[0].length===0 )
         const listener = typeof(arguments[0])==='function' ? arguments[0] : arguments[1]
         const options = arguments.length >=2 && typeof(arguments[arguments.length-1])==='object' ? arguments[arguments.length-1] : undefined
 
@@ -732,9 +732,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         let watchers: Watcher[] = []
         // const filter = options?.filter || (()=>true)
 
-        const syncToStore = (store:AutoStore<any>,relPath:string[],operate:StateOperate)=>{
-            const {type,path,value,flags,indexs} = operate
-            if(!pathStartsWith(relPath,path)) return 
+        const applyToStore = (store:AutoStore<any>,relPath:string[],operate:StateOperate)=>{
+            const {type,value,flags,indexs} = operate
             const silent = flags===CYCLE_OPERATE_FLAG 
             if(flags === CYCLE_OPERATE_FLAG) return 
             if(type==='set' || type==='update'){
@@ -750,8 +749,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                     setVal(state,relPath,undefined)
                 },{flags:CYCLE_OPERATE_FLAG,silent})
             }else if(type==='insert'){
-                store.update(state=>{
-                    setVal(state,relPath,value)
+                store.update(state=>{                    
+                    const arr = getVal(state,operate.parentPath)
+                    if(indexs) arr.splice(indexs[0],0,...value)
                 },{flags:CYCLE_OPERATE_FLAG,silent})
             }else if(type==='remove'){ 
                 store.update(state=>{
@@ -762,34 +762,52 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 },{flags:CYCLE_OPERATE_FLAG,silent})
             }
         }
-
         // 马上进行同步
         if(immediate){            
-            const toEntryValue = getVal(toStore.state,toEntry)
             const fromEntryValue = this.getSnap({entry:fromEntry})
             if(typeof(fromEntryValue)==='object'){
-                Object.assign(toEntryValue,fromEntryValue)
+                toStore.update((state)=>{
+                    const toEntryValue = getVal(state,toEntry)
+                    if(Array.isArray(fromEntryValue)){
+                        if(Array.isArray(toEntryValue)){
+                            toEntryValue.splice(0,toEntryValue.length,...fromEntryValue)
+                        }else{
+                            setVal(state,toEntry,fromEntryValue)
+                        }
+                    }else{
+                        Object.assign(toEntryValue,fromEntryValue)
+                    }
+                },{silent:true})
             }else{
-                setVal(toStore,toEntry,fromEntryValue)    
+                toStore.update((state)=>{
+                    setVal(state,toEntry,fromEntryValue)    
+                },{silent:true})
+                
             }
         }
 
         const syncer ={
             on:()=>{
-                if(watchers.length===0) return 
+                if(watchers.length === 2) return 
                 watchers.push(toStore.watch('*',(operate)=>{   
+                    if(!pathStartsWith(toEntry,operate.path)) return 
+                    if(operate.flags === CYCLE_OPERATE_FLAG) return 
                     const fromPath = [...fromEntry,...operate.path.slice(toEntry.length)]
                     operate.path = [...fromEntry,...operate.path]
-                    syncToStore(this,fromPath,operate) 
+                    if(operate.parentPath) operate.parentPath = [...fromEntry,...operate.parentPath.slice(fromEntry.length)]
+                    applyToStore(this,fromPath,operate) 
                 },{ operates:"write" }))
         
                 watchers.push(this.watch('*', (operate)=>{   
+                    if(operate.flags === CYCLE_OPERATE_FLAG) return 
+                    if(!pathStartsWith(fromEntry,operate.path)) return 
                     if(typeof(filter)==='function'){
                         if(filter.call(this,operate)===false) return
                     }
                     const toPath = [...toEntry,...operate.path.slice(fromEntry.length)]
-                    operate.path = operate.path.slice(fromEntry.length)
-                    syncToStore(toStore,toPath,operate) 
+                    operate.path = [...toEntry,...operate.path.slice(fromEntry.length)]
+                    if(operate.parentPath) operate.parentPath = [...toEntry,...operate.parentPath.slice(fromEntry.length)]
+                    applyToStore(toStore,toPath,operate) 
                 },{ operates:"write" }))
             },
             off: ()=>{

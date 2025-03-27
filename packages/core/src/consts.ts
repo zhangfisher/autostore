@@ -8,3 +8,4 @@ export const EMPTY = Symbol("EMPTY")
 export const VALUE_SCHEMA = Symbol("ValueSchema")
 export const CYCLE_OPERATE_FLAG = Symbol("CycleOperateFlag")
 export const DELETE_FLAG = Symbol("DeleteFlag")
+export const CYCLE_OPERATE_FLAG_VALUE = 0x11001100
