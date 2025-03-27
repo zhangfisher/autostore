@@ -40,6 +40,7 @@ export default {
                 { text: '事件', link: '/zh/guide/store/events' },
                 { text: '批量更新', link: '/zh/guide/store/batchUpdate' },
                 { text: '校验模式', link: '/zh/guide/store/schema' },                
+                { text: '同步', link: '/zh/guide/store/sync' },                
               ]
             },
             {

@@ -1,9 +1,8 @@
 import { ObjectKeyPaths,AsyncComputedGetter, 
     AsyncComputedObject, AsyncComputedValue, ComputedDescriptorBuilder, ComputedGetter, 
-    ComputedOptions, ComputedState, Dict, ExtendAsyncOptions, SyncComputedObject, WatchListener, 
+    ComputedOptions, ComputedState, Dict, ExtendAsyncOptions, SyncComputedObject,  
     WatchListenerOptions, GetTypeByPath, 
-    WatchObject, WatchGetter, WatchDescriptorBuilder, WatchOptions, 
-    WatchDependFilter,
+    WatchObject,  WatchDescriptorBuilder, WatchOptions, 
     StateOperate
 } from "autostore"
 

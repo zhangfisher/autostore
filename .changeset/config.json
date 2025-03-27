@@ -6,7 +6,8 @@
   "fixed": [
     [
       "autostore",
-      "@autostorejs/react"
+      "@autostorejs/react",
+      "@autostorejs/syncer"
     ]
   ],
   "linked": [], 
@@ -14,7 +15,6 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@autostore-examples/*",
-    "autostore-docs",
-    "@autostorejs/syncer"
+    "autostore-docs"
   ]
 }

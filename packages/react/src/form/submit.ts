@@ -38,9 +38,9 @@ export function createSubmit<State extends Dict>(store: ReactAutoStore<State>,
 			ctx.setSubmiting(true)
 			const { entry } = ctx.options
 			const formSnap = store.getSnap({
-				entry:entry ? entry.split(PATH_DELIMITER) : undefined
+				entry:entry 
 			})
-			Promise.resolve(props.onSubmit?.(formSnap,e)).then(r=>{
+			Promise.resolve(props.onSubmit?.(formSnap as any,e)).then(r=>{
 				if(r===false) e.preventDefault()
 			}).catch((err)=>{ 
 				ctx.setError(err)

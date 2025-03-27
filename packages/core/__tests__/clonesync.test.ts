@@ -23,7 +23,7 @@ describe("同步与克隆",()=>{
                 }            
             })
             const toStore = store.clone({entry:"order"})
-            expect(toStore.getSnap()).toEqual(store.getSnap({entry:["order"]}))
+            expect(toStore.getSnap()).toEqual(store.getSnap({entry:"order"}))
         })   
     })
 
@@ -53,7 +53,7 @@ describe("同步与克隆",()=>{
                 }            
             })
             const toStore = store.clone({entry:"order"})
-            expect(toStore.getSnap()).toEqual(store.getSnap({entry:["order"]}))
+            expect(toStore.getSnap()).toEqual(store.getSnap({entry:"order"}))
             store.state.order.price = 10
             expect(toStore.state.price).toBe(10)
             toStore.state.price =11
@@ -124,7 +124,7 @@ describe("同步与克隆",()=>{
                 }            
             })
             const toStore = store.clone({entry:"order"})
-            expect(toStore.getSnap()).toEqual(store.getSnap({entry:["order"]}))        
+            expect(toStore.getSnap()).toEqual(store.getSnap({entry:"order"}))        
             store.state.order.tags.splice(1,1)
             expect(toStore.state.tags).toEqual(["a","c","d"])
             toStore.state.tags.splice(1,1)
@@ -138,7 +138,7 @@ describe("同步与克隆",()=>{
                 }            
             })
             const toStore = store.clone({entry:"order"})
-            expect(toStore.getSnap()).toEqual(store.getSnap({entry:["order"]}))        
+            expect(toStore.getSnap()).toEqual(store.getSnap({entry:"order"}))        
             store.state.order.tags.splice(5,3)
             expect(toStore.state.tags).toEqual([1,2,3,4,5,9,10])
             toStore.state.tags.splice(2,2)

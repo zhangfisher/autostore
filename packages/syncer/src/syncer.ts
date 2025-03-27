@@ -4,7 +4,7 @@
  * 
  */
 
-import { AutoStore, CYCLE_OPERATE_FLAG_VALUE, getVal, isAsyncComputedValue, pathStartsWith, setVal, StateOperate, Watcher } from "autostore";
+import { AutoStore, CYCLE_OPERATE_FLAG_VALUE, getVal, isAsyncComputedValue, PATH_DELIMITER, pathStartsWith, setVal, StateOperate, Watcher } from "autostore";
 import { IAutoStoreTransport, StateRemoteOperate } from "./transport";
  
 export type AutoStoreSyncerOptions = {
@@ -25,7 +25,7 @@ export type AutoStoreSyncerOptions = {
 export class AutoStoreSyncer{
     private _options: Required<AutoStoreSyncerOptions> 
     syncing:boolean = false
-    private _watcher:Watcher
+    private _watcher:Watcher | undefined
     private _operateCache:StateRemoteOperate[] = []         // 本地操作缓存,
     constructor(public store:AutoStore<any>,options?:AutoStoreSyncerOptions){
         this._options = Object.assign({
@@ -44,7 +44,7 @@ export class AutoStoreSyncer{
 
     private _initSync(){
         if(!this.options.immediate) return 
-        const entryValue = this.store.getSnap({entry:this.entry})
+        const entryValue = this.store.getSnap({entry:this.entry.join(PATH_DELIMITER)})
         this._sendToRemote({
             type  : 'set',
             path  : this.options.remoteEntry,

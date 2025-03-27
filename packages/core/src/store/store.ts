@@ -668,10 +668,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      *      异步对象的值是一个AsyncComputedValue对象。=true时会保留。=false时会只返回value值
      *  @returns 
      */
-    getSnap(options?:{entry?:string[],reserveAsync?:boolean }){
+    getSnap<Entry extends string>(options?: {entry?: Entry,reserveAsync?: boolean }){
         const { reserveAsync,entry } =Object.assign({reserveAsync:true},options)        
-        return getSnapshot(entry ? getVal(this._data,entry) : this._data,reserveAsync)
-    }
+        return (getSnapshot(entry ? getVal(this._data,entry) : this._data,reserveAsync)) as GetTypeByPath<ComputedState<State>,Entry>
+    } 
 
     /**
      * 克隆当前 store 的一个子状态树,创建新的 store 实例
@@ -764,7 +764,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         }
         // 马上进行同步
         if(immediate){            
-            const fromEntryValue = this.getSnap({entry:fromEntry})
+            const fromEntryValue = this.getSnap({entry:fromEntry.join(PATH_DELIMITER)}) as any
             if(typeof(fromEntryValue)==='object'){
                 toStore.update((state)=>{
                     const toEntryValue = getVal(state,toEntry)
@@ -818,6 +818,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         syncer.on()
         return syncer
     }
+    
 
 
 }

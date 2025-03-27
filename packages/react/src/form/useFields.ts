@@ -91,7 +91,7 @@ export function createUseFields<State extends Dict>(store:ReactAutoStore<State>)
         useSyncExternalStore((callback)=>{
             const watcher = store.watch((op)=>{   
                 if(op.reply) return
-                const ops =  (op.type =='batch' ? op.value : [op]) as StateOperate[]
+                const ops =  (op.type ==='batch' ? op.value : [op]) as StateOperate[]
                 ops.forEach(({path,value})=>{ 
                     setVal(snap,path,value)
                     setVal(bindingsState,[...path,'value'],value)
