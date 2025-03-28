@@ -267,4 +267,30 @@ describe("同步与克隆",()=>{
 
         })  
     })
+    test("同步时仅指定to时能过滤其他无效的路径",async ()=>{
+        const store1 = new AutoStore({
+            x:{
+                a:1,
+                b:2,
+                c:3
+            },
+            y:{
+                a:1,
+                b:2,
+                c:3
+            }
+        })
+        const store2 = new AutoStore({
+            order:{
+                a:1,
+                b:2,
+                c:3
+            }            
+        })
+
+        store2.sync(store2,{to:"x"})
+
+
+
+    })
 })

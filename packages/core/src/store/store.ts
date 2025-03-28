@@ -246,6 +246,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * const watcher = state.watch(["job.title","job.salary"],({type,path,value,oldValue,parentPath,parent})=>{})
      * watcher.off() 取消侦听
      * 
+     * - 使用通配符
+     * const watcher = state.watch(["job.*"],(operate)=>{})  job子路径
+     * const watcher = state.watch(["job.**"],(operate)=>{}) job下的所有路径
+     * 
      * 
      * @param {string|string[]} keyPaths - 要监视的数据路径，可以是单个字符串或字符串数组。
      * @param {WatchListenerOptions} listener - 当监视的数据路径变化时执行的回调函数。
