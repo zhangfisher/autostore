@@ -12,7 +12,7 @@
  * 
  */
 
-import { Dict, PATH_DELIMITER } from "autostore"
+import { Dict } from "autostore"
 import { ReactAutoStore } from "../store"
 import { AutoFormContext, AutoFormProps } from "./Form"
 import { UseFormOptions } from "./types"
