@@ -691,7 +691,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     clone<Entry extends string, CloneState extends Record<string, any> = GetTypeByPath<State, Entry>>(
         options?: AutoStoreOptions<State> & { entry?: Entry, sync?: 'none' | StoreSyncOptions['direction'] }
     ){
-        const { sync, entry } = Object.assign({ sync: 'none' }, this._options, options)
+        const { sync, entry } = Object.assign({ sync: 'both' }, this._options, options)
         const state = getValueByPath(this.getSnap() ,entry) as CloneState
         if(!isPlainObject(state)){
             throw new Error(`The entry path must be an object, but got ${typeof(state)}`)
@@ -828,9 +828,5 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         syncer.on()
         return syncer
     }
-    
-
-
 }
-
-
+ 

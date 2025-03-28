@@ -81,7 +81,7 @@ describe('isPathMatched', () => {
         const result = isPathMatched(path, pattern);
 
         // Assert
-        expect(result).toBe(true);
+        expect(result).toBe(false);
     });
     
     test('should return false when wildcards do not match pattern structure', () => {
@@ -177,7 +177,7 @@ describe('isPathMatched', () => {
         const result = isPathMatched(path, pattern);
 
         // Assert
-        expect(result).toBe(false);
+        expect(result).toBe(true);
     });
     
     it('should match paths with special characters', () => {

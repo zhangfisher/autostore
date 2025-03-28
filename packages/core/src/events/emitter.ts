@@ -1,4 +1,5 @@
 import { PATH_DELIMITER } from "../consts";
+import { isPathMatched } from "../utils";
 import { createEventEmitterScope } from "./scope";
 import { EventDefines } from "./types";
 
@@ -65,6 +66,7 @@ export class EventEmitter<Events extends EventDefines>{
     
     on<T extends keyof Events>(type: T, handler: EventHandler<T,Events[T]>,prepend ?:boolean):EventListener
     on<P=any>(type: '**', handler: EventHandler<keyof Events,P>,prepend ?:boolean):EventListener
+    on<P=any>(type: string, handler: EventHandler<string,P>):EventListener
     on():EventListener{
         const type = arguments[0]
         const handler = arguments[1]
@@ -78,6 +80,9 @@ export class EventEmitter<Events extends EventDefines>{
                 if(isEventMatched(etype as string,type as any)){
                     handler(payload,etype)
                 }
+                // if(isPathMatched(type.split(PATH_DELIMITER),etype.split(PATH_DELIMITER))){
+                //     handler(payload,etype)
+                // }
             }
             this.addHandler("*",phandler,prepend)
         }else{
@@ -236,3 +241,4 @@ export class EventEmitter<Events extends EventDefines>{
 
 
 }
+

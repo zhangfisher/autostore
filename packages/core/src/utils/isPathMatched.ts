@@ -27,11 +27,12 @@ export function isPathMatched(path:string[],pattern:string[]):boolean{
     let isMatched = isPathEq(path,pattern) 
     if(isMatched) return true    
     if(pattern[pattern.length-1]==='**'){
+        pattern[pattern.length-1]="*"
         pattern.splice(pattern.length-1,0,...Array.from<string>({length:path.length-pattern.length}).fill("*"))
     }
     if(path.length!==pattern.length) return false
     return pattern.every((item,index)=>{
-        if(item==='*') return true
+        if(item==='*' || item==='**') return true
         return item===path[index]
     })
 }

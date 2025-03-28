@@ -389,6 +389,30 @@ describe("watch events",()=>{
             ])
         })
     })
-
+    describe("watch keypath use wildcard", () => {
+        let store:AutoStore<typeof data>;
+        let watcher:Watcher
+        beforeEach(() => {
+            store = new AutoStore(deepClone(data));
+        })
+        afterEach(() => {
+            watcher.off();
+        })
+    
+        test("use wildcard watch children ",()=>{            
+            const ops:string[] = []
+            watcher = store.watch("address.*",(op)=>{
+                ops.push(op.path.join("."))
+            },{operates:"read"})
+            store.state.address[0]
+            store.state.address[0].city
+            store.state.address[1].street
+            expect(ops).toStrictEqual([
+                'address.0',
+                'address.0',
+                'address.1'
+            ])
+        })        
+    })
 })
 
