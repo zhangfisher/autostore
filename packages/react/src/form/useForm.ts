@@ -115,7 +115,7 @@ export function useForm<State extends Dict>(): AutoFormObject<State>{
 		}
 		formComponentRef.current = createAutoFormComponent<State>(store,formContext)
 		fieldComponentRef.current = createAutoFieldComponent<State>(store, formContext)
-		formContext.current.validator = new Validator(store,formContext.current!)		
+		formContext.current.validator = new Validator<State>(store,formContext.current!)		
 	}
 
 	useEffect(()=>{			

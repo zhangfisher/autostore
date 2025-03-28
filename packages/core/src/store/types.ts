@@ -240,4 +240,5 @@ export type StoreSyncOptions ={
     to?       : string
     filter?   : (this:AutoStore<any>,operate:StateOperate)=>boolean
     immediate?: boolean      // 初始化时立刻同步一次
+    direction?: 'both' | 'forward' | 'backward'    // 0:双向同步, 1: from->to,  2: to->from 
 }

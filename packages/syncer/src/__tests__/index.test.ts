@@ -1,13 +1,13 @@
 import { describe, expect, test} from "vitest"
-import { IAutoStoreTransport, StateRemoteOperate } from "../transport"
+import { IAutoStoreSyncTransport, StateRemoteOperate } from "../transport"
 import { AutoStore } from '../../../core/src/store/store';
 import { computed } from "autostore";
 import { AutoStoreSyncer } from "../syncer";
 
 
 describe("远程同步",()=>{
-    class WebSocketTansport implements IAutoStoreTransport{
-        ready:true
+    class WebSocketTansport implements IAutoStoreSyncTransport{
+        ready = true
         receiveCallback:any
         constructor(public getPeer:()=>WebSocketTansport){
 
@@ -20,8 +20,8 @@ describe("远程同步",()=>{
         }
     }
 
-    const localTransport = new WebSocketTansport(()=>remoteTransport)
-    const remoteTransport =  new WebSocketTansport(()=>localTransport)
+    const localTransport: WebSocketTansport = new WebSocketTansport(()=>remoteTransport )
+    const remoteTransport: WebSocketTansport =  new WebSocketTansport(()=>localTransport)
 
 
     test("一对一完全对象同步",()=>{

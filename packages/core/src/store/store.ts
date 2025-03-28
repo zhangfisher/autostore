@@ -685,9 +685,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * const subStore = store.clone({ entry: 'foo' }) 
      */
     clone<Entry extends string, CloneState extends Record<string, any> = GetTypeByPath<State, Entry>>(
-        options?: AutoStoreOptions<State> & { entry?: Entry, sync?: boolean }
+        options?: AutoStoreOptions<State> & { entry?: Entry, sync?: 'none' | StoreSyncOptions['direction'] }
     ){
-        const { sync, entry } = Object.assign({ sync: true }, this._options, options)
+        const { sync, entry } = Object.assign({ sync: 'none' }, this._options, options)
         const state = getValueByPath(this.getSnap() ,entry) as CloneState
         if(!isPlainObject(state)){
             throw new Error(`The entry path must be an object, but got ${typeof(state)}`)
@@ -695,10 +695,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const clonedOptions = Object.assign({}, this._options, options) as unknown as AutoStoreOptions<CloneState>
         const clonedStore = new AutoStore<CloneState>(state,clonedOptions)
 
-        if(sync){
+        if(sync!=='none'){
             this.sync(clonedStore,{
                 from:entry,
-                immediate:false
+                immediate:false,
+                direction: sync
             })
         }         
         return clonedStore
@@ -723,8 +724,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @param entry 
      */
     sync(toStore:AutoStore<any>,options?:StoreSyncOptions):StoreSyncer{
-        const { from,to,filter,immediate  } = Object.assign({
-            immediate:true
+        const { from,to,filter,immediate,direction='both'  } = Object.assign({
+            immediate: true,
+            direction: 'both'
         },options) as StoreSyncOptions
         const fromEntry = from ? from.split(PATH_DELIMITER) : []
         const toEntry = to ? to.split(PATH_DELIMITER) : []
@@ -788,27 +790,31 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
 
         const syncer ={
             on:()=>{
-                if(watchers.length === 2) return 
-                watchers.push(toStore.watch('*',(operate)=>{   
-                    if(!pathStartsWith(toEntry,operate.path)) return 
-                    if(operate.flags === CYCLE_OPERATE_FLAG) return 
-                    const fromPath = [...fromEntry,...operate.path.slice(toEntry.length)]
-                    operate.path = [...fromEntry,...operate.path]
-                    if(operate.parentPath) operate.parentPath = [...fromEntry,...operate.parentPath.slice(fromEntry.length)]
-                    applyToStore(this,fromPath,operate) 
-                },{ operates:"write" }))
-        
-                watchers.push(this.watch('*', (operate)=>{   
-                    if(operate.flags === CYCLE_OPERATE_FLAG) return 
-                    if(!pathStartsWith(fromEntry,operate.path)) return 
-                    if(typeof(filter)==='function'){
-                        if(filter.call(this,operate)===false) return
-                    }
-                    const toPath = [...toEntry,...operate.path.slice(fromEntry.length)]
-                    operate.path = [...toEntry,...operate.path.slice(fromEntry.length)]
-                    if(operate.parentPath) operate.parentPath = [...toEntry,...operate.parentPath.slice(fromEntry.length)]
-                    applyToStore(toStore,toPath,operate) 
-                },{ operates:"write" }))
+                if(watchers.length > 0) return 
+                if(['both','backward'].includes(direction)){
+                    watchers.push(toStore.watch('*',(operate)=>{   
+                        if(!pathStartsWith(toEntry,operate.path)) return 
+                        if(operate.flags === CYCLE_OPERATE_FLAG) return 
+                        const fromPath = [...fromEntry,...operate.path.slice(toEntry.length)]
+                        operate.path = [...fromEntry,...operate.path]
+                        if(operate.parentPath) operate.parentPath = [...fromEntry,...operate.parentPath.slice(fromEntry.length)]
+                        applyToStore(this,fromPath,operate) 
+                    },{ operates:"write" }))
+                }
+                if(['both','farward'].includes(direction)){
+                    watchers.push(this.watch('*', (operate)=>{   
+                        if(operate.flags === CYCLE_OPERATE_FLAG) return 
+                        if(!pathStartsWith(fromEntry,operate.path)) return 
+                        if(typeof(filter)==='function'){
+                            if(filter.call(this,operate)===false) return
+                        }
+                        const toPath = [...toEntry,...operate.path.slice(fromEntry.length)]
+                        operate.path = [...toEntry,...operate.path.slice(fromEntry.length)]
+                        if(operate.parentPath) operate.parentPath = [...toEntry,...operate.parentPath.slice(fromEntry.length)]
+                        applyToStore(toStore,toPath,operate) 
+                    },{ operates:"write" }))
+                }
+                
             },
             off: ()=>{
                 watchers.forEach(watcher=>watcher.off())

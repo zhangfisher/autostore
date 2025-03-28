@@ -139,7 +139,7 @@ export function createUseField<State extends Dict>(store:ReactAutoStore<State>){
         // mergedDeps=[dep1,...,depN]  合并去重了记录了所有getter的依赖，用于订阅
         const [ [allDeps,mergedDeps] ] = useState<[string[][][],string[][]]>(()=>{        
             // 如果是异步计算属性，则会自动依赖于其value    
-            const allDeps = getters.map(getter=>getDepends(getter,store,'value'))   
+            const allDeps = getters.map(getter=>getDepends<State>(getter,store,'value'))   
             // 合并所有依赖并消除重复
             const mergedDeps = noRepeat(allDeps.reduce((r,cur)=>{
                 if(cur) r.push(...cur)

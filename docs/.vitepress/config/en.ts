@@ -40,6 +40,7 @@ export default {
                 { text: 'Events', link: '/en/guide/store/events' },
                 { text: 'Batch Update', link: '/en/guide/store/batchUpdate' },
                 { text: 'Value Schema', link: '/en/guide/store/schema' },                
+                { text: 'Sync', link: '/en/guide/store/sync' },   
               ]
             },
             {

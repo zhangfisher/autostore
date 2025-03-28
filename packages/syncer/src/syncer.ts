@@ -5,12 +5,12 @@
  */
 
 import { AutoStore, CYCLE_OPERATE_FLAG_VALUE, getVal, isAsyncComputedValue, PATH_DELIMITER, pathStartsWith, setVal, StateOperate, Watcher } from "autostore";
-import { IAutoStoreTransport, StateRemoteOperate } from "./transport";
+import { IAutoStoreSyncTransport, StateRemoteOperate } from "./transport";
  
 export type AutoStoreSyncerOptions = {
     entry?       : string[]
     remoteEntry? : string[]
-    transport?   : IAutoStoreTransport
+    transport?   : IAutoStoreSyncTransport
     autostart?   : boolean 
     // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
     onSend?      : (operate:StateRemoteOperate)=>boolean | void        
