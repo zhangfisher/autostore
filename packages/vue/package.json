@@ -14,8 +14,7 @@
     "module": "dist/index.js"
   },
   "type": "module",
-  "scripts": { 
-  },
+  "scripts": {},
   "files": [
     "readme.md",
     "dist"
@@ -42,7 +41,7 @@
   "dependencies": {
     "flex-tools": "^1.4.9",
     "reflect-metadata": "^0.2.2",
-    "autostore":"workspace:*"
+    "autostore": "workspace:*"
   },
   "peerDependencies": {
     "vue": "3.2.0"
