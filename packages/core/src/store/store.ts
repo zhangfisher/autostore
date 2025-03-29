@@ -259,7 +259,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     watch(listener:WatchListener,options?:WatchListenerOptions):Watcher
     watch(paths:'*' | string | (string|string[])[],listener:WatchListener,options?:WatchListenerOptions):Watcher
     watch():Watcher{
-        const isWatchAll = typeof(arguments[0])==='function' || arguments[0]==='*' || (Array.isArray(arguments[0]) && arguments[0].length===0 )
+        const isWatchAll = typeof(arguments[0])==='function' || ['*','**'].includes(arguments[0]) || (Array.isArray(arguments[0]) && arguments[0].length===0 )
         const listener = typeof(arguments[0])==='function' ? arguments[0] : arguments[1]
         const options = arguments.length >=2 && typeof(arguments[arguments.length-1])==='object' ? arguments[arguments.length-1] : undefined
 
@@ -773,16 +773,20 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             const fromEntryValue = this.getSnap({entry:fromEntry.join(PATH_DELIMITER)}) as any
             if(typeof(fromEntryValue)==='object'){
                 toStore.update((state)=>{
-                    const toEntryValue = getVal(state,toEntry)
-                    if(Array.isArray(fromEntryValue)){
-                        if(Array.isArray(toEntryValue)){
-                            toEntryValue.splice(0,toEntryValue.length,...fromEntryValue)
-                        }else{
-                            setVal(state,toEntry,fromEntryValue)
-                        }
+                    const toEntryValue = getVal(state,toEntry,undefined)
+                    if(toEntryValue===undefined){
+                        setVal(state,toEntry,fromEntryValue)
                     }else{
-                        Object.assign(toEntryValue,fromEntryValue)
-                    }
+                        if(Array.isArray(fromEntryValue)){
+                            if(Array.isArray(toEntryValue)){
+                                toEntryValue.splice(0,toEntryValue.length,...fromEntryValue)
+                            }else{
+                                setVal(state,toEntry,fromEntryValue)
+                            }
+                        }else{
+                            Object.assign(toEntryValue,fromEntryValue)
+                        }
+                    }                    
                 },{silent:true})
             }else{
                 toStore.update((state)=>{

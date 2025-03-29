@@ -1,33 +1,34 @@
 import { describe, it, expect, vi } from 'vitest';
-import { isEventMatched, EventEmitter } from '../src/events/emitter';
+import { EventEmitter } from '../src/events/emitter';
+import { isPathMatched } from "../src/utils";
 
-// 测试 isEventMatched 函数
+// 测试 isPathMatched 函数
 describe("EventEmitter",()=>{
 
 
-    describe('isEventMatched', () => {
+    describe('isPathMatched', () => {
         it('should return true for exact match', () => {
-            expect(isEventMatched('a.b.c', 'a.b.c')).toBe(true);
+            expect(isPathMatched('a.b.c', 'a.b.c')).toBe(true);
         });
     
         it('should return true for single wildcard match', () => {
-            expect(isEventMatched('a.b.c', 'a.*.c')).toBe(true);
+            expect(isPathMatched('a.b.c', 'a.*.c')).toBe(true);
         });
     
         it('should return false for single wildcard mismatch', () => {
-            expect(isEventMatched('a.b.c', 'a.*.d')).toBe(false);
+            expect(isPathMatched('a.b.c', 'a.*.d')).toBe(false);
         });
     
         it('should return true for double wildcard match', () => {
-            expect(isEventMatched('a.b.c', '**')).toBe(true);
+            expect(isPathMatched('a.b.c', '**')).toBe(true);
         });
     
         it('should return false for different lengths', () => {
-            expect(isEventMatched('a.b.c', 'a.b')).toBe(false);
+            expect(isPathMatched('a.b.c', 'a.b')).toBe(false);
         });
     
         it('should return true for empty pattern', () => {
-            expect(isEventMatched('a.b.c', '')).toBe(true);
+            expect(isPathMatched('a.b.c', '')).toBe(true);
         });
     });
     
@@ -75,12 +76,12 @@ describe("EventEmitter",()=>{
         });
         
         it('应该正确处理空字符串模式', () => {
-            expect(isEventMatched('a.b.c', '')).toBe(true); // 根据现有逻辑，空模式返回 true
-            expect(isEventMatched('', '')).toBe(true); // 两个空字符串应该匹配
+            expect(isPathMatched('a.b.c', '')).toBe(true); // 根据现有逻辑，空模式返回 true
+            expect(isPathMatched('', '')).toBe(true); // 两个空字符串应该匹配
         });
     
         it('应该正确处理只有通配符的模式', () => {
-            expect(isEventMatched('a.b.c', '**')).toBe(true); // ** 匹配任意长度
+            expect(isPathMatched('a.b.c', '**')).toBe(true); // ** 匹配任意长度
         });
      
     });

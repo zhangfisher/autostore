@@ -21,7 +21,7 @@ export function createUseAsyncState<State extends Dict>(store: VueAutoStore<Stat
         const selector = args.length >= 1 && (Array.isArray(args[0]) || typeof (args[0]) === 'string' || typeof (args[0]) === 'function') ? args[0] : undefined;
         
         // 创建响应式的结果对象
-        const result = ref<AsyncComputedValue>(() => {
+        const result = ref<AsyncComputedValue>((() => {
             const val = getValueBySelector(store, selector);
             if (isAsyncComputedValue(val)) {
                 return val;
@@ -37,7 +37,7 @@ export function createUseAsyncState<State extends Dict>(store: VueAutoStore<Stat
                     cancel: () => { }
                 };
             }
-        });
+        })());
 
         // 注意，如果输入的计算属性是一个异步计算属性，则会自动添加后缀'value'
         const deps = store.useDeps(selector, 'all');

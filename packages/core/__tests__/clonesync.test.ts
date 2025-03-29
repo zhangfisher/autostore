@@ -1,5 +1,6 @@
 import { test,expect, describe } from "vitest"
 import { AutoStore, computed } from "../src"  
+import { s } from '../src/schema/schema';
 
 describe("同步与克隆",()=>{
     describe("克隆Store",()=>{
@@ -269,28 +270,89 @@ describe("同步与克隆",()=>{
     })
     test("同步时仅指定to时能过滤其他无效的路径",async ()=>{
         const store1 = new AutoStore({
-            x:{
-                a:1,
-                b:2,
-                c:3
-            },
-            y:{
-                a:1,
-                b:2,
-                c:3
-            }
+            x:{ a:1, b:2, c:3 },
+            y:{ a:1, b:2, c:3 }
         })
         const store2 = new AutoStore({
-            order:{
-                a:1,
-                b:2,
-                c:3
-            }            
+            order:{ a:1, b:2, c:3 }            
         })
 
-        store2.sync(store2,{to:"x"})
+        store1.sync(store2,{to:"x.y"})
+        // @ts-ignore
+        expect(store2.state.x.y).toEqual(store1.state)
 
+    })
 
+    test("多对一同步",async ()=>{
+        const store = new AutoStore({
+            x:{ a1:1, b1:2, c1:3 },
+            y:{ a2:1, b2:2, c2:3 },
+            z:{ a3:1, b3:2, c3:3 }
+        })
+        const store1 = new AutoStore({
+             a1:1, b1:2, c1:3 
+        })
+        store1.sync(store,{to:"x"})
+        const store2 = new AutoStore({
+            a2:1, b2:2, c2:3             
+        })
+        store2.sync(store,{to:"y"})
+        const store3 = new AutoStore({
+            a3:1, b3:2, c3:3 
+        })
+        store3.sync(store,{to:"z"})
+
+        store1.state.a1 = 10
+        expect(store.state.x.a1).toBe(10)
+        store.state.x.a1 = 11
+        expect(store1.state.a1).toBe(11)
+
+        store2.state.a2 = 10
+        expect(store.state.y.a2).toBe(10)
+        store.state.y.a2 = 11
+        expect(store2.state.a2).toBe(11)
+
+        store3.state.a3 = 10
+        expect(store.state.z.a3).toBe(10)
+        store.state.z.a3 = 11
+        expect(store3.state.a3).toBe(11)
+
+    })
+    test("一对多同步",async ()=>{
+        const store = new AutoStore({
+            x:{ a1:1, b1:2, c1:3 },
+            y:{ a2:1, b2:2, c2:3 },
+            z:{ a3:1, b3:2, c3:3 }
+        })
+        const store1 = new AutoStore({
+             a1:1, b1:2, c1:3 
+        })
+        store.sync(store1,{from:"x"})
+
+        const store2 = new AutoStore({
+            a2:1, b2:2, c2:3             
+        })
+        store.sync(store2,{from:"y"})
+
+        const store3 = new AutoStore({
+            a3:1, b3:2, c3:3 
+        })
+        store.sync(store3,{from:"z"})
+
+        store1.state.a1 = 10
+        expect(store.state.x.a1).toBe(10)
+        store.state.x.a1 = 11
+        expect(store1.state.a1).toBe(11)
+
+        store2.state.a2 = 10
+        expect(store.state.y.a2).toBe(10)
+        store.state.y.a2 = 11
+        expect(store2.state.a2).toBe(11)
+
+        store3.state.a3 = 10
+        expect(store.state.z.a3).toBe(10)
+        store.state.z.a3 = 11
+        expect(store3.state.a3).toBe(11)
 
     })
 })

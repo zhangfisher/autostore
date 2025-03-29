@@ -21,18 +21,23 @@
  * 
  */
 
+import { PATH_DELIMITER } from "../consts";
 import { isPathEq } from "./isPathEq"
 
-export function isPathMatched(path:string[],pattern:string[]):boolean{
-    let isMatched = isPathEq(path,pattern) 
+
+export function isPathMatched(path:string | string[],pattern:string | string[]):boolean{
+    const arrayPath = Array.isArray(path) ? path : path.split(PATH_DELIMITER)
+    const arrayPattern = Array.isArray(pattern) ? pattern : (pattern==='' ? [] : pattern.split(PATH_DELIMITER))
+    if(arrayPattern.length===0) return true
+    let isMatched = isPathEq(arrayPath,arrayPattern) 
     if(isMatched) return true    
-    if(pattern[pattern.length-1]==='**'){
-        pattern[pattern.length-1]="*"
-        pattern.splice(pattern.length-1,0,...Array.from<string>({length:path.length-pattern.length}).fill("*"))
+    if(arrayPattern[arrayPattern.length-1]==='**'){
+        arrayPattern[arrayPattern.length-1]="*"
+        arrayPattern.splice(arrayPattern.length-1,0,...Array.from<string>({length:arrayPath.length-arrayPattern.length}).fill("*"))
     }
-    if(path.length!==pattern.length) return false
-    return pattern.every((item,index)=>{
+    if(arrayPath.length!==arrayPattern.length) return false
+    return arrayPattern.every((item,index)=>{
         if(item==='*' || item==='**') return true
-        return item===path[index]
+        return item===arrayPath[index]
     })
 }

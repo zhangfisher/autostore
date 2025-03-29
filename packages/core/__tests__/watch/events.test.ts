@@ -413,6 +413,23 @@ describe("watch events",()=>{
                 'address.1'
             ])
         })        
+        test("use wildcard watch all descendants ",()=>{            
+            const ops:string[] = []
+            // **代表所有子孙
+            watcher = store.watch("address.**",(op)=>{
+                ops.push(op.path.join("."))
+            },{operates:"read"})
+            store.state.address[0]
+            store.state.address[0].city
+            store.state.address[1].street
+            expect(ops).toStrictEqual([
+                'address.0',
+                'address.0',
+                'address.0.city',
+                'address.1',
+                'address.1.street'
+            ])
+        })  
     })
 })
 

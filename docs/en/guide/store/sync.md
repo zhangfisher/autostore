@@ -1,6 +1,6 @@
-# Sync
+# Synchronization
 
-`AutoStore` has a built-in synchronization mechanism that makes it easy to synchronize data between two `AutoStore` instances.
+`AutoStore` has a built-in synchronization mechanism that enables easy data synchronization between two `AutoStore` instances.
 
 ## Usage
 
@@ -57,11 +57,11 @@ The `sync` method can accept a configuration object with the following propertie
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `from` | `string` | Path of the current `store`'s `state` |
-| `to` | `string` | Path of the target `store`'s `state` |
+| `from` | `string` | Path in the current store's `state` |
+| `to` | `string` | Path in the target store's `state` |
 | `direction` | `'both' \| 'forward' \| 'backward'`  | Sync direction, `both`=bidirectional, `forward`=forward sync, `backward`=backward sync |
 | `filter` | `(operate:StateOperate)=>boolean` | Filter function, returns `true` to sync, `false` to not sync |
-| `immediate` | `boolean` | Whether to sync immediately, defaults to `true`, meaning sync is executed once at initialization |
+| `immediate` | `boolean` | Whether to sync immediately, defaults to `true`, meaning sync is executed once during initialization |
 
 ### Sync Direction
 
@@ -84,7 +84,7 @@ store1.sync(store2,{direction:'backward'})
 
 ### Partial Sync
 
-Synchronize parts of the state using `from` and `to` properties instead of complete sync.
+Sync parts of the state using `from` and `to` properties instead of complete synchronization.
 
 ```ts
 const store1 = new AutoStore({...})
@@ -106,7 +106,7 @@ store1.sync(store2,{to:"myorder"})
 
 ### Filter Sync
 
-By default, all data under the `from` path will be synchronized. You can additionally filter using the `filter` function.
+By default, all data under the `from` path will be synchronized. You can use a `filter` function for additional filtering.
 
 ```ts {13}
 const store1 = new AutoStore({
@@ -144,15 +144,15 @@ export type StateOperate<Value=any,Parent=any> = {
 
 ### Clone Sync
 
-`AutoStore` provides a `Clone` method that can clone a `store`. The cloned `store` is independent of the original `store`, but their `state`s are synchronized.
+`AutoStore` provides a `Clone` method that can clone a store. The cloned store is independent of the original store, but their `state`s are synchronized.
 
 ```ts
 
-// Complete clone, but no sync
+// Complete clone, no sync
 const store1 = new AutoStore({...})
 const store2 = store1.clone({...<AutoStore Options>...})
 
-// Complete clone, but no sync
+// Complete clone, no sync
 const store2 = store1.clone()
 const store2 = store1.clone({sync:'none'})
 
@@ -165,7 +165,7 @@ const store2 = store1.clone({sync:'farward'})
 // Complete clone with backward sync
 const store2 = store1.clone({sync:'backward'})
 
-// Clone store1.state.<path> with forward sync
+// Clone store1.state.<path> with backward sync
 const store2 = store1.clone({
     entry:"<path>",
     sync:'backward'
@@ -173,7 +173,7 @@ const store2 = store1.clone({
 
 ```
 
-- After executing the `clone` method, synchronization is not enabled by default.
+- By default, synchronization is not enabled after executing the `clone` method.
 
 ### Enable/Disable Sync
 
@@ -203,7 +203,7 @@ Remote synchronization requires installing `@autostore/syncer`.
 
 Here's a simple example of using `@autostore/syncer` to implement synchronization between `worker` and `browser`.
 
-- **Step 1: Develop a `Transport` to handle update operations by implementing the `IAutoStoreSyncTransport` interface.**
+- **Step 1: Develop a `Transport` to transmit update operations by implementing the `IAutoStoreSyncTransport` interface.**
 
 ```ts {3,8,11}
 // transport.ts
@@ -225,11 +225,11 @@ export class WorkerTransport implements IAutoStoreSyncTransport{
 }
 ```
 
-You need to implement the `IAutoStoreSyncTransport` interface, defined as follows:
+You need to implement the `IAutoStoreSyncTransport` interface, which is defined as:
 
 ```ts
 export interface IAutoStoreSyncTransport {
-    // If false, indicates currently unavailable, update operations will be temporarily cached
+    // If false, indicates currently unavailable, updates will be temporarily cached
     ready: boolean                  
     // Send update operation
     send(operate: StateRemoteOperate): void
@@ -305,12 +305,12 @@ syncer.flush()
 
 ```
 
-- **Note**: The availability of `transport` is determined by the `Transport` itself. When the availability status changes, `syncer.flush()` should be called.
+- **Note** that the availability of `transport` is determined by the Transport itself. When the availability status changes, `syncer.flush()` should be called.
 - When `transport` is unavailable, update operations will be temporarily cached. Cache size is controlled by `maxCacheSize`, defaulting to `100`.
 
 #### Sync Mapping
 
-Support controlling the sync mapping relationship between two `AutoStore` instances through `entry` and `remoteEntry`.
+Support controlling the synchronization mapping relationship between two `AutoStore`s through `entry` and `remoteEntry`.
 
 ```ts {3-4}
 new AutoStoreSyncer(localStore,{
@@ -320,20 +320,19 @@ new AutoStoreSyncer(localStore,{
 })
 ```
 
-This represents mapping `order` in `localStore` to `remoteOrder` in `remoteStore`.
+This means mapping `order` in `localStore` to `remoteOrder` in `remoteStore`.
 
 #### Sync Parameters
 
-| Parameter | Type | Default |  Description |
-| :---: | :---:  | :---: | --- | 
+| Parameter | Type | Default | Description |
+| :---: | :---: | :---: | --- |
 | `autostart` | `boolean` | `true` | Whether to start sync automatically |
 | `maxCacheSize` | `number` | `100` | Cache size |
 | `entry` | `string[]` | `[]` | Sync mapping relationship |
 | `remoteEntry` | `string[]` | `[]` | Sync mapping relationship |
 | `immediate` | `boolean` | `false` | Whether to sync immediately |
 | `onSend` | `(operate:StateRemoteOperate) => boolean` || Send update operation callback, return `false` to not send |
-| `onReceive` | `(operate:StateRemoteOperate) => boolean`|| Receive update operation callback, return `false` to not receive |
-
+| `onReceive` | `(operate:StateRemoteOperate) => boolean` || Receive update operation callback, return `false` to not receive |
 
 ```ts
 type StateRemoteOperate {

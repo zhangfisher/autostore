@@ -15,6 +15,7 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@autostore-examples/*",
-    "autostore-docs"
+    "autostore-docs",
+    "@autostorejs/vue"
   ]
 }

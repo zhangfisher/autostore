@@ -3,48 +3,10 @@ import { isPathMatched } from "../utils";
 import { createEventEmitterScope } from "./scope";
 import { EventDefines } from "./types";
 
-const Delimiter = PATH_DELIMITER
-
 export type EventHandler<T,P> = (payload:P,type:T)=>void
 export type EventListener = { off:()=>void }
 export type EventHandlerList = Array<EventHandler<any,any>>; 
-
-/**
- * 判断事件是否匹配指定的通配符
- * 
- * @description
- * 
- * - * 代表一个分割区间内的任意字符
- * - **  代表任意字符
- * 
- * isEventMatched("a","*") == true
- * isEventMatched("a.b","*") == false
- * isEventMatched("a.b","a.*") == true
- * isEventMatched("a.b.c","a.*") == false
- * isEventMatched("a.b.c","a.*.*") == true
- * isEventMatched("a.b.c","a.*.c") == true
- * isEventMatched("a.b.c","a.*.d") == false
- * isEventMatched("a.b.c","**") == true  
- * isEventMatched("a.b.c.d","a.**") == true
- * isEventMatched("a.b","a.**") == true
- * 
- * @param type 
- * @param pattern 
- * @returns 
- */
-export function isEventMatched(type:string,pattern:string){
-    if(!pattern) return true
-    if(pattern==='**') return true    
-    const eventParts = type.split(Delimiter)
-    const patternParts = pattern.split(Delimiter)
-    if(eventParts.length !== patternParts.length) return false
-    for(let i=0;i<patternParts.length;i++){
-        if(patternParts[i] === '*') continue
-        if(patternParts[i] === '**') break
-        if(patternParts[i] !== eventParts[i]) return false
-    }
-    return true
-}
+ 
 
 
 export class EventEmitter<Events extends EventDefines>{     
@@ -59,37 +21,34 @@ export class EventEmitter<Events extends EventDefines>{
      * 
      * 支持简单的通配符订阅， *代表一个分割区间内的任意字符，**代表任意字符
      * 
-     * @param type 
+     * @param event 
      * @param handler 
      * @returns 
      */
     
-    on<T extends keyof Events>(type: T, handler: EventHandler<T,Events[T]>,prepend ?:boolean):EventListener
-    on<P=any>(type: '**', handler: EventHandler<keyof Events,P>,prepend ?:boolean):EventListener
-    on<P=any>(type: string, handler: EventHandler<string,P>):EventListener
+    on<T extends keyof Events>(event: T, handler: EventHandler<T,Events[T]>,prepend ?:boolean):EventListener
+    on<P=any>(event: '**', handler: EventHandler<keyof Events,P>,prepend ?:boolean):EventListener
+    on<P=any>(event: string, handler: EventHandler<string,P>):EventListener
     on():EventListener{
-        const type = arguments[0]
+        const event = arguments[0]
         const handler = arguments[1]
         const prepend = arguments[2]
         let phandler = handler
         // 当订阅时包含了通配符时，就需要订阅所有事件，然后在事件触发时判断是否匹配
-        if(type==='**'){
+        if(event==='**'){
             this.addHandler("*",phandler,prepend)
-        }else if(String(type).includes('*')){  
-            phandler = (payload:any,etype:any)=>{
-                if(isEventMatched(etype as string,type as any)){
-                    handler(payload,etype)
+        }else if(String(event).includes('*')){  
+            phandler = (payload:any,type:any)=>{ 
+                if(isPathMatched(type,event)){
+                    handler(payload,type)
                 }
-                // if(isPathMatched(type.split(PATH_DELIMITER),etype.split(PATH_DELIMITER))){
-                //     handler(payload,etype)
-                // }
             }
             this.addHandler("*",phandler,prepend)
         }else{
-            this.addHandler(type,phandler,prepend)
+            this.addHandler(event,phandler,prepend)
         }               
         return {
-            off:()=>this.off(type,phandler)
+            off:()=>this.off(event,phandler)
         }
     } 
     /**

@@ -17,17 +17,11 @@ export function getVal(obj: any, keyPath: string | string[] | undefined,defaultV
         if (key in parent) {
           val = parent[key];
         }else {
-          if(defaultValue!==undefined){
-            return defaultValue
-          }else{
-            throw new Error(`invalid state path: ${paths.join(".")}`);
-          }
+          return defaultValue
         }
       }
       parent = val;
     }
-
-
     return val;
   }
 
