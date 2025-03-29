@@ -31,8 +31,7 @@ export default ()=>{
     return ()=>watcher.off()
   },[])  
 
-  const bindBooks = useFields('order.books')
-
+  const bindBooks = useFields().order.books
 
   return (<Layout style={{maxHeight:'400px'}}>
     <div>

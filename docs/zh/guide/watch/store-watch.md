@@ -164,3 +164,32 @@ function collectDependencies(){
 `store.watch`方法用于全局监视`State`中的数据变化，计算属性的实现也是基于`watch`方法。
 :::
 
+## 通配符
+
+`store.watch`支持通配符，比如`watch('order.*',listener)`，当`order`对象中的任意属性发生变化时，都会执行监听函数。
+
+| 通配符 | 说明 |
+| :----: | :----: |
+| `*` | 匹配任意字符 |
+| `**` | 用在路径的最后面，代表后续所有字符 |
+
+
+```ts
+
+// 匹配order对象中的任意属性
+store.watch('order.*',listener)
+// order.a   ✔️
+// order.b   ✔️
+// order.a.b ❌  
+// order.a.b.c  ❌  
+
+// 匹配order对象中的任意属性
+store.watch('order.**',listener)
+// order.a   ✔️
+// order.b   ✔️
+// order.a.b ✔️  
+// order.a.b.c  ✔️  
+```
+
+
+
