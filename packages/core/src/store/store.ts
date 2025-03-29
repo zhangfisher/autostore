@@ -61,7 +61,7 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPlainObject, pathStartsWith, setVal } from "../utils";
+import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isFunction, isPlainObject, pathStartsWith, setVal } from "../utils";
 import { BATCH_UPDATE_EVENT, CYCLE_OPERATE_FLAG, PATH_DELIMITER } from "../consts";
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
@@ -728,7 +728,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      * @param entry 
      */
     sync(toStore:AutoStore<any>,options?:StoreSyncOptions):StoreSyncer{
-        const { from,to,filter,immediate,direction='both'  } = Object.assign({
+        const { from,to,filter,immediate,direction='both',pathMap  } = Object.assign({
             immediate: true,
             direction: 'both'
         },options) as StoreSyncOptions
@@ -736,7 +736,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const toEntry = to ? to.split(PATH_DELIMITER) : []
 
         let watchers: Watcher[] = []
-        // const filter = options?.filter || (()=>true)
+
+        const mapPath = (path:string[],value:any,dir: 'from' | 'to' = 'from'):string[] | undefined=>{      
+            return pathMap && isFunction((pathMap as any)[dir]) ? (pathMap as any)[dir](path,value) : path
+        }
 
         const applyToStore = (store:AutoStore<any>,relPath:string[],operate:StateOperate)=>{
             const {type,value,flags,indexs} = operate
@@ -768,61 +771,82 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 },{flags:CYCLE_OPERATE_FLAG,silent})
             }
         }
-        // 马上进行同步
+        // 马上进行一次全同步
         if(immediate){            
             const fromEntryValue = this.getSnap({entry:fromEntry.join(PATH_DELIMITER)}) as any
-            if(typeof(fromEntryValue)==='object'){
-                toStore.update((state)=>{
-                    const toEntryValue = getVal(state,toEntry,undefined)
-                    if(toEntryValue===undefined){
-                        setVal(state,toEntry,fromEntryValue)
-                    }else{
-                        if(Array.isArray(fromEntryValue)){
-                            if(Array.isArray(toEntryValue)){
-                                toEntryValue.splice(0,toEntryValue.length,...fromEntryValue)
-                            }else{
-                                setVal(state,toEntry,fromEntryValue)
-                            }
+            // 当指定了映射关系时，需要通过进行遍历来执行全同步
+            if(pathMap){
+                forEachObject(fromEntryValue,({value,path})=>{                    
+                    const toPath = mapPath(path,value, 'to')                    
+                    if(toPath){
+                        const toValue = Array.isArray(value) ? [] : 
+                            ((typeof(value)==='object') ? {} : value)
+                        applyToStore(toStore,[...toEntry,...toPath],{
+                            type:'set',
+                            path:toPath,
+                            value:toValue
+                        })
+                    }
+                })
+            }else{// 没有指定映射关系时，可以简单进行Object.assign，会更加高效
+                const toPath = toEntry
+                if(typeof(fromEntryValue)==='object'){
+                    toStore.update((state)=>{                   
+                        const toEntryValue = getVal(state,toPath,undefined)
+                        if(toEntryValue===undefined){
+                            setVal(state,toPath,fromEntryValue)
                         }else{
-                            Object.assign(toEntryValue,fromEntryValue)
-                        }
-                    }                    
-                },{silent:true})
-            }else{
-                toStore.update((state)=>{
-                    setVal(state,toEntry,fromEntryValue)    
-                },{silent:true})
-                
+                            if(Array.isArray(fromEntryValue)){
+                                if(Array.isArray(toEntryValue)){
+                                    toEntryValue.splice(0,toEntryValue.length,...fromEntryValue)
+                                }else{
+                                    setVal(state,toPath,fromEntryValue)
+                                }
+                            }else{
+                                Object.assign(toEntryValue,fromEntryValue)
+                            }
+                        }                    
+                    },{silent:true})
+                }else{
+                    toStore.update((state)=>{
+                        setVal(state,toPath,fromEntryValue)    
+                    },{silent:true})                
+                }
             }
         }
 
         const syncer ={
             on:()=>{
                 if(watchers.length > 0) return 
-                if(['both','backward'].includes(direction)){
-                    watchers.push(toStore.watch('*',(operate)=>{   
-                        if(!pathStartsWith(toEntry,operate.path)) return 
-                        if(operate.flags === CYCLE_OPERATE_FLAG) return 
-                        const fromPath = [...fromEntry,...operate.path.slice(toEntry.length)]
-                        operate.path = [...fromEntry,...operate.path]
-                        if(operate.parentPath) operate.parentPath = [...fromEntry,...operate.parentPath.slice(fromEntry.length)]
-                        applyToStore(this,fromPath,operate) 
-                    },{ operates:"write" }))
-                }
+                // from
                 if(['both','farward'].includes(direction)){
                     watchers.push(this.watch('*', (operate)=>{   
                         if(operate.flags === CYCLE_OPERATE_FLAG) return 
                         if(!pathStartsWith(fromEntry,operate.path)) return 
-                        if(typeof(filter)==='function'){
-                            if(filter.call(this,operate)===false) return
-                        }
+                        if(isFunction(filter) && filter.call(this,operate)===false) return
+                        const mappedPath = mapPath(operate.path,operate.value,'to')
+                        if(mappedPath===undefined) return 
+                        operate.path = mappedPath
                         const toPath = [...toEntry,...operate.path.slice(fromEntry.length)]
                         operate.path = [...toEntry,...operate.path.slice(fromEntry.length)]
                         if(operate.parentPath) operate.parentPath = [...toEntry,...operate.parentPath.slice(fromEntry.length)]
                         applyToStore(toStore,toPath,operate) 
                     },{ operates:"write" }))
-                }
-                
+                }   
+                // to
+                if(['both','backward'].includes(direction)){
+                    watchers.push(toStore.watch('*',(operate)=>{   
+                        if(!pathStartsWith(toEntry,operate.path)) return 
+                        if(operate.flags === CYCLE_OPERATE_FLAG) return 
+                        const mappedPath = mapPath(operate.path,operate.value,'from')
+                        if(mappedPath===undefined) return 
+                        operate.path = mappedPath
+                        const fromPath = [...fromEntry,...operate.path.slice(toEntry.length)]
+                        operate.path = [...fromEntry,...operate.path]
+                        if(operate.parentPath) operate.parentPath = [...fromEntry,...operate.parentPath.slice(fromEntry.length)]
+                        applyToStore(this,fromPath,operate) 
+                    },{ operates:"write" }))
+                }            
             },
             off: ()=>{
                 watchers.forEach(watcher=>watcher.off())

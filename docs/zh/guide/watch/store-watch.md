@@ -164,6 +164,17 @@ function collectDependencies(){
 `store.watch`方法用于全局监视`State`中的数据变化，计算属性的实现也是基于`watch`方法。
 :::
 
+
+## 增量同步
+
+当指定同步参数`immediate`为`true`时，会立即执行一次同步计算，然后执行监听函数。
+
+如果`immediate`为`false`，则进行增量同步，仅在状态发生变化时进行同步。
+
+:::warning 注意
+增量同步时，有可能因为`AutoStore`结构不一致导致同步失败，所以增量同步时，需要尽可能保证`AutoStore`结构一致。
+:::
+
 ## 通配符
 
 `store.watch`支持通配符，比如`watch('order.*',listener)`，当`order`对象中的任意属性发生变化时，都会执行监听函数。
@@ -178,17 +189,17 @@ function collectDependencies(){
 
 // 匹配order对象中的任意属性
 store.watch('order.*',listener)
-// order.a   ✔️
-// order.b   ✔️
+// order.a   ✅
+// order.b   ✅
 // order.a.b ❌  
 // order.a.b.c  ❌  
 
 // 匹配order对象中的任意属性
 store.watch('order.**',listener)
-// order.a   ✔️
-// order.b   ✔️
-// order.a.b ✔️  
-// order.a.b.c  ✔️  
+// order.a   ✅
+// order.b   ✅
+// order.a.b ✅ 
+// order.a.b.c  ✅ 
 ```
 
 

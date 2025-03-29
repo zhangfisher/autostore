@@ -241,4 +241,9 @@ export type StoreSyncOptions ={
     filter?   : (this:AutoStore<any>,operate:StateOperate)=>boolean
     immediate?: boolean      // 初始化时立刻同步一次
     direction?: 'both' | 'forward' | 'backward'    // 0:双向同步, 1: from->to,  2: to->from 
+    // 同步时，是否路径进行映射处理，比如将['order','price']映射成['order.price']等
+    pathMap?  :{
+        from  : (path:string[],value:any)=>string[] | undefined
+        to    : (path:string[],value:any)=>string[] | undefined
+    }
 }

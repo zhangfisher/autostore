@@ -197,6 +197,155 @@ syncer.on()
 ```
 
 
+### 路径映射
+
+允许通过`pathMap`来控制两个`AutoStore`之间的路径映射关系。
+
+```ts
+const fromStore = new AutoStore({
+    order:{
+        a:1, b:2, c:3 
+    }             
+})
+const toStore = new AutoStore({
+    myorder:{}
+})
+fromStore.sync(toStore,{
+    to:"myorder",
+    immediate:false,
+    pathMap:{
+        to:(path:string[])=>{
+            return [path.join(".")]
+        },
+        from:(path:string[])=>{
+            return path.reduce<string[]>((result,cur)=>{
+                result.push(...cur.split("."))
+                return result
+            },[])
+        }
+    }
+})
+```
+
+以上代码：
+
+- `to`参数表示将`fromStore`中的`order.a`映射到`toStore`中的`myorder[order.a]`。
+- `from`参数表示将`toStore`中的`myorder[order.a]`映射到`fromStore`中的`order.a`。
+
+所以同步后生效后：
+
+```ts
+fromStore.state.order.a = 11
+fromStore.state.order.b = 12
+fromStore.state.order.c = 13
+
+expect(toStore.state).toEqual({
+    myorder:{
+        'order.a':11,
+        'order.b':12,
+        'order.c':13
+    }})     
+```
+
+反之，如果修改`toStore`中的`myorder[order.a]`，`fromStore`中的`order.a`也会同步更新。
+
+```ts
+toStore.state.myorder['order.a'] = 21
+toStore.state.myorder['order.b'] = 22
+toStore.state.myorder['order.c'] = 23
+expect(fromStore.state).toEqual({
+    order:{
+        a:21, b:22, c:23 
+    }})
+```
+
+:::warning 注意
+以上配置了`immediate=false`，所以不会立即进行全同步，而是进行增量同步，仅当`fromStore`变化时才会同步变更项到`toStore`中。
+:::
+
+如果我们指定`immediate=true`，则代表需要在初始化进行一次全同步。
+
+以上的代码需要进行修改:
+
+```ts
+fromStore.sync(toStore,{
+        to:"myorder", 
+        pathMap:{
+            to:(path:string[],value:any)=>{
+                if(typeof(value)!=='object'){
+                    return [path.join(".")]
+                }                    
+            },
+            from:(path:string[],value:any)=>{
+                if(typeof(value)!=='object'){
+                    return path.reduce<string[]>((result,cur)=>{
+                        result.push(...cur.split("."))
+                        return result
+                    },[])
+                }
+            }
+        }
+    }) 
+```
+
+**重点：**
+
+当`immediate=true`时，我们无法在进行第一次同步时使用`Object.assign`来快速同步，而只能使用`for...in`来深度遍历`fromStore`中的所有属性(包括后代对象)，然后逐条进行更新。
+
+如果路径映射代码是：
+
+```ts
+pathMap:{
+    to:(path:string[],value:any)=>{
+        return [path.join(".")]
+    }
+}
+```
+
+则会在`toStore`中写入：
+```
+{
+    myorder:{
+        'order':{a:1,b:2,c:3}
+        'order.a':1,
+        'order.b':2,
+        'order.c':3
+    }
+}
+```
+
+多了一个`order`属性，为了避免这种情况，要点在于，当`value`是基本类型时，才进行路径转换，如果值类型是`object`，则需要返回`undefined`。
+
+因此代码需要修改为：
+
+```ts
+fromStore.sync(toStore,{
+        to:"myorder", 
+        pathMap:{
+            to:(path:string[],value:any)=>{
+                if(typeof(value)!=='object'){
+                    return [path.join(".")]
+                }                    
+            },
+            from:(path:string[],value:any)=>{
+                if(typeof(value)!=='object'){
+                    return path.reduce<string[]>((result,cur)=>{
+                        result.push(...cur.split("."))
+                        return result
+                    },[])
+                }
+            }
+        }
+    }) 
+```
+
+- 当遍历`fromStore`时，如果遇到`object`类型时，则返回`undefined`，这样`toStore`中就不会写入多余的`order`属性。
+
+**以下完整示例：**
+
+<demo react="store/syncStoreWithPathMap2.tsx"/>
+
+
 ### 远程同步
 
 远程同步可以实现将本地的`AutoStore`与远程的`AutoStore`进行同步。比如将浏览器的`AutoStore`与`WebWorker`的`AutoStore`进行同步。
@@ -349,7 +498,10 @@ type StateRemoteOperate {
 } 
 ```
 
-
 ## 示例
 
 <demo react="store/syncStore.tsx"/>
+
+以下是同步时进行路径映射的示例：
+
+<demo react="store/syncStoreWithPathMap.tsx"/>

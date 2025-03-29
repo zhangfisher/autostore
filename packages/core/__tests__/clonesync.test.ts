@@ -355,4 +355,122 @@ describe("同步与克隆",()=>{
         expect(store3.state.a3).toBe(11)
 
     })
+    test("同步时路径映射",async ()=>{
+        // order.a <-> myorder['order.a']
+        const fromStore = new AutoStore({
+            order:{
+                a:1, b:2, c:3 
+            }             
+        })
+        const toStore = new AutoStore({
+            myorder:{}
+        })
+        fromStore.sync(toStore,{
+            to:"myorder",
+            immediate:false,
+            pathMap:{
+                to:(path:string[])=>{
+                    return [path.join(".")]
+                },
+                from:(path:string[])=>{
+                    return path.reduce<string[]>((result,cur)=>{
+                        result.push(...cur.split("."))
+                        return result
+                    },[])
+                }
+            }
+        })
+        fromStore.state.order.a = 11
+        fromStore.state.order.b = 12
+        fromStore.state.order.c = 13
+
+        expect(toStore.state).toEqual({
+            myorder:{
+                'order.a':11,
+                'order.b':12,
+                'order.c':13
+            }})
+        // @ts-ignore
+        toStore.state.myorder['order.a'] = 21
+        // @ts-ignore
+        toStore.state.myorder['order.b'] = 22
+        // @ts-ignore
+        toStore.state.myorder['order.c'] = 23
+        
+        expect(fromStore.state).toEqual({
+            order:{
+                a:21, b:22, c:23 
+            }})
+
+    })
+    test("指定同步路径映射时进行一次全同步",async ()=>{
+        // order.a <-> myorder['order.a']
+        const fromStore = new AutoStore({
+            order:{
+                a:1, b:2, c:3,                
+            },
+            user:{
+                tags:['x','y','z']
+            }             
+        })
+        const toStore = new AutoStore({
+            myorder:{}
+        })
+        fromStore.sync(toStore,{
+            to:"myorder", 
+            pathMap:{
+                to:(path:string[],value:any)=>{
+                    if(typeof(value)!=='object'){
+                        return [path.join(".")]
+                    }                    
+                },
+                from:(path:string[],value:any)=>{
+                    if(typeof(value)!=='object'){
+                        return path.reduce<string[]>((result,cur)=>{
+                            result.push(...cur.split("."))
+                            return result
+                        },[])
+                    }
+                }
+            }
+        }) 
+        expect(toStore.state).toEqual({
+            myorder:{
+                'order.a':1,
+                'order.b':2,
+                'order.c':3,
+                'user.tags.0':'x',
+                'user.tags.1':'y',
+                'user.tags.2':'z'
+            }}) 
+
+        fromStore.state.order.a = 11
+        fromStore.state.order.b = 12
+        fromStore.state.order.c = 13
+
+        expect(toStore.state).toEqual({
+            myorder:{
+                'order.a':11,
+                'order.b':12,
+                'order.c':13,
+                'user.tags.0':'x',
+                'user.tags.1':'y',
+                'user.tags.2':'z'
+            }}) 
+        // @ts-ignore
+        toStore.state.myorder['order.a'] = 21
+        // @ts-ignore
+        toStore.state.myorder['order.b'] = 22
+        // @ts-ignore
+        toStore.state.myorder['order.c'] = 23
+        
+        expect(fromStore.state).toEqual({
+            order:{
+                a:21, b:22, c:23 
+            },
+            user:{
+                tags:['x','y','z']
+            }  
+        })
+    })
 })
