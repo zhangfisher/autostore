@@ -9,9 +9,19 @@
     "type": "git",
     "url": "https://github.com/zhangfisher/autostore.git"
   },
-  "publishConfig": {
-    "main": "dist/index.cjs",
-    "module": "dist/index.js"
+  "publishConfig": { 
+    "exports":{
+        ".":{
+            "types":"dist/index.d.ts",
+            "require":"dist/index.cjs",
+            "import":"dist/index.js"
+        },
+        "./lite":{
+            "types":"dist/lite/index.d.ts",
+            "require":"dist/lite/index.cjs",
+            "import":"dist/lite/index.js"
+        }
+    }
   },
   "scripts": {
     "build": "tsup"

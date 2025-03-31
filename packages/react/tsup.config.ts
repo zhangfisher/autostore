@@ -15,6 +15,19 @@ export default defineConfig([
         treeshake:true,  
         minify: true, 
         noExternal:["autostore"]
+    },  
+    {
+        entry: [
+            'src/index.tsx'
+        ],
+        outDir:"dist/lite",
+        format: ['esm','cjs'],
+        dts: true,
+        splitting: true,
+        sourcemap: true,
+        clean: true,
+        treeshake:true,  
+        minify: true
     },
 ]
 )

@@ -1,10 +1,11 @@
 # 安装
 
-`AutoStore`共包括三个包：
+`AutoStore`共包括`4`个包：
 
 - `autostore`: 核心包
 - `@autostorejs/react`: 面向`React`开发者
 - `@autostorejs/devtools`: 使用`Redux DevTools`调试`AutoStore`
+- `@autostorejs/syncr`: 远程同步两个`AutoStore`
 
 
 ## autostore
@@ -34,11 +35,13 @@ pnpm add autostore
 
 ## @autostorejs/react
 
-:::warning 
+:::warning 提示
 如果您是`React`开发者，只需要安装`@autostorejs/react`即可。
 :::
 
-`@autostorejs/react`已经集成了`autostore`包的所有功能，**不需要额外安装`autostore`**。
+- 默认情况下，`@autostorejs/react`已经集成了`autostore`包的所有功能，**不需要额外安装`autostore`**。
+- `@autostorejs/react`也提供了将`autostore`包作为`peerDependencies`的产物，通过`import {...} from "@autostorejs/react/lite"`方式进行导入。
+
 
 :::code-group
 
@@ -54,6 +57,8 @@ yarn add @autostorejs/react
 pnpm add @autostorejs/react
 ``` 
 :::
+
+
 
 ## @autostorejs/devtools
 
@@ -74,6 +79,10 @@ pnpm add @autostorejs/devtools
 ``` 
 :::
 
+
+## @autostorejs/syncer
+
+用来远程同步两个`AutoStore`的数据，如在同步`browser`和`worker`的`AutoStore`数据。
 
 ## @autostorejs/vue
 
