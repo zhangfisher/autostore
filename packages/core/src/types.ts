@@ -29,8 +29,6 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
 如：ComputedState<{count:async ()=>1}> => {count:number}
 
 */
- 
-
 
 export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[] 
     :

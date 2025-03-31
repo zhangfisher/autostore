@@ -3,7 +3,7 @@ import { configurable, s } from '../src/schema'
 import { AutoStore } from '../src/store';
 import { ValidateError } from '../src';
 
-// 测试 isEventMatched 函数
+ 
 describe("validator",()=>{
 
     test("number initial",()=>{
