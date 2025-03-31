@@ -15,7 +15,7 @@
     "publish:all": "turbo build --filter=./packages/* && changeset version && changeset publish",
     "build:all": "turbo build --filter=./packages/*",
     "docs:preview": "cd docs && vitepress preview",
-    "sync":"cnpm sync autostore @autostorejs/react"
+    "sync":"cnpm sync autostore @autostorejs/react @autostorejs/syncer"
   },
   "keywords": [],
   "author": "",

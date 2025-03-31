@@ -109,14 +109,16 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             notify:this._notify.bind(this),
             createComputedObject:this.createObserverObject.bind(this)
         }) as ComputedState<State>
-        this.getSnap = this.getSnap.bind(this)
-        this.watch = this.watch.bind(this)
-        this.update = this.update.bind(this)
-        this.peep = this.peep.bind(this)
-        this.silentUpdate = this.silentUpdate.bind(this)
-        this.batchUpdate = this.batchUpdate.bind(this)
+        
+        this.getSnap             = this.getSnap.bind(this)
+        this.watch               = this.watch.bind(this)
+        this.update              = this.update.bind(this)
+        this.peep                = this.peep.bind(this)
+        this.silentUpdate        = this.silentUpdate.bind(this)
+        this.batchUpdate         = this.batchUpdate.bind(this)
+        this.trace               = this.trace.bind(this)
         this.collectDependencies = this.collectDependencies.bind(this)
-        this.trace = this.trace.bind(this)
+
         this.installExtends()                     
         if(!this._options.lazy) forEachObject(this._data)       
         if(this._options.resetable) this.resetable = true     
@@ -735,7 +737,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
         const fromEntry = from ? from.split(PATH_DELIMITER) : []
         const toEntry = to ? to.split(PATH_DELIMITER) : []
 
-        let watchers: Watcher[] = []
+        const watchers: Watcher[] = []
 
         const mapPath = (path:string[],value:any,dir: 'from' | 'to' = 'from'):string[] | undefined=>{      
             return pathMap && isFunction((pathMap as any)[dir]) ? (pathMap as any)[dir](path,value) : path
@@ -832,7 +834,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                         if(operate.parentPath) operate.parentPath = [...toEntry,...operate.parentPath.slice(fromEntry.length)]
                         applyToStore(toStore,toPath,operate) 
                     },{ operates:"write" }))
-                }   
+                }
                 // to
                 if(['both','backward'].includes(direction)){
                     watchers.push(toStore.watch('*',(operate)=>{   
@@ -846,15 +848,15 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                         if(operate.parentPath) operate.parentPath = [...fromEntry,...operate.parentPath.slice(fromEntry.length)]
                         applyToStore(this,fromPath,operate) 
                     },{ operates:"write" }))
-                }            
+                }
             },
             off: ()=>{
                 watchers.forEach(watcher=>watcher.off())
-                watchers =[]
+                watchers.splice(0,watchers.length)
             }
         }
         syncer.on()
         return syncer
-    }
+    } 
 }
  
