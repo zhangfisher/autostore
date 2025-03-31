@@ -35,11 +35,11 @@ import { getErrorTips } from "./utils"
 
 
 function getSchemaOptions(args:any[]){
-    const options = Object.assign({ },(
-        args.length === 1 && isPlainObject(args[0])) ? args[0] : 
-            (args.length>=2 && isPlainObject(args[args.length-1]) ? args[args.length-1] : undefined)
-        ) as SchemaObjectArgs
-    options.value = args.length >=2 ? args[0] : undefined
+    const options =Object.assign({},( args.length>=2 && isPlainObject(args[args.length-1]) 
+                        ? args[args.length-1] : undefined
+                    )) as SchemaObjectArgs    
+    options.value = args[0]
+
     if(args.length >=2 && typeof(args[1]) === 'function'){
         options.validate = args[1] 
     }

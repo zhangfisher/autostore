@@ -46,7 +46,6 @@ export type SchemaObjectArgs<Value=any> = Pick<SchemaObject<Value>,
 > & Record<string,any>
 
 export interface SchemaBuilder<Value=any>{
-    <T=Value>(options:SchemaObjectArgs ): SchemaObject<T>
     <T=Value>(value:T, options?:SchemaObjectArgs ): SchemaObject<T>
     <T=Value>(value:T, validate:SchemaObjectValidate<T>, options?:SchemaObjectArgs):SchemaObject<T>
     <T=Value>(value:T, validate:SchemaObjectValidate<T>, errorTips?:SchemaObjectArgs['errorTips']):SchemaObject<T>

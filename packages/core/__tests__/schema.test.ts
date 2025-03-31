@@ -1,5 +1,5 @@
 import { describe,  expect, test } from 'vitest'; 
-import { s } from '../src/schema'
+import { configurable, s } from '../src/schema'
 import { AutoStore } from '../src/store';
 import { ValidateError } from '../src';
 
@@ -127,5 +127,21 @@ describe("validator",()=>{
             expect(e).toBeInstanceOf(ValidateError)
             expect("order.price" in store.schemas.errors).toBe(true)
         }
+    })
+
+    test("configurable状态时提供默认值",()=>{
+        const store = new AutoStore({
+            order:{
+                name : configurable("order"),
+                price: configurable(10),
+                count: configurable(2),
+                pay  : configurable(true)
+            }
+        })
+        expect(store.state.order.name).toBe("order")
+        expect(store.state.order.price).toBe(10)
+        expect(store.state.order.count).toBe(2)
+        expect(store.state.order.pay).toBe(true)
+
     })
 })
