@@ -1,5 +1,11 @@
 # autostore
 
+## 1.3.10
+
+### Patch Changes
+
+- [`a1246a3`](https://github.com/zhangfisher/autostore/commit/a1246a34538dda21c1ccc20768e3fa2ddf23e783) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix: schema(value) value error
+
 ## 1.3.9
 
 ## 1.3.8
