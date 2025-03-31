@@ -1,5 +1,14 @@
 # @autostorejs/react
 
+## 1.3.9
+
+### Patch Changes
+
+- [`2daa009`](https://github.com/zhangfisher/autostore/commit/2daa0093a57602d9f3889756393e8e6f37ba3921) Thanks [@zhangfisher](https://github.com/zhangfisher)! - @autostorejs/react add lite output
+
+- Updated dependencies []:
+  - autostore@1.3.9
+
 ## 1.3.8
 
 ### Patch Changes
