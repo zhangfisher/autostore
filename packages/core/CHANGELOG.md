@@ -1,5 +1,7 @@
 # autostore
 
+## 1.3.9
+
 ## 1.3.8
 
 ### Patch Changes
