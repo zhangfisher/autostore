@@ -7,7 +7,7 @@ const store1 = createStore({
         a:1, b:2, c:3,                
     },
     user:{
-        tags:['x','y','z']
+        tags:[100,200,300]
     }             
 })
 const { useReactive:useReactive1  } = store1
@@ -46,6 +46,10 @@ export default () => {
     // @ts-ignore
     const [ a2,setA2 ] = useReactive2(["myorder","order.a"])
 
+    const [ tag1,setTag1 ] = useReactive1("user.tags.1")
+    // @ts-ignore
+    const [ tag2,setTag2 ] = useReactive2(["myorder","user.tags.1"])
+
     return <div>
         <Layout>
             <div><JsonView data={state1}/></div>
@@ -53,14 +57,20 @@ export default () => {
         </Layout>
         <Layout>
         <div>
-            <Button onClick={() => setA1(state1.order.a+1)} >Store1 A++</Button>        
-            <Button onClick={() => setA1(state1.order.a-1)} >Store1 A--</Button>        
+            <Button onClick={() => setA1(state1.order.a+1)} >A++</Button>
+            <Button onClick={() => setA1(state1.order.a-1)} >A--</Button>
+            <Button onClick={() => setTag1(state1.user.tags[1]+1)} >Tags[1]++</Button>
+            <Button onClick={() => setTag1(state1.user.tags[1]-1)} >Tags[1]--</Button>
         </div>
         <div>
             {/*  @ts-ignore */}
-            <Button onClick={() => setA2(state2.myorder['order.a']+1)} >Store2 A++</Button>        
+            <Button onClick={() => setA2(state2.myorder['order.a']+1)} >A++</Button>        
             {/*  @ts-ignore */}
-            <Button onClick={() => setA2(state2.myorder['order.a']-1)} >Store2 A--</Button>        
+            <Button onClick={() => setA2(state2.myorder['order.a']-1)} >A--</Button>        
+            {/*  @ts-ignore */}
+            <Button onClick={() => setTag1(state2.myorder['user.tags.1']+1)} >Tags[1]++</Button>
+            {/*  @ts-ignore */}
+            <Button onClick={() => setTag1(state2.myorder['user.tags.1']-1)} >Tags[1]--</Button>
         </div>        
         </Layout>
     </div>
