@@ -1,6 +1,7 @@
 import { VALUE_SCHEMA } from "../consts"
+import { ComputedState, Dict, GetTypeByPath, ObjectKeyPaths } from '../types';
 
-export type SchemaObjectValidate<Value=any> = (newValue:Value,oldValue:Value,path:string)=>boolean
+export type SchemaObjectValidate<Value=any> = (newValue:Value, oldValue:Value, path:string)=>boolean
 
 export interface SchemaObject<Value=any> {
     [VALUE_SCHEMA]    : true
@@ -21,12 +22,11 @@ export interface SchemaObject<Value=any> {
         icon?         : string
     })[]
     widget?           : string          
-    errorTips?        : string | ((this:SchemaObject<Value>,path:string,newValue:Value,oldValue:Value)=>string )
+    errorTips?        : string | ((this:SchemaObject<Value>, path:string, newValue:Value, oldValue:Value)=>string)
     tags?             : string[]        
     group?            : string
     advanced?        : boolean 
 }
-
 
 export type SchemaObjectArgs<Value=any> = Pick<SchemaObject<Value>,
     'value'
@@ -46,27 +46,21 @@ export type SchemaObjectArgs<Value=any> = Pick<SchemaObject<Value>,
 > & Record<string,any>
 
 export interface SchemaBuilder<Value=any>{
-    <T=Value>(value:T, options?:SchemaObjectArgs ): SchemaObject<T>
-    <T=Value>(value:T, validate:SchemaObjectValidate<T>, options?:SchemaObjectArgs):SchemaObject<T>
-    <T=Value>(value:T, validate:SchemaObjectValidate<T>, errorTips?:SchemaObjectArgs['errorTips']):SchemaObject<T>
+    <T=Value>(value:T, options?:SchemaObjectArgs<T>): SchemaObject<T>
+    <T=Value>(value:T, validate:SchemaObjectValidate<T>, options?:SchemaObjectArgs<T>):SchemaObject<T>
+    <T=Value>(value:T, validate:SchemaObjectValidate<T>, errorTips?:SchemaObjectArgs<T>['errorTips']):SchemaObject<T>
 }
 
+export type ConfigurableState<State extends Dict> = {
+    [Key in ObjectKeyPaths<ComputedState<State>>]: 
+        GetTypeByPath<State, Key> extends SchemaObject<infer Value> 
+            ? Value
+            : never
+} extends infer Temp 
+    ? { [K in keyof Temp as Temp[K] extends never ? never : K]: Temp[K] } 
+    : never
+
+export type SchemaState<State extends Dict> = ConfigurableState<State>
  
 
-// 以上用来提取出SchemaObject的类型
-type MergeIntersection<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
-type UnionToIntersection<U> = 
-    (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never;
-type GetSchemaObjectsHelper<T, Prefix extends string> = 
-    T extends SchemaObject<infer V> 
-        ? Prefix extends '' ? never : { [key in Prefix]: V }
-        : T extends Record<string, any> 
-            ? { [K in keyof T]: 
-                GetSchemaObjectsHelper<T[K], Prefix extends '' 
-                    ? K & string 
-                    : `${Prefix}.${K & string}`
-              > }[keyof T]
-            : never;
-
-export type SchemaState<T extends Record<string, any>> = 
-    MergeIntersection<UnionToIntersection<GetSchemaObjectsHelper<T, ''>>>
+ 

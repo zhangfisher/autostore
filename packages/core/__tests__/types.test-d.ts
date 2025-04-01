@@ -1,9 +1,11 @@
 import { Equal, Expect }  from "@type-challenges/utils"
 import { ComputedState } from "../src/types";
-import { s, schema,SchemaState } from "../src/schema";
+import { ConfigurableState, s, schema,SchemaState } from "../src/schema";
+import { AutoStore } from "../src/store";
+
 
 const obj = {
-    price     : schema(100),
+    price     : schema<number>(100),
     tags      : s.array<number>([1,2]),
     address   : s.object({
         city  : "QuanZhou",
@@ -12,15 +14,19 @@ const obj = {
     }),
     customer:{
         name: s.string("zhang"),
-        age : s.number(18)
+        age : s.number<number>(18)
     }
 }
+const store = new AutoStore(obj)
+store.state.price
+
+type d = ConfigurableState<RawState>
+ 
 
 type State = ComputedState<typeof obj>
 
 // 示例测试
-type  RawState = typeof obj
-
+type RawState = typeof obj
 
 let objState = obj as unknown as State
 
@@ -31,6 +37,7 @@ objState.address.post
 objState.address.street 
 objState.customer.name
 objState.customer.age
+
 // eslint-disable-next-line 
 type cases = [
     Expect<Equal<State['price'],number>>,
