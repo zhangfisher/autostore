@@ -6,8 +6,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bench": "tsx src/tasks/sync-bench.ts",
-    "bench:async": "tsx src/tasks/async-bench.ts"
+    "bench": "tsx src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +21,6 @@
     "autostore": "workspace:*",
     "helux": "^4.4.0",
     "mobx": "^6.13.2",
-    "tinybench": "^2.9.0"
+    "tinybench": "^4.0.1"
   }
 }

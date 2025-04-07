@@ -16,6 +16,7 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
+    "bench":"tsx src/index.ts",
     "test": "vitest"
   },
   "files": [
