@@ -1,7 +1,6 @@
 import { Bench } from 'tinybench';
 import { AutoStore } from "autostore"
-import { derive, share } from 'helux';
-import { MobxStore } from './mobx.store';
+import { derive, share } from 'helux'; 
 
 
 const bench = new Bench({
@@ -28,14 +27,7 @@ const heluxStore = share({
 });
 
 
-bench
-    .add('[Mobx] 简单的依赖计算', () => {
-        const store = new MobxStore();
-        for (let i = 1; i <= 1000; i++) {
-            store.setA0(i);
-        }
-    })
-    // *********  多重依赖链计算  *********  
+bench 
     .add('[AutoStore] 多重依赖链计算', () => {
         for (let i = 1; i <= 1000; i++) {
             autoStore.state.a0 = i

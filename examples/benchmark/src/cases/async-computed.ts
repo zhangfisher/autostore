@@ -1,14 +1,11 @@
 import { Bench } from 'tinybench';
 import { computed, AutoStore } from "autostore"
 import { share, watch } from 'helux';
-
-
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+import { delay } from '../utils';
 
 const bench = new Bench({
     time: 1000,
-    iterations: 100,
-
+    iterations: 100
 });
 
 const autoStore = new AutoStore({
@@ -142,32 +139,29 @@ const heluxStore = share({
 bench
     .add('[AutoStore] 多重依赖链异步计算', () => {
         return new Promise<void>((resolve) => {
-            (async () => {
-                autoStore.on('computed:done', (event) => {
-                    if (event.path.join(".") === "a2") {
-                        resolve()
-                    }
-                })
-                autoStore.state.a0 = 100
-            })()
+            let subscriber = autoStore.on('computed:done', (event) => {
+                if (event.path.join(".") === "a2") {
+                    subscriber.off()
+                    resolve()
+                }
+            })
+            autoStore.state.a0 = 100
         })
     })
     .add('[Helux] 多重依赖链异步计算', () => {
         return new Promise<void>((resolve) => {
-            const [state, setState] = heluxStore;
-            (async () => {
-                watch(() => {
-                    resolve()
-                }, () => ([state.a9]))
-                setState((draft: any) => {
-                    draft.a0 = 100
-                })
-            })()
+            const [state, setState] = heluxStore;            
+            const { unwatch } = watch(() => {
+                unwatch()
+                resolve()
+            }, () => ([state.a9]))
+            setState((draft: any) => {
+                draft.a0 = 100
+            })
         })
     });
 
 (async () => {
-    //await bench.warmup(); // make results more reliable, ref: https://github.com/tinylibs/tinybench/pull/50
     await bench.run();
     console.table(bench.table());
 })();

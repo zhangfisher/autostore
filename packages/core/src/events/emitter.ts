@@ -1,4 +1,3 @@
-import { PATH_DELIMITER } from "../consts";
 import { isPathMatched } from "../utils";
 import { createEventEmitterScope } from "./scope";
 import { EventDefines } from "./types";

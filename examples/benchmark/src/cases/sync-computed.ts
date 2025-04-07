@@ -1,8 +1,6 @@
 import { Bench } from 'tinybench';
 import {  AutoStore } from "autostore"
-import { derive, share } from 'helux';
-import { MobxStore } from './mobx.store';
-
+import { derive, share } from 'helux'; 
 
 const bench = new Bench({ 
   time: 1000, 
@@ -19,9 +17,7 @@ const heluxStore =share({
 });
 
 bench   
-  // *********  基本的依赖计算  *********  
-  .add('[AutoStore] 同步依赖计算', () => { 
-   
+  .add('[AutoStore] 同步依赖计算', () => {    
     for(let i = 1; i <= 1000; i++){      
         autoStore.state.a = i
     } 
@@ -33,19 +29,12 @@ bench
       }); 
       for(let i = 1; i <= 1000; i++){
         setA(draft=>{
-              draft.value = i
-          }) 
+            draft.value = i
+        })
       } 
-  }) 
-  .add('[Mobx] 简单的依赖计算', () => { 
-    const store = new MobxStore();
-    for (let i = 1; i <= 1000; i++) {
-      store.setA0(i); 
-    }
   });  
 
 (async () => {
-    //await bench.warmup(); // make results more reliable, ref: https://github.com/tinylibs/tinybench/pull/50
     await bench.run();
     console.table(bench.table());
 })();
