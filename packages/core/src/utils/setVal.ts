@@ -14,66 +14,70 @@ import { isAsyncComputedValue } from "./isAsyncComputedValue";
  * @param {boolean} toAsyncValue - 当keyPath是AsyncComputedValue时，是否更新到.value值。
  */
 export function setVal(obj: any, path: string[], value: any, toAsyncValue?: boolean) {
-    if (!path || !obj || path.length === 0) {
+    if (!path || !obj ) {
         return obj;
-    }
-
+    }    
     const keys = path;
-
-    let current: any = obj;
-    const curPath: string[] = [];
-
-    const update = (cur: any, key: any, newValue: any) => {
-        if (toAsyncValue) {
-            if (isAsyncComputedValue(cur[key])) {
-                cur[key].value = newValue;
+    if(keys.length===0){
+        if(typeof(obj)==='object') {
+            Object.assign(obj,value)
+            return obj;
+        }
+        return obj
+    }else{
+        let current: any = obj;
+        const curPath: string[] = [];
+        const update = (cur: any, key: any, newValue: any) => {
+            if (toAsyncValue) {
+                if (isAsyncComputedValue(cur[key])) {
+                    cur[key].value = newValue;
+                } else {
+                    cur[key] = newValue;
+                }
             } else {
                 cur[key] = newValue;
             }
-        } else {
-            cur[key] = newValue;
-        }
-    };
-
-    for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-        curPath.push(key);
-        if (current) {
-            if (Array.isArray(current)) {
-                const index = parseInt(key, 10);
-                if (Number.isNaN(index) || index < 0 ) {
-                    throw new Error(`setVal: invalid array index ${curPath.join(".")}`);
-                } else {
-                    if (i === keys.length - 1) {
-                        update(current, index, value);
+        };
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            curPath.push(key);
+            if (current) {
+                if (Array.isArray(current)) {
+                    const index = parseInt(key, 10);
+                    if (Number.isNaN(index) || index < 0 ) {
+                        throw new Error(`setVal: invalid array index ${curPath.join(".")}`);
                     } else {
-                        current = current[index];
+                        if (i === keys.length - 1) {
+                            update(current, index, value);
+                        } else {
+                            current = current[index];
+                        }
                     }
-                }
-            } else if (current instanceof Map || current instanceof WeakMap) {
-                if (i === keys.length - 1) {                    
-                    current.set(key as any, value);
-                }else{
-                    if(!current.has(key as any)) {
-                        current.set(key as any, {});
+                } else if (current instanceof Map || current instanceof WeakMap) {
+                    if (i === keys.length - 1) {                    
+                        current.set(key as any, value);
+                    }else{
+                        if(!current.has(key as any)) {
+                            current.set(key as any, {});
+                        }
+                        current = current.get(key as any);
                     }
-                    current = current.get(key as any);
-                }
-            } else if (typeof current === "object" && key in current) {
-                if (i === keys.length - 1) {
-                    update(current, key, value);
+                } else if (typeof current === "object" && key in current) {
+                    if (i === keys.length - 1) {
+                        update(current, key, value);
+                    } else {
+                        current = current[key];
+                    }
                 } else {
+                    current[key] = i === keys.length - 1 ? value : {};
                     current = current[key];
                 }
-            } else {
+            } else { // 如果当前对象不存在，则创建
                 current[key] = i === keys.length - 1 ? value : {};
                 current = current[key];
             }
-        } else { // 如果当前对象不存在，则创建
-            current[key] = i === keys.length - 1 ? value : {};
-            current = current[key];
         }
-    }
+    }    
     return obj;
 }
 

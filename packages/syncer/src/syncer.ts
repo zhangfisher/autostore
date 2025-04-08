@@ -4,7 +4,18 @@
  * 
  */
 
-import { AutoStore, CYCLE_OPERATE_FLAG_VALUE, getVal, isAsyncComputedValue, PATH_DELIMITER, pathStartsWith, setVal, StateOperate, Watcher } from "autostore";
+import { 
+    AutoStore, 
+    SYNC_INIT_FLAG,
+    SYNC_CYCLE_FLAG, 
+    getVal, 
+    isAsyncComputedValue, 
+    PATH_DELIMITER, 
+    pathStartsWith, 
+    setVal, 
+    StateOperate, 
+    Watcher 
+} from "autostore";
 import { IAutoStoreSyncTransport, StateRemoteOperate } from "./transport";
  
 export type AutoStoreSyncerOptions = {
@@ -48,7 +59,8 @@ export class AutoStoreSyncer{
         this._sendToRemote({
             type  : 'set',
             path  : this.options.remoteEntry,
-            value : entryValue
+            value : entryValue,
+            flags: SYNC_INIT_FLAG
         })
     }
 
@@ -83,7 +95,7 @@ export class AutoStoreSyncer{
     }
 
     private _sendToRemote(operate:StateOperate){
-        if(operate.flags === CYCLE_OPERATE_FLAG_VALUE) return                 
+        if((operate.flags! & SYNC_CYCLE_FLAG) > 0) return                 
         const localEntry = this.options.entry           
         const remoteEntry = this.options.remoteEntry 
         
@@ -113,14 +125,17 @@ export class AutoStoreSyncer{
         if(typeof(this._options.onReceive)==='function'){
             if(this._options.onReceive.call(this,operate)===false) return
         }
-        this._applyOperate(operate)
+        this._applyOperate(operate,SYNC_INIT_FLAG)
     }
 
-    private _applyOperate(operate:StateRemoteOperate){
+    private _applyOperate(operate:StateRemoteOperate,extraFlag:number=0){
         const {type,value,flags,indexs} = operate        
         const toPath = [...this.entry,...operate.path.slice(this.options.remoteEntry.length)]
-        const silent = flags===CYCLE_OPERATE_FLAG_VALUE  
-
+        const silent = (flags & SYNC_CYCLE_FLAG ) > 0
+        const updateOpts = {
+            flags:SYNC_CYCLE_FLAG+extraFlag,
+            silent
+        }
         if(type==='set' || type==='update'){
             this.store.update(state=>{
                 // getVal提供一个默认值，否则当目标路径不存在时会触发invalid state path error
@@ -129,23 +144,23 @@ export class AutoStoreSyncer{
                 }else{
                     setVal(state,toPath,value)
                 }
-            },{flags:CYCLE_OPERATE_FLAG_VALUE,silent})
+            },updateOpts)
         }else if(type==='delete'){
             this.store.update(state=>{
                 setVal(state,toPath,undefined)
-            },{flags:CYCLE_OPERATE_FLAG_VALUE,silent})
+            },updateOpts)
         }else if(type==='insert'){
             this.store.update(state=>{                    
                 const arr = getVal(state,operate.parentPath)
                 if(indexs) arr.splice(indexs[0],0,...value)
-            },{flags:CYCLE_OPERATE_FLAG_VALUE,silent})
+            },updateOpts)
         }else if(type==='remove'){ 
             this.store.update(state=>{
                 const arr = getVal(state,toPath)                    
                 if(indexs){
                     arr.splice(indexs[0],indexs.length)
                 }
-            },{flags:CYCLE_OPERATE_FLAG_VALUE,silent})
+            },updateOpts)
         }
     }
 

@@ -1,7 +1,6 @@
 import { describe, expect, test} from "vitest"
 import { IAutoStoreSyncTransport, StateRemoteOperate } from "../transport"
-import { AutoStore } from '../../../core/src/store/store';
-import { computed } from "autostore";
+import { computed, SYNC_INIT_FLAG,AutoStore } from '../../../core/src';
 import { AutoStoreSyncer } from "../syncer";
 
 
@@ -55,8 +54,11 @@ describe("远程同步",()=>{
                 count:2,
                 total:computed(order=>order.price * order.count)
             }
+        },{id:"local"})
+        const remoteStore = new AutoStore({},{id:"remote"})
+        remoteStore.watch((operate)=>{
+            expect(operate.flags! & SYNC_INIT_FLAG).toBeGreaterThan(0)
         })
-        const remoteStore = new AutoStore()
         
         new AutoStoreSyncer(remoteStore,{transport:remoteTransport})
         new AutoStoreSyncer(localStore,{transport:localTransport,immediate:true})        
@@ -113,6 +115,5 @@ describe("远程同步",()=>{
         remoteStore.state.remoteOrder.count = 4 
         expect(localStore.state.order.count).toBe(4)        
     })
-
 
 })
