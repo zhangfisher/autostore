@@ -1,5 +1,12 @@
 # @autostorejs/react
 
+## 1.3.13
+
+### Patch Changes
+
+- Updated dependencies [[`e16301a`](https://github.com/zhangfisher/autostore/commit/e16301ab9998208e9b970d7be345662fa68c0c9f)]:
+  - autostore@1.3.13
+
 ## 1.3.12
 
 ### Patch Changes
