@@ -43,17 +43,17 @@ describe("watch events",()=>{
             store.state.job.title;    
             expect(events).toStrictEqual([
                 { type: 'get', path: ['firstName'], indexs:[],value: data.firstName,parent:data,parentPath:[],oldValue:undefined ,
-                    flags:undefined},
+                    flags:0},
                 { type: 'get', path: ['address'], indexs:[], value: data.address,parent:data,parentPath:[],oldValue:undefined,
-                    flags:undefined },
+                    flags:0 },
                 { type: 'get', path: ['address','0'], indexs:[], value: data.address[0] ,parent:data.address,parentPath:["address"],oldValue:undefined,
-                    flags:undefined},
+                    flags:0},
                 { type: 'get', path: ['address', '0', 'city'], indexs:[], value: data.address[0].city,parent:data.address[0],parentPath:["address",'0'],oldValue:undefined,
-                    flags:undefined },
+                    flags:0 },
                 { type: 'get', path: ['job'], indexs:[], value: data.job,parent:data,parentPath:[],oldValue:undefined ,
-                    flags:undefined},
+                    flags:0},
                 { type: 'get', path: ['job', 'title'], indexs:[], value: data.job.title,parent:data.job,parentPath:["job"],oldValue:undefined,
-                    flags:undefined }
+                    flags:0 }
             ])
         })
         test("Write operage events",()=>{
@@ -65,11 +65,11 @@ describe("watch events",()=>{
             store.state.address[0].city = "Shanghai";
             store.state.job.title = "Frontend Engineer";
             expect(events[0]).toStrictEqual({ type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:store.state,parentPath:[] ,oldValue: 'John',
-                flags:undefined})
+                flags:0})
             expect(events[1]).toStrictEqual({ type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:store.state.address[0],parentPath:["address",'0'],oldValue: 'New York',
-                flags:undefined })
+                flags:0 })
             expect(events[2]).toStrictEqual({ type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:store.state.job,parentPath:["job"],oldValue: 'Software Engineer',
-                flags:undefined})
+                flags:0})
         })
         test("delete object items",()=>{
             const events:any[] = [];
@@ -85,12 +85,12 @@ describe("watch events",()=>{
             // @ts-ignore
             delete store.state.job;
             expect(events[0]).toStrictEqual({ type: 'delete', path: ['firstName'], indexs:[], value: 'John',parent:store.state,parentPath:[] ,oldValue: undefined,
-                flags:undefined})
+                flags:0})
             expect(events[1]).toStrictEqual({ type: 'delete', path: ['address', '0', 'city'], indexs:[], value:'New York',parent:store.state.address[0],parentPath:["address",'0'],oldValue: undefined,
-                flags:undefined})
+                flags:0})
             expect(events[2]).toStrictEqual({ type: 'delete', path: ['job', 'title'], indexs:[], value: 'Software Engineer',parent:{company: 'Google',
                 salary: 100000},parentPath:["job"],oldValue: undefined,
-                flags:undefined})
+                flags:0})
         })
     
     })
@@ -122,7 +122,7 @@ describe("watch events",()=>{
                 parent    : state.state.address,
                 parentPath: ['address'],
                 oldValue  : undefined,
-                flags:undefined
+                flags:0
             })  
         })
         test("array splice operage event",()=>{
@@ -141,7 +141,7 @@ describe("watch events",()=>{
                 parent    : [data.address[0],...newItems,...data.address.slice(1)],
                 parentPath: ['address'],
                 oldValue  : undefined,
-                flags:undefined
+                flags:0
             })  
         })
         test("array splice with delete operage event",()=>{
@@ -161,7 +161,7 @@ describe("watch events",()=>{
                 parent    : [data.address[0],...newItems,...data.address.slice(3)],
                 parentPath: ['address'],
                 oldValue  : undefined,
-                flags:undefined
+                flags:0
             })  
             expect(events[1]).toStrictEqual({ 
                 type      : 'insert', 
@@ -171,7 +171,7 @@ describe("watch events",()=>{
                 parent    : [data.address[0],...newItems,...data.address.slice(3)],
                 parentPath: ['address'],
                 oldValue  : undefined,
-                flags:undefined
+                flags:0
             })            
         })
     
@@ -191,7 +191,7 @@ describe("watch events",()=>{
                 parent    : [...newItems,...data.address],
                 parentPath: ['address'],
                 oldValue  : undefined,
-                flags:undefined
+                flags:0
             })  
         })
     
@@ -211,7 +211,7 @@ describe("watch events",()=>{
                 parent    : state.state.address,
                 parentPath: ['address'],
                 oldValue  : data.address[0],
-                flags:undefined
+                flags:0
             })  
         })
         test("remove array member",()=>{
@@ -230,7 +230,7 @@ describe("watch events",()=>{
                 parent    : [data.address[0],...data.address.slice(2)],
                 parentPath: ['address'],
                 oldValue  : undefined,
-                flags:undefined
+                flags:0
             })  
         })
         test("remove array multi member",()=>{
@@ -249,7 +249,7 @@ describe("watch events",()=>{
                 parent    : [data.address[0]],
                 parentPath: ['address'],
                 oldValue  : undefined, 
-                flags:undefined
+                flags:0
             })  
         })
     })
@@ -281,9 +281,9 @@ describe("watch events",()=>{
             state.state.address[0].city = "Shanghai";
             state.state.job.title = "Frontend Engineer";
             expect(events).toStrictEqual([
-                { type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:state.state,parentPath:[] ,oldValue: 'John',flags:undefined},
-                { type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:state.state.address[0],parentPath:["address",'0'],oldValue: 'New York' ,flags:undefined},
-                { type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:state.state.job,parentPath:["job"],oldValue: 'Software Engineer',flags:undefined}
+                { type: 'set', path: ['firstName'], indexs:[], value: "Li",parent:state.state,parentPath:[] ,oldValue: 'John',flags:0},
+                { type: 'set', path: ['address', '0', 'city'], indexs:[], value: "Shanghai",parent:state.state.address[0],parentPath:["address",'0'],oldValue: 'New York' ,flags:0},
+                { type: 'set', path: ['job', 'title'], indexs:[], value: "Frontend Engineer",parent:state.state.job,parentPath:["job"],oldValue: 'Software Engineer',flags:0}
             ])
     
         })

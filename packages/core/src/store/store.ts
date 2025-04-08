@@ -62,7 +62,7 @@ import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
 import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isFunction, isPlainObject, pathStartsWith, setVal } from "../utils";
-import { BATCH_UPDATE_EVENT, CYCLE_OPERATE_FLAG, PATH_DELIMITER } from "../consts";
+import { BATCH_UPDATE_EVENT, PATH_DELIMITER, SYNC_CYCLE_FLAG, SYNC_INIT_FLAG } from '../consts';
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects"; 
@@ -86,7 +86,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
     private _silenting = false                                          // 是否静默更新，不触发事件
     private _batching = false                                           // 是否批量更新中
     private _batchOperates:StateOperate[] = []                          // 暂存批量操作
-    private _updateFlags:number | symbol | undefined                    // 额外的更新标识
+    private _updateFlags:number= 0                                      // 额外的更新标识
     private _peeping:boolean = false 
     private _updatedState?:Dict                                         // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
     private _updatedWatcher:Watcher | undefined                         // 脏状态侦听器
@@ -464,7 +464,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
      *  })
      */
     update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions){
-        const {batch=false,reply=true,silent=false,peep=false,flags} = Object.assign({},options)        
+        const {batch=false,reply=true,silent=false,peep=false,flags=0} = Object.assign({},options)        
         if(typeof(fn)==='function'){                        
             this._updateFlags = flags
             if(silent) this._silenting=true
@@ -743,10 +743,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
             return pathMap && isFunction((pathMap as any)[dir]) ? (pathMap as any)[dir](path,value) : path
         }
 
-        const applyToStore = (store:AutoStore<any>,relPath:string[],operate:StateOperate)=>{
-            const {type,value,flags,indexs} = operate
-            const silent = flags===CYCLE_OPERATE_FLAG 
-            if(flags === CYCLE_OPERATE_FLAG) return 
+        const applyToStore = (store:AutoStore<any>,relPath:string[],operate:StateOperate,extraFlags:number = 0)=>{
+            const {type,value,flags=0,indexs} = operate
+            const silent = (flags & SYNC_CYCLE_FLAG) > 0
+            if(silent) return 
+            const updateOpts ={
+                flags:SYNC_CYCLE_FLAG + extraFlags,
+                silent
+            }
             if(type==='set' || type==='update'){
                 store.update(state=>{
                     if(isAsyncComputedValue(getVal(state,relPath))){
@@ -754,23 +758,23 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                     }else{
                         setVal(state,relPath,value)
                     }
-                },{flags:CYCLE_OPERATE_FLAG,silent})
+                },updateOpts)
             }else if(type==='delete'){
                 store.update(state=>{
                     setVal(state,relPath,undefined)
-                },{flags:CYCLE_OPERATE_FLAG,silent})
+                },updateOpts)
             }else if(type==='insert'){
                 store.update(state=>{                    
                     const arr = getVal(state,operate.parentPath)
                     if(indexs) arr.splice(indexs[0],0,...value)
-                },{flags:CYCLE_OPERATE_FLAG,silent})
+                },updateOpts)
             }else if(type==='remove'){ 
                 store.update(state=>{
                     const arr = getVal(state,relPath)                    
                     if(indexs){
                         arr.splice(indexs[0],indexs.length)
                     }
-                },{flags:CYCLE_OPERATE_FLAG,silent})
+                },updateOpts)
             }
         }
         // 马上进行一次全同步
@@ -784,10 +788,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                         const toValue = Array.isArray(value) ? [] : 
                             ((typeof(value)==='object') ? {} : value)
                         applyToStore(toStore,[...toEntry,...toPath],{
-                            type:'set',
-                            path:toPath,
-                            value:toValue
-                        })
+                            type : 'set',
+                            path : toPath,
+                            value: toValue
+                        },SYNC_INIT_FLAG)
                     }
                 })
             }else{// 没有指定映射关系时，可以简单进行Object.assign，会更加高效
@@ -808,13 +812,25 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                                 Object.assign(toEntryValue,fromEntryValue)
                             }
                         }                    
-                    },{silent:true})
+                    },{
+                        silent:true,
+                        flags:SYNC_CYCLE_FLAG + SYNC_INIT_FLAG
+                    })
                 }else{
                     toStore.update((state)=>{
                         setVal(state,toPath,fromEntryValue)    
-                    },{silent:true})                
+                    },{
+                        silent:true,
+                        flags:SYNC_CYCLE_FLAG + SYNC_INIT_FLAG
+                    })                
                 }
             }
+        }
+
+        const getMappedPath = (operate:StateOperate,entry:string[],dir: 'from' | 'to')=>{
+            if((operate.flags! & SYNC_CYCLE_FLAG) > 0 ) return 
+            if(!pathStartsWith(entry,operate.path)) return    
+            return mapPath(operate.path,operate.value,dir)
         }
 
         const syncer ={
@@ -823,10 +839,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 // from
                 if(['both','farward'].includes(direction)){
                     watchers.push(this.watch('*', (operate)=>{   
-                        if(operate.flags === CYCLE_OPERATE_FLAG) return 
-                        if(!pathStartsWith(fromEntry,operate.path)) return 
+                        // if((operate.flags! & SYNC_CYCLE_FLAG) > 0 ) return 
+                        // if(!pathStartsWith(fromEntry,operate.path)) return 
                         if(isFunction(filter) && filter.call(this,operate)===false) return
-                        const mappedPath = mapPath(operate.path,operate.value,'to')
+                        const mappedPath = getMappedPath(operate,fromEntry,"to") //mapPath(operate.path,operate.value,'to')
                         if(mappedPath===undefined) return 
                         operate.path = mappedPath
                         const toPath = [...toEntry,...operate.path.slice(fromEntry.length)]
@@ -838,9 +854,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents>{
                 // to
                 if(['both','backward'].includes(direction)){
                     watchers.push(toStore.watch('*',(operate)=>{   
-                        if(!pathStartsWith(toEntry,operate.path)) return 
-                        if(operate.flags === CYCLE_OPERATE_FLAG) return 
-                        const mappedPath = mapPath(operate.path,operate.value,'from')
+                        const mappedPath = getMappedPath(operate,toEntry,"from") //mapPath(operate.path,operate.value,'to')
                         if(mappedPath===undefined) return 
                         operate.path = mappedPath
                         const fromPath = [...fromEntry,...operate.path.slice(toEntry.length)]

@@ -6,6 +6,9 @@ export const BATCH_UPDATE_EVENT = '__batch_update__'
 export const ASYNC_COMPUTED_VALUE = Symbol("AsyncComputedValue")
 export const EMPTY = Symbol("EMPTY")
 export const VALUE_SCHEMA = Symbol("ValueSchema")
-export const CYCLE_OPERATE_FLAG = Symbol("CycleOperateFlag")
 export const DELETE_FLAG = Symbol("DeleteFlag")
-export const CYCLE_OPERATE_FLAG_VALUE = 0x11001100
+
+// 同步时用来标识是否是循环
+export const SYNC_CYCLE_FLAG = 1 
+// 当第一次同步时的标识
+export const SYNC_INIT_FLAG = 2

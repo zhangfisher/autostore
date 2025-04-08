@@ -25,7 +25,7 @@ export type StateOperate<Value=any,Parent=any> = {
      * 是否是批量操作时的回放事件
      */
     reply?     : boolean      
-    flags?     : number | symbol         
+    flags?     : number         
 }
  
 
@@ -224,7 +224,7 @@ export type UpdateOptions = {
      * 在update期间触发的事件operate中会包含此值，可以通过operate.flags获取到此值
      * 
      */
-    flags?:number | symbol
+    flags?:number
 }
 
 

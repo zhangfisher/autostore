@@ -1,6 +1,5 @@
 import { test,expect, describe } from "vitest"
-import { AutoStore, computed } from "../src"  
-import { s } from '../src/schema/schema';
+import { AutoStore, computed } from "../src"   
 
 describe("同步与克隆",()=>{
     describe("克隆Store",()=>{

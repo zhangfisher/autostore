@@ -6,9 +6,9 @@ import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions } from "
 export type WatchListener<Value=any,Parent=any> = (operate:StateOperate<Value,Parent>)=>void
 
 export type WatchListenerOptions = {
-    once?    : boolean                                      // 只侦听一次后自动移除
-    operates?: '*' | 'read' | 'write' | StateOperateType[]     // 只侦听的操作类型
-    filter?  : (args:StateOperate)=>boolean           // 过滤器
+    once?    : boolean                                          // 只侦听一次后自动移除
+    operates?: '*' | 'read' | 'write' | StateOperateType[]      // 只侦听的操作类型
+    filter?  : (args:StateOperate)=>boolean                     // 过滤器 
 }
 export type Watcher = EventListener
 
