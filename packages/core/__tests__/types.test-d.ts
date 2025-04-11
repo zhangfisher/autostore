@@ -1,6 +1,6 @@
 import { Equal, Expect }  from "@type-challenges/utils"
 import { ComputedState } from "../src/types";
-import { ConfigurableState, s, schema,SchemaState } from "../src/schema";
+import { configurable, ConfigurableState, s, schema,SchemaState } from "../src/schema";
 import { AutoStore } from "../src/store";
 
 
@@ -15,18 +15,21 @@ const obj = {
     customer:{
         name: s.string("zhang"),
         age : s.number<number>(18)
-    }
+    } 
 }
 const store = new AutoStore(obj)
 store.state.price
+
+// 示例测试
+type RawState = typeof obj
+
+
 
 type d = ConfigurableState<RawState>
  
 
 type State = ComputedState<typeof obj>
 
-// 示例测试
-type RawState = typeof obj
 
 let objState = obj as unknown as State
 
