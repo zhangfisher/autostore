@@ -1,5 +1,5 @@
 import { Equal, Expect }  from "@type-challenges/utils"
-import { ComputedState } from "../src/types";
+import { ComputedState, Dict } from "../src/types";
 import { configurable, ConfigurableState, s, schema,SchemaState } from "../src/schema";
 import { AutoStore } from "../src/store";
 import { computed } from "../src";
@@ -70,16 +70,21 @@ const store2 = new AutoStore({
         name : configurable("autostore"),
         price: configurable(10),
         count: configurable(2),
-        pay  : configurable(true),
-        
+        pay  : configurable(true),        
         total: computed<number>((scope)=>scope.price * scope.count)
     }
 })
 store2.state.order.name 
 store2.state.order.name
 store2.state.order.price
+store2.state.order.total
+
+
+function state<State extends Dict<any>>(state:State){
+    return state as ComputedState<State>
+}
  class MyState{
-    state = {
+    state = state({
         order:{ 
             name : configurable("autostore"),
             price: configurable(10),
@@ -87,7 +92,7 @@ store2.state.order.price
             pay  : configurable(true) ,
             total: computed<number>((scope)=>scope.price * scope.count)
         }
-    } 
+    })
     constructor(){
          
     }
@@ -108,7 +113,7 @@ store2.state.order.price
         return this._store! as AutoStore<this['state']>
     }
     get reactive(){ 
-        return  this.store.state as ComputedState<this['state']>
+        return  this.store.state //as ComputedState<this['state']>
     }
  }
 
