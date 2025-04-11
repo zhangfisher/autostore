@@ -2,6 +2,7 @@ import { Equal, Expect }  from "@type-challenges/utils"
 import { ComputedState } from "../src/types";
 import { configurable, ConfigurableState, s, schema,SchemaState } from "../src/schema";
 import { AutoStore } from "../src/store";
+import { computed } from "../src";
 
 
 const obj = {
@@ -63,3 +64,55 @@ type cases = [
     }>>
  ]
 
+
+const store2 = new AutoStore({
+    order:{ 
+        name : configurable("autostore"),
+        price: configurable(10),
+        count: configurable(2),
+        pay  : configurable(true),
+        
+        total: computed<number>((scope)=>scope.price * scope.count)
+    }
+})
+store2.state.order.name 
+store2.state.order.name
+store2.state.order.price
+ class MyState{
+    state = {
+        order:{ 
+            name : configurable("autostore"),
+            price: configurable(10),
+            count: configurable(2),
+            pay  : configurable(true) ,
+            total: computed<number>((scope)=>scope.price * scope.count)
+        }
+    } 
+    constructor(){
+         
+    }
+    test(){
+        this.reactive.order.name       
+        this.reactive.order.name   
+        this.reactive.order.total   
+
+        this.store.state.order.name 
+        this.store.state.order.name
+        this.store.state.order.total
+
+        this.state.order.price
+        
+    }
+    private _store?     : AutoStore<any>
+    get store(){
+        return this._store! as AutoStore<this['state']>
+    }
+    get reactive(){ 
+        return  this.store.state as ComputedState<this['state']>
+    }
+ }
+
+
+ const mys = new MyState()
+
+ mys.reactive.order.name
