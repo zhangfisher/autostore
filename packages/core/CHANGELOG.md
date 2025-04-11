@@ -1,5 +1,11 @@
 # autostore
 
+## 1.3.14
+
+### Patch Changes
+
+- [`77543fe`](https://github.com/zhangfisher/autostore/commit/77543feb2a9da3ac4e6090f090251260763a372e) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 修改所有 Symbol 标识常量为字符串以减少版本冲突的可能性
+
 ## 1.3.13
 
 ### Patch Changes
