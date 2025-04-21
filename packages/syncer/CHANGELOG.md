@@ -1,5 +1,14 @@
 # @autostorejs/syncer
 
+## 1.3.15
+
+### Patch Changes
+
+- [`71a12f9`](https://github.com/zhangfisher/autostore/commit/71a12f9f4def90d8ddf01ef43c319aaadf7ab89a) Thanks [@zhangfisher](https://github.com/zhangfisher)! - syncer 支持断开同步指令
+
+- Updated dependencies []:
+  - autostore@1.3.15
+
 ## 1.3.14
 
 ### Patch Changes
