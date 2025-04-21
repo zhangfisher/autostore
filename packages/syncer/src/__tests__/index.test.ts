@@ -8,6 +8,7 @@ describe("远程同步",()=>{
     class WebSocketTansport implements IAutoStoreSyncTransport{
         ready = true
         receiveCallback:any
+        isStop:boolean = false
         constructor(public getPeer:()=>WebSocketTansport){
 
         }
@@ -17,11 +18,13 @@ describe("远程同步",()=>{
         receive(callback:any){
             this.receiveCallback=callback
         }
+        onStop(){
+            this.isStop = true
+        }
     }
 
     const localTransport: WebSocketTansport = new WebSocketTansport(()=>remoteTransport )
     const remoteTransport: WebSocketTansport =  new WebSocketTansport(()=>localTransport)
-
 
     test("一对一完全对象同步",()=>{
         const localStore = new AutoStore({
@@ -115,5 +118,34 @@ describe("远程同步",()=>{
         remoteStore.state.remoteOrder.count = 4 
         expect(localStore.state.order.count).toBe(4)        
     })
+
+    test("停止同步时通知对方断开连接",()=>{
+        const localStore = new AutoStore({
+            order:{
+                price:100,
+                count:2,
+                total:computed(order=>order.price * order.count)
+            }
+        })
+        const remoteStore = new AutoStore({
+            order:{
+                price:100,
+                count:2,
+                total:computed(order=>order.price * order.count)
+            }
+        })
+        
+        const localSyncer = new AutoStoreSyncer(localStore,{transport:localTransport})
+        const remoteSyncer = new AutoStoreSyncer(remoteStore,{transport:remoteTransport})
+
+        localStore.state.order.count = 3
+        expect(remoteStore.state).toEqual(localStore.state)
+        localSyncer.stop()
+        expect(localTransport.isStop).toBeTruthy()
+        expect(remoteTransport.isStop).toBeTruthy()
+        localStore.state.order.count = 4
+        expect(remoteStore.state).not.toEqual(localStore.state)
+    })
+
 
 })

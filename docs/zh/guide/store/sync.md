@@ -497,6 +497,22 @@ type StateRemoteOperate {
     flags     : number 
 } 
 ```
+#### 停止同步
+
+可以通过`.stop`方法停止同步。
+
+```ts {4}
+const syncer = new AutoStoreSyncer(localStore,{
+    transport:localTransport,
+})
+syncer.stop()
+```
+
+当调用`stop()`后，`syncer`会停止同步，然后：
+
+- 调用`transport.onStop`方法，因此可以在停止同步时进行断开连接等工作。
+- 同时会向对方发送一个`stop`操作指令，对方的`syncer`会收到这个指令，也会停止同步和调用`transport.onStop`方法。
+
 
 ## 示例
 

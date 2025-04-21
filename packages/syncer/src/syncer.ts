@@ -74,7 +74,10 @@ export class AutoStoreSyncer{
         } as StateRemoteOperate
     }
 
-    start(){
+    start(){        
+        if(!(this.transport && this.transport.ready)){
+            throw new Error('AutoStore sync transport not ready')
+        }
         if(this.syncing) return
         try{
             this.syncing = true
@@ -125,7 +128,12 @@ export class AutoStoreSyncer{
         if(typeof(this._options.onReceive)==='function'){
             if(this._options.onReceive.call(this,operate)===false) return
         }
-        this._applyOperate(operate,SYNC_INIT_FLAG)
+        if(operate.type==='$stop'){
+            this.stop(false)
+            this.transport.onStop && this.transport.onStop()
+        }else{
+            this._applyOperate(operate,SYNC_INIT_FLAG)
+        }        
     }
 
     private _applyOperate(operate:StateRemoteOperate,extraFlag:number=0){
@@ -164,9 +172,22 @@ export class AutoStoreSyncer{
         }
     }
 
-    stop(){
-        if(!this.syncing) return
+    stop(disconnect:boolean=true){
+        if(!this.syncing) return       
         this._watcher && this._watcher.off()
+        this.syncing=false
+        if(disconnect) this._disconnect()
+    }
+
+    private _disconnect(){
+        // 向对方发送一个停止同步的信号
+        this._options.transport.send({
+            type  : '$stop',
+            path: [],
+            value: undefined,
+            flags:SYNC_CYCLE_FLAG
+        })
+        this.transport.onStop && this.transport.onStop()
     }
     /**
      * 
