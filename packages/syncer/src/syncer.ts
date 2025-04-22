@@ -4,118 +4,121 @@
  * 
  */
 
-import { 
-    AutoStore, 
+import {
+    AutoStore,
     SYNC_INIT_FLAG,
-    SYNC_CYCLE_FLAG, 
-    getVal, 
-    isAsyncComputedValue, 
-    PATH_DELIMITER, 
-    pathStartsWith, 
-    setVal, 
-    StateOperate, 
-    Watcher 
+    SYNC_CYCLE_FLAG,
+    getVal,
+    isAsyncComputedValue,
+    PATH_DELIMITER,
+    pathStartsWith,
+    setVal,
+    StateOperate,
+    Watcher
 } from "autostore";
 import { IAutoStoreSyncTransport, StateRemoteOperate } from "./transport";
- 
+
 export type AutoStoreSyncerOptions = {
-    entry?       : string[]
-    remoteEntry? : string[]
-    transport?   : IAutoStoreSyncTransport
-    autostart?   : boolean 
+    id?: string
+    entry?: string[]
+    remoteEntry?: string[]
+    transport?: IAutoStoreSyncTransport
+    autostart?: boolean
     // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
-    onSend?      : (operate:StateRemoteOperate)=>boolean | void        
-        // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
-    onReceive?   : (operate:StateRemoteOperate)=>boolean | void    
+    onSend?: (operate: StateRemoteOperate) => boolean | void
+    // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
+    onReceive?: (operate: StateRemoteOperate) => boolean | void
     // 是否进行一次同步
-    immediate?   : boolean
+    immediate?: boolean
     // 当启用缓存时，缓存的最大数量,超出部分会自动删除
-    maxCacheSize?: number           
+    maxCacheSize?: number
 }
 
-export class AutoStoreSyncer{
-    private _options: Required<AutoStoreSyncerOptions> 
-    syncing:boolean = false
-    private _watcher:Watcher | undefined
-    private _operateCache:StateRemoteOperate[] = []         // 本地操作缓存,
-    constructor(public store:AutoStore<any>,options?:AutoStoreSyncerOptions){
+export class AutoStoreSyncer {
+    private _options: Required<AutoStoreSyncerOptions>
+    syncing: boolean = false
+    private _watcher: Watcher | undefined
+    private _operateCache: StateRemoteOperate[] = []         // 本地操作缓存,
+    constructor(public store: AutoStore<any>, options?: AutoStoreSyncerOptions) {
         this._options = Object.assign({
-            entry       : [],
-            remoteEntry : [],
-            autostart   : true,
+            id: store.id,
+            entry: [],
+            remoteEntry: [],
+            autostart: true,
             maxCacheSize: 100
-        },options) as Required<AutoStoreSyncerOptions> 
+        }, options) as Required<AutoStoreSyncerOptions>
         this._initSync()
-        this._options.autostart && this.start()        
+        this._options.autostart && this.start()
     }
-    get options(){ return this._options }
-    get transport(){ return this._options.transport }
-    get entry(){return this._options.entry}
-    get remoteEntry(){return this._options.remoteEntry}
+    get id() { return this._options.id }
+    get options() { return this._options }
+    get transport() { return this._options.transport }
+    get entry() { return this._options.entry }
+    get remoteEntry() { return this._options.remoteEntry }
 
-    private _initSync(){
-        if(!this.options.immediate) return 
-        const entryValue = this.store.getSnap({entry:this.entry.join(PATH_DELIMITER)})
+    private _initSync() {
+        if (!this.options.immediate) return
+        const entryValue = this.store.getSnap({ entry: this.entry.join(PATH_DELIMITER) })
         this._sendToRemote({
-            type  : 'set',
-            path  : this.options.remoteEntry,
-            value : entryValue,
+            type: 'set',
+            path: this.options.remoteEntry,
+            value: entryValue,
             flags: SYNC_INIT_FLAG
         })
     }
 
-    private createRemoteOperate(operate:StateOperate){
+    private createRemoteOperate(operate: StateOperate) {
         return {
-            type  : operate.type,
-            path  : operate.path,
-            value : operate.value,
+            type: operate.type,
+            path: operate.path,
+            value: operate.value,
             indexs: operate.indexs,
-            flags : operate.flags
+            flags: operate.flags
         } as StateRemoteOperate
     }
 
-    start(){        
-        if(!(this.transport && this.transport.ready)){
+    start() {
+        if (!(this.transport && this.transport.ready)) {
             throw new Error('AutoStore sync transport not ready')
         }
-        if(this.syncing) return
-        try{
+        if (this.syncing) return
+        try {
             this.syncing = true
             // 发送更新到了远程
-            this._watcher = this.store.watch((operate)=>{                
+            this._watcher = this.store.watch((operate) => {
                 this._sendToRemote(operate)
-            },{
-                operates:'write'
+            }, {
+                operates: 'write'
             })
             // 收到远程更新
-            this._options.transport.receive((operate)=>{
+            this._options.transport.receive((operate) => {
                 this._onReceiveFromRemote(operate)
             })
-        }catch(e){         
+        } catch (e) {
             this.syncing = false
             throw e
-        }        
+        }
     }
 
-    private _sendToRemote(operate:StateOperate){
-        if((operate.flags! & SYNC_CYCLE_FLAG) > 0) return                 
-        const localEntry = this.options.entry           
-        const remoteEntry = this.options.remoteEntry 
-        
-        if(!pathStartsWith(this._options.entry,operate.path)) return 
-        
+    private _sendToRemote(operate: StateOperate) {
+        if ((operate.flags! & SYNC_CYCLE_FLAG) > 0) return
+        const localEntry = this.options.entry
+        const remoteEntry = this.options.remoteEntry
+
+        if (!pathStartsWith(this._options.entry, operate.path)) return
+
         // 路径变换
-        operate.path = [...remoteEntry,...operate.path.slice(localEntry.length)]
+        operate.path = [...remoteEntry, ...operate.path.slice(localEntry.length)]
 
         const remoteOperate = this.createRemoteOperate(operate)
 
-        if(typeof(this._options.onSend)==='function'){
-            if(this._options.onSend.call(this,remoteOperate)===false) return
+        if (typeof (this._options.onSend) === 'function') {
+            if (this._options.onSend.call(this, remoteOperate) === false) return
         }
         // 传输未准备好
-        if(!this.transport || !this.transport.ready){
+        if (!this.transport || !this.transport.ready) {
             this._operateCache.push(remoteOperate)
-            if(this._operateCache.length>this._options.maxCacheSize){
+            if (this._operateCache.length > this._options.maxCacheSize) {
                 this._operateCache.shift()
             }
             return
@@ -124,68 +127,68 @@ export class AutoStoreSyncer{
         this._options.transport.send(remoteOperate)
     }
 
-    private _onReceiveFromRemote(operate:StateRemoteOperate){
-        if(typeof(this._options.onReceive)==='function'){
-            if(this._options.onReceive.call(this,operate)===false) return
+    private _onReceiveFromRemote(operate: StateRemoteOperate) {
+        if (typeof (this._options.onReceive) === 'function') {
+            if (this._options.onReceive.call(this, operate) === false) return
         }
-        if(operate.type==='$stop'){
+        if (operate.type === '$stop') {
             this.stop(false)
             this.transport.onStop && this.transport.onStop()
-        }else{
-            this._applyOperate(operate,SYNC_INIT_FLAG)
-        }        
+        } else {
+            this._applyOperate(operate, SYNC_INIT_FLAG)
+        }
     }
 
-    private _applyOperate(operate:StateRemoteOperate,extraFlag:number=0){
-        const {type,value,flags,indexs} = operate        
-        const toPath = [...this.entry,...operate.path.slice(this.options.remoteEntry.length)]
-        const silent = (flags & SYNC_CYCLE_FLAG ) > 0
+    private _applyOperate(operate: StateRemoteOperate, extraFlag: number = 0) {
+        const { type, value, flags, indexs } = operate
+        const toPath = [...this.entry, ...operate.path.slice(this.options.remoteEntry.length)]
+        const silent = (flags & SYNC_CYCLE_FLAG) > 0
         const updateOpts = {
-            flags:SYNC_CYCLE_FLAG+extraFlag,
+            flags: SYNC_CYCLE_FLAG + extraFlag,
             silent
         }
-        if(type==='set' || type==='update'){
-            this.store.update(state=>{
+        if (type === 'set' || type === 'update') {
+            this.store.update(state => {
                 // getVal提供一个默认值，否则当目标路径不存在时会触发invalid state path error
-                if(isAsyncComputedValue(getVal(state,toPath,true))){
-                    setVal(state,toPath.concat('value'),value)
-                }else{
-                    setVal(state,toPath,value)
+                if (isAsyncComputedValue(getVal(state, toPath, true))) {
+                    setVal(state, toPath.concat('value'), value)
+                } else {
+                    setVal(state, toPath, value)
                 }
-            },updateOpts)
-        }else if(type==='delete'){
-            this.store.update(state=>{
-                setVal(state,toPath,undefined)
-            },updateOpts)
-        }else if(type==='insert'){
-            this.store.update(state=>{                    
-                const arr = getVal(state,operate.parentPath)
-                if(indexs) arr.splice(indexs[0],0,...value)
-            },updateOpts)
-        }else if(type==='remove'){ 
-            this.store.update(state=>{
-                const arr = getVal(state,toPath)                    
-                if(indexs){
-                    arr.splice(indexs[0],indexs.length)
+            }, updateOpts)
+        } else if (type === 'delete') {
+            this.store.update(state => {
+                setVal(state, toPath, undefined)
+            }, updateOpts)
+        } else if (type === 'insert') {
+            this.store.update(state => {
+                const arr = getVal(state, operate.parentPath)
+                if (indexs) arr.splice(indexs[0], 0, ...value)
+            }, updateOpts)
+        } else if (type === 'remove') {
+            this.store.update(state => {
+                const arr = getVal(state, toPath)
+                if (indexs) {
+                    arr.splice(indexs[0], indexs.length)
                 }
-            },updateOpts)
+            }, updateOpts)
         }
     }
 
-    stop(disconnect:boolean=true){
-        if(!this.syncing) return       
+    stop(disconnect: boolean = true) {
+        if (!this.syncing) return
         this._watcher && this._watcher.off()
-        this.syncing=false
-        if(disconnect) this._disconnect()
+        this.syncing = false
+        if (disconnect) this._disconnect()
     }
 
-    private _disconnect(){
+    private _disconnect() {
         // 向对方发送一个停止同步的信号
         this._options.transport.send({
-            type  : '$stop',
+            type: '$stop',
             path: [],
             value: undefined,
-            flags:SYNC_CYCLE_FLAG
+            flags: SYNC_CYCLE_FLAG
         })
         this.transport.onStop && this.transport.onStop()
     }
@@ -197,14 +200,14 @@ export class AutoStoreSyncer{
      * 然后应该调用此方法，将本地操作缓存发送到远程
      * 
      */
-    async flush(){
-        if(!this.transport.ready){
+    async flush() {
+        if (!this.transport.ready) {
             throw new Error('transport not ready')
         }
-        await Promise.all(this._operateCache.map(operate=>{
+        await Promise.all(this._operateCache.map(operate => {
             return this._options.transport.send(operate)
-        })).finally(()=>{
+        })).finally(() => {
             this._operateCache = []
         })
-    }    
+    }
 }
