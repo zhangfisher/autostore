@@ -1,5 +1,14 @@
 # @autostorejs/syncer
 
+## 1.3.18
+
+### Patch Changes
+
+-   [`c9cb218`](https://github.com/zhangfisher/autostore/commit/c9cb218655e99ec48fbe15170000398f8212f941) Thanks [@zhangfisher](https://github.com/zhangfisher)! - @autostorejs/syncer 的 StateRemoteOperate 增加一个 id 标识用来区分不同的同步器
+
+-   Updated dependencies []:
+    -   autostore@1.3.18
+
 ## 1.3.17
 
 ### Patch Changes
