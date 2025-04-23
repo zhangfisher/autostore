@@ -45,27 +45,17 @@ export class AutoStoreSyncer {
             entry: [],
             remoteEntry: [],
             autostart: true,
-            maxCacheSize: 100
+            maxCacheSize: 100,
+            immediate: false
         }, options) as Required<AutoStoreSyncerOptions>
-        this._initSync()
         this._options.autostart && this.start()
+        if (this.options.immediate) this.update()
     }
     get id() { return this._options.id }
     get options() { return this._options }
     get transport() { return this._options.transport }
     get entry() { return this._options.entry }
     get remoteEntry() { return this._options.remoteEntry }
-
-    private _initSync() {
-        if (!this.options.immediate) return
-        const entryValue = this.store.getSnap({ entry: this.entry.join(PATH_DELIMITER) })
-        this._sendToRemote({
-            type: 'set',
-            path: this.options.remoteEntry,
-            value: entryValue,
-            flags: SYNC_INIT_FLAG
-        })
-    }
 
     private createRemoteOperate(operate: StateOperate) {
         return {
@@ -94,6 +84,8 @@ export class AutoStoreSyncer {
             this._options.transport.receive((operate) => {
                 this._onReceiveFromRemote(operate)
             })
+
+
         } catch (e) {
             this.syncing = false
             throw e
@@ -115,16 +107,8 @@ export class AutoStoreSyncer {
         if (typeof (this._options.onSend) === 'function') {
             if (this._options.onSend.call(this, remoteOperate) === false) return
         }
-        // 传输未准备好
-        if (!this.transport || !this.transport.ready) {
-            this._operateCache.push(remoteOperate)
-            if (this._operateCache.length > this._options.maxCacheSize) {
-                this._operateCache.shift()
-            }
-            return
-        }
 
-        this._options.transport.send(remoteOperate)
+        this._sendOperate(remoteOperate)
     }
 
     private _onReceiveFromRemote(operate: StateRemoteOperate) {
@@ -134,9 +118,22 @@ export class AutoStoreSyncer {
         if (operate.type === '$stop') {
             this.stop(false)
             this.transport.onStop && this.transport.onStop()
+        } else if (operate.type === '$update') {
+            this._sendStore(operate.path)
         } else {
             this._applyOperate(operate, SYNC_INIT_FLAG)
         }
+    }
+    /**
+     * 向远程发送整个store
+     */
+    private _sendStore(path: string[]) {
+        this.transport.send({
+            type: 'set',
+            path: [],
+            value: this.store.getSnap({ entry: path.join(PATH_DELIMITER) }),
+            flags: SYNC_INIT_FLAG
+        })
     }
 
     private _applyOperate(operate: StateRemoteOperate, extraFlag: number = 0) {
@@ -201,13 +198,39 @@ export class AutoStoreSyncer {
      * 
      */
     async flush() {
-        if (!this.transport.ready) {
-            throw new Error('transport not ready')
-        }
+        this._asertTransportReady()
         await Promise.all(this._operateCache.map(operate => {
             return this._options.transport.send(operate)
         })).finally(() => {
             this._operateCache = []
         })
+    }
+    private _asertTransportReady() {
+        if (!this.transport.ready) {
+            throw new Error('transport not ready')
+        }
+    }
+    private _sendOperate(operate: StateRemoteOperate) {
+        // 传输未准备好
+        if (!this.transport || !this.transport.ready) {
+            this._operateCache.push(operate)
+            if (this._operateCache.length > this._options.maxCacheSize) {
+                this._operateCache.shift()
+            }
+            return
+        }
+        this._options.transport.send(operate)
+    }
+    /**
+     * 向对方请求一次全同步
+     */
+    update() {
+        const operate = {
+            type: '$update',
+            path: this.options.remoteEntry,
+            value: undefined,
+            flags: SYNC_CYCLE_FLAG
+        } as StateRemoteOperate
+        this._sendOperate(operate)
     }
 }
