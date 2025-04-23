@@ -1,5 +1,12 @@
 # @autostorejs/react
 
+## 1.3.17
+
+### Patch Changes
+
+-   Updated dependencies []:
+    -   autostore@1.3.17
+
 ## 1.3.16
 
 ### Patch Changes

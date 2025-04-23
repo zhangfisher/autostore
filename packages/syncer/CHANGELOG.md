@@ -1,5 +1,14 @@
 # @autostorejs/syncer
 
+## 1.3.17
+
+### Patch Changes
+
+-   [`2ac683c`](https://github.com/zhangfisher/autostore/commit/2ac683c5a89fa3ef71828157017474a2860bbcd1) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 增加 update 方法用于手动全同步
+
+-   Updated dependencies []:
+    -   autostore@1.3.17
+
 ## 1.3.16
 
 ### Patch Changes
