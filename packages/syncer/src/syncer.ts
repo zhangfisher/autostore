@@ -59,6 +59,7 @@ export class AutoStoreSyncer {
 
     private createRemoteOperate(operate: StateOperate) {
         return {
+            id: this.id,
             type: operate.type,
             path: operate.path,
             value: operate.value,
@@ -129,6 +130,7 @@ export class AutoStoreSyncer {
      */
     private _sendStore(path: string[]) {
         this.transport.send({
+            id: this.id,
             type: 'set',
             path: [],
             value: this.store.getSnap({ entry: path.join(PATH_DELIMITER) }),
@@ -182,6 +184,7 @@ export class AutoStoreSyncer {
     private _disconnect() {
         // 向对方发送一个停止同步的信号
         this._options.transport.send({
+            id: this.id,
             type: '$stop',
             path: [],
             value: undefined,
@@ -226,6 +229,7 @@ export class AutoStoreSyncer {
      */
     update() {
         const operate = {
+            id: this.id,
             type: '$update',
             path: this.options.remoteEntry,
             value: undefined,
