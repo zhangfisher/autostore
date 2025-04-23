@@ -1,6 +1,6 @@
 {
   "name": "@autostorejs/syncer",
-  "version": "1.3.16",
+  "version": "1.3.17",
   "main": "src/index.ts",
   "repository": {
     "type": "git",
