@@ -52,7 +52,7 @@
 
 import { ComputedObjects } from "../computed/computedObjects";
 import { assignObject } from "flex-tools/object/assignObject"
-import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, StoreSyncer, StoreSyncOptions, UpdateOptions } from "./types";
+import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from "./types";
 import type { Dict } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";
@@ -61,8 +61,8 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isFunction, isPlainObject, pathStartsWith, setVal } from "../utils";
-import { BATCH_UPDATE_EVENT, PATH_DELIMITER, SYNC_CYCLE_FLAG, SYNC_INIT_FLAG } from '../consts';
+import { forEachObject, getSnapshot, getVal, setVal } from "../utils";
+import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from '../consts';
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects";
@@ -74,11 +74,9 @@ import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
 import { ObjectKeyPaths, GetTypeByPath } from '../types';
-import { getValueByPath } from "../utils/getValueByPath";
 import { SchemaManager } from "../schema";
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
-    private static _seq = 0
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>
     public watchObjects: WatchObjects<State>
@@ -678,198 +676,5 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     getSnap<Entry extends string>(options?: { entry?: Entry, reserveAsync?: boolean }) {
         const { reserveAsync, entry } = Object.assign({ reserveAsync: true }, options)
         return (getSnapshot(entry ? getVal(this._data, entry) : this._data, reserveAsync)) as GetTypeByPath<ComputedState<State>, Entry>
-    }
-
-    /**
-     * 克隆当前 store 的一个子状态树,创建新的 store 实例
-     * @param options 配置选项
-     * @param options.entry 子状态树的路径
-     * @param options.sync 是否同步更新到父 store,默认为 true
-     * @returns 新的 store 实例
-     * @throws 当 entry 路径对应的值不是普通对象时抛出错误
-     * @example
-     * const store = new AutoStore({ foo: { bar: 1 } })
-     * const subStore = store.clone({ entry: 'foo' }) 
-     */
-    clone<Entry extends string, CloneState extends Record<string, any> = GetTypeByPath<State, Entry>>(
-        options?: AutoStoreOptions<State> & { entry?: Entry, sync?: 'none' | StoreSyncOptions['direction'] }
-    ) {
-        const { sync, entry } = Object.assign({ sync: 'both' }, this._options, options)
-        const state = getValueByPath(this.getSnap(), entry) as CloneState
-        if (!isPlainObject(state)) {
-            throw new Error(`The entry path must be an object, but got ${typeof (state)}`)
-        }
-        const clonedOptions = Object.assign({}, this._options, options) as unknown as AutoStoreOptions<CloneState>
-        const clonedStore = new AutoStore<CloneState>(state, clonedOptions)
-
-        if (sync !== 'none') {
-            this.sync(clonedStore, {
-                from: entry,
-                immediate: false,
-                direction: sync
-            })
-        }
-        return clonedStore
-    }
-    /**
-     * 同步两个Store，使用两个Store的状态数据同步
-     * 
-     * const store1 = new AutoStore({ a: {
-     *     x:1, y:2, z:3
-     * }})
-     * 
-     * const store2 = new AutoStore({ b: {
-     *    x:2, y:3, z:4
-     * }})
-     * 
-     * store1.sync(store2,{
-     *  from:'a',
-     *  to:'b'
-     * })   ----> store1的a对象的值会同步到store2的b对象上
-     * 
-     * @param toStore 
-     * @param entry 
-     */
-    sync(toStore: AutoStore<any>, options?: StoreSyncOptions): StoreSyncer {
-        const { from, to, filter, immediate, direction = 'both', pathMap } = Object.assign({
-            immediate: true,
-            direction: 'both'
-        }, options) as StoreSyncOptions
-        const fromEntry = from ? from.split(PATH_DELIMITER) : []
-        const toEntry = to ? to.split(PATH_DELIMITER) : []
-
-        const watchers: Watcher[] = []
-        const seq = ++AutoStore._seq
-
-        const mapPath = (path: string[], value: any, dir: 'from' | 'to' = 'from'): string[] | undefined => {
-            return pathMap && isFunction((pathMap as any)[dir]) ? (pathMap as any)[dir](path, value) : path
-        }
-
-        const applyToStore = (store: AutoStore<any>, relPath: string[], operate: StateOperate, extraFlags: number = 0) => {
-            const { type, value, flags = 0, indexs } = operate
-            const silent = (flags & SYNC_CYCLE_FLAG) > 0
-            if (silent) return
-            const updateOpts = {
-                flags: SYNC_CYCLE_FLAG + extraFlags,
-                silent
-            }
-            if (type === 'set' || type === 'update') {
-                store.update(state => {
-                    if (isAsyncComputedValue(getVal(state, relPath))) {
-                        setVal(state, relPath.concat('value'), value)
-                    } else {
-                        setVal(state, relPath, value)
-                    }
-                }, updateOpts)
-            } else if (type === 'delete') {
-                store.update(state => {
-                    setVal(state, relPath, undefined)
-                }, updateOpts)
-            } else if (type === 'insert') {
-                store.update(state => {
-                    const arr = getVal(state, operate.parentPath)
-                    if (indexs) arr.splice(indexs[0], 0, ...value)
-                }, updateOpts)
-            } else if (type === 'remove') {
-                store.update(state => {
-                    const arr = getVal(state, relPath)
-                    if (indexs) {
-                        arr.splice(indexs[0], indexs.length)
-                    }
-                }, updateOpts)
-            }
-        }
-        // 马上进行一次全同步
-        if (immediate) {
-            const fromEntryValue = this.getSnap({ entry: fromEntry.join(PATH_DELIMITER) }) as any
-            // 当指定了映射关系时，需要通过进行遍历来执行全同步
-            if (pathMap) {
-                forEachObject(fromEntryValue, ({ value, path }) => {
-                    const toPath = mapPath(path, value, 'to')
-                    if (toPath) {
-                        const toValue = Array.isArray(value) ? [] :
-                            ((typeof (value) === 'object') ? {} : value)
-                        applyToStore(toStore, [...toEntry, ...toPath], {
-                            type: 'set',
-                            path: toPath,
-                            value: toValue
-                        }, SYNC_INIT_FLAG)
-                    }
-                })
-            } else {// 没有指定映射关系时，可以简单进行Object.assign，会更加高效
-                const toPath = toEntry
-                if (typeof (fromEntryValue) === 'object') {
-                    toStore.update((state) => {
-                        const toEntryValue = getVal(state, toPath, undefined)
-                        if (toEntryValue === undefined) {
-                            setVal(state, toPath, fromEntryValue)
-                        } else {
-                            if (Array.isArray(fromEntryValue)) {
-                                if (Array.isArray(toEntryValue)) {
-                                    toEntryValue.splice(0, toEntryValue.length, ...fromEntryValue)
-                                } else {
-                                    setVal(state, toPath, fromEntryValue)
-                                }
-                            } else {
-                                Object.assign(toEntryValue, fromEntryValue)
-                            }
-                        }
-                    }, {
-                        silent: true,
-                        flags: SYNC_CYCLE_FLAG + SYNC_INIT_FLAG
-                    })
-                } else {
-                    toStore.update((state) => {
-                        setVal(state, toPath, fromEntryValue)
-                    }, {
-                        silent: true,
-                        flags: SYNC_CYCLE_FLAG + SYNC_INIT_FLAG
-                    })
-                }
-            }
-        }
-
-        const getMappedPath = (operate: StateOperate, entry: string[], dir: 'from' | 'to') => {
-            if ((operate.flags! & SYNC_CYCLE_FLAG) > 0) return
-            if (!pathStartsWith(entry, operate.path)) return
-            return mapPath(operate.path, operate.value, dir)
-        }
-
-        const syncer = {
-            on: () => {
-                if (watchers.length > 0) return
-                // from
-                if (['both', 'farward'].includes(direction)) {
-                    watchers.push(this.watch('*', (operate) => {
-                        if (isFunction(filter) && filter.call(this, operate) === false) return
-                        const mappedPath = getMappedPath(operate, fromEntry, "to") //mapPath(operate.path,operate.value,'to')
-                        if (mappedPath === undefined) return
-                        operate.path = mappedPath
-                        const toPath = [...toEntry, ...operate.path.slice(fromEntry.length)]
-                        operate.path = [...toEntry, ...operate.path.slice(fromEntry.length)]
-                        if (operate.parentPath) operate.parentPath = [...toEntry, ...operate.parentPath.slice(fromEntry.length)]
-                        applyToStore(toStore, toPath, operate)
-                    }, { operates: "write" }))
-                }
-                // to
-                if (['both', 'backward'].includes(direction)) {
-                    watchers.push(toStore.watch('*', (operate) => {
-                        const mappedPath = getMappedPath(operate, toEntry, "from") //mapPath(operate.path,operate.value,'to')
-                        if (mappedPath === undefined) return
-                        operate.path = mappedPath
-                        const fromPath = [...fromEntry, ...operate.path.slice(toEntry.length)]
-                        operate.path = [...fromEntry, ...operate.path]
-                        if (operate.parentPath) operate.parentPath = [...fromEntry, ...operate.parentPath.slice(fromEntry.length)]
-                        applyToStore(this, fromPath, operate)
-                    }, { operates: "write" }))
-                }
-            },
-            off: () => {
-                watchers.forEach(watcher => watcher.off())
-                watchers.splice(0, watchers.length)
-            }
-        }
-        syncer.on()
-        return syncer
     }
 }

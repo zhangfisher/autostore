@@ -14,27 +14,19 @@ import {
     StateOperate,
     Watcher
 } from "autostore";
-import { IAutoStoreSyncTransport, StateRemoteOperate } from "./transport";
+import { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
+import { forEachObject } from "./utils/forEachObject";
+import { isFunction } from "./utils/isFunction";
 
-export type AutoStoreSyncerOptions = {
-    id?: string
-    from?: string[]
-    to?: string[]
-    transport?: IAutoStoreSyncTransport
-    autostart?: boolean
-    // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
-    onSend?: (operate: StateRemoteOperate) => boolean | void
-    // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
-    onReceive?: (operate: StateRemoteOperate) => boolean | void
-    // 是否进行一次同步
-    immediate?: boolean
-    // 当启用缓存时，缓存的最大数量,超出部分会自动删除
-    maxCacheSize?: number
-}
+
+type NormalizeAutoStoreSyncerOptions = Required<Omit<AutoStoreSyncerOptions, 'from' | 'to'> & {
+    from: string[]
+    to: string[]
+}>
 
 export class AutoStoreSyncer {
     static seq = 0
-    private _options: Required<AutoStoreSyncerOptions>
+    private _options: NormalizeAutoStoreSyncerOptions
     syncing: boolean = false
     private _watcher: Watcher | undefined
     private _operateCache: StateRemoteOperate[] = []         // 本地操作缓存,
@@ -46,8 +38,12 @@ export class AutoStoreSyncer {
             to: [],
             autostart: true,
             maxCacheSize: 100,
-            immediate: false
-        }, options) as Required<AutoStoreSyncerOptions>
+            immediate: false,
+            direction: 'both',
+            pathMap: {}
+        }, options) as any
+        if (typeof (this._options.from) === 'string') this._options.from = (this._options.from as string).split(PATH_DELIMITER)
+        if (typeof (this._options.to) === 'string') this._options.to = (this._options.to as string).split(PATH_DELIMITER)
         this.seq = ++AutoStoreSyncer.seq
         this._options.autostart && this.start()
         if (this.options.immediate) this.push()
@@ -63,6 +59,7 @@ export class AutoStoreSyncer {
             id: this.id,
             type: operate.type,
             path: operate.path,
+            parentPath: operate.parentPath,
             value: operate.value,
             indexs: operate.indexs,
             flags: operate.flags
@@ -78,17 +75,20 @@ export class AutoStoreSyncer {
             this.syncing = true
             // 发送更新到了远程
             this._watcher = this.store.watch((operate) => {
+                if (isFunction(this._options.filter)) {
+                    if (this._options.filter(operate) === false) return
+                }
                 if (operate.flags === this.seq) return
+                if (this.options.direction === "backward") return
                 this._sendToRemote(operate)
             }, {
                 operates: 'write'
             })
             // 收到远程更新
             this._options.transport.receive((operate) => {
+                if (this.options.direction === "forward" && !operate.type.startsWith('$')) return
                 this._onReceiveFromRemote(operate)
             })
-
-
         } catch (e) {
             this.syncing = false
             throw e
@@ -101,16 +101,21 @@ export class AutoStoreSyncer {
         const remoteEntry = this.options.to
 
         if (!pathStartsWith(this._options.from, operate.path)) return
-
         // 路径变换
-        operate.path = [...remoteEntry, ...operate.path.slice(localEntry.length)]
+        if (typeof (this._options.pathMap.toRemote) === 'function') {
+            const toPath = this._options.pathMap.toRemote(operate.path.slice(this._options.from.length), operate.value)
+            if (toPath) {
+                operate.path = [...remoteEntry, ...toPath]
+            }
+        } else {
+            operate.path = [...remoteEntry, ...operate.path.slice(localEntry.length)]
+        }
 
         const remoteOperate = this.createRemoteOperate(operate)
 
         if (typeof (this._options.onSend) === 'function') {
             if (this._options.onSend.call(this, remoteOperate) === false) return
         }
-
         this._sendOperate(remoteOperate)
     }
 
@@ -125,13 +130,39 @@ export class AutoStoreSyncer {
             this._updateStore(operate)
         } else if (operate.type === '$pull') {
             this._sendStore(operate)
+        } else if (operate.type === '$pull-update') {
+            this._pullStore(operate)
         } else {
             this._applyOperate(operate)
         }
     }
 
+    private _pullStore(operate: StateRemoteOperate) {
+        if (typeof (this._options.pathMap.toLocal) === 'function') {
+            forEachObject(operate.value, ({ path, value }) => {
+                const newPath = this._options.pathMap.toLocal!(path, value)
+                if (newPath) {
+                    const toPath = [...this.entry, ...newPath]
+                    if (isAsyncComputedValue(getVal(this.store.state, toPath, true))) {
+                        setVal(this.store.state, toPath.concat('value'), value)
+                    } else {
+                        setVal(this.store.state, toPath, value)
+                    }
+                }
+            })
+        } else {
+            operate.type = "set"
+            this._applyOperate(operate)
+        }
+    }
     private _applyOperate(operate: StateRemoteOperate) {
+
         const { type, value, indexs } = operate
+        // 路径映射
+        const newPath = this._mapPath(operate.path, operate.value, 'toLocal')
+        if (!newPath) return
+        operate.path = newPath
+
         const toPath = [...this.entry, ...operate.path.slice(this.options.to.length)]
         const updateOpts = {
             flags: this.seq
@@ -151,7 +182,7 @@ export class AutoStoreSyncer {
             }, updateOpts)
         } else if (type === 'insert') {
             this.store.update(state => {
-                const arr = getVal(state, operate.parentPath)
+                const arr = getVal(state, toPath)
                 if (indexs) arr.splice(indexs[0], 0, ...value)
             }, updateOpts)
         } else if (type === 'remove') {
@@ -214,30 +245,64 @@ export class AutoStoreSyncer {
         }
         this._options.transport.send(operate)
     }
+
+    private _getLocalSnap() {
+        return this.store.getSnap({ entry: this._options.from.join(PATH_DELIMITER) })
+    }
     /**
      * 将本地store推送到远程
      */
     push() {
-        const operate = {
-            id: this.id,
-            type: '$push',
-            path: this.options.to,
-            value: this.store.getSnap({ entry: this._options.from.join(PATH_DELIMITER) }),
-            flags: 0
-        } as StateRemoteOperate
-        this._sendOperate(operate)
+        const localSnap = this._getLocalSnap()
+        if (typeof (this._options.pathMap.toRemote) === 'function') {
+            forEachObject(localSnap, ({ value, path }) => {
+                const toValue = Array.isArray(value) ? [] : ((typeof (value) === 'object') ? {} : value)
+                const toPath = this._mapPath(path, toValue, 'toRemote')
+                if (toPath) {
+                    const operate = {
+                        type: 'set',
+                        path: [... this.options.to, ...toPath],
+                        value: toValue
+                    } as StateRemoteOperate
+                    this._sendOperate(operate)
+                }
+            })
+        } else {
+            this._sendOperate({
+                id: this.id,
+                type: '$push',
+                path: this.options.to,
+                value: localSnap,
+                flags: 0
+            } as StateRemoteOperate)
+        }
     }
+
     /**
      * 响应$push时调用此方法
      * @param operate 
      */
     private _updateStore(operate: StateRemoteOperate) {
-        const toPath = [...this.entry, ...operate.path]
-        this.store.update(state => {
-            setVal(state, toPath, operate.value)
-        }, {
-            flags: this.seq
-        })
+        if (typeof (this._options.pathMap.toLocal) === 'function') {
+            forEachObject(operate.value, ({ value, path }) => {
+                const toValue = Array.isArray(value) ? [] : ((typeof (value) === 'object') ? {} : value)
+                const toPath = this._mapPath(path, toValue, 'toLocal')
+                if (toPath) {
+                    this.store.update(state => {
+                        setVal(state, toPath, toValue)
+                    }, {
+                        flags: this.seq
+                    })
+                }
+            })
+        } else {
+            const toPath = [...this.entry, ...operate.path]
+            this.store.update(state => {
+                setVal(state, toPath, operate.value)
+            }, {
+                flags: this.seq
+            })
+        }
     }
     /**
      * 
@@ -245,22 +310,26 @@ export class AutoStoreSyncer {
      * 
      */
     pull() {
-        const operate = {
+        this._sendOperate({
             id: this.id,
             type: '$pull',
             path: this.options.to,
             value: undefined,
             flags: 0
-        } as StateRemoteOperate
-        this._sendOperate(operate)
+        } as StateRemoteOperate)
+
+    }
+    private _mapPath(path: string[], value: any, dir: string): string[] | undefined {
+        return this._options.pathMap && isFunction((this._options.pathMap as any)[dir])
+            ? (this._options.pathMap as any)[dir](path, value) : path
     }
     /**
      * 向远程发送整个store
      */
     private _sendStore(operate: StateRemoteOperate) {
-        this.transport.send({
+        this._sendOperate({
             id: this.id,
-            type: 'set',
+            type: '$pull-update',
             path: [],
             value: this.store.getSnap({ entry: operate.path.join(PATH_DELIMITER) }),
             flags: this.seq

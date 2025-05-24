@@ -1,2 +1,3 @@
 export * from "./syncer"
-export * from "./transport"
+export * from "./types"
+export * from "./plugin"

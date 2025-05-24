@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, test } from "vitest"
-import { IAutoStoreSyncTransport, StateRemoteOperate } from "../transport"
+import { IAutoStoreSyncTransport, StateRemoteOperate } from "../types"
 import { computed, AutoStore } from '../../../core/src';
 import { AutoStoreSyncer } from "../syncer";
 
@@ -27,7 +27,7 @@ describe("远程同步", () => {
     const localTransport: WebSocketTansport = new WebSocketTansport(() => remoteTransport)
     const remoteTransport: WebSocketTansport = new WebSocketTansport(() => localTransport)
 
-    test("一对一完全对象同步", () => {
+    test("一对一完整对象同步", () => {
         const localStore = new AutoStore({
             order: {
                 price: 100,
@@ -51,7 +51,7 @@ describe("远程同步", () => {
 
     })
 
-    test("初始化时进行一次完全同步对象", () => {
+    test("初始化时执行一次完整对象同步", () => {
         const localStore = new AutoStore({
             order: {
                 price: 100,
@@ -164,7 +164,11 @@ describe("远程同步", () => {
         remoteSyncer.pull()
         expect(remoteStore.state).toEqual(localStore.state)
     })
-    test("部份同步时向对方请求一次全同步", () => {
+
+
+
+
+    test("部分路径同步时请求完整同步", () => {
 
         const remoteStore = new AutoStore({
             order: {
@@ -183,7 +187,32 @@ describe("远程同步", () => {
         localSyncer.pull()
         expect(localStore.state.x).toEqual(remoteStore.state)
     })
-    test("部份同步到了本地时请求全同步", () => {
+
+    test("部分路径同步时成员间数据同步", () => {
+        const remoteStore = new AutoStore({
+            order: {
+                price: 100,
+                count: 2,
+                total: computed(order => order.price * order.count)
+            }
+        })
+        const localStore = new AutoStore({
+            x: {}
+        })
+        const remoteSyncer = new AutoStoreSyncer(remoteStore, { transport: remoteTransport })
+        const localSyncer = new AutoStoreSyncer(localStore, { transport: localTransport, from: ['x'] })
+
+        expect(localStore.state.x).toEqual({})
+        localSyncer.pull()
+        expect(localStore.state.x).toEqual(remoteStore.state)
+        remoteStore.state.order.count = 3
+        // @ts-ignore
+        expect(localStore.state.x.order.count).toBe(3)
+
+    })
+
+
+    test("部分路径同步到本地时请求完整同步", () => {
         const remoteStore = new AutoStore({
             x: {
                 order: {
@@ -203,7 +232,7 @@ describe("远程同步", () => {
         expect(localStore.state.y).toEqual(remoteStore.state.x)
     })
 
-    test("三个Store同步", () => {
+    test("三个Store之间的数据联动同步", () => {
         const oneStore = new AutoStore({
             order: {
                 price: 100,
@@ -267,5 +296,165 @@ describe("远程同步", () => {
         expect(threeStore.state.threeOrder.count).toBe(5)
 
     })
+    test("单向同步模式下本地推送完整数据", () => {
+        const localStore = new AutoStore({
+            x: {
+                order: {
+                    price: 100,
+                    count: 2
+                }
+            }
+        })
+        const remoteStore = new AutoStore()
+        const localSyncer = new AutoStoreSyncer(localStore, {
+            transport: localTransport,
+            direction: 'forward'
+        })
+        const remoteSyncer = new AutoStoreSyncer(remoteStore, {
+            transport: remoteTransport,
+            direction: 'backward',
+            pathMap: {
+                toLocal: (path, value) => {
+                    if (['number', 'boolean', 'string'].includes(typeof (value))) {
+                        return [path.join(".")]
+                    }
+                }
+            }
+        })
+        localSyncer.push()
+        expect(remoteStore.state).toEqual({
+            'x.order.price': 100,
+            'x.order.count': 2
+        })
+    })
+    test("单向同步模式下使用toRemote路径映射", () => {
+        const localStore = new AutoStore({
+            x: {
+                order: {
+                    price: 100,
+                    count: 2
+                }
+            }
+        })
+        const remoteStore = new AutoStore()
+        const localSyncer = new AutoStoreSyncer(localStore, {
+            transport: localTransport,
+            direction: 'forward',
+            pathMap: {
+                toRemote: (path, value) => {
+                    if (['number', 'boolean', 'string'].includes(typeof (value))) {
+                        return [path.join(".")]
+                    }
+                }
+            }
+        })
+        const remoteSyncer = new AutoStoreSyncer(remoteStore, {
+            transport: remoteTransport,
+            direction: 'backward',
+        })
+        localStore.state.x.order.count = 3
+        expect(localStore.state.x.order.count).toEqual(3)
+        expect(remoteStore.state).toEqual({
+            'x.order.count': 3
+        })
+    })
 
+
+    test("完全单向同步指定进行from同步路径映射", () => {
+        const localStore = new AutoStore()
+
+        const localSyncer = new AutoStoreSyncer(localStore, {
+            transport: localTransport,
+            direction: 'backward',
+            pathMap: {
+                toLocal: (path, value) => {
+                    return [path.join(".")]
+                }
+            }
+        })
+        const remoteStore = new AutoStore({
+            x: {
+                order: {
+                    price: 100,
+                    count: 2
+                }
+            }
+        })
+        const remoteSyncer = new AutoStoreSyncer(remoteStore, {
+            transport: remoteTransport,
+            direction: 'forward',
+        })
+        remoteStore.state.x.order.count = 3
+        expect(remoteStore.state.x.order.count).toEqual(3)
+        expect(localStore.state).toEqual({
+            'x.order.count': 3
+        })
+    })
+    test("完全单向同且指定from同步路径映射时进行pull操作", () => {
+        const localStore = new AutoStore()
+        const remoteStore = new AutoStore({
+            x: {
+                order: {
+                    price: 100,
+                    count: 2
+                }
+            }
+        })
+        const localSyncer = new AutoStoreSyncer(localStore, {
+            transport: localTransport,
+            direction: 'backward',
+            pathMap: {
+                toLocal: (path, value) => {
+                    if (['number', 'boolean', 'string'].includes(typeof (value))) {
+                        return [path.join(".")]
+                    }
+                }
+            }
+        })
+        const remoteSyncer = new AutoStoreSyncer(remoteStore, {
+            transport: remoteTransport,
+            direction: 'forward',
+        })
+        localSyncer.pull()
+        expect(localStore.state).toEqual({
+            'x.order.count': 2,
+            'x.order.price': 100
+        })
+    })
+
+
+    test("局部单向同步指定进行to同步路径映射", () => {
+
+        const localStore = new AutoStore({
+            x: {
+                order: {
+                    price: 100,
+                    count: 2
+                }
+            }
+        })
+        const remoteStore = new AutoStore({
+            y: {}
+        })
+        const localSyncer = new AutoStoreSyncer(localStore, {
+            transport: localTransport,
+            from: ['x'],
+            to: ['y'],
+            direction: 'forward',
+            pathMap: {
+                toRemote: (path) => {
+                    return [path.join(".")]
+                }
+            }
+        })
+        const remoteSyncer = new AutoStoreSyncer(remoteStore, {
+            transport: remoteTransport,
+            direction: 'backward',
+        })
+        localStore.state.x.order.count = 3
+        expect(localStore.state.x.order.count).toEqual(3)
+        expect(remoteStore.state.y).toEqual({
+            'order.count': 3
+        })
+    })
 })

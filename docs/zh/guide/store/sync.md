@@ -1,6 +1,6 @@
 # 同步
 
-`AutoStore`内置同步机制，可以方便的实现两个`AutoStore`之间的数据同步。
+`AutoStore`提供了`@autostorejs/syncer`可以方便的实现两个`AutoStore`之间的数据同步。
 
 ## 使用方法
 
@@ -48,18 +48,6 @@ store1.sync(store2, { from: 'order', to: 'myorder' });
 ```
 
 ## 指南
-
-### 同步配置
-
-`sync`方法可以接受一个配置对象，配置对象可以有以下属性：
-
-| 属性        | 类型                                | 说明                                                          |
-| ----------- | ----------------------------------- | ------------------------------------------------------------- |
-| `from`      | `string`                            | 当前`store`的`state`的路径                                    |
-| `to`        | `string`                            | 目标`store`的`state`的路径                                    |
-| `direction` | `'both' \| 'forward' \| 'backward'` | 同步方向,`both`=双向，`forward`=前向同步，`backward`=后向同步 |
-| `filter`    | `(operate:StateOperate)=>boolean`   | 过滤函数，返回`true`表示同步，返回`false`表示不同步           |
-| `immediate` | `boolean`                           | 是否立即同步,默认为`true`，即初始化时马上执行一次同步         |
 
 ### 同步方向
 
@@ -538,6 +526,18 @@ syncer.stop();
 
 -   调用`transport.onStop`方法，因此可以在停止同步时进行断开连接等工作。
 -   同时会向对方发送一个`stop`操作指令，对方的`syncer`会收到这个指令，也会停止同步和调用`transport.onStop`方法。
+
+## 同步配置
+
+`sync`方法可以接受一个配置对象，配置对象可以有以下属性：
+
+| 属性        | 类型                                | 说明                                                          |
+| ----------- | ----------------------------------- | ------------------------------------------------------------- |
+| `from`      | `string`                            | 当前`store`的`state`的路径                                    |
+| `to`        | `string`                            | 目标`store`的`state`的路径                                    |
+| `direction` | `'both' \| 'forward' \| 'backward'` | 同步方向,`both`=双向，`forward`=前向同步，`backward`=后向同步 |
+| `filter`    | `(operate:StateOperate)=>boolean`   | 过滤函数，返回`true`表示同步，返回`false`表示不同步           |
+| `immediate` | `boolean`                           | 是否立即同步,默认为`true`，即初始化时马上执行一次同步         |
 
 ## 示例
 
