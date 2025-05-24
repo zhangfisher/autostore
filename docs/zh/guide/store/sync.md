@@ -4,11 +4,16 @@
 
 ## 使用方法
 
+```warning 提示
+同步功能由`@autostorejs/syncer`提供，只需要导入即可。
+```
+
 ### 完全同步
 
 将`store1`的`state`同步到`store2`的`state`中。
 
-```ts {12}
+```ts {13}
+import '@autostorejs/syncer'; // [!code ++]
 const store1 = new AutoStore({
     order: {
         name: 'fisher',
@@ -23,15 +28,12 @@ const store2 = new AutoStore<typeof store1.state.order>();
 store1.sync(store2);
 ```
 
-:::warning 提示
-同步是双向的。
-:::
-
 ### 部分同步
 
 将`store1.state.order`同步到`store2.state.myorder`中。
 
-```ts {14}
+```ts {15}
+import '@autostorejs/syncer'; // [!code ++]
 const store1 = new AutoStore({
     order: {
         name: 'fisher',
@@ -53,12 +55,13 @@ store1.sync(store2, { from: 'order', to: 'myorder' });
 
 默认情况下，同步是双向的。
 
-```ts {5,8,11}
+```ts {5-6,9,12}
 const store1 = new AutoStore({...})
 const store2 = new AutoStore({...})
 
 // 默认双向同步
 store1.sync(store2)
+store1.sync(store2,{direction:'both'})
 
 // 复制store1的变更到store2
 store1.sync(store2,{direction:'forward'})
@@ -164,7 +167,7 @@ const store2 = store1.clone({
 
 ### 打开/关闭同步
 
-同步可以通过`on`和`off`方法来打开和关闭同步。
+同步可以通过`start`和`stop`方法来打开和关闭同步。
 
 ```ts
 const store1 = new AutoStore({...})
@@ -173,10 +176,10 @@ const store2 = new AutoStore({...})
 const syncer = store1.sync(store2)
 
 // 关闭同步
-syncer.off()
+syncer.stop()
 
-// 打开同步
-syncer.on()
+// 打开同步，默认是自动开始的
+syncer.start()
 
 ```
 
@@ -199,10 +202,12 @@ fromStore.sync(toStore, {
     to: 'myorder',
     immediate: false,
     pathMap: {
-        to: (path: string[]) => {
-            return [path.join('.')];
+        toLocal: (path: string[]) => {
+            if (typeof path[0] !== 'object') {
+                return [path.join('.')];
+            }
         },
-        from: (path: string[]) => {
+        toRemote: (path: string[]) => {
             return path.reduce<string[]>((result, cur) => {
                 result.push(...cur.split('.'));
                 return result;
@@ -261,9 +266,7 @@ fromStore.sync(toStore, {
     to: 'myorder',
     pathMap: {
         to: (path: string[], value: any) => {
-            if (typeof value !== 'object') {
-                return [path.join('.')];
-            }
+            return [path.join('.')];
         },
         from: (path: string[], value: any) => {
             if (typeof value !== 'object') {
@@ -462,31 +465,10 @@ new AutoStoreSyncer(localStore, {
 
 以上代表要将`localStore`中的`order`映射到`remoteStore`中的`remoteOrder`。
 
-#### 同步参数
-
-|      参数      |                   类型                    | 默认值  | 说明                                    |
-| :------------: | :---------------------------------------: | :-----: | --------------------------------------- |
-|  `autostart`   |                 `boolean`                 | `true`  | 是否自动开始同步                        |
-| `maxCacheSize` |                 `number`                  |  `100`  | 缓存大小                                |
-|    `entry`     |                `string[]`                 |  `[]`   | 同步映射关系                            |
-| `remoteEntry`  |                `string[]`                 |  `[]`   | 同步映射关系                            |
-|  `immediate`   |                 `boolean`                 | `false` | 是否立即同步                            |
-|    `onSend`    | `(operate:StateRemoteOperate) => boolean` |         | 发送更新操作回调，返回`false`表示不发送 |
-|  `onReceive`   | `(operate:StateRemoteOperate) => boolean` |         | 接收更新操作回调，返回`false`表示接收   |
-
-```ts
-type StateRemoteOperate {
-    type      : StateOperateType,
-    path      : string[],
-    value     : Value,
-    indexs    : number[],
-    flags     : number
-}
-```
-
 #### 手动全同步
 
-调用`syncer.update()`方法可以向远程`store`要求一次全同步。
+调用`syncer.push()`方法将本地的`AutoStore`推送给远程`AutoStore`。
+也可以调用`syncer.pull()`方法从远程拉取数据到本地的`AutoStore`。
 
 ```ts
 const remoteStore = new AutoStore({
@@ -505,11 +487,11 @@ const remoteSyncer = new AutoStoreSyncer(remoteStore, { transport: remoteTranspo
 const localSyncer = new AutoStoreSyncer(localStore, { transport: localTransport, entry: ['y'], remoteEntry: ['x'] });
 
 expect(localStore.state.y).toEqual({});
-localSyncer.update(); // [!code ++]
+localSyncer.push(); // [!code ++]
 expect(localStore.state.y).toEqual(remoteStore.state.x);
 ```
 
--   配置`options.immediate`为`true`会在启动时自动调用`syncer.update()`。
+-   配置`options.immediate`为`true`会在启动时自动调用`syncer.push()`。
 
 #### 停止同步
 
@@ -531,13 +513,18 @@ syncer.stop();
 
 `sync`方法可以接受一个配置对象，配置对象可以有以下属性：
 
-| 属性        | 类型                                | 说明                                                          |
-| ----------- | ----------------------------------- | ------------------------------------------------------------- |
-| `from`      | `string`                            | 当前`store`的`state`的路径                                    |
-| `to`        | `string`                            | 目标`store`的`state`的路径                                    |
-| `direction` | `'both' \| 'forward' \| 'backward'` | 同步方向,`both`=双向，`forward`=前向同步，`backward`=后向同步 |
-| `filter`    | `(operate:StateOperate)=>boolean`   | 过滤函数，返回`true`表示同步，返回`false`表示不同步           |
-| `immediate` | `boolean`                           | 是否立即同步,默认为`true`，即初始化时马上执行一次同步         |
+| 属性           | 类型                                | 说明                                                                                              |
+| -------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `autostart`    | `boolean`                           | 自动开始同步                                                                                      |
+| `from`         | `string`                            | 当前`store`的`state`的路径                                                                        |
+| `to`           | `string`                            | 目标`store`的`state`的路径                                                                        |
+| `direction`    | `'both' \| 'forward' \| 'backward'` | 同步方向,`both`=双向，`forward`=前向同步，`backward`=后向同步                                     |
+| `filter`       | `(operate:StateOperate)=>boolean`   | 过滤函数，返回`true`表示同步，返回`false`表示不同步                                               |
+| `immediate`    | `boolean`                           | 是否立即同步,默认为`true`，即初始化时马上执行一次同步                                             |
+| `maxCacheSize` | `number`                            | 缓存大小，默认为`100`                                                                             |
+| `onSend`       | `(operate) => boolean \| void`      | 发送到远程之前触发，可以在此修改 operate，叠加自己的数据到了 operate, 返回 false 可以阻止发送     |
+| `onReceive`    | `(operate) => boolean \| void`      | 从远程接收到数据时触发，可以在此修改 operate，叠加自己的数据到了 operate, 返回 false 可以阻止接收 |
+| `pathMap`      | `{toLocal,toRemote}`                | 路径映射，用于将当前`store`的`state`的路径映射到目标`store`的`state`的路径，用于双向同步          |
 
 ## 示例
 
