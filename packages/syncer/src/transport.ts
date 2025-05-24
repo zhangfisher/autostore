@@ -3,7 +3,7 @@ import type { StateOperateType } from "autostore";
 
 export type StateRemoteOperate<Value = any> = {
     id: string                       // 同步器id，在一对多/多对一时，用于区分不同的同步器
-    type: StateOperateType | '$stop' | '$update',
+    type: StateOperateType | '$stop' | '$update' | '$push' | '$pull',
     path: string[],
     value: Value,
     indexs?: number[],               // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素

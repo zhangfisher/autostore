@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, test } from "vitest"
 import { IAutoStoreSyncTransport, StateRemoteOperate } from "../transport"
-import { computed, SYNC_INIT_FLAG, AutoStore } from '../../../core/src';
+import { computed, AutoStore } from '../../../core/src';
 import { AutoStoreSyncer } from "../syncer";
 
 
@@ -59,9 +60,9 @@ describe("远程同步", () => {
             }
         }, { id: "local" })
         const remoteStore = new AutoStore({}, { id: "remote" })
-        remoteStore.watch((operate) => {
-            expect(operate.flags! & SYNC_INIT_FLAG).toBeGreaterThan(0)
-        })
+        // remoteStore.watch((operate) => {
+        //     //expect(operate.flags! & SYNC_INIT_FLAG).toBeGreaterThan(0)
+        // })
 
         new AutoStoreSyncer(remoteStore, { transport: remoteTransport })
         new AutoStoreSyncer(localStore, { transport: localTransport, immediate: true })
@@ -81,7 +82,7 @@ describe("远程同步", () => {
 
         new AutoStoreSyncer(localStore, {
             transport: localTransport,
-            entry: ["order"]
+            from: ["order"]
         })
         new AutoStoreSyncer(remoteStore, { transport: remoteTransport })
 
@@ -90,8 +91,6 @@ describe("远程同步", () => {
         remoteStore.state.count = 4
         expect(localStore.state.order.count).toBe(4)
     })
-
-
     test("同步对象成员到远程对象的指定路径", () => {
         const localStore = new AutoStore({
             order: {
@@ -108,8 +107,8 @@ describe("远程同步", () => {
 
         new AutoStoreSyncer(localStore, {
             transport: localTransport,
-            entry: ["order"],
-            remoteEntry: ["remoteOrder"]
+            from: ["order"],
+            to: ["remoteOrder"]
         })
         new AutoStoreSyncer(remoteStore, { transport: remoteTransport })
 
@@ -162,7 +161,7 @@ describe("远程同步", () => {
         const remoteSyncer = new AutoStoreSyncer(remoteStore, { transport: remoteTransport })
 
         expect(remoteStore.state).toEqual({})
-        remoteSyncer.update()
+        remoteSyncer.pull()
         expect(remoteStore.state).toEqual(localStore.state)
     })
     test("部份同步时向对方请求一次全同步", () => {
@@ -178,14 +177,13 @@ describe("远程同步", () => {
             x: {}
         })
         const remoteSyncer = new AutoStoreSyncer(remoteStore, { transport: remoteTransport })
-        const localSyncer = new AutoStoreSyncer(localStore, { transport: localTransport, entry: ['x'] })
+        const localSyncer = new AutoStoreSyncer(localStore, { transport: localTransport, from: ['x'] })
 
         expect(localStore.state.x).toEqual({})
-        localSyncer.update()
+        localSyncer.pull()
         expect(localStore.state.x).toEqual(remoteStore.state)
     })
     test("部份同步到了本地时请求全同步", () => {
-
         const remoteStore = new AutoStore({
             x: {
                 order: {
@@ -199,12 +197,75 @@ describe("远程同步", () => {
             y: {}
         })
         const remoteSyncer = new AutoStoreSyncer(remoteStore, { transport: remoteTransport })
-        const localSyncer = new AutoStoreSyncer(localStore, { transport: localTransport, entry: ['y'], remoteEntry: ['x'] })
-
+        const localSyncer = new AutoStoreSyncer(localStore, { transport: localTransport, from: ['y'], to: ['x'] })
         expect(localStore.state.y).toEqual({})
-        localSyncer.update()
+        localSyncer.pull()
         expect(localStore.state.y).toEqual(remoteStore.state.x)
     })
 
+    test("三个Store同步", () => {
+        const oneStore = new AutoStore({
+            order: {
+                price: 100,
+                count: 2,
+                total: computed(order => order.price * order.count)
+            }
+        }, { id: "one" })
+        const twoStore = new AutoStore({
+            twoOrder: {
+                count: 0
+            }
+        }, { id: "two" })
+
+        const threeStore = new AutoStore({
+            threeOrder: {
+                count: 0
+            }
+        }, { id: "three" })
+        // one <----> two
+        const localTransport: WebSocketTansport = new WebSocketTansport(() => remoteTransport)
+        const remoteTransport: WebSocketTansport = new WebSocketTansport(() => localTransport)
+        new AutoStoreSyncer(oneStore, {
+            id: "one-two",
+            transport: localTransport,
+            from: ["order"],
+            to: ["twoOrder"]
+        })
+        new AutoStoreSyncer(twoStore, {
+            id: "two-one",
+            transport: remoteTransport
+        })
+
+        // two <----> three
+        const localTransport2: WebSocketTansport = new WebSocketTansport(() => remoteTransport2)
+        const remoteTransport2: WebSocketTansport = new WebSocketTansport(() => localTransport2)
+
+        new AutoStoreSyncer(twoStore, {
+            id: "two-three",
+            transport: localTransport2,
+            from: ["twoOrder"],
+            to: ["threeOrder"]
+        })
+        new AutoStoreSyncer(threeStore, {
+            id: "three-two",
+            transport: remoteTransport2
+        })
+
+        oneStore.state.order.count = 3
+        expect(oneStore.state.order.count).toBe(3)
+        expect(twoStore.state.twoOrder.count).toBe(3)
+        expect(threeStore.state.threeOrder.count).toBe(3)
+
+        twoStore.state.twoOrder.count = 4
+        expect(oneStore.state.order.count).toBe(4)
+        expect(twoStore.state.twoOrder.count).toBe(4)
+        expect(threeStore.state.threeOrder.count).toBe(4)
+
+        threeStore.state.threeOrder.count = 5
+        expect(oneStore.state.order.count).toBe(5)
+        expect(twoStore.state.twoOrder.count).toBe(5)
+        expect(threeStore.state.threeOrder.count).toBe(5)
+
+    })
 
 })
