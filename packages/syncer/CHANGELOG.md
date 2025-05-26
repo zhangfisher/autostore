@@ -1,5 +1,14 @@
 # @autostorejs/syncer
 
+## 1.3.20
+
+### Patch Changes
+
+-   [`bee649b`](https://github.com/zhangfisher/autostore/commit/bee649b73502d7b24509a3d3a09a881dabdeff2a) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 当第一次全同步时提供一个额外的标识，帮助识别是第一次同步
+
+-   Updated dependencies []:
+    -   autostore@1.3.20
+
 ## 1.3.19
 
 ### Patch Changes

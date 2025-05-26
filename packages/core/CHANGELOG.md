@@ -1,5 +1,7 @@
 # autostore
 
+## 1.3.20
+
 ## 1.3.19
 
 ### Patch Changes
