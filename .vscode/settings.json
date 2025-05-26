@@ -3,6 +3,5 @@
     "editor.insertSpaces": true,
     "editor.detectIndentation": false,
     "editor.formatOnSave": true,
-    "prettier.tabWidth": 4,
-    "oxlint.enable": true
+    "prettier.tabWidth": 4 
 }

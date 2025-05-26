@@ -14,7 +14,6 @@
   "baseBranch": "master",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "@autostore-examples/*",
     "autostore-docs",
     "@autostorejs/vue"
   ]

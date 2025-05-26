@@ -199,10 +199,10 @@ fromStore.sync(toStore, {
     to: 'myorder',
     immediate: false,
     pathMap: {
-        to: (path: string[]) => {
+        toRemote: (path: string[], value: any) => {
             return [path.join('.')];
         },
-        from: (path: string[]) => {
+        toLocal: (path: string[]) => {
             return path.reduce<string[]>((result, cur) => {
                 result.push(...cur.split('.'));
                 return result;
@@ -214,8 +214,8 @@ fromStore.sync(toStore, {
 
 以上代码：
 
--   `to`参数表示将`fromStore`中的`order.a`映射到`toStore`中的`myorder[order.a]`。
--   `from`参数表示将`toStore`中的`myorder[order.a]`映射到`fromStore`中的`order.a`。
+-   `toRemote`参数表示将`fromStore`中的`order.a`映射到`toStore`中的`myorder[order.a]`。
+-   `toLocal`参数表示将`toStore`中的`myorder[order.a]`映射到`fromStore`中的`order.a`。
 
 所以同步后生效后：
 
@@ -260,12 +260,12 @@ expect(fromStore.state).toEqual({
 fromStore.sync(toStore, {
     to: 'myorder',
     pathMap: {
-        to: (path: string[], value: any) => {
+        toRemote: (path: string[], value: any) => {
             if (typeof value !== 'object') {
                 return [path.join('.')];
             }
         },
-        from: (path: string[], value: any) => {
+        toLocal: (path: string[], value: any) => {
             if (typeof value !== 'object') {
                 return path.reduce<string[]>((result, cur) => {
                     result.push(...cur.split('.'));
@@ -312,12 +312,12 @@ pathMap: {
 fromStore.sync(toStore, {
     to: 'myorder',
     pathMap: {
-        to: (path: string[], value: any) => {
+        toRemote: (path: string[], value: any) => {
             if (typeof value !== 'object') {
                 return [path.join('.')];
             }
         },
-        from: (path: string[], value: any) => {
+        toLocal: (path: string[], value: any) => {
             if (typeof value !== 'object') {
                 return path.reduce<string[]>((result, cur) => {
                     result.push(...cur.split('.'));
