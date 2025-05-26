@@ -1,5 +1,11 @@
 # autostore
 
+## 1.3.19
+
+### Patch Changes
+
+-   [`dedd9cc`](https://github.com/zhangfisher/autostore/commit/dedd9cc282202d3e4df35a27e0f0c3946c59e74d) Thanks [@zhangfisher](https://github.com/zhangfisher)! - - [特性] 重构同步功能，现在同步功能由`@autostorejs/syncer`提供
+
 ## 1.3.18
 
 ## 1.3.17
