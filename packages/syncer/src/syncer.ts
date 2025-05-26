@@ -24,10 +24,14 @@ type NormalizeAutoStoreSyncerOptions = Required<Omit<AutoStoreSyncerOptions, 'fr
     to: string[]
 }>
 
+
+export const SYNC_INIT_FLAG = -1
+
 export class AutoStoreSyncer {
-    static seq = 0
+    static seq = 9
     private _options: NormalizeAutoStoreSyncerOptions
     syncing: boolean = false
+    peer?: AutoStoreSyncer
     private _watcher: Watcher | undefined
     private _operateCache: StateRemoteOperate[] = []         // 本地操作缓存,
     private seq: number = 0                                  // 实例标识
@@ -46,7 +50,7 @@ export class AutoStoreSyncer {
         if (typeof (this._options.to) === 'string') this._options.to = (this._options.to as string).split(PATH_DELIMITER)
         this.seq = ++AutoStoreSyncer.seq
         this._options.autostart && this.start()
-        if (this.options.immediate) this.push()
+        if (this.options.immediate) this.push(true)
     }
     get id() { return this._options.id }
     get options() { return this._options }
@@ -78,7 +82,9 @@ export class AutoStoreSyncer {
                 if (isFunction(this._options.filter)) {
                     if (this._options.filter(operate) === false) return
                 }
-                if (operate.flags === this.seq) return
+                // 为什么要Math.abs?
+                // 在初始化进行第一次同步时传送seq时使用了负数，这样就可以让接收方区分是否是第一次同步
+                if (Math.abs(operate.flags || 0) === this.seq) return
                 if (this.options.direction === "backward") return
                 this._sendToRemote(operate)
             }, {
@@ -165,7 +171,7 @@ export class AutoStoreSyncer {
 
         const toPath = [...this.entry, ...operate.path.slice(this.options.to.length)]
         const updateOpts = {
-            flags: this.seq
+            flags: operate.flags === SYNC_INIT_FLAG ? -this.seq : this.seq
         }
         if (type === 'set' || type === 'update') {
             this.store.update(state => {
@@ -251,8 +257,11 @@ export class AutoStoreSyncer {
     }
     /**
      * 将本地store推送到远程
+     * 
+     * @param initial 是否是第一次同步
+     * 
      */
-    push() {
+    push(initial: boolean = false) {
         const localSnap = this._getLocalSnap()
         if (typeof (this._options.pathMap.toRemote) === 'function') {
             forEachObject(localSnap, ({ value, path }) => {
@@ -264,6 +273,7 @@ export class AutoStoreSyncer {
                         path: [... this.options.to, ...toPath],
                         value: toValue
                     } as StateRemoteOperate
+                    if (initial) operate.flags = SYNC_INIT_FLAG
                     this._sendOperate(operate)
                 }
             })
@@ -273,7 +283,7 @@ export class AutoStoreSyncer {
                 type: '$push',
                 path: this.options.to,
                 value: localSnap,
-                flags: 0
+                flags: initial ? SYNC_INIT_FLAG : 0
             } as StateRemoteOperate)
         }
     }

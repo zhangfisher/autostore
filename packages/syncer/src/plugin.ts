@@ -43,6 +43,7 @@ function createSyncerPlugin() {
             const localSyncer = new AutoStoreSyncer(store, Object.assign({ immediate: true }, options, {
                 transport: localTransport
             }))
+            localSyncer.peer = remoteSyncer
             return localSyncer
         }
 
