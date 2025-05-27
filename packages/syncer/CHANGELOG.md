@@ -1,5 +1,14 @@
 # @autostorejs/syncer
 
+## 1.3.21
+
+### Patch Changes
+
+-   [`d6f12ef`](https://github.com/zhangfisher/autostore/commit/d6f12eff23667311764e215fac4026c9aaa40be3) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 修复 syncer 的 filter 不能生效的问题
+
+-   Updated dependencies []:
+    -   autostore@1.3.21
+
 ## 1.3.20
 
 ### Patch Changes
