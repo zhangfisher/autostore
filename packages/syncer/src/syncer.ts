@@ -79,9 +79,7 @@ export class AutoStoreSyncer {
             this.syncing = true
             // 发送更新到了远程
             this._watcher = this.store.watch((operate) => {
-                if (isFunction(this._options.filter)) {
-                    if (this._options.filter(operate) === false) return
-                }
+                if (this._isPass(operate.path, operate.value) === false) return
                 // 为什么要Math.abs?
                 // 在初始化进行第一次同步时传送seq时使用了负数，这样就可以让接收方区分是否是第一次同步
                 if (Math.abs(operate.flags || 0) === this.seq) return
@@ -99,6 +97,13 @@ export class AutoStoreSyncer {
             this.syncing = false
             throw e
         }
+    }
+
+    private _isPass(path: string[], value: any) {
+        if (isFunction(this._options.filter)) {
+            return this._options.filter(path, value)
+        }
+        return true
     }
 
 
@@ -265,6 +270,7 @@ export class AutoStoreSyncer {
         const localSnap = this._getLocalSnap()
         if (typeof (this._options.pathMap.toRemote) === 'function') {
             forEachObject(localSnap, ({ value, path }) => {
+                if (this._isPass(path, value) === false) return
                 const toValue = Array.isArray(value) ? [] : ((typeof (value) === 'object') ? {} : value)
                 const toPath = this._mapPath(path, toValue, 'toRemote')
                 if (toPath) {
@@ -295,6 +301,7 @@ export class AutoStoreSyncer {
     private _updateStore(operate: StateRemoteOperate) {
         if (typeof (this._options.pathMap.toLocal) === 'function') {
             forEachObject(operate.value, ({ value, path }) => {
+                if (this._isPass(path, value) === false) return
                 const toValue = Array.isArray(value) ? [] : ((typeof (value) === 'object') ? {} : value)
                 const toPath = this._mapPath(path, toValue, 'toLocal')
                 if (toPath) {

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, test } from "vitest"
-import { computed, AutoStore } from '../../../core/src';
+import { computed, AutoStore, configurable, StateOperate } from '../../../core/src';
 import "..";
 
 
@@ -358,6 +358,73 @@ describe("本地Store同步", () => {
             },
             user: {
                 tags: ['x', 'y', 'z']
+            }
+        })
+    })
+    test("只有将configable的数据同步到远程", async () => {
+        // order.a <-> myorder['order.a']
+        const fromStore = new AutoStore({
+            order: {
+                a: 1, b: configurable(2), c: 3,
+            },
+            user: {
+                tags: ['x', configurable('y'), 'z']
+            }
+        }, { id: "local" })
+        const toStore = new AutoStore({
+            myorder: {}
+        }, { id: "remote" })
+        const filter = (path: string[], value: any) => {
+            const keyPath = path.join(".")
+            return fromStore.schemas.has(keyPath)
+        }
+        fromStore.sync(toStore, {
+            to: "myorder",
+            filter,
+            pathMap: {
+                toRemote: (path: string[], value: any) => {
+                    if (typeof (value) !== 'object') {
+                        return [path.join(".")]
+                    }
+                },
+                toLocal: (path: string[], value: any) => {
+                    if (typeof (value) !== 'object') {
+                        return path.reduce<string[]>((result, cur) => {
+                            result.push(...cur.split("."))
+                            return result
+                        }, [])
+                    }
+                }
+            }
+        })
+        expect(toStore.state).toEqual({
+            myorder: {
+                'order.b': 2,
+                'user.tags.1': 'y'
+            }
+        })
+
+        fromStore.state.order.a = 11
+        fromStore.state.order.b = 12
+        fromStore.state.order.c = 13
+
+        expect(toStore.state).toEqual({
+            myorder: {
+                'order.b': 12,
+                'user.tags.1': 'y'
+            }
+        })
+        // @ts-ignore
+        toStore.state.myorder['order.b'] = 22
+        // @ts-ignore
+        toStore.state.myorder['user.tags.1'] = 'yy'
+
+        expect(fromStore.state).toEqual({
+            order: {
+                a: 11, b: 22, c: 13
+            },
+            user: {
+                tags: ['x', 'yy', 'z']
             }
         })
     })

@@ -19,7 +19,7 @@ export type AutoStoreSyncerOptions = {
     // 0:双向同步, 1: from->to,  2: to->from 
     direction?: 'both' | 'forward' | 'backward'
     // 是否进行一次同步
-    filter?: (operate: StateOperate) => boolean
+    filter?: (path: string[], value: any) => boolean
     /**
      * 将远程操作映射到本地 
      * 比如将['order','price']映射成['order.price']等
