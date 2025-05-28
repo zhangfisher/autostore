@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoForm</title>
+        <link rel="stylesheet" href="./index.css" />
+        <script type="module" src="/src/index.ts"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
+
+        <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/tab/tab.js"></script>
+    </head>
+
+    <body>
+        <div style="padding: 2em; border: 1px solid #ccc; margin: 2em">
+            <sl-tab-group>
+                <sl-tab slot="nav" panel="form">表单</sl-tab>
+                <sl-tab slot="nav" panel="form2">表单</sl-tab>
+                <sl-tab-panel name="form">
+                    <auto-form></auto-form>
+                </sl-tab-panel>
+                <sl-tab-panel name="form2"
+                    >1
+                    <auto-form></auto-form>
+                </sl-tab-panel>
+            </sl-tab-group>
+        </div>
+        <div id="state" style="padding: 2em; border: 1px solid #ccc; margin: 2em"></div>
+        <div id="errors" style="padding: 2em; border: 1px solid #ccc; margin: 2em; color: red"></div>
+        <script type="module" src="./example.ts"></script>
+    </body>
+</html>
