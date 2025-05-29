@@ -1,11 +1,15 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
-import { Dict } from "../types";
+import { ComputedState, Dict, StatePath } from "../types";
 import { getValueByPath } from "../utils/getValueByPath";
-import { SchemaObject, SchemaState } from "./types";
+import { ComputedSchemaObject, SchemaObject, SchemaState } from "./types";
+import { isComputedDescriptorParameter } from '../utils/isComputedDescriptorParameter';
 
-export class SchemaManager<State extends Dict> extends Map<string, SchemaObject> {
+
+
+export class SchemaManager<State extends Dict> extends Map<string, ComputedSchemaObject<any, ComputedState<State>>> {
     errors: Dict<string> = {}          // {<路径名称>:"错误信息"}
+    _subscribers: any[] = []
     constructor(public store: AutoStore<any>) {
         super()
     }
@@ -15,20 +19,40 @@ export class SchemaManager<State extends Dict> extends Map<string, SchemaObject>
     _getPath(path: string) {
         return path.split('_$_')
     }
-    add(path: string | string[], validator: SchemaObject) {
-        this.set(this._getKey(path), validator)
+    add(path: StatePath<State>, schema: SchemaObject<any, ComputedState<State>>): SchemaObject<any, ComputedState<State>> {
+        schema.path = Array.isArray(path) ? path : path.split(PATH_DELIMITER)
+        this.set(this._getKey(path), schema as ComputedSchemaObject<any, ComputedState<State>>)
+        return schema
+    }
+    /**
+     * Schema对象的所有属性均可以是一个computed对象
+     * 
+     * @param schema 
+     */
+    private _createComputedSchemaObject(schema: SchemaObject) {
+        Object.entries(schema).forEach(([key, value]) => {
+            if (['path', 'value'].includes(key)) return
+            if (isComputedDescriptorParameter(value)) {
+                const computedObject = this.store.computedObjects.create(value as any)
+                computedObject.watch(({ value }) => {
+                    (schema as any)[key] = value
+                    this.store.emit("schema:updated", schema)
+                })
+            }
+        })
     }
 
-    get(path: string | string[]) {
-        return super.get(this._getKey(path),)
+    get(path: StatePath<State>): ComputedSchemaObject<any, ComputedState<State>> | undefined {
+        return super.get(this._getKey(path)) as ComputedSchemaObject<any, ComputedState<State>> | undefined
     }
-    remove(path: string | string[]) {
-        super.delete(this._getKey(path))
-    }
-    delete(path: string | string[]) {
+
+    remove(path: StatePath<State> | string | string[]): boolean {
         return super.delete(this._getKey(path))
     }
-    has(path: string | string[]) {
+    delete(path: StatePath<State>): boolean {
+        return super.delete(this._getKey(path))
+    }
+    has(path: StatePath<State>): boolean {
         return super.has(this._getKey(path))
     }
     /**

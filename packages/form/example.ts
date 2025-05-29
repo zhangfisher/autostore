@@ -1,5 +1,6 @@
-import { AutoStore, configurable } from 'autostore';
+import { AutoStore, computed, configurable } from 'autostore';
 import { AutoForm } from './src/form/index';
+
 const store = new AutoStore({
     user: {
         name: configurable<string>('Fisher', (value: any) => {
@@ -14,8 +15,27 @@ const store = new AutoStore({
         sex: configurable('男', { title: '性别', widget: 'radio', select: ['男', '女'] }),
         post: configurable('程序员', { title: '职业', widget: 'select', select: ['程序员', '教师', '医生', '其他'] }),
         notes: configurable('', { title: '简历', widget: 'textarea' }),
+        x: 1
     },
 });
+
+
+store.schemas.add("user.age", {
+    validate: (val: any) => val > 18,
+    enable: computed((state) => {
+        return state.user.admin
+    }),
+    required: computed(async (state) => {
+        return state.user.admin
+    }, ['user.admin']),
+    errorTips: '年龄必须大于18岁'
+})
+
+store.schemas.get("user.age")?.enable
+store.schemas.get("user.age")!.required
+
+// @ts-ignore
+window.store = store;
 const updateState = () => {
     const ele = document.querySelector('#state');
     ele!.innerHTML = JSON.stringify(store.state);

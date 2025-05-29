@@ -48,6 +48,7 @@ import { provide } from '@lit/context';
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
+    static seq: number = 0
     static styles = styles
 
     @provide({ context })
@@ -66,6 +67,7 @@ export class AutoForm extends LitElement {
 
 
     store?: AutoStore<Dict>
+    seq: number = ++AutoForm.seq
 
     connectedCallback(): void {
         super.connectedCallback()
@@ -106,6 +108,7 @@ export class AutoForm extends LitElement {
         this.store = store
         Object.assign(this.context, {
             store,
+            form: this,
             labelPos: this.labelPos,
             advanced: this.advanced,
             dark: this.dark

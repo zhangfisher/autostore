@@ -53,7 +53,7 @@
 import { ComputedObjects } from "../computed/computedObjects";
 import { assignObject } from "flex-tools/object/assignObject"
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from "./types";
-import type { Dict } from "../types";
+import type { Dict, StatePath } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";
 import { ComputedObject } from "../computed/computedObject";
@@ -73,10 +73,12 @@ import { EventEmitter, EventListener } from "../events";
 import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
-import { ObjectKeyPaths, GetTypeByPath } from '../types';
+import { GetTypeByPath } from '../types';
 import { SchemaManager } from "../schema";
 
-export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
+export class AutoStore<
+    State extends Dict,
+> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>
     public watchObjects: WatchObjects<State>
@@ -90,6 +92,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _updatedState?: Dict                                         // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
     private _updatedWatcher: Watcher | undefined                         // 脏状态侦听器
     private _schemas: SchemaManager<State> | undefined
+    types = {
+        state: undefined as unknown as ComputedState<State>
+    }
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super()
         this._options = assignObject({
@@ -119,7 +124,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.collectDependencies = this.collectDependencies.bind(this)
 
         this.installExtends()
-        if (!this._options.lazy) forEachObject(this._data)
+        if (!this._options.lazy) forEachObject(this._data as any)
         if (this._options.resetable) this.resetable = true
         // @ts-ignore
         if (this._options.debug && typeof (globalThis.__AUTOSTORE_DEVTOOLS__) === 'object') {
@@ -258,6 +263,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      * @returns {Watcher} - 返回一个表示监听器的数字标识符，用来取消监听。
      */
     watch(listener: WatchListener, options?: WatchListenerOptions): Watcher
+    watch(paths: StatePath<State> | StatePath<State>[], listener: WatchListener, options?: WatchListenerOptions): Watcher
     watch(paths: '*' | string | (string | string[])[], listener: WatchListener, options?: WatchListenerOptions): Watcher
     watch(): Watcher {
         const isWatchAll = typeof (arguments[0]) === 'function' || ['*', '**'].includes(arguments[0]) || (Array.isArray(arguments[0]) && arguments[0].length === 0)
@@ -522,7 +528,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      */
     peep<Value = any>(getter: (state: State) => Value): Value
     peep<
-        PATH extends ObjectKeyPaths<ComputedState<State>> = ObjectKeyPaths<ComputedState<State>>,
+        PATH extends StatePath<State> = StatePath<State>,
         VALUE extends GetTypeByPath<ComputedState<State>, PATH> = GetTypeByPath<ComputedState<State>, PATH>,
     >(path: PATH): VALUE
     peep<Value = any>(path: string[]): Value

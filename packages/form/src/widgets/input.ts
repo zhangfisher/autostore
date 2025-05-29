@@ -10,7 +10,7 @@ export class AutoFieldInput extends AutoField {
             <sl-input 
                 slot="value" 
                 data-path = ${this.schema!.path}
-                .value=${this.schema!.value} 
+                .value=${this.value} 
                 placeholder=${this.schema!.placeholder || ''}
                 @sl-input=${this.onFieldInput.bind(this)}
                 @sl-change=${this.onFieldChange.bind(this)}

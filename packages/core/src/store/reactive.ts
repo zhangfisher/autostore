@@ -27,7 +27,7 @@ type CreateReactiveObjectOptions = {
 
 function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue: any, oldValue: any, parentPath: string[]) {
     const validators = this.schemas
-    const validator = validators.get(key)
+    const validator = validators.get(key as never)
 
     let validFn: SchemaObjectValidate
     if (validator && typeof (validator.validate) === 'function') {
@@ -109,7 +109,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
                 }
             } else if (isValueSchema(value)) {
                 const validator = Object.assign({}, this.options.valueSchema, value, { path })
-                this.schemas.add(path, validator)
+                this.schemas.add(path as never, validator)
                 return value.value
             }
             options.notify({ type: 'get', path, indexs: [], value, oldValue: undefined, parentPath, parent: obj });

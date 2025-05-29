@@ -20,10 +20,23 @@ export default css`
             flex-direction:row;
         }
         
-        .error{
-            color:red;
+
+        sl-input::part(base){
+            outline: none!important;
+            box-shadow: none!important;
         }
-
+        /* 错误样式 */
+        &.error{
+            color:red; 
+            & sl-input::part(base){
+                outline: none!important;
+                box-shadow: none!important;
+                border-color: red;
+            }
+            .error{
+                padding: 4px;
+            }
+        } 
     }
-
+        
 `

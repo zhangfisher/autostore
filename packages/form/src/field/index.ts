@@ -24,11 +24,12 @@
 
 import { LitElement, html } from 'lit'
 import { property, query, queryAssignedElements, state } from 'lit/decorators.js'
-import { setVal, type SchemaObject } from 'autostore';
+import { getVal, setVal, Watcher, type SchemaObject } from 'autostore';
 import { classMap } from 'lit/directives/class-map.js';
 import { consume } from '@lit/context';
 import { AutoFormContext, context } from '../context';
 import styles from './styles'
+import { toSchemaValue } from '@/utils/toSchemaValue';
 
 
 export class AutoField extends LitElement {
@@ -43,6 +44,13 @@ export class AutoField extends LitElement {
     @state()
     errorTips?: string
 
+    @queryAssignedElements({ slot: 'value', flatten: true })
+    _field!: Array<HTMLElement>;
+
+    _subscriber: Watcher | undefined
+
+    @query('.value >:first-child')
+    inputElement?: HTMLInputElement
     @consume({ context })
     @property({ attribute: false })
     public context?: AutoFormContext
@@ -63,11 +71,6 @@ export class AutoField extends LitElement {
 
     }
 
-    @queryAssignedElements({ slot: 'value', flatten: true })
-    _field!: Array<HTMLElement>;
-
-    @query('.value >:first-child')
-    inputElement?: HTMLInputElement
 
     renderHelp(context: AutoFormContext) {
         return html`<span class="help"></span>`
@@ -83,27 +86,49 @@ export class AutoField extends LitElement {
     }
 
     onFieldChange(e: Event) {
-        console.log("onFieldChange", e)
+        this._updateFieldValue()
     }
 
     onFieldInput(e: Event) {
         this._updateFieldValue()
     }
+
+    connectedCallback(): void {
+        super.connectedCallback()
+        const ctx = this.getContext()
+        if (ctx && ctx.store && this.schema) {
+            this._subscriber = ctx.store.watch(this.schema.path.join("."), (operate) => {
+                // 当表单change/input时更新时设置flags=form.seq
+                // 此时应不需要更新到value，否则会导致死循环
+                if (ctx.form.seq === operate.flags) return
+                this.value = operate.value
+            }, { operates: 'write' })
+            this.value = getVal(ctx.store.state, this.schema.path, this.schema.value)
+        }
+
+    }
+    disconnectedCallback(): void {
+        super.disconnectedCallback()
+        if (this._subscriber) {
+            this._subscriber.off()
+        }
+    }
+
     _updateFieldValue() {
         if (!this.schema) return
         if (!this.inputElement) return
         const path = this.schema.path
         const value = this.inputElement?.value
-        const validate = this.schema.validate
-        // if (typeof (validate) === 'function') {
-        //     if (validate(value, 1, '')) {
-
-        //     }
-        // }
-
+        const ctx = this.getContext()
         try {
-            setVal(this.getContext().store.state, path, value)
-            this.errorTips = undefined
+            const store = this.getContext().store
+            store.update((state) => {
+                setVal(state, path, toSchemaValue(value, this.schema!))
+                this.errorTips = undefined
+            }, {
+                flags: ctx.form.seq
+            })
+
         } catch (e: any) {
             this.errorTips = e.message
         }
@@ -118,7 +143,8 @@ export class AutoField extends LitElement {
                 ${classMap({
             'left-label': ctx.labelPos === 'left',
             'top-label': ctx.labelPos === 'top',
-            'no-label': ctx.labelPos === 'none'
+            'no-label': ctx.labelPos === 'none',
+            error: !!this.errorTips,
         })}"         
           >
                 <div class="label">

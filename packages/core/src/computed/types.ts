@@ -15,88 +15,88 @@
  * 
  * 
  */
-import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions,  ObserverScopeRef } from "../observer/types"
+import { ObserverDescriptor, ObserverDescriptorBuilder, ObserverOptions, ObserverScopeRef } from "../observer/types"
 import { StateOperate } from "../store/types"
-import { ComputedObject } from "./computedObject" 
-import { Dict } from "../types"  
+import { ComputedObject } from "./computedObject"
+import { Dict } from "../types"
 
 
 /**
  * 同步计算属性配置参数
  */
-export interface ComputedGetterArgs{    
+export interface ComputedGetterArgs {
     /**
      * @description 
      * 第一次运行为true
      */
-    first?:boolean
+    first?: boolean
     /**
      * 发生变化的依赖信息 
      * 
      */
-    operate?:StateOperate
-}
- 
-export type ComputedGetter<Value,Scope=any> = (scope: Scope,args:Required<ComputedGetterArgs>) => Exclude<Value,Promise<any>>
-
-
-export interface ComputedProgressbar{
-    value: (num:number)=>void
-    end  : ()=>void
+    operate?: StateOperate
 }
 
-export interface AsyncComputedGetterArgs{
+export type ComputedGetter<Value, Scope = any> = (scope: Scope, args: Required<ComputedGetterArgs>) => Exclude<Value, Promise<any>>
+
+
+export interface ComputedProgressbar {
+    value: (num: number) => void
+    end: () => void
+}
+
+export interface AsyncComputedGetterArgs {
     /**
      *  获取一个进度条，用来显示异步计算的进度 
      * @param opts 
      * @returns 
      */
-    getProgressbar?:(opts?:{max?:number,min?:number,value?:number})=>ComputedProgressbar
+    getProgressbar?: (opts?: { max?: number, min?: number, value?: number }) => ComputedProgressbar
     /**
      * 当计算函数启用超时时，可以指定一个cb，在超时后会调用此函数 
      * @param cb 
      * @returns 
      */
-    onTimeout?:(cb:()=>void)=>void    
+    onTimeout?: (cb: () => void) => void
     /**
      * 
      * 提供一个函数用来获取当前Scope的快照
      * 传入的scope是一个经过Proxy处理的响应式对象，此方法可以对scope进行转换为普通对象   
      */
-    getSnap?:<T=Dict>(scope:any)=>T  
+    getSnap?: <T = Dict>(scope: any) => T
     /**
      * 在执行计算函数时，如果传入AbortController.signal可以用来传递给异步计算函数，用来取消异步计算
      * 例如：fetch(url,{signal:signal})
      */
-    abortSignal:AbortSignal  
+    abortSignal: AbortSignal
     /**
      * 用来取消操作正在执行的异步计算函数
      * 异步函数可以通过此方法来取消异步计算
      * 
      * @returns 
      */
-    cancel:()=>void
+    cancel: () => void
     /**
      * 额外的参数，用来传递给计算函数
      */
-    extras?:any
+    extras?: any
     /**
      * 触发计算的操作
      */
-    operate?:StateOperate
+    operate?: StateOperate
     /**
      * 是否是第一次运行
      */
-    first?:boolean
+    first?: boolean
 
 }
 
-export type AsyncComputedGetter<Value,Scope=any> = (scope:Scope,args:Required<AsyncComputedGetterArgs>) => Promise<Value>
- 
+export type AsyncComputedGetter<Value, Scope = any> = (scope: Scope, args: Required<AsyncComputedGetterArgs>) => Promise<Value>
 
-    
-export type RequiredComputedOptions<Value=any> = Required<ComputedOptions<Value>>
- 
+
+
+export type RequiredComputedOptions<Value = any> = Required<ComputedOptions<Value>>
+
 
 /**
  * 
@@ -106,28 +106,28 @@ export type RequiredComputedOptions<Value=any> = Required<ComputedOptions<Value>
  * 
  */
 export type RuntimeComputedOptions = ComputedOptions & {
-    first?  : boolean                      // 当第一次运行时为true
+    first?: boolean                      // 当第一次运行时为true
     operate?: StateOperate                // 变化的依赖信息
-} 
+}
 
 export type SyncRuntimeComputedOptions = SyncComputedOptions & {
-    first?  : boolean                           // 当第一次运行时为true
+    first?: boolean                           // 当第一次运行时为true
     operate?: StateOperate                // 变化的依赖信息
-} 
+}
 
 
-export type Computed<T> = (...args: any) => Exclude<T,Promise<any>>;                   // 同步计算函数
-export type AsyncComputed<T=any> = (...args: any) => Promise<T>;    // 异步计算函数
+export type Computed<T> = (...args: any) => Exclude<T, Promise<any>>;                   // 同步计算函数
+export type AsyncComputed<T = any> = (...args: any) => Promise<T>;    // 异步计算函数
 
- 
+
 /**
  * 指定Store中计算函数的上下文,如果是字符串代表是当前对象的指定键，如果是string[]，则代表是当前Store对象的完整路径
  * 当ComputedContext是一个字符串并且以@开头时，有个特殊含义，即是一个路径指向：
  * 如：{fields:{ user:"address",address:"user" }}，如果scope=@user，代表的当前scope对象指向的user属性的值所指向的对象，在这里实质传入的是address
  */
-export type ComputedScope  =  ObserverScopeRef | string | string[] | ((computedObject:ComputedObject)=>string | string[] | ObserverScopeRef)
+export type ComputedScope = ObserverScopeRef | string | string[] | ((computedObject: ComputedObject) => string | string[] | ObserverScopeRef)
 
-  
+
 
 
 /**
@@ -158,10 +158,10 @@ export type ComputedScope  =  ObserverScopeRef | string | string[] | ((computedO
  * 
  *  
  */
-export type ComputedDepend = 'CURRENT' | 'ROOT' | 'PARENT' | `/${string}` | `./${string}` | `../${string}` | string | string[] 
-export type ComputedDepends = ComputedDepend[]  
+export type ComputedDepend = 'CURRENT' | 'ROOT' | 'PARENT' | `/${string}` | `./${string}` | `../${string}` | string | string[]
+export type ComputedDepends = ComputedDepend[]
 
-export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Value> {    
+export interface ComputedOptions<Value = any, Scope = any> extends ObserverOptions<Value> {
     /**
      * 
      * 计算函数的执行超时时间
@@ -174,7 +174,7 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
      * 这样就可以通过绑定timeout值来实现倒计时的效果
      * 如果要实现60秒倒计时，可以这样写：[60*1000,60],这样value.timeout就会从60开始递减
      */
-    timeout?:number  | [number,number]    
+    timeout?: number | [number, number]
 
     /**
      * 
@@ -189,14 +189,14 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
      * 
      * 
      */
-    immediate?:'auto' | boolean
+    immediate?: 'auto' | boolean
     /**
      * 计算函数是否允许重入执行
      * 
      * 默认为true，即允许重入执行
      * 
      */
-    reentry?:boolean
+    reentry?: boolean
     /**
      * 提供一个异步信号，用来传递给异步计算函数以便可以取消异步计算
      * 
@@ -205,7 +205,7 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
      * 仅在异步计算函数中有效
      * 
      */
-    abortController?:()=>AbortController | undefined
+    abortController?: () => AbortController | undefined
     /**
      * 当计算函数执行出错时的重试次数
      * 
@@ -219,11 +219,11 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
      * 可以在UI中通过AsyncComputedObject.retry来实时显示重试次数
      * 
      */
-    retry?:number | [number,number]  
+    retry?: number | [number, number]
     /**
      * 额外的参数
      */
-    extras?:any
+    extras?: any
     /**
      * 当执行计算getter函数出错时的回调，如果返回值==undefined，则返回值会作为出错时的计算结果
      * 
@@ -233,46 +233,46 @@ export interface ComputedOptions<Value=any,Scope=any> extends ObserverOptions<Va
      * 当计算出错时抛出异常，此时就可以返回false, 这样就可以实现当计算出错时，validate返回false
      * 
      */
-    onError?:(e:Error)=>any                         
+    onError?: (e: Error) => any
     /**
      * 当计算完成后的回调函数
      */
-    onDone?(args:{id:string,error:Error | undefined,timeout:boolean ,abort:boolean ,path:string[] | undefined,scope:Scope,value:any}):void
+    onDone?(args: { id: string, error: Error | undefined, timeout: boolean, abort: boolean, path: string[] | undefined, scope: Scope, value: any }): void
 
 }
 
 
-export type AsyncComputedValue<Value = any> ={
-    loading : boolean;
+export type AsyncComputedValue<Value = any> = {
+    loading: boolean;
     progress: number;                // 进度值    
-    timeout : number ;               // 超时时间，单位ms，当启用超时时进行倒计时
-    error   : any;
-    retry   : number                 // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试
-    value   : Value;                // 计算结果保存到此处
-    run     : (options?:RuntimeComputedOptions) => void ;     // 重新执行任务
-    cancel  : ()=>void                                        // 中止正在执行的异步计算
-  }  
-
-  
+    timeout: number;               // 超时时间，单位ms，当启用超时时进行倒计时
+    error: any;
+    retry: number                 // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试
+    value: Value;                // 计算结果保存到此处
+    run: (options?: RuntimeComputedOptions) => void;     // 重新执行任务
+    cancel: () => void                                        // 中止正在执行的异步计算
+}
 
 
 
-export type SyncComputedOptions<Value=any,Scope=any> = Pick<ComputedOptions<Value,Scope>, 
-    'id' | 'enable' | 'onError'  | 'onDone' | 'depends' | 'initial' | 'objectify' | 'group' | 'scope' | 'extras'>
+
+
+export type SyncComputedOptions<Value = any, Scope = any> = Pick<ComputedOptions<Value, Scope>,
+    'id' | 'enable' | 'onError' | 'onDone' | 'depends' | 'initial' | 'objectify' | 'group' | 'scope' | 'extras'>
 
 
 /**
  * 计算属性所在的位置
  */
-export type ComputedContext<Value=any> = {
-    path      : string[]
-    value     : Value
+export type ComputedContext<Value = any> = {
+    path: string[]
+    value: Value
     parentPath: string[]
-    parent    : any
+    parent: any
 }
 
 
-export type ComputedSyncReturns<T=any> = (...args: any) => Exclude<T,Promise<any>>;  
+export type ComputedSyncReturns<T = any> = (...args: any) => Exclude<T, Promise<any>>;
 
 /**
  * 返回函数的返回值类型
@@ -280,51 +280,51 @@ export type ComputedSyncReturns<T=any> = (...args: any) => Exclude<T,Promise<any
  */
 export type AsyncReturnType<T extends (...args: any) => any> = T extends (...args: any) => Promise<infer R> ? R : (
     T extends (...args: any) => infer R ? R : any)
- 
-  
-export type SyncComputedDescriptor<Value=any,Scope=any> = ObserverDescriptor<      
-    'computed',         
+
+
+export type SyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
+    'computed',
     Value,
-    Scope, 
-    ComputedGetter<Value,Scope>,
-    ComputedOptions<Value,Scope>
+    Scope,
+    ComputedGetter<Value, Scope>,
+    ComputedOptions<Value, Scope>
 >
-export type SyncComputedDescriptorBuilder<Value=any,Scope=any> 
-    = ObserverDescriptorBuilder<'computed',Value,Scope,SyncComputedDescriptor<Value,Scope>>
+export type SyncComputedDescriptorBuilder<Value = any, Scope = any>
+    = ObserverDescriptorBuilder<'computed', Value, Scope, SyncComputedDescriptor<Value, Scope>>
 
 
-export type AsyncComputedDescriptor<Value=any,Scope=any> = ObserverDescriptor<      
-    'computed',         
+export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
+    'computed',
     Value,
-    Scope, 
-    AsyncComputedGetter<Value,Scope>,
-    ComputedOptions<Value,Scope>
+    Scope,
+    AsyncComputedGetter<Value, Scope>,
+    ComputedOptions<Value, Scope>
 >
 
-export type AsyncComputedDescriptorBuilder<Value=any,Scope=any> 
-    = ObserverDescriptorBuilder<'computed',Value,Scope,AsyncComputedDescriptor<Value,Scope>>
+export type AsyncComputedDescriptorBuilder<Value = any, Scope = any>
+    = ObserverDescriptorBuilder<'computed', Value, Scope, AsyncComputedDescriptor<Value, Scope>>
 
 
-export type ComputedDescriptor<Value=any,Scope=any> = SyncComputedDescriptor<Value,Scope> | AsyncComputedDescriptor<Value,Scope>
-export type ComputedDescriptorBuilder<Value=any,Scope=any> = SyncComputedDescriptorBuilder<Value,Scope> | AsyncComputedDescriptorBuilder<Value,Scope>
+export type ComputedDescriptor<Value = any, Scope = any> = SyncComputedDescriptor<Value, Scope> | AsyncComputedDescriptor<Value, Scope>
+export type ComputedDescriptorBuilder<Value = any, Scope = any> = SyncComputedDescriptorBuilder<Value, Scope> | AsyncComputedDescriptorBuilder<Value, Scope>
 
 
-export type IComputedGetter<Value=any,Scope=any> = (...args:any[]) =>  Exclude<Value,Promise<any>> 
-export type IAsyncComputedGetter<Value=any,Scope=any> = (...args:any[]) => Promise<Value>
- 
+export type IComputedGetter<Value = any, Scope = any> = (...args: any[]) => Exclude<Value, Promise<any>>
+export type IAsyncComputedGetter<Value = any, Scope = any> = (...args: any[]) => Promise<Value>
 
 
 
 
-export type ComputedDescriptorParameter<Value=any,Scope=any> =  
-                                        ComputedDescriptorBuilder<Value,Scope> 
-                                        | ComputedGetter<Value,Scope> 
-                                        | AsyncComputedGetter<Value,Scope>
- 
+
+export type ComputedDescriptorParameter<Value = any, Scope = any> =
+    ComputedDescriptorBuilder<Value, Scope>
+    | ComputedGetter<Value, Scope>
+    | AsyncComputedGetter<Value, Scope>
 
 
-export type ComputedBuilder<Value,Scope> =  ComputedDescriptorBuilder<Value,Scope> 
-                                            | AsyncComputedGetter<Value,Scope> 
-                                            | ComputedGetter<Value,Scope> 
-                                           
-  
+
+export type ComputedBuilder<Value, Scope> = ComputedDescriptorBuilder<Value, Scope>
+    | AsyncComputedGetter<Value, Scope>
+    | ComputedGetter<Value, Scope>
+
+
