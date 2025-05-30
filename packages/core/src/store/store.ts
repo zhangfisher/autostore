@@ -93,6 +93,7 @@ export class AutoStore<
     private _updatedWatcher: Watcher | undefined                         // 脏状态侦听器
     private _schemas: SchemaManager<State> | undefined
     types = {
+        rawState: undefined as unknown as State,
         state: undefined as unknown as ComputedState<State>
     }
     constructor(state?: State, options?: AutoStoreOptions<State>) {

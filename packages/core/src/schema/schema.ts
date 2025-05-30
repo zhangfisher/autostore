@@ -29,7 +29,7 @@ import { VALUE_SCHEMA } from "../consts"
 import { ValidateError } from "../errors"
 import type { AutoStore } from "../store/store"
 import { isPlainObject } from "../utils"
-import { SchemaBuilder, SchemaObject, SchemaObjectArgs, SchemaObjectValidate } from './types';
+import { ISchemaObject, SchemaBuilder, SchemaObject, SchemaObjectArgs, SchemaObjectValidate } from './types';
 import { getErrorTips } from "./utils"
 
 
@@ -80,11 +80,11 @@ function createSchemaObject<T>(options: any, isValid: (val: any) => boolean) {
             return options.validate(newValue, oldValue, path)
         }
         return true
-    }, options) as SchemaObject<T>
+    }, options) as ISchemaObject<T>
 }
 
 export function createTypeSchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
-    return function typeSchema<T>(): SchemaObject<T> {
+    return function typeSchema<T>(): ISchemaObject<T> {
         const options = getSchemaOptions([...arguments])
         if (!isValid(options.value)) throw new ValidateError(defaultTips)
         return createSchemaObject(options, isValid)
@@ -92,10 +92,10 @@ export function createTypeSchemaBuilder<Value = any>(isValid: (val: any) => bool
 }
 
 export function createObjectSchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
-    function objectSchema<T = Value>(value: T, options?: SchemaObjectArgs<T>): SchemaObject<T>
-    function objectSchema<T = Value>(value: T, validate?: SchemaObjectValidate, options?: SchemaObjectArgs<T>): SchemaObject<T>
-    function objectSchema<T = Value>(value: T, validate?: SchemaObjectValidate, errorTips?: SchemaObjectArgs<T>['errorTips']): SchemaObject<T>
-    function objectSchema<T = Value>(): SchemaObject<T> {
+    function objectSchema<T = Value>(value: T, options?: SchemaObjectArgs<T>): ISchemaObject<T>
+    function objectSchema<T = Value>(value: T, validate?: SchemaObjectValidate, options?: SchemaObjectArgs<T>): ISchemaObject<T>
+    function objectSchema<T = Value>(value: T, validate?: SchemaObjectValidate, errorTips?: SchemaObjectArgs<T>['errorTips']): ISchemaObject<T>
+    function objectSchema<T = Value>(): ISchemaObject<T> {
         const opts = getSchemaOptions([...arguments])
         if (!isValid(opts.value)) throw new ValidateError(defaultTips)
         return createSchemaObject<T>(opts, isValid)
@@ -103,9 +103,9 @@ export function createObjectSchemaBuilder<Value = any>(isValid: (val: any) => bo
     return objectSchema
 }
 export function createArraySchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
-    function arraySchema<T = Value>(value: Array<T>, options?: SchemaObjectArgs<Array<T>>): SchemaObject<Array<T>>
-    function arraySchema<T = Value>(value: Array<T>, validate?: SchemaObjectValidate, options?: SchemaObjectArgs<Array<T>>): SchemaObject<Array<T>>
-    function arraySchema<T = Value>(value: Array<T>, validate?: SchemaObjectValidate, errorTips?: SchemaObjectArgs<Array<T>>['errorTips']): SchemaObject<Array<T>>
+    function arraySchema<T = Value>(value: Array<T>, options?: SchemaObjectArgs<Array<T>>): ISchemaObject<Array<T>>
+    function arraySchema<T = Value>(value: Array<T>, validate?: SchemaObjectValidate, options?: SchemaObjectArgs<Array<T>>): ISchemaObject<Array<T>>
+    function arraySchema<T = Value>(value: Array<T>, validate?: SchemaObjectValidate, errorTips?: SchemaObjectArgs<Array<T>>['errorTips']): ISchemaObject<Array<T>>
     function arraySchema<T = Value>(): SchemaObject<Array<T>> {
         const opts = getSchemaOptions([...arguments])
         if (!isValid(opts.value)) throw new ValidateError(defaultTips)

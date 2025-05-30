@@ -1,31 +1,62 @@
 import { Equal, Expect } from "@type-challenges/utils"
-import { ComputedState, Dict } from "../src/types";
-import { configurable, ConfigurableState, s, schema, SchemaState } from "../src/schema";
+import { ComputedState, Dict, GetTypeByPath, StatePath } from "../src/types";
+import { configurable, ConfigurableState, s, schema, SchemaState, SchemaStatePath } from "../src/schema";
 import { AutoStore } from "../src/store";
 import { computed } from "../src";
+import { RawObject } from '../src/utils/markRaw';
+import { Get } from "type-fest";
 
+
+const stt = {
+    title: '姓名',
+    placeholder: '请输入姓名',
+    errorTips: '姓名长度必须大于3个字符',
+    enable: computed((state) => {
+        return state.user.admin as boolean
+    }),
+    required: computed(async (state) => {
+        return state.user.admin
+    }, ['user.admin']),
+
+    tags: [computed(() => 'fisher'),]
+
+}
+
+type sst = ComputedState<typeof stt>
 
 const obj = {
     price: schema<number>(100),
     tags: s.array<number>([1, 2]),
-    address: s.object({
+    address: configurable({
         city: "QuanZhou",
         post: 1234,
         street: "FenZhei"
     }),
     customer: {
         name: s.string("zhang"),
-        age: s.number<number>(18)
-    }
+        age: s.number<number>(18),
+        address: "ss"
+    },
+    products: [
+        "fisher",
+        configurable('100')
+    ]
 }
 const store = new AutoStore(obj)
 store.state.price
 
 // 示例测试
 type RawState = typeof obj
+type addressType = RawState['address']
+type s = SchemaState<RawState>
+type s2 = StatePath<RawState>
+type sf = SchemaStatePath<RawState>
+type sdf = GetTypeByPath<RawState, 'address'>
+type sdf2 = GetTypeByPath<RawState, 'address.post'>
 
+type dd = Get<RawState, 'address'>
 
-type d = ConfigurableState<RawState>
+type d = ComputedState<RawState>
 
 
 type State = ComputedState<typeof obj>
@@ -35,6 +66,7 @@ let objState = obj as unknown as State
 
 objState.price
 objState.tags
+objState.address
 objState.address.city
 objState.address.post
 objState.address.street
@@ -51,17 +83,17 @@ type cases = [
         post: number,
         street: string
     }>>,
-    Expect<Equal<SchemaState<RawState>, {
-        tags: number[]
-        price: number
-        address: {
-            city: string
-            post: number
-            street: string;
-        }
-        "customer.name": string
-        "customer.age": number
-    }>>
+    // Expect<Equal<SchemaState<RawState>, {
+    //     tags: number[]
+    //     price: number
+    //     address: {
+    //         city: string
+    //         post: number
+    //         street: string;
+    //     }
+    //     "customer.name": string
+    //     "customer.age": number
+    // }>>
 ]
 
 

@@ -6,7 +6,7 @@ import { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
 import { isValueSchema } from '../utils';
 import { PATH_DELIMITER } from '../consts';
-import type { SchemaObjectValidate } from '../schema/types';
+import type { SchemaObject, SchemaObjectValidate } from '../schema/types';
 import { getErrorTips } from '../schema/utils';
 
 
@@ -27,11 +27,11 @@ type CreateReactiveObjectOptions = {
 
 function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue: any, oldValue: any, parentPath: string[]) {
     const validators = this.schemas
-    const validator = validators.get(key as never)
+    const validator = validators.get(key as never) as SchemaObject | undefined
 
     let validFn: SchemaObjectValidate
     if (validator && typeof (validator.validate) === 'function') {
-        validFn = validator.validate!
+        validFn = validator.validate! as any
     } else if (typeof (this.options.onValidate) === 'function') {
         validFn = this.options.onValidate
     }

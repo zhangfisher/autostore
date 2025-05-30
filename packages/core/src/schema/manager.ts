@@ -1,13 +1,11 @@
-import { PATH_DELIMITER } from "../consts";
+import { PATH_DELIMITER, VALUE_SCHEMA } from "../consts";
 import type { AutoStore } from "../store/store";
-import { ComputedState, Dict, StatePath } from "../types";
+import { ComputedState, Dict, StatePath } from '../types';
 import { getValueByPath } from "../utils/getValueByPath";
-import { ComputedSchemaObject, SchemaObject, SchemaState } from "./types";
+import { GetSchemaObjectByPath, NewSchemaObject, SchemaObject, SchemaState, SchemaStatePath } from "./types";
 import { isComputedDescriptorParameter } from '../utils/isComputedDescriptorParameter';
 
-
-
-export class SchemaManager<State extends Dict> extends Map<string, ComputedSchemaObject<any, ComputedState<State>>> {
+export class SchemaManager<State extends Dict> extends Map<string, SchemaObject<any, ComputedState<State>>> {
     errors: Dict<string> = {}          // {<路径名称>:"错误信息"}
     _subscribers: any[] = []
     constructor(public store: AutoStore<any>) {
@@ -19,31 +17,38 @@ export class SchemaManager<State extends Dict> extends Map<string, ComputedSchem
     _getPath(path: string) {
         return path.split('_$_')
     }
-    add(path: StatePath<State>, schema: SchemaObject<any, ComputedState<State>>): SchemaObject<any, ComputedState<State>> {
+
+    add<Define extends SchemaObject<any, ComputedState<State>>>(path: string | string[], schema: Define): NewSchemaObject<Define> {
+        // @ts-ignore
         schema.path = Array.isArray(path) ? path : path.split(PATH_DELIMITER)
-        this.set(this._getKey(path), schema as ComputedSchemaObject<any, ComputedState<State>>)
-        return schema
+        schema[VALUE_SCHEMA] = true
+        this.set(this._getKey(path), schema as any)
+        this._createComputedSchemaObject(schema)
+        return schema as NewSchemaObject<Define>
     }
     /**
      * Schema对象的所有属性均可以是一个computed对象
      * 
+     * 当目标数据变化时
+     * 
      * @param schema 
      */
-    private _createComputedSchemaObject(schema: SchemaObject) {
+    private _createComputedSchemaObject(schema: any) {
         Object.entries(schema).forEach(([key, value]) => {
             if (['path', 'value'].includes(key)) return
             if (isComputedDescriptorParameter(value)) {
-                const computedObject = this.store.computedObjects.create(value as any)
-                computedObject.watch(({ value }) => {
+                const computedObject = this.store.computedObjects.create((value as any)() as any)
+                this.store.watch(schema.path, ({ value }: any) => {
                     (schema as any)[key] = value
                     this.store.emit("schema:updated", schema)
-                })
+                });
+                (schema as any)[key] = computedObject.value
             }
         })
     }
 
-    get(path: StatePath<State>): ComputedSchemaObject<any, ComputedState<State>> | undefined {
-        return super.get(this._getKey(path)) as ComputedSchemaObject<any, ComputedState<State>> | undefined
+    get<T extends SchemaStatePath<State> = SchemaStatePath<State>>(path: T): GetSchemaObjectByPath<State, T> | undefined {
+        return super.get(this._getKey(path)) as unknown as GetSchemaObjectByPath<State, T> | undefined
     }
 
     remove(path: StatePath<State> | string | string[]): boolean {
@@ -54,6 +59,9 @@ export class SchemaManager<State extends Dict> extends Map<string, ComputedSchem
     }
     has(path: StatePath<State>): boolean {
         return super.has(this._getKey(path))
+    }
+    getKeys() {
+        return super.keys() as SchemaStatePath<State>
     }
     /**
      * 返回所有标注了Schema的状态值

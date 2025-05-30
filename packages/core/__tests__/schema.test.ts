@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { configurable, s } from '../src/schema'
 import { AutoStore, StateOperate } from '../src/store';
-import { setVal, ValidateError } from '../src';
+import { computed, setVal, ValidateError } from '../src';
 
 
 describe("validator", () => {
@@ -93,7 +93,7 @@ describe("validator", () => {
     test("使用函数自定义校验提示", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val) => val > 10, { errorTips: (path) => path + ":价格必须大于10" })
+                price: s.number(100, (val) => val > 10, { errorTips: (path: string) => path + ":价格必须大于10" })
             }
         })
         expect(store.state.order.price).toBe(100)
@@ -158,6 +158,29 @@ describe("validator", () => {
             })
             setVal(store.state, ["order", "price"], 101)
             // store.state.order.price = 101
+        })
+    })
+    test("schema数据是一个计算函数", () => {
+        return new Promise<void>((resolve, reject) => {
+            const store = new AutoStore({
+                order: {
+                    price: configurable(10),
+                    visiable: configurable(true, {
+                        enable: computed((state) => {
+                            return state.order.price > 20 as boolean
+                        })
+                    })
+                }
+            })
+            store.on('schema:updated', (schema) => {
+                expect(schema.enable).toBe(true)
+            })
+            const schmea = store.schemas.get("order.visiable")!
+            expect(schmea.enable).toBe(false)
+            setVal(store.state, ["order", "price"], 101)
+            expect(schmea.enable).toBe(true)
+            // store.state.order.price = 101
+            resolve()
         })
     })
 })

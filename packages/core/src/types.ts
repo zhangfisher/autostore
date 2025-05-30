@@ -1,5 +1,5 @@
 import { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
-import { SchemaObject } from "./schema";
+import { ISchemaObject } from "./schema";
 import type { AutoStore } from "./store";
 import { RawObject } from "./utils";
 import { WatchDescriptorBuilder } from "./watch/types";
@@ -10,8 +10,8 @@ import { Get, Paths } from "type-fest"
 // **************  以下实现将计算属性函数的返回值类型提取出来  **************
 
 
-export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> :
-    (T extends SyncComputedDescriptorBuilder<infer X> ? X :
+export type PickComputedResult<T> = T extends SyncComputedDescriptorBuilder<infer X> ? X :
+    (T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> :
         (T extends WatchDescriptorBuilder<infer X> ? X :
             (T extends ComputedGetter<infer X> ? X :                                           // 同步函数
                 (T extends AsyncComputedGetter<infer X> ? AsyncComputedValue<X> :                // 异步函数
@@ -20,7 +20,16 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
             )
         )
     )
-
+// export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> :
+// (T extends SyncComputedDescriptorBuilder<infer X> ? X :
+//     (T extends WatchDescriptorBuilder<infer X> ? X :
+//         (T extends ComputedGetter<infer X> ? X :                                           // 同步函数
+//             (T extends AsyncComputedGetter<infer X> ? AsyncComputedValue<X> :                // 异步函数
+//                 T
+//             )
+//         )
+//     )
+// )
 /**
 
 转换状态中的计算属性函数的类型
@@ -33,7 +42,7 @@ export type PickComputedResult<T> = T extends AsyncComputedDescriptorBuilder<inf
 export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[]
     :
     (
-        T extends SchemaObject<infer V> ? V
+        T extends ISchemaObject<infer V> ? V
         : (
             T extends RawObject<T> ? T
             : (
@@ -96,10 +105,12 @@ export type Primitive = string | number | boolean | null | undefined | symbol | 
 export type Dict<T = any> = T extends (...args: any[]) => any ? never : Record<string, T>
 
 
-export type ObjectKeyPaths<T> = Exclude<Paths<T, { maxRecursionDepth: 30 }>, number>
+export type ObjectKeyPaths<T> = Exclude<Paths<T, { maxRecursionDepth: 50 }>, number>
 
 export type GetTypeByPath<State, Path extends string>
     = Path extends '' | undefined
     ? State
-    : (State extends Dict ? Get<State, Path> : State)
+    : (State extends Dict ? Get<State, Path> : never)
 
+
+export type RemoveUnknown<T> = T extends unknown ? never : T

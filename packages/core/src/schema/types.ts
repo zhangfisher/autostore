@@ -1,51 +1,29 @@
 import { ComputedBuilder } from "../computed/types";
 import { VALUE_SCHEMA } from "../consts"
-import { ComputedState, Dict, GetTypeByPath, ObjectKeyPaths } from '../types';
+import { ComputedState, Dict, GetTypeByPath, ObjectKeyPaths, StatePath } from '../types';
 
 export type SchemaObjectValidate<Value = any> = (newValue: Value, oldValue: Value, path: string) => boolean
-
 
 export interface SchemaObjectWidgetTypes {
 
 }
 
-export interface ComputedSchemaObject<Value = any, State = Dict> {
-    [VALUE_SCHEMA]?: true
-    value?: Value
-    validate?: SchemaObjectValidate<Value>
-    behavior?: 'pass' | 'ignore' | 'throw'   // 当验证失败时的行为， pass=继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
-    required?: boolean | ComputedBuilder<boolean, State>
-    datatype?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | string
-    enable?: boolean
-    path?: string[]
-    icon?: string
-    // 提供一些元数据
-    title?: string
-    help?: string
-    placeholder?: string
-    select?: string[] | number[] | boolean[] | ({
-        label?: string
-        value: Value
-        default?: boolean
-        icon?: string
-    })[]
-    widget?: keyof SchemaObjectWidgetTypes | string
-    errorTips?: string | ((this: SchemaObject<Value>, path: string, newValue: Value, oldValue: Value) => string)
-    tags?: string[]
-    group?: string
-    advanced?: boolean
-    order?: number
-}
+type ToExpandType<T> =
+    T extends string ? (string extends T ? T : string) :
+    T extends number ? (number extends T ? T : number) :
+    T extends boolean ? (boolean extends T ? T : boolean) :
+    T;
+
 
 export interface SchemaObject<Value = any, State = Dict> {
     [VALUE_SCHEMA]?: true
+    path?: string[]
     value?: Value
     validate?: SchemaObjectValidate<Value>
     behavior?: 'pass' | 'ignore' | 'throw'   // 当验证失败时的行为， pass=继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
     required?: boolean | ComputedBuilder<boolean, State>
     datatype?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | string
     enable?: boolean | ComputedBuilder<boolean, State>
-    path?: string[]
     icon?: string | ComputedBuilder<string, State>
     // 提供一些元数据
     title?: string | ComputedBuilder<string, State>
@@ -66,34 +44,48 @@ export interface SchemaObject<Value = any, State = Dict> {
     order?: number | ComputedBuilder<number, State>
 }
 
-
-// T extends unknown[] ? ComputedState<T[number]>[]
-//     :
-//     (
-//         T extends SchemaObject<infer V> ? V
-//         : (
-//             T extends RawObject<T> ? T
-//             : (
-//                 T extends (...args: any) => any ? PickComputedResult<T>
-//                 : (
-//                     T extends Dict ? {
-//                         [K in keyof T]: T[K] extends (...args: any[]) => any ? PickComputedResult<T[K]>
-//                         : (
-//                             T[K] extends Record<string, any> ? ComputedState<T[K]>
-//                             : (
-//                                 T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
-//                             )
-//                         )
-//                     }
-//                     : T
-//                 )
-//             )
-//         )
-//     )
+export type ISchemaObject<Value = any, Extras extends Dict = Dict> = {
+    [VALUE_SCHEMA]: true
+    path: string[]
+    value: ToExpandType<Value>
+} & Extras
 
 
-export type SchemaObjectArgs<Value = any> = Pick<SchemaObject<Value>,
-    'value'
+export type RemoveSchemaFlags<T extends Dict> = {
+    [K in keyof T as K extends typeof VALUE_SCHEMA ? never : K]: T[K]
+}
+
+
+export type SchemaStatePath<State> = Exclude<keyof {
+    [K in StatePath<State> as GetTypeByPath<State, K> extends {
+        [VALUE_SCHEMA]: true
+    } ? K : GetTypeByPath<State, K> extends Array<infer Item>
+    ? Item extends { [VALUE_SCHEMA]: true }
+    ? `${K}.${number}` | K  // 返回数组路径和索引路径
+    : never
+    : never]: any
+}, number | symbol>
+
+// export type SchemaStatePath<State> = Exclude<keyof {
+//     [K in StatePath<State> as GetTypeByPath<State, K> extends ISchemaObject ? K : never]: any
+// }, number | symbol>
+
+
+// 根据路径获取SchemaObject
+export type GetSchemaObjectByPath<State extends Dict, P extends string = string> = Required<
+    ComputedState<RemoveSchemaFlags<GetTypeByPath<State, P>>> & {
+        [VALUE_SCHEMA]: true
+        value: GetTypeByPath<State, P>['value']
+    }
+>
+
+export type NewSchemaObject<State extends Dict> =
+    ComputedState<RemoveSchemaFlags<State>> & {
+        [VALUE_SCHEMA]: true
+        path: string[]
+    }
+
+export type SchemaObjectArgs<Value = any, State = Dict> = Pick<SchemaObject<Value, State>,
     | 'required'
     | 'validate'
     | 'behavior'
@@ -110,20 +102,16 @@ export type SchemaObjectArgs<Value = any> = Pick<SchemaObject<Value>,
 > & Record<string, any>
 
 export interface SchemaBuilder<Value = any> {
-    <T = Value>(value: T, options?: SchemaObjectArgs<T>): SchemaObject<T>
-    <T = Value>(value: T, validate: SchemaObjectValidate<T>, options?: SchemaObjectArgs<T>): SchemaObject<T>
-    <T = Value>(value: T, validate: SchemaObjectValidate<T>, errorTips?: SchemaObjectArgs<T>['errorTips']): SchemaObject<T>
+    <T = Value, Define extends SchemaObjectArgs<T> = SchemaObjectArgs<T>>(value: T, options?: Define): ISchemaObject<T, Define>
+    <T = Value, Define extends SchemaObjectArgs<T> = SchemaObjectArgs<T>>(value: T, validate: SchemaObjectValidate<T>, options?: Define): ISchemaObject<T, Define>
+    <T = Value, Define extends SchemaObjectArgs<T> = SchemaObjectArgs<T>>(value: T, validate: SchemaObjectValidate<T>, errorTips?: SchemaObject<T>['errorTips']): ISchemaObject<T, Define>
 }
 
 export type ConfigurableState<State extends Dict> = {
-    [Key in ObjectKeyPaths<ComputedState<State>>]:
-    GetTypeByPath<State, Key> extends SchemaObject<infer Value>
-    ? Value
-    : never
-} extends infer Temp
-    ? { [K in keyof Temp as Temp[K] extends never ? never : K]: Temp[K] }
-    : never
+    [Key in SchemaStatePath<State> as GetTypeByPath<State, Key> extends ISchemaObject ? Key : never]: GetTypeByPath<ComputedState<State>, Key>
+}
 
 export type SchemaState<State extends Dict> = ConfigurableState<State>
+
 
 
