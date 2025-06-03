@@ -110,6 +110,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
             } else if (isValueSchema(value)) {
                 const validator = Object.assign({}, this.options.valueSchema, value, { path })
                 this.schemas.add(path as never, validator)
+                options.notify({ type: 'get', path, indexs: [], value, oldValue: undefined, parentPath, parent: obj });
                 return value.value
             }
             options.notify({ type: 'get', path, indexs: [], value, oldValue: undefined, parentPath, parent: obj });

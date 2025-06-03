@@ -48,7 +48,7 @@ function getSchemaOptions(args: any[]) {
     }
     return options
 }
-
+``
 const defaultValidates = {
     boolean: (val: any) => typeof (val) === 'boolean',
     number: (val: any) => typeof (val) === 'number',

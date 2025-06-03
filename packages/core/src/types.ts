@@ -1,5 +1,5 @@
 import { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
-import { ISchemaObject } from "./schema";
+import { ISchemaObject, SchemaObject } from "./schema";
 import type { AutoStore } from "./store";
 import { RawObject } from "./utils";
 import { WatchDescriptorBuilder } from "./watch/types";
@@ -42,7 +42,7 @@ export type PickComputedResult<T> = T extends SyncComputedDescriptorBuilder<infe
 export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[]
     :
     (
-        T extends ISchemaObject<infer V> ? V
+        T extends SchemaObject<infer V> ? V
         : (
             T extends RawObject<T> ? T
             : (

@@ -101,6 +101,7 @@ export class AutoForm extends LitElement {
             }
             return true
         }).sort((a, b) => {
+            // @ts-ignore
             return (a.order || 0) - (b.order || 0)
         })
     }
@@ -120,6 +121,9 @@ export class AutoForm extends LitElement {
     _renderFields() {
         return html`            
                 ${this.schemas!.map(schema => {
+            if (!schema.widget) {
+                if (schema.datatype === 'boolean') schema.widget = 'checkbox'
+            }
             switch (schema.widget) {
                 case 'textarea':
                     return widgets.renderTextarea.call(this, schema)
@@ -139,8 +143,14 @@ export class AutoForm extends LitElement {
                     return widgets.renderRating.call(this, schema)
                 case 'range':
                     return widgets.renderRange.call(this, schema)
+                case 'date':
+                    return html`<auto-field-date .schema=${schema}></auto-field-date>`
+                case 'number':
+                    return html`<auto-field-number .schema=${schema}></auto-field-number>`
+                case 'email':
+                    return html`<auto-field-email .schema=${schema}></auto-field-email>`
                 case 'checkbox':
-                    return widgets.renderCheckbox.call(this, schema)
+                    return html`<auto-field-checkbox .schema=${schema}></auto-field-checkbox>`
                 default:
                     return html`<auto-field-input .schema=${schema}></auto-field-input>`
             }

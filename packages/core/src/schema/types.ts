@@ -1,4 +1,4 @@
-import { ComputedBuilder } from "../computed/types";
+import { ComputedBuilder, ComputedGetter } from "../computed/types";
 import { VALUE_SCHEMA } from "../consts"
 import { ComputedState, Dict, GetTypeByPath, ObjectKeyPaths, StatePath } from '../types';
 
@@ -15,10 +15,11 @@ type ToExpandType<T> =
     T;
 
 
-export interface SchemaObject<Value = any, State = Dict> {
-    [VALUE_SCHEMA]?: true
-    path?: string[]
-    value?: Value
+export interface SchemaObject<Value = any, State = Dict> extends Record<string, any> {
+    [VALUE_SCHEMA]: true
+    path: string[]
+    value: ToExpandType<Value>
+    name?: string
     validate?: SchemaObjectValidate<Value>
     behavior?: 'pass' | 'ignore' | 'throw'   // 当验证失败时的行为， pass=继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
     required?: boolean | ComputedBuilder<boolean, State>
@@ -40,9 +41,10 @@ export interface SchemaObject<Value = any, State = Dict> {
     | ((this: SchemaObject<Value>, path: string, newValue: Value, oldValue: Value) => string)
     tags?: string[] | ComputedBuilder<string[], State>
     group?: string | ComputedBuilder<string, State>
-    advanced?: boolean | ComputedBuilder<boolean, State>
-    order?: number | ComputedBuilder<number, State>
+    advanced?: boolean | ComputedGetter<boolean, State>
+    order?: number | ComputedGetter<number, State>
 }
+
 
 export type ISchemaObject<Value = any, Extras extends Dict = Dict> = {
     [VALUE_SCHEMA]: true
@@ -76,6 +78,7 @@ export type GetSchemaObjectByPath<State extends Dict, P extends string = string>
     ComputedState<RemoveSchemaFlags<GetTypeByPath<State, P>>> & {
         [VALUE_SCHEMA]: true
         value: GetTypeByPath<State, P>['value']
+        path: string[]
     }
 >
 
@@ -85,20 +88,8 @@ export type NewSchemaObject<State extends Dict> =
         path: string[]
     }
 
-export type SchemaObjectArgs<Value = any, State = Dict> = Pick<SchemaObject<Value, State>,
-    | 'required'
-    | 'validate'
-    | 'behavior'
-    | 'enable'
-    | 'errorTips'
-    | 'placeholder'
-    | 'tags'
-    | 'help'
-    | 'title'
-    | 'widget'
-    | 'select'
-    | 'group'
-    | 'advanced'
+export type SchemaObjectArgs<Value = any, State = Dict> = Omit<SchemaObject<Value, State>,
+    'path' | '__AS_VALUE_SCHEMA__' | 'value'
 > & Record<string, any>
 
 export interface SchemaBuilder<Value = any> {

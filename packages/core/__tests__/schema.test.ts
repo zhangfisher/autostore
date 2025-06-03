@@ -179,8 +179,37 @@ describe("validator", () => {
             expect(schmea.enable).toBe(false)
             setVal(store.state, ["order", "price"], 101)
             expect(schmea.enable).toBe(true)
-            // store.state.order.price = 101
             resolve()
+        })
+    })
+    test("schema数据是一个异步计算函数", () => {
+        return new Promise<void>((resolve, reject) => {
+            const store = new AutoStore({
+                order: {
+                    price: configurable(10),
+                    visiable: configurable(true, {
+                        enable: computed(async (state) => {
+                            await new Promise((resolve) => setTimeout(resolve, 10))
+                            return state.order.price > 20
+                        }, ['order.price'], {
+                            initial: false
+                        })
+                    })
+                }
+            })
+            const values: any[] = []
+            store.on("schema:updated", (schema) => {
+                values.push((schema.enable as any).value)
+            })
+
+            const schmea = store.schemas.get("order.visiable")!
+
+            setVal(store.state, ["order", "price"], 101)
+            setTimeout(() => {
+                expect(schmea.enable.value).toBe(true)
+                resolve()
+            }, 200)
+
         })
     })
 })

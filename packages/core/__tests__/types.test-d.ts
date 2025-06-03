@@ -107,7 +107,6 @@ const store2 = new AutoStore({
     }
 })
 store2.state.order.name
-store2.state.order.name
 store2.state.order.price
 store2.state.order.total
 

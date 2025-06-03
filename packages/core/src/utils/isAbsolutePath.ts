@@ -7,18 +7,18 @@
 import type { ComputedDepends } from "../computed";
 
 
-export function isAbsolutePath(depends: ComputedDepends | undefined) { 
-    if(!depends) return false;
-    return depends.some(dep => { 
-        if(typeof(dep) === 'string') {
-            if(dep.startsWith("./") || dep.startsWith("../") || dep.startsWith("@")) {
+export function isAbsolutePath(depends: ComputedDepends | undefined) {
+    if (!depends) return false;
+    return depends.some(dep => {
+        if (typeof (dep) === 'string') {
+            if (dep.startsWith("./") || dep.startsWith("../") || dep.startsWith("@")) {
                 return false;
-            }else if(['CURRENT','ROOT','SELF','PARENT'].includes(dep)){
+            } else if (['CURRENT', 'SELF', 'PARENT'].includes(dep)) {
                 return false;
-            }else{
+            } else {
                 return true;
             }
-        }else{
+        } else {
             return true;
         }
     });

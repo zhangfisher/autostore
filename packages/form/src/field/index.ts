@@ -24,7 +24,7 @@
 
 import { LitElement, html } from 'lit'
 import { property, query, queryAssignedElements, state } from 'lit/decorators.js'
-import { getVal, setVal, Watcher, type SchemaObject } from 'autostore';
+import { getVal, isAsyncComputedValue, setVal, Watcher, type SchemaObject } from 'autostore';
 import { classMap } from 'lit/directives/class-map.js';
 import { consume } from '@lit/context';
 import { AutoFormContext, context } from '../context';
@@ -50,7 +50,7 @@ export class AutoField extends LitElement {
     _subscriber: Watcher | undefined
 
     @query('.value >:first-child')
-    inputElement?: HTMLInputElement
+    input?: HTMLInputElement
     @consume({ context })
     @property({ attribute: false })
     public context?: AutoFormContext
@@ -69,6 +69,29 @@ export class AutoField extends LitElement {
 
     getSchema() {
 
+    }
+    getSchmeaItemValue(name: string, defaultValue?: any) {
+        if (this.schema && name in this.schema) {
+            // @ts-ignore
+            const value = this.schema[name]
+            if (value === undefined) {
+                return defaultValue
+            } else if (isAsyncComputedValue(value)) {
+                return value.value
+            } else {
+                return value
+            }
+        } else {
+            return defaultValue
+        }
+    }
+    getValue(): any {
+        if (!this.input) return ''
+        const datatype = this.schema?.datatype || 'string'
+        const value = this.input.checked ?? this.input.value
+        if (datatype === 'number') return Number(value)
+        if (datatype === 'boolean') return Boolean(value)
+        return value
     }
 
 
@@ -116,9 +139,9 @@ export class AutoField extends LitElement {
 
     _updateFieldValue() {
         if (!this.schema) return
-        if (!this.inputElement) return
+        if (!this.input) return
         const path = this.schema.path
-        const value = this.inputElement?.value
+        const value = this.getValue()
         const ctx = this.getContext()
         try {
             const store = this.getContext().store
