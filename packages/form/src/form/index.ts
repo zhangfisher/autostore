@@ -33,17 +33,23 @@ import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
+import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/rating/rating.js';
 import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
 import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
+import '@shoelace-style/shoelace/dist/components/divider/divider.js';
 import '@shoelace-style/shoelace/dist/components/color-picker/color-picker.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/range/range.js';
+import '@shoelace-style/shoelace/dist/components/radio/radio.js';
+import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
+import '@shoelace-style/shoelace/dist/components/tree/tree.js';
+import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 import '../field'
 import styles from './styles'
 import { AutoStore, Dict, SchemaObject } from 'autostore';
 import { context, AutoFormContext } from '../context'
-import * as widgets from '../widgets'
+import '../widgets'
 import { provide } from '@lit/context';
 
 @customElement('auto-form')
@@ -125,32 +131,42 @@ export class AutoForm extends LitElement {
                 if (schema.datatype === 'boolean') schema.widget = 'checkbox'
             }
             switch (schema.widget) {
-                case 'textarea':
-                    return widgets.renderTextarea.call(this, schema)
                 case 'select':
-                    return widgets.renderSelect.call(this, schema)
+                    return html`<auto-field-select .schema=${schema}></auto-field-select>`
+                case 'password':
+                    return html`<auto-field-password .schema=${schema}></auto-field-password>`
                 case 'switch':
-                    return widgets.renderSwitch.call(this, schema)
+                    return html`<auto-field-switch .schema=${schema}></auto-field-switch>`
                 case 'qrcode':
-                    return widgets.renderQRCode.call(this, schema)
+                    return html`<auto-field-qrcode .schema=${schema}></auto-field-qrcode>`
                 case 'colorpicker':
-                    return widgets.renderColorPicker.call(this, schema)
+                    return html`<auto-field-colorpicker .schema=${schema}></auto-field-colorpicker>`
                 case 'radio':
-                    return widgets.renderRadio.call(this, schema)
-                case 'radiobutton':
-                    return widgets.renderRadioButton.call(this, schema)
+                    return html`<auto-field-radio .schema=${schema}></auto-field-radio>`
+                case 'radio-button':
+                    return html`<auto-field-radio-button .schema=${schema}></auto-field-radio-button>`
                 case 'rating':
-                    return widgets.renderRating.call(this, schema)
+                    return html`<auto-field-rating .schema=${schema}></auto-field-rating>`
                 case 'range':
-                    return widgets.renderRange.call(this, schema)
+                    return html`<auto-field-range .schema=${schema}></auto-field-range>`
+                case 'textarea':
+                    return html`<auto-field-textarea .schema=${schema}></auto-field-textarea>`
                 case 'date':
                     return html`<auto-field-date .schema=${schema}></auto-field-date>`
                 case 'number':
                     return html`<auto-field-number .schema=${schema}></auto-field-number>`
                 case 'email':
                     return html`<auto-field-email .schema=${schema}></auto-field-email>`
+                case 'tree-select':
+                    return html`<auto-field-tree-select .schema=${schema}></auto-field-tree-select>`
+                case 'ipaddress':
+                    return html`<auto-field-ipaddress .schema=${schema}></auto-field-ipaddress>`
                 case 'checkbox':
                     return html`<auto-field-checkbox .schema=${schema}></auto-field-checkbox>`
+                case 'time':
+                    return html`<auto-field-time .schema=${schema}></auto-field-time>`
+                case 'url':
+                    return html`<auto-field-url .schema=${schema}></auto-field-url>`
                 default:
                     return html`<auto-field-input .schema=${schema}></auto-field-input>`
             }

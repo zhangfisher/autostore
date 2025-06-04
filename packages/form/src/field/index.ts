@@ -22,7 +22,7 @@
  * 
  */
 
-import { LitElement, html } from 'lit'
+import { CSSResult, LitElement, html } from 'lit'
 import { property, query, queryAssignedElements, state } from 'lit/decorators.js'
 import { getVal, isAsyncComputedValue, setVal, Watcher, type SchemaObject } from 'autostore';
 import { classMap } from 'lit/directives/class-map.js';
@@ -33,13 +33,16 @@ import { toSchemaValue } from '@/utils/toSchemaValue';
 
 
 export class AutoField extends LitElement {
-    static styles = styles
+    static styles = styles as CSSResult
 
     @property({ type: Object })
     schema?: SchemaObject
 
     @state()
     value: any = ''
+
+    name: string = ''
+    path: string = ''
 
     @state()
     errorTips?: string
@@ -67,10 +70,14 @@ export class AutoField extends LitElement {
         }
     }
 
-    getSchema() {
-
+    getLabel() {
+        return this.getSchema().title || this.name
     }
-    getSchmeaItemValue(name: string, defaultValue?: any) {
+
+    getSchema() {
+        return this.schema!
+    }
+    getSchemaItemValue(name: string, defaultValue?: any) {
         if (this.schema && name in this.schema) {
             // @ts-ignore
             const value = this.schema[name]
@@ -99,7 +106,7 @@ export class AutoField extends LitElement {
         return html`<span class="help"></span>`
     }
     renderLabel(context: AutoFormContext) {
-        return html`<label>${this.schema?.title}</label>`
+        return html`${this.schema?.title}`
     }
     renderValue(context: AutoFormContext) {
         return html``
@@ -108,7 +115,7 @@ export class AutoField extends LitElement {
         return html`${this.errorTips}`
     }
 
-    onFieldChange(e: Event) {
+    onFieldChange(e?: Event) {
         this._updateFieldValue()
     }
 
@@ -127,6 +134,8 @@ export class AutoField extends LitElement {
                 this.value = operate.value
             }, { operates: 'write' })
             this.value = getVal(ctx.store.state, this.schema.path, this.schema.value)
+            this.path = this.schema!.path.join(".")
+            this.name = this.schema!.name || this.path
         }
 
     }

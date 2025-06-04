@@ -1,17 +1,17 @@
 import { customElement } from "lit/decorators.js"
 import { AutoFieldInput } from "./input"
 
-@customElement('auto-field-number')
-export class AutoFieldNumber extends AutoFieldInput {
+@customElement('auto-field-password')
+export class AutoFieldPassword extends AutoFieldInput {
 
     getInputType() {
-        return 'number' as any
+        return 'password' as any
     }
 }
 
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-number': AutoFieldNumber
+        'auto-field-password': AutoFieldPassword
     }
 }

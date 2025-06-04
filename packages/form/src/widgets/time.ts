@@ -2,16 +2,16 @@ import { customElement } from "lit/decorators.js"
 import { AutoFieldInput, InputType } from "./input"
 
 
-@customElement('auto-field-email')
-export class AutoFieldEmail extends AutoFieldInput {
+@customElement('auto-field-time')
+export class AutoFieldTime extends AutoFieldInput {
     getInputType(): InputType {
-        return "email"
+        return 'time'
     }
 }
 
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-email': AutoFieldEmail
+        'auto-field-time': AutoFieldTime
     }
 }

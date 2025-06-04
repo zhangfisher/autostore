@@ -1,3 +1,4 @@
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
@@ -10,9 +11,10 @@ export class AutoFieldCheckbox extends AutoField {
         return html`              
         <sl-checkbox 
             slot="value" 
-            data-path = ${this.schema!.path}
+            name="${this.name}"
+            data-path = ${this.path}
             .value=${this.value} 
-            placeholder=${this.schema!.placeholder || ''}
+            ${ifDefined(this.getSchemaItemValue("placeholder"))}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         > ${this.schema!.title}</sl-checkbox> 

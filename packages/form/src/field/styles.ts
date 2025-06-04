@@ -15,7 +15,14 @@ export default css`
         &>.label{
             color: var(--sl-color-gray-600);           
             padding: 4px; 
+            font-weight: 600;
+            display: flex;
+            &>.title{
+                flex-grow: 1;
+            }
         }        
+
+
         &.left{
             flex-direction:row;
         }

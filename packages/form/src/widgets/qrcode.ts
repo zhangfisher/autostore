@@ -1,8 +1,35 @@
-import type { AutoForm } from "@/form"
-import type { SchemaObject } from "autostore"
+import { AutoField } from "@/field"
+import { html } from "lit"
+import { customElement } from "lit/decorators.js"
 
 
-export function renderQRCode(this: AutoForm, schema: SchemaObject) {
+@customElement('auto-field-qrcode')
+export class AutoFieldQRCode extends AutoField {
 
-    return
+    renderValue() {
+        return html`              
+        <sl-qr-code 
+            slot="value" 
+            name=${this.schema!.name || this.schema!.path.join('.')} 
+            data-path = ${this.schema!.path}
+            value=${this.value} 
+            placeholder=${this.getSchemaItemValue('placeholder')}
+            title=${this.getSchemaItemValue('title')}
+            fill=${this.getSchemaItemValue('fill', 'black')}
+            background=${this.getSchemaItemValue('background', 'white')}
+            radius=${this.getSchemaItemValue('radius')}
+            error-correction=${this.getSchemaItemValue('errorCorrection', 'L')}
+            @sl-input=${this.onFieldInput.bind(this)}
+            @sl-change=${this.onFieldChange.bind(this)}
+            size=${this.getSchemaItemValue('size', 64)}
+        ></sl-qr-code > 
+        `
+    }
+}
+
+
+declare global {
+    interface HTMLElementTagNameMap {
+        'auto-field-qrcode': AutoFieldQRCode
+    }
 }

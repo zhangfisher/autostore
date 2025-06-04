@@ -1,8 +1,33 @@
-import type { AutoForm } from "@/form"
-import type { SchemaObject } from "autostore"
+import { ifDefined } from 'lit/directives/if-defined.js';
+import { AutoField } from "@/field"
+import { html } from "lit"
+import { customElement } from "lit/decorators.js"
 
 
-export function renderSwitch(this: AutoForm, schema: SchemaObject) {
+@customElement('auto-field-switch')
+export class AutoFieldSwitch extends AutoField {
 
-    return
+    renderValue() {
+        return html`              
+        <sl-switch 
+            slot="value" 
+            name="${this.name}"
+            data-path = ${this.path}
+            .value=${this.value} 
+            ${ifDefined(this.getSchemaItemValue("placeholder"))}
+            @sl-input=${this.onFieldInput.bind(this)}
+            @sl-change=${this.onFieldChange.bind(this)}
+        > ${this.schema!.title}</sl-switch> 
+        `
+    }
+    renderLabel() {
+        return html``
+    }
+}
+
+
+declare global {
+    interface HTMLElementTagNameMap {
+        'auto-field-switch': AutoFieldSwitch
+    }
 }
