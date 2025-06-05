@@ -53,7 +53,7 @@
 import { ComputedObjects } from "../computed/computedObjects";
 import { assignObject } from "flex-tools/object/assignObject"
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from "./types";
-import type { Dict, ObjectKeyPaths, StatePath } from "../types";
+import type { Dict, StatePath } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";
 import { ComputedObject } from "../computed/computedObject";
@@ -61,7 +61,7 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, setVal } from "../utils";
+import { forEachObject, getSnapshot, getVal, setVal } from "../utils";
 import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from '../consts';
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
@@ -75,10 +75,9 @@ import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
 import { GetTypeByPath } from '../types';
 import { SchemaManager } from "../schema";
+import { createShadow } from "./shadow";
 
-export class AutoStore<
-    State extends Dict,
-> extends EventEmitter<StoreEvents> {
+export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>
     public watchObjects: WatchObjects<State>
@@ -363,7 +362,6 @@ export class AutoStore<
         }
         return computedObj
     }
-
     /**
      * 创建侦听对象
      * @param computedContext 
@@ -683,5 +681,9 @@ export class AutoStore<
     getSnap<Entry extends string>(options?: { entry?: Entry, reserveAsync?: boolean }) {
         const { reserveAsync, entry } = Object.assign({ reserveAsync: true }, options)
         return (getSnapshot(entry ? getVal(this._data, entry) : this._data, reserveAsync)) as GetTypeByPath<ComputedState<State>, Entry>
+    }
+
+    shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>) {
+        return createShadow(this, state, options)
     }
 }

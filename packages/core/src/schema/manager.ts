@@ -1,14 +1,12 @@
-import { PATH_DELIMITER, VALUE_SCHEMA } from "../consts";
+import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
 import { ComputedState, Dict, StatePath } from '../types';
 import { getValueByPath } from "../utils/getValueByPath";
-import { GetSchemaObjectByPath, NewSchemaObject, SchemaObject, SchemaObjectArgs, SchemaState, SchemaStatePath } from "./types";
-import { isComputedDescriptorParameter } from '../utils/isComputedDescriptorParameter';
-import type { StateOperate } from "../store";
-import { isAsyncComputedValue } from "../utils";
-import { ObserverScopeRef } from "../observer";
+import { SchemaObject } from "./schema";
+import { GetSchemaOptionsByPath, SchemaOptions, SchemaDescriptor, SchemaState, SchemaStatePath } from "./types";
 
-export class SchemaManager<State extends Dict> extends Map<string, SchemaObject<any, ComputedState<State>>> {
+
+export class SchemaManager<State extends Dict> extends Map<string, SchemaObject<any>> {
     errors: Dict<string> = {}          // {<路径名称>:"错误信息"}
     _subscribers: any[] = []
     constructor(public store: AutoStore<any>) {
@@ -21,58 +19,21 @@ export class SchemaManager<State extends Dict> extends Map<string, SchemaObject<
         return path.split('_$_')
     }
 
-    add<Define extends SchemaObjectArgs<any, ComputedState<State>>>(path: string | string[], schema: Define): NewSchemaObject<Define> {
-        // @ts-ignore
-        schema.path = Array.isArray(path) ? path : path.split(PATH_DELIMITER)
-        // @ts-ignore
-        schema[VALUE_SCHEMA] = true
+    add<Define extends SchemaOptions<any, ComputedState<State>>>(path: string | string[], descriptor: SchemaDescriptor<any>): SchemaObject<Define> {
         const key = this._getKey(path)
         if (this.has(key as any)) {
-            return this.get(key as any) as NewSchemaObject<Define>
+            return this.get(key as any) as unknown as SchemaObject<Define>
         } else {
-            this.set(this._getKey(path), schema as any)
-            this._createComputedSchemaObject(schema)
-            return schema as NewSchemaObject<Define>
+            const shadow = this.store.shadow(descriptor.options) as SchemaObject<Define>
+            shadow.validate = descriptor.validate
+            shadow.path = Array.isArray(path) ? path : path.split(PATH_DELIMITER)
+            this.set(this._getKey(path), shadow)
+            return shadow as unknown as SchemaObject<Define>
         }
     }
-    /**
-     * Schema对象的所有属性均可以是一个computed对象
-     * 
-     * 当目标数据变化时
-     * 
-     * @param schema 
-     */
-    private _createComputedSchemaObject(schema: any) {
-        Object.entries(schema).forEach(([key, value]) => {
-            if (['path', 'value'].includes(key)) return
-            if (isComputedDescriptorParameter(value)) {
-                const computedObject = this.store.computedObjects.create((value as any)() as any)
-                computedObject.watch((operate: StateOperate) => {
-                    const shcmeaValue = (schema as any)[key]
-                    if (operate.reply) return
-                    let values: Record<string, any> = {}
-                    if (operate.type === 'batch') {
-                        operate.value.reduce((vals: any, cur: any) => {
-                            vals[cur.path[1]] = cur.value
-                            return vals
-                        }, values)
-                    } else {
-                        values[operate.path[1]] = operate.value
-                    }
-                    if (isAsyncComputedValue(shcmeaValue)) {
-                        Object.assign(shcmeaValue, values)
-                    } else {
-                        (schema as any)[key] = operate.value
-                    }
-                    this.store.emit("schema:updated", schema)
-                }, { operates: 'write' });
-                (schema as any)[key] = computedObject.value
-            }
-        })
-    }
 
-    get<T extends SchemaStatePath<State> = SchemaStatePath<State>>(path: T): GetSchemaObjectByPath<State, T> | undefined {
-        return super.get(this._getKey(path)) as unknown as GetSchemaObjectByPath<State, T> | undefined
+    get<T extends SchemaStatePath<State> = SchemaStatePath<State>>(path: T): SchemaObject<GetSchemaOptionsByPath<State, T>> | undefined {
+        return super.get(this._getKey(path)) as unknown as SchemaObject<GetSchemaOptionsByPath<State, T>> | undefined
     }
 
     remove(path: StatePath<State> | string | string[]): boolean {

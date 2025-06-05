@@ -1,39 +1,39 @@
 import type { ComputedObject } from '../computed/computedObject';
-import type { ComputedScope  } from "../computed/types"
+import type { ComputedScope } from "../computed/types"
 import type { ObserverObject } from '../observer/observer';
 import { ObserverType } from "../observer/types"
 import { Dict } from "../types"
-import type { SchemaObjectArgs } from '../schema';
-import type { AutoStore } from "./store" 
+import type { SchemaOptions } from '../schema';
+import type { AutoStore } from "./store"
 
-export type BatchChangeEvent= '__batch_update__'
-export type StateChangeEvents = Record<string,StateOperate>
+export type BatchChangeEvent = '__batch_update__'
+export type StateChangeEvents = Record<string, StateOperate>
 
 export type StateOperateType = 'get' | 'set' | 'delete'                   // 用于对象
-                            | 'insert' | 'update' | 'remove'           // 用于数组  
-                            | 'batch'                                  // 批量操作
+    | 'insert' | 'update' | 'remove'           // 用于数组  
+    | 'batch'                                  // 批量操作
 
-export type StateOperate<Value=any,Parent=any> = {
-    type       : StateOperateType,
-    path       : string[],
-    value      : Value,
-    indexs?    : number[],               // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
-    oldValue?  : Value,
+export type StateOperate<Value = any, Parent = any> = {
+    type: StateOperateType,
+    path: string[],
+    value: Value,
+    indexs?: number[],               // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
+    oldValue?: Value,
     parentPath?: string[],
-    parent?    : Parent,    
+    parent?: Parent,
     /**
      * 是否是批量操作时的回放事件
      */
-    reply?     : boolean      
-    flags?     : number         
+    reply?: boolean
+    flags?: number
 }
- 
+
 
 export interface AutoStoreOptions<State extends Dict> {
     /**
      * 提供一个id，用于标识当前store
      */
-    id?:string
+    id?: string
 
     /**
      * 是否启用调试模式
@@ -42,7 +42,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * 调试模式下会在控制台输出一些日志信息
      * 
      */
-    debug?:boolean 
+    debug?: boolean
 
     /**
      *  是否马上创建动态对象
@@ -56,7 +56,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @default true
      * 
     */
-    lazy?: boolean 
+    lazy?: boolean
     /**
       * 是否启用计算
       * 
@@ -70,8 +70,8 @@ export interface AutoStoreOptions<State extends Dict> {
       *       
       * 
     */
-    enableComputed?:boolean
-    
+    enableComputed?: boolean
+
     /**
      * 获取计算函数的根scope
      * 
@@ -85,7 +85,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
      * 
      */
-    getRootScope?:(state:State,options:{observerType:ObserverType, valuePath:string[] | undefined}) => any
+    getRootScope?: (state: State, options: { observerType: ObserverType, valuePath: string[] | undefined }) => any
 
     /**
      * 
@@ -105,7 +105,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param level 
      * @returns 
      */
-    log?:(message:any,level?:'info' | 'error' | 'warn')=>void  
+    log?: (message: any, level?: 'info' | 'error' | 'warn') => void
     /**
      * 启用重置功能
      * 
@@ -114,11 +114,11 @@ export interface AutoStoreOptions<State extends Dict> {
      * 当启用resetable=true时，会记录数据的首次变化，然后在store.reset()方法调用时，将数据恢复到初始状态
      * 
      */
-    resetable?:boolean
+    resetable?: boolean
     /**
      * 计算函数是否允许重入     
      */
-    reentry?:boolean
+    reentry?: boolean
     /**
      * 
      * 当创建计算属性时调用
@@ -142,15 +142,15 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param computedObject 
      * @returns 
      */
-    onComputedCreated?:(this:AutoStore<State>,computedObject:ComputedObject)=> void
-    
+    onComputedCreated?: (this: AutoStore<State>, computedObject: ComputedObject) => void
+
     /**
      * 当每一次计算完成后调用
      * @param this 
      * @param computedObject 
      * @returns 
      */
-    onComputedDone?:(this:AutoStore<State>,args:{id:string,path:string[],value:any,computedObject:ComputedObject})=> void
+    onComputedDone?: (this: AutoStore<State>, args: { id: string, path: string[], value: any, computedObject: ComputedObject }) => void
 
     /**
      * 当计算出错时调用
@@ -158,8 +158,8 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param error 
      * @param computedObject 
      * @returns 
-     */    
-    onComputedError?:(this:AutoStore<State>,args:{id:string,path:string[],error:Error,computedObject:ComputedObject})=> void
+     */
+    onComputedError?: (this: AutoStore<State>, args: { id: string, path: string[], error: Error, computedObject: ComputedObject }) => void
     /**
      * 当每一次计算对象被取消时调用
      * 仅在异步计算时有效
@@ -167,7 +167,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param computedObject 
      * @returns 
      */
-    onComputedCancel?:(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void
+    onComputedCancel?: (this: AutoStore<State>, args: { id: string, path: string[], reason: 'timeout' | 'abort' | 'reentry' | 'error', computedObject: ComputedObject<any> }) => void
     /**
      * 
      * 当创建观察对象实例化时调用    
@@ -176,15 +176,23 @@ export interface AutoStoreOptions<State extends Dict> {
      * 比如重新封装run函数等
      * 
      */
-    onObserverCreated?:(observerObject:ObserverObject<any,any>)=>void
+    onObserverCreated?: (observerObject: ObserverObject<any, any>) => void
     /**
      * 默认的値模式
      */
-    valueSchema?: Partial<SchemaObjectArgs<any>>
+    valueSchema?: Partial<SchemaOptions<any>>
     /**
      * 当写入时状态时执行此校验函数
      */
-    onValidate?:(this:AutoStore<State>,path:string[],newValue:any,oldValue:any)=>boolean
+    onValidate?: (this: AutoStore<State>, path: string[], newValue: any, oldValue: any) => boolean
+
+    /**
+     * 
+     * 获取影子store
+     * 为所有observer对象提供store对象
+     * 
+     */
+    getShadowStore?: () => AutoStore<any>
 }
 
 
@@ -195,16 +203,16 @@ export type UpdateOptions = {
      *  =true  执行批量更新操作，批量更新事件名称为__batch_update__
      *  <string> 执行批量更新操作，批量更新事件名称为指定的字符串
      */
-    batch?:boolean | string,   
+    batch?: boolean | string,
     /**
      * 执行更新操作时，静默，不会触发任何事件
-     */      
-    silent?:boolean,        
+     */
+    silent?: boolean,
     /**
      * 执行读取操作时，不会触发GET事件
      * 即偷听
      */
-    peep?:boolean           
+    peep?: boolean
     /**
      * 在批量更新结束后，会自动回放update(()=>{...})之间的所有操作事件
      * 然后再触发一个__batch_update__事件
@@ -214,7 +222,7 @@ export type UpdateOptions = {
      * =true 默认会回放所有操作事件
      * =false 不会回放操作事件,仅会触发__batch_update__事件
      */
-    reply?:boolean
+    reply?: boolean
     /**
      * 额外的更新标识
      * 用在执行更新操作时传递额外的标识
@@ -224,26 +232,26 @@ export type UpdateOptions = {
      * 在update期间触发的事件operate中会包含此值，可以通过operate.flags获取到此值
      * 
      */
-    flags?:number
+    flags?: number
 }
 
 
-export type StateTracker= {
-    stop:()=>void,
-    start(isStop?:(operate:StateOperate)=>boolean):Promise<StateOperate[]>
+export type StateTracker = {
+    stop: () => void,
+    start(isStop?: (operate: StateOperate) => boolean): Promise<StateOperate[]>
 }
 
-export type StoreSyncer = {on:()=>void,off:()=>void}
+export type StoreSyncer = { on: () => void, off: () => void }
 
-export type StoreSyncOptions ={
-    from?     : string
-    to?       : string
-    filter?   : (this:AutoStore<any>,operate:StateOperate)=>boolean
+export type StoreSyncOptions = {
+    from?: string
+    to?: string
+    filter?: (this: AutoStore<any>, operate: StateOperate) => boolean
     immediate?: boolean      // 初始化时立刻同步一次
     direction?: 'both' | 'forward' | 'backward'    // 0:双向同步, 1: from->to,  2: to->from 
     // 同步时，是否路径进行映射处理，比如将['order','price']映射成['order.price']等
-    pathMap?  :{
-        from  : (path:string[],value:any)=>string[] | undefined
-        to    : (path:string[],value:any)=>string[] | undefined
+    pathMap?: {
+        from: (path: string[], value: any) => string[] | undefined
+        to: (path: string[], value: any) => string[] | undefined
     }
 }

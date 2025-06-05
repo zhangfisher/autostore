@@ -38,7 +38,6 @@ export class AutoFieldInput extends AutoField {
                 .autocomplete=${this.getSchemaItemValue('autocomplete')}
                 ?autofocus=${this.getSchemaItemValue('autofocus')}
                 @sl-input=${this.onFieldInput.bind(this)}
-                @sl-change=${this.onFieldChange.bind(this)}
                 spellcheck=${ifDefined(this.getSchemaItemValue('spellcheck', "false"))}
             ></sl-input>
         `

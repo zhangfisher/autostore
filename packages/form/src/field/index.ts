@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * 
  *  通过双向绑定表单
@@ -92,6 +93,7 @@ export class AutoField extends LitElement {
             return defaultValue
         }
     }
+
     getValue(): any {
         if (!this.input) return ''
         const datatype = this.schema?.datatype || 'string'
@@ -105,16 +107,18 @@ export class AutoField extends LitElement {
     renderHelp(context: AutoFormContext) {
         return html`<span class="help"></span>`
     }
-    renderLabel(context: AutoFormContext) {
-        return html`${this.schema?.title}`
+    renderLabel(ctx: AutoFormContext) {
+        return html`<div class="label">
+            <span class="title">${this.getLabel()}</span>
+            <span class="help">${this.renderHelp(ctx)}</span>
+        </div>`
     }
-    renderValue(context: AutoFormContext) {
+    renderValue(ctx: AutoFormContext) {
         return html``
     }
-    renderError(context: AutoFormContext) {
-        return html`${this.errorTips}`
+    renderError(ctx: AutoFormContext) {
+        return this.errorTips ? html`<div class="error">${this.errorTips}</div>` : html``
     }
-
     onFieldChange(e?: Event) {
         this._updateFieldValue()
     }
@@ -127,6 +131,13 @@ export class AutoField extends LitElement {
         super.connectedCallback()
         const ctx = this.getContext()
         if (ctx && ctx.store && this.schema) {
+            ctx.store.on('schema:updated', (schema: SchemaObject) => {
+                if (schema.path.join('.') === this.path) {
+                    if (ctx.form.seq === schema.operate.flags) return
+                    // 当schmea变化时，比如enable或者visible变化时，需要重新渲染
+                    this.requestUpdate()
+                }
+            })
             this._subscriber = ctx.store.watch(this.schema.path.join("."), (operate) => {
                 // 当表单change/input时更新时设置flags=form.seq
                 // 此时应不需要更新到value，否则会导致死循环
@@ -146,6 +157,10 @@ export class AutoField extends LitElement {
         }
     }
 
+    /**
+     * 当输入框值改变时更新状态
+     * @returns 
+     */
     _updateFieldValue() {
         if (!this.schema) return
         if (!this.input) return
@@ -179,15 +194,12 @@ export class AutoField extends LitElement {
             error: !!this.errorTips,
         })}"         
           >
-                <div class="label">
-                    <span class="title">${this.renderLabel(ctx)}</span>
-                    <span class="help">${this.renderHelp(ctx)}</span>
-                </div>
-                <div class="value">
-                    ${this.renderValue(ctx)}
-                </div>            
-                ${this.errorTips ? html`<div class="error">${this.renderError(ctx)}</div>` : ''}    
-            </div>
+            ${this.renderLabel(ctx)}
+            <div class="value">
+                ${this.renderValue(ctx)}
+            </div>            
+            ${this.renderError(ctx)}
+        </div>
         `
     }
 

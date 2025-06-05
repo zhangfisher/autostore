@@ -1,55 +1,20 @@
 import { ComputedBuilder, ComputedGetter } from "../computed/types";
 import { VALUE_SCHEMA } from "../consts"
-import { ComputedState, Dict, GetTypeByPath, ObjectKeyPaths, StatePath } from '../types';
+import { ComputedState, Dict, GetTypeByPath, ObjectKeyPaths, StatePath, ToRawType } from '../types';
 
-export type SchemaObjectValidate<Value = any> = (newValue: Value, oldValue: Value, path: string) => boolean
+export type SchemaValidator<Value = any> = (newValue: Value, oldValue: Value, path: string) => boolean
 
 export interface SchemaObjectWidgetTypes {
 
 }
 
-type ToExpandType<T> =
-    T extends string ? (string extends T ? T : string) :
-    T extends number ? (number extends T ? T : number) :
-    T extends boolean ? (boolean extends T ? T : boolean) :
-    T;
 
-
-export interface SchemaObject<Value = any, State = Dict> extends Record<string, any> {
-    [VALUE_SCHEMA]: true
-    path: string[]
-    value: ToExpandType<Value>
-    name?: string
-    validate?: SchemaObjectValidate<Value>
-    behavior?: 'pass' | 'ignore' | 'throw'   // 当验证失败时的行为， pass=继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
-    required?: boolean | ComputedBuilder<boolean, State>
-    datatype?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | string
-    enable?: boolean | ComputedBuilder<boolean, State>
-    icon?: string | ComputedBuilder<string, State>
-    // 提供一些元数据
-    title?: string | ComputedBuilder<string, State>
-    help?: string | ComputedBuilder<string, State>
-    placeholder?: string | ComputedBuilder<string, State>
-    select?: string[] | number[] | boolean[] | ({
-        label?: string
-        value: Value
-        default?: boolean
-        icon?: string
-    })[] | ComputedBuilder<any[], State>
-    widget?: keyof SchemaObjectWidgetTypes | string | ComputedBuilder<string, State>
-    errorTips?: string | ComputedBuilder<string, State>
-    | ((this: SchemaObject<Value>, path: string, newValue: Value, oldValue: Value) => string)
-    tags?: string[] | ComputedBuilder<string[], State>
-    group?: string | ComputedBuilder<string, State>
-    advanced?: boolean | ComputedGetter<boolean, State>
-    order?: number | ComputedGetter<number, State>
-}
 
 
 export type ISchemaObject<Value = any, Extras extends Dict = Dict> = {
     [VALUE_SCHEMA]: true
     path: string[]
-    value: ToExpandType<Value>
+    value: ToRawType<Value>
 } & Extras
 
 
@@ -68,34 +33,59 @@ export type SchemaStatePath<State> = Exclude<keyof {
     : never]: any
 }, number | symbol>
 
-// export type SchemaStatePath<State> = Exclude<keyof {
-//     [K in StatePath<State> as GetTypeByPath<State, K> extends ISchemaObject ? K : never]: any
-// }, number | symbol>
 
 
-// 根据路径获取SchemaObject
-export type GetSchemaObjectByPath<State extends Dict, P extends string = string> = Required<
-    ComputedState<RemoveSchemaFlags<GetTypeByPath<State, P>>> & {
-        [VALUE_SCHEMA]: true
-        value: GetTypeByPath<State, P>['value']
-        path: string[]
-    }
+// 根据路径获取Schema
+export type GetSchemaOptionsByPath<State extends Dict, P extends string = string> = Required<
+    ComputedState<GetTypeByPath<State, P>['options']>
 >
 
-export type NewSchemaObject<State extends Dict> =
-    ComputedState<RemoveSchemaFlags<State>> & {
-        [VALUE_SCHEMA]: true
-        path: string[]
-    }
 
-export type SchemaObjectArgs<Value = any, State = Dict> = Omit<SchemaObject<Value, State>,
-    'path' | '__AS_VALUE_SCHEMA__' | 'value'
-> & Record<string, any>
+export type SchemaOptions<Value = any, State = Dict> = {
+    name?: string
+    // 当验证失败时的行为， pass=继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
+    behavior?: 'pass' | 'ignore' | 'throw'
+    widget?: keyof SchemaObjectWidgetTypes | string | ComputedBuilder<string, State>
+    required?: boolean | ComputedBuilder<boolean, State>
+    visible?: boolean | ComputedBuilder<boolean, State>
+    enable?: boolean | ComputedBuilder<boolean, State>
+    icon?: string | ComputedBuilder<string, State>
+    // 提供一些元数据
+    title?: string | ComputedBuilder<string, State>
+    help?: string | ComputedBuilder<string, State>
+    placeholder?: string | ComputedBuilder<string, State>
+    errorTips?: string | ComputedBuilder<string, State>
+    tags?: string[] | ComputedBuilder<string[], State>
+    group?: string | ComputedBuilder<string, State>
+    advanced?: boolean | ComputedGetter<boolean, State>
+    order?: number | ComputedGetter<number, State>
+    select?: string[] | number[] | boolean[] | ({
+        label?: string
+        value?: ToRawType<Value>
+        default?: boolean
+        enable?: boolean
+        selected?: boolean
+        icon?: string
+    })[] | ComputedBuilder<any[], State>
+} & Record<string, any>
+
+export type ISchemaDescriptor<Value = any> = {
+    [VALUE_SCHEMA]: true
+    value: ToRawType<Value>
+}
+export type SchemaDescriptor<Value = any, State = Dict> = {
+    datatype: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | string
+    validate?: SchemaValidator<ToRawType<Value>>
+    options: SchemaOptions<ToRawType<Value>, State>
+} & ISchemaDescriptor<Value>
+
+export type SchemaDescriptorBuilder<Value = any, State = Dict> = () => SchemaDescriptor<Value, State>
+
 
 export interface SchemaBuilder<Value = any> {
-    <T = Value, Define extends SchemaObjectArgs<T> = SchemaObjectArgs<T>>(value: T, options?: Define): ISchemaObject<T, Define>
-    <T = Value, Define extends SchemaObjectArgs<T> = SchemaObjectArgs<T>>(value: T, validate: SchemaObjectValidate<T>, options?: Define): ISchemaObject<T, Define>
-    <T = Value, Define extends SchemaObjectArgs<T> = SchemaObjectArgs<T>>(value: T, validate: SchemaObjectValidate<T>, errorTips?: SchemaObject<T>['errorTips']): ISchemaObject<T, Define>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, options?: Options): SchemaDescriptor<T, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidator<T>, options?: Options): SchemaDescriptor<T, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidator<T>, errorTips?: SchemaOptions<T, Options>['errorTips']): SchemaDescriptor<T, Options>
 }
 
 export type ConfigurableState<State extends Dict> = {
