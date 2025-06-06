@@ -1,4 +1,3 @@
-import { PATH_DELIMITER } from "../consts";
 import { TimeoutError } from "../errors";
 import type { AutoStore } from "../store/store";
 import { getVal } from "./getVal";
@@ -13,13 +12,13 @@ import { isAsyncComputedValue } from "./isAsyncComputedValue";
 export function getAsyncValue<Value = any>(store: AutoStore<any>, keyPath: string | string[] | undefined, options?: { defaultValue?: any, timeout?: number }): Promise<Value> {
     const { defaultValue, timeout = 0 } = options || {}
     return new Promise<Value>((resolve, reject) => {
-        const path = typeof (keyPath) === 'string' ? keyPath.split(PATH_DELIMITER) : keyPath
+        const path = typeof (keyPath) === 'string' ? keyPath.split(store.delimiter) : keyPath
         const val = getVal(store.state, path, defaultValue)
         if (isAsyncComputedValue(val)) {
             if (val.loading) {
                 let tmId: any
                 // 等等loading变成false
-                const subscriber = store.watch(`${path}${PATH_DELIMITER}loading`, (operate) => {
+                const subscriber = store.watch(`${path}${store.delimiter}loading`, (operate) => {
                     if (tmId) clearTimeout(tmId)
                     resolve(val.value)
                 }, { once: true })

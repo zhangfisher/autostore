@@ -53,7 +53,7 @@
 import { ComputedObjects } from "../computed/computedObjects";
 import { assignObject } from "flex-tools/object/assignObject"
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from "./types";
-import type { Dict, StatePath } from "../types";
+import type { Dict, ObjectKeyPaths, StatePath } from "../types";
 import { log, LogLevel, LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";
 import { ComputedObject } from "../computed/computedObject";
@@ -61,8 +61,8 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal, setVal } from "../utils";
-import { BATCH_UPDATE_EVENT, PATH_DELIMITER } from '../consts';
+import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPathEq, setVal } from "../utils";
+import { BATCH_UPDATE_EVENT } from '../consts';
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects";
@@ -74,8 +74,9 @@ import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
 import { GetTypeByPath } from '../types';
-import { SchemaManager } from "../schema";
+import { SchemaManager, SchemaState, SchemaKeyPaths } from "../schema";
 import { createShadow } from "./shadow";
+import { TimeoutError } from "../errors";
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
@@ -91,9 +92,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _updatedState?: Dict                                         // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
     private _updatedWatcher: Watcher | undefined                         // 脏状态侦听器
     private _schemas: SchemaManager<State> | undefined
+    private _delimiter: string = '.'
     types = {
         rawState: undefined as unknown as State,
-        state: undefined as unknown as ComputedState<State>
+        state: undefined as unknown as ComputedState<State>,
+        schemas: undefined as unknown as SchemaState<State>,
+        schemaKeys: undefined as unknown as SchemaKeyPaths<State>
     }
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super()
@@ -104,8 +108,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             enableComputed: true,
             reentry: true,
             resetable: false,
+            delimiter: '.',
             log,
         }, options) as Required<AutoStoreOptions<State>>
+        this._delimiter = this._options.delimiter
         this.computedObjects = new ComputedObjects<State>(this)
         this.watchObjects = new WatchObjects<State>(this)
         this.subscribeCallbacks()
@@ -138,6 +144,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     get operates() { return this._operates }
     get options() { return this._options }
     get silenting() { return this._silenting }
+    get delimiter() { return this._delimiter }
     get batching() { return this._batching }
     get peeping() { return this._peeping }
     get resetable() { return this._options.resetable }
@@ -153,7 +160,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             this._updatedState = {}
             this._updatedWatcher = this.watch(({ path, oldValue }) => {
                 if (path.length === 0) return
-                const pathKey = path.join(PATH_DELIMITER)
+                const pathKey = path.join(this._delimiter)
                 if (!pathKey.startsWith("#") && !(pathKey in this._updatedState!)) {
                     this._updatedState![pathKey] = oldValue
                 }
@@ -180,10 +187,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         if (this._options.resetable && this._updatedState) {
             try {
                 this.batchUpdate(state => {
-                    const prefix = entry ? `${entry}${PATH_DELIMITER}` : ''
+                    const prefix = entry ? `${entry}${this._delimiter}` : ''
                     Object.entries(this._updatedState!).forEach(([key, value]) => {
                         if (key.startsWith(prefix)) {
-                            setVal(state, key.split(PATH_DELIMITER), value)
+                            setVal(state, key.split(this._delimiter), value)
                         }
                     })
                 })
@@ -229,7 +236,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         }
         if (this._silenting) return
         params.flags = this._updateFlags
-        this.operates.emit(params.path.join(PATH_DELIMITER), params)
+        this.operates.emit(params.path.join(this._delimiter), params)
     }
     // ************* Watch **************/
     /**
@@ -302,7 +309,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             return this.operates.onAny(handler)
         } else { // 只侦听指定路径
             const keyPaths = arguments[0] as string | (string | string[])[]
-            const paths: string[] = Array.isArray(keyPaths) ? keyPaths.map(v => typeof (v) === 'string' ? v : v.join(PATH_DELIMITER)) : [keyPaths]
+            const paths: string[] = Array.isArray(keyPaths) ? keyPaths.map(v => typeof (v) === 'string' ? v : v.join(this._delimiter)) : [keyPaths]
             const { once, operates, filter } = Object.assign({ once: false, operates: 'write' }, options) as Required<WatchListenerOptions>
             const subscribeMethod = once ? this.operates.once.bind(this.operates) : this.operates.on.bind(this.operates)
             const listeners: EventListener[] = []
@@ -534,7 +541,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     peep() {
         const getter = typeof (arguments[0]) === 'function' ?
             () => arguments[0](this.state)
-            : () => getVal(this.state, Array.isArray(arguments[0]) ? arguments[0] : arguments[0].split(PATH_DELIMITER))
+            : () => getVal(this.state, Array.isArray(arguments[0]) ? arguments[0] : arguments[0].split(this._delimiter))
         this._peeping = true
         try {
             return getter()
@@ -685,5 +692,51 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 
     shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>) {
         return createShadow(this, state, options)
+    }
+    /**
+     * 
+     * 获取指定路径的值
+     * 
+     * eg.
+     *  store.get("user.name")
+     *  await store.get("user.async")
+     * 
+     * @param path 
+     * @param options
+     * @param options.defaultValue - 默认值，如果指定则当指定路径不存在时返回默认值
+     * @param options.waitAsyncDone - 如果异步计算正在进行中，则等待异步计算结束再返回 
+     * @param options.timeout - 当等待异步计算时的超时时间
+     * @param options.expandAsync - 如果是异步计算则返回异步计算对象的value,=false时则返回异步计算对象而不是值     
+     * 
+     * 
+     */
+    get<T extends ObjectKeyPaths<State>>(path: T, options?: { defaultValue?: any, waitAsyncDone?: boolean, timeout?: number, expandAsync?: boolean }) {
+        const { defaultValue, timeout = 0, expandAsync = false, waitAsyncDone = false } = Object.assign({}, options)
+        const keyPath = Array.isArray(path) ? path : path.split(this.delimiter)
+        const val = getVal(this.state, keyPath, defaultValue)
+        if (isAsyncComputedValue(val)) {
+            if (val.loading && waitAsyncDone) {
+                return new Promise((resolve, reject) => {
+                    let tmId: any, subscriber: EventListener
+                    if (timeout > 0) {
+                        tmId = setTimeout(() => {
+                            subscriber && subscriber.off()
+                            reject(new TimeoutError())
+                        }, timeout)
+                    }
+                    subscriber = this.on('computed:done', ({ path: spath }) => {
+                        if (isPathEq(keyPath, spath)) {
+                            clearTimeout(tmId)
+                            subscriber && subscriber.off()
+                            resolve(expandAsync ? val.value : val)
+                        }
+                    })
+                })
+            } else {
+                return expandAsync ? val.value : val
+            }
+        } else {
+            return val
+        }
     }
 }

@@ -1,15 +1,21 @@
 import { ComputedBuilder, ComputedGetter } from "../computed/types";
 import { VALUE_SCHEMA } from "../consts"
-import { ComputedState, Dict, GetTypeByPath, ObjectKeyPaths, StatePath, ToRawType } from '../types';
+import { ComputedState, Dict, GetTypeByPath, StatePath, ToRawType } from '../types';
 
-export type SchemaValidator<Value = any> = (newValue: Value, oldValue: Value, path: string) => boolean
+export type SchemaValidate<Value = any> = (newValue: Value, oldValue: Value, path: string) => boolean
+export type SchemaValidator<Value = any> = {
+    // 校验函数
+    validate: SchemaValidate<Value>
+    // 当验证失败时的行为
+    // pass: 继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
+    onFail: 'pass' | 'throw' | 'ignore'
+    // 校验失败时的错误信息
+    errorTips?: string | ((e: Error, newValue: Value, oldValue: Value, path: string) => string)
+}
 
 export interface SchemaObjectWidgetTypes {
 
 }
-
-
-
 
 export type ISchemaObject<Value = any, Extras extends Dict = Dict> = {
     [VALUE_SCHEMA]: true
@@ -17,22 +23,19 @@ export type ISchemaObject<Value = any, Extras extends Dict = Dict> = {
     value: ToRawType<Value>
 } & Extras
 
-
 export type RemoveSchemaFlags<T extends Dict> = {
     [K in keyof T as K extends typeof VALUE_SCHEMA ? never : K]: T[K]
 }
 
-
-export type SchemaStatePath<State> = Exclude<keyof {
+export type SchemaKeyPaths<State> = Exclude<keyof {
     [K in StatePath<State> as GetTypeByPath<State, K> extends {
         [VALUE_SCHEMA]: true
     } ? K : GetTypeByPath<State, K> extends Array<infer Item>
     ? Item extends { [VALUE_SCHEMA]: true }
-    ? `${K}.${number}` | K  // 返回数组路径和索引路径
+    ? `${K}.${number}`
     : never
     : never]: any
 }, number | symbol>
-
 
 
 // 根据路径获取Schema
@@ -43,8 +46,6 @@ export type GetSchemaOptionsByPath<State extends Dict, P extends string = string
 
 export type SchemaOptions<Value = any, State = Dict> = {
     name?: string
-    // 当验证失败时的行为， pass=继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
-    behavior?: 'pass' | 'ignore' | 'throw'
     widget?: keyof SchemaObjectWidgetTypes | string | ComputedBuilder<string, State>
     required?: boolean | ComputedBuilder<boolean, State>
     visible?: boolean | ComputedBuilder<boolean, State>
@@ -54,7 +55,6 @@ export type SchemaOptions<Value = any, State = Dict> = {
     title?: string | ComputedBuilder<string, State>
     help?: string | ComputedBuilder<string, State>
     placeholder?: string | ComputedBuilder<string, State>
-    errorTips?: string | ComputedBuilder<string, State>
     tags?: string[] | ComputedBuilder<string[], State>
     group?: string | ComputedBuilder<string, State>
     advanced?: boolean | ComputedGetter<boolean, State>
@@ -73,10 +73,10 @@ export type ISchemaDescriptor<Value = any> = {
     [VALUE_SCHEMA]: true
     value: ToRawType<Value>
 }
-export type SchemaDescriptor<Value = any, State = Dict> = {
+export type SchemaDescriptor<Value = any, Options = Dict> = {
     datatype: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | string
-    validate?: SchemaValidator<ToRawType<Value>>
-    options: SchemaOptions<ToRawType<Value>, State>
+    validator?: SchemaValidator<ToRawType<Value>>
+    options: SchemaOptions<ToRawType<Value>, Options>
 } & ISchemaDescriptor<Value>
 
 export type SchemaDescriptorBuilder<Value = any, State = Dict> = () => SchemaDescriptor<Value, State>
@@ -89,10 +89,17 @@ export interface SchemaBuilder<Value = any> {
 }
 
 export type ConfigurableState<State extends Dict> = {
-    [Key in SchemaStatePath<State> as GetTypeByPath<State, Key> extends ISchemaObject ? Key : never]: GetTypeByPath<ComputedState<State>, Key>
+    [Key in SchemaKeyPaths<State>]: GetTypeByPath<ComputedState<State>, Key>
 }
 
 export type SchemaState<State extends Dict> = ConfigurableState<State>
 
 
-
+export type ComputedSchemaState<State extends Dict> = {
+    [Key in SchemaKeyPaths<State>]: (
+        GetTypeByPath<State, Key> extends SchemaDescriptor<infer V, infer Options>
+        ? Options & { value: V } : GetTypeByPath<State, Key>
+    ) & {
+        path: string[]
+    }
+}

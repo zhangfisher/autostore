@@ -4,8 +4,7 @@ import { StateOperateType } from './types';
 import { CyleDependError, ValidateError } from '../errors';
 import { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
-import { isValueSchema } from '../utils';
-import { PATH_DELIMITER } from '../consts';
+import { isFunction, isValueSchema } from '../utils';
 import type { SchemaValidator } from '../schema/types';
 import { getErrorTips } from '../schema/utils';
 import { SchemaObject } from '../schema/schema';
@@ -27,42 +26,43 @@ type CreateReactiveObjectOptions = {
 
 
 function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue: any, oldValue: any, parentPath: string[]) {
-    const validators = this.schemas
-    const validator = validators.get(key as never) as SchemaObject | undefined
+    const schemas = this.schemas
+    const validator = schemas.getValidator(key as never) as SchemaValidator
+    if (!validator) return true
 
-    let validFn: SchemaValidator
-    if (validator && typeof (validator.validate) === 'function') {
-        validFn = validator.validate! as any
-    } else if (typeof (this.options.onValidate) === 'function') {
-        validFn = this.options.onValidate
-    }
+    const validate = validator.validate || this.options.onValidate
+    if (typeof (validate) !== 'function') return true
+
+    const onFail = validator.onFail || 'throw'
+
     let isValid: boolean = true
-    let errorTips: string | undefined = getErrorTips.call(this,
-        validator?.errorTips || this.options.valueSchema?.errorTips,
-        key, newValue, oldValue
-    )
+    let errorTips: SchemaValidator['errorTips'] | undefined = validator.errorTips
+
     let isPass: boolean = true
-    let behavior = validator?.behavior || this.options.valueSchema || 'throw'
 
     try {
-        isValid = validFn!.call(this, newValue, oldValue, key)
+        isValid = validate!.call(this, newValue, oldValue, key)
     } catch (e: any) {
-        if (e instanceof ValidateError) {
-            errorTips = e.message
+        if (isFunction(errorTips)) {
+            try {
+                errorTips = errorTips.call(this, e, newValue, oldValue, key)
+            } catch { }
         }
+        if (!errorTips) errorTips = e.message
+
     } finally {
         errorTips = isValid ? undefined : errorTips
         if (isValid) {
-            delete validators.errors[key]
+            delete schemas.errors[key]
         } else {
-            validators.errors[key] = errorTips!
+            schemas.errors[key] = errorTips as string
         }
-        this.emit("validate", { path: [...parentPath, key], newValue, oldValue, error: errorTips })
+        this.emit("validate", { path: [...parentPath, key], newValue, oldValue, error: errorTips as string })
     }
     if (!isValid) {
-        if (behavior === 'throw') {
-            throw new ValidateError(errorTips!)
-        } else if (behavior === 'ignore') {
+        if (onFail === 'throw') {
+            throw new ValidateError(errorTips! as string)
+        } else if (onFail === 'ignore') {
             isPass = false
         } else {
             isPass = true
@@ -109,7 +109,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
                     return value
                 }
             } else if (isValueSchema(value)) {
-                const validator = Object.assign({}, this.options.valueSchema, value, { path })
+                const validator = Object.assign({}, this.options.defaultValueSchema, value, { path })
                 this.schemas.add(path as never, validator)
                 options.notify({ type: 'get', path, indexs: [], value, oldValue: undefined, parentPath, parent: obj });
                 return value.value
@@ -120,7 +120,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
             const path = [...parentPath, String(key)]
-            if (isValidPass.call(this, proxyObj, path.join(PATH_DELIMITER) as string, value, oldValue, parentPath)) {
+            if (isValidPass.call(this, proxyObj, path.join(this.delimiter) as string, value, oldValue, parentPath)) {
                 let success = Reflect.set(obj, key, value, receiver);
                 if (key === __NOTIFY__) return true
                 if (success && key !== __NOTIFY__ && value !== oldValue) {
@@ -136,7 +136,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
             const path = [...parentPath, String(prop)];
             const success = Reflect.deleteProperty(obj, prop);
             if (success && prop !== __NOTIFY__) {
-                this.schemas.remove(path);
+                this.schemas.remove(path as never);
                 options.notify({ type: 'delete', path, indexs: [], value, oldValue: undefined, parentPath, parent: obj });
             }
             return success;

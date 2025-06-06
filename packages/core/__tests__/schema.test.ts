@@ -32,7 +32,7 @@ describe("validator", () => {
                 price: s.number(100, (val) => val > 10)
             }
         }, {
-            valueSchema: {
+            defaultValueSchema: {
                 behavior: 'ignore'
             }
         })
@@ -47,7 +47,7 @@ describe("validator", () => {
                 price: s.number(100, (val) => val > 10)
             }
         }, {
-            valueSchema: {
+            defaultValueSchema: {
                 behavior: 'pass'
             }
         })

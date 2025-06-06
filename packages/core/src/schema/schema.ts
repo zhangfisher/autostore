@@ -26,11 +26,9 @@
  */
 
 import { VALUE_SCHEMA } from "../consts"
-import { ValidateError } from "../errors"
 import { AutoStore } from "../store/store"
 import { isPlainObject } from "../utils"
-import { ISchemaObject, SchemaBuilder, SchemaOptions, SchemaValidator } from './types';
-import { getErrorTips } from "./utils"
+import { SchemaBuilder, SchemaOptions, SchemaValidator } from './types';
 import { Dict } from "../types"
 
 
@@ -47,12 +45,20 @@ function parseSchemaArgs(args: any[]) {
         ? args[args.length - 1] : undefined
     )) as SchemaOptions
     finalArgs.value = args[0]
-
+    let validator: SchemaValidator | undefined
+    const datatype = Array.isArray(args[0]) ? 'array' : typeof (args[0])
     if (args.length >= 2 && typeof (args[1]) === 'function') {
-        finalArgs.validate = args[1]
+        validator = {
+            onFail: 'throw',
+            validate: args[1] || (datatype in defaultValidates ? (defaultValidates as any)[datatype] : () => true),
+
+        }
     }
-    if (args.length >= 3 && typeof (args[2]) === 'string') {
-        finalArgs.options.errorTips = args[2]
+    if (validator && args.length >= 3 && typeof (args[2]) === 'string') {
+        validator.errorTips = args[2]
+    }
+    if (validator) {
+        finalArgs.validator = validator
     }
     return finalArgs
 }
@@ -81,9 +87,8 @@ export const schema = function () {
     const datatype = Array.isArray(value) ? 'array' : typeof (value)
     return {
         [VALUE_SCHEMA]: true,
-        pass: false,
         datatype,
-        validate: args.validate || (datatype in defaultValidates ? (defaultValidates as any)[datatype] : () => true),
+        validator: args.validator,
         options: args.options,
     }
 } as unknown as SchemaBuilder

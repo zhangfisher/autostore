@@ -142,11 +142,16 @@ const store = new AutoStore({
         // color: configurable('#ff0000', { title: '颜色', widget: 'colorpicker' }),
         // qrcode: configurable('www.voerkai18n.com', { title: '扫描二维码', widget: 'qrcode' }),
         , notes: configurable('输入简历', { title: '简历', widget: 'textarea' }),
-    }
+    },
+    x: 1
 
 }, {
     resetable: true
 });
+
+store.types.state
+store.types.schemas
+store.types.schemaKeys
 
 
 store.state.user.name = ""

@@ -1,6 +1,6 @@
 import { Equal, Expect } from "@type-challenges/utils"
 import { ComputedState, Dict, GetTypeByPath, StatePath } from "../src/types";
-import { configurable, ConfigurableState, s, schema, SchemaState, SchemaStatePath } from "../src/schema";
+import { configurable, ConfigurableState, s, schema, SchemaState, SchemaKeyPaths } from "../src/schema";
 import { AutoStore } from "../src/store";
 import { computed } from "../src";
 import { RawObject } from '../src/utils/markRaw';
@@ -50,7 +50,7 @@ type RawState = typeof obj
 type addressType = RawState['address']
 type s = SchemaState<RawState>
 type s2 = StatePath<RawState>
-type sf = SchemaStatePath<RawState>
+type sf = SchemaKeyPaths<RawState>
 type sdf = GetTypeByPath<RawState, 'address'>
 type sdf2 = GetTypeByPath<RawState, 'address.post'>
 

@@ -73,6 +73,10 @@ export interface AutoStoreOptions<State extends Dict> {
     enableComputed?: boolean
 
     /**
+     * 路径分隔符,默认是`.`
+     */
+    delimiter?: string
+    /**
      * 获取计算函数的根scope
      * 
      * @description
@@ -180,7 +184,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 默认的値模式
      */
-    valueSchema?: Partial<SchemaOptions<any>>
+    defaultValueSchema?: Partial<SchemaOptions<any>>
     /**
      * 当写入时状态时执行此校验函数
      */

@@ -70,7 +70,6 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
             const errValue = options.onError(this.error)
             if (errValue !== undefined) computedResult = errValue
         }
-
         if (first) this.initial = computedResult
         this.store.peep(() => {           // 将结果回写入store,且不触发get事件
             this.value = computedResult
