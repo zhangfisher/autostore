@@ -138,11 +138,49 @@ describe("Schema类型", () => {
                 NameValidatorType,
                 {
                     validate: SchemaValidate<boolean>;
-                    errorTips: string | ((e: Error, newValue: boolean, oldValue: boolean, path: string) => string);
                     onFail: "pass" | "throw" | "ignore";
+                    message?: string | ((e: Error, path: string, newValue: boolean, oldValue: boolean) => string) | undefined
                 }
             >
         >
 
     })
+
+    test("动态增加schema", () => {
+        const store = new AutoStore({
+            user: {
+                name: "张三",
+            }
+        })
+        const newSchema = store.schemas.add("sss", {
+            title: '姓名',
+            placeholder: '请输入姓名',
+            errorTips: '姓名长度必须大于3个字符',
+            required: computed(() => true),
+            enable: computed<boolean>(
+                async (state: any) => state.user.admin,
+                ['user.admin']
+            )
+        })
+        newSchema.title
+        newSchema.placeholder
+        newSchema.placeholder
+        newSchema.errorTips
+        newSchema.required
+        newSchema.enable
+        type cases = Expect<
+            Equal<
+                typeof newSchema,
+                {
+                    title: string;
+                    placeholder: string;
+                    errorTips: string;
+                    required: boolean;
+                    enable: AsyncComputedValue<boolean>;
+                }
+            >
+        >
+    })
+
+
 })

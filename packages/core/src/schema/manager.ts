@@ -1,9 +1,8 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
-import { ComputedState, Dict, StatePath, GetTypeByPath } from '../types';
+import { ComputedState, Dict, } from '../types';
 import { getVal } from "../utils/getVal";
-import { SchemaObject } from "./schema";
-import { SchemaOptions, SchemaDescriptor, SchemaState, SchemaKeyPaths, SchemaValidator, GetSchemaOptionsByPath, ComputedSchemaState } from "./types";
+import { SchemaOptions, SchemaValidator, ComputedSchemaState } from "./types";
 
 
 export class SchemaManager<
@@ -15,7 +14,9 @@ export class SchemaManager<
     store: SchemaStore
     validators: Record<string, SchemaValidator<any>> = {}
     constructor(public shadow: AutoStore<any>) {
-        this.store = shadow.shadow({}) as SchemaStore
+        this.store = shadow.shadow({
+
+        }) as SchemaStore
     }
     _getKey(path: any) {
         return Array.isArray(path) ? path.join('_$_') : path.split(PATH_DELIMITER).join('_$_')
@@ -23,7 +24,10 @@ export class SchemaManager<
     _getPath(path: string) {
         return path.split('_$_')
     }
-    add<Define extends SchemaOptions<any, ComputedState<State>>>(path: string | string[], descriptor: SchemaDescriptor<any>): SchemaObject<Define> {
+    add<V = any, Options extends SchemaOptions<V> = SchemaOptions<V>>(
+        path: string | string[],
+        descriptor: Options
+    ): ComputedState<Options> {
         const key = this._getKey(path);
         (this.store.state as any)[key] = Object.assign(
             {},
@@ -36,6 +40,7 @@ export class SchemaManager<
                 onFail: 'throw'
             }, descriptor.validator)
         }
+        return (this.store.state as any)[key]
     }
     get<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(path: T): SchemaStore['state'][T] | undefined {
         return getVal(this.store.state, this._getKey(path as any))

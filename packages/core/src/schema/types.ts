@@ -10,7 +10,7 @@ export type SchemaValidator<Value = any> = {
     // pass: 继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
     onFail: 'pass' | 'throw' | 'ignore'
     // 校验失败时的错误信息
-    errorTips?: string | ((e: Error, newValue: Value, oldValue: Value, path: string) => string)
+    message?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string)
 }
 
 export interface SchemaObjectWidgetTypes {
@@ -75,6 +75,7 @@ export type ISchemaDescriptor<Value = any> = {
 }
 export type SchemaDescriptor<Value = any, Options = Dict> = {
     datatype: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | string
+    value: ToRawType<Value>
     validator?: SchemaValidator<ToRawType<Value>>
     options: SchemaOptions<ToRawType<Value>, Options>
 } & ISchemaDescriptor<Value>
@@ -84,8 +85,9 @@ export type SchemaDescriptorBuilder<Value = any, State = Dict> = () => SchemaDes
 
 export interface SchemaBuilder<Value = any> {
     <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, options?: Options): SchemaDescriptor<T, Options>
-    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidator<T>, options?: Options): SchemaDescriptor<T, Options>
-    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidator<T>, errorTips?: SchemaOptions<T, Options>['errorTips']): SchemaDescriptor<T, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, options?: Options): SchemaDescriptor<T, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, invalidMessage?: SchemaValidator<T>['message'], options?: Options): SchemaDescriptor<T, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validator: SchemaValidator<T>, options?: Options): SchemaDescriptor<T, Options>
 }
 
 export type ConfigurableState<State extends Dict> = {

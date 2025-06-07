@@ -184,7 +184,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 默认的値模式
      */
-    defaultValueSchema?: Partial<SchemaOptions<any>>
+    defaultSchemaOptions?: Partial<SchemaOptions<any>>
     /**
      * 当写入时状态时执行此校验函数
      */

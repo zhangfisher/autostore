@@ -18,11 +18,14 @@ import { AutoStore } from "./store";
 import { PATH_DELIMITER } from '../consts';
 import type { Dict } from "../types"
 import { AutoStoreOptions } from "./types";
+import { ObserverScopeRef } from "../observer";
 
 export function createShadow<T extends Dict>(store: AutoStore<any>, shadowObject: T, options?: AutoStoreOptions<T>): AutoStore<T> {
     const shadowStore = new AutoStore(shadowObject, Object.assign({}, options, {
+        id: `${store.id}_shadow`,
         getRootScope: () => store.state,
-        getShadowStore: () => store
+        getShadowStore: () => store,
+        scope: ObserverScopeRef.Root
     }))
     // 将操作转到到shadowStore
     store.watch((operate) => {

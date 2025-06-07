@@ -9,16 +9,16 @@ describe("validator", () => {
     test("number initial", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val) => val > 10)
+                price: s.number(100, (val: any) => val > 10)
             }
         })
         expect(store.state.order.price).toBe(100)
-        store.schemas.has("order.price")
+        expect(store.schemas.has("order.price")).toBeTruthy()
     })
     test("赋值时校验出错默认触发ValidateError", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val) => val > 10)
+                price: s.number(100, (val: any) => val > 10)
             }
         })
         expect(store.state.order.price).toBe(100)
@@ -29,26 +29,24 @@ describe("validator", () => {
     test("赋值时校验出错时不触发错误忽略", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val) => val > 10)
-            }
-        }, {
-            defaultValueSchema: {
-                behavior: 'ignore'
+                price: s.number(100, {
+                    validate: (val: any) => val > 10,
+                    onFail: 'ignore'
+                })
             }
         })
         expect(store.state.order.price).toBe(100)
         expect(() => store.state.order.price = 10).not.toThrow(ValidateError)
         expect(store.state.order.price).toBe(100)
     })
-
+    // ignore忽略错误也不写入，而pass则是写入，但是将错误信息写入到errors中    
     test("赋值时校验出错时不触发错误放行", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val) => val > 10)
-            }
-        }, {
-            defaultValueSchema: {
-                behavior: 'pass'
+                price: s.number(100, {
+                    validate: (val: any) => val > 10,
+                    onFail: 'pass'
+                })
             }
         })
         expect(store.state.order.price).toBe(100)
@@ -56,10 +54,13 @@ describe("validator", () => {
         expect(store.state.order.price).toBe(10)
         expect("order.price" in store.schemas.errors).toBe(true)
     })
+
+
+
     test("自定义校验提示", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val) => val > 10, { errorTips: "价格必须大于10" })
+                price: s.number(100, (val: any) => val > 10, "价格必须大于10")
             }
         })
         expect(store.state.order.price).toBe(100)
@@ -73,10 +74,12 @@ describe("validator", () => {
             expect(store.schemas.errors["order.price"]).toBe("价格必须大于10")
         }
     })
-    test("自定义校验提示", () => {
+    test("校验提示信息可以使用插值变量", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val) => val > 10, "价格必须大于10")
+                price: s.number(100, (val: any) => val > 10, "价格必须大于10({title})", {
+                    title: "注意"
+                })
             }
         })
         expect(store.state.order.price).toBe(100)
@@ -86,14 +89,18 @@ describe("validator", () => {
 
         } catch (e: any) {
             expect(e).toBeInstanceOf(ValidateError)
-            expect(e.message).toBe("价格必须大于10")
-            expect(store.schemas.errors["order.price"]).toBe("价格必须大于10")
+            expect(e.message).toBe("价格必须大于10(注意)")
+            expect(store.schemas.errors["order.price"]).toBe("价格必须大于10(注意)")
         }
     })
-    test("使用函数自定义校验提示", () => {
+
+    test("使自定义用函数校验提示", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val) => val > 10, { errorTips: (path: string) => path + ":价格必须大于10" })
+                price: s.number(100, {
+                    validate: (val: any) => val > 10,
+                    message: (e: any, path: string) => path + ":价格必须大于10"
+                })
             }
         })
         expect(store.state.order.price).toBe(100)
@@ -107,7 +114,28 @@ describe("validator", () => {
             expect(store.schemas.errors["order.price"]).toBe("order.price:价格必须大于10")
         }
     })
-    test("使用onValidate校验", () => {
+    test("通过err.message返回校验错误信息", () => {
+        const store = new AutoStore({
+            order: {
+                price: s.number(100, (val: any) => {
+                    if (val < 10) {
+                        throw new ValidateError("价格必须大于10")
+                    }
+                    return true
+                },)
+            }
+        })
+        expect(store.state.order.price).toBe(100)
+        store.schemas.has("order.price")
+        try {
+            store.state.order.price = 10
+        } catch (e: any) {
+            expect(e).toBeInstanceOf(ValidateError)
+            expect(e.message).toBe("价格必须大于10")
+            expect(store.schemas.errors["order.price"]).toBe("价格必须大于10")
+        }
+    })
+    test("使用onValidate全局校验", () => {
         const store = new AutoStore({
             order: {
                 price: 100
@@ -142,13 +170,52 @@ describe("validator", () => {
         expect(store.state.order.price).toBe(10)
         expect(store.state.order.count).toBe(2)
         expect(store.state.order.pay).toBe(true)
-
     })
+    test("configurable提供额外的配置选项", () => {
+        const store = new AutoStore({
+            order: {
+                name: configurable("order", {
+                    title: '订单名称',
+                    description: '订单描述',
+                    placeholder: '请输入订单名称',
+                    required: true
+                }),
+                price: configurable(10),
+                count: configurable(2),
+                pay: configurable(true)
+            }
+        })
+        const nameSchema = store.schemas.get('order.name')!
+        expect(nameSchema.title).toBe('订单名称')
+        expect(nameSchema.description).toBe('订单描述')
+        expect(nameSchema.placeholder).toBe('请输入订单名称')
+        expect(nameSchema.required).toBe(true)
+    })
+    test("configurable使用同步计算配置选项", () => {
+        const store = new AutoStore({
+            order: {
+                price: configurable(10),
+                count: configurable(0),
+                pay: configurable(true, {
+                    enable: computed((state) => {
+                        return state.order.count > 0
+                    })
+                })
+            }
+        })
+        const paySchema = store.schemas.get('order.pay')!
+        expect(paySchema.enable).toBe(false)
+        store.state.order.count = 1
+        expect(paySchema.enable).toBe(true)
+    })
+
+
+
     test("监听使用schema装饰的值变化", () => {
         return new Promise<void>((resolve, reject) => {
             const store = new AutoStore({
                 order: {
-                    price: s.number(100, (val) => val > 10)
+                    price: s.number(100, (val: any) => val > 10)
                 }
             })
             store.watch((operate: StateOperate) => {

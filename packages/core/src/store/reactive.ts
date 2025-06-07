@@ -6,8 +6,6 @@ import { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
 import { isFunction, isValueSchema } from '../utils';
 import type { SchemaValidator } from '../schema/types';
-import { getErrorTips } from '../schema/utils';
-import { SchemaObject } from '../schema/schema';
 
 
 const __NOTIFY__ = Symbol('__NOTIFY__')
@@ -36,32 +34,42 @@ function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue:
     const onFail = validator.onFail || 'throw'
 
     let isValid: boolean = true
-    let errorTips: SchemaValidator['errorTips'] | undefined = validator.errorTips
+    let errorMessage: SchemaValidator['message'] | undefined = validator.message
 
     let isPass: boolean = true
+    let hasError: any
 
     try {
-        isValid = validate!.call(this, newValue, oldValue, key)
+        isValid = !(validate!.call(this, newValue, oldValue, key) === false)
     } catch (e: any) {
-        if (isFunction(errorTips)) {
-            try {
-                errorTips = errorTips.call(this, e, newValue, oldValue, key)
-            } catch { }
-        }
-        if (!errorTips) errorTips = e.message
-
+        hasError = e
     } finally {
-        errorTips = isValid ? undefined : errorTips
         if (isValid) {
             delete schemas.errors[key]
         } else {
-            schemas.errors[key] = errorTips as string
+            if (isFunction(errorMessage)) {
+                try { errorMessage = errorMessage.call(this, hasError, key, newValue, oldValue) } catch { }
+            } else if (hasError && !errorMessage) {
+                errorMessage = hasError.message
+            }
+            // 错误信息可以使用插值变量
+            if (typeof (errorMessage) === 'string') {
+                if (errorMessage.includes("{") && errorMessage.includes("}")) {
+                    const schemaOptions = schemas.get(key as never)
+                    if (schemaOptions) {
+                        errorMessage = errorMessage.replace(/\{([^}]+)\}/g, (match, varName) => {
+                            return schemaOptions[varName]
+                        })
+                    }
+                }
+            }
+            schemas.errors[key] = errorMessage as string
         }
-        this.emit("validate", { path: [...parentPath, key], newValue, oldValue, error: errorTips as string })
+        this.emit("validate", { path: [...parentPath, key], newValue, oldValue, error: errorMessage as string })
     }
     if (!isValid) {
         if (onFail === 'throw') {
-            throw new ValidateError(errorTips! as string)
+            throw new ValidateError(errorMessage! as string)
         } else if (onFail === 'ignore') {
             isPass = false
         } else {
@@ -109,8 +117,9 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
                     return value
                 }
             } else if (isValueSchema(value)) {
-                const validator = Object.assign({}, this.options.defaultValueSchema, value, { path })
-                this.schemas.add(path as never, validator)
+                const descriptor = Object.assign({}, this.options.defaultSchemaOptions, value, { path })
+                descriptor.path = path
+                this.schemas.add(path as never, descriptor)
                 options.notify({ type: 'get', path, indexs: [], value, oldValue: undefined, parentPath, parent: obj });
                 return value.value
             }
