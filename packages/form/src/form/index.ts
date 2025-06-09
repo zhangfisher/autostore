@@ -47,7 +47,7 @@ import '@shoelace-style/shoelace/dist/components/tree/tree.js';
 import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 import '../field'
 import styles from './styles'
-import { AutoStore, Dict, SchemaObject } from 'autostore';
+import { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
 import { context, AutoFormContext } from '../context'
 import '../widgets'
 import { provide } from '@lit/context';
@@ -61,7 +61,7 @@ export class AutoForm extends LitElement {
     context: AutoFormContext = {}
 
 
-    schemas?: SchemaObject[] = []
+    schemas?: ComputedSchemaState<SchemaOptions>[]
 
 
     @property({ type: String })
@@ -77,7 +77,6 @@ export class AutoForm extends LitElement {
 
     connectedCallback(): void {
         super.connectedCallback()
-        this._load()
     }
     /**
      * 
@@ -101,15 +100,17 @@ export class AutoForm extends LitElement {
     dark: boolean = false
 
     _load() {
-        this.schemas = Array.from(this.store?.schemas.values() ?? []).filter(schema => {
-            if (this.group) {
-                return schema.group ? (schema.group === this.group) : true
-            }
-            return true
-        }).sort((a, b) => {
-            // @ts-ignore
-            return (a.order || 0) - (b.order || 0)
-        })
+        const schmeaState = this.store!.schemas.store.state as Record<string, ComputedState<SchemaOptions>>
+        this.schemas = Object.values(schmeaState)
+            .filter((schema) => {
+                if (this.group) {
+                    return schema.group ? (schema.group === this.group) : true
+                }
+                return true
+            }).sort((a, b) => {
+                // @ts-ignore
+                return (a.order || 0) - (b.order || 0)
+            })
     }
     bind(store: AutoStore<Dict>) {
         this.store = store

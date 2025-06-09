@@ -1,6 +1,7 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
 import { ComputedState, Dict, } from '../types';
+import { forEachObject } from "../utils";
 import { getVal } from "../utils/getVal";
 import { SchemaOptions, SchemaValidator, ComputedSchemaState } from "./types";
 
@@ -11,12 +12,9 @@ export class SchemaManager<
 > {
     errors: Dict<string> = {}          // {<路径名称>:"错误信息"}
     _subscribers: any[] = []
-    store: SchemaStore
+    store!: SchemaStore
     validators: Record<string, SchemaValidator<any>> = {}
     constructor(public shadow: AutoStore<any>) {
-        this.store = shadow.shadow({
-
-        }) as SchemaStore
     }
     _getKey(path: any) {
         return Array.isArray(path) ? path.join('_$_') : path.split(PATH_DELIMITER).join('_$_')
@@ -28,6 +26,9 @@ export class SchemaManager<
         path: string | string[],
         descriptor: Options
     ): ComputedState<Options> {
+        if (!this.store) {
+            this.store = this.shadow.shadow({}) as SchemaStore
+        }
         const key = this._getKey(path);
         (this.store.state as any)[key] = Object.assign(
             {},
@@ -40,12 +41,16 @@ export class SchemaManager<
                 onFail: 'throw'
             }, descriptor.validator)
         }
+        // 通过遍历读取触发计算属性的创建
+        forEachObject((this.store.state as any)[key])
         return (this.store.state as any)[key]
     }
     get<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(path: T): SchemaStore['state'][T] | undefined {
+        if (!this.store) return undefined
         return getVal(this.store.state, this._getKey(path as any))
     }
     has(path: keyof SchemaStore['state']): boolean {
+        if (!this.store) return false
         const key = this._getKey(path)
         return key in (this.store.state as any)
     }
@@ -53,11 +58,13 @@ export class SchemaManager<
     getValidator<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(
         path: T
     ): SchemaValidator<SchemaStore['state'][T]> | undefined {
+        if (!this.store) return undefined
         const key = this._getKey(path)
         return this.validators[key]
     }
 
     remove(path: keyof SchemaStore['state']) {
+        if (!this.store) return undefined
         const key = this._getKey(path)
         delete (this.store.state as any)[key]
     }

@@ -1,5 +1,6 @@
 import { ComputedObject } from "../computed/computedObject";
-import { SchemaObject } from "../schema/types";
+import { ComputedDescriptor } from "../computed/types";
+import { ObserverDescriptor } from "../observer";
 import type { AutoStore } from "../store";
 import type { WatchObject } from "../watch/watchObject";
 
@@ -14,10 +15,14 @@ export type StoreEvents = {
     'watch:created': WatchObject
     'watch:done': { value: any, watchObject: WatchObject }
     'watch:error': { error: any, watchObject: WatchObject }
+    //
+    'observer:beforeCreate': ObserverDescriptor<any, any, any>
+    'observer:afterCreate': ObserverDescriptor<any, any, any>
+    'observer:done': ObserverDescriptor<any, any, any>
     // 当验证器验证失败时触发
     'validate': { path: string[], newValue: any, oldValue: any, error: string | undefined }
     // 当schema被修改时触发
-    'schema:updated': SchemaObject
+    // 'schema:updated': SchemaObject
 };
 
 export type EventDefines = {

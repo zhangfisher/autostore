@@ -149,20 +149,6 @@ const store = new AutoStore({
     resetable: true
 });
 
-store.types.state
-store.types.schemas
-store.types.schemaKeys
-
-
-store.state.user.name = ""
-
-const useNameSchema = store.schemas.get('user.name')!
-useNameSchema.state.required
-useNameSchema.state.enable
-// const noteschema = store.schemas.get("user.notes")!
-// noteschema.state.title
-
-
 
 // @ts-ignore
 window.store = store;

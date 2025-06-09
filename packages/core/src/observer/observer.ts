@@ -1,14 +1,11 @@
 /**
- * 
- * 
  * 观察者对象
  * 
- * 
+ * 观察者对象可以状态读写时进行响应
+ * 如计算属性就是观察状态中的某个值的变化，当值变化时，触发回调函数进行相应的操作
  * 
  * 
  */
-
-
 import { PATH_DELIMITER } from "../consts";
 import { AutoStore } from "../store/store";
 import { getVal } from "../utils/getVal";
@@ -39,6 +36,9 @@ export class ObserverObject<
     private _subscribers: Watcher[] = []              // 保存订阅者的ID
     private _strPath?: string
     private _error?: Error                            // 记录最后一次运行时的错误
+    store: AutoStore<any>
+    _reader!: AutoStore<any>
+    _writer!: AutoStore<any>
     /**
      *  构造函数。
      * 
@@ -46,10 +46,8 @@ export class ObserverObject<
      * @param {ComputedContext} context - 动态值上下文，指该动态值所有的路径、值、父路径和父对象引用。
      * @param {ComputedDescriptor<Options>} descriptor - 动态值描述符，包含了动态值的元数据。
      */
-    constructor(public store: AutoStore<any>, public descriptor: ObserverDescriptor<any, any, any>, public context?: ComputedContext<Value>) {
-        if (isFunction(store.options.getShadowStore)) {
-            this.store = store.options.getShadowStore() || store
-        }
+    constructor(store: AutoStore<any>, public descriptor: ObserverDescriptor<any, any, any>, public context?: ComputedContext<Value>) {
+        this.store = store
         this._associated = context !== undefined
         this._getter = descriptor.getter
         this._options = Object.assign({
@@ -66,6 +64,18 @@ export class ObserverObject<
         this._depends = calcDependPaths(this._path, this._options.depends)
         this._onObserverCreated()
         this._onInitial()
+    }
+    get reader() {
+        if (!this._reader) {
+            this._reader = isFunction(this.store.options.getReadStore) ? this.store.options.getReadStore() || this.store : this.store
+        }
+        return this._reader
+    }
+    get writer() {
+        if (!this._writer) {
+            isFunction(this.store.options.getWriteStore) ? this.store.options.getWriteStore() || this.store : this.store
+        }
+        return this._writer
     }
     get type() { return this.descriptor.type }
     get options() { return this._options }

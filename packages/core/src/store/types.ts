@@ -196,7 +196,8 @@ export interface AutoStoreOptions<State extends Dict> {
      * 为所有observer对象提供store对象
      * 
      */
-    getShadowStore?: () => AutoStore<any>
+    getReadStore?: () => AutoStore<any>
+    getWriteStore?: () => AutoStore<any>
 }
 
 

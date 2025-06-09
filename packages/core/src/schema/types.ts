@@ -84,10 +84,10 @@ export type SchemaDescriptorBuilder<Value = any, State = Dict> = () => SchemaDes
 
 
 export interface SchemaBuilder<Value = any> {
-    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, options?: Options): SchemaDescriptor<T, Options>
-    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, options?: Options): SchemaDescriptor<T, Options>
-    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, invalidMessage?: SchemaValidator<T>['message'], options?: Options): SchemaDescriptor<T, Options>
-    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validator: SchemaValidator<T>, options?: Options): SchemaDescriptor<T, Options>
+    <T extends Value = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, options?: Options): SchemaDescriptor<T, Options>
+    <T extends Value = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, options?: Options): SchemaDescriptor<T, Options>
+    <T extends Value = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, invalidMessage?: SchemaValidator<T>['message'], options?: Options): SchemaDescriptor<T, Options>
+    <T extends Value = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validator: SchemaValidator<T>, options?: Options): SchemaDescriptor<T, Options>
 }
 
 export type ConfigurableState<State extends Dict> = {

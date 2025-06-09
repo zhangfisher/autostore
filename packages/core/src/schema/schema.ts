@@ -119,28 +119,9 @@ export function createTypeSchemaBuilder<Value = any>(isValid: (val: any) => bool
 }
 
 
-// export function createObjectSchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
-//     function objectSchema<T = Value>(value: T, options?: SchemaOptions<T>): SchemaDescriptor<T>
-//     function objectSchema<T = Value>(value: T, validate?: SchemaValidate<T>, options?: SchemaOptions<T>): SchemaDescriptor<T>
-//     function objectSchema<T = Value>(value: T, validate?: SchemaValidate<T>, errorTips?: SchemaOptions<T>['errorTips']): SchemaDescriptor<T>
-//     function objectSchema<T = Value>(): SchemaDescriptor<T> {
-//         const opts = parseSchemaArgs([...arguments])
-//         if (!isValid(opts.value)) throw new ValidateError(defaultTips)
-//         return createSchemaDescriptor<T>(opts, isValid, defaultTips)
-//     }
-//     return objectSchema
-// }
-// export function createArraySchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
-//     function arraySchema<T = Value>(value: Array<T>, options?: SchemaOptions<Array<T>>): SchemaDescriptor<Array<T>>
-//     function arraySchema<T = Value>(value: Array<T>, validate?: SchemaValidate<T>, options?: SchemaOptions<Array<T>>): SchemaDescriptor<Array<T>>
-//     function arraySchema<T = Value>(value: Array<T>, validate?: SchemaValidate<T>, errorTips?: SchemaOptions<Array<T>>['errorTips']): SchemaDescriptor<Array<T>>
-//     function arraySchema<T = Value>(): SchemaDescriptor<Array<T>> {
-//         const opts = parseSchemaArgs([...arguments])
-//         if (!isValid(opts.value)) throw new ValidateError(defaultTips)
-//         return createSchemaDescriptor<Array<T>>(opts, isValid, defaultTips)
-//     }
-//     return arraySchema
-// }
+export function createArraySchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
+    return createTypeSchemaBuilder<Value[]>(isValid, defaultTips)
+}
 
 export const schemas = {
     number: createTypeSchemaBuilder<number>((val) => typeof (val) === 'number', 'must be a number'),
@@ -148,9 +129,8 @@ export const schemas = {
     boolean: createTypeSchemaBuilder<boolean>((val) => typeof (val) === 'boolean', 'must be a boolean'),
     date: createTypeSchemaBuilder<Date>((val) => val instanceof Date, 'must be a date'),
     bigint: createTypeSchemaBuilder<bigint>((val) => typeof (val) === 'bigint', 'must be a bigint'),
-    // array: createArraySchemaBuilder((val) => Array.isArray(val), 'must be an array'),
-    // object: createObjectSchemaBuilder((val) => typeof (val) === 'object', 'must be an object')
+    array: createTypeSchemaBuilder<any[]>((val) => Array.isArray(val), 'must be an array'),
+    object: createTypeSchemaBuilder<object>((val) => typeof (val) === 'object', 'must be an object')
 }
 
 export const s = schemas
-

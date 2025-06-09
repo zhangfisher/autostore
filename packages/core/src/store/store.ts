@@ -77,6 +77,7 @@ import { GetTypeByPath } from '../types';
 import { SchemaManager, SchemaState, SchemaKeyPaths } from "../schema";
 import { createShadow } from "./shadow";
 import { TimeoutError } from "../errors";
+import { ObserverDescriptor } from "../observer/types";
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
@@ -354,6 +355,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      */
     _createComputed(descriptor: ComputedDescriptor, computedContext?: ComputedContext) {
         let computedObj: ComputedObject | undefined
+        this.emit("observer:beforeCreate", descriptor as ObserverDescriptor<any, any, any>)
         if (descriptor.options.async) { // 异步计算
             computedObj = (new AsyncComputedObject(this, descriptor as ComputedDescriptor, computedContext)) as unknown as ComputedObject
         } else { // 同步计算
@@ -366,6 +368,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                 this.computedObjects.set(computedObj.id, computedObj)
             }
             this.emit("computed:created", computedObj)
+            this.emit("observer:afterCreate", descriptor as ObserverDescriptor<any, any, any>)
         }
         return computedObj
     }
@@ -375,9 +378,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      * @param descriptor 
      */
     _createWatch(descriptor: WatchDescriptor, computedContext?: ComputedContext) {
+        this.emit("observer:beforeCreate", descriptor as WatchDescriptor)
         const watchObj = new WatchObject(this, descriptor, computedContext)
         this.watchObjects.set(watchObj.id, watchObj)
         this.emit("watch:created", watchObj)
+        this.emit("observer:afterCreate", descriptor as WatchDescriptor)
         return watchObj
     }
     // **************** 普通方法 ***********
@@ -738,5 +743,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         } else {
             return val
         }
+    }
+    toString() {
+        return `AutoStore<${this.id}>`
     }
 }
