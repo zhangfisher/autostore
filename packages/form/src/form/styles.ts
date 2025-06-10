@@ -12,4 +12,21 @@ export default css`
         width:100%;        
         padding: 1em;
     }
+    .auto-form > .fields{
+        padding-right: -1em;
+    }
+    .auto-form > .fields > *{
+        display: inline-block;
+        width: 100%;
+        box-sizing: border-box;
+        padding-right:1em;
+    }    
+    .auto-form > .fields.row-layout{
+        display: flex;
+        flex-direction: row;
+    }
+    .auto-form > .fields.col-layout{
+        display: flex;
+        flex-direction: column;
+    }
 `

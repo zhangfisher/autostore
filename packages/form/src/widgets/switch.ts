@@ -14,10 +14,10 @@ export class AutoFieldSwitch extends AutoField {
             name="${this.name}"
             data-path = ${this.path}
             .value=${this.value} 
-            ${ifDefined(this.getSchemaItemValue("placeholder"))}
+            ${ifDefined(this.getOptionValue("placeholder"))}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
-        > ${this.schema!.title}</sl-switch> 
+        > ${this.schema!.label}</sl-switch> 
         `
     }
     renderLabel() {

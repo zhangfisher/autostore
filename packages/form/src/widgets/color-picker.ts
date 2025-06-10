@@ -23,13 +23,13 @@ export class AutoFieldColorPicker extends AutoField {
                 data-path = ${this.schema!.path}
                 name=${this.name} 
                 value=${this.value} 
-                format=${this.getSchemaItemValue('format', 'hex')}
-                ?opacity=${this.getSchemaItemValue('opacity', false)}
-                ?inline=${this.getSchemaItemValue('inline', false)}
-                ?required=${this.getSchemaItemValue('required', false)}
-                ?disabled=${this.getSchemaItemValue('disabled', false)}
+                format=${this.getOptionValue('format', 'hex')}
+                ?opacity=${this.getOptionValue('opacity', false)}
+                ?inline=${this.getOptionValue('inline', false)}
+                ?required=${this.getOptionValue('required', false)}
+                ?disabled=${this.getOptionValue('disabled', false)}
                 placeholder=${this.schema!.placeholder || ''}
-                swatches=${this.getSchemaItemValue('presets', defaultColors)}
+                swatches=${this.getOptionValue('presets', defaultColors)}
                 @sl-input=${this.onFieldInput.bind(this)}
                 @sl-change=${this.onFieldChange.bind(this)}
             ></sl-color-picker>

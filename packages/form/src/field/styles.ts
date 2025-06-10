@@ -21,7 +21,13 @@ export default css`
                 flex-grow: 1;
             }
         }        
-
+        /* 必填字段 */
+        &.required{
+            &>.label{
+                &>.title{
+                }
+            }
+        }
 
         &.left{
             flex-direction:row;
@@ -39,11 +45,42 @@ export default css`
                 outline: none!important;
                 box-shadow: none!important;
                 border-color: red;
+                color:red;
+            }
+            & sl-input::part(input){
+                color:red;
             }
             .error{
-                padding: 4px;
+                display: flex;
+                align-items: center;
+                padding: 4px;                
+                font-size: 0.8em;
+            }
+            & > .label > .title {
+                color:red;
             }
         } 
+        /* 禁用样式 */
+        &.disable{
+            &>.label{
+                color: var(--sl-color-gray-400);
+            }
+            &>.title{
+                color: var(--sl-color-gray-400);
+            }
+            & sl-input::part(base),sl-input::part(input){
+                color: var(--sl-color-gray-400);
+                user-select: none;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+            & sl-textarea::part(textarea){
+                color: var(--sl-color-gray-400);
+                user-select: none;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+        }
     }
         
 `

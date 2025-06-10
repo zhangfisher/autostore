@@ -13,11 +13,12 @@ export class AutoFieldCheckbox extends AutoField {
             slot="value" 
             name="${this.name}"
             data-path = ${this.path}
-            .value=${this.value} 
-            ${ifDefined(this.getSchemaItemValue("placeholder"))}
+            .value="${this.value}" 
+            .checked=${this.value} 
+            ${ifDefined(this.getOptionValue("placeholder"))}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
-        > ${this.schema!.title}</sl-checkbox> 
+        > ${this.schema!.label}</sl-checkbox> 
         `
     }
     renderLabel() {

@@ -37,8 +37,7 @@ export class ObserverObject<
     private _strPath?: string
     private _error?: Error                            // 记录最后一次运行时的错误
     store: AutoStore<any>
-    _reader!: AutoStore<any>
-    _writer!: AutoStore<any>
+    _shadowStore!: AutoStore<any>
     /**
      *  构造函数。
      * 
@@ -65,17 +64,11 @@ export class ObserverObject<
         this._onObserverCreated()
         this._onInitial()
     }
-    get reader() {
-        if (!this._reader) {
-            this._reader = isFunction(this.store.options.getReadStore) ? this.store.options.getReadStore() || this.store : this.store
+    get shadowStore() {
+        if (!this._shadowStore) {
+            this._shadowStore = isFunction(this.store.options.getShadowStore) ? this.store.options.getShadowStore() || this.store : this.store
         }
-        return this._reader
-    }
-    get writer() {
-        if (!this._writer) {
-            isFunction(this.store.options.getWriteStore) ? this.store.options.getWriteStore() || this.store : this.store
-        }
-        return this._writer
+        return this._shadowStore
     }
     get type() { return this.descriptor.type }
     get options() { return this._options }
@@ -254,7 +247,7 @@ export class ObserverObject<
 
     attach() {
         if (!this._attached && this.depends && this.depends.length > 0) {
-            this._subscribers.push(this.store.watch(
+            this._subscribers.push(this.shadowStore.watch(
                 this.getDepends(),
                 this.onDependsChange.bind(this),
                 { operates: 'write' }

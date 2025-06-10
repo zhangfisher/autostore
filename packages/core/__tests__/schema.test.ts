@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { configurable, s } from '../src/schema'
 import { AutoStore, StateOperate } from '../src/store';
-import { computed, setVal, ValidateError } from '../src';
+import { computed, delay, setVal, ValidateError } from '../src';
 
 
 describe("validator", () => {
@@ -218,26 +218,25 @@ describe("validator", () => {
                     count: configurable(0),
                     pay: configurable(true, {
                         enable: computed(async (state) => {
+                            await delay(100)
                             return state.order.count > 0
                         }, [
                             'order.count'
                         ])
                     })
                 }
-            }, {
-                onComputedDone: ({ path, value }) => {
-                    paths.push(path)
-                    values.push(value)
-                    if (paths.length === 1) {
-                        store.state.order.count = 1
-                    } else if (paths.length === 2) {
-                        expect(paths).toEqual([["order_$_pay", "enable"], ["order_$_pay", "enable"]])
-                        expect(values).toEqual([false, true])
-                        resolve()
-                    }
+            })
+            store.schemas.store.on('computed:done', ({ path, value }) => {
+                paths.push(path)
+                values.push(value)
+                if (paths.length === 1) {
+                    store.state.order.count = 1
+                } else if (paths.length === 2) {
+                    expect(paths).toEqual([["order_$_pay", "enable"], ["order_$_pay", "enable"]])
+                    expect(values).toEqual([false, true])
+                    resolve()
                 }
             })
-            const paySchema = store.schemas.get('order.pay')!
         })
     })
 
@@ -303,12 +302,38 @@ describe("validator", () => {
             })
 
             const schmea = store.schemas.get("order.visiable")!
-
-            setVal(store.state, ["order", "price"], 101)
+            store.state.order.price = 101
             setTimeout(() => {
                 expect(schmea.enable.value).toBe(true)
                 resolve()
             }, 200)
+
+        })
+    })
+    test("监听shadow的store的异步属性", () => {
+        return new Promise<void>((resolve, reject) => {
+            const store = new AutoStore({
+                order: {
+                    price: configurable(10),
+                    visiable: configurable(true, {
+                        enable: computed(async (state) => {
+                            await new Promise((resolve) => setTimeout(resolve, 100))
+                            return state.order.price > 20
+                        }, ['order.price'], {
+                            initial: false
+                        })
+                    })
+                }
+            })
+            const values: any[] = []
+            const paths: any[] = []
+            store.on("schema:updated", (schema) => {
+                values.push((schema.enable as any).value)
+            })
+            store.schemas.store.watch((op) => {
+                paths.push(op.path)
+            })
+            store.state.order.price = 101
 
         })
     })

@@ -6,7 +6,7 @@ import { SlTreeItem } from '@shoelace-style/shoelace';
 
 type TreeNode = {
     id?: string | number
-    title?: string
+    label?: string
     icon?: string
     value?: string
     selected?: boolean
@@ -68,10 +68,10 @@ export class AutoFieldTreeSelect extends AutoField {
     }
     _renderNode(item: TreeNode): any {
         return html`<sl-tree-item 
-            data-id=${String(item.id || item.title)}
+            data-id=${String(item.id || item.label)}
             ?selected=${item.selected}
             ?expanded=${item.expanded}
-        >${item.title}
+        >${item.label}
         ${Array.isArray(item.children) ? html`${item.children.map((child) => {
             return this._renderNode(child)
         })}` : ''}</sl-tree-item>`
@@ -104,7 +104,7 @@ export class AutoFieldTreeSelect extends AutoField {
             slot="value" 
             name="${this.name}"
             data-path = ${this.path}   
-            selection = "${this.getSchemaItemValue("selection", 'single')}"
+            selection = "${this.getOptionValue("selection", 'single')}"
             @sl-selection-change=${this._onSelectionChange.bind(this)}
         >${this._renderNodes(this.nodes)}</sl-tree> 
         `

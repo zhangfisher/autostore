@@ -54,7 +54,10 @@ export class SchemaManager<
         const key = this._getKey(path)
         return key in (this.store.state as any)
     }
-
+    watch() {
+        // @ts-ignore
+        return this.store.watch(...arguemnts)
+    }
     getValidator<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(
         path: T
     ): SchemaValidator<SchemaStore['state'][T]> | undefined {

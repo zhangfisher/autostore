@@ -45,12 +45,15 @@ import '@shoelace-style/shoelace/dist/components/radio/radio.js';
 import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
 import '@shoelace-style/shoelace/dist/components/tree/tree.js';
 import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
+import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 import '../field'
 import styles from './styles'
 import { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
 import { context, AutoFormContext } from '../context'
 import '../widgets'
 import { provide } from '@lit/context';
+import { styleMap } from 'lit/directives/style-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
@@ -61,7 +64,7 @@ export class AutoForm extends LitElement {
     context: AutoFormContext = {}
 
 
-    schemas?: ComputedSchemaState<SchemaOptions>[]
+    schemas: ComputedSchemaState<SchemaOptions>[] = []
 
 
     @property({ type: String })
@@ -99,6 +102,11 @@ export class AutoForm extends LitElement {
     @property({ type: Boolean, reflect: true })
     dark: boolean = false
 
+
+    @property({ type: String })
+    layout: 'auto' | 'row' | 'col' = 'auto'
+
+
     _load() {
         const schmeaState = this.store!.schemas.store.state as Record<string, ComputedState<SchemaOptions>>
         this.schemas = Object.values(schmeaState)
@@ -128,14 +136,12 @@ export class AutoForm extends LitElement {
     _renderFields() {
         return html`            
                 ${this.schemas!.map(schema => {
-            if (!schema.widget) {
-                if (schema.datatype === 'boolean') schema.widget = 'checkbox'
-            }
+            const width = schema.width
             switch (schema.widget) {
                 case 'select':
-                    return html`<auto-field-select .schema=${schema}></auto-field-select>`
+                    return html`<auto-field-select .schema=${schema} ></auto-field-select>`
                 case 'password':
-                    return html`<auto-field-password .schema=${schema}></auto-field-password>`
+                    return html`<auto-field-password .schema=${schema} style="width:${ifDefined(width)}"></auto-field-password>`
                 case 'switch':
                     return html`<auto-field-switch .schema=${schema}></auto-field-switch>`
                 case 'qrcode':
@@ -155,7 +161,7 @@ export class AutoForm extends LitElement {
                 case 'date':
                     return html`<auto-field-date .schema=${schema}></auto-field-date>`
                 case 'number':
-                    return html`<auto-field-number .schema=${schema}></auto-field-number>`
+                    return html`<auto-field-number .schema=${schema} style="width:${ifDefined(width)}"></auto-field-number>`
                 case 'email':
                     return html`<auto-field-email .schema=${schema}></auto-field-email>`
                 case 'tree-select':
@@ -169,7 +175,7 @@ export class AutoForm extends LitElement {
                 case 'url':
                     return html`<auto-field-url .schema=${schema}></auto-field-url>`
                 default:
-                    return html`<auto-field-input .schema=${schema}></auto-field-input>`
+                    return html`<auto-field-input .schema=${schema} style="width:${ifDefined(width)}"></auto-field-input>`
             }
         })}`
     }
@@ -177,7 +183,10 @@ export class AutoForm extends LitElement {
         return html`
             <div class="auto-form ${classMap({
             dark: this.dark,
-            'sl-theme-dark': this.dark
+            'sl-theme-dark': this.dark,
+            'row-layout': this.layout === 'row',
+            'col-layout': this.layout === 'col',
+            'auto-layout': this.layout === 'auto'
         })}">
                 <div class="actions header" >
 

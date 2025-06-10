@@ -25,19 +25,25 @@
 
 import { CSSResult, LitElement, html } from 'lit'
 import { property, query, queryAssignedElements, state } from 'lit/decorators.js'
-import { getVal, isAsyncComputedValue, setVal, Watcher, type SchemaObject } from 'autostore';
+import { AsyncComputedValue, createAsyncComptuedValue, getVal, isAsyncComputedValue, setVal, Watcher, SchemaOptions, StateOperate } from 'autostore';
 import { classMap } from 'lit/directives/class-map.js';
 import { consume } from '@lit/context';
 import { AutoFormContext, context } from '../context';
 import styles from './styles'
 import { toSchemaValue } from '@/utils/toSchemaValue';
+import { KnownRecord } from '@/types';
+import '../icons'
+import { styleMap } from 'lit/directives/style-map.js';
+
 
 
 export class AutoField extends LitElement {
     static styles = styles as CSSResult
 
     @property({ type: Object })
-    schema?: SchemaObject
+    schema?: SchemaOptions
+
+    field: KnownRecord<SchemaOptions, AsyncComputedValue> = {}
 
     @state()
     value: any = ''
@@ -46,18 +52,49 @@ export class AutoField extends LitElement {
     path: string = ''
 
     @state()
-    errorTips?: string
+    invalidMessage?: string
+
+    @state()
+    labelPos: string = 'top'
+
 
     @queryAssignedElements({ slot: 'value', flatten: true })
     _field!: Array<HTMLElement>;
 
-    _subscriber: Watcher | undefined
+    _subscribers: Watcher[] = []
 
     @query('.value >:first-child')
     input?: HTMLInputElement
     @consume({ context })
     @property({ attribute: false })
     public context?: AutoFormContext
+
+    /**
+     * 
+     * @param options 
+     */
+    _normalizeSchema(options: SchemaOptions) {
+        this.field = Object.entries(options).reduce<Record<string, AsyncComputedValue>>((result, [key, value]) => {
+            if (isAsyncComputedValue(value)) {
+                result[key] = value
+            } else {
+                result[key] = createAsyncComptuedValue(value)
+            }
+            return result
+        }, {
+
+        })
+    }
+
+    _renderSchemaOption(name: string, render?: (value: any) => any) {
+        const option = (this.field as any)[name]
+        if (!option) return
+        if (option.loading) {
+            return html`<sl-spinner></sl-spinner>`
+        } else {
+            return html`${render ? render(option.value) : option.value}</div>`
+        }
+    }
 
     getContext() {
         if (this.context) {
@@ -72,13 +109,13 @@ export class AutoField extends LitElement {
     }
 
     getLabel() {
-        return this.getSchema().title || this.name
+        return this.getSchema().label || this.name
     }
 
     getSchema() {
         return this.schema!
     }
-    getSchemaItemValue(name: string, defaultValue?: any) {
+    getOptionValue(name: string, defaultValue?: any) {
         if (this.schema && name in this.schema) {
             // @ts-ignore
             const value = this.schema[name]
@@ -104,20 +141,31 @@ export class AutoField extends LitElement {
     }
 
 
-    renderHelp(context: AutoFormContext) {
+    renderHelp(ctx: AutoFormContext) {
         return html`<span class="help"></span>`
     }
+    _renderRequiredOption() {
+        return this._renderSchemaOption('required', (val) => {
+            return val ? html`<span style='color:red;padding:2px;'>*</span>` : ''
+        })
+    }
     renderLabel(ctx: AutoFormContext) {
-        return html`<div class="label">
-            <span class="title">${this.getLabel()}</span>
+        if (this.labelPos === 'none') {
+            return html``
+        } else {
+            return html`<div class="label">
+            <span class="title">${this.getLabel()}${this._renderRequiredOption()}:</span>
             <span class="help">${this.renderHelp(ctx)}</span>
         </div>`
+        }
     }
     renderValue(ctx: AutoFormContext) {
         return html``
     }
     renderError(ctx: AutoFormContext) {
-        return this.errorTips ? html`<div class="error">${this.errorTips}</div>` : html``
+        return this.invalidMessage ? html`<div class="error">
+            ${this.invalidMessage}
+        </div>` : html``
     }
     onFieldChange(e?: Event) {
         this._updateFieldValue()
@@ -126,35 +174,58 @@ export class AutoField extends LitElement {
     onFieldInput(e: Event) {
         this._updateFieldValue()
     }
+    _handleSchemaChange() {
+        const ctx = this.getContext()
+        if (ctx && ctx.store && this.schema) {
+            const pathKeys = this.schema.path.join("_$_")
+            // 监听schema变化,schema什么会变化，当schema成员是一个计算函数时，会在所依赖的状态变化时重新计算而导致变化
+            // 
+            this._subscribers.push(ctx.store.schemas.store.watch(pathKeys + ".**", (operate) => {
+                const { reply, type, value, flags } = operate
+                if (reply) return
+                // 
+                if (ctx.form.seq === flags) return
+                const ops = type === 'batch' ? value : [operate]
+                ops.forEach((op: StateOperate) => {
+                    const tpath = op.path.length === 2 ? [...op.path.slice(1), 'value'] : op.path.slice(1)
+                    setVal(this.field, tpath, op.value)
+                })
+                // 重新渲染
+                this.requestUpdate()
+            }, {
+                operates: 'write'
+            }))
+        }
+    }
+
+    _handleStateChange() {
+        const ctx = this.getContext()
+        if (ctx && ctx.store && this.schema) {
+            this._subscribers.push(ctx.store.watch(this.schema.path.join("."), (operate) => {
+                // 当表单change/input时更新时设置flags=form.seq
+                // 此时应不需要更新到value，否则会导致死循环
+                if (ctx.form.seq === operate.flags) return
+                this.value = operate.value
+            }, { operates: 'write' }))
+        }
+    }
 
     connectedCallback(): void {
         super.connectedCallback()
         const ctx = this.getContext()
         if (ctx && ctx.store && this.schema) {
-            ctx.store.on('schema:updated', (schema: SchemaObject) => {
-                if (schema.path.join('.') === this.path) {
-                    if (ctx.form.seq === schema.operate.flags) return
-                    // 当schmea变化时，比如enable或者visible变化时，需要重新渲染
-                    this.requestUpdate()
-                }
-            })
-            this._subscriber = ctx.store.watch(this.schema.path.join("."), (operate) => {
-                // 当表单change/input时更新时设置flags=form.seq
-                // 此时应不需要更新到value，否则会导致死循环
-                if (ctx.form.seq === operate.flags) return
-                this.value = operate.value
-            }, { operates: 'write' })
+            this._normalizeSchema(this.schema)
+            this._handleSchemaChange()
+            this._handleStateChange()
             this.value = getVal(ctx.store.state, this.schema.path, this.schema.value)
             this.path = this.schema!.path.join(".")
             this.name = this.schema!.name || this.path
         }
-
     }
+
     disconnectedCallback(): void {
         super.disconnectedCallback()
-        if (this._subscriber) {
-            this._subscriber.off()
-        }
+        this._subscribers.forEach((subscriber) => subscriber.off())
     }
 
     /**
@@ -171,13 +242,13 @@ export class AutoField extends LitElement {
             const store = this.getContext().store
             store.update((state) => {
                 setVal(state, path, toSchemaValue(value, this.schema!))
-                this.errorTips = undefined
+                this.invalidMessage = undefined
             }, {
                 flags: ctx.form.seq
             })
 
         } catch (e: any) {
-            this.errorTips = e.message
+            this.invalidMessage = e.message
         }
     }
 
@@ -191,8 +262,11 @@ export class AutoField extends LitElement {
             'left-label': ctx.labelPos === 'left',
             'top-label': ctx.labelPos === 'top',
             'no-label': ctx.labelPos === 'none',
-            error: !!this.errorTips,
-        })}"         
+            error: !!this.invalidMessage,
+            disable: this.field.enable?.value === false,
+            required: this.field.required?.value === true,
+            hidden: this.field.visible?.value === false
+        })}"
           >
             ${this.renderLabel(ctx)}
             <div class="value">

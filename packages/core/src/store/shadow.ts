@@ -24,11 +24,11 @@ export function createShadow<T extends Dict>(store: AutoStore<any>, shadowObject
     const shadowStore = new AutoStore(shadowObject, Object.assign({}, options, {
         id: `${store.id}_shadow`,
         getRootScope: () => store.state,
-        getReadStore: () => store,
-        getWriteStore: () => shadowStore as AutoStore<T>
+        getShadowStore: () => store,
+        // getWriteStore: () => shadowStore as AutoStore<T>
     })) as AutoStore<T>
 
-    store.on('observer:beforeCreate', (descriptor) => {
+    shadowStore.on('observer:beforeCreate', (descriptor) => {
         //除非显式指定scope，并且scope不能是CURRENT
         // 因为动态创建的observer不能是CURRENT，也不能是相对路径
         const scope = descriptor.options.scope

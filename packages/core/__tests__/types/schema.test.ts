@@ -1,8 +1,7 @@
 import { describe, test } from "vitest"
 import type { Equal, Expect } from '@type-challenges/utils'
-import { AutoStore, computed, ComputedState, configurable, GetTypeByPath, SchemaOptions, SchemaValidate } from "../../src"
+import { AutoStore, computed, configurable, SchemaValidate } from "../../src"
 import { AsyncComputedValue } from '../../src/computed/types';
-import { Get } from "type-fest";
 
 describe("Schema类型", () => {
 
@@ -63,9 +62,9 @@ describe("Schema类型", () => {
         const store = new AutoStore({
             user: {
                 name: configurable("张三", {
-                    title: '姓名',
+                    label: '姓名',
                     placeholder: '请输入姓名',
-                    errorTips: '姓名长度必须大于3个字符',
+                    invalidMessage: '姓名长度必须大于3个字符',
                     required: computed(() => true),
                     enable: computed<boolean>(
                         async (state: any) => state.user.admin,
@@ -86,9 +85,9 @@ describe("Schema类型", () => {
                 {
                     value: string
                     path: string[]
-                    title: string
+                    label: string
                     placeholder: string
-                    errorTips: string
+                    invalidMessage: string
                     required: boolean
                     enable: AsyncComputedValue<boolean>
                 }
@@ -102,9 +101,9 @@ describe("Schema类型", () => {
                 {
                     value: string
                     path: string[]
-                    title: string
+                    label: string
                     placeholder: string
-                    errorTips: string
+                    invalidMessage: string
                     required: boolean
                     enable: AsyncComputedValue<boolean>
                 } | undefined
@@ -153,28 +152,28 @@ describe("Schema类型", () => {
             }
         })
         const newSchema = store.schemas.add("sss", {
-            title: '姓名',
+            label: '姓名',
             placeholder: '请输入姓名',
-            errorTips: '姓名长度必须大于3个字符',
+            invalidMessage: '姓名长度必须大于3个字符',
             required: computed(() => true),
             enable: computed<boolean>(
                 async (state: any) => state.user.admin,
                 ['user.admin']
             )
         })
-        newSchema.title
+        newSchema.label
         newSchema.placeholder
         newSchema.placeholder
-        newSchema.errorTips
+        newSchema.invalidMessage
         newSchema.required
         newSchema.enable
         type cases = Expect<
             Equal<
                 typeof newSchema,
                 {
-                    title: string;
+                    label: string;
                     placeholder: string;
-                    errorTips: string;
+                    invalidMessage: string;
                     required: boolean;
                     enable: AsyncComputedValue<boolean>;
                 }

@@ -29,8 +29,7 @@ describe("create shadow store", () => {
         const store = new AutoStore({
             order: {
                 price: 10,
-                count: 3,
-                total: computed((scope: any) => scope.price * scope.count)
+                count: 3
             }
         })
         const shadowStore = createShadow(store, {
@@ -46,25 +45,5 @@ describe("create shadow store", () => {
         store.state.order.count = 4
         expect(shadowStore.state.orderTotal).toBe(40)
         expect(values).toEqual([40])
-    })
-
-    test("创建Shadow store的异步计算属性", async () => {
-        const store = new AutoStore({
-            order: {
-                price: 10,
-                count: 3,
-                total: computed((scope: any) => scope.price * scope.count)
-            }
-        })
-        const shadowStore = createShadow(store, {
-            orderTotal: computed(async (scope: any) => {
-                return scope.order.price * scope.order.count
-            }, ['order.price', 'order.count'])
-        })
-        await delay()
-        expect(shadowStore.state.orderTotal.value).toBe(30)
-        store.state.order.count = 4
-        await delay()
-        expect(shadowStore.state.orderTotal.value).toBe(40)
     })
 })

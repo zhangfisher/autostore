@@ -98,7 +98,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
      */
     private collectDependencies() {
         let dependencies: string[][] = []
-        const watcher = this.store.watch((event) => {
+        const watcher = this.shadowStore.watch((event) => {
             dependencies.push(event.path)
         }, { operates: ['get'] })
         // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖

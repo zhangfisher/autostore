@@ -26,11 +26,8 @@
  */
 
 import { VALUE_SCHEMA } from "../consts"
-import { AutoStore } from "../store/store"
 import { isPlainObject } from "../utils"
 import { SchemaBuilder, SchemaDescriptor, SchemaOptions, SchemaValidate, SchemaValidator } from './types';
-import { Dict } from "../types"
-import { ValidateError } from "../errors";
 
 
 
@@ -74,9 +71,35 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
     if (args.length >= 2 && isPlainObject(args[args.length - 1]) && !('validate' in args[args.length - 1])) {
         finalArgs.options = Object.assign({}, args[args.length - 1])
     }
-    if (validator) {
-        finalArgs.validator = validator
+    if (finalArgs.options) {
+        // 设置默认的widget
+        if (!finalArgs.options.widget) {
+            const datatype = typeof (finalArgs.value)
+            if (datatype === 'boolean') {
+                finalArgs.options.widget = 'checkbox'
+            } else if (datatype === 'number') {
+                finalArgs.options.widget = 'number'
+            }
+            if (Array.isArray(finalArgs.options.select)) {
+                finalArgs.options.widget = 'select'
+            }
+        }
+        if (validator) {
+            finalArgs.validator = validator
+        }
+        // invalidMessage方便
+        if ('invalidMessage' in finalArgs.options) {
+            finalArgs.validator.message = finalArgs.options.invalidMessage
+            delete finalArgs.options.invalidMessage
+        }
+        if ('onFail' in finalArgs.options) {
+            finalArgs.validator.onFail = finalArgs.options.onFail
+            delete finalArgs.options.onFail
+        }
     }
+
+
+
     return finalArgs as SchemaArgs
 }
 /**

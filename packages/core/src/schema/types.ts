@@ -13,8 +13,8 @@ export type SchemaValidator<Value = any> = {
     message?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string)
 }
 
-export interface SchemaObjectWidgetTypes {
-
+export interface SchemaWidgetTypes {
+    email: {}
 }
 
 export type ISchemaObject<Value = any, Extras extends Dict = Dict> = {
@@ -42,23 +42,25 @@ export type SchemaKeyPaths<State> = Exclude<keyof {
 export type GetSchemaOptionsByPath<State extends Dict, P extends string = string> = Required<
     ComputedState<GetTypeByPath<State, P>['options']>
 >
-
-
-export type SchemaOptions<Value = any, State = Dict> = {
+export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
     name?: string
-    widget?: keyof SchemaObjectWidgetTypes | string | ComputedBuilder<string, State>
+    widget?: keyof SchemaWidgetTypes | string | ComputedBuilder<string, State>
     required?: boolean | ComputedBuilder<boolean, State>
     visible?: boolean | ComputedBuilder<boolean, State>
     enable?: boolean | ComputedBuilder<boolean, State>
     icon?: string | ComputedBuilder<string, State>
     // 提供一些元数据
-    title?: string | ComputedBuilder<string, State>
+    label?: string | ComputedBuilder<string, State>
+    labelPos?: string | ComputedBuilder<string, State>
     help?: string | ComputedBuilder<string, State>
     placeholder?: string | ComputedBuilder<string, State>
     tags?: string[] | ComputedBuilder<string[], State>
     group?: string | ComputedBuilder<string, State>
     advanced?: boolean | ComputedGetter<boolean, State>
     order?: number | ComputedGetter<number, State>
+    width?: string | ComputedGetter<string, State>
+    invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
+    onFail?: 'pass' | 'throw' | 'ignore'
     select?: string[] | number[] | boolean[] | ({
         label?: string
         value?: ToRawType<Value>
@@ -66,8 +68,8 @@ export type SchemaOptions<Value = any, State = Dict> = {
         enable?: boolean
         selected?: boolean
         icon?: string
-    })[] | ComputedBuilder<any[], State>
-} & Record<string, any>
+    } | string)[] | ComputedBuilder<any[], State>
+}
 
 export type ISchemaDescriptor<Value = any> = {
     [VALUE_SCHEMA]: true

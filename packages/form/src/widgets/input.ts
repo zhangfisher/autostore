@@ -9,6 +9,9 @@ export class AutoFieldInput extends AutoField {
     getInputType(): InputType {
         return this.schema?.type || "text"
     }
+    connectedCallback(): void {
+        super.connectedCallback()
+    }
     renderValue() {
         const schema = this.schema!
         return html`
@@ -18,27 +21,27 @@ export class AutoFieldInput extends AutoField {
                 .value=${this.value} 
                 name=${this.name} 
                 data-path = ${schema.path} 
-                .defaultValue=${this.getSchemaItemValue('defaultValue')}                 
-                ?filled=${this.getSchemaItemValue('filled')}
-                ?pill=${this.getSchemaItemValue('pill', false)}
-                ?clearable=${this.getSchemaItemValue('clearable', false)}
-                ?disabled=${this.getSchemaItemValue('disabled', false)}                
-                ?required=${this.getSchemaItemValue('required', false)}                
-                size=${ifDefined(this.getSchemaItemValue('size', 'medium'))}
-                placeholder=${ifDefined(this.getSchemaItemValue('placeholder'))}
-                pattern=${ifDefined(this.getSchemaItemValue('pattern'))}
-                helpText=${ifDefined(this.getSchemaItemValue('help'))}
-                minLength=${ifDefined(this.getSchemaItemValue('minLength'))}
-                maxLength=${ifDefined(this.getSchemaItemValue('maxLength'))}
-                .max=${this.getSchemaItemValue('max')}
-                .min=${this.getSchemaItemValue('min')}
-                .step=${this.getSchemaItemValue('step')}
-                .passwordToggle=${this.getSchemaItemValue('passwordToggle')}
-                .utocorrect=${this.getSchemaItemValue('autocorrect')}
-                .autocomplete=${this.getSchemaItemValue('autocomplete')}
-                ?autofocus=${this.getSchemaItemValue('autofocus')}
+                .defaultValue=${this.getOptionValue('defaultValue')}                 
+                ?filled=${this.getOptionValue('filled')}
+                ?pill=${this.getOptionValue('pill', false)}
+                ?clearable=${this.getOptionValue('clearable', false)}
+                ?disabled=${this.getOptionValue('disabled', false)}                
+                ?required=${this.getOptionValue('required', false)}                
+                size=${ifDefined(this.getOptionValue('size', 'medium'))}
+                placeholder=${ifDefined(this.getOptionValue('placeholder'))}
+                pattern=${ifDefined(this.getOptionValue('pattern'))}
+                helpText=${ifDefined(this.getOptionValue('help'))}
+                minLength=${ifDefined(this.getOptionValue('minLength'))}
+                maxLength=${ifDefined(this.getOptionValue('maxLength'))}
+                .max=${this.getOptionValue('max')}
+                .min=${this.getOptionValue('min')}
+                .step=${this.getOptionValue('step')}
+                .passwordToggle=${this.getOptionValue('passwordToggle')}
+                .utocorrect=${this.getOptionValue('autocorrect')}
+                .autocomplete=${this.getOptionValue('autocomplete')}
+                ?autofocus=${this.getOptionValue('autofocus')}
                 @sl-input=${this.onFieldInput.bind(this)}
-                spellcheck=${ifDefined(this.getSchemaItemValue('spellcheck', "false"))}
+                spellcheck=${ifDefined(this.getOptionValue('spellcheck', "false"))}
             ></sl-input>
         `
     }

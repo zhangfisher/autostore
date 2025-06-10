@@ -1,5 +1,4 @@
 import { AutoField } from "@/field"
-import { html } from "lit"
 import { customElement } from "lit/decorators.js"
 import { InputType } from "./input"
 

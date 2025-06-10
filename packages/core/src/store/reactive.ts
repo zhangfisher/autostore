@@ -34,7 +34,7 @@ function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue:
     const onFail = validator.onFail || 'throw'
 
     let isValid: boolean = true
-    let errorMessage: SchemaValidator['message'] | undefined = validator.message
+    let errorMessage: SchemaValidator['message'] | undefined = validator.message || 'validate error'
 
     let isPass: boolean = true
     let hasError: any
@@ -63,7 +63,7 @@ function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue:
                     }
                 }
             }
-            schemas.errors[key] = errorMessage as string
+            schemas.errors[key] = (errorMessage) as string
         }
         this.emit("validate", { path: [...parentPath, key], newValue, oldValue, error: errorMessage as string })
     }

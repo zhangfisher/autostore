@@ -296,6 +296,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                         const ops = (operate.value as StateOperate[]).filter(op => isMatchOperates(op, operates))
                         if (ops.length > 0) {
                             operate.value = ops
+                        } else {
+                            return
                         }
                     }
                     listener(operate)

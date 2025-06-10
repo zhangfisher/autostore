@@ -24,7 +24,7 @@ export class AutoFieldTextArea extends AutoField {
             placeholder=${this.schema!.placeholder || ''}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
-        > ${this.schema!.title}</sl-textarea> 
+        > ${this.schema!.label}</sl-textarea> 
         `
     }
 }
