@@ -164,9 +164,25 @@ export class AutoIcon extends LitElement {
 
 
 
+@customElement('auto-icons')
+export class AutoIcons extends LitElement {
+    static styles = css`
+    :host{
+        display: none;
+    }
+    `
+    connectedCallback() {
+        super.connectedCallback();
+        this.style.display = 'none'; // 确保立即隐藏
+    }
+    render() {
+        return html``
+    }
+}
 
 declare global {
     interface HTMLElementTagNameMap {
         'auto-icon': AutoIcon;
+        'auto-icons': AutoIcons;
     }
 }

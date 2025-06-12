@@ -3,19 +3,19 @@ import { AutoFieldInput, InputType } from "./input"
 import { html } from "lit"
 
 
-@customElement('auto-field-time')
-export class AutoFieldTime extends AutoFieldInput {
+@customElement('auto-field-search')
+export class AutoFieldSearch extends AutoFieldInput {
     getInputType(): InputType {
-        return 'time'
+        return 'search'
     }
     getPrefix() {
-        return html`<auto-icon name='time'  slot="prefix"></auto-icon>`
+        return html`<auto-icon name='search'  slot="prefix"></auto-icon>`
     }
 }
 
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-time': AutoFieldTime
+        'auto-field-search': AutoFieldSearch
     }
 }

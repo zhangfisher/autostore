@@ -1,5 +1,6 @@
 import { ComputedBuilder, ComputedGetter } from "../computed/types";
-import { VALUE_SCHEMA } from "../consts"
+import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts"
+import { ObserverDescriptor } from "../observer/types";
 import { ComputedState, Dict, GetTypeByPath, StatePath, ToRawType } from '../types';
 
 export type SchemaValidate<Value = any> = (newValue: Value, oldValue: Value, path: string) => boolean
@@ -15,20 +16,22 @@ export type SchemaValidator<Value = any> = {
 
 
 export type ISchemaObject<Value = any, Extras extends Dict = Dict> = {
-    [VALUE_SCHEMA]: true
+    [VALUE_SCHEMA_BUILDER_FLAG]: true
     path: string[]
     value: ToRawType<Value>
 } & Extras
 
 export type RemoveSchemaFlags<T extends Dict> = {
-    [K in keyof T as K extends typeof VALUE_SCHEMA ? never : K]: T[K]
+    [K in keyof T as K extends typeof VALUE_SCHEMA_BUILDER_FLAG ? never : K]: T[K]
 }
+
+
 
 export type SchemaKeyPaths<State> = Exclude<keyof {
     [K in StatePath<State> as GetTypeByPath<State, K> extends {
-        [VALUE_SCHEMA]: true
+        [VALUE_SCHEMA_BUILDER_FLAG]: true
     } ? K : GetTypeByPath<State, K> extends Array<infer Item>
-    ? Item extends { [VALUE_SCHEMA]: true }
+    ? Item extends { [VALUE_SCHEMA_BUILDER_FLAG]: true }
     ? `${K}.${number}`
     : never
     : never]: any
@@ -83,6 +86,8 @@ export type SchemaWidgetTypes = 'input'
     | 'password'
     | 'qrcode'
     | 'email'
+    | 'phone'
+    | 'search'
 
 export interface SchemaWidgetOptions<State = Dict> {
     filled?: boolean | ComputedBuilder<boolean, State>
@@ -121,6 +126,23 @@ export interface SchemaWidgetOptions<State = Dict> {
     items?: SchemaWidgetTreeNode | SchemaWidgetTreeNode[]
 }
 
+export type SchemaWidgetAction<State = Dict> = {
+    id?: string
+    label?: string
+    icon?: string
+    position?: 'before' | 'after'
+    onClick: (value: any, ctx: {
+        action: SchemaWidgetAction,
+        schema: SchemaOptions,
+        event: Event,
+        update: (value: any) => void
+    }) => void
+    disabled?: boolean | ComputedBuilder<boolean, State>
+    hidden?: boolean | ComputedBuilder<boolean, State>
+    visible?: boolean | ComputedBuilder<boolean, State>
+    // 如果指定了items，则渲染为Dropdown
+    items?: SchemaWidgetAction<State>[]
+}
 
 export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
     name?: string
@@ -149,27 +171,26 @@ export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
         selected?: boolean
         icon?: string
     } | string)[] | ComputedBuilder<any[], State>
+    actions?: SchemaWidgetAction<State>[]
 } & SchemaWidgetOptions<State>
 
-export type ISchemaDescriptor<Value = any> = {
-    [VALUE_SCHEMA]: true
-    value: ToRawType<Value>
-}
 export type SchemaDescriptor<Value = any, Options = Dict> = {
     datatype: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | string
-    value: ToRawType<Value>
-    validator?: SchemaValidator<ToRawType<Value>>
-    options: SchemaOptions<ToRawType<Value>, Options>
-} & ISchemaDescriptor<Value>
+    value: Value
+    validator?: SchemaValidator<Value>
+    options: SchemaOptions<Value, Options>
+}
 
-export type SchemaDescriptorBuilder<Value = any, State = Dict> = () => SchemaDescriptor<Value, State>
-
+export interface SchemaDescriptorBuilder<Value = any, State = Dict> {
+    [VALUE_SCHEMA_BUILDER_FLAG]: true
+    (): SchemaDescriptor<Value, State>
+}
 
 export interface SchemaBuilder<Value = any> {
-    <T extends Value = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, options?: Options): SchemaDescriptor<T, Options>
-    <T extends Value = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, options?: Options): SchemaDescriptor<T, Options>
-    <T extends Value = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, invalidMessage?: SchemaValidator<T>['message'], options?: Options): SchemaDescriptor<T, Options>
-    <T extends Value = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validator: SchemaValidator<T>, options?: Options): SchemaDescriptor<T, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, options?: Options): SchemaDescriptorBuilder<ToRawType<T>, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, options?: Options): SchemaDescriptorBuilder<ToRawType<T>, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validate: SchemaValidate<T>, invalidMessage?: SchemaValidator<T>['message'], options?: Options): SchemaDescriptorBuilder<ToRawType<T>, Options>
+    <T = Value, Options extends SchemaOptions<T> = SchemaOptions<T>>(value: T, validator: SchemaValidator<T>, options?: Options): SchemaDescriptorBuilder<ToRawType<T>, Options>
 }
 
 export type ConfigurableState<State extends Dict> = {
@@ -181,7 +202,7 @@ export type SchemaState<State extends Dict> = ConfigurableState<State>
 
 export type ComputedSchemaState<State extends Dict> = {
     [Key in SchemaKeyPaths<State>]: (
-        GetTypeByPath<State, Key> extends SchemaDescriptor<infer V, infer Options>
+        GetTypeByPath<State, Key> extends SchemaDescriptorBuilder<infer V, infer Options>
         ? Options & { value: V } : GetTypeByPath<State, Key>
     ) & {
         path: string[]

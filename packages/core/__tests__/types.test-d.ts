@@ -1,9 +1,8 @@
 import { Equal, Expect } from "@type-challenges/utils"
 import { ComputedState, Dict, GetTypeByPath, StatePath } from "../src/types";
-import { configurable, ConfigurableState, s, schema, SchemaState, SchemaKeyPaths } from "../src/schema";
+import { configurable, s, schema, SchemaState, SchemaKeyPaths } from "../src/schema";
 import { AutoStore } from "../src/store";
 import { computed } from "../src";
-import { RawObject } from '../src/utils/markRaw';
 import { Get } from "type-fest";
 
 
@@ -26,7 +25,7 @@ type sst = ComputedState<typeof stt>
 
 const obj = {
     price: schema<number>(100),
-    tags: s.array<number>([1, 2]),
+    tags: s.array<number[]>([1, 2]),
     address: configurable({
         city: "QuanZhou",
         post: 1234,

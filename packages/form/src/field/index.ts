@@ -25,7 +25,7 @@
 
 import { CSSResult, LitElement, html } from 'lit'
 import { property, query, queryAssignedElements, state } from 'lit/decorators.js'
-import { AsyncComputedValue, createAsyncComptuedValue, getVal, isAsyncComputedValue, setVal, Watcher, SchemaOptions, StateOperate } from 'autostore';
+import { AsyncComputedValue, createAsyncComptuedValue, getVal, isAsyncComputedValue, setVal, Watcher, SchemaOptions, StateOperate, SchemaWidgetAction } from 'autostore';
 import { classMap } from 'lit/directives/class-map.js';
 import { consume } from '@lit/context';
 import { AutoFormContext, context } from '../context';
@@ -55,6 +55,9 @@ export class AutoField extends LitElement {
     @state()
     labelPos: string = 'top'
 
+    beforeActions?: SchemaWidgetAction[]
+    afterActions?: SchemaWidgetAction[]
+
 
     @queryAssignedElements({ slot: 'value', flatten: true })
     _field!: Array<HTMLElement>;
@@ -73,7 +76,7 @@ export class AutoField extends LitElement {
      */
     _normalizeSchema(options: SchemaOptions) {
         this.field = Object.entries(options).reduce<Record<string, AsyncComputedValue>>((result, [key, value]) => {
-            if (['value', 'path'].includes(key)) {
+            if (['value', 'path', 'widget'].includes(key)) {
                 result[key] = value
             } else if (isAsyncComputedValue(value)) {
                 result[key] = value
@@ -81,9 +84,7 @@ export class AutoField extends LitElement {
                 result[key] = createAsyncComptuedValue(value)
             }
             return result
-        }, {
-
-        })
+        }, {})
     }
 
     _renderSchemaOption(name: string, render?: (value: any) => any) {
@@ -139,6 +140,7 @@ export class AutoField extends LitElement {
         if (datatype === 'boolean') return Boolean(value)
         return value
     }
+
 
 
     renderHelp(ctx: AutoFormContext) {
@@ -220,6 +222,10 @@ export class AutoField extends LitElement {
             this.value = getVal(ctx.store.state, this.schema.path, this.schema.value)
             this.path = this.schema!.path.join(".")
             this.name = this.schema!.name || this.path
+            if (Array.isArray(this.schema!.actions)) {
+                this.beforeActions = this.schema!.actions.filter((action) => action.position === 'before')
+                this.afterActions = this.schema!.actions.filter((action) => action.position !== 'before')
+            }
         }
     }
 

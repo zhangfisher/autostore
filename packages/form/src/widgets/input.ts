@@ -2,8 +2,10 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
+import { repeat } from 'lit/directives/repeat.js';
+import { SchemaWidgetAction, setVal } from 'autostore';
 
-export type InputType = 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url'
+export type InputType = 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url' | 'phone'
 @customElement('auto-field-input')
 export class AutoFieldInput extends AutoField {
     static styles = [
@@ -17,13 +19,19 @@ export class AutoFieldInput extends AutoField {
         }
         .actions > sl-button{
             margin:0px;
-
-            
         }
-        .actions > sl-button::part(base){
+        .actions.after > sl-button::part(base){
             border-right:none;
             border-radius: 0px;
         }
+        .actions.before{
+            margin-left: 0px;
+        }
+        .actions.before > sl-button::part(base){
+            border-left:none;
+            border-radius: 0px;
+        }
+
     `] as any
 
     getInputType(): any {
@@ -36,11 +44,43 @@ export class AutoFieldInput extends AutoField {
     getSuffix() {
 
     }
-    renderActions(pos: 'prefix' | 'suffix' = 'suffix') {
-        return html`<div class="actions" slot=${pos}>
-            <sl-button>增加</sl-button>
-            <sl-button>删除</sl-button>
-    </div>`
+    renderAction(action: SchemaWidgetAction) {
+        const onClick = (action: SchemaWidgetAction) => (e: any) => action.onClick(this.value, {
+            action,
+            schema: this.schema!,
+            event: e,
+            update: (value: any) => {
+                setVal(this.context!.store!.state, this.schema!.path, value)
+            }
+        })
+        return html`
+        <sl-button @click=${onClick(action)}>${action.label}</sl-button>
+    `
+    }
+    renderActions() {
+        const actions = this.schema?.actions
+        if (Array.isArray(actions)) {
+            const onClick = (action: SchemaWidgetAction) => (e: any) => action.onClick(this.value, {
+                action,
+                schema: this.schema!,
+                event: e,
+                update: (value: any) => {
+                    setVal(this.context!.store!.state, this.schema!.path, value)
+                }
+            })
+            return html`<div class="actions before" slot="prefix">
+            ${repeat(this.beforeActions || [], (action) => {
+                return html`
+                        <sl-button @click=${onClick(action)}>${action.label}</sl-button>
+                    `
+            })}</div>
+            <div class="actions after" slot="suffix"> 
+            ${repeat(this.afterActions || [], (action) => {
+                return html`
+                    <sl-button @click=${onClick(action)}>${action.label}</sl-button>            
+                    `
+            })}</div>`
+        }
     }
     connectedCallback(): void {
         super.connectedCallback()

@@ -1,5 +1,5 @@
 import { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
-import { ISchemaDescriptor } from "./schema";
+import { SchemaDescriptorBuilder } from "./schema";
 import type { AutoStore } from "./store";
 import { RawObject } from "./utils";
 import { WatchDescriptorBuilder } from "./watch/types";
@@ -25,17 +25,18 @@ export type PickValues<T extends Record<string, any>> = Union<UnionToIntersectio
 // **************  以下实现将计算属性函数的返回值类型提取出来  **************
 
 
-export type PickComputedResult<T> = T extends SyncComputedDescriptorBuilder<infer X> ? X :
-    (T extends AsyncComputedDescriptorBuilder<infer X> ? AsyncComputedValue<X> :
-        (T extends WatchDescriptorBuilder<infer X> ? X :
-            (T extends ComputedGetter<infer X> ? X :                                           // 同步函数
-                (T extends AsyncComputedGetter<infer X> ? AsyncComputedValue<X> :                // 异步函数
+export type PickComputedResult<T> = T extends SchemaDescriptorBuilder<infer X, any> ? X : (
+    T extends SyncComputedDescriptorBuilder<infer X, any> ? X :
+    (T extends AsyncComputedDescriptorBuilder<infer X, any> ? AsyncComputedValue<X> :
+        (T extends WatchDescriptorBuilder<infer X, any> ? X :
+            (T extends ComputedGetter<infer X, any> ? X :                                           // 同步函数
+                (T extends AsyncComputedGetter<infer X, any> ? AsyncComputedValue<X> :                // 异步函数
                     T
                 )
             )
         )
     )
-
+)
 /**
 
 转换状态中的计算属性函数的类型
@@ -45,36 +46,31 @@ export type PickComputedResult<T> = T extends SyncComputedDescriptorBuilder<infe
 
 */
 
-export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[]
-    :
-    (
-        T extends ISchemaDescriptor<infer V> ? V
+export type ComputedState<T> = T extends unknown[]
+    ? ComputedState<T[number]>[]
+    : (
+        T extends RawObject<T> ? T
         : (
-            T extends RawObject<T> ? T
+            T extends (...args: any) => any ? PickComputedResult<T>
             : (
-                T extends (...args: any) => any ? PickComputedResult<T>
-                : (
-                    T extends Dict ? {
-                        [K in keyof T]: T[K] extends (...args: any[]) => any ? PickComputedResult<T[K]>
+                T extends Dict ? {
+                    [K in keyof T]: T[K] extends (...args: any[]) => any ? PickComputedResult<T[K]>
+                    : (
+                        T[K] extends Record<string, any> ? ComputedState<T[K]>
                         : (
-                            T[K] extends Record<string, any> ? ComputedState<T[K]>
-                            : (
-                                T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
-                            )
+                            T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
                         )
-                    }
-                    : T
-                )
+                    )
+                }
+                : T
             )
         )
     )
 
-
-
 // export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[]
 //     :
 //     (
-//         T extends SchemaDescriptor<infer V> ? V
+//         T extends ISchemaDescriptor<infer V> ? V
 //         : (
 //             T extends RawObject<T> ? T
 //             : (
@@ -94,28 +90,13 @@ export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[]
 //             )
 //         )
 //     )
+
+
+
 export type StatePath<T> = ObjectKeyPaths<ComputedState<T>>
 
 
-// export type ComputedState<T> = T extends unknown[] ? ComputedState<T[number]>[] 
-// : ( 
-//     T extends RawObject<T> ? T 
-//     : (
-//         T extends (...args:any) => any ? PickComputedResult<T> 
-//         : (
-//             T extends Dict  ? {
-//                 [K in keyof T]: T[K] extends (...args:any[]) => any ? PickComputedResult<T[K]> 
-//                     : (  
-//                         T[K] extends Record<string, any> ? ComputedState<T[K]> 
-//                         :   ( 
-//                                 T[K] extends unknown[] ? ComputedState<T[K][number]>[] : T[K]
-//                             )
-//                         )        
-//                 }  
-//             : T
-//         )
-//     )        
-// )
+
 
 // 在ComputedState的基础上，排除了undefined的类型
 export type RequiredComputedState<T extends Record<string, any>> = {

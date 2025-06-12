@@ -181,6 +181,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * 
      */
     onObserverCreated?: (observerObject: ObserverObject<any, any>) => void
+    onObserverBeforeCreate?: (observerObject: ObserverObject<any, any>) => void
     /**
      * 默认的値模式
      */

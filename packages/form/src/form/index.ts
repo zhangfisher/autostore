@@ -46,13 +46,17 @@ import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
 import '@shoelace-style/shoelace/dist/components/tree/tree.js';
 import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
+
 import '../field'
 import styles from './styles'
 import { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
 import { context, AutoFormContext } from '../context'
 import '../widgets'
 import { provide } from '@lit/context';
-import { ifDefined } from 'lit/directives/if-defined.js';
+import { registerIconLibrary } from '@shoelace-style/shoelace';
+import { IconLibrary, IconLibraryResolver } from '@shoelace-style/shoelace/dist/components/icon/library.js';
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
@@ -102,6 +106,36 @@ export class AutoForm extends LitElement {
     @property({ type: String })
     layout: 'auto' | 'row' | 'col' = 'auto'
 
+    /**
+     * 
+     * 注册图标库地址
+     * 
+     * iconset="https://cdn.jsdelivr.net/npm/lucide-static@0.16.29/icons/${name}.svg"
+     * 
+     */
+    @property({ type: String })
+    iconLibrary: string = 'https://unpkg.com/lucide-static@latest/icons/${name}.svg'
+
+    /**
+     * 注册图标库
+     * 
+     * registerIcons((name=?{})>)
+     * 
+     * 
+     */
+    registerIcons(resolver: IconLibraryResolver, options?: Omit<IconLibrary, 'name' | 'resolver'>) {
+        registerIconLibrary('default', {
+            resolver,
+            ...options || {}
+        })
+    }
+
+    connectedCallback(): void {
+        super.connectedCallback()
+        this.registerIcons((name) => {
+            return this.iconLibrary.replace('${name}', name)
+        })
+    }
 
     _load() {
         const schmeaState = this.store!.schemas.store.state as Record<string, ComputedState<SchemaOptions>>
@@ -128,52 +162,25 @@ export class AutoForm extends LitElement {
         this._load()
         this.requestUpdate()
     }
-
+    _renderWidget(schema: SchemaOptions) {
+        const width = schema.width
+        const widget = schema.widget
+        let widgetEle
+        try {
+            widgetEle = document.createElement(`auto-field-${widget || 'input'}`)
+        } catch {
+            widgetEle = document.createElement('auto-field-input')
+        }
+        // @ts-ignore
+        widgetEle.schema = schema
+        // @ts-ignore
+        if (width) widgetEle.style.width = width
+        return widgetEle
+    }
     _renderFields() {
         return html`            
                 ${this.schemas!.map(schema => {
-
-            const width = schema.width
-            switch (schema.widget) {
-                case 'select':
-                    return html`<auto-field-select .schema=${schema} style="width:${ifDefined(width)}" ></auto-field-select>`
-                case 'password':
-                    return html`<auto-field-password .schema=${schema} style="width:${ifDefined(width)}"></auto-field-password>`
-                case 'switch':
-                    return html`<auto-field-switch .schema=${schema} style="width:${ifDefined(width)}"></auto-field-switch>`
-                case 'qrcode':
-                    return html`<auto-field-qrcode .schema=${schema} style="width:${ifDefined(width)}"></auto-field-qrcode>`
-                case 'colorpicker':
-                    return html`<auto-field-colorpicker .schema=${schema} style="width:${ifDefined(width)}"></auto-field-colorpicker>`
-                case 'radio':
-                    return html`<auto-field-radio .schema=${schema} style="width:${ifDefined(width)}"></auto-field-radio>`
-                case 'radio-button':
-                    return html`<auto-field-radio-button .schema=${schema} style="width:${ifDefined(width)}"></auto-field-radio-button>`
-                case 'rating':
-                    return html`<auto-field-rating .schema=${schema} style="width:${ifDefined(width)}"></auto-field-rating>`
-                case 'range':
-                    return html`<auto-field-range .schema=${schema} style="width:${ifDefined(width)}"></auto-field-range>`
-                case 'textarea':
-                    return html`<auto-field-textarea .schema=${schema} style="width:${ifDefined(width)}"></auto-field-textarea>`
-                case 'date':
-                    return html`<auto-field-date .schema=${schema} style="width:${ifDefined(width)}"></auto-field-date>`
-                case 'number':
-                    return html`<auto-field-number .schema=${schema} style="width:${ifDefined(width)}"></auto-field-number>`
-                case 'email':
-                    return html`<auto-field-email .schema=${schema} style="width:${ifDefined(width)}"></auto-field-email>`
-                case 'tree-select':
-                    return html`<auto-field-tree-select .schema=${schema} style="width:${ifDefined(width)}"></auto-field-tree-select>`
-                case 'ipaddress':
-                    return html`<auto-field-ipaddress .schema=${schema} style="width:${ifDefined(width)}"></auto-field-ipaddress>`
-                case 'checkbox':
-                    return html`<auto-field-checkbox .schema=${schema} style="width:${ifDefined(width)}"></auto-field-checkbox>`
-                case 'time':
-                    return html`<auto-field-time .schema=${schema} style="width:${ifDefined(width)}"></auto-field-time>`
-                case 'url':
-                    return html`<auto-field-url .schema=${schema} style="width:${ifDefined(width)}"></auto-field-url>`
-                default:
-                    return html`<auto-field-input .schema=${schema} style="width:${ifDefined(width)}"></auto-field-input>`
-            }
+            return html`${this._renderWidget(schema)}`
         })}`
     }
     render() {
@@ -185,8 +192,7 @@ export class AutoForm extends LitElement {
             'col-layout': this.layout === 'col',
             'auto-layout': this.layout === 'auto'
         })}">
-                <div class="actions header" >
-
+                <div class="actions header" > 
                 </div>
                 <div class="fields">
                     ${this._renderFields()}

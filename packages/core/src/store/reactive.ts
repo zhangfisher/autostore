@@ -19,7 +19,7 @@ export type ReactiveNotifyParams<T = any> = {
 
 type CreateReactiveObjectOptions = {
     notify: (params: ReactiveNotifyParams) => void
-    createComputedObject: (path: string[], value: Function, parentPath: string[], parent: any) => any
+    createObserverObject: (path: string[], value: Function, parentPath: string[], parent: any) => any
 };
 
 
@@ -106,7 +106,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
                                 throw new CyleDependError(`Find circular dependency at <"${path}">, steps: ${cylePaths.join(' -> ')}`)
                             }
                             isComputedCreating.set(pathKey, true)
-                            return options.createComputedObject(path, value, parentPath, obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            return options.createObserverObject(path, value, parentPath, obj)    // 如果值是一个函数，则创建一个计算属性或Watch对象
                         } finally {
                             isComputedCreating.delete(pathKey)
                         }
@@ -116,12 +116,6 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
                 } else {
                     return value
                 }
-            } else if (isValueSchema(value)) {
-                const descriptor = Object.assign({}, this.options.defaultSchemaOptions, value, { path })
-                descriptor.path = path
-                this.schemas.add(path as never, descriptor)
-                options.notify({ type: 'get', path, indexs: [], value, oldValue: undefined, parentPath, parent: obj });
-                return value.value
             }
             options.notify({ type: 'get', path, indexs: [], value, oldValue: undefined, parentPath, parent: obj });
             return createProxy.call(this, value, path, proxyCache, isComputedCreating, options);

@@ -25,16 +25,38 @@
  * 
  */
 
-import { VALUE_SCHEMA } from "../consts"
+import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts"
 import { isPlainObject } from "../utils"
-import { SchemaBuilder, SchemaDescriptor, SchemaOptions, SchemaValidate, SchemaValidator } from './types';
-
+import { SchemaBuilder, SchemaDescriptorBuilder, SchemaOptions, SchemaValidator, SchemaWidgetAction } from './types';
+import { markRaw } from '../utils/markRaw';
 
 
 type SchemaArgs = {
     value: any
     options: SchemaOptions
     validator: SchemaValidator
+}
+
+/**
+ * 对Schema.options里面的actions进行标记
+ * 
+ * 将actions里面所有onXXX开头的事件处理函数全局markRaw
+ * 
+ * 
+ */
+function markActions(actions: SchemaWidgetAction[]) {
+    if (Array.isArray(actions)) {
+        actions.forEach(action => {
+            if (typeof (action) === 'object') {
+                Object.entries(action).forEach(([key, value]) => {
+                    if (key === 'items' || (key.startsWith('on') && typeof (value) === 'function')) {
+                        //@ts-ignore
+                        action[key] = markRaw(value)
+                    }
+                })
+            }
+        })
+    }
 }
 
 /**
@@ -71,6 +93,9 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
     if (args.length >= 2 && isPlainObject(args[args.length - 1]) && !('validate' in args[args.length - 1])) {
         finalArgs.options = Object.assign({}, args[args.length - 1])
     }
+    if (validator) {
+        finalArgs.validator = validator
+    }
     if (finalArgs.options) {
         // 设置默认的widget
         if (!finalArgs.options.widget) {
@@ -84,10 +109,6 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
                 finalArgs.options.widget = 'select'
             }
         }
-        if (validator) {
-            finalArgs.validator = validator
-        }
-        // invalidMessage方便
         if ('invalidMessage' in finalArgs.options) {
             finalArgs.validator.message = finalArgs.options.invalidMessage
             delete finalArgs.options.invalidMessage
@@ -95,6 +116,9 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
         if ('onFail' in finalArgs.options) {
             finalArgs.validator.onFail = finalArgs.options.onFail
             delete finalArgs.options.onFail
+        }
+        if (finalArgs.options.actions) {
+            markActions(finalArgs.options.actions)
         }
     }
     return finalArgs as SchemaArgs
@@ -109,13 +133,14 @@ export const schema = function () {
     const args = parseSchemaArgs([...arguments])
     const value = arguments[0]
     const datatype = Array.isArray(value) ? 'array' : typeof (value)
-    return {
-        [VALUE_SCHEMA]: true,
+    const builder = () => ({
         value,
         datatype,
         validator: args.validator,
         options: args.options,
-    }
+    })
+    builder[VALUE_SCHEMA_BUILDER_FLAG] = true
+    return builder as SchemaDescriptorBuilder
 } as unknown as SchemaBuilder
 
 export const configurable = schema
@@ -123,24 +148,20 @@ export const configurable = schema
 
 
 export function createTypeSchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
-    return function typeSchema<T>(): SchemaDescriptor<T> {
-        const args = parseSchemaArgs([...arguments])
+    const typeSchema = function () {
+        const args = parseSchemaArgs([...arguments]);
         if (!args.validator) {
-            args.validator = {} as any
+            args.validator = {} as any;
         }
         if (typeof (args.validator.validate) !== 'function') {
-            args.validator.validate = isValid
+            args.validator.validate = isValid;
         }
         if (!args.validator.message) {
-            args.validator.message = defaultTips
+            args.validator.message = defaultTips;
         }
-        return schema<T>(args.value, args.validator, args.options) as SchemaDescriptor<T>
-    } as SchemaBuilder<Value>
-}
-
-
-export function createArraySchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
-    return createTypeSchemaBuilder<Value[]>(isValid, defaultTips)
+        return schema(args.value, args.validator, args.options)
+    }
+    return typeSchema as SchemaBuilder<Value>
 }
 
 export const schemas = {

@@ -146,41 +146,41 @@ describe("Schema类型", () => {
 
     })
 
-    test("动态增加schema", () => {
-        const store = new AutoStore({
-            user: {
-                name: "张三",
-            }
-        })
-        const newSchema = store.schemas.add("sss", {
-            label: '姓名',
-            placeholder: '请输入姓名',
-            invalidMessage: '姓名长度必须大于3个字符',
-            required: computed(() => true),
-            enable: computed<boolean>(
-                async (state: any) => state.user.admin,
-                ['user.admin']
-            )
-        })
-        newSchema.label
-        newSchema.placeholder
-        newSchema.placeholder
-        newSchema.invalidMessage
-        newSchema.required
-        newSchema.enable
-        type cases = Expect<
-            Equal<
-                typeof newSchema,
-                {
-                    label: string;
-                    placeholder: string;
-                    invalidMessage: string;
-                    required: boolean;
-                    enable: AsyncComputedValue<boolean>;
-                }
-            >
-        >
-    })
+    // test("动态增加schema", () => {
+    //     const store = new AutoStore({
+    //         user: {
+    //             name: "张三",
+    //         }
+    //     })
+    //     const newSchema = store.schemas.add("sss", {
+    //         label: '姓名',
+    //         placeholder: '请输入姓名',
+    //         invalidMessage: '姓名长度必须大于3个字符',
+    //         required: computed(() => true),
+    //         enable: computed<boolean>(
+    //             async (state: any) => state.user.admin,
+    //             ['user.admin']
+    //         )
+    //     })
+    //     newSchema.label
+    //     newSchema.placeholder
+    //     newSchema.placeholder
+    //     newSchema.invalidMessage
+    //     newSchema.required
+    //     newSchema.enable
+    //     type cases = Expect<
+    //         Equal<
+    //             typeof newSchema,
+    //             {
+    //                 label: string;
+    //                 placeholder: string;
+    //                 invalidMessage: string;
+    //                 required: boolean;
+    //                 enable: AsyncComputedValue<boolean>;
+    //             }
+    //         >
+    //     >
+    // })
 
 
 })

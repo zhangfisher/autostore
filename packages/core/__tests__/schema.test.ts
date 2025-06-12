@@ -77,7 +77,7 @@ describe("validator", () => {
     test("校验提示信息可以使用插值变量", () => {
         const store = new AutoStore({
             order: {
-                price: s.number(100, (val: any) => val > 10, "价格必须大于10({title})", {
+                price: s.number(100, (val: any) => val > 10, "价格必须大于10({label})", {
                     label: "注意"
                 })
             }
@@ -107,7 +107,6 @@ describe("validator", () => {
         store.schemas.has("order.price")
         try {
             store.state.order.price = 10
-
         } catch (e: any) {
             expect(e).toBeInstanceOf(ValidateError)
             expect(e.message).toBe("order.price:价格必须大于10")
@@ -280,6 +279,7 @@ describe("validator", () => {
             expect(schmea.enable).toBe(true)
             resolve()
         })
+
     })
     test("schema数据是一个异步计算函数", () => {
         return new Promise<void>((resolve, reject) => {
@@ -325,13 +325,9 @@ describe("validator", () => {
                     })
                 }
             })
-            const values: any[] = []
-            const paths: any[] = []
-            store.on("schema:updated", (schema) => {
-                values.push((schema.enable as any).value)
-            })
-            store.schemas.store.watch((op) => {
-                paths.push(op.path)
+            store.schemas.store.watch('order_$_visiable.enable.value', (op) => {
+                expect(op.value).toBeTruthy()
+                resolve()
             })
             store.state.order.price = 101
 

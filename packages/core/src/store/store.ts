@@ -61,7 +61,7 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPathEq, setVal } from "../utils";
+import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPathEq, isValueSchema, setVal } from "../utils";
 import { BATCH_UPDATE_EVENT } from '../consts';
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
@@ -78,6 +78,7 @@ import { SchemaManager, SchemaState, SchemaKeyPaths } from "../schema";
 import { createShadow } from "./shadow";
 import { TimeoutError } from "../errors";
 import { ObserverDescriptor } from "../observer/types";
+import { isSchemaBuilder } from "../utils/isSchemaBuilder";
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
@@ -118,7 +119,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.subscribeCallbacks()
         this._data = createReactiveObject.call(this as any, state || {}, {
             notify: this._notify.bind(this),
-            createComputedObject: this.createObserverObject.bind(this)
+            createObserverObject: this.createObserverObject.bind(this)
         }) as ComputedState<State>
 
         this.getSnap = this.getSnap.bind(this)
@@ -129,9 +130,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.batchUpdate = this.batchUpdate.bind(this)
         this.trace = this.trace.bind(this)
         this.collectDependencies = this.collectDependencies.bind(this)
-
         this.installExtends()
-        if (!this._options.lazy) forEachObject(this._data as any)
+        forEachObject(this._data as any)
+        this.schemas.build()
         if (this._options.resetable) this.resetable = true
         // @ts-ignore
         if (this._options.debug && typeof (globalThis.__AUTOSTORE_DEVTOOLS__) === 'object') {
@@ -219,6 +220,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         if (this._options.onComputedDone) this.on("computed:done", this._options.onComputedDone.bind(this))
         if (this._options.onComputedError) this.on("computed:error", this._options.onComputedError.bind(this))
         if (this._options.onComputedCancel) this.on("computed:cancel", this._options.onComputedCancel.bind(this))
+        if (this._options.onObserverBeforeCreate) this.on("observer:beforeCreate", this._options.onObserverBeforeCreate.bind(this))
     }
     /**
      * 
@@ -337,18 +339,24 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      */
 
     private createObserverObject(path: string[], value: any, parentPath: string[], parent: any) {
-        const descriptor = getObserverDescriptor(value)
-        const computedCtx = { path, value, parentPath, parent }
-        if (descriptor) {
-            if (descriptor.type === 'computed') {
-                const computedObj = this._createComputed(descriptor, computedCtx)
-                return computedObj?.initial
-            } else if (descriptor.type === 'watch') {
-                const watchObj = this._createWatch(descriptor, computedCtx)
-                return watchObj?.initial
-            }
+        if (isSchemaBuilder(value)) {
+            const schema = value()
+            this.schemas.add(path, schema)
+            return schema.value
         } else {
-            return value
+            const descriptor = getObserverDescriptor(value)
+            const computedCtx = { path, value, parentPath, parent }
+            if (descriptor) {
+                if (descriptor.type === 'computed') {
+                    const computedObj = this._createComputed(descriptor, computedCtx)
+                    return computedObj?.initial
+                } else if (descriptor.type === 'watch') {
+                    const watchObj = this._createWatch(descriptor, computedCtx)
+                    return watchObj?.initial
+                }
+            } else {
+                return value
+            }
         }
     }
     /**

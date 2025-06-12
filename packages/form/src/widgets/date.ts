@@ -1,12 +1,15 @@
-import { AutoField } from "@/field"
 import { customElement } from "lit/decorators.js"
-import { InputType } from "./input"
+import { AutoFieldInput, InputType } from "./input"
+import { html } from "lit"
 
 
 @customElement('auto-field-date')
-export class AutoFieldDate extends AutoField {
+export class AutoFieldDate extends AutoFieldInput {
     getInputType(): InputType {
         return 'date'
+    }
+    getPrefix() {
+        return html`<auto-icon name='date'  slot="prefix"></auto-icon>`
     }
 }
 
