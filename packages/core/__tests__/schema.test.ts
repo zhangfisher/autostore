@@ -78,7 +78,7 @@ describe("validator", () => {
         const store = new AutoStore({
             order: {
                 price: s.number(100, (val: any) => val > 10, "价格必须大于10({title})", {
-                    title: "注意"
+                    label: "注意"
                 })
             }
         })
@@ -175,7 +175,7 @@ describe("validator", () => {
         const store = new AutoStore({
             order: {
                 name: configurable("order", {
-                    title: '订单名称',
+                    label: '订单名称',
                     description: '订单描述',
                     placeholder: '请输入订单名称',
                     required: true
@@ -186,7 +186,7 @@ describe("validator", () => {
             }
         })
         const nameSchema = store.schemas.get('order.name')!
-        expect(nameSchema.title).toBe('订单名称')
+        expect(nameSchema.label).toBe('订单名称')
         expect(nameSchema.description).toBe('订单描述')
         expect(nameSchema.placeholder).toBe('请输入订单名称')
         expect(nameSchema.required).toBe(true)

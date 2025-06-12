@@ -131,6 +131,7 @@ describe("Schema类型", () => {
             }
         })
         const validator = store.schemas.getValidator('user.name')
+
         type NameValidatorType = Exclude<typeof validator, undefined>
         type NameCases = Expect<
             Equal<

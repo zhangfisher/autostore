@@ -97,9 +97,6 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
             delete finalArgs.options.onFail
         }
     }
-
-
-
     return finalArgs as SchemaArgs
 }
 /**

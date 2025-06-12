@@ -1,13 +1,46 @@
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
-import { html } from "lit"
+import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 
 export type InputType = 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url'
 @customElement('auto-field-input')
 export class AutoFieldInput extends AutoField {
-    getInputType(): InputType {
-        return this.schema?.type || "text"
+    static styles = [
+        AutoField.styles,
+        css`
+        .actions{
+            margin-right:0px;
+            display:flex;
+            flex-direction:row;
+            align-items:center;
+        }
+        .actions > sl-button{
+            margin:0px;
+
+            
+        }
+        .actions > sl-button::part(base){
+            border-right:none;
+            border-radius: 0px;
+        }
+    `] as any
+
+    getInputType(): any {
+        return this.schema?.inputType || "input"
+    }
+
+    getPrefix() {
+
+    }
+    getSuffix() {
+
+    }
+    renderActions(pos: 'prefix' | 'suffix' = 'suffix') {
+        return html`<div class="actions" slot=${pos}>
+            <sl-button>增加</sl-button>
+            <sl-button>删除</sl-button>
+    </div>`
     }
     connectedCallback(): void {
         super.connectedCallback()
@@ -42,7 +75,7 @@ export class AutoFieldInput extends AutoField {
                 ?autofocus=${this.getOptionValue('autofocus')}
                 @sl-input=${this.onFieldInput.bind(this)}
                 spellcheck=${ifDefined(this.getOptionValue('spellcheck', "false"))}
-            ></sl-input>
+            >${this.getPrefix()}${this.getSuffix()}${this.renderActions()}</sl-input>
         `
     }
 }

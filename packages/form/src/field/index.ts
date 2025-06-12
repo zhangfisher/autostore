@@ -32,9 +32,7 @@ import { AutoFormContext, context } from '../context';
 import styles from './styles'
 import { toSchemaValue } from '@/utils/toSchemaValue';
 import { KnownRecord } from '@/types';
-import '../icons'
-import { styleMap } from 'lit/directives/style-map.js';
-
+import '../components/icon'
 
 
 export class AutoField extends LitElement {
@@ -75,7 +73,9 @@ export class AutoField extends LitElement {
      */
     _normalizeSchema(options: SchemaOptions) {
         this.field = Object.entries(options).reduce<Record<string, AsyncComputedValue>>((result, [key, value]) => {
-            if (isAsyncComputedValue(value)) {
+            if (['value', 'path'].includes(key)) {
+                result[key] = value
+            } else if (isAsyncComputedValue(value)) {
                 result[key] = value
             } else {
                 result[key] = createAsyncComptuedValue(value)

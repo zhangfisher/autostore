@@ -1,10 +1,25 @@
 import { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
-import { ISchemaDescriptor, ISchemaObject, SchemaDescriptor, SchemaDescriptorBuilder, SchemaObject } from "./schema";
+import { ISchemaDescriptor } from "./schema";
 import type { AutoStore } from "./store";
 import { RawObject } from "./utils";
 import { WatchDescriptorBuilder } from "./watch/types";
-import { Get, Paths } from "type-fest"
+import { Get, Paths, UnionToIntersection } from "type-fest"
 
+
+export type Union<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
+
+export type MutableRecord<Items, KindKey extends string = 'type', Share = unknown, DefaultKind extends keyof Items = never> = {
+    [Kind in keyof Items]: Union<{
+        [type in KindKey]: Kind;
+    } & Items[Kind] & Share>
+}[Exclude<keyof Items, DefaultKind>] | (
+        DefaultKind extends never ? never : (
+            Union<{ [K in KindKey]?: DefaultKind } & Items[DefaultKind] & Share>
+        )
+    )
+
+
+export type PickValues<T extends Record<string, any>> = Union<UnionToIntersection<T[keyof T]>>
 
 
 // **************  以下实现将计算属性函数的返回值类型提取出来  **************
@@ -118,7 +133,6 @@ declare global {
 export type Primitive = string | number | boolean | null | undefined | symbol | bigint;
 
 export type Dict<T = any> = T extends (...args: any[]) => any ? never : Record<string, T>
-
 
 export type ObjectKeyPaths<T> = Exclude<Paths<T, { maxRecursionDepth: 50 }>, number>
 

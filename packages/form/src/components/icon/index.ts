@@ -2,6 +2,8 @@ import { css, LitElement, html } from "lit";
 import stypes from "./styles";
 import icons, { AutoIconName } from "./icons"
 import { customElement, property } from "lit/decorators.js";
+import { styleMap } from "lit/directives/style-map.js";
+import { classMap } from "lit/directives/class-map.js";
 
 @customElement('auto-icon')
 export class AutoIcon extends LitElement {
@@ -13,7 +15,7 @@ export class AutoIcon extends LitElement {
     name: string = 'user';
 
     @property({ type: String })
-    size: string = '32px';
+    size: string = '24px';
 
     @property({ type: Boolean })
     ripple: boolean = false;
@@ -82,26 +84,34 @@ export class AutoIcon extends LitElement {
             if (!iconName || !icons[iconName as AutoIconName]) return null;
             const defaultTitle = icons[iconName].title
             const parsedSize = this.parseSize(this.size);
-            const sizeStyle = parsedSize ? `
-                width: ${parsedSize};
-                height: ${parsedSize};
-            ` : '';
-            const iconStyle = `
-                ${sizeStyle}
-                ${extraStyle ? extraStyle + ';' : ''}
-                ${this.rippleColor ? `--ripple-color: ${this.rippleColor};` : ''}
-                --ripple-speed: ${this.rippleSpeed};
-                position: relative;
-                transform: rotate(${this.rotate}deg);
-            `;
-
+            const sizeStyle = parsedSize ? `width: ${parsedSize};height: ${parsedSize};` : '';
+            const iconStyle = [
+                sizeStyle,
+                extraStyle ? extraStyle + ';' : '',
+                this.rippleColor ? `--ripple-color: ${this.rippleColor};` : '',
+                this.rotate ? `transform: rotate(${this.rotate}deg);` : '',
+                this.rotate ? '--ripple-speed: ${this.rippleSpeed};' : ''
+            ]
+            if (this.ripple) {
+                if (this.rippleColor) iconStyle.push(`--ripple-color: ${this.rippleColor};`)
+                iconStyle.push(`--ripple-speed: ${this.rippleSpeed};`)
+            }
+            if (this.rotate) {
+                iconStyle.push(`transform: rotate(${this.rotate}deg);`)
+            }
             return html`
                 <div 
-                    class="icon-container ${this.ripple ? 'has-ripple' : ''}" 
-                    style=${`
-                        ${iconStyle}
-                        ${this.mode === 'compose' ? 'position: absolute; top: 0; left: 0;' : ''}
-                    `}
+                    class="icon-container ${classMap({
+                'has-ripple': this.ripple,
+                compose: this.mode === 'compose'
+            })}"
+                    style=${styleMap({
+                width: parsedSize ? parsedSize : null,
+                height: parsedSize ? parsedSize : null,
+                transform: this.rotate ? `rotate(${this.rotate}deg)` : null,
+                '--ripple-speed': this.ripple ? this.rippleSpeed : null,
+                '--ripple-color': this.ripple ? this.rippleColor : null,
+            })} 
                     title=${this.title || defaultTitle}
                     .innerHTML=${icons[iconName].data}
                 >

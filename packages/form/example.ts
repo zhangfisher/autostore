@@ -1,10 +1,12 @@
-import { AutoStore, computed, configurable } from 'autostore';
 import { AutoForm } from './src/form/index';
+import { AutoStore, computed, configurable } from 'autostore';
+
+
 const delay = (ms: number = 1000) => new Promise((resolve) => setTimeout(resolve, ms));
 const store = new AutoStore({
     user: {
-        name: configurable('Fisher', (value: any) => {
-            return value && value.length > 5;
+        name: configurable('Fisher', (value) => {
+            return value.length > 5;
         }, {
             label: '姓名',
             placeholder: '请输入姓名',
@@ -17,10 +19,15 @@ const store = new AutoStore({
                 return state.user.admin
             })
         }),
+        birday: configurable('2025-11-01', { label: '生日', widget: 'date' }),
         admin: configurable(true, { label: '管理员' }),
-        age: configurable(18, {
+        age: configurable(18, (value) => {
+            return value > 0 && value < 24
+        }, {
+            widget: 'number',
+            pill: true,
             label: '年龄',
-            widget: 'number', enable: () => true,
+            enable: () => true,
             max: 100,
             min: 1,
             width: "50%"
@@ -48,7 +55,8 @@ const store = new AutoStore({
             label: '部门',
             widget: 'tree-select',
             selection: 'multiple',
-            items: [{
+            items: {
+                id: 1,
                 label: '美一',
                 children: [
                     {
@@ -84,21 +92,7 @@ const store = new AutoStore({
 
                     }
                 ]
-            },
-            {
-                id: 223,
-                label: '生产中心',
-                children: [
-                    { id: 2231, label: '生产部' },
-                    { id: 2232, label: '采购部' },
-                    { id: 2233, label: '仓储部' },
-                    { id: 2234, label: '质检部' }
-                ]
-
             }
-
-
-            ]
         }),
         tags: configurable(['前端'], { label: '标签', widget: 'radio', select: ['前端', '后端', '测试', '运维'] }),
         rating: configurable(1, { label: '评分', widget: 'rating' }),
@@ -113,10 +107,11 @@ const store = new AutoStore({
         }),
 
         version: configurable(['2.0'], {
-            label: '版本',
             widget: 'select',
             multiple: true,
+            label: '版本',
             clearable: true,
+            // 
             placeholder: '请选择版本',
             select: [
                 { label: '1.0' },
@@ -130,7 +125,12 @@ const store = new AutoStore({
                 { label: '8.0' },
             ]
         }),
-        volume: configurable(18, { label: '音量', widget: 'range', min: 0, max: 100 }),
+        volume: configurable(18, {
+            widget: 'range',
+            label: '音量',
+            min: 0,
+            max: 100
+        }),
         worktime: configurable("12:12:11", { label: '上班时间', widget: 'time' }),
         certificate: configurable(1, {
             label: '证件类型', widget: 'radio', select: [
@@ -140,19 +140,21 @@ const store = new AutoStore({
                 { label: '其他', value: 4 }
             ]
         }),
-        birday: configurable('2025-11-01', { label: '生日', widget: 'date' }),
         email: configurable('admin@autostore.com', { label: '电子邮件', widget: 'email' }),
         color: configurable('#ff0000', { label: '颜色', widget: 'colorpicker' }),
         qrcode: configurable('www.voerkai18n.com', { label: '扫描二维码', widget: 'qrcode' }),
         notes: configurable('输入简历', {
-            label: '简历', widget: 'textarea',
+            label: '简历',
+            widget: 'textarea',
             enable: computed<boolean>((state) => {
                 return state.user.admin
             })
         }),
         address: {
             city: configurable('北京', {
+                required: true,
                 label: '城市',
+                pill: true,
                 enable: computed<boolean>((state) => {
                     return state.user.admin
                 })
@@ -182,3 +184,4 @@ updateState();
 const form = document.querySelector('auto-form') as AutoForm;
 // @ts-ignore
 form!.bind(store);
+

@@ -3,7 +3,7 @@ import type { AutoStore } from "../store/store";
 import { ComputedState, Dict, } from '../types';
 import { forEachObject } from "../utils";
 import { getVal } from "../utils/getVal";
-import { SchemaOptions, SchemaValidator, ComputedSchemaState } from "./types";
+import { SchemaOptions, SchemaValidator, ComputedSchemaState, SchemaDescriptor } from "./types";
 
 
 export class SchemaManager<
@@ -24,7 +24,7 @@ export class SchemaManager<
     }
     add<V = any, Options extends SchemaOptions<V> = SchemaOptions<V>>(
         path: string | string[],
-        descriptor: Options
+        descriptor: SchemaDescriptor<V, Options>
     ): ComputedState<Options> {
         if (!this.store) {
             this.store = this.shadow.shadow({}) as SchemaStore

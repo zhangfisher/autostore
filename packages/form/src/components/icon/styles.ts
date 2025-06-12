@@ -7,9 +7,10 @@ export default css`
         display: inline-block;
         line-height: 0;        
         transition: filter 0.2s ease;
+        color: var(--sl-color-gray-400);
     }
     :host([variant="default"]){
-        color: var(--sl-color-gray-500);
+        color: var(--sl-color-gray-400);
     }
     :host([variant="primary"]){
         color: var(--sl-color-primary-600);
@@ -70,6 +71,11 @@ export default css`
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        &.compose{
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
     } 
 
     :host([circle]) .icon-container {

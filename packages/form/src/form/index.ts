@@ -52,7 +52,6 @@ import { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } fr
 import { context, AutoFormContext } from '../context'
 import '../widgets'
 import { provide } from '@lit/context';
-import { styleMap } from 'lit/directives/style-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 
 @customElement('auto-form')
@@ -78,9 +77,6 @@ export class AutoForm extends LitElement {
     store?: AutoStore<Dict>
     seq: number = ++AutoForm.seq
 
-    connectedCallback(): void {
-        super.connectedCallback()
-    }
     /**
      * 
      * 是否显示高级选项
@@ -136,44 +132,45 @@ export class AutoForm extends LitElement {
     _renderFields() {
         return html`            
                 ${this.schemas!.map(schema => {
+
             const width = schema.width
             switch (schema.widget) {
                 case 'select':
-                    return html`<auto-field-select .schema=${schema} ></auto-field-select>`
+                    return html`<auto-field-select .schema=${schema} style="width:${ifDefined(width)}" ></auto-field-select>`
                 case 'password':
                     return html`<auto-field-password .schema=${schema} style="width:${ifDefined(width)}"></auto-field-password>`
                 case 'switch':
-                    return html`<auto-field-switch .schema=${schema}></auto-field-switch>`
+                    return html`<auto-field-switch .schema=${schema} style="width:${ifDefined(width)}"></auto-field-switch>`
                 case 'qrcode':
-                    return html`<auto-field-qrcode .schema=${schema}></auto-field-qrcode>`
+                    return html`<auto-field-qrcode .schema=${schema} style="width:${ifDefined(width)}"></auto-field-qrcode>`
                 case 'colorpicker':
-                    return html`<auto-field-colorpicker .schema=${schema}></auto-field-colorpicker>`
+                    return html`<auto-field-colorpicker .schema=${schema} style="width:${ifDefined(width)}"></auto-field-colorpicker>`
                 case 'radio':
-                    return html`<auto-field-radio .schema=${schema}></auto-field-radio>`
+                    return html`<auto-field-radio .schema=${schema} style="width:${ifDefined(width)}"></auto-field-radio>`
                 case 'radio-button':
-                    return html`<auto-field-radio-button .schema=${schema}></auto-field-radio-button>`
+                    return html`<auto-field-radio-button .schema=${schema} style="width:${ifDefined(width)}"></auto-field-radio-button>`
                 case 'rating':
-                    return html`<auto-field-rating .schema=${schema}></auto-field-rating>`
+                    return html`<auto-field-rating .schema=${schema} style="width:${ifDefined(width)}"></auto-field-rating>`
                 case 'range':
-                    return html`<auto-field-range .schema=${schema}></auto-field-range>`
+                    return html`<auto-field-range .schema=${schema} style="width:${ifDefined(width)}"></auto-field-range>`
                 case 'textarea':
-                    return html`<auto-field-textarea .schema=${schema}></auto-field-textarea>`
+                    return html`<auto-field-textarea .schema=${schema} style="width:${ifDefined(width)}"></auto-field-textarea>`
                 case 'date':
-                    return html`<auto-field-date .schema=${schema}></auto-field-date>`
+                    return html`<auto-field-date .schema=${schema} style="width:${ifDefined(width)}"></auto-field-date>`
                 case 'number':
                     return html`<auto-field-number .schema=${schema} style="width:${ifDefined(width)}"></auto-field-number>`
                 case 'email':
-                    return html`<auto-field-email .schema=${schema}></auto-field-email>`
+                    return html`<auto-field-email .schema=${schema} style="width:${ifDefined(width)}"></auto-field-email>`
                 case 'tree-select':
-                    return html`<auto-field-tree-select .schema=${schema}></auto-field-tree-select>`
+                    return html`<auto-field-tree-select .schema=${schema} style="width:${ifDefined(width)}"></auto-field-tree-select>`
                 case 'ipaddress':
-                    return html`<auto-field-ipaddress .schema=${schema}></auto-field-ipaddress>`
+                    return html`<auto-field-ipaddress .schema=${schema} style="width:${ifDefined(width)}"></auto-field-ipaddress>`
                 case 'checkbox':
-                    return html`<auto-field-checkbox .schema=${schema}></auto-field-checkbox>`
+                    return html`<auto-field-checkbox .schema=${schema} style="width:${ifDefined(width)}"></auto-field-checkbox>`
                 case 'time':
-                    return html`<auto-field-time .schema=${schema}></auto-field-time>`
+                    return html`<auto-field-time .schema=${schema} style="width:${ifDefined(width)}"></auto-field-time>`
                 case 'url':
-                    return html`<auto-field-url .schema=${schema}></auto-field-url>`
+                    return html`<auto-field-url .schema=${schema} style="width:${ifDefined(width)}"></auto-field-url>`
                 default:
                     return html`<auto-field-input .schema=${schema} style="width:${ifDefined(width)}"></auto-field-input>`
             }
