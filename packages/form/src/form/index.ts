@@ -57,11 +57,14 @@ import '../widgets'
 import { provide } from '@lit/context';
 import { registerIconLibrary } from '@shoelace-style/shoelace';
 import { IconLibrary, IconLibraryResolver } from '@shoelace-style/shoelace/dist/components/icon/library.js';
+import { ThemeController } from '@/controllers/theme';
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
     static seq: number = 0
     static styles = styles
+
+    theme = new ThemeController(this)
 
     @provide({ context })
     context: AutoFormContext = {}
@@ -137,6 +140,7 @@ export class AutoForm extends LitElement {
         })
     }
 
+
     _load() {
         const schmeaState = this.store!.schemas.store.state as Record<string, ComputedState<SchemaOptions>>
         this.schemas = Object.values(schmeaState)
@@ -187,7 +191,6 @@ export class AutoForm extends LitElement {
         return html`
             <div class="auto-form ${classMap({
             dark: this.dark,
-            'sl-theme-dark': this.dark,
             'row-layout': this.layout === 'row',
             'col-layout': this.layout === 'col',
             'auto-layout': this.layout === 'auto'

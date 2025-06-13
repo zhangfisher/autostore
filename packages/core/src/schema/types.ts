@@ -1,6 +1,6 @@
 import { ComputedBuilder, ComputedGetter } from "../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts"
-import { ObserverDescriptor } from "../observer/types";
+import { AutoStore } from "../store";
 import { ComputedState, Dict, GetTypeByPath, StatePath, ToRawType } from '../types';
 
 export type SchemaValidate<Value = any> = (newValue: Value, oldValue: Value, path: string) => boolean
@@ -88,6 +88,7 @@ export type SchemaWidgetTypes = 'input'
     | 'email'
     | 'phone'
     | 'search'
+    | 'tree-dropdown-select'
 
 export interface SchemaWidgetOptions<State = Dict> {
     filled?: boolean | ComputedBuilder<boolean, State>
@@ -124,6 +125,19 @@ export interface SchemaWidgetOptions<State = Dict> {
     passwordVisible?: boolean | ComputedBuilder<boolean, State>
     resize?: 'none' | 'vertical' | 'auto'
     items?: SchemaWidgetTreeNode | SchemaWidgetTreeNode[]
+    renderHelp?: (ctx: AutoFormContext) => any
+    renderLabel?: (ctx: AutoFormContext) => any
+    renderValue?: (ctx: AutoFormContext) => any
+    renderError?: (ctx: AutoFormContext) => any
+    onFieldChange?: (event: Event) => any
+}
+
+export type AutoFormContext = {
+    store: AutoStore<any>
+    form: any
+    labelPos: 'top' | 'left' | 'none'
+    advanced: boolean
+    dark: boolean
 }
 
 export type SchemaWidgetAction<State = Dict> = {
@@ -146,7 +160,7 @@ export type SchemaWidgetAction<State = Dict> = {
 
 export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
     name?: string
-    widget?: SchemaWidgetTypes
+    widget?: SchemaWidgetTypes | Omit<string, SchemaWidgetTypes>
     required?: boolean | ComputedBuilder<boolean, State>
     visible?: boolean | ComputedBuilder<boolean, State>
     enable?: boolean | ComputedBuilder<boolean, State>

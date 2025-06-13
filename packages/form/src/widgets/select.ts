@@ -45,6 +45,7 @@ export class AutoFieldSelect extends AutoField {
                     ${ifDefined(this.getOptionValue('disabled'))}
                 >${item.label}</sl-option>`
         })}
+        ${this.getPrefix()}${this.getSuffix()}${this.renderActions()}
         </sl-select> 
         `
     }

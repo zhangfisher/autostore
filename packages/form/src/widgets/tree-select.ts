@@ -66,23 +66,26 @@ export class AutoFieldTreeSelect extends AutoField {
             forEachItem(item, undefined, 0)
         })
     }
-    _renderNode(item: TreeNode): any {
+    _renderNode(item: TreeNode, values: any): any {
+        const valueKey = this.schema?.valueKey || 'id'
+        const isSelected = values.includes((item as any)[valueKey])
         return html`<sl-tree-item 
-            data-id=${String(item.id || item.label)}
-            ?selected=${item.selected}
+            data-id=${String((item as any)[valueKey])}
+            ?selected=${isSelected}
             ?expanded=${item.expanded}
-        >${item.label}
+        >${item.label}        
         ${Array.isArray(item.children) ? html`${item.children.map((child) => {
-            return this._renderNode(child)
+            return this._renderNode(child, values)
         })}` : ''}</sl-tree-item>`
     }
     _renderNodes(nodes: TreeNodes): any {
+        const values = Array.isArray(this.value) ? this.value : [this.value]
         if (Array.isArray(nodes)) {
             return nodes.map(node => {
-                return this._renderNode(node as TreeNode)
+                return this._renderNode(node as TreeNode, values)
             })
         } else {
-            return this._renderNode(nodes as TreeNode)
+            return this._renderNode(nodes as TreeNode, values)
         }
     }
     _onSelectionChange(e: CustomEvent) {
@@ -98,13 +101,14 @@ export class AutoFieldTreeSelect extends AutoField {
     getValue() {
         return this.selection
     }
+
     renderValue() {
         return html`              
         <sl-tree 
             slot="value" 
             name="${this.name}"
             data-path = ${this.path}   
-            selection = "${this.getOptionValue("selection", 'single')}"
+            selection = "${this.getOptionValue("multiple", true) ? 'multiple' : 'single'}"
             @sl-selection-change=${this._onSelectionChange.bind(this)}
         >${this._renderNodes(this.nodes)}</sl-tree> 
         `

@@ -4,6 +4,7 @@ export default css`
     :host{
         display: flex;
         position: relative;
+        background-color: var(--sl-color-neutral-0);
     }
     .auto-field{
         display: flex;
@@ -13,7 +14,7 @@ export default css`
         padding: 0.3em;
         
         &>.label{
-            color: var(--sl-color-gray-600);           
+            color: var(--sl-color-neutral-800);           
             padding: 4px; 
             font-weight: 600;
             display: flex;

@@ -53,7 +53,7 @@ export class AutoFieldIpAddress extends AutoField {
                         type="number"
                         value="${bit}" 
                         name=${this.name} 
-                        data-path = ${schema.path} 
+                        data-path = ${schema.path.join('.')}
                         defaultValue='0' 
                         max="255"
                         min="0"

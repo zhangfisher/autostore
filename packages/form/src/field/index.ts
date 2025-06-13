@@ -33,10 +33,13 @@ import styles from './styles'
 import { toSchemaValue } from '@/utils/toSchemaValue';
 import { KnownRecord } from '@/types';
 import '../components/icon'
+import { repeat } from 'lit/directives/repeat.js';
+import { ThemeController } from '@/controllers/theme';
 
 
 export class AutoField extends LitElement {
     static styles = styles as CSSResult
+    theme = new ThemeController(this)
 
     @property({ type: Object })
     schema?: SchemaOptions
@@ -86,7 +89,37 @@ export class AutoField extends LitElement {
             return result
         }, {})
     }
+    getPrefix() {
 
+    }
+    getSuffix() {
+
+    }
+    renderActions() {
+        const actions = this.schema?.actions
+        if (Array.isArray(actions)) {
+            const onClick = (action: SchemaWidgetAction) => (e: any) => action.onClick(this.getValue(), {
+                action,
+                schema: this.schema!,
+                event: e,
+                update: (value: any) => {
+                    setVal(this.context!.store!.state, this.schema!.path, value)
+                }
+            })
+            return html`<div class="actions before" slot="prefix">
+            ${repeat(this.beforeActions || [], (action) => {
+                return html`
+                        <sl-button @click=${onClick(action)}>${action.label}</sl-button>
+                    `
+            })}</div>
+            <div class="actions after" slot="suffix"> 
+            ${repeat(this.afterActions || [], (action) => {
+                return html`
+                    <sl-button @click=${onClick(action)}>${action.label}</sl-button>            
+                    `
+            })}</div>`
+        }
+    }
     _renderSchemaOption(name: string, render?: (value: any) => any) {
         const option = (this.field as any)[name]
         if (!option) return
@@ -142,14 +175,13 @@ export class AutoField extends LitElement {
     }
 
 
-
-    renderHelp(ctx: AutoFormContext) {
-        return html`<span class="help"></span>`
-    }
     _renderRequiredOption() {
         return this._renderSchemaOption('required', (val) => {
             return val ? html`<span style='color:red;padding:2px;'>*</span>` : ''
         })
+    }
+    renderHelp(ctx: AutoFormContext) {
+        return html`<span class="help"></span>`
     }
     renderLabel(ctx: AutoFormContext) {
         if (this.labelPos === 'none') {
@@ -240,7 +272,6 @@ export class AutoField extends LitElement {
      */
     _updateFieldValue() {
         if (!this.schema) return
-        if (!this.input) return
         const path = this.schema.path
         const value = this.getValue()
         const ctx = this.getContext()

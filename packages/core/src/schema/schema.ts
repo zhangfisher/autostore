@@ -26,7 +26,7 @@
  */
 
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts"
-import { isPlainObject } from "../utils"
+import { isFunction, isPlainObject } from "../utils"
 import { SchemaBuilder, SchemaDescriptorBuilder, SchemaOptions, SchemaValidator, SchemaWidgetAction } from './types';
 import { markRaw } from '../utils/markRaw';
 
@@ -49,11 +49,22 @@ function markActions(actions: SchemaWidgetAction[]) {
         actions.forEach(action => {
             if (typeof (action) === 'object') {
                 Object.entries(action).forEach(([key, value]) => {
-                    if (key === 'items' || (key.startsWith('on') && typeof (value) === 'function')) {
+                    if (key === 'items' || (typeof (value) === 'function' && key.startsWith('on'))) {
                         //@ts-ignore
                         action[key] = markRaw(value)
                     }
                 })
+            }
+        })
+    }
+}
+
+// 将options里面的on和render开头的函数标识为raw
+function markOptions(options: SchemaOptions) {
+    if (isPlainObject(options)) {
+        Object.entries(options).forEach(([key, value]) => {
+            if (isFunction(value) && (key.startsWith('on') || key.startsWith('render'))) {
+                options[key] = markRaw(value)
             }
         })
     }
@@ -120,6 +131,7 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
         if (finalArgs.options.actions) {
             markActions(finalArgs.options.actions)
         }
+        markOptions(finalArgs.options)
     }
     return finalArgs as SchemaArgs
 }
