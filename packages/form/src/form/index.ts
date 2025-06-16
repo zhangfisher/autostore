@@ -113,11 +113,11 @@ export class AutoForm extends LitElement {
      * 
      * 注册图标库地址
      * 
-     * iconset="https://cdn.jsdelivr.net/npm/lucide-static@0.16.29/icons/${name}.svg"
+      
      * 
      */
     @property({ type: String })
-    iconLibrary: string = 'https://unpkg.com/lucide-static@latest/icons/${name}.svg'
+    iconLibrary: string = 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${name}.svg'
 
     /**
      * 注册图标库

@@ -4,8 +4,8 @@ import { html } from "lit"
 import { customElement } from "lit/decorators.js"
 
 
-@customElement('auto-field-checkbox')
-export class AutoFieldCheckbox extends AutoField {
+@customElement('auto-field-checkbox-group')
+export class AutoFieldCheckboxGroup extends AutoField {
 
     renderValue() {
         return html`              
@@ -30,6 +30,6 @@ export class AutoFieldCheckbox extends AutoField {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-checkbox': AutoFieldCheckbox
+        'auto-field-checkbox-group': AutoFieldCheckboxGroup
     }
 }

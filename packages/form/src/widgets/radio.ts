@@ -23,7 +23,7 @@ export class AutoFieldRadio extends AutoField {
     `] as any
 
     renderValue() {
-        const items = this.getOptionValue('select', []).map((item: any, index: number) => {
+        const items = this.getReactiveOption('select', []).map((item: any, index: number) => {
             const selectItem: any = {}
             if (typeof (item) === 'object') {
                 Object.assign(selectItem, item)
@@ -41,7 +41,7 @@ export class AutoFieldRadio extends AutoField {
         >
         ${items.map((item: any) => html`<sl-radio 
             value="${item.value || item.label}"
-            ${ifDefined(this.getOptionValue('disabled'))}
+            ${ifDefined(this.getReactiveOption('disabled'))}
         >${item.label}</sl-radio>`)}
         </sl-radio-group> 
         `

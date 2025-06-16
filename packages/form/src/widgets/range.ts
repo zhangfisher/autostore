@@ -14,14 +14,14 @@ export class AutoFieldRabge extends AutoField {
             name="${this.name}"
             data-path = ${this.schema!.path}
             value=${this.value} 
-            .placeholder=${this.getOptionValue("placeholder")}
-            .defaultValue=${this.getOptionValue("defaultValue", this.value)}
-            ?disabled=${this.getOptionValue("disabled")}
-            .max=${this.getOptionValue("max")}
-            .min=${this.getOptionValue("min")}
-            .step=${this.getOptionValue("step")}
-            .tooltip=${this.getOptionValue("tooltip")}
-            .tooltipFormatter=${this.getOptionValue("tooltipFormatter")}
+            .placeholder=${this.getReactiveOption("placeholder")}
+            .defaultValue=${this.getReactiveOption("defaultValue", this.value)}
+            ?disabled=${this.getReactiveOption("disabled")}
+            .max=${this.getReactiveOption("max")}
+            .min=${this.getReactiveOption("min")}
+            .step=${this.getReactiveOption("step")}
+            .tooltip=${this.getReactiveOption("tooltip")}
+            .tooltipFormatter=${this.getReactiveOption("tooltipFormatter")}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         > ${this.schema!.label}</sl-range> 

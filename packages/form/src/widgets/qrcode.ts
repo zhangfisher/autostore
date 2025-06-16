@@ -13,15 +13,15 @@ export class AutoFieldQRCode extends AutoField {
             name=${this.schema!.name || this.schema!.path.join('.')} 
             data-path = ${this.schema!.path}
             value=${this.value} 
-            placeholder=${this.getOptionValue('placeholder')}
-            title=${this.getOptionValue('title')}
-            fill=${this.getOptionValue('fill', 'black')}
-            background=${this.getOptionValue('background', 'white')}
-            radius=${this.getOptionValue('radius')}
-            error-correction=${this.getOptionValue('errorCorrection', 'L')}
+            placeholder=${this.getReactiveOption('placeholder')}
+            title=${this.getReactiveOption('title')}
+            fill=${this.getReactiveOption('fill', 'black')}
+            background=${this.getReactiveOption('background', 'white')}
+            radius=${this.getReactiveOption('radius')}
+            error-correction=${this.getReactiveOption('errorCorrection', 'L')}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
-            size=${this.getOptionValue('size', 64)}
+            size=${this.getReactiveOption('size', 64)}
         ></sl-qr-code > 
         `
     }

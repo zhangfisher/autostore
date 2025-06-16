@@ -124,13 +124,19 @@ const store = new AutoStore({
             widget: 'tree-select',
             multiple: true,
             valueKey: 'label',     // 默认选择的是id
+            onlySelectLeaf: false,      // 只选择叶子节点
+            showSelectType: '',     // 'path' | 'value' | 'id'
             // maxItems: 3,    // 最多选择3个
-            items: orgTree
+            // minItems:1
+            items: orgTree,
+            // onSelectionChange: (selection) => {}
         }),
-        org: configurable(['组织架构'], {
+        org: configurable(['工程部', '市场部'], {
             label: '组织架构',
             widget: 'tree-dropdown-select',
-            multiple: true,
+            idKey: "id",
+            valueKey: "label",
+            pathKey: "label",
             items: Object.assign({}, orgTree)
         }),
         tags: configurable(['前端'], { label: '标签', widget: 'radio', select: ['前端', '后端', '测试', '运维'] }),

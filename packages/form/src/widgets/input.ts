@@ -61,27 +61,27 @@ export class AutoFieldInput extends AutoField {
                 .value=${this.value} 
                 name=${this.name} 
                 data-path = ${schema.path.join('.')}
-                .defaultValue=${this.getOptionValue('defaultValue')}                 
-                ?filled=${this.getOptionValue('filled')}
-                ?pill=${this.getOptionValue('pill', false)}
-                ?clearable=${this.getOptionValue('clearable', false)}
-                ?disabled=${this.getOptionValue('disabled', false)}                
-                ?required=${this.getOptionValue('required', false)}                
-                size=${ifDefined(this.getOptionValue('size'))}
-                placeholder=${ifDefined(this.getOptionValue('placeholder'))}
-                pattern=${ifDefined(this.getOptionValue('pattern'))}
-                help-text=${ifDefined(this.getOptionValue('help'))}
-                minLength=${ifDefined(this.getOptionValue('minLength'))}
-                maxLength=${ifDefined(this.getOptionValue('maxLength'))}
-                .max=${this.getOptionValue('max')}
-                .min=${this.getOptionValue('min')}
-                .step=${this.getOptionValue('step')}
-                .passwordToggle=${this.getOptionValue('passwordToggle')}
-                .utocorrect=${this.getOptionValue('autocorrect')}
-                .autocomplete=${this.getOptionValue('autocomplete')}
-                ?autofocus=${this.getOptionValue('autofocus')}
+                .defaultValue=${this.getReactiveOption('defaultValue')}                 
+                ?filled=${this.getReactiveOption('filled')}
+                ?pill=${this.getReactiveOption('pill', false)}
+                ?clearable=${this.getReactiveOption('clearable', false)}
+                ?disabled=${this.getReactiveOption('disabled', false)}                
+                ?required=${this.getReactiveOption('required', false)}                
+                size=${ifDefined(this.getReactiveOption('size'))}
+                placeholder=${ifDefined(this.getReactiveOption('placeholder'))}
+                pattern=${ifDefined(this.getReactiveOption('pattern'))}
+                help-text=${ifDefined(this.getReactiveOption('help'))}
+                minLength=${ifDefined(this.getReactiveOption('minLength'))}
+                maxLength=${ifDefined(this.getReactiveOption('maxLength'))}
+                .max=${this.getReactiveOption('max')}
+                .min=${this.getReactiveOption('min')}
+                .step=${this.getReactiveOption('step')}
+                .passwordToggle=${this.getReactiveOption('passwordToggle')}
+                .utocorrect=${this.getReactiveOption('autocorrect')}
+                .autocomplete=${this.getReactiveOption('autocomplete')}
+                ?autofocus=${this.getReactiveOption('autofocus')}
                 @sl-input=${this.onFieldInput.bind(this)}
-                spellcheck=${ifDefined(this.getOptionValue('spellcheck', "false"))}
+                spellcheck=${ifDefined(this.getReactiveOption('spellcheck', "false"))}
             >${this.getPrefix()}${this.getSuffix()}${this.renderActions()}</sl-input>
         `
     }

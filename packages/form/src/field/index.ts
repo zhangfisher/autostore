@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+// @ts-nocheck
 /**
  * 
  *  通过双向绑定表单
@@ -37,12 +38,12 @@ import { repeat } from 'lit/directives/repeat.js';
 import { ThemeController } from '@/controllers/theme';
 
 
-export class AutoField extends LitElement {
+export class AutoField<SCHEMA = unknown> extends LitElement {
     static styles = styles as CSSResult
     theme = new ThemeController(this)
 
     @property({ type: Object })
-    schema?: SchemaOptions
+    schema?: SchemaOptions & SCHEMA
 
     field: KnownRecord<SchemaOptions, AsyncComputedValue> = {}
 
@@ -109,14 +110,14 @@ export class AutoField extends LitElement {
             return html`<div class="actions before" slot="prefix">
             ${repeat(this.beforeActions || [], (action) => {
                 return html`
-                        <sl-button @click=${onClick(action)}>${action.label}</sl-button>
-                    `
+                    <sl-button @click=${onClick(action)}>${action.label}</sl-button>
+                `
             })}</div>
             <div class="actions after" slot="suffix"> 
             ${repeat(this.afterActions || [], (action) => {
                 return html`
                     <sl-button @click=${onClick(action)}>${action.label}</sl-button>            
-                    `
+                `
             })}</div>`
         }
     }
@@ -149,7 +150,7 @@ export class AutoField extends LitElement {
     getSchema() {
         return this.schema!
     }
-    getOptionValue(name: string, defaultValue?: any) {
+    getReactiveOption(name: string, defaultValue?: any) {
         if (this.schema && name in this.schema) {
             // @ts-ignore
             const value = this.schema[name]
@@ -251,7 +252,7 @@ export class AutoField extends LitElement {
             this._normalizeSchema(this.schema)
             this._handleSchemaChange()
             this._handleStateChange()
-            this.value = getVal(ctx.store.state, this.schema.path, this.schema.value)
+            this.value = this.getInitialValue()
             this.path = this.schema!.path.join(".")
             this.name = this.schema!.name || this.path
             if (Array.isArray(this.schema!.actions)) {
@@ -259,6 +260,10 @@ export class AutoField extends LitElement {
                 this.afterActions = this.schema!.actions.filter((action) => action.position !== 'before')
             }
         }
+    }
+    getInitialValue() {
+        const ctx = this.getContext()
+        return getVal(ctx.store.state, this.schema.path, this.schema.value)
     }
 
     disconnectedCallback(): void {
@@ -288,9 +293,6 @@ export class AutoField extends LitElement {
             this.invalidMessage = e.message
         }
     }
-
-
-
     render() {
         const ctx = this.getContext()
         return html`

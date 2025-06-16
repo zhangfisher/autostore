@@ -7,7 +7,7 @@ import { customElement } from "lit/decorators.js"
 @customElement('auto-field-select')
 export class AutoFieldSelect extends AutoField {
     renderValue() {
-        const items = this.getOptionValue('select', []).map((item: any, index: number) => {
+        const items = this.getReactiveOption('select', []).map((item: any, index: number) => {
             const selectItem: any = {}
             if (typeof (item) === 'object') {
                 Object.assign(selectItem, item)
@@ -25,16 +25,16 @@ export class AutoFieldSelect extends AutoField {
             name="${this.name}"
             data-path="${this.path}"
             value="${this.value}"           
-            ?multiple=${this.getOptionValue('multiple')}
-            ?disabled=${this.getOptionValue('disabled')}
-            ?clearable=${this.getOptionValue('clearable', true)}  
-            ?filled=${this.getOptionValue('filled')}  
-            ?pill=${this.getOptionValue('pill')}  
-            ?required=${this.getOptionValue('required')}  
-            .placeholder=${this.getOptionValue('placeholder')}  
-            .helpText=${this.getOptionValue('help')}  
-            .defaultValue=${this.getOptionValue('defaultValue', this.value)}  
-            .placement=${this.getOptionValue('placement')}  
+            ?multiple=${this.getReactiveOption('multiple')}
+            ?disabled=${this.getReactiveOption('disabled')}
+            ?clearable=${this.getReactiveOption('clearable', true)}  
+            ?filled=${this.getReactiveOption('filled')}  
+            ?pill=${this.getReactiveOption('pill')}  
+            ?required=${this.getReactiveOption('required')}  
+            .placeholder=${this.getReactiveOption('placeholder')}  
+            .helpText=${this.getReactiveOption('help')}  
+            .defaultValue=${this.getReactiveOption('defaultValue', this.value)}  
+            .placement=${this.getReactiveOption('placement')}  
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         >
@@ -42,7 +42,7 @@ export class AutoFieldSelect extends AutoField {
             if (item.type === 'divider') return html`<sl-divider></sl-divider>`
             return html`<sl-option 
                     value="${item.value || item.label}"
-                    ${ifDefined(this.getOptionValue('disabled'))}
+                    ${ifDefined(this.getReactiveOption('disabled'))}
                 >${item.label}</sl-option>`
         })}
         ${this.getPrefix()}${this.getSuffix()}${this.renderActions()}

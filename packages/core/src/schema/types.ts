@@ -104,7 +104,7 @@ export interface SchemaWidgetOptions<State = Dict> {
     minLength?: number | ComputedBuilder<number, State>
     spellcheck?: boolean | ComputedBuilder<boolean, State>
     inputType?: 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url'
-    selection?: 'signle' | 'multiple'
+    selection?: 'signle' | 'multiple' | 'leaf'
     multiple?: boolean | ComputedBuilder<boolean, State>,
     maxOptionsVisible?: number | ComputedBuilder<number, State>,
     placement?: 'top' | 'bottom'

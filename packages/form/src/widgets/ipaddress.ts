@@ -8,24 +8,35 @@ export class AutoFieldIpAddress extends AutoField {
     static styles = [
         AutoField.styles,
         css`
-        .value{
-            display: flex;
-            flex-direction: row;
-        }
-        .value > span.dot{
-            width:1em;                     
-            text-align: center;   
-            font-weight: bold;
-            margin-top: 1em;
-        }
-        sl-input{
-            width: 4em;
-            
-        }
-        sl-input::part(input){
-            text-align: center;   
-            padding-right: 2px;
-        }
+            :host{
+                
+            }
+            .value{
+                display: flex;
+                flex-direction: row;
+                border: 1px solid var(--sl-color-gray-500);
+                border-radius: var(--sl-border-radius-medium);
+                background-color: var(--sl-input-background-color);
+                border: solid var(--sl-input-border-width) var(--sl-input-border-color);
+                width: 15rem;
+            }
+            .value > span.dot{
+                width:1em;                     
+                text-align: center;   
+                font-weight: bold;
+                margin-top: 1em;
+                
+            }
+            sl-input::part(base){
+                border: none;
+            }
+            sl-input{
+                width: 3rem;
+            }
+            sl-input::part(input){
+                text-align: center; 
+                padding: 0px 4px ;
+            }
     `] as any
     _getIpBits(): [number, number, number, number] {
         const bits = this.value?.split(".")
@@ -50,11 +61,12 @@ export class AutoFieldIpAddress extends AutoField {
                 ${this._getIpBits().map((bit, index) => html`
                     <sl-input 
                         slot="value" 
-                        type="number"
                         value="${bit}" 
                         name=${this.name} 
                         data-path = ${schema.path.join('.')}
                         defaultValue='0' 
+                        maxLength="3"
+                        minLength="1"
                         max="255"
                         min="0"
                         @sl-input=${(e: Event) => this._onIpChange(index, e)}

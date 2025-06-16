@@ -10,7 +10,7 @@ export default css`
         position: relative;
         flex-direction:column;
         width:100%;        
-        padding: 1em;
+        padding: 1em;        
     }
     .auto-form > .fields{
         padding-right: -1em;
