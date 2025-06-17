@@ -4,7 +4,9 @@ import { customElement, state } from "lit/decorators.js"
 import { repeat } from "lit/directives/repeat.js";
 import '@shoelace-style/shoelace/dist/components/tag/tag.js';
 import { classMap } from "lit/directives/class-map.js";
-import { AutoFieldTreeSelect } from "./tree-select";
+import { AutoFieldTreeSelect, TreeSelectedItem } from "./tree-select";
+import { when } from "lit/directives/when.js";
+import { initFieldOptions } from "@/utils/initFieldOptions";
 
 @customElement('auto-field-tree-dropdown-select')
 export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
@@ -54,14 +56,26 @@ export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
                     transform: rotate(-180deg);
                 }
             }
+            .placeholder{
+                padding-left: 0.5rem;
+                color: var(--sl-input-placeholder-color);
+            }
         `] as any
 
     @state()
     active: boolean = false
 
-
     _onRemoveSelection(e: any) {
-        console.log("remove=", e.target)
+        const id = e.target.dataset.id
+        for (let i = 0; i < this.selection.length; i++) {
+            if (String(this.selection[i].id) === id) {
+                this.selection.splice(i, 1)
+                this.onFieldChange()
+                this.requestUpdate()
+                break
+            }
+        }
+        e.stopPropagation();
     }
     _onActionSelection(e: any) {
         console.log("remove=", e.target)
@@ -70,19 +84,32 @@ export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
         if (valueKey === showKey) return value
 
     }
+    getSelectedTagValue(value: TreeSelectedItem) {
+        const showAsPath = this.field.showAsPath.value
+        if (showAsPath) {
+            return html`${value.path}`
+        } else {
+            const paths = value.path.split("/")
+            return paths[paths.length - 1]
+        }
+    }
     renderSelectedTags() {
-        const values = this.selection
-        return html`<span class="tags">${repeat(values, (value) => {
+        const items = this.selection
+        return html`<span class="tags">${repeat(items, (item) => {
             return html`<sl-tag 
-                    data-id="${value.id}"
-                    title=${value.path}
+                    data-id="${item.id}" 
+                    title=${item.path}
                     @sl-remove=${this._onRemoveSelection.bind(this)}
-                    removable>${value.value}</sl-tag>`
+                    @click=${(e: any) => e.stopPropagation()}
+                    removable
+                    >${this.getSelectedTagValue(item)}</sl-tag>`
         })}</span>`
     }
     renderSelection() {
         return html`    
             <div class="selection" slot="trigger">              
+                ${when(this.selection.length === 0 && this.field.placeholder
+            , () => html`<span class='placeholder'>${this.field.placeholder!.value}</span>`)}
                 ${this.renderSelectedTags()}
                 <span class='suffix'>
                     <sl-icon library="system" class="chevron ${classMap({ active: this.active })}" 
@@ -112,7 +139,7 @@ export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
         >
             ${this.renderSelection()}
             <div>
-            ${this.renderTree()}            
+                ${this.renderTree()}            
             </div>
         </sl-dropdown> 
         `

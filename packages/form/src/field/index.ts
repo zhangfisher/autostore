@@ -1,5 +1,5 @@
+import { ifDefined } from 'lit/directives/if-defined.js';
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// @ts-nocheck
 /**
  * 
  *  通过双向绑定表单
@@ -14,13 +14,12 @@
  * 
  *  - 用法：
  * 
- *  <voerka-form 
+ *  <auto-form 
  *      .store=${store}
  *      entry="指定store的entry，没有指定时使用整个store" 
  *      group=""
  *  >
- *     
- *  </voerka-form>
+ *  </auto-form>
  * 
  */
 
@@ -36,6 +35,35 @@ import { KnownRecord } from '@/types';
 import '../components/icon'
 import { repeat } from 'lit/directives/repeat.js';
 import { ThemeController } from '@/controllers/theme';
+import { RequiredKeys } from 'flex-tools/types';
+import { styleMap } from 'lit/directives/style-map.js';
+
+function getDefaultFieldOptions() {
+    return {
+        widget: 'input',
+        name: '',
+        path: [],
+        visible: createAsyncComptuedValue(true),
+        enable: createAsyncComptuedValue(true),
+        required: createAsyncComptuedValue(false),
+        order: createAsyncComptuedValue(0),
+        advanced: createAsyncComptuedValue(false),
+        actions: createAsyncComptuedValue([])
+    }
+}
+
+type AsyncComputedValueRecord<T extends Record<string, any>> = {
+    [K in keyof T]: AsyncComputedValue<T[K]>
+}
+
+type NormalizedFieldOptions<SCHEMA = unknown> = Omit<
+    RequiredKeys<KnownRecord<SchemaOptions, AsyncComputedValue>,
+        'visible' | 'enable' | 'required' | 'order' | 'advanced' | 'actions'
+    >, 'widget' | 'path' | 'name'> & {
+        widget: string
+        path: string[]
+        name: string
+    } & (SCHEMA extends Record<string, any> ? AsyncComputedValueRecord<SCHEMA> : unknown)
 
 
 export class AutoField<SCHEMA = unknown> extends LitElement {
@@ -45,7 +73,7 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
     @property({ type: Object })
     schema?: SchemaOptions & SCHEMA
 
-    field: KnownRecord<SchemaOptions, AsyncComputedValue> = {}
+    field: NormalizedFieldOptions<SCHEMA> = getDefaultFieldOptions() as unknown as NormalizedFieldOptions<SCHEMA>
 
     @state()
     value: any = ''
@@ -70,26 +98,27 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
 
     @query('.value >:first-child')
     input?: HTMLInputElement
+
     @consume({ context })
     @property({ attribute: false })
-    public context?: AutoFormContext
+    public context!: AutoFormContext
 
     /**
-     * 
-     * @param options 
+     * 将所有schmea options统一转换为AsyncComputedValue 
      */
-    _normalizeSchema(options: SchemaOptions) {
-        this.field = Object.entries(options).reduce<Record<string, AsyncComputedValue>>((result, [key, value]) => {
+    getFieldOptions(): NormalizedFieldOptions<SCHEMA> {
+        return Object.entries(this.schema || {}).reduce((result: any, [key, value]) => {
             if (['value', 'path', 'widget'].includes(key)) {
                 result[key] = value
             } else if (isAsyncComputedValue(value)) {
-                result[key] = value
+                result[key] = Object.assign({}, result[key], value)
             } else {
-                result[key] = createAsyncComptuedValue(value)
+                result[key] = Object.assign({}, result[key], createAsyncComptuedValue(value))
             }
             return result
-        }, {})
+        }, getDefaultFieldOptions())
     }
+
     getPrefix() {
 
     }
@@ -97,26 +126,36 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
 
     }
     renderActions() {
-        const actions = this.schema?.actions
-        if (Array.isArray(actions)) {
-            const onClick = (action: SchemaWidgetAction) => (e: any) => action.onClick(this.getValue(), {
-                action,
-                schema: this.schema!,
-                event: e,
-                update: (value: any) => {
-                    setVal(this.context!.store!.state, this.schema!.path, value)
-                }
-            })
+        this.renderBeforeActions()
+        this.renderAfterActions()
+    }
+    _onClickAction(action: SchemaWidgetAction) {
+        return (e: any) => action.onClick(this.getValue(), {
+            action,
+            schema: this.schema!,
+            event: e,
+            update: (value: any) => {
+                setVal(this.context!.store!.state, this.schema!.path, value)
+            }
+        })
+    }
+    renderBeforeActions() {
+        if (Array.isArray(this.beforeActions) && this.beforeActions.length > 0) {
             return html`<div class="actions before" slot="prefix">
             ${repeat(this.beforeActions || [], (action) => {
                 return html`
-                    <sl-button @click=${onClick(action)}>${action.label}</sl-button>
+                    <sl-button @click=${this._onClickAction.call(this, action)}>${action.label}</sl-button>
                 `
-            })}</div>
-            <div class="actions after" slot="suffix"> 
+            })}</div>`
+        }
+    }
+
+    renderAfterActions() {
+        if (Array.isArray(this.afterActions) && this.afterActions.length > 0) {
+            return html`<div class="actions after" slot="suffix">
             ${repeat(this.afterActions || [], (action) => {
                 return html`
-                    <sl-button @click=${onClick(action)}>${action.label}</sl-button>            
+                    <sl-button @click=${this._onClickAction.call(this, action)}>${action.label}</sl-button>
                 `
             })}</div>`
         }
@@ -150,7 +189,7 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
     getSchema() {
         return this.schema!
     }
-    getReactiveOption(name: string, defaultValue?: any) {
+    getFieldOption(name: string, defaultValue?: any): any {
         if (this.schema && name in this.schema) {
             // @ts-ignore
             const value = this.schema[name]
@@ -185,10 +224,12 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
         return html`<span class="help"></span>`
     }
     renderLabel(ctx: AutoFormContext) {
-        if (this.labelPos === 'none') {
+        if (ctx.labelPos === 'none') {
             return html``
         } else {
-            return html`<div class="label">
+            const style: Record<string, any> = {}
+            style.width = ctx.labelPos === 'left' ? ctx.labelWidth : ''
+            return html`<div class="label" style="${ifDefined(styleMap(style))}">
             <span class="title">${this.getLabel()}${this._renderRequiredOption()}:</span>
             <span class="help">${this.renderHelp(ctx)}</span>
         </div>`
@@ -209,12 +250,14 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
     onFieldInput(e: Event) {
         this._updateFieldValue()
     }
+    /**
+     * 当schmeaOption发生变化时
+     */
     _handleSchemaChange() {
         const ctx = this.getContext()
         if (ctx && ctx.store && this.schema) {
             const pathKeys = this.schema.path.join("_$_")
             // 监听schema变化,schema什么会变化，当schema成员是一个计算函数时，会在所依赖的状态变化时重新计算而导致变化
-            // 
             this._subscribers.push(ctx.store.schemas.store.watch(pathKeys + ".**", (operate) => {
                 const { reply, type, value, flags } = operate
                 if (reply) return
@@ -232,7 +275,9 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
             }))
         }
     }
-
+    /**
+     * 当状态数据发生变化时
+     */
     _handleStateChange() {
         const ctx = this.getContext()
         if (ctx && ctx.store && this.schema) {
@@ -244,15 +289,18 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
             }, { operates: 'write' }))
         }
     }
-
+    getInitialValue() {
+        const ctx = this.getContext()
+        return getVal(ctx.store.state, this.field.path)
+    }
     connectedCallback(): void {
         super.connectedCallback()
         const ctx = this.getContext()
         if (ctx && ctx.store && this.schema) {
-            this._normalizeSchema(this.schema)
+            this.field = this.getFieldOptions()
+            this.value = this.getInitialValue()
             this._handleSchemaChange()
             this._handleStateChange()
-            this.value = this.getInitialValue()
             this.path = this.schema!.path.join(".")
             this.name = this.schema!.name || this.path
             if (Array.isArray(this.schema!.actions)) {
@@ -260,10 +308,6 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
                 this.afterActions = this.schema!.actions.filter((action) => action.position !== 'before')
             }
         }
-    }
-    getInitialValue() {
-        const ctx = this.getContext()
-        return getVal(ctx.store.state, this.schema.path, this.schema.value)
     }
 
     disconnectedCallback(): void {
@@ -302,11 +346,14 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
             'top-label': ctx.labelPos === 'top',
             'no-label': ctx.labelPos === 'none',
             error: !!this.invalidMessage,
-            disable: this.field.enable?.value === false,
-            required: this.field.required?.value === true,
-            hidden: this.field.visible?.value === false
+            disable: this.field.enable.value === false,
+            required: this.field.required.value === true,
+            hidden: this.field.visible.value === false
         })}"
           >
+            ${this.field.divider?.value
+                ? html`<sl-divider></sl-divider>` : null
+            }
             ${this.renderLabel(ctx)}
             <div class="value">
                 ${this.renderValue(ctx)}

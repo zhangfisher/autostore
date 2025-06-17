@@ -15,8 +15,8 @@ export class AutoFieldCheckboxGroup extends AutoField {
             data-path = ${this.path}
             .value="${this.value}" 
             .checked=${this.value} 
-            placeholde="${ifDefined(this.getReactiveOption("placeholder"))}"
-            helpText="${ifDefined(this.getReactiveOption("help"))}"
+            placeholde="${ifDefined(this.getFieldOption("placeholder"))}"
+            helpText="${ifDefined(this.getFieldOption("help"))}"
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         > ${this.schema!.label}</sl-checkbox> 

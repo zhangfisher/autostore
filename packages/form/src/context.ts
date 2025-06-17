@@ -6,6 +6,7 @@ export type AutoFormContext = {
     store?: AutoStore<Dict>
     form?: AutoForm
     labelPos?: 'none' | 'top' | 'left'
+    labelWidth?: string
     advanced?: boolean
     dark?: boolean
 }

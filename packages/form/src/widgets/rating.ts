@@ -14,9 +14,9 @@ export class AutoFieldRating extends AutoField {
             name="${this.name}"
             data-path = ${this.schema!.path}
             value=${this.value} 
-            .placeholder=${this.getReactiveOption("placeholder")}
-            .defaultValue=${this.getReactiveOption("defaultValue", this.value)}
-            ?disabled=${this.getReactiveOption("disabled")}
+            .placeholder=${this.getFieldOption("placeholder")}
+            .defaultValue=${this.getFieldOption("defaultValue", this.value)}
+            ?disabled=${this.getFieldOption("disabled")}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         > </sl-rating> 

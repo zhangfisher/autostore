@@ -4,8 +4,10 @@ import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 
 const defaultColors = `
-    #d0021b; #f5a623; #f8e71c; #8b572a; #7ed321; #417505; #bd10e0; #9013fe;
-    #4a90e2; #50e3c2; #b8e986; #000; #444; #888; #ccc; #fff;
+    #f5222d; #fa541c; #fa8c16;
+    #faad14; #fadb14; #a0d911;
+     #52c41a; #13c2c2;#1890ff;
+     #2f54eb;#722ed1;#eb2f96;#ffffff; #bfbfbf; #fafafa;#262626;
   `
 
 @customElement('auto-field-colorpicker')
@@ -23,13 +25,13 @@ export class AutoFieldColorPicker extends AutoField {
                 data-path = ${this.schema!.path}
                 name=${this.name} 
                 value=${this.value} 
-                format=${this.getReactiveOption('format', 'hex')}
-                ?opacity=${this.getReactiveOption('opacity', false)}
-                ?inline=${this.getReactiveOption('inline', false)}
-                ?required=${this.getReactiveOption('required', false)}
-                ?disabled=${this.getReactiveOption('disabled', false)}
+                format=${this.getFieldOption('format', 'hex')}
+                ?opacity=${this.getFieldOption('opacity', false)}
+                ?inline=${this.getFieldOption('inline', false)}
+                ?required=${this.getFieldOption('required', false)}
+                ?disabled=${this.getFieldOption('disabled', false)}
                 placeholder=${this.schema!.placeholder || ''}
-                swatches=${this.getReactiveOption('presets', defaultColors)}
+                swatches=${this.getFieldOption('presets', defaultColors)}
                 @sl-input=${this.onFieldInput.bind(this)}
                 @sl-change=${this.onFieldChange.bind(this)}
             ></sl-color-picker>

@@ -174,7 +174,9 @@ export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
     group?: string | ComputedBuilder<string, State>
     advanced?: boolean | ComputedGetter<boolean, State>
     order?: number | ComputedGetter<number, State>
-    width?: string | ComputedGetter<string, State>
+    width?: number | string | ComputedGetter<string, State>
+    divider?: boolean | ComputedGetter<boolean, State>
+    itemWidth?: number | string | ComputedGetter<string, State>
     invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
     onFail?: 'pass' | 'throw' | 'ignore'
     select?: string[] | number[] | boolean[] | ({

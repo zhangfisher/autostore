@@ -16,7 +16,7 @@ export default css`
         &>.label{
             color: var(--sl-color-neutral-800);           
             padding: 4px; 
-            font-weight: 600;
+            font-weight: 500;
             display: flex;
             &>.title{
                 flex-grow: 1;
@@ -30,8 +30,14 @@ export default css`
             }
         }
 
-        &.left{
+        &.left-label{
             flex-direction:row;
+            &>.label{                
+                flex-shrink: 0;
+            }
+            &>.value{
+                flex-grow: 1;
+            }
         }
         
 

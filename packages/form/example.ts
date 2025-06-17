@@ -82,6 +82,25 @@ const store = new AutoStore({
                 }
             ]
         }),
+        layout: configurable('卡片集', {
+            divider: true,
+            label: '布局',
+            required: true,
+            widget: 'radio',
+            itemWidth: '33%',
+            card: true,
+            select: [
+                { label: '简约风', help: '极简设计，突出内容' },
+                { label: '经典式', help: '传统布局，平衡稳重' },
+                { label: '卡片集', help: '模块化卡片，灵活组合' },
+                { label: '瀑布流', help: '动态滚动，视觉延展' },
+                { label: '分屏式', help: '双栏对比，高效浏览' },
+                { label: '导航型', help: '侧边主导，层级清晰' },
+                { label: '全屏化', help: '沉浸体验，无界视觉' },
+                { label: '网格阵', help: '整齐排列，规整直观' },
+                { label: '自由板', help: '可拖拽定制，随心布局' }
+            ]
+        }),
         admin: configurable(true, { label: '管理员', help: "管理员拥有有所有权限" }),
         birday: configurable('2025-11-01', { label: '生日', widget: 'date' }),
         phone: configurable('138456789112', {
@@ -109,7 +128,6 @@ const store = new AutoStore({
             pill: true,
             width: "50%"
         }),
-
         homepage: configurable("www.autostore.com", { widget: "url", label: '主页' }),
         sex: configurable('男', { label: '性别', widget: 'radio', select: ['男', '女'] }),
         post: configurable('程序员', {
@@ -117,7 +135,7 @@ const store = new AutoStore({
             widget: 'select',
             select: ['程序员', '教师', '医生', '其他']
         }),
-        ip: configurable('127.0.0.1', { label: '网络地址', widget: 'ipaddress' }),
+        ip: configurable('192.168.6.112', { label: '网络地址', widget: 'ipaddress' }),
         enable: configurable(true, { label: '启用/关闭', widget: 'switch' }),
         depts: configurable(['产品部'], {
             label: '部门',
@@ -134,12 +152,27 @@ const store = new AutoStore({
         org: configurable(['工程部', '市场部'], {
             label: '组织架构',
             widget: 'tree-dropdown-select',
-            idKey: "id",
             valueKey: "label",
-            pathKey: "label",
+            multiple: true,
+            showAsPath: true,
             items: Object.assign({}, orgTree)
         }),
-        tags: configurable(['前端'], { label: '标签', widget: 'radio', select: ['前端', '后端', '测试', '运维'] }),
+        adminDept: configurable(undefined, {
+            label: '管理部门',
+            placeholder: '选择管理部门',
+            widget: 'tree-dropdown-select',
+            showAsPath: true,
+            valueKey: "label",
+            onlySelectLeaf: true,
+            items: Object.assign({}, orgTree)
+        }),
+        tags: configurable(['测试'], {
+            label: '标签',
+            widget: 'radio',
+            select: [
+                '前端', '后端', '测试', '运维'
+            ]
+        }),
         rating: configurable(1, { label: '评分', widget: 'rating' }),
         level: configurable(1, {
             label: '级别', widget: 'radio-button',
@@ -150,7 +183,6 @@ const store = new AutoStore({
                 { label: '专家', value: 4 },
             ]
         }),
-
         version: configurable(['2.0'], {
             widget: 'select',
             multiple: true,
@@ -284,12 +316,25 @@ class AutoFormDebuger extends LitElement {
             ele.dark = e.target.checked;
         }
     }
+    onChangelabelPos(e) {
+        const ele = this.getNextAutoForm();
+        if (ele) {
+            // @ts-ignore
+            ele.labelPos = e.target.value;
+        }
+    }
     render() {
         return html`
             <div class="toolbar">
+                <sl-select label="标签位置" style="width:100px;" value="top" @sl-change=${this.onChangelabelPos.bind(this)}>
+                    <sl-option value="top">上方</sl-option>
+                    <sl-option value="left">左侧</sl-option>
+                    <sl-option value="none">隐藏</sl-option>
+                </sl-select>    
                 <span>
-                    <sl-checkbox @click=${this.onToggleDark.bind(this)}>深色调</sl-checkbox>
+                    <sl-checkbox @click=${this.onToggleDark.bind(this)}>暗色调</sl-checkbox>                    
                 </span>
+                
                 <sl-button>提交</sl-button>
                 <sl-button>重置</sl-button>                
             </div>

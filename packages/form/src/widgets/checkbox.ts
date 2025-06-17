@@ -2,6 +2,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
+import { AutoFormContext } from '@/context';
 
 
 @customElement('auto-field-checkbox')
@@ -15,15 +16,23 @@ export class AutoFieldCheckbox extends AutoField {
             data-path = ${this.path}
             .value="${this.value}" 
             .checked=${this.value} 
-            placeholde="${ifDefined(this.getReactiveOption("placeholder"))}"
-            helpText="${ifDefined(this.getReactiveOption("help"))}"
+            placeholder="${ifDefined(this.getFieldOption("placeholder"))}"
+            helpText="${ifDefined(this.getFieldOption("help"))}"
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         > ${this.schema!.label}</sl-checkbox> 
         `
     }
-    renderLabel() {
-        return html``
+    renderLabel(ctx: AutoFormContext) {
+        if (ctx.labelPos === 'left') {
+            return super.renderLabel(ctx)
+        } else {
+            return html``
+        }
+
+    }
+    getLabel() {
+        return ''
     }
 }
 

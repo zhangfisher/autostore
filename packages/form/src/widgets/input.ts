@@ -61,27 +61,27 @@ export class AutoFieldInput extends AutoField {
                 .value=${this.value} 
                 name=${this.name} 
                 data-path = ${schema.path.join('.')}
-                .defaultValue=${this.getReactiveOption('defaultValue')}                 
-                ?filled=${this.getReactiveOption('filled')}
-                ?pill=${this.getReactiveOption('pill', false)}
-                ?clearable=${this.getReactiveOption('clearable', false)}
-                ?disabled=${this.getReactiveOption('disabled', false)}                
-                ?required=${this.getReactiveOption('required', false)}                
-                size=${ifDefined(this.getReactiveOption('size'))}
-                placeholder=${ifDefined(this.getReactiveOption('placeholder'))}
-                pattern=${ifDefined(this.getReactiveOption('pattern'))}
-                help-text=${ifDefined(this.getReactiveOption('help'))}
-                minLength=${ifDefined(this.getReactiveOption('minLength'))}
-                maxLength=${ifDefined(this.getReactiveOption('maxLength'))}
-                .max=${this.getReactiveOption('max')}
-                .min=${this.getReactiveOption('min')}
-                .step=${this.getReactiveOption('step')}
-                .passwordToggle=${this.getReactiveOption('passwordToggle')}
-                .utocorrect=${this.getReactiveOption('autocorrect')}
-                .autocomplete=${this.getReactiveOption('autocomplete')}
-                ?autofocus=${this.getReactiveOption('autofocus')}
+                .defaultValue=${this.getFieldOption('defaultValue')}                 
+                ?filled=${this.getFieldOption('filled')}
+                ?pill=${this.getFieldOption('pill', false)}
+                ?clearable=${this.getFieldOption('clearable', false)}
+                ?disabled=${this.getFieldOption('disabled', false)}                
+                ?required=${this.getFieldOption('required', false)}                
+                size=${ifDefined(this.getFieldOption('size'))}
+                placeholder=${ifDefined(this.getFieldOption('placeholder'))}
+                pattern=${ifDefined(this.getFieldOption('pattern'))}
+                help-text=${ifDefined(this.getFieldOption('help'))}
+                minLength=${ifDefined(this.getFieldOption('minLength'))}
+                maxLength=${ifDefined(this.getFieldOption('maxLength'))}
+                .max=${this.getFieldOption('max')}
+                .min=${this.getFieldOption('min')}
+                .step=${this.getFieldOption('step')}
+                .passwordToggle=${this.getFieldOption('passwordToggle')}
+                .utocorrect=${this.getFieldOption('autocorrect')}
+                .autocomplete=${this.getFieldOption('autocomplete')}
+                ?autofocus=${this.getFieldOption('autofocus')}
                 @sl-input=${this.onFieldInput.bind(this)}
-                spellcheck=${ifDefined(this.getReactiveOption('spellcheck', "false"))}
+                spellcheck=${ifDefined(this.getFieldOption('spellcheck', "false"))}
             >${this.getPrefix()}${this.getSuffix()}${this.renderActions()}</sl-input>
         `
     }

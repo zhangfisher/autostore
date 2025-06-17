@@ -14,7 +14,7 @@ export class AutoFieldSwitch extends AutoField {
             name="${this.name}"
             data-path = ${this.path}
             .value=${this.value} 
-            ${ifDefined(this.getReactiveOption("placeholder"))}
+            ${ifDefined(this.getFieldOption("placeholder"))}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         > ${this.schema!.label}</sl-switch> 

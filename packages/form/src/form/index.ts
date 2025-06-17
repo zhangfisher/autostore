@@ -23,7 +23,7 @@ import { classMap } from 'lit/directives/class-map.js';
  * 
  */
 
-import { LitElement, html } from 'lit'
+import { LitElement, PropertyValues, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import '@shoelace-style/shoelace/dist/themes/dark.css'
 import '@shoelace-style/shoelace/dist/themes/light.css'
@@ -98,9 +98,11 @@ export class AutoForm extends LitElement {
      * - top: 标签在上方
      * - left: 标签在左侧
      */
-    @property({ type: String })
+    @property({ type: String, reflect: true })
     labelPos: string = 'top'
 
+    @property({ type: String, reflect: true })
+    labelWidth?: string = '5rem'
 
     @property({ type: Boolean, reflect: true })
     dark: boolean = false
@@ -160,6 +162,7 @@ export class AutoForm extends LitElement {
             store,
             form: this,
             labelPos: this.labelPos,
+            labelWidth: this.labelWidth,
             advanced: this.advanced,
             dark: this.dark
         })
@@ -193,16 +196,19 @@ export class AutoForm extends LitElement {
             dark: this.dark,
             'row-layout': this.layout === 'row',
             'col-layout': this.layout === 'col',
-            'auto-layout': this.layout === 'auto'
+            'auto-layout': this.layout === 'auto',
+            'left-label': this.labelPos === 'left',
+            'top-label': this.labelPos === 'top',
+            'none-label': this.labelPos === 'none'
         })}">
-                <div class="actions header" > 
-                </div>
-                <div class="fields">
+            <div class="actions header" > 
+            </div>
+            <div class="fields">
                     ${this._renderFields()}
-                </div>
-                <div class="actions footer" >
+            </div>
+            <div class="actions footer" >
 
-                </div>
+            </div>
             </div>
         `
     }
