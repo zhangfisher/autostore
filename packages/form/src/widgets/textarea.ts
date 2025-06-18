@@ -14,7 +14,7 @@ import { customElement } from "lit/decorators.js"
 @customElement('auto-field-textarea')
 export class AutoFieldTextArea extends AutoField {
 
-    renderValue() {
+    renderInput() {
         return html`              
         <sl-textarea 
             slot="value"             

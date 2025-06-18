@@ -3,9 +3,6 @@ import { AutoForm } from './src/form/index';
 import { AutoStore, computed, configurable } from 'autostore';
 import { customElement } from 'lit/decorators.js';
 
-
-
-
 const orgTree = {
     id: 1,
     label: '美一',
@@ -67,14 +64,17 @@ const store = new AutoStore({
             actions: [
                 {
                     label: '验证',
+                    icon: 'clipboard',
                     onClick: (value, { update }) => {
                         console.log('Action click:', value)
                         update(value + "*")
-                    }
+                    },
+                    variant: "primary"
                 },
                 {
                     label: '前面',
                     position: 'before',
+                    icon: 'atom',
                     onClick: (args) => {
                         console.log('Action click:', args)
                     },
@@ -83,18 +83,18 @@ const store = new AutoStore({
             ]
         }),
         layout: configurable('卡片集', {
-            divider: true,
+            // divider: true,
             label: '布局',
             required: true,
             widget: 'radio',
-            itemWidth: '33%',
+            itemWidth: '33.33%',
             card: true,
             select: [
                 { label: '简约风', help: '极简设计，突出内容' },
                 { label: '经典式', help: '传统布局，平衡稳重' },
                 { label: '卡片集', help: '模块化卡片，灵活组合' },
                 { label: '瀑布流', help: '动态滚动，视觉延展' },
-                { label: '分屏式', help: '双栏对比，高效浏览' },
+                { label: '分屏式', help: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
                 { label: '导航型', help: '侧边主导，层级清晰' },
                 { label: '全屏化', help: '沉浸体验，无界视觉' },
                 { label: '网格阵', help: '整齐排列，规整直观' },
@@ -102,13 +102,40 @@ const store = new AutoStore({
             ]
         }),
         admin: configurable(true, { label: '管理员', help: "管理员拥有有所有权限" }),
-        birday: configurable('2025-11-01', { label: '生日', widget: 'date' }),
+        salary: configurable(3000, {
+            label: '工资',
+            widget: 'number',
+            icon: 'money',
+            actions: [
+                {
+                    label: '清空',
+                    icon: 'trash',
+                    onClick: (value, { update }) => {
+                        update('')
+                    }
+                }
+            ]
+        }),
+        captcha: configurable('', {
+            label: '验证码',
+            widget: 'captcha',
+            title: '单击刷新验证码',
+            labelPos: 'none',
+            placeholder: '请输入验证码',
+            captchaUrl: "/captcha.png"
+        }),
+        birday: configurable('2025-11-01', { label: '生日', widget: 'date', width: '33.33%' }),
+
         phone: configurable('138456789112', {
             label: '电话号码',
             widget: 'phone',
-            clearable: true
+            clearable: true,
+            width: '33.33%'
         }),
-        search: configurable('', { label: '搜索', widget: 'search' }),
+        search: configurable('', {
+            label: '搜索', widget: 'search',
+            width: '33.33%'
+        }),
         age: configurable(18, (value) => {
             return value > 0 && value < 24
         }, {
@@ -213,7 +240,8 @@ const store = new AutoStore({
             widget: 'range',
             label: '音量',
             min: 0,
-            max: 100
+            max: 100,
+            step: 5
         }),
         worktime: configurable("12:12:11", { label: '上班时间', widget: 'time' }),
         certificate: configurable(1, {
@@ -257,8 +285,9 @@ const store = new AutoStore({
 // @ts-ignore
 window.store = store;
 const updateState = () => {
-    const ele = document.querySelector('#state');
-    ele!.innerHTML = JSON.stringify(store.state);
+    const textarea = document.querySelector('#state');
+    // @ts-ignore
+    textarea.value = JSON.stringify(store.state);
 };
 store.watch(() => updateState());
 store.on('validate', () => {
@@ -323,6 +352,13 @@ class AutoFormDebuger extends LitElement {
             ele.labelPos = e.target.value;
         }
     }
+    onToggleGridLine(e) {
+        const ele = this.getNextAutoForm();
+        if (ele) {
+            // @ts-ignore
+            ele.grid = e.target.checked;
+        }
+    }
     render() {
         return html`
             <div class="toolbar">
@@ -333,6 +369,7 @@ class AutoFormDebuger extends LitElement {
                 </sl-select>    
                 <span>
                     <sl-checkbox @click=${this.onToggleDark.bind(this)}>暗色调</sl-checkbox>                    
+                    <sl-checkbox @click=${this.onToggleGridLine.bind(this)}>网格线</sl-checkbox>                    
                 </span>
                 
                 <sl-button>提交</sl-button>

@@ -7,7 +7,7 @@ import { customElement } from "lit/decorators.js"
 @customElement('auto-field-rating')
 export class AutoFieldRating extends AutoField {
 
-    renderValue() {
+    renderInput() {
         return html`              
         <sl-rating 
             slot="value" 

@@ -6,7 +6,7 @@ import { customElement } from "lit/decorators.js"
 @customElement('auto-field-qrcode')
 export class AutoFieldQRCode extends AutoField {
 
-    renderValue() {
+    renderInput() {
         return html`              
         <sl-qr-code 
             slot="value" 
@@ -18,9 +18,7 @@ export class AutoFieldQRCode extends AutoField {
             fill=${this.getFieldOption('fill', 'black')}
             background=${this.getFieldOption('background', 'white')}
             radius=${this.getFieldOption('radius')}
-            error-correction=${this.getFieldOption('errorCorrection', 'L')}
-            @sl-input=${this.onFieldInput.bind(this)}
-            @sl-change=${this.onFieldChange.bind(this)}
+            error-correction=${this.getFieldOption('errorCorrection', 'L')} 
             size=${this.getFieldOption('size', 64)}
         ></sl-qr-code > 
         `

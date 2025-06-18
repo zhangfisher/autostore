@@ -11,8 +11,9 @@ export default css`
         position: relative;
         flex-direction:column;
         width:100%;        
-        padding: 0.3em;
-        
+        padding:0.5rem;
+        box-sizing: border-box;
+        padding-right: 0px;
         &>.label{
             color: var(--sl-color-neutral-800);           
             padding: 4px; 
@@ -20,12 +21,16 @@ export default css`
             display: flex;
             &>.title{
                 flex-grow: 1;
+                &::after{
+                    content: '：';                    
+                }
             }
         }        
         /* 必填字段 */
         &.required{
-            &>.label{
+            &>.label{                
                 &>.title{
+                                      
                 }
             }
         }
@@ -45,6 +50,7 @@ export default css`
             outline: none!important;
             box-shadow: none!important;
         }
+
         /* 错误样式 */
         &.error{
             color:red; 
@@ -88,6 +94,28 @@ export default css`
                 pointer-events: none;
             }
         }
+        /* 网格线 */
+        &.grid{ 
+            padding:1rem;
+        }
+        & sl-input::part(suffix) .action-widget{
+            color: red;
+        }
+        & .action-widget.image{
+            position: relative; 
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding:0px;
+            border-left: 1px solid var(--sl-input-border-color);
+            & img{
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+        }
+        
     }
         
 `

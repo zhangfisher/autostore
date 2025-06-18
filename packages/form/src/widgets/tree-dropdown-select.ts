@@ -1,12 +1,11 @@
 import { AutoField } from "@/field"
 import { css, html } from "lit"
-import { customElement, state } from "lit/decorators.js"
+import { customElement, query, state } from "lit/decorators.js"
 import { repeat } from "lit/directives/repeat.js";
 import '@shoelace-style/shoelace/dist/components/tag/tag.js';
 import { classMap } from "lit/directives/class-map.js";
 import { AutoFieldTreeSelect, TreeSelectedItem } from "./tree-select";
 import { when } from "lit/directives/when.js";
-import { initFieldOptions } from "@/utils/initFieldOptions";
 
 @customElement('auto-field-tree-dropdown-select')
 export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
@@ -64,6 +63,9 @@ export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
 
     @state()
     active: boolean = false
+
+    @query('sl-tree')
+    tree!: HTMLElement
 
     _onRemoveSelection(e: any) {
         const id = e.target.dataset.id
@@ -130,7 +132,7 @@ export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
     _onHidePopup() {
         this.active = false
     }
-    renderValue() {
+    renderInput() {
         return html`             
         <sl-dropdown 
             @sl-show="${this._onShowPopup.bind(this)}" 

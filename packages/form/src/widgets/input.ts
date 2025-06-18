@@ -2,7 +2,6 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
-import { SchemaWidgetAction, setVal } from 'autostore';
 
 export type InputType = 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url' | 'phone'
 @customElement('auto-field-input')
@@ -14,14 +13,15 @@ export class AutoFieldInput extends AutoField {
             margin-right:0px;
             display:flex;
             flex-direction:row;
-            align-items:center;
+            align-items:center; 
         }
         .actions > sl-button{
-            margin:0px;
+            margin:0px;            
         }
         .actions.after > sl-button::part(base){
             border-right:none;
             border-radius: 0px;
+
         }
         .actions.before{
             margin-left: 0px;
@@ -36,23 +36,10 @@ export class AutoFieldInput extends AutoField {
     getInputType(): any {
         return this.schema?.inputType || "input"
     }
-    renderAction(action: SchemaWidgetAction) {
-        const onClick = (action: SchemaWidgetAction) => (e: any) => action.onClick(this.value, {
-            action,
-            schema: this.schema!,
-            event: e,
-            update: (value: any) => {
-                setVal(this.context!.store!.state, this.schema!.path, value)
-            }
-        })
-        return html`
-        <sl-button @click=${onClick(action)}>${action.label}</sl-button>
-    `
-    }
     connectedCallback(): void {
         super.connectedCallback()
     }
-    renderValue() {
+    renderInput() {
         const schema = this.schema!
         return html`
             <sl-input 

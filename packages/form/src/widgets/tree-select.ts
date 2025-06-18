@@ -44,7 +44,8 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
         css`
             sl-tree{
                 padding: 0.2em;
-                border: 1px solid var(--sl-color-gray-200);
+                border: 1px solid var(--sl-input-border-color);
+                border-radius: var(--sl-border-radius-medium);
             }
     `] as any
     nodes: TreeNodes = {}
@@ -88,8 +89,8 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
         }
     }
 
-    getInitialValue() {
-        const initial = super.getInitialValue()
+    getStateValue() {
+        const initial = super.getStateValue()
         if (this.schema!.multiple) {
             return Array.isArray(initial) ? initial : [initial]
         } else {
@@ -168,11 +169,11 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
             if (this.schema && typeof (this.schema.onSelectionChange) === 'function') {
                 this.schema.onSelectionChange(this.selection)
             }
-            this.onFieldChange()
+            this.onFieldChange(e)
         }
 
     }
-    getValue() {
+    getInputValue() {
         return this.selection.map(item => item.value)
     }
 
@@ -188,7 +189,7 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
         `
     }
 
-    renderValue() {
+    renderInput() {
         return html`              
             ${this.renderTree()}
         `

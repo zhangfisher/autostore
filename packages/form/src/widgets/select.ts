@@ -6,7 +6,7 @@ import { customElement } from "lit/decorators.js"
 
 @customElement('auto-field-select')
 export class AutoFieldSelect extends AutoField {
-    renderValue() {
+    renderInput() {
         const items = this.getFieldOption('select', []).map((item: any, index: number) => {
             const selectItem: any = {}
             if (typeof (item) === 'object') {

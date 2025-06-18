@@ -22,7 +22,7 @@ export class AutoFieldRadioButton extends AutoField {
         }
     `] as any
 
-    renderValue() {
+    renderInput() {
         const items = this.getFieldOption('select', []).map((item: any, index: number) => {
             const selectItem: any = {}
             if (typeof (item) === 'object') {

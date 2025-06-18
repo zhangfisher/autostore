@@ -1,15 +1,16 @@
 import { css, LitElement, html } from "lit";
-import stypes from "./styles";
+import styles from "./styles";
 import icons, { AutoIconName } from "./icons"
 import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { classMap } from "lit/directives/class-map.js";
+import { ThemeController } from "@/controllers/theme";
 
 @customElement('auto-icon')
 export class AutoIcon extends LitElement {
-    static styles = css`
-        ${stypes}
-    `
+    static styles = styles
+
+    theme = new ThemeController(this)
 
     @property({ type: String })
     name: string = 'user';

@@ -1,4 +1,3 @@
-import { ifDefined } from 'lit/directives/if-defined.js';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * 
@@ -37,6 +36,8 @@ import { repeat } from 'lit/directives/repeat.js';
 import { ThemeController } from '@/controllers/theme';
 import { RequiredKeys } from 'flex-tools/types';
 import { styleMap } from 'lit/directives/style-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
+import { when } from 'lit/directives/when.js';
 
 function getDefaultFieldOptions() {
     return {
@@ -87,6 +88,7 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
     @state()
     labelPos: string = 'top'
 
+
     beforeActions?: SchemaWidgetAction[]
     afterActions?: SchemaWidgetAction[]
 
@@ -96,7 +98,7 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
 
     _subscribers: Watcher[] = []
 
-    @query('.value >:first-child')
+    @query('.value sl-input,sl-radio-group,.sl-checkbox,sl-switch,sl-rande,sl-textarea,sl-rating,sl-select,sl-color-picker')
     input?: HTMLInputElement
 
     @consume({ context })
@@ -126,38 +128,60 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
 
     }
     renderActions() {
-        this.renderBeforeActions()
-        this.renderAfterActions()
+        return html`${this.renderBeforeActions()}
+                ${this.renderAfterActions()}`
     }
     _onClickAction(action: SchemaWidgetAction) {
-        return (e: any) => action.onClick(this.getValue(), {
-            action,
-            schema: this.schema!,
-            event: e,
-            update: (value: any) => {
-                setVal(this.context!.store!.state, this.schema!.path, value)
-            }
-        })
+        if (typeof (action.onClick) == 'function') {
+            return (e: any) => action.onClick!.call(this, this.getInputValue(), {
+                action,
+                schema: this.schema!,
+                event: e,
+                update: (value: any) => {
+                    setVal(this.context!.store!.state, this.schema!.path, value)
+                }
+            })
+        }
     }
     renderBeforeActions() {
         if (Array.isArray(this.beforeActions) && this.beforeActions.length > 0) {
             return html`<div class="actions before" slot="prefix">
-            ${repeat(this.beforeActions || [], (action) => {
-                return html`
-                    <sl-button @click=${this._onClickAction.call(this, action)}>${action.label}</sl-button>
-                `
+            ${repeat(this.beforeActions, (action) => {
+                return this.renderActionWidget(action)
             })}</div>`
         }
     }
-
     renderAfterActions() {
         if (Array.isArray(this.afterActions) && this.afterActions.length > 0) {
             return html`<div class="actions after" slot="suffix">
-            ${repeat(this.afterActions || [], (action) => {
-                return html`
-                    <sl-button @click=${this._onClickAction.call(this, action)}>${action.label}</sl-button>
-                `
+            ${repeat(this.afterActions, (action) => {
+                return this.renderActionWidget(action)
             })}</div>`
+        }
+    }
+    renderActionWidget(action: SchemaWidgetAction) {
+        if (typeof (action) !== 'object') return
+        const type = action.type || 'button'
+        if (type === 'dropdown') {
+
+        } else if (type === 'button') {
+            return html`
+            <sl-button class='action-widget' 
+                title=${ifDefined(action.tips)}
+                variant=${ifDefined(action.variant)}
+                @click=${this._onClickAction.call(this, action)}>
+                ${when(action.icon, () => html`<sl-icon name=${action.icon!}></sl-icon>`)}
+                ${action.label}
+            </sl-button>
+        `
+        } else if (type === 'image') {
+            return html`
+            <sl-button title="${ifDefined(action.tips)}" variant='text' class='action-widget image' @click=${this._onClickAction.call(this, action)}>                
+                <img src="${action.url!}"/>
+            </sl-button>
+        `
+        } else {
+
         }
     }
     _renderSchemaOption(name: string, render?: (value: any) => any) {
@@ -169,19 +193,6 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
             return html`${render ? render(option.value) : option.value}</div>`
         }
     }
-
-    getContext() {
-        if (this.context) {
-            return this.context as Required<AutoFormContext>
-        } else {
-            return {
-                dark: false,
-                labelPos: 'top',
-                advanced: false
-            } as Required<AutoFormContext>
-        }
-    }
-
     getLabel() {
         return this.getSchema().label || this.name
     }
@@ -205,7 +216,7 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
         }
     }
 
-    getValue(): any {
+    getInputValue(): any {
         if (!this.input) return ''
         const datatype = this.schema?.datatype || 'string'
         const value = this.input.checked ?? this.input.value
@@ -214,31 +225,34 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
         return value
     }
 
-
     _renderRequiredOption() {
         return this._renderSchemaOption('required', (val) => {
             return val ? html`<span style='color:red;padding:2px;'>*</span>` : ''
         })
     }
-    renderHelp(ctx: AutoFormContext) {
+    renderHelp() {
         return html`<span class="help"></span>`
     }
-    renderLabel(ctx: AutoFormContext) {
-        if (ctx.labelPos === 'none') {
+    renderLabel() {
+        const ctx = this.context
+        const labelPos = this.field.labelPos?.value || ctx.labelPos
+        if (labelPos === 'none') {
             return html``
         } else {
             const style: Record<string, any> = {}
-            style.width = ctx.labelPos === 'left' ? ctx.labelWidth : ''
+            if (ctx.labelWidth && labelPos === 'left') {
+                style.width = ctx.labelWidth
+            }
             return html`<div class="label" style="${ifDefined(styleMap(style))}">
-            <span class="title">${this.getLabel()}${this._renderRequiredOption()}:</span>
-            <span class="help">${this.renderHelp(ctx)}</span>
+            <span class="title">${this.getLabel()}${this._renderRequiredOption()}</span>
+            <span class="help">${this.renderHelp()}</span>
         </div>`
         }
     }
-    renderValue(ctx: AutoFormContext) {
+    renderInput() {
         return html``
     }
-    renderError(ctx: AutoFormContext) {
+    renderError() {
         return this.invalidMessage ? html`<div class="error">
             ${this.invalidMessage}
         </div>` : html``
@@ -254,7 +268,7 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
      * 当schmeaOption发生变化时
      */
     _handleSchemaChange() {
-        const ctx = this.getContext()
+        const ctx = this.context
         if (ctx && ctx.store && this.schema) {
             const pathKeys = this.schema.path.join("_$_")
             // 监听schema变化,schema什么会变化，当schema成员是一个计算函数时，会在所依赖的状态变化时重新计算而导致变化
@@ -279,26 +293,26 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
      * 当状态数据发生变化时
      */
     _handleStateChange() {
-        const ctx = this.getContext()
+        const ctx = this.context
         if (ctx && ctx.store && this.schema) {
             this._subscribers.push(ctx.store.watch(this.schema.path.join("."), (operate) => {
                 // 当表单change/input时更新时设置flags=form.seq
                 // 此时应不需要更新到value，否则会导致死循环
-                if (ctx.form.seq === operate.flags) return
+                //if (ctx.form.seq === operate.flags) return
                 this.value = operate.value
             }, { operates: 'write' }))
         }
     }
-    getInitialValue() {
-        const ctx = this.getContext()
+    getStateValue() {
+        const ctx = this.context
         return getVal(ctx.store.state, this.field.path)
     }
     connectedCallback(): void {
         super.connectedCallback()
-        const ctx = this.getContext()
+        const ctx = this.context
         if (ctx && ctx.store && this.schema) {
             this.field = this.getFieldOptions()
-            this.value = this.getInitialValue()
+            this.value = this.getStateValue()
             this._handleSchemaChange()
             this._handleStateChange()
             this.path = this.schema!.path.join(".")
@@ -322,10 +336,10 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
     _updateFieldValue() {
         if (!this.schema) return
         const path = this.schema.path
-        const value = this.getValue()
-        const ctx = this.getContext()
+        const value = this.getInputValue()
+        const ctx = this.context
         try {
-            const store = this.getContext().store
+            const store = this.context.store
             store.update((state) => {
                 setVal(state, path, toSchemaValue(value, this.schema!))
                 this.invalidMessage = undefined
@@ -338,27 +352,25 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
         }
     }
     render() {
-        const ctx = this.getContext()
+        const ctx = this.context
         return html`
-            <div class="auto-field
-                ${classMap({
+            <div class="auto-field ${classMap({
+            grid: ctx.grid,
             'left-label': ctx.labelPos === 'left',
             'top-label': ctx.labelPos === 'top',
-            'no-label': ctx.labelPos === 'none',
-            error: !!this.invalidMessage,
             disable: this.field.enable.value === false,
             required: this.field.required.value === true,
             hidden: this.field.visible.value === false
         })}"
-          >
+          >             
             ${this.field.divider?.value
                 ? html`<sl-divider></sl-divider>` : null
             }
-            ${this.renderLabel(ctx)}
+            ${this.renderLabel()}
             <div class="value">
-                ${this.renderValue(ctx)}
+                ${this.renderInput()}
             </div>            
-            ${this.renderError(ctx)}
+            ${this.renderError()}
         </div>
         `
     }

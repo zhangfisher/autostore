@@ -2,18 +2,18 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
-import { AutoFormContext } from '@/context';
 
 
 @customElement('auto-field-checkbox')
 export class AutoFieldCheckbox extends AutoField {
 
-    renderValue() {
+    renderInput() {
         return html`              
         <sl-checkbox 
             slot="value" 
             name="${this.name}"
-            data-path = ${this.path}
+            data-path = ${this.path}            
+            class="auto-input"
             .value="${this.value}" 
             .checked=${this.value} 
             placeholder="${ifDefined(this.getFieldOption("placeholder"))}"
@@ -23,9 +23,9 @@ export class AutoFieldCheckbox extends AutoField {
         > ${this.schema!.label}</sl-checkbox> 
         `
     }
-    renderLabel(ctx: AutoFormContext) {
-        if (ctx.labelPos === 'left') {
-            return super.renderLabel(ctx)
+    renderLabel() {
+        if (this.context.labelPos === 'left') {
+            return super.renderLabel()
         } else {
             return html``
         }

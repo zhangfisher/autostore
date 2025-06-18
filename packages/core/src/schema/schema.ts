@@ -63,7 +63,11 @@ function markActions(actions: SchemaWidgetAction[]) {
 function markOptions(options: SchemaOptions) {
     if (isPlainObject(options)) {
         Object.entries(options).forEach(([key, value]) => {
-            if (isFunction(value) && (key.startsWith('on') || key.startsWith('render'))) {
+            if (isFunction(value) && (
+                key.startsWith('on')
+                || key.startsWith('render')
+                || key.startsWith('to')
+            )) {
                 options[key] = markRaw(value)
             }
         })

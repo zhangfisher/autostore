@@ -23,7 +23,7 @@ import { classMap } from 'lit/directives/class-map.js';
  * 
  */
 
-import { LitElement, PropertyValues, html } from 'lit'
+import { LitElement, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import '@shoelace-style/shoelace/dist/themes/dark.css'
 import '@shoelace-style/shoelace/dist/themes/light.css'
@@ -67,6 +67,7 @@ export class AutoForm extends LitElement {
     theme = new ThemeController(this)
 
     @provide({ context })
+    //@ts-ignore
     context: AutoFormContext = {}
 
 
@@ -91,6 +92,31 @@ export class AutoForm extends LitElement {
      */
     @property({ type: Boolean, reflect: true })
     advanced?: boolean
+
+    /**
+     * 
+     * 显示网络
+     * 
+     */
+    @property({ type: Boolean, reflect: true })
+    grid: boolean = true
+
+    /**
+     * 
+     * 显示模式
+     * 
+     * - default : 默认编辑修改模式
+     * - readonly: 只读模式
+     * - view: 视图模式，只显示数据，不渲染输入组件，使用renderView
+     * 
+     *  toView
+     *  toInput
+     *  toState
+     * 
+     */
+    @property({ type: String, reflect: true })
+    mode: 'default' | 'view' | 'readonly' = 'default'
+
     /**
      * 标签位置
      * 取值：
@@ -164,6 +190,7 @@ export class AutoForm extends LitElement {
             labelPos: this.labelPos,
             labelWidth: this.labelWidth,
             advanced: this.advanced,
+            grid: this.grid,
             dark: this.dark
         })
         this._load()
@@ -194,6 +221,7 @@ export class AutoForm extends LitElement {
         return html`
             <div class="auto-form ${classMap({
             dark: this.dark,
+            grid: this.grid,
             'row-layout': this.layout === 'row',
             'col-layout': this.layout === 'col',
             'auto-layout': this.layout === 'auto',

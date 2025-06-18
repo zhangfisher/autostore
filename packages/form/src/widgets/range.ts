@@ -1,4 +1,3 @@
-import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
@@ -7,7 +6,7 @@ import { customElement } from "lit/decorators.js"
 @customElement('auto-field-range')
 export class AutoFieldRabge extends AutoField {
 
-    renderValue() {
+    renderInput() {
         return html`              
         <sl-range 
             slot="value" 

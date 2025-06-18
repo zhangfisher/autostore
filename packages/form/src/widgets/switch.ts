@@ -7,7 +7,7 @@ import { customElement } from "lit/decorators.js"
 @customElement('auto-field-switch')
 export class AutoFieldSwitch extends AutoField {
 
-    renderValue() {
+    renderInput() {
         return html`              
         <sl-switch 
             slot="value" 

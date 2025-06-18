@@ -7,7 +7,7 @@ const defaultColors = `
     #f5222d; #fa541c; #fa8c16;
     #faad14; #fadb14; #a0d911;
      #52c41a; #13c2c2;#1890ff;
-     #2f54eb;#722ed1;#eb2f96;#ffffff; #bfbfbf; #fafafa;#262626;
+     #2f54eb;#722ed1;#eb2f96;#ffffff;#f1f1f1;#bfbfbf;#262626;
   `
 
 @customElement('auto-field-colorpicker')
@@ -18,11 +18,12 @@ export class AutoFieldColorPicker extends AutoField {
             border-radius: 4px;
         }
     `] as any
-    renderValue() {
+    renderInput() {
         return html`
             <sl-color-picker 
                 slot="value"  
                 data-path = ${this.schema!.path}
+                class="auto-input"
                 name=${this.name} 
                 value=${this.value} 
                 format=${this.getFieldOption('format', 'hex')}

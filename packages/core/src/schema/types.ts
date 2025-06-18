@@ -145,14 +145,17 @@ export type SchemaWidgetAction<State = Dict> = {
     label?: string
     icon?: string
     position?: 'before' | 'after'
-    onClick: (value: any, ctx: {
+    type?: 'button' | 'dropdown' | 'image' | string
+    url?: string
+    tips?: string
+    variant?: 'primary' | 'neutral' | 'success' | 'danger' | 'warning' | 'default'
+    onClick?: (value: any, ctx: {
         action: SchemaWidgetAction,
         schema: SchemaOptions,
         event: Event,
         update: (value: any) => void
     }) => void
     disabled?: boolean | ComputedBuilder<boolean, State>
-    hidden?: boolean | ComputedBuilder<boolean, State>
     visible?: boolean | ComputedBuilder<boolean, State>
     // 如果指定了items，则渲染为Dropdown
     items?: SchemaWidgetAction<State>[]
@@ -188,6 +191,10 @@ export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
         icon?: string
     } | string)[] | ComputedBuilder<any[], State>
     actions?: SchemaWidgetAction<State>[]
+    // 转换数据
+    toView?: (value: any) => any
+    toState?: (value: any) => any
+    toInput?: (value: any) => any
 } & SchemaWidgetOptions<State>
 
 export type SchemaDescriptor<Value = any, Options = Dict> = {

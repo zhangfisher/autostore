@@ -30,6 +30,7 @@ export class ThemeController implements ReactiveController {
         Object.assign(this.host.context, {
             labelPos: this.host.labelPos,
             labelWidth: this.host.labelWidth,
+            grid: this.host.grid,
         })
     }
     hostUpdate() {

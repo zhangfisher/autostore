@@ -12,13 +12,13 @@
     </head>
 
     <body>
-        <div style="padding: 2em; border: 1px solid #ccc; margin: 2em">
+        <div style="padding: 2em; border: 1px solid #ccc; margin: 2em;position:relative;">
             <div class="actions">
             <auto-form-debuger></auto-form-debuger>
             <auto-form id="form1"> </auto-form>
         </div>
-        <div id="state" style="padding: 2em; border: 1px solid #ccc; margin: 2em"></div>
-        <div id="errors" style="padding: 2em; border: 1px solid #ccc; margin: 2em; color: red"></div>
+        <textarea id="state" rows="10" style="margin-top:2rem;box-sizing:border-box; border: 1px solid #ccc; width:100%;"></textarea>
+        <div id="errors" style="border: 1px solid #ccc; color: red"></div>
         <script type="module" src="./example.ts"></script>
     </body>
 </html>

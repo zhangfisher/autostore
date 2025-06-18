@@ -7,12 +7,13 @@ import { customElement } from "lit/decorators.js"
 @customElement('auto-field-checkbox-group')
 export class AutoFieldCheckboxGroup extends AutoField {
 
-    renderValue() {
+    renderInput() {
         return html`              
         <sl-checkbox 
             slot="value" 
             name="${this.name}"
-            data-path = ${this.path}
+            data-path = ${this.path}            
+            class="value"
             .value="${this.value}" 
             .checked=${this.value} 
             placeholde="${ifDefined(this.getFieldOption("placeholder"))}"
