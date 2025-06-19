@@ -3,8 +3,8 @@ import { AutoFieldInput, InputType } from "./input"
 import { html } from "lit"
 
 
-@customElement('auto-field-dropdown-selector')
-export class AutoFieldDropdownSelector extends AutoFieldInput {
+@customElement('auto-field-dropdown')
+export class AutoFieldDropdown extends AutoFieldInput {
     render() {
         return html``
     }
@@ -12,6 +12,6 @@ export class AutoFieldDropdownSelector extends AutoFieldInput {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-dropdown-selector': AutoFieldDropdownSelector
+        'auto-field-dropdown': AutoFieldDropdown
     }
 }

@@ -3,7 +3,8 @@ import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import { SlTreeItem } from '@shoelace-style/shoelace';
 import { initFieldOptions } from "@/utils/initFieldOptions";
-
+import '@shoelace-style/shoelace/dist/components/tree/tree.js';
+import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 
 export type TreeNode = {
     id?: string | number
@@ -174,7 +175,11 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
 
     }
     getInputValue() {
-        return this.selection.map(item => item.value)
+        if (this.field.multiple.value) {
+            return this.selection.map(item => item.value)
+        } else {
+            return this.selection.length > 0 ? this.selection[0].value : undefined
+        }
     }
 
     renderTree() {

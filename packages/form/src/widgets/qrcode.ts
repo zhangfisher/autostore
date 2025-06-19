@@ -1,6 +1,7 @@
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
+import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
 
 
 @customElement('auto-field-qrcode')

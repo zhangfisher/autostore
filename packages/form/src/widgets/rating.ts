@@ -1,8 +1,7 @@
-import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
-
+import '@shoelace-style/shoelace/dist/components/rating/rating.js';
 
 @customElement('auto-field-rating')
 export class AutoFieldRating extends AutoField {

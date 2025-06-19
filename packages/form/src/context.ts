@@ -7,9 +7,9 @@ export type AutoFormContext = {
     form: AutoForm
     labelPos?: 'none' | 'top' | 'left'
     labelWidth: string
-    advanced: boolean
     grid: boolean                       // 显示网格线
     dark: boolean
+    size: 'small' | 'medium' | 'large'
 }
 
 export const context = createContext<AutoFormContext>('autoform');

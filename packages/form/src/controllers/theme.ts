@@ -31,6 +31,7 @@ export class ThemeController implements ReactiveController {
             labelPos: this.host.labelPos,
             labelWidth: this.host.labelWidth,
             grid: this.host.grid,
+            size: this.host.size,
         })
     }
     hostUpdate() {

@@ -2,6 +2,7 @@ import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import { ifDefined } from "lit/directives/if-defined.js"
+import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
 
 
 @customElement('auto-field-radio-button')

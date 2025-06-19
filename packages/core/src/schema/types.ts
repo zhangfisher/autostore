@@ -75,7 +75,6 @@ export type SchemaWidgetTypes = 'input'
     | 'rating'
     | 'checkbox'
     | 'switch'
-    | 'tree-select'
     | 'date'
     | 'time'
     | 'ipaddress'
@@ -88,7 +87,8 @@ export type SchemaWidgetTypes = 'input'
     | 'email'
     | 'phone'
     | 'search'
-    | 'tree-dropdown-select'
+    | 'tree-dropdown'
+    | 'tree-select'
 
 export interface SchemaWidgetOptions<State = Dict> {
     filled?: boolean | ComputedBuilder<boolean, State>
@@ -182,6 +182,7 @@ export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
     itemWidth?: number | string | ComputedGetter<string, State>
     invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
     onFail?: 'pass' | 'throw' | 'ignore'
+    tips?: string
     select?: string[] | number[] | boolean[] | ({
         label?: string
         value?: ToRawType<Value>

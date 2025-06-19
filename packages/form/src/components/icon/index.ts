@@ -5,6 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ThemeController } from "@/controllers/theme";
+import { getIconLibrary } from "@shoelace-style/shoelace/dist/components/icon/library.js";
 
 @customElement('auto-icon')
 export class AutoIcon extends LitElement {
@@ -73,8 +74,9 @@ export class AutoIcon extends LitElement {
     }
 
     render() {
+        const icon = getIconLibrary('default')
+        console.log(icon?.resolver('settings'))
         if (!this.name) return null;
-
         const iconNames = this.name.split(',');
         const filteredNames = this.mode === 'toggle'
             ? [iconNames[this.currentIndex % iconNames.length]]

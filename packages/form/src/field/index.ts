@@ -31,13 +31,14 @@ import { AutoFormContext, context } from '../context';
 import styles from './styles'
 import { toSchemaValue } from '@/utils/toSchemaValue';
 import { KnownRecord } from '@/types';
-import '../components/icon'
 import { repeat } from 'lit/directives/repeat.js';
 import { ThemeController } from '@/controllers/theme';
 import { RequiredKeys } from 'flex-tools/types';
 import { styleMap } from 'lit/directives/style-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { when } from 'lit/directives/when.js';
+import '../components/icon'
+import { HostClasses } from '@/controllers/hostClasss';
 
 function getDefaultFieldOptions() {
     return {
@@ -67,14 +68,14 @@ type NormalizedFieldOptions<SCHEMA = unknown> = Omit<
     } & (SCHEMA extends Record<string, any> ? AsyncComputedValueRecord<SCHEMA> : unknown)
 
 
-export class AutoField<SCHEMA = unknown> extends LitElement {
+export class AutoField<Options = unknown> extends LitElement {
     static styles = styles as CSSResult
     theme = new ThemeController(this)
 
     @property({ type: Object })
-    schema?: SchemaOptions & SCHEMA
-
-    field: NormalizedFieldOptions<SCHEMA> = getDefaultFieldOptions() as unknown as NormalizedFieldOptions<SCHEMA>
+    schema?: SchemaOptions & Options
+    classs = new HostClasses(this)
+    field: NormalizedFieldOptions<Options> = getDefaultFieldOptions() as unknown as NormalizedFieldOptions<Options>
 
     @state()
     value: any = ''
@@ -106,9 +107,9 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
     public context!: AutoFormContext
 
     /**
-     * 将所有schmea options统一转换为AsyncComputedValue 
+     * 转换为AsyncComputedValue 
      */
-    getFieldOptions(): NormalizedFieldOptions<SCHEMA> {
+    getFieldOptions(): NormalizedFieldOptions<Options> {
         return Object.entries(this.schema || {}).reduce((result: any, [key, value]) => {
             if (['value', 'path', 'widget'].includes(key)) {
                 result[key] = value
@@ -120,7 +121,6 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
             return result
         }, getDefaultFieldOptions())
     }
-
     getPrefix() {
 
     }
@@ -169,6 +169,7 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
             <sl-button class='action-widget' 
                 title=${ifDefined(action.tips)}
                 variant=${ifDefined(action.variant)}
+                size=${this.context.size}
                 @click=${this._onClickAction.call(this, action)}>
                 ${when(action.icon, () => html`<sl-icon name=${action.icon!}></sl-icon>`)}
                 ${action.label}
@@ -231,7 +232,12 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
         })
     }
     renderHelp() {
-        return html`<span class="help"></span>`
+        const helpText = this.getFieldOption('help')
+        if (!helpText) return
+        return html`<span class="help">
+        <sl-icon name="help"></sl-icon>
+        ${ifDefined(this.getFieldOption('help'))}
+        </span>`
     }
     renderLabel() {
         const ctx = this.context
@@ -245,7 +251,7 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
             }
             return html`<div class="label" style="${ifDefined(styleMap(style))}">
             <span class="title">${this.getLabel()}${this._renderRequiredOption()}</span>
-            <span class="help">${this.renderHelp()}</span>
+            
         </div>`
         }
     }
@@ -351,27 +357,31 @@ export class AutoField<SCHEMA = unknown> extends LitElement {
             this.invalidMessage = e.message
         }
     }
+
     render() {
         const ctx = this.context
-        return html`
-            <div class="auto-field ${classMap({
+        this.classs.use(ctx.size, {
             grid: ctx.grid,
+            error: !!this.invalidMessage,
             'left-label': ctx.labelPos === 'left',
             'top-label': ctx.labelPos === 'top',
             disable: this.field.enable.value === false,
             required: this.field.required.value === true,
             hidden: this.field.visible.value === false
-        })}"
-          >             
-            ${this.field.divider?.value
+
+        })
+        return html`           
+            <div class="autofield">
+                ${this.field.divider?.value
                 ? html`<sl-divider></sl-divider>` : null
             }
-            ${this.renderLabel()}
-            <div class="value">
-                ${this.renderInput()}
-            </div>            
-            ${this.renderError()}
-        </div>
+                ${this.renderLabel()}
+                <div class="value">
+                    ${this.renderInput()}
+                    ${this.renderHelp()}
+                </div>            
+                ${this.renderError()} 
+            </div>
         `
     }
 

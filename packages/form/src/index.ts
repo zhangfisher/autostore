@@ -1,3 +1,3 @@
 export * from './form'
-export * from './components/icon'
+export * from './field'
 export * from './types'

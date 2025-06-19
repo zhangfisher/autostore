@@ -3,7 +3,6 @@ import { AutoFieldInput } from "./input"
 
 @customElement('auto-field-number')
 export class AutoFieldNumber extends AutoFieldInput {
-
     getInputType() {
         return 'number' as any
     }

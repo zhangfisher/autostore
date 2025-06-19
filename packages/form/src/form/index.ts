@@ -1,4 +1,3 @@
-import { classMap } from 'lit/directives/class-map.js';
 /**
  * 
  *  通过双向绑定表单
@@ -23,34 +22,16 @@ import { classMap } from 'lit/directives/class-map.js';
  * 
  */
 
-import { LitElement, html } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
 import '@shoelace-style/shoelace/dist/themes/dark.css'
 import '@shoelace-style/shoelace/dist/themes/light.css'
 import '@shoelace-style/shoelace/dist/components/button/button.js';
-import '@shoelace-style/shoelace/dist/components/tab/tab.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
-import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
-import '@shoelace-style/shoelace/dist/components/switch/switch.js';
-import '@shoelace-style/shoelace/dist/components/select/select.js';
-import '@shoelace-style/shoelace/dist/components/option/option.js';
-import '@shoelace-style/shoelace/dist/components/rating/rating.js';
-import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
-import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
 import '@shoelace-style/shoelace/dist/components/divider/divider.js';
-import '@shoelace-style/shoelace/dist/components/color-picker/color-picker.js';
-import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
-import '@shoelace-style/shoelace/dist/components/range/range.js';
-import '@shoelace-style/shoelace/dist/components/radio/radio.js';
-import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
-import '@shoelace-style/shoelace/dist/components/tree/tree.js';
-import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
+import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
-import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
-
-import '../field'
-import styles from './styles'
+import { LitElement, html } from 'lit'
+import { customElement, property } from 'lit/decorators.js'
 import { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
 import { context, AutoFormContext } from '../context'
 import '../widgets'
@@ -58,12 +39,16 @@ import { provide } from '@lit/context';
 import { registerIconLibrary } from '@shoelace-style/shoelace';
 import { IconLibrary, IconLibraryResolver } from '@shoelace-style/shoelace/dist/components/icon/library.js';
 import { ThemeController } from '@/controllers/theme';
+import { HostClasses } from '@/controllers/hostClasss';
+import '../field'
+import styles from './styles'
+import { presetIcons } from './icons';
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
     static seq: number = 0
     static styles = styles
-
+    classs = new HostClasses(this)
     theme = new ThemeController(this)
 
     @provide({ context })
@@ -91,7 +76,7 @@ export class AutoForm extends LitElement {
      * 
      */
     @property({ type: Boolean, reflect: true })
-    advanced?: boolean
+    advanced: boolean = true
 
     /**
      * 
@@ -100,6 +85,14 @@ export class AutoForm extends LitElement {
      */
     @property({ type: Boolean, reflect: true })
     grid: boolean = true
+
+    /**
+     * 
+     * 显示网络
+     * 
+     */
+    @property({ type: String })
+    size: 'small' | 'medium' | 'large' = 'medium'
 
     /**
      * 
@@ -147,6 +140,7 @@ export class AutoForm extends LitElement {
     @property({ type: String })
     iconLibrary: string = 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${name}.svg'
 
+
     /**
      * 注册图标库
      * 
@@ -164,7 +158,11 @@ export class AutoForm extends LitElement {
     connectedCallback(): void {
         super.connectedCallback()
         this.registerIcons((name) => {
-            return this.iconLibrary.replace('${name}', name)
+            if (name in presetIcons) {
+                return `data:image/svg+xml,${encodeURIComponent((presetIcons as any)[name])}`;
+            } else {
+                return this.iconLibrary.replace('${name}', name)
+            }
         })
     }
 
@@ -176,6 +174,7 @@ export class AutoForm extends LitElement {
                 if (this.group) {
                     return schema.group ? (schema.group === this.group) : true
                 }
+                if (this.advanced === false && schema.advanced === true) return true
                 return true
             }).sort((a, b) => {
                 // @ts-ignore
@@ -189,7 +188,6 @@ export class AutoForm extends LitElement {
             form: this,
             labelPos: this.labelPos,
             labelWidth: this.labelWidth,
-            advanced: this.advanced,
             grid: this.grid,
             dark: this.dark
         })
@@ -199,7 +197,7 @@ export class AutoForm extends LitElement {
     _renderWidget(schema: SchemaOptions) {
         const width = schema.width
         const widget = schema.widget
-        let widgetEle
+        let widgetEle: HTMLElement
         try {
             widgetEle = document.createElement(`auto-field-${widget || 'input'}`)
         } catch {
@@ -207,6 +205,7 @@ export class AutoForm extends LitElement {
         }
         // @ts-ignore
         widgetEle.schema = schema
+        widgetEle.setAttribute('grid', String(this.grid))
         // @ts-ignore
         if (width) widgetEle.style.width = width
         return widgetEle
@@ -218,17 +217,17 @@ export class AutoForm extends LitElement {
         })}`
     }
     render() {
-        return html`
-            <div class="auto-form ${classMap({
-            dark: this.dark,
-            grid: this.grid,
+        this.classs.use(this.size, {
+            'dark': this.context.dark,
+            'grid': this.grid,
             'row-layout': this.layout === 'row',
             'col-layout': this.layout === 'col',
             'auto-layout': this.layout === 'auto',
             'left-label': this.labelPos === 'left',
             'top-label': this.labelPos === 'top',
-            'none-label': this.labelPos === 'none'
-        })}">
+        })
+        return html`
+            
             <div class="actions header" > 
             </div>
             <div class="fields">
@@ -236,7 +235,6 @@ export class AutoForm extends LitElement {
             </div>
             <div class="actions footer" >
 
-            </div>
             </div>
         `
     }

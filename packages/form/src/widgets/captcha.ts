@@ -3,8 +3,12 @@ import { AutoFieldInput } from "./input"
 import { css } from "lit"
 //
 
+export type AutoFieldCaptchaOptions = {
+    captchaUrl: string
+}
+
 @customElement('auto-field-captcha')
-export class AutoFieldCaptcha extends AutoFieldInput {
+export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
     static styles = [
         AutoFieldInput.styles,
         css`

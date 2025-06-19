@@ -2,6 +2,8 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
+import '@shoelace-style/shoelace/dist/components/select/select.js';
+import '@shoelace-style/shoelace/dist/components/option/option.js';
 
 
 @customElement('auto-field-select')

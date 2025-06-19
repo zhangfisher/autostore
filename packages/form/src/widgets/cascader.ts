@@ -8,9 +8,6 @@ export class AutoFieldCascader extends AutoFieldInput {
     getInputType(): InputType {
         return 'time'
     }
-    getPrefix() {
-        return html`<auto-icon name='time'  slot="prefix"></auto-icon>`
-    }
 }
 
 

@@ -4,8 +4,12 @@ import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 
 export type InputType = 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url' | 'phone'
+
+export type AutoFieldInputOptions = {
+
+}
 @customElement('auto-field-input')
-export class AutoFieldInput extends AutoField {
+export class AutoFieldInput<Options = unknown> extends AutoField<AutoFieldInputOptions & Options> {
     static styles = [
         AutoField.styles,
         css`
@@ -39,6 +43,11 @@ export class AutoFieldInput extends AutoField {
     connectedCallback(): void {
         super.connectedCallback()
     }
+    getPrefix() {
+        if (this.field.icon) {
+            return html`<sl-icon name="${this.field.icon.value}" slot="prefix"></sl-icon>`
+        }
+    }
     renderInput() {
         const schema = this.schema!
         return html`
@@ -54,10 +63,9 @@ export class AutoFieldInput extends AutoField {
                 ?clearable=${this.getFieldOption('clearable', false)}
                 ?disabled=${this.getFieldOption('disabled', false)}                
                 ?required=${this.getFieldOption('required', false)}                
-                size=${ifDefined(this.getFieldOption('size'))}
+                size=${this.context.size}
                 placeholder=${ifDefined(this.getFieldOption('placeholder'))}
                 pattern=${ifDefined(this.getFieldOption('pattern'))}
-                help-text=${ifDefined(this.getFieldOption('help'))}
                 minLength=${ifDefined(this.getFieldOption('minLength'))}
                 maxLength=${ifDefined(this.getFieldOption('maxLength'))}
                 .max=${this.getFieldOption('max')}
@@ -69,7 +77,8 @@ export class AutoFieldInput extends AutoField {
                 ?autofocus=${this.getFieldOption('autofocus')}
                 @sl-input=${this.onFieldInput.bind(this)}
                 spellcheck=${ifDefined(this.getFieldOption('spellcheck', "false"))}
-            >${this.getPrefix()}${this.getSuffix()}${this.renderActions()}</sl-input>
+            >
+            ${this.getPrefix()}${this.getSuffix()}${this.renderActions()}</sl-input>
         `
     }
 }

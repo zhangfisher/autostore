@@ -7,8 +7,8 @@ import { classMap } from "lit/directives/class-map.js";
 import { AutoFieldTreeSelect, TreeSelectedItem } from "./tree-select";
 import { when } from "lit/directives/when.js";
 
-@customElement('auto-field-tree-dropdown-select')
-export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
+@customElement('auto-field-tree-dropdown')
+export class AutoFieldTreeDropdown extends AutoFieldTreeSelect {
     static styles = [
         AutoField.styles,
         AutoFieldTreeSelect.styles,
@@ -79,9 +79,6 @@ export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
         }
         e.stopPropagation();
     }
-    _onActionSelection(e: any) {
-        console.log("remove=", e.target)
-    }
     getShowItemValue(value: any, valueKey: string, showKey: string) {
         if (valueKey === showKey) return value
 
@@ -115,7 +112,6 @@ export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
                 ${this.renderSelectedTags()}
                 <span class='suffix'>
                     <sl-icon library="system" class="chevron ${classMap({ active: this.active })}" 
-                        @click=${this._onActionSelection.bind(this)}
                         name="chevron-down" aria-hidden="true">
                     </sl-icon>
                 </span>  
@@ -151,6 +147,6 @@ export class AutoFieldTreeDropdownSelect extends AutoFieldTreeSelect {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-tree-dropdown-select': AutoFieldTreeDropdownSelect
+        'auto-field-tree-dropdown': AutoFieldTreeDropdown
     }
 }

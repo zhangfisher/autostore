@@ -3,6 +3,8 @@ import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import { ifDefined } from "lit/directives/if-defined.js"
 import { styleMap } from "lit/directives/style-map.js"
+import '@shoelace-style/shoelace/dist/components/radio/radio.js';
+import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
 
 export type AutoFieldRadioOptions = {
     card: boolean
@@ -22,7 +24,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
         }
         sl-radio{            
             position: relative;
-            & .help{
+            & .memo{
                 color: var(--sl-color-gray-500);
                 font-size: 0.8rem;
                 max-height: 2.2rem;
@@ -131,7 +133,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             width: this.field.card == undefined ? this.field.itemWidth?.value : undefined
         })}
             ${ifDefined(this.getFieldOption('disabled'))}
-        >${item.label}<br/><span class="help">${item.help}</span></sl-radio>`
+        >${item.label}<br/><span class="memo">${item.memo}</span></sl-radio>`
     }
     renderInput() {
         const items = this.getFieldOption('select', []).map((item: any) => {

@@ -1,11 +1,22 @@
+import './src/widgets/autocomplete';
 import { LitElement, css, html } from 'lit';
 import { AutoForm } from './src/form/index';
 import { AutoStore, computed, configurable } from 'autostore';
 import { customElement } from 'lit/decorators.js';
 
+
 const orgTree = {
     id: 1,
     label: '美一',
+    user: {
+        name: "",
+        admin: false,
+        address: {
+            province: '广东省',
+            city: '深圳市',
+            street: '南山区'
+        }
+    },
     children: [
         {
             id: 1,
@@ -90,22 +101,47 @@ const store = new AutoStore({
             itemWidth: '33.33%',
             card: true,
             select: [
-                { label: '简约风', help: '极简设计，突出内容' },
-                { label: '经典式', help: '传统布局，平衡稳重' },
-                { label: '卡片集', help: '模块化卡片，灵活组合' },
-                { label: '瀑布流', help: '动态滚动，视觉延展' },
-                { label: '分屏式', help: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
-                { label: '导航型', help: '侧边主导，层级清晰' },
-                { label: '全屏化', help: '沉浸体验，无界视觉' },
-                { label: '网格阵', help: '整齐排列，规整直观' },
-                { label: '自由板', help: '可拖拽定制，随心布局' }
+                { label: '简约风', memo: '极简设计，突出内容' },
+                { label: '经典式', memo: '传统布局，平衡稳重' },
+                { label: '卡片集', memo: '模块化卡片，灵活组合' },
+                { label: '瀑布流', enable: false, memo: '动态滚动，视觉延展' },
+                { label: '分屏式', memo: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                { label: '导航型', memo: '侧边主导，层级清晰' },
+                { label: '全屏化', memo: '沉浸体验，无界视觉' },
+                { label: '网格阵', memo: '整齐排列，规整直观' },
+                { label: '自由板', memo: '可拖拽定制，随心布局' }
             ]
         }),
-        admin: configurable(true, { label: '管理员', help: "管理员拥有有所有权限" }),
+        admin: configurable(true, {
+            label: '管理员',
+            help: "管理员拥有所有权限",
+            widget: 'checkbox',
+            checkLabel: "是"
+        }),
+        products: configurable(['电脑'], {
+            label: '产品',
+            widget: 'list',
+            multiple: true,
+            valueKey: 'label',     // 默认选择的是id
+            labelKey: 'label',     // 默认选择的是id
+            idKey: 'id',     // 默认选择的是id
+            items: [
+                { id: 1, label: "手机", price: 1000, icon: "phone" },
+                { id: 2, label: "电脑", price: 2000, icon: "laptop" },
+                { id: 3, label: "手表", price: 3000, icon: "watch" },
+                { id: 4, label: "耳机", price: 4000, icon: "headphones" },
+                { id: 5, label: "鼠标", price: 5000, icon: "mouse" },
+                { id: 6, label: "键盘", price: 6000, icon: "keyboard" },
+                { id: 7, label: "鼠标垫", price: 7000, icon: "mousepad" },
+                { id: 8, label: "U盘", price: 8000, icon: "usb" },
+                { id: 9, label: "硬盘", price: 9000, icon: "hdd" },
+                { id: 10, label: "内存", price: 10000, icon: "memory" },
+            ]
+        }),
         salary: configurable(3000, {
             label: '工资',
             widget: 'number',
-            icon: 'money',
+            icon: 'japanese-yen',
             actions: [
                 {
                     label: '清空',
@@ -163,7 +199,10 @@ const store = new AutoStore({
             select: ['程序员', '教师', '医生', '其他']
         }),
         ip: configurable('192.168.6.112', { label: '网络地址', widget: 'ipaddress' }),
-        enable: configurable(true, { label: '启用/关闭', widget: 'switch' }),
+        enable: configurable(true, {
+            label: '允许访问',
+            widget: 'switch'
+        }),
         depts: configurable(['产品部'], {
             label: '部门',
             widget: 'tree-select',
@@ -178,7 +217,7 @@ const store = new AutoStore({
         }),
         org: configurable(['工程部', '市场部'], {
             label: '组织架构',
-            widget: 'tree-dropdown-select',
+            widget: 'tree-dropdown',
             valueKey: "label",
             multiple: true,
             showAsPath: true,
@@ -187,7 +226,7 @@ const store = new AutoStore({
         adminDept: configurable(undefined, {
             label: '管理部门',
             placeholder: '选择管理部门',
-            widget: 'tree-dropdown-select',
+            widget: 'tree-dropdown',
             showAsPath: true,
             valueKey: "label",
             onlySelectLeaf: true,
@@ -359,6 +398,35 @@ class AutoFormDebuger extends LitElement {
             ele.grid = e.target.checked;
         }
     }
+    onChangeSize(e) {
+        const ele = this.getNextAutoForm();
+        if (ele) {
+            // @ts-ignore
+            ele.size = e.target.value;
+        }
+    }
+    getJson() {
+        return {
+            user: {
+                name: '张三',
+                age: 18,
+                admin: true,
+                certificate: 1,
+                email: '<EMAIL>',
+                color: '#ff0000',
+                qrcode: 'www.voerkai18n.com',
+                notes: '输入简历',
+                address: {
+                    city: '北京',
+                    street: '长安街'
+                },
+            },
+            orders: [
+                { id: 1, name: 'iphone12', price: 10000, count: 10000, date: '2021-01-01' },
+                { id: 2, name: 'iphone12', price: 10000, count: 10000, date: '2021-01-01' },
+            ]
+        }
+    }
     render() {
         return html`
             <div class="toolbar">
@@ -366,7 +434,12 @@ class AutoFormDebuger extends LitElement {
                     <sl-option value="top">上方</sl-option>
                     <sl-option value="left">左侧</sl-option>
                     <sl-option value="none">隐藏</sl-option>
-                </sl-select>    
+                </sl-select>   
+                <sl-select label="尺寸" style="width:100px;" value="medium" @sl-change=${this.onChangeSize.bind(this)}>
+                    <sl-option value="small">小</sl-option>
+                    <sl-option value="medium">中</sl-option>
+                    <sl-option value="large">大</sl-option>
+                </sl-select>   
                 <span>
                     <sl-checkbox @click=${this.onToggleDark.bind(this)}>暗色调</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleGridLine.bind(this)}>网格线</sl-checkbox>                    
