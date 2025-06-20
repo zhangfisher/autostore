@@ -24,6 +24,10 @@ type CreateReactiveObjectOptions = {
 
 
 function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue: any, oldValue: any, parentPath: string[]) {
+
+    //@ts-ignore
+    const behavior = this._updateValidateBehavior
+    if (behavior === 'none') return true
     const schemas = this.schemas
     const validator = schemas.getValidator(key as never) as SchemaValidator
     if (!validator) return true
@@ -31,7 +35,7 @@ function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue:
     const validate = validator.validate || this.options.onValidate
     if (typeof (validate) !== 'function') return true
 
-    const onFail = validator.onFail || 'throw'
+    const onFail = behavior !== undefined ? behavior : (validator.onFail || 'throw')
 
     let isValid: boolean = true
     let errorMessage: SchemaValidator['message'] | undefined = validator.message || 'validate error'

@@ -25,7 +25,6 @@
 import { CSSResult, LitElement, html } from 'lit'
 import { property, query, queryAssignedElements, state } from 'lit/decorators.js'
 import { AsyncComputedValue, createAsyncComptuedValue, getVal, isAsyncComputedValue, setVal, Watcher, SchemaOptions, StateOperate, SchemaWidgetAction } from 'autostore';
-import { classMap } from 'lit/directives/class-map.js';
 import { consume } from '@lit/context';
 import { AutoFormContext, context } from '../context';
 import styles from './styles'
@@ -169,7 +168,7 @@ export class AutoField<Options = unknown> extends LitElement {
             <sl-button class='action-widget' 
                 title=${ifDefined(action.tips)}
                 variant=${ifDefined(action.variant)}
-                size=${this.context.size}
+                size=${action.size || this.context.size} 
                 @click=${this._onClickAction.call(this, action)}>
                 ${when(action.icon, () => html`<sl-icon name=${action.icon!}></sl-icon>`)}
                 ${action.label}
@@ -323,6 +322,9 @@ export class AutoField<Options = unknown> extends LitElement {
             this._handleStateChange()
             this.path = this.schema!.path.join(".")
             this.name = this.schema!.name || this.path
+            if (this.path in ctx.store.schemas.errors) {
+                this.invalidMessage = ctx.store.schemas.errors[this.path]
+            }
             if (Array.isArray(this.schema!.actions)) {
                 this.beforeActions = this.schema!.actions.filter((action) => action.position === 'before')
                 this.afterActions = this.schema!.actions.filter((action) => action.position !== 'before')
@@ -334,7 +336,12 @@ export class AutoField<Options = unknown> extends LitElement {
         super.disconnectedCallback()
         this._subscribers.forEach((subscriber) => subscriber.off())
     }
-
+    getLabelPos() {
+        return this.field.labelPos?.value || this.context.labelPos
+    }
+    getHelpPos() {
+        return this.field.helpPos?.value || this.context.helpPos
+    }
     /**
      * 当输入框值改变时更新状态
      * @returns 
@@ -368,7 +375,6 @@ export class AutoField<Options = unknown> extends LitElement {
             disable: this.field.enable.value === false,
             required: this.field.required.value === true,
             hidden: this.field.visible.value === false
-
         })
         return html`           
             <div class="autofield">
@@ -378,9 +384,9 @@ export class AutoField<Options = unknown> extends LitElement {
                 ${this.renderLabel()}
                 <div class="value">
                     ${this.renderInput()}
-                    ${this.renderHelp()}
-                </div>            
-                ${this.renderError()} 
+                    ${this.renderHelp()}                    
+                    ${this.renderError()} 
+                </div>                            
             </div>
         `
     }

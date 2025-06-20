@@ -147,6 +147,7 @@ export type SchemaWidgetAction<State = Dict> = {
     position?: 'before' | 'after'
     type?: 'button' | 'dropdown' | 'image' | string
     url?: string
+    size?: 'small' | 'medium' | 'large'
     tips?: string
     variant?: 'primary' | 'neutral' | 'success' | 'danger' | 'warning' | 'default'
     onClick?: (value: any, ctx: {
@@ -173,13 +174,16 @@ export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
     label?: string | ComputedBuilder<string, State>
     labelPos?: string | ComputedBuilder<string, State>
     help?: string | ComputedBuilder<string, State>
+    helpPos?: 'default' | '' | ComputedBuilder<string, State>
     placeholder?: string | ComputedBuilder<string, State>
     group?: string | ComputedBuilder<string, State>
     advanced?: boolean | ComputedGetter<boolean, State>
     order?: number | ComputedGetter<number, State>
     width?: number | string | ComputedGetter<string, State>
+    height?: number | string | ComputedGetter<string, State>
     divider?: boolean | ComputedGetter<boolean, State>
     itemWidth?: number | string | ComputedGetter<string, State>
+    itemTemplate?: string | ComputedGetter<string, State>
     invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
     onFail?: 'pass' | 'throw' | 'ignore'
     tips?: string

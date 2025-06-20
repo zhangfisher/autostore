@@ -211,8 +211,20 @@ export type UpdateOptions = {
     batch?: boolean | string,
     /**
      * 执行更新操作时，静默，不会触发任何事件
+     * 
      */
     silent?: boolean,
+    /**
+     * 
+     * 更新时执行校验的模式
+     * - none    不进行校验，即不执行校验函数
+     * - pass    校验失败时放行，即进行更新
+     * - ignore  校验失败时忽略更新操作，不进行更新
+     * - throw   校验失败时抛出异常 (默认)
+     * 
+     * 
+     */
+    validate?: 'none' | 'pass' | 'throw' | 'ignore'
     /**
      * 执行读取操作时，不会触发GET事件
      * 即偷听

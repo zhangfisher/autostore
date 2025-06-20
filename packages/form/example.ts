@@ -58,7 +58,7 @@ const store = new AutoStore({
     price: 100,
     count: computed(scope => scope.price * 2),
     user: {
-        name: configurable('Fisher', (value) => {
+        name: configurable('Fish', (value) => {
             return value.length > 5;
         }, {
             label: '姓名',
@@ -118,13 +118,18 @@ const store = new AutoStore({
             widget: 'checkbox',
             checkLabel: "是"
         }),
-        products: configurable(['电脑'], {
+        products: configurable(['电脑'], (value) => {
+            return value.length > 2
+        }, {
             label: '产品',
             widget: 'list',
             multiple: true,
-            valueKey: 'label',     // 默认选择的是id
-            labelKey: 'label',     // 默认选择的是id
             idKey: 'id',     // 默认选择的是id
+            valueKey: 'label',     // 默认选择的是id
+            labelKey: 'label',     // 用于显示
+            invalidMessage: '至少选择两个产品',
+            itemTemplate: "<span>{label}</span><span>{price}</span>",
+            height: '150px',
             items: [
                 { id: 1, label: "手机", price: 1000, icon: "phone" },
                 { id: 2, label: "电脑", price: 2000, icon: "laptop" },
@@ -136,6 +141,15 @@ const store = new AutoStore({
                 { id: 8, label: "U盘", price: 8000, icon: "usb" },
                 { id: 9, label: "硬盘", price: 9000, icon: "hdd" },
                 { id: 10, label: "内存", price: 10000, icon: "memory" },
+                { id: 11, label: "硬盘盒", price: 11000, icon: "hdd-box" },
+                { id: 12, label: "固态硬盘", price: 12000, icon: "ssd" },
+                { id: 13, label: "机械硬盘", price: 13000, icon: "hdd" },
+                { id: 14, label: "显卡", price: 14000, icon: "gpu" },
+                { id: 15, label: "固态硬盘", price: 15000, icon: "ssd" },
+                { id: 16, label: "机械硬盘", price: 16000, icon: "hdd" },
+                { id: 17, label: "显卡", price: 17000, icon: "gpu" },
+                { id: 18, label: "显卡", price: 18000, icon: "gpu" },
+                { id: 19, label: "显卡", price: 19000, icon: "gpu" },
             ]
         }),
         salary: configurable(3000, {

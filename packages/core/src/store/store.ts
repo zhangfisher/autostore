@@ -84,13 +84,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
     public computedObjects: ComputedObjects<State>
     public watchObjects: WatchObjects<State>
-    protected _operates = new EventEmitter<StateChangeEvents>()         // 依赖变更事件触发器
+    protected _operates = new EventEmitter<StateChangeEvents>()          // 依赖变更事件触发器
     private _options: Required<AutoStoreOptions<State>>
-    private _silenting = false                                          // 是否静默更新，不触发事件
-    private _batching = false                                           // 是否批量更新中
+    private _silenting = false                                           // 是否静默更新，不触发事件
+    private _batching = false                                            // 是否批量更新中
     private _batchOperates: StateOperate[] = []                          // 暂存批量操作
-    private _updateFlags: number = 0                                      // 额外的更新标识
+    private _updateFlags: number = 0                                     // 额外的更新标识
     private _peeping: boolean = false
+    private _updateValidateBehavior: UpdateOptions['validate']           // 更新时的校验行为
     private _updatedState?: Dict                                         // 脏状态数据，当启用resetable时用来保存上一次的状态数据 
     private _updatedWatcher: Watcher | undefined                         // 脏状态侦听器
     private _schemas: SchemaManager<State> | undefined
@@ -490,9 +491,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      *  })
      */
     update(fn: (state: ComputedState<State>) => void, options?: UpdateOptions) {
-        const { batch = false, reply = true, silent = false, peep = false, flags = 0 } = Object.assign({}, options)
+        const { batch = false, reply = true, silent = false, peep = false, flags = 0, validate } = Object.assign({}, options)
         if (typeof (fn) === 'function') {
             this._updateFlags = flags
+            this._updateValidateBehavior = validate
             if (silent) this._silenting = true
             if (batch) {
                 this._batching = true
@@ -507,6 +509,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                 this._batching = false
                 this._peeping = false
                 this._updateFlags = 0
+                this._updateValidateBehavior = validate
                 this.replyBatchOperates(reply, batch)
             }
         } else {

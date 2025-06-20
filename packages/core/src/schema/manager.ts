@@ -1,7 +1,7 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
-import { ComputedState, Dict, } from '../types';
-import { forEachObject, setVal } from "../utils";
+import { Dict, } from '../types';
+import { setVal } from "../utils";
 import { getVal } from "../utils/getVal";
 import { SchemaOptions, SchemaValidator, ComputedSchemaState, SchemaDescriptor } from "./types";
 
@@ -42,8 +42,10 @@ export class SchemaManager<
             }, descriptor.validator)
         }
         // 
-        this.shadow.peep((state) => {
+        this.shadow.update((state) => {
             setVal(state, pathKey, descriptor.value)
+        }, {
+            validate: 'pass'
         })
     }
     /**
@@ -56,7 +58,6 @@ export class SchemaManager<
         this.store = this.shadow.shadow(this._descriptors) as unknown as SchemaStore
     }
     get<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(path: T): SchemaStore['state'][T] | undefined {
-        if (!this.store) return undefined
         return getVal(this.store.state, this._getKey(path as any))
     }
     has(path: keyof SchemaStore['state']): boolean {
@@ -71,13 +72,11 @@ export class SchemaManager<
     getValidator<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(
         path: T
     ): SchemaValidator<SchemaStore['state'][T]> | undefined {
-        if (!this.store) return undefined
         const key = this._getKey(path)
         return this.validators[key]
     }
 
     remove(path: keyof SchemaStore['state']) {
-        if (!this.store) return undefined
         const key = this._getKey(path)
         delete (this.store.state as any)[key]
     }

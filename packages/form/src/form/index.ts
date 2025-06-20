@@ -34,6 +34,7 @@ import { LitElement, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
 import { context, AutoFormContext } from '../context'
+import '../components/box'
 import '../widgets'
 import { provide } from '@lit/context';
 import { registerIconLibrary } from '@shoelace-style/shoelace';
