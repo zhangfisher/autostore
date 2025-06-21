@@ -27,9 +27,10 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             & .memo{
                 color: var(--sl-color-gray-500);
                 font-size: 0.8rem;
-                max-height: 2.2rem;
+                max-height: 2.2rem; 
                 overflow: hidden;
                 display: -webkit-box;
+                margin-top:2px;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
             }            
@@ -39,15 +40,15 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             margin-right: 1em;            
         }
         .card{      
-            padding: 0.5rem;
-            box-sizing: border-box;            
+            padding: calc(var(--auto-spacing) * 0.5);
+            box-sizing: border-box;                                    
             &>.body{
                 display: flex;
                 flex-direction: row;
-                border: 1px solid var(--sl-input-border-color);
-                border-radius: var(--sl-border-radius-medium);
-                box-shadow: var(--sl-shadow-medium);
-                padding: 1rem;
+                border: var(--auto-border);
+                border-radius: var(--auto-border-radius);
+                box-shadow: var(--auto-shadow);
+                padding: var(--auto-spacing);
                 box-sizing: border-box; 
                 position: relative;                          
                 &:hover{
@@ -150,6 +151,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                 class="value"
                 name=${this.name} 
                 value="${this.value}"            
+                size="${this.context.size}"            
                 @sl-change=${this.onRadioChange.bind(this)}
             >
             ${items.map((item: any) => {

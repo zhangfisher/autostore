@@ -44,6 +44,7 @@ import { HostClasses } from '@/controllers/hostClasss';
 import '../field'
 import styles from './styles'
 import { presetIcons } from './icons';
+import '@/styles/base.css'
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
@@ -127,7 +128,20 @@ export class AutoForm extends LitElement {
     @property({ type: Boolean, reflect: true })
     dark: boolean = false
 
+    /**
+     * 只读模式
+     */
+    @property({ type: Boolean, reflect: true })
+    readonly: boolean = false
 
+    /**
+     * 
+     * 布局
+     * - auto：使用inline-block布局,或者叫流式布局
+     * - col: 使用flex:col布局
+     * - row: 使用flex:row布局
+     * 
+     */
     @property({ type: String })
     layout: 'auto' | 'row' | 'col' = 'auto'
 
@@ -227,12 +241,11 @@ export class AutoForm extends LitElement {
             'left-label': this.labelPos === 'left',
             'top-label': this.labelPos === 'top',
         })
-        return html`
-            
+        return html`            
             <div class="actions header" > 
             </div>
             <div class="fields">
-                    ${this._renderFields()}
+                ${this._renderFields()}
             </div>
             <div class="actions footer" >
 

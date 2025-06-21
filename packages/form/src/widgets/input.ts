@@ -13,28 +13,27 @@ export class AutoFieldInput<Options = unknown> extends AutoField<AutoFieldInputO
     static styles = [
         AutoField.styles,
         css`
-        .actions{
-            margin-right:0px;
-            display:flex;
-            flex-direction:row;
-            align-items:center; 
-        }
-        .actions > sl-button{
-            margin:0px;            
-        }
-        .actions.after > sl-button::part(base){
-            border-right:none;
-            border-radius: 0px;
+            .actions{
+                margin-right:0px;
+                display:flex;
+                flex-direction:row;
+                align-items:center; 
+            }
+            .actions > sl-button{
+                margin:0px;            
+            }
+            .actions.after > sl-button::part(base){
+                border-right:none;
+                border-radius: 0px;
 
-        }
-        .actions.before{
-            margin-left: 0px;
-        }
-        .actions.before > sl-button::part(base){
-            border-left:none;
-            border-radius: 0px;
-        }
-
+            }
+            .actions.before{
+                margin-left: 0px;
+            }
+            .actions.before > sl-button::part(base){
+                border-left:none;
+                border-radius: 0px;
+            }
     `] as any
 
     getInputType(): any {

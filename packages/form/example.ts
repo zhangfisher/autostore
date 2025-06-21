@@ -93,6 +93,13 @@ const store = new AutoStore({
                 }
             ]
         }),
+        admin: configurable(false, {
+            label: '管理员',
+            help: "管理员拥有所有权限",
+            widget: 'checkbox',
+            checkLabel: "是",
+            // switchValues: ['是', '否']
+        }),
         layout: configurable('卡片集', {
             // divider: true,
             label: '布局',
@@ -112,12 +119,6 @@ const store = new AutoStore({
                 { label: '自由板', memo: '可拖拽定制，随心布局' }
             ]
         }),
-        admin: configurable(true, {
-            label: '管理员',
-            help: "管理员拥有所有权限",
-            widget: 'checkbox',
-            checkLabel: "是"
-        }),
         products: configurable(['电脑'], (value) => {
             return value.length > 2
         }, {
@@ -130,6 +131,7 @@ const store = new AutoStore({
             invalidMessage: '至少选择两个产品',
             itemTemplate: "<span>{label}</span><span>{price}</span>",
             height: '150px',
+            showResults: true,// 是否显示结果框
             items: [
                 { id: 1, label: "手机", price: 1000, icon: "phone" },
                 { id: 2, label: "电脑", price: 2000, icon: "laptop" },
@@ -213,7 +215,7 @@ const store = new AutoStore({
             select: ['程序员', '教师', '医生', '其他']
         }),
         ip: configurable('192.168.6.112', { label: '网络地址', widget: 'ipaddress' }),
-        enable: configurable(true, {
+        access: configurable(false, {
             label: '允许访问',
             widget: 'switch'
         }),
@@ -412,11 +414,20 @@ class AutoFormDebuger extends LitElement {
             ele.grid = e.target.checked;
         }
     }
+    onToggleReadonly(e) {
+        const ele = this.getNextAutoForm();
+        if (ele) {
+            if (e.target.checked) {
+                ele.setAttribute('readonly', "");
+            } else {
+                ele.removeAttribute('readonly');
+            }
+        }
+    }
     onChangeSize(e) {
         const ele = this.getNextAutoForm();
         if (ele) {
-            // @ts-ignore
-            ele.size = e.target.value;
+            ele.setAttribute('size', e.target.value);
         }
     }
     getJson() {
@@ -457,6 +468,7 @@ class AutoFormDebuger extends LitElement {
                 <span>
                     <sl-checkbox @click=${this.onToggleDark.bind(this)}>暗色调</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleGridLine.bind(this)}>网格线</sl-checkbox>                    
+                    <sl-checkbox @click=${this.onToggleReadonly.bind(this)}>只读</sl-checkbox>                    
                 </span>
                 
                 <sl-button>提交</sl-button>

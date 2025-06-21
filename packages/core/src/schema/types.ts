@@ -182,6 +182,7 @@ export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
     width?: number | string | ComputedGetter<string, State>
     height?: number | string | ComputedGetter<string, State>
     divider?: boolean | ComputedGetter<boolean, State>
+    switchValues?: any[] | ComputedGetter<any[], State>
     itemWidth?: number | string | ComputedGetter<string, State>
     itemTemplate?: string | ComputedGetter<string, State>
     invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);

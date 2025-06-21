@@ -3,6 +3,8 @@ import { AutoField } from "@/field"
 import { css, html } from "lit"
 import '@shoelace-style/shoelace/dist/components/menu/menu.js';
 import '@shoelace-style/shoelace/dist/components/menu-item/menu-item.js';
+import '@shoelace-style/shoelace/dist/components/split-panel/split-panel.js';
+import '@shoelace-style/shoelace/dist/components/tag/tag.js';
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
@@ -55,6 +57,34 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
                     flex-grow: 1;
                 }
             }
+            .results{                
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                justify-content: stretch;
+                padding: 4px;
+                box-sizing: border-box;
+                overflow-x: hidden;
+                & > .item{
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    border-radius: 4px;
+                    padding: 4px;
+                    border: var(--auto-border);
+                    background-color: var(--sl-color-gray-50);
+                    margin-bottom: 4px; 
+                    &:hover{
+                        background-color: var(--sl-color-gray-100);
+                    }
+                    &>:first-child{
+                        flex-grow: 1;                        
+                        white-space: nowrap; 
+                        overflow: hidden;    
+                        text-overflow: ellipsis;  
+                    }
+                }
+            } 
             
         `
     ] as any
@@ -111,10 +141,12 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     _removeSelectItem(item: any) {
         for (let i = this.selection.length - 1; i >= 0; i--) {
             const value = this.selection[i]
-            if (value === item[this.valueKey]) {
+            if (value === item) {
                 this.selection.splice(i, 1)
             }
         }
+        this.onFieldChange()
+        this.requestUpdate()
     }
     _onSelectItem(e: MouseEvent) {
         const item = (e.detail as any).item as any
@@ -138,29 +170,46 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
             <div class="header">
                 ${this.renderBeforeActions()}
             </div>
-            <sl-menu class="scrollbar" style=${styleMap({
-            maxHeight: this.field.height?.value
+            <!-- 渲染列表项 -->
+            ${this._renderWithSplitPanel(html`
+                <sl-menu slot="start" class="mark-err" style=${styleMap({
+            maxHeight: this.field.height?.value,
         })}
-                @sl-select=${this._onSelectItem.bind(this)}>
-                ${repeat(this.items, (item: any) => {
+                    @sl-select=${this._onSelectItem.bind(this)}>
+                    ${repeat(this.items, (item: any) => {
             const isSelected = values.includes((item as any)[this.valueKey])
             return html`<sl-menu-item 
-                type="checkbox"                
-                data-id=${String(item[this.idKey])} 
-                .checked=${isSelected}
-            >                
-                    ${this._getItemLabel(item, itemTemplate)}
-               </sl-menu-item>`
+                    type="checkbox"                
+                    data-id=${String(item[this.idKey])} 
+                    .checked=${isSelected}
+                >                
+                <auto-box no-border no-padding flex="row" grow="first" style="width:100%;">
+                        ${this._getItemLabel(item, itemTemplate)}
+                        </auto-box>
+                </sl-menu-item>`
         })}
-            </sl-menu>            
+                </sl-menu>                            
+                `)} 
             <div class="footer">
-                ${this.renderAfterActions()}            
+
+            ${this.renderAfterActions()}            
                 <span class="detail">
                 ${this.selection.length}/${this.items.length}
                 </span>
             </div>
         </div>
         `
+    }
+    _renderWithSplitPanel(list: any) {
+        //@ts-ignore
+        if (this.field?.showResults.value) {
+            return html`<sl-split-panel position="60">
+                ${list}
+                ${this.renderResults()}
+            </sl-split-panel>`
+        } else {
+            return list
+        }
     }
     _getItemLabel(item: ListItem, template: string | undefined) {
         if (template) {
@@ -183,7 +232,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
             this.selection = []
         }
         this.onFieldChange()
-        this.menu.update()
+        this.requestUpdate()
     }
     setPresetActions() {
         const presetActions = [
@@ -238,14 +287,23 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
 
     }
     renderResults() {
-        return html``
+        return html`<auto-box slot="end" 
+            class="results mark-err" 
+            no-padding 
+            style="${styleMap({
+            maxHeight: this.field.height?.value
+        })}">
+            ${repeat(this.selection, (item: any) => {
+            return html`<div class="item" >
+                    <span>${item}</span>
+                    <sl-icon-button name="x" @click=${() => this._removeSelectItem(item)}></sl-icon-button>
+                </div>`
+        })}
+        </auto-box>`
     }
     renderInput() {
         return html`<div class="list">   
-            <auto-box size="large" .radius=${false}>
-            ${this.renderList()}
-            ${this.renderResults()}            
-            </auto-box>
+                ${this.renderList()}       
         </div>`
     }
 

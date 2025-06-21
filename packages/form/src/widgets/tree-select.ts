@@ -188,6 +188,7 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
             slot="value" 
             name="${this.name}"
             data-path = ${this.path}   
+            size=${this.context.size}
             selection = "${this.field.onlySelectLeaf.value ? 'leaf' : (this.field.multiple.value ? 'multiple' : 'single')}"
             @sl-selection-change=${this.onSelectionChange.bind(this)}
         >${this._renderNodes(this.nodes)}</sl-tree> 

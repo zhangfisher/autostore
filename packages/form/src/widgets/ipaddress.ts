@@ -8,31 +8,37 @@ export class AutoFieldIpAddress extends AutoField {
     static styles = [
         AutoField.styles,
         css` 
+        
             .value{
-                display: flex;
+                /* display: flex;
                 flex-direction: row;
                 border: 1px solid var(--sl-color-gray-500);
                 border-radius: var(--sl-border-radius-medium);
                 background-color: var(--sl-input-background-color);
                 border: solid var(--sl-input-border-width) var(--sl-input-border-color);
-                width: 15rem;
+                width: 15rem; */
             }
-            .value > span.dot{
+            span.dot{
                 width:1em;                     
                 text-align: center;   
                 font-weight: bold;
-                margin-top: 0.8rem;
-                
+                margin-top: 0.8rem;                
             }
             sl-input::part(base){
                 border: none;
+            }
+            auto-box{
+                width:15rem;
+                justify-content: space-around;
             }
             sl-input{
                 width: 3rem;
             }
             sl-input::part(input){
                 text-align: center; 
-                padding: 0px 4px ;
+                padding: 0px 2px ;
+                padding-inline: 0px;
+                letter-spacing: var(--sl-letter-spacing-denser);
             }
     `] as any
     _getIpBits(): [number, number, number, number] {
@@ -108,13 +114,14 @@ export class AutoFieldIpAddress extends AutoField {
     renderInput() {
         const schema = this.schema!
         return html`
+            <auto-box flex="row" size="small" no-padding>
                 ${this._getIpBits().map((bit, index) => html`
                     <sl-input 
-                        slot="value" 
                         value="${bit}" 
                         name=${this.name} 
                         data-path = ${schema.path.join('.')}
                         defaultValue='0' 
+                        size=${this.context.size}
                         maxLength="3"
                         minLength="1"
                         max="255"
@@ -125,6 +132,7 @@ export class AutoFieldIpAddress extends AutoField {
                     ></sl-input>
                     ${index < 3 ? html`<span class="dot">.</span>` : ''}                    
                 `)} 
+            </auto-box>
         `
     }
 }

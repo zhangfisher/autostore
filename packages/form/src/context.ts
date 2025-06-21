@@ -7,6 +7,7 @@ export type AutoFormContext = {
     form: AutoForm
     labelPos?: 'none' | 'top' | 'left'
     labelWidth: string
+    readonly: boolean
     helpPos?: 'default' | 'value' | 'label'
     grid: boolean                       // 显示网格线
     dark: boolean

@@ -25,7 +25,7 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect {
                 flex-direction: row;
                 align-items: center;
                 border: solid var(--sl-input-border-width) var(--sl-input-border-color);
-                font-size: var(--sl-input-font-size-medium);
+                font-size: var(--auto-font-size);
                 min-height: var(--sl-input-height-medium);
                 border-radius: var(--sl-input-border-radius-medium);    
                 letter-spacing: var(--sl-input-letter-spacing);
@@ -130,7 +130,8 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect {
     }
     renderInput() {
         return html`             
-        <sl-dropdown 
+        <sl-dropdown          
+            size="${this.context.size}"    
             @sl-show="${this._onShowPopup.bind(this)}" 
             @sl-after-hide="${this._onHidePopup.bind(this)}" 
             sync="width"

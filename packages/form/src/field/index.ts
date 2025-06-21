@@ -98,7 +98,7 @@ export class AutoField<Options = unknown> extends LitElement {
 
     _subscribers: Watcher[] = []
 
-    @query('.value sl-input,sl-radio-group,.sl-checkbox,sl-switch,sl-rande,sl-textarea,sl-rating,sl-select,sl-color-picker')
+    @query('.value sl-input,sl-radio-group,sl-checkbox,sl-switch,sl-rande,sl-textarea,sl-rating,sl-select,sl-color-picker')
     input?: HTMLInputElement
 
     @consume({ context })
@@ -249,8 +249,7 @@ export class AutoField<Options = unknown> extends LitElement {
                 style.width = ctx.labelWidth
             }
             return html`<div class="label" style="${ifDefined(styleMap(style))}">
-            <span class="title">${this.getLabel()}${this._renderRequiredOption()}</span>
-            
+            <span class="title">${this.getLabel()}${this._renderRequiredOption()}</span>            
         </div>`
         }
     }

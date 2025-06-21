@@ -10,15 +10,16 @@ export default css`
             flex-direction:column;
             background-color: var(--sl-color-neutral-0);        
             width:100%;        
-            padding:0.5rem;
+            padding: calc(var(--auto-spacing) * 0.5);
             box-sizing: border-box;
             padding-right: 0px;
             &>.label{
-                color: var(--sl-color-neutral-700);           
+                display: flex;   
+                color: var(--auto-text-color);   
                 padding: 4px; 
-                font-weight: 600;
-                display: flex;
+                font-weight: 600;                             
                 &>.title{
+                    font-size: var(--auto-font-size);
                     flex-grow: 1;
                     &::after{
                         content: '：';                    
@@ -29,12 +30,16 @@ export default css`
             & .help{
                 display: flex;
                 align-items: center;
-                font-size: 0.9rem;
-                color: var(--sl-color-neutral-400);
-                padding:  2px 0px;
+                font-size: calc(var(--auto-font-size) * 0.9);
+                color: var(--auto-gray-color);
+                padding:  calc(var(--auto-spacing) * 0.3) 0px;
             }    
         }
         
+        & > .autofield:hover{
+            background-color: var(--sl-color-gray-50);
+        }
+
         sl-input::part(base){
             outline: none!important;
             box-shadow: none!important;
@@ -61,26 +66,32 @@ export default css`
     }
     /* 错误样式 */
     :host(.error){
-        color:red; 
-        & sl-input::part(base){
-            outline: none!important;
-            box-shadow: none!important;
-            border-color: red;
-            color:red;
+        & > .autofield{
+            color:red; 
+            & sl-input::part(base){
+                outline: none!important;
+                box-shadow: none!important;
+                border-color: red;
+                color:red;
+            }
+            & sl-input::part(input){
+                color:red;
+            }
+            & .error{
+                display: flex;
+                align-items: center;
+                padding: 4px;                
+                font-size: 0.8em;
+                color:red;
+            }
+            & > .label > .title {
+                color:red;
+            }
+            & .mark-err{
+                border-color: red;
+            }
         }
-        & sl-input::part(input){
-            color:red;
-        }
-        & .error{
-            display: flex;
-            align-items: center;
-            padding: 4px;                
-            font-size: 0.8em;
-            color:red;
-        }
-        & > .label > .title {
-            color:red;
-        }
+        
     } 
     :host(.left-label){
         & > .autofield{
@@ -93,9 +104,6 @@ export default css`
             }
         }
     }
-
-
-
     
     /* 禁用样式 */
     :host(.disable){
@@ -124,33 +132,9 @@ export default css`
     /* 网格线 */
     :host(.grid){ 
         & > .autofield{
-            padding:1rem;
+            padding: var(--auto-spacing);
         }
-    }
-    /* 小尺寸 */
-    :host(.small){
-        & > .autofield{
-            &>.label{            
-                &>.title{
-                    font-size: var(--sl-font-size-small);
-                }
-            }             
-            & .help{
-                font-size: var(--sl-font-size-small);     
-            }   
-        }
-    }
-    /* 大尺寸 */
-    :host(.large){
-        & > .autofield{
-            &>.label{            
-                &>.title{
-                    font-size: var(--sl-font-size-large);
-                }            
-            }   
-            & .help{
-                    font-size: var(--sl-font-size-large);     
-            }
-        }
-    }
+    } 
+
+   
 `

@@ -44,5 +44,9 @@ export default css`
             }
         }
     } 
+    /** 只读表单 */
+    :host([readonly]){
+        
+    }
     
 `
