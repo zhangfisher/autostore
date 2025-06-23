@@ -9,7 +9,8 @@ import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 export class AutoFieldCheckbox extends AutoField {
     switchValues: any[] = []
     renderInput() {
-        return html`              
+        return html`
+        
         <sl-checkbox 
             slot="value" 
             name="${this.name}"

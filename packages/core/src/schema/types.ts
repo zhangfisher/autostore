@@ -113,7 +113,7 @@ export interface SchemaWidgetOptions<State = Dict> {
     min?: number | ComputedBuilder<number, State>
     step?: number | ComputedBuilder<number, State>
     tooltip?: 'top' | 'bottom'
-    format?: ('hex' | 'rgb' | 'hsl' | 'hsv') | ComputedBuilder<('hex' | 'rgb' | 'hsl' | 'hsv'), State>
+    format?: string | ComputedBuilder<string, State>
     inline?: boolean | ComputedBuilder<boolean, State>
     opacity?: boolean | ComputedBuilder<boolean, State>
     uppercase?: boolean | ComputedBuilder<boolean, State>

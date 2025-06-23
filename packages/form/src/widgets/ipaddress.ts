@@ -50,7 +50,7 @@ export class AutoFieldIpAddress extends AutoField {
             parseInt(bits![3] || "0")
         ]
     }
-    _onIpChange(index: number, e: Event) {
+    _onIpChange(_: number, e: Event) {
         this.onFieldChange()
         this._isLastInput(e)
     }

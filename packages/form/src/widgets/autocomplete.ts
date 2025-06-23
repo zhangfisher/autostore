@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { customElement, state, property } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import { AutoField } from "@/field";
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';

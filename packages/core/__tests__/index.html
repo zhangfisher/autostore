@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <script src="./index.global.js"></script>
+    </head>
+
+    <body>
+        <div style="padding: 2em; border: 1px solid #ccc; margin: 2em; position: relative"></div>
+        <script>
+            // 现在可以通过exports对象访问AutoStore
+            const store = new AutoStore.AutoStore({
+                order: {
+                    price: 100,
+                    count: 10,
+                    total: (order) => order.price * order.count,
+                },
+            });
+            console.log('Total: ', store.state.order.total);
+        </script>
+    </body>
+</html>

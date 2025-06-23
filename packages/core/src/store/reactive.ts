@@ -4,7 +4,7 @@ import { StateOperateType } from './types';
 import { CyleDependError, ValidateError } from '../errors';
 import { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
-import { isFunction, isValueSchema } from '../utils';
+import { isFunction } from '../utils';
 import type { SchemaValidator } from '../schema/types';
 
 
@@ -23,7 +23,7 @@ type CreateReactiveObjectOptions = {
 };
 
 
-function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue: any, oldValue: any, parentPath: string[]) {
+function isValidPass(this: AutoStore<any>, _: any, key: string, newValue: any, oldValue: any, parentPath: string[]) {
 
     //@ts-ignore
     const behavior = this._updateValidateBehavior
@@ -61,7 +61,7 @@ function isValidPass(this: AutoStore<any>, proxyObj: any, key: string, newValue:
                 if (errorMessage.includes("{") && errorMessage.includes("}")) {
                     const schemaOptions = schemas.get(key as never)
                     if (schemaOptions) {
-                        errorMessage = errorMessage.replace(/\{([^}]+)\}/g, (match, varName) => {
+                        errorMessage = errorMessage.replace(/\{([^}]+)\}/g, (_, varName) => {
                             return schemaOptions[varName]
                         })
                     }

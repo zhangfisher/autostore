@@ -202,7 +202,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     }
     _renderWithSplitPanel(list: any) {
         //@ts-ignore
-        if (this.field?.showResults.value) {
+        if (this.field?.showResults && this.field?.showResults.value) {
             return html`<sl-split-panel position="60">
                 ${list}
                 ${this.renderResults()}
@@ -213,7 +213,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     }
     _getItemLabel(item: ListItem, template: string | undefined) {
         if (template) {
-            return html`${unsafeHTML(template.replace(/\{(.+?)\}/g, (match: string, key: string) => {
+            return html`${unsafeHTML(template.replace(/\{(.+?)\}/g, (_: string, key: string) => {
                 return item[key]
             }))}`
         } else {

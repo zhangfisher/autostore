@@ -6,12 +6,15 @@ auto-form[size=small]{
     --auto-spacing: var(--sl-spacing-small);                    /* 用于内边距和外边距 */
     --auto-border-radius: var(--sl-border-radius-small);
     --auto-shadow: var(--sl-shadow-small);    
+    --auto-line-height: calc(var(--sl-input-height-small) - var(--sl-input-border-width) * 4);    
+
 }
 
 auto-form,auto-form[size=medium]{
     --auto-text-color: var(--sl-color-gray-700);    
     --auto-gray-color: var(--sl-color-gray-500);    
     --auto-bgcolor: var(--sl-color-neutral-0);    
+    --auto-line-height: calc(var(--sl-input-height-medium) - var(--sl-input-border-width) * 4);    
     --auto-font-size: var(--sl-font-size-medium);    
     --auto-spacing: var(--sl-spacing-medium);                    /* 用于内边距和外边距 */
     --auto-border-color: var(--sl-color-neutral-300);
@@ -32,6 +35,7 @@ auto-form[size=large]{
     --auto-spacing: var(--sl-spacing-large);                    /* 用于内边距和外边距 */
     --auto-border-radius: var(--sl-border-radius-large);
     --auto-shadow: var(--sl-shadow-large);    
+    --auto-line-height: calc(var(--sl-input-height-large) - var(--sl-input-border-width) * 4);    
 } 
 
 auto-form.error{

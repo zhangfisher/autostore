@@ -61,7 +61,7 @@ import { SyncComputedObject } from "../computed/sync";
 import { ComputedContext, ComputedDescriptor, } from "../computed/types";
 import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { StoreEvents } from "../events/types";
-import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPathEq, isValueSchema, setVal } from "../utils";
+import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPathEq, setVal } from "../utils";
 import { BATCH_UPDATE_EVENT } from '../consts';
 import { createReactiveObject } from "./reactive";
 import { AsyncComputedObject } from "../computed/async";
@@ -433,7 +433,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.update(fn, { silent: true })
     }
     batchUpdate(fn: (state: ComputedState<State>) => void) {
-        this.update(fn, { batch: true })
+        this.update(fn, { batch: true, validate: 'pass' })
     }
     /**
      * 更新状态值

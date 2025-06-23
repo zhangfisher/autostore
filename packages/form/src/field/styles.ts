@@ -21,6 +21,7 @@ export default css`
                 &>.title{
                     font-size: var(--auto-font-size);
                     flex-grow: 1;
+                    line-height: var(--auto-line-height);
                     &::after{
                         content: '：';                    
                     }
@@ -135,6 +136,15 @@ export default css`
             padding: var(--auto-spacing);
         }
     } 
+    :host(.viewonly){
+        & > .autofield{
+            &>.value{
+                display:flex;
+                align-items: center;
+                justify-content: end; 
+            }  
+        }
+    }
 
    
 `

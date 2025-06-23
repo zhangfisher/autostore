@@ -19,6 +19,14 @@ export class AutoFieldColorPicker extends AutoField {
         sl-color-picker::part(trigger){
             border-radius: 4px;
         }
+        .color{
+            border: 2px solid white;            
+            border-radius: 4px;
+            width: 1rem;
+            height: 1rem;
+            outline: 1px solid #aaa; 
+            margin-right: 0.5rem;
+        }
     `] as any
     renderInput() {
         return html`
@@ -39,6 +47,9 @@ export class AutoFieldColorPicker extends AutoField {
                 @sl-change=${this.onFieldChange.bind(this)}
             ></sl-color-picker>
         `
+    }
+    renderView() {
+        return html`<span class="color" style="background-color:${this.value};"></span>${this.value}`
     }
 }
 

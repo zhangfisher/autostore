@@ -21,6 +21,15 @@ export class AutoFieldRating extends AutoField {
         > </sl-rating> 
         `
     }
+    renderView() {
+        return html`<sl-rating 
+            slot="value" 
+            name="${this.name}"
+            data-path = ${this.schema!.path}
+            value=${this.value}  
+            readonly
+        > </sl-rating> `
+    }
 }
 
 

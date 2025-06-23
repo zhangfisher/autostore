@@ -147,6 +147,7 @@ export class ObserverObject<
      * 
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    //@ts-ignore
     protected onInitOptions(options: Required<Options>) {
 
     }
@@ -267,6 +268,7 @@ export class ObserverObject<
      * 供子类重写 
      * 
      *///  eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // @ts-ignore
     run(...args: any[]): any {
 
     }

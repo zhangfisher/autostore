@@ -44,7 +44,7 @@ export class ComputedObject<Value = any> extends ObserverObject<Value, ComputedO
     * @description
     * 
     *///eslint-disable-next-line @typescript-eslint/no-unused-vars
-    run(options?: RuntimeComputedOptions) {
+    run(_?: RuntimeComputedOptions) {
         throw new Error("Method not implemented.");
     }
 

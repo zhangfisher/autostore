@@ -8,10 +8,13 @@ export type AutoFormContext = {
     labelPos?: 'none' | 'top' | 'left'
     labelWidth: string
     readonly: boolean
+    viewonly: boolean
     helpPos?: 'default' | 'value' | 'label'
     grid: boolean                       // 显示网格线
     dark: boolean
     size: 'small' | 'medium' | 'large'
+    dirty: boolean
+    showInitialError: boolean
 }
 
 export const context = createContext<AutoFormContext>('autoform');

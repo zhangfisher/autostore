@@ -60,6 +60,19 @@ export class AutoForm extends LitElement {
 
     schemas: ComputedSchemaState<SchemaOptions>[] = []
 
+    /**
+     * 是不显示初始错误
+     * 
+     * 比如
+     * field.username 要求长度大于>3
+     * 但是在初始化时，而默认会执行一次校验，但是由于此时没有输入任何值
+     * 所以会显示错误
+     * 此开关可以在让字段在初始化时不显示错误信息
+     * 
+     * 
+     */
+    @property({ type: Boolean, reflect: true })
+    showInitialError: boolean = false
 
     @property({ type: String })
     group?: string
@@ -97,22 +110,6 @@ export class AutoForm extends LitElement {
     size: 'small' | 'medium' | 'large' = 'medium'
 
     /**
-     * 
-     * 显示模式
-     * 
-     * - default : 默认编辑修改模式
-     * - readonly: 只读模式
-     * - view: 视图模式，只显示数据，不渲染输入组件，使用renderView
-     * 
-     *  toView
-     *  toInput
-     *  toState
-     * 
-     */
-    @property({ type: String, reflect: true })
-    mode: 'default' | 'view' | 'readonly' = 'default'
-
-    /**
      * 标签位置
      * 取值：
      * - none: 不显示标签
@@ -134,6 +131,11 @@ export class AutoForm extends LitElement {
     @property({ type: Boolean, reflect: true })
     readonly: boolean = false
 
+    /**
+     * 只读模式
+     */
+    @property({ type: Boolean, reflect: true })
+    viewonly: boolean = false
     /**
      * 
      * 布局
@@ -204,9 +206,25 @@ export class AutoForm extends LitElement {
             labelPos: this.labelPos,
             labelWidth: this.labelWidth,
             grid: this.grid,
-            dark: this.dark
+            dark: this.dark,
+            dirty: false,
+            invalide: Object.keys(store.schemas.errors).length > 0,
+            showInitialError: this.showInitialError
         })
         this._load()
+        this.requestUpdate()
+    }
+    /**
+     * 清除所有错误信息
+     */
+    clearErrors() {
+        this.store!.schemas.errors = {}
+        const fields = Array.from(this.shadowRoot!.querySelectorAll(".fields > *")) as HTMLElement[]
+        fields.forEach(field => {
+            if (field.tagName.startsWith('auto-field')) {
+                (field as any).invalidMessage = undefined
+            }
+        })
         this.requestUpdate()
     }
     _renderWidget(schema: SchemaOptions) {
@@ -253,7 +271,16 @@ export class AutoForm extends LitElement {
         `
     }
 
-
+    reset() {
+        this.store?.reset()
+    }
+    submit(callback: (values: Record<string, string>, errors?: Record<string, string>) => void) {
+        if (typeof (callback) === 'function') {
+            const values = this.store?.schemas.getValues() || {}
+            const errors = this.store?.schemas.errors
+            callback(values, errors)
+        }
+    }
 }
 
 declare global {

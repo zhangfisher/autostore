@@ -309,13 +309,6 @@ export type ComputedDescriptor<Value = any, Scope = any> = SyncComputedDescripto
 export type ComputedDescriptorBuilder<Value = any, Scope = any> = SyncComputedDescriptorBuilder<Value, Scope> | AsyncComputedDescriptorBuilder<Value, Scope>
 
 
-export type IComputedGetter<Value = any, Scope = any> = (...args: any[]) => Exclude<Value, Promise<any>>
-export type IAsyncComputedGetter<Value = any, Scope = any> = (...args: any[]) => Promise<Value>
-
-
-
-
-
 export type ComputedDescriptorParameter<Value = any, Scope = any> =
     ComputedDescriptorBuilder<Value, Scope>
     | ComputedGetter<Value, Scope>

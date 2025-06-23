@@ -81,7 +81,17 @@ export class SchemaManager<
         delete (this.store.state as any)[key]
     }
 
-
+    getValues() {
+        const values: Record<string, any> = {}
+        Object.entries(this._descriptors || {}).forEach(([key, options]) => {
+            const path = this._getPath(key)
+            const name = (options as any).name ?? path.join(PATH_DELIMITER)
+            this.shadow.peep((state) => {
+                values[name] = getVal(state, path)
+            })
+        })
+        return values
+    }
 }
 
 

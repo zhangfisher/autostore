@@ -69,9 +69,6 @@ const store = new AutoStore({
                 await delay(2000)
                 return state.user.admin
             }, ['user.admin']),
-            enable: computed<boolean>((state) => {
-                return state.user.admin
-            }),
             actions: [
                 {
                     label: '验证',
@@ -100,12 +97,66 @@ const store = new AutoStore({
             checkLabel: "是",
             // switchValues: ['是', '否']
         }),
+        tcpFlags: configurable(3, {
+            label: 'TCP标识',
+            widget: 'checkbox-group',
+            select: [
+                { label: 'URG', value: 1 },
+                { label: 'ACK', value: 2 },
+                { label: 'PSH', value: 4 },
+                { label: 'RST', value: 8 },
+                { label: 'SYN', value: 16 },
+                { label: 'FIN', value: 32 },
+                { label: 'CRC', value: 64 }
+            ],
+            toInput: (value) => {
+                const vals: number[] = []
+                if ((value & 1) > 0) vals.push(1)
+                if ((value & 2) > 0) vals.push(2)
+                if ((value & 4) > 0) vals.push(4)
+                if ((value & 8) > 0) vals.push(8)
+                if ((value & 16) > 0) vals.push(16)
+                if ((value & 32) > 0) vals.push(32)
+                if ((value & 64) > 0) vals.push(64)
+                return vals
+            },
+            toState: (vals) => {
+                let value = 0
+                if (vals.includes(1)) value += 1
+                if (vals.includes(2)) value += 2
+                if (vals.includes(4)) value += 4
+                if (vals.includes(8)) value += 8
+                if (vals.includes(16)) value += 16
+                if (vals.includes(32)) value += 32
+                if (vals.includes(64)) value += 64
+                return value
+            }
+        }),
         layout: configurable('卡片集', {
             // divider: true,
             label: '布局',
             required: true,
             widget: 'radio',
             itemWidth: '33.33%',
+            card: true,
+            select: [
+                { label: '简约风', memo: '极简设计，突出内容' },
+                { label: '经典式', memo: '传统布局，平衡稳重' },
+                { label: '卡片集', memo: '模块化卡片，灵活组合' },
+                { label: '瀑布流', enable: false, memo: '动态滚动，视觉延展' },
+                { label: '分屏式', memo: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                { label: '导航型', memo: '侧边主导，层级清晰' },
+                { label: '全屏化', memo: '沉浸体验，无界视觉' },
+                { label: '网格阵', memo: '整齐排列，规整直观' },
+                { label: '自由板', memo: '可拖拽定制，随心布局' }
+            ]
+        }),
+        useLayout: configurable(['经典式', '全屏化'], {
+            label: '可用布局',
+            widget: 'checkbox-group',
+            itemWidth: '33.33%',
+            valueKey: "label",
+            idKey: "label",
             card: true,
             select: [
                 { label: '简约风', memo: '极简设计，突出内容' },
@@ -131,7 +182,7 @@ const store = new AutoStore({
             invalidMessage: '至少选择两个产品',
             itemTemplate: "<span>{label}</span><span>{price}</span>",
             height: '150px',
-            showResults: true,// 是否显示结果框
+            // showResults: true,// 是否显示结果框
             items: [
                 { id: 1, label: "手机", price: 1000, icon: "phone" },
                 { id: 2, label: "电脑", price: 2000, icon: "laptop" },
@@ -196,7 +247,8 @@ const store = new AutoStore({
             label: '年龄',
             max: 100,
             min: 1,
-            width: "50%"
+            width: "50%",
+            toView: (value: any) => `<span style="color:red;border:1px solid red;padding:4px;">${value}岁</span>`
         }),
         password: configurable("18", {
             label: '密码',
@@ -231,23 +283,23 @@ const store = new AutoStore({
             items: orgTree,
             // onSelectionChange: (selection) => {}
         }),
-        org: configurable(['工程部', '市场部'], {
-            label: '组织架构',
-            widget: 'tree-dropdown',
-            valueKey: "label",
-            multiple: true,
-            showAsPath: true,
-            items: Object.assign({}, orgTree)
-        }),
-        adminDept: configurable(undefined, {
-            label: '管理部门',
-            placeholder: '选择管理部门',
-            widget: 'tree-dropdown',
-            showAsPath: true,
-            valueKey: "label",
-            onlySelectLeaf: true,
-            items: Object.assign({}, orgTree)
-        }),
+        // org: configurable(['工程部', '市场部'], {
+        //     label: '组织架构',
+        //     widget: 'tree-dropdown',
+        //     valueKey: "label",
+        //     multiple: true,
+        //     showAsPath: true,
+        //     items: Object.assign({}, orgTree)
+        // }),
+        // adminDept: configurable(undefined, {
+        //     label: '管理部门',
+        //     placeholder: '选择管理部门',
+        //     widget: 'tree-dropdown',
+        //     showAsPath: true,
+        //     valueKey: "label",
+        //     onlySelectLeaf: true,
+        //     items: Object.assign({}, orgTree)
+        // }),
         tags: configurable(['测试'], {
             label: '标签',
             widget: 'radio',
@@ -296,7 +348,8 @@ const store = new AutoStore({
             label: '音量',
             min: 0,
             max: 100,
-            step: 5
+            step: 5,
+            toView: (value: any) => `${value}%`
         }),
         worktime: configurable("12:12:11", { label: '上班时间', widget: 'time' }),
         certificate: configurable(1, {
@@ -430,6 +483,16 @@ class AutoFormDebuger extends LitElement {
             ele.setAttribute('size', e.target.value);
         }
     }
+    onToggleView(e) {
+        const ele = this.getNextAutoForm();
+        if (ele) {
+            if (e.target.checked) {
+                ele.setAttribute('viewonly', "");
+            } else {
+                ele.removeAttribute('viewonly');
+            }
+        }
+    }
     getJson() {
         return {
             user: {
@@ -452,6 +515,22 @@ class AutoFormDebuger extends LitElement {
             ]
         }
     }
+    onSubmit() {
+        const form = this.getNextAutoForm() as AutoForm
+        if (form) {
+            form.submit((values, errors) => {
+                console.log("errors=", errors)
+                console.log("values=", JSON.stringify(values))
+            })
+        }
+    }
+
+    onReset() {
+        const form = this.getNextAutoForm() as AutoForm
+        if (form) {
+            form.reset()
+        }
+    }
     render() {
         return html`
             <div class="toolbar">
@@ -469,10 +548,11 @@ class AutoFormDebuger extends LitElement {
                     <sl-checkbox @click=${this.onToggleDark.bind(this)}>暗色调</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleGridLine.bind(this)}>网格线</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleReadonly.bind(this)}>只读</sl-checkbox>                    
+                    <sl-checkbox @click=${this.onToggleView.bind(this)}>浏览视图</sl-checkbox>                    
                 </span>
                 
-                <sl-button>提交</sl-button>
-                <sl-button>重置</sl-button>                
+                <sl-button @click=${this.onSubmit.bind(this)}>提交</sl-button>
+                <sl-button @click=${this.onReset.bind(this)}>重置</sl-button>                
             </div>
         `
     }

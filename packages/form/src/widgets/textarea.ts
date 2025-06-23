@@ -12,13 +12,16 @@ export class AutoFieldTextArea extends AutoField {
         <sl-textarea 
             slot="value"             
             name=${this.schema!.name || this.schema!.path.join('.')} 
-            data-path = ${this.schema!.path}
+            data-path = ${this.schema!.path.join('.')}
             value=${this.value} 
             placeholder=${this.schema!.placeholder || ''}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         > ${this.schema!.label}</sl-textarea> 
         `
+    }
+    getInputValue() {
+        return this.input!.textContent
     }
 }
 

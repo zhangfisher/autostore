@@ -139,8 +139,8 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
     }
     return finalArgs as SchemaArgs
 }
+
 /**
- *  
  * schema(value,validate,errorTips,options)
  * schema(value,validate,options) // 没有指定errorTips
  * schema(value,options) // 没有指定validate
@@ -160,8 +160,6 @@ export const schema = function () {
 } as unknown as SchemaBuilder
 
 export const configurable = schema
-
-
 
 export function createTypeSchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
     const typeSchema = function () {

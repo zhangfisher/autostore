@@ -12,7 +12,9 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
     static styles = [
         AutoFieldInput.styles,
         css`
-            
+            sl-button.action-widget.image::part(label){
+                padding: 0px;
+            }
         `
     ]
     @query('img')

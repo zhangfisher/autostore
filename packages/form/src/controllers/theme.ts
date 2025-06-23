@@ -30,6 +30,8 @@ export class ThemeController implements ReactiveController {
         Object.assign(this.host.context, {
             labelPos: this.host.labelPos,
             labelWidth: this.host.labelWidth,
+            readonly: this.host.readonly,
+            viewonly: this.host.viewonly,
             grid: this.host.grid,
             size: this.host.size,
         })

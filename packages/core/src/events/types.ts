@@ -1,5 +1,4 @@
 import { ComputedObject } from "../computed/computedObject";
-import { ComputedDescriptor } from "../computed/types";
 import { ObserverDescriptor } from "../observer";
 import type { AutoStore } from "../store";
 import type { WatchObject } from "../watch/watchObject";

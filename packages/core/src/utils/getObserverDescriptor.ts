@@ -3,8 +3,6 @@ import { WatchDescriptor } from "../watch/types"
 import { getDefaultComputedOptions } from "./getDefaultComputedOptions"
 import { isAsyncFunction } from "./isAsyncFunction"
 import { isObserverDescriptorBuilder } from "./isObserverDescriptorBuilder"
-import { SchemaDescriptor } from '../schema/types';
-
 /**
  * 
  * @param value 

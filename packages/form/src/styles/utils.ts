@@ -41,32 +41,4 @@ export const scrollbar = css`
     }
 `
 
-/**
- * 
- * 创建根CSS变量
- * 
- * @param vars 要设置的CSS变量对象，键为变量名，值为变量值
- * @example
- * // 设置两个CSS变量
- * createRootVars({
- *   'primary-color': '#ff0000',
- *   'secondary-color': '#00ff00'
- * });
- */
-export function createRootVars(vars: Record<string, string>) {
-    if (!vars || typeof vars !== 'object') return;
-    Object.entries(vars).forEach(([key, value]) => {
-        // 确保变量名有--前缀
-        const varName = key.startsWith('--') ? key : `--auto-${key}`;
-        // 设置到:root (document.documentElement)
-        document.documentElement.style.setProperty(varName, value);
-    });
-}
 
-
-export function createAutoFormVars(vars: Record<string, string>) {
-    createRootVars({
-        // 整体尺寸
-        '--auto-size': 'small'
-    })
-}   

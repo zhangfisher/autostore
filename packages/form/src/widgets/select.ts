@@ -9,7 +9,7 @@ import '@shoelace-style/shoelace/dist/components/option/option.js';
 @customElement('auto-field-select')
 export class AutoFieldSelect extends AutoField {
     renderInput() {
-        const items = this.getFieldOption('select', []).map((item: any, index: number) => {
+        const items = this.getFieldOption('select', []).map((item: any) => {
             const selectItem: any = {}
             if (typeof (item) === 'object') {
                 Object.assign(selectItem, item)

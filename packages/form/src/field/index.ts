@@ -36,8 +36,8 @@ import { RequiredKeys } from 'flex-tools/types';
 import { styleMap } from 'lit/directives/style-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { when } from 'lit/directives/when.js';
-import '../components/icon'
 import { HostClasses } from '@/controllers/hostClasss';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 
 function getDefaultFieldOptions() {
     return {
@@ -88,6 +88,8 @@ export class AutoField<Options = unknown> extends LitElement {
     @state()
     labelPos: string = 'top'
 
+    @state()
+    dirty: boolean = false
 
     beforeActions?: SchemaWidgetAction[]
     afterActions?: SchemaWidgetAction[]
@@ -98,8 +100,8 @@ export class AutoField<Options = unknown> extends LitElement {
 
     _subscribers: Watcher[] = []
 
-    @query('.value sl-input,sl-radio-group,sl-checkbox,sl-switch,sl-rande,sl-textarea,sl-rating,sl-select,sl-color-picker')
-    input?: HTMLInputElement
+    @query('.value sl-input,sl-radio-group,sl-checkbox,sl-switch,sl-range,sl-textarea,sl-rating,sl-select,sl-color-picker')
+    input!: HTMLInputElement
 
     @consume({ context })
     @property({ attribute: false })
@@ -200,6 +202,25 @@ export class AutoField<Options = unknown> extends LitElement {
     getSchema() {
         return this.schema!
     }
+    toView(value: any) {
+        if (this.field.toView && typeof (this.field.toView.value) === 'function') {
+            return this.field.toView.value.call(this, value)
+        }
+        return value
+    }
+    toState(value: any) {
+        if (this.field.toState && typeof (this.field.toState.value) === 'function') {
+            return this.field.toState.value.call(this, value)
+        }
+        return value
+    }
+
+    toInput(value: any) {
+        if (this.field.toInput && typeof (this.field.toInput.value) === 'function') {
+            return this.field.toInput.value.call(this, value)
+        }
+        return value
+    }
     getFieldOption(name: string, defaultValue?: any): any {
         if (this.schema && name in this.schema) {
             // @ts-ignore
@@ -219,9 +240,12 @@ export class AutoField<Options = unknown> extends LitElement {
     getInputValue(): any {
         if (!this.input) return ''
         const datatype = this.schema?.datatype || 'string'
-        const value = this.input.checked ?? this.input.value
-        if (datatype === 'number') return Number(value)
-        if (datatype === 'boolean') return Boolean(value)
+        let value: any = this.input.value
+        if (datatype === 'number') {
+            value = Number(value)
+        } else if (datatype === 'boolean') {
+            value = Boolean(value)
+        }
         return value
     }
 
@@ -256,15 +280,24 @@ export class AutoField<Options = unknown> extends LitElement {
     renderInput() {
         return html``
     }
+    isShowError() {
+        if (this.context.showInitialError) {
+            return !!this.invalidMessage
+        } else { // 不显示
+            return this.dirty ? !!this.invalidMessage
+                : false
+        }
+    }
     renderError() {
-        return this.invalidMessage ? html`<div class="error">
+        return this.isShowError() ? html`<div class="error">
             ${this.invalidMessage}
         </div>` : html``
     }
+    // @ts-ignore
     onFieldChange(e?: Event) {
         this._updateFieldValue()
     }
-
+    // @ts-ignore
     onFieldInput(e: Event) {
         this._updateFieldValue()
     }
@@ -293,6 +326,17 @@ export class AutoField<Options = unknown> extends LitElement {
             }))
         }
     }
+    renderView() {
+        let viewData = this.value
+        if (this.field.toView && this.field.toView.value) {
+            try {
+                viewData = this.field.toView.value.call(this, this.value)
+            } catch (e: any) {
+                console.error(`Error while toView<${this.path}>: ${e.message}`)
+            }
+        }
+        return html`${unsafeHTML(String(viewData))}`
+    }
     /**
      * 当状态数据发生变化时
      */
@@ -303,13 +347,12 @@ export class AutoField<Options = unknown> extends LitElement {
                 // 当表单change/input时更新时设置flags=form.seq
                 // 此时应不需要更新到value，否则会导致死循环
                 //if (ctx.form.seq === operate.flags) return
-                this.value = operate.value
+                this.value = this.toInput(operate.value)
             }, { operates: 'write' }))
         }
     }
     getStateValue() {
-        const ctx = this.context
-        return getVal(ctx.store.state, this.field.path)
+        return this.toInput(getVal(this.context.store.state, this.field.path))
     }
     connectedCallback(): void {
         super.connectedCallback()
@@ -350,10 +393,13 @@ export class AutoField<Options = unknown> extends LitElement {
         const path = this.schema.path
         const value = this.getInputValue()
         const ctx = this.context
+        ctx.dirty = true
+        this.dirty = true
         try {
             const store = this.context.store
             store.update((state) => {
-                setVal(state, path, toSchemaValue(value, this.schema!))
+                const newVal = this.toState(toSchemaValue(value, this.schema!))
+                setVal(state, path, newVal)
                 this.invalidMessage = undefined
             }, {
                 flags: ctx.form.seq
@@ -363,15 +409,22 @@ export class AutoField<Options = unknown> extends LitElement {
             this.invalidMessage = e.message
         }
     }
-
+    renderValue() {
+        return html`
+            ${this.renderInput()}
+            ${this.renderHelp()}                    
+            ${this.renderError()} 
+        `
+    }
     render() {
         const ctx = this.context
         this.classs.use(ctx.size, {
             grid: ctx.grid,
-            error: !!this.invalidMessage,
-            'left-label': ctx.labelPos === 'left',
-            'top-label': ctx.labelPos === 'top',
+            error: this.isShowError(),
+            'left-label': ctx.labelPos === 'left' || ctx.viewonly,
+            'top-label': ctx.labelPos === 'top' && !ctx.viewonly,
             disable: this.field.enable.value === false,
+            viewonly: ctx.viewonly,
             required: this.field.required.value === true,
             hidden: this.field.visible.value === false
         })
@@ -382,9 +435,10 @@ export class AutoField<Options = unknown> extends LitElement {
             }
                 ${this.renderLabel()}
                 <div class="value">
-                    ${this.renderInput()}
-                    ${this.renderHelp()}                    
-                    ${this.renderError()} 
+                    ${when(ctx.viewonly,
+                () => this.renderView(),
+                () => this.renderValue()
+            )}
                 </div>                            
             </div>
         `
