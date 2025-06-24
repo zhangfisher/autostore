@@ -1,24 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
- * 
- *  通过双向绑定表单
- * 
- *  用于实现Form与AutoStore的双向绑定
  *  
- *  根据autostore的schema生成表单
- *  
- *  schema.widget用来指定字段类型
- *  
- * 
- * 
- *  - 用法：
- * 
- *  <auto-form 
- *      .store=${store}
- *      entry="指定store的entry，没有指定时使用整个store" 
- *      group=""
- *  >
- *  </auto-form>
  * 
  */
 
@@ -381,6 +363,11 @@ export class AutoField<Options = unknown> extends LitElement {
     getLabelPos() {
         return this.field.labelPos?.value || this.context.labelPos
     }
+    /**
+     * 
+     * auto bottom, label 
+     * 
+     */
     getHelpPos() {
         return this.field.helpPos?.value || this.context.helpPos
     }

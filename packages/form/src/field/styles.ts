@@ -102,6 +102,11 @@ export default css`
             }
             &>.value{
                 flex-grow: 1;
+                display: flex;
+                align-items: stretch;
+                flex-direction: column;
+                justify-content: center;
+               
             }
         }
     }
@@ -132,7 +137,7 @@ export default css`
     }
     /* 网格线 */
     :host(.grid){ 
-        & > .autofield{
+        & > .autofield{ 
             padding: var(--auto-spacing);
         }
     } 

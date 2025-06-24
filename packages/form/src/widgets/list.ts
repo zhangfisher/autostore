@@ -34,8 +34,8 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
         AutoField.styles,
         css`
             sl-menu-item[checked]{
-                background-color: var(--sl-color-primary-100);
-            }
+                background-color: var(--sl-color-primary-100);                
+            } 
             .footer{
                 padding:4px  0px ;
                 padding-top:8px;
@@ -72,7 +72,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
                     border-radius: 4px;
                     padding: 4px;
                     border: var(--auto-border);
-                    background-color: var(--sl-color-gray-50);
+                    background-color: var(--sl-color-gray-100);
                     margin-bottom: 4px; 
                     &:hover{
                         background-color: var(--sl-color-gray-100);
@@ -89,7 +89,6 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
         `
     ] as any
     selection: any[] = []
-    idKey: string = 'id'
     valueKey: string = 'id'
     labelKey: string = 'label'
     items: ListItem[] = []
@@ -103,10 +102,9 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     connectedCallback() {
         super.connectedCallback()
         if (this.field) {
-            this.idKey = this.field.idKey.value || 'id'
-            this.valueKey = this.field.valueKey.value || this.idKey
+            this.valueKey = this.field.valueKey.value || 'value'
             this.labelKey = this.field.labelKey.value || 'label'
-            const items = this.field.items.value
+            const items = this.field.select!.value
             if (items) {
                 this.items = items
                 this.items.forEach((item: any) => {
@@ -129,7 +127,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     _addSecectItem(newItem: any) {
         const findIndex = this.selection.findIndex(item => {
             //@ts-ignore
-            return item[this.idKey] == newItem[this.idKey]
+            return item[this.valueKey] == newItem[this.valueKey]
         })
         if (findIndex === -1) {
             if (this.field.multiple.value === false && this.selection.length > 0) {
@@ -150,13 +148,13 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     }
     _onSelectItem(e: MouseEvent) {
         const item = (e.detail as any).item as any
-        const id = item.dataset.id
-        const itemData = this.items.find(item => String((item as any)[this.idKey]) === id)
+        const index = item.dataset.index
+        const itemData = this.items[index]
         if (itemData) {
             if (item.checked) {
                 this._addSecectItem(itemData)
             } else {
-                this._removeSelectItem(itemData)
+                this._removeSelectItem(itemData[this.valueKey])
             }
             this.selectedTips = `${this.selection.length}/${this.items.length}`
             this.onFieldChange()
@@ -176,11 +174,11 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
             maxHeight: this.field.height?.value,
         })}
                     @sl-select=${this._onSelectItem.bind(this)}>
-                    ${repeat(this.items, (item: any) => {
+                    ${repeat(this.items, (item: any, index: number) => {
             const isSelected = values.includes((item as any)[this.valueKey])
             return html`<sl-menu-item 
                     type="checkbox"                
-                    data-id=${String(item[this.idKey])} 
+                    data-index=${String(index)} 
                     .checked=${isSelected}
                 >                
                 <auto-box no-border no-padding flex="row" grow="first" style="width:100%;">
@@ -284,7 +282,6 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
         } else {
             return item.label
         }
-
     }
     renderResults() {
         return html`<auto-box slot="end" 

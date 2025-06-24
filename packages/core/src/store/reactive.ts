@@ -40,7 +40,7 @@ function isValidPass(this: AutoStore<any>, _: any, key: string, newValue: any, o
     let isValid: boolean = true
     let errorMessage: SchemaValidator['message'] | undefined = validator.message || 'validate error'
 
-    let isPass: boolean = true
+    let isPass: boolean | Error = true
     let hasError: any
 
     try {
@@ -74,6 +74,8 @@ function isValidPass(this: AutoStore<any>, _: any, key: string, newValue: any, o
     if (!isValid) {
         if (onFail === 'throw') {
             throw new ValidateError(errorMessage! as string)
+        } else if (onFail === 'throw-pass') {
+            isPass = new ValidateError(errorMessage as string)
         } else if (onFail === 'ignore') {
             isPass = false
         } else {
@@ -127,11 +129,15 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
             const path = [...parentPath, String(key)]
-            if (isValidPass.call(this, proxyObj, path.join(this.delimiter) as string, value, oldValue, parentPath)) {
+            const isValid = isValidPass.call(this, proxyObj, path.join(this.delimiter) as string, value, oldValue, parentPath)
+            if (isValid) {
                 let success = Reflect.set(obj, key, value, receiver);
                 if (key === __NOTIFY__) return true
                 if (success && key !== __NOTIFY__ && value !== oldValue) {
                     options.notify({ type: Array.isArray(obj) ? 'update' : 'set', path, indexs: [], value, oldValue, parentPath, parent: obj });
+                }
+                if (isValid instanceof Error) {
+                    throw isValid
                 }
                 return success;
             } else {
@@ -156,8 +162,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
 
 /**
  * 创建一个响应式对象。
- * 
- * 
+ *  
  * @template State - 对象状态的类型，必须是对象类型。
  * @param {State} state - 对象的状态，必须是对象类型。
  * @param {CreateReactiveObjectOptions} [options] - 可选参数，用于配置响应式对象的行为。

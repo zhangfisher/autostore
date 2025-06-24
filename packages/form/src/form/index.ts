@@ -35,10 +35,8 @@ import { customElement, property } from 'lit/decorators.js'
 import { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
 import { context, AutoFormContext } from '../context'
 import '../components/box'
-import '../widgets'
 import { provide } from '@lit/context';
-import { registerIconLibrary } from '@shoelace-style/shoelace';
-import { IconLibrary, IconLibraryResolver } from '@shoelace-style/shoelace/dist/components/icon/library.js';
+import { IconLibrary, IconLibraryResolver, registerIconLibrary } from '@shoelace-style/shoelace/dist/components/icon/library.js';
 import { ThemeController } from '@/controllers/theme';
 import { HostClasses } from '@/controllers/hostClasss';
 import '../field'
@@ -189,7 +187,7 @@ export class AutoForm extends LitElement {
         this.schemas = Object.values(schmeaState)
             .filter((schema) => {
                 if (this.group) {
-                    return schema.group ? (schema.group === this.group) : true
+                    return schema.group === this.group
                 }
                 if (this.advanced === false && schema.advanced === true) return true
                 return true

@@ -32,13 +32,16 @@ export class SchemaManager<
         if (!this._descriptors) this._descriptors = {}
         this._descriptors[key] = Object.assign(
             {},
+            this.shadow.options.defaultSchemaOptions,
             descriptor.options,
             {
-                path: pathKey
+                path: pathKey,
+                datatype: descriptor.datatype,
+                value: descriptor.value
             }) as unknown as SchemaDescriptor
         if (descriptor.validator) {
             this.validators[key] = Object.assign({
-                onFail: 'throw'
+                onFail: 'throw-pass',
             }, descriptor.validator)
         }
         // 

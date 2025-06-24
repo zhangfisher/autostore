@@ -9,7 +9,7 @@ export type AutoFormContext = {
     labelWidth: string
     readonly: boolean
     viewonly: boolean
-    helpPos?: 'default' | 'value' | 'label'
+    helpPos?: 'auto' | 'value' | 'label'
     grid: boolean                       // 显示网格线
     dark: boolean
     size: 'small' | 'medium' | 'large'

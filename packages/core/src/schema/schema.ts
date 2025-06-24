@@ -93,7 +93,7 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
     let validator: SchemaValidator | undefined
     if (args.length >= 2 && typeof (args[1]) === 'function') {
         validator = {
-            onFail: 'throw',
+            onFail: 'throw-pass',
             validate: args[1]
         }
     }
@@ -102,7 +102,7 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
     }
     if (args.length >= 2 && isPlainObject(args[1]) && 'validate' in args[1]) {
         validator = Object.assign({
-            onFail: 'throw',
+            onFail: 'throw-pass',
         }, args[1]) as SchemaValidator
     }
     if (args.length >= 2 && isPlainObject(args[args.length - 1]) && !('validate' in args[args.length - 1])) {

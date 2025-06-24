@@ -90,6 +90,17 @@ const store = new AutoStore({
                 }
             ]
         }),
+        smsCode: configurable('', {
+            label: '短信验证码',
+            placeholder: '请输入验证码',
+            maxLength: 6,
+            widget: 'sms-captcha',
+            timeout: 60 * 1000,
+            template: '{timeout}秒后重新获取',
+            onRequest: () => {
+                console.log("发送短信")
+            }
+        }),
         admin: configurable(false, {
             label: '管理员',
             help: "管理员拥有所有权限",
@@ -176,14 +187,13 @@ const store = new AutoStore({
             label: '产品',
             widget: 'list',
             multiple: true,
-            idKey: 'id',     // 默认选择的是id
             valueKey: 'label',     // 默认选择的是id
-            labelKey: 'label',     // 用于显示
+            labelKey: 'label',     // 用于显示，当showResults为true时，显示的是label
             invalidMessage: '至少选择两个产品',
             itemTemplate: "<span>{label}</span><span>{price}</span>",
-            height: '150px',
-            // showResults: true,// 是否显示结果框
-            items: [
+            height: '200px',
+            showResults: true,// 是否显示结果框
+            select: [
                 { id: 1, label: "手机", price: 1000, icon: "phone" },
                 { id: 2, label: "电脑", price: 2000, icon: "laptop" },
                 { id: 3, label: "手表", price: 3000, icon: "watch" },
@@ -198,11 +208,16 @@ const store = new AutoStore({
                 { id: 12, label: "固态硬盘", price: 12000, icon: "ssd" },
                 { id: 13, label: "机械硬盘", price: 13000, icon: "hdd" },
                 { id: 14, label: "显卡", price: 14000, icon: "gpu" },
-                { id: 15, label: "固态硬盘", price: 15000, icon: "ssd" },
-                { id: 16, label: "机械硬盘", price: 16000, icon: "hdd" },
-                { id: 17, label: "显卡", price: 17000, icon: "gpu" },
-                { id: 18, label: "显卡", price: 18000, icon: "gpu" },
-                { id: 19, label: "显卡", price: 19000, icon: "gpu" },
+                { id: 15, label: "蓝牙耳机", price: 15000, icon: "bluetooth" },
+                { id: 16, label: "电视", price: 16000, icon: "tv" },
+                { id: 17, label: "空调", price: 17000, icon: "air-conditioner" },
+                { id: 18, label: "冰箱", price: 18000, icon: "fridge" },
+                { id: 19, label: "洗衣机", price: 19000, icon: "washing-machine" },
+                { id: 20, label: "微波炉", price: 20000, icon: "microwave-oven" },
+                { id: 21, label: "电饭煲", price: 21000, icon: "rice-cooker" },
+                { id: 22, label: "电风扇", price: 22000, icon: "fan" },
+                { id: 23, label: "电吹风", price: 23000, icon: "hair-dryer" },
+                { id: 24, label: "吸尘器", price: 24000, icon: "vacuum-cleaner" },
             ]
         }),
         salary: configurable(3000, {

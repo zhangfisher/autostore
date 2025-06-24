@@ -9,7 +9,8 @@ export type SchemaValidator<Value = any> = {
     validate: SchemaValidate<Value>
     // 当验证失败时的行为
     // pass: 继续写入; ignore: 静默忽略; throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
-    onFail: 'pass' | 'throw' | 'ignore'
+    // throw-pass: 写入数据但同时抛出ValidateError错误
+    onFail: 'pass' | 'throw' | 'ignore' | 'throw-pass'
     // 校验失败时的错误信息
     message?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string)
 }
@@ -186,7 +187,7 @@ export type SchemaOptions<Value = any, State = Dict> = Record<string, any> & {
     itemWidth?: number | string | ComputedGetter<string, State>
     itemTemplate?: string | ComputedGetter<string, State>
     invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
-    onFail?: 'pass' | 'throw' | 'ignore'
+    onFail?: 'pass' | 'throw' | 'ignore' | 'throw-pass'
     tips?: string
     select?: string[] | number[] | boolean[] | ({
         label?: string

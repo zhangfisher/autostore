@@ -8,6 +8,8 @@ import '@shoelace-style/shoelace/dist/components/option/option.js';
 
 @customElement('auto-field-select')
 export class AutoFieldSelect extends AutoField {
+    valueKey: string = 'value'
+    labelKey: string = 'label'
     renderInput() {
         const items = this.getFieldOption('select', []).map((item: any) => {
             const selectItem: any = {}
@@ -26,7 +28,7 @@ export class AutoFieldSelect extends AutoField {
         <sl-select
             name="${this.name}"
             data-path="${this.path}"
-            value="${this.value}"           
+            value="${this.getValue()}"           
             ?multiple=${this.getFieldOption('multiple')}
             ?disabled=${this.getFieldOption('disabled')}
             ?clearable=${this.getFieldOption('clearable', true)}  
@@ -34,23 +36,27 @@ export class AutoFieldSelect extends AutoField {
             ?pill=${this.getFieldOption('pill')}  
             ?required=${this.getFieldOption('required')}  
             .placeholder=${this.getFieldOption('placeholder')}  
-            .helpText=${this.getFieldOption('help')}  
+            .maxOptionsVisible=${this.getFieldOption('maxOptionsVisible', 0)}  
+            .help-text=${this.getFieldOption('help')}  
             .defaultValue=${this.getFieldOption('defaultValue', this.value)}  
             .placement=${this.getFieldOption('placement')}  
             @sl-input=${this.onFieldInput.bind(this)}
-            @sl-change=${this.onFieldChange.bind(this)}
-        >
+         >
             ${items.map((item: any) => {
             if (item.type === 'divider') return html`<sl-divider></sl-divider>`
             return html`<sl-option 
-                    value="${item.value || item.label}"
+                    value="${item[this.valueKey] || item.label}"
                     ${ifDefined(this.getFieldOption('disabled'))}
-                >${item.label}</sl-option>`
+                >${item[this.labelKey]}</sl-option>`
         })}
         ${this.renderBeforeActions()}
         ${this.renderAfterActions()}
         </sl-select> 
         `
+    }
+
+    getValue() {
+        return this.getFieldOption('multiple') ? this.value.join(' ') : this.value
     }
 }
 

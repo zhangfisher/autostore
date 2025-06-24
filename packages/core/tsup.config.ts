@@ -11,7 +11,7 @@ export default defineConfig(
         dts: true,
         splitting: true,
         sourcemap: true,
-        globalName: 'AutoStore',
+        globalName: 'AutoStoreSpaces',
         clean: true,
         treeshake: true,
         minify: true,
