@@ -1,22 +1,12 @@
-import './src/widgets/autocomplete';
-import { LitElement, css, html } from 'lit';
-import { AutoForm } from './src/form/index';
-import { AutoStore, computed, configurable } from 'autostore';
 import { customElement } from 'lit/decorators.js';
+import { LitElement, css, html } from 'lit';
+import { AutoStore, computed, configurable } from 'autostore';
+import type { AutoForm } from './src/form/index';
 
 
 const orgTree = {
     id: 1,
     label: '美一',
-    user: {
-        name: "",
-        admin: false,
-        address: {
-            province: '广东省',
-            city: '深圳市',
-            street: '南山区'
-        }
-    },
     children: [
         {
             id: 1,
@@ -53,16 +43,19 @@ const orgTree = {
     ]
 }
 
+
+
 const delay = (ms: number = 1000) => new Promise((resolve) => setTimeout(resolve, ms));
 const store = new AutoStore({
     price: 100,
     count: computed(scope => scope.price * 2),
     user: {
-        name: configurable('Fish', (value) => {
-            return value.length > 5;
-        }, {
+        name: configurable('Fish', {
             label: '姓名',
             placeholder: '请输入姓名',
+            onValidate: (value) => {
+                return value.length > 5;
+            },
             invalidMessage: '姓名长度必须大于3个字符',
             help: "中文姓名",
             required: computed(async (state) => {
@@ -90,11 +83,22 @@ const store = new AutoStore({
                 }
             ]
         }),
+        files: configurable([], {
+            label: "上传图片",
+            widget: 'upload'
+        }),
+        verifyCode: configurable('12-65', {
+            label: "邮件验证码",
+            widget: "parts",
+            // split: true // 是否拆分输入框
+            delimiter: '-', //当没有指定delimiter时，使用空格分隔
+            template: '00-00-00-00' // 每一组之间的分割符
+        }),
         smsCode: configurable('', {
             label: '短信验证码',
             placeholder: '请输入验证码',
             maxLength: 6,
-            widget: 'sms-captcha',
+            widget: 'verifycode',
             timeout: 60 * 1000,
             template: '{timeout}秒后重新获取',
             onRequest: () => {
@@ -151,15 +155,15 @@ const store = new AutoStore({
             itemWidth: '33.33%',
             card: true,
             select: [
-                { label: '简约风', memo: '极简设计，突出内容' },
-                { label: '经典式', memo: '传统布局，平衡稳重' },
-                { label: '卡片集', memo: '模块化卡片，灵活组合' },
-                { label: '瀑布流', enable: false, memo: '动态滚动，视觉延展' },
-                { label: '分屏式', memo: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
-                { label: '导航型', memo: '侧边主导，层级清晰' },
-                { label: '全屏化', memo: '沉浸体验，无界视觉' },
-                { label: '网格阵', memo: '整齐排列，规整直观' },
-                { label: '自由板', memo: '可拖拽定制，随心布局' }
+                { label: '简约风', description: '极简设计，突出内容' },
+                { label: '经典式', description: '传统布局，平衡稳重' },
+                { label: '卡片集', description: '模块化卡片，灵活组合' },
+                { label: '瀑布流', enable: false, description: '动态滚动，视觉延展' },
+                { label: '分屏式', description: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                { label: '导航型', description: '侧边主导，层级清晰' },
+                { label: '全屏化', description: '沉浸体验，无界视觉' },
+                { label: '网格阵', description: '整齐排列，规整直观' },
+                { label: '自由板', description: '可拖拽定制，随心布局' }
             ]
         }),
         useLayout: configurable(['经典式', '全屏化'], {
@@ -167,24 +171,24 @@ const store = new AutoStore({
             widget: 'checkbox-group',
             itemWidth: '33.33%',
             valueKey: "label",
-            idKey: "label",
             card: true,
             select: [
-                { label: '简约风', memo: '极简设计，突出内容' },
-                { label: '经典式', memo: '传统布局，平衡稳重' },
-                { label: '卡片集', memo: '模块化卡片，灵活组合' },
-                { label: '瀑布流', enable: false, memo: '动态滚动，视觉延展' },
-                { label: '分屏式', memo: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
-                { label: '导航型', memo: '侧边主导，层级清晰' },
-                { label: '全屏化', memo: '沉浸体验，无界视觉' },
-                { label: '网格阵', memo: '整齐排列，规整直观' },
-                { label: '自由板', memo: '可拖拽定制，随心布局' }
+                { label: '简约风', description: '极简设计，突出内容' },
+                { label: '经典式', description: '传统布局，平衡稳重' },
+                { label: '卡片集', description: '模块化卡片，灵活组合' },
+                { label: '瀑布流', enable: false, description: '动态滚动，视觉延展' },
+                { label: '分屏式', description: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                { label: '导航型', description: '侧边主导，层级清晰' },
+                { label: '全屏化', description: '沉浸体验，无界视觉' },
+                { label: '网格阵', description: '整齐排列，规整直观' },
+                { label: '自由板', description: '可拖拽定制，随心布局' }
             ]
         }),
-        products: configurable(['电脑'], (value) => {
-            return value.length > 2
-        }, {
+        products: configurable(['电脑'], {
             label: '产品',
+            onValidate: (value) => {
+                return value.length > 2
+            },
             widget: 'list',
             multiple: true,
             valueKey: 'label',     // 默认选择的是id
@@ -237,27 +241,27 @@ const store = new AutoStore({
         captcha: configurable('', {
             label: '验证码',
             widget: 'captcha',
-            title: '单击刷新验证码',
+            help: '单击刷新验证码',
             labelPos: 'none',
             placeholder: '请输入验证码',
-            captchaUrl: "/captcha.png"
+            url: "/captcha.png"
         }),
-        birday: configurable('2025-11-01', { label: '生日', widget: 'date', width: '33.33%' }),
-
+        birday: configurable('2025-11-01', { label: '生日', widget: 'date' }),
         phone: configurable('138456789112', {
             label: '电话号码',
             widget: 'phone',
             clearable: true,
-            width: '33.33%'
+            width: '50%'
         }),
         search: configurable('', {
             label: '搜索', widget: 'search',
-            width: '33.33%'
+            width: '50%'
         }),
-        age: configurable(18, (value) => {
-            return value > 0 && value < 24
-        }, {
+        age: configurable(18, {
             widget: 'number',
+            onValidate: (value) => {
+                return value > 0 && value < 24
+            },
             pill: true,
             label: '年龄',
             max: 100,
@@ -292,29 +296,28 @@ const store = new AutoStore({
             multiple: true,
             valueKey: 'label',     // 默认选择的是id
             onlySelectLeaf: false,      // 只选择叶子节点
-            showSelectType: '',     // 'path' | 'value' | 'id'
             // maxItems: 3,    // 最多选择3个
             // minItems:1
             items: orgTree,
             // onSelectionChange: (selection) => {}
         }),
-        // org: configurable(['工程部', '市场部'], {
-        //     label: '组织架构',
-        //     widget: 'tree-dropdown',
-        //     valueKey: "label",
-        //     multiple: true,
-        //     showAsPath: true,
-        //     items: Object.assign({}, orgTree)
-        // }),
-        // adminDept: configurable(undefined, {
-        //     label: '管理部门',
-        //     placeholder: '选择管理部门',
-        //     widget: 'tree-dropdown',
-        //     showAsPath: true,
-        //     valueKey: "label",
-        //     onlySelectLeaf: true,
-        //     items: Object.assign({}, orgTree)
-        // }),
+        org: configurable(['工程部', '市场部'], {
+            label: '组织架构',
+            widget: 'tree-dropdown',
+            valueKey: "label",
+            multiple: true,
+            showAsPath: true,
+            items: Object.assign({}, orgTree)
+        }),
+        adminDept: configurable(undefined, {
+            label: '管理部门',
+            placeholder: '选择管理部门',
+            widget: 'tree-dropdown',
+            showAsPath: true,
+            valueKey: "label",
+            onlySelectLeaf: true,
+            items: Object.assign({}, orgTree)
+        }),
         tags: configurable(['测试'], {
             label: '标签',
             widget: 'radio',
@@ -324,7 +327,8 @@ const store = new AutoStore({
         }),
         rating: configurable(1, { label: '评分', widget: 'rating' }),
         level: configurable(1, {
-            label: '级别', widget: 'radio-button',
+            label: '级别',
+            widget: 'radio-button',
             select: [
                 { label: '初级', value: 1 },
                 { label: '中级', value: 2 },

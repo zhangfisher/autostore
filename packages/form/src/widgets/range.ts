@@ -1,7 +1,7 @@
-import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import '@shoelace-style/shoelace/dist/components/range/range.js';
+import { AutoField } from "@/field"
 
 @customElement('auto-field-range')
 export class AutoFieldRabge extends AutoField {
@@ -54,7 +54,7 @@ export class AutoFieldRabge extends AutoField {
                 value=${this.value} 
                 .placeholder=${this.getFieldOption("placeholder")}
                 .defaultValue=${this.getFieldOption("defaultValue", this.value)}
-                ?disabled=${this.getFieldOption("disabled")}
+                ?disabled=${!this.getFieldOption("enable", false)}
                 .max=${this.getFieldOption("max")}
                 .min=${this.getFieldOption("min")}
                 .step=${this.getFieldOption("step")}

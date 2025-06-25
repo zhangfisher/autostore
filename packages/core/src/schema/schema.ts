@@ -27,7 +27,7 @@
 
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts"
 import { isFunction, isPlainObject } from "../utils"
-import { SchemaBuilder, SchemaDescriptorBuilder, SchemaOptions, SchemaValidator, SchemaWidgetAction } from './types';
+import type { SchemaBuilder, SchemaDescriptorBuilder, SchemaOptions, SchemaValidator, SchemaWidgetAction } from './types';
 import { markRaw } from '../utils/markRaw';
 
 
@@ -140,11 +140,7 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
     return finalArgs as SchemaArgs
 }
 
-/**
- * schema(value,validate,errorTips,options)
- * schema(value,validate,options) // 没有指定errorTips
- * schema(value,options) // 没有指定validate
- */
+
 export const schema = function () {
     const args = parseSchemaArgs([...arguments])
     const value = arguments[0]

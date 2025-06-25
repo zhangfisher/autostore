@@ -12,8 +12,8 @@ export type AutoFieldSmsCaptchaOptions = {
     template: string
 }
 
-@customElement('auto-field-sms-captcha')
-export class AutoFieldSmsCaptcha extends AutoFieldInput<AutoFieldSmsCaptchaOptions> {
+@customElement('auto-field-verifycode')
+export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptions> {
     static styles = [
         AutoFieldInput.styles,
         css`
@@ -72,7 +72,7 @@ export class AutoFieldSmsCaptcha extends AutoFieldInput<AutoFieldSmsCaptchaOptio
             if (remainingSteps <= 0) {
                 // 倒计时结束，恢复按钮文本和状态
                 if (this.afterActions && this.afterActions.length > 0) {
-                    this.afterActions[0].label = '发送验证码';
+                    this.afterActions[0].label = this.getFieldOption('sendTips', '发送验证码');
                     this.requestUpdate();
                 }
                 this.countdowning = false;
@@ -93,7 +93,7 @@ export class AutoFieldSmsCaptcha extends AutoFieldInput<AutoFieldSmsCaptchaOptio
         }
         this.afterActions!.unshift({
             id: "send",
-            label: '发送验证码',
+            label: this.getFieldOption('sendTips', '发送验证码'),
             onClick: this.sendRequest.bind(this)
         })
         const timeout = this.getFieldOption('timeout', 60 * 1000)
@@ -107,6 +107,6 @@ export class AutoFieldSmsCaptcha extends AutoFieldInput<AutoFieldSmsCaptchaOptio
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-sms-captcha': AutoFieldSmsCaptcha
+        'auto-field-verifycode': AutoFieldVerifyCode
     }
 }

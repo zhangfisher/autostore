@@ -4,17 +4,17 @@
  * 
  */
 
-import { CSSResult, LitElement, html } from 'lit'
+import { LitElement, html } from 'lit'
 import { property, query, queryAssignedElements, state } from 'lit/decorators.js'
-import { AsyncComputedValue, createAsyncComptuedValue, getVal, isAsyncComputedValue, setVal, Watcher, SchemaOptions, StateOperate, SchemaWidgetAction } from 'autostore';
+import { AsyncComputedValue, createAsyncComptuedValue, getVal, isAsyncComputedValue, setVal, Watcher, SchemaOptions, StateOperate, SchemaWidgetAction, ComputedState } from 'autostore';
 import { consume } from '@lit/context';
-import { AutoFormContext, context } from '../context';
+import { type AutoFormContext, context } from '../context';
 import styles from './styles'
 import { toSchemaValue } from '@/utils/toSchemaValue';
-import { KnownRecord } from '@/types';
+import type { KnownRecord } from '@/types';
 import { repeat } from 'lit/directives/repeat.js';
 import { ThemeController } from '@/controllers/theme';
-import { RequiredKeys } from 'flex-tools/types';
+import type { RequiredKeys } from 'flex-tools/types';
 import { styleMap } from 'lit/directives/style-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { when } from 'lit/directives/when.js';
@@ -48,14 +48,23 @@ type NormalizedFieldOptions<SCHEMA = unknown> = Omit<
         name: string
     } & (SCHEMA extends Record<string, any> ? AsyncComputedValueRecord<SCHEMA> : unknown)
 
+type FieldOptions<Options = unknown> = RequiredKeys<
+    ComputedState<SchemaOptions>,
+    'visible' | 'enable' | 'required' | 'order' | 'advanced' | 'actions'
+> & {
+    widget: string
+    path: string[]
+    name: string
+} & Options
 
 export class AutoField<Options = unknown> extends LitElement {
-    static styles = styles as CSSResult
+    static styles = styles
     theme = new ThemeController(this)
 
     @property({ type: Object })
     schema?: SchemaOptions & Options
     classs = new HostClasses(this)
+
     field: NormalizedFieldOptions<Options> = getDefaultFieldOptions() as unknown as NormalizedFieldOptions<Options>
 
     @state()
@@ -115,7 +124,7 @@ export class AutoField<Options = unknown> extends LitElement {
                 ${this.renderAfterActions()}`
     }
     _onClickAction(action: SchemaWidgetAction) {
-        if (typeof (action.onClick) == 'function') {
+        if (typeof (action.onClick) === 'function') {
             return (e: any) => action.onClick!.call(this, this.getInputValue(), {
                 action,
                 schema: this.schema!,
@@ -339,7 +348,7 @@ export class AutoField<Options = unknown> extends LitElement {
     connectedCallback(): void {
         super.connectedCallback()
         const ctx = this.context
-        if (ctx && ctx.store && this.schema) {
+        if (ctx?.store && this.schema) {
             this.field = this.getFieldOptions()
             this.value = this.getStateValue()
             this._handleSchemaChange()

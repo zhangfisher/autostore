@@ -30,7 +30,7 @@ export class AutoFieldSelect extends AutoField {
             data-path="${this.path}"
             value="${this.getValue()}"           
             ?multiple=${this.getFieldOption('multiple')}
-            ?disabled=${this.getFieldOption('disabled')}
+            ?disabled=${this.getFieldOption('enable', false)}
             ?clearable=${this.getFieldOption('clearable', true)}  
             ?filled=${this.getFieldOption('filled')}  
             ?pill=${this.getFieldOption('pill')}  

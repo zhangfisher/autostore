@@ -131,7 +131,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
         return html`<sl-radio 
             value="${value}"
             style=${styleMap({
-            width: this.field.card == undefined ? this.field.itemWidth?.value : undefined
+            width: this.field.card === undefined ? this.field.itemWidth?.value : undefined
         })}
             ${ifDefined(this.getFieldOption('disabled'))}
         >${item.label}<br/><span class="memo">${item.memo}</span></sl-radio>`

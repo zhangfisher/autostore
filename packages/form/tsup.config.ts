@@ -41,9 +41,8 @@ export default defineConfig([
             'src/index.ts',
         ],
         format: ['esm', 'cjs', 'iife'],
-        outDir: 'dist/full',
         dts: true,
-        splitting: false,
+        splitting: true,
         sourcemap: true,
         globalName: 'AutoForm',
         clean: true,
@@ -54,56 +53,4 @@ export default defineConfig([
             AnalyzerPlugin()
         ],
     },
-    // {
-    //     entry: [
-    //         'src/index-lite.ts'
-    //     ],
-    //     outDir: 'dist/lite',
-    //     format: ['esm', 'cjs', 'iife'],
-    //     dts: true,
-    //     splitting: false,
-    //     sourcemap: true,
-    //     globalName: 'AutoForm',
-    //     clean: true,
-    //     treeshake: true,
-    //     minify: true,
-    //     noExternal: ['flex-tools', 'autostore'],
-    //     esbuildPlugins: [
-    //         AnalyzerPlugin()
-    //     ]
-    // },
-    {
-        entry: [
-            'src/widgets/tree-select.ts'
-        ],
-        outDir: 'examples',
-        format: ['iife'],
-        dts: true,
-        splitting: false,
-        sourcemap: false,
-        globalName: 'AutoFieldTreeSelect',
-        clean: true,
-        treeshake: true,
-        minify: true,
-        noExternal: ['flex-tools', 'autostore'],
-        external: ['lit']
-    },
-    // @ts-ignore
-    // ...widgets.map(widget => {
-    //     return {
-    //         entry: [
-    //             `src/widgets/${widget}`
-    //         ],
-    //         outDir: 'dist/lite',
-    //         format: ['esm', 'cjs', 'iife'],
-    //         dts: true,
-    //         splitting: true,
-    //         sourcemap: true,
-    //         globalName: `AutoFormField${widget}`,
-    //         clean: true,
-    //         treeshake: true,
-    //         minify: true,
-    //         noExternal: ['flex-tools', 'autostore']
-    //     }
-    // })
 ])

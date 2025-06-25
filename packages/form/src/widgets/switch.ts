@@ -26,7 +26,7 @@ export class AutoFieldSwitch extends AutoField {
     }
 
     _isChecked() {
-        return this.value == this.switchValues[0]
+        return this.value === this.switchValues[0]
     }
     connectedCallback(): void {
         super.connectedCallback()

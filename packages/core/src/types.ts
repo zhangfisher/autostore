@@ -1,9 +1,9 @@
-import { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
-import { SchemaDescriptorBuilder } from "./schema";
+import type { AsyncComputedDescriptorBuilder, AsyncComputedGetter, AsyncComputedValue, ComputedGetter, SyncComputedDescriptorBuilder } from "./computed";
+import type { SchemaDescriptorBuilder } from "./schema";
 import type { AutoStore } from "./store";
-import { RawObject } from "./utils";
-import { WatchDescriptorBuilder } from "./watch/types";
-import { Get, Paths, UnionToIntersection } from "type-fest"
+import type { RawObject } from "./utils";
+import type { WatchDescriptorBuilder } from "./watch/types";
+import type { Get, Paths, UnionToIntersection } from "type-fest"
 
 
 export type Union<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
@@ -17,6 +17,7 @@ export type MutableRecord<Items, KindKey extends string = 'type', Share = unknow
             Union<{ [K in KindKey]?: DefaultKind } & Items[DefaultKind] & Share>
         )
     )
+
 
 
 export type PickValues<T extends Record<string, any>> = Union<UnionToIntersection<T[keyof T]>>

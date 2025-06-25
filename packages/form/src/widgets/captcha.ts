@@ -24,7 +24,7 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
     loading: boolean = false
 
     getRefreshUrl() {
-        let url = this.getFieldOption('captchaUrl');
+        let url = this.getFieldOption('url');
         const [baseUrl, query] = url.split('?');
         // 重建查询参数，保留原有参数并添加时间戳
         const params = new URLSearchParams(query);
@@ -55,7 +55,7 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
         }
         this.afterActions!.unshift({
             type: 'image',
-            url: this.getFieldOption('captchaUrl'),
+            url: this.getFieldOption('url'),
             tips: this.getFieldOption('tips', '单击刷新验证码'),
             onClick: this.refreshCaptchaImage.bind(this)
         })
