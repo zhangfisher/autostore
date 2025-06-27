@@ -1,10 +1,15 @@
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
-import { SlTreeItem } from '@shoelace-style/shoelace';
-import { initFieldOptions } from "@/utils/initFieldOptions";
+import type { SlTreeItem } from '@shoelace-style/shoelace';
 import '@shoelace-style/shoelace/dist/components/tree/tree.js';
 import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
+
+import type { SchemaTreeSelectWidgetOptions } from 'autostore';
+
+export type AutoFieldTreeSelectOptions = Required<SchemaTreeSelectWidgetOptions>
+
+
 
 export type TreeNode = {
     id?: string | number
@@ -39,7 +44,7 @@ export type AutoTreeSelectOptions = {
 }
 
 @customElement('auto-field-tree-select')
-export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
+export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldTreeSelectOptions & Options> {
     static styles = [
         AutoField.styles,
         css`
@@ -55,13 +60,27 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
     valueKey: string = 'id'
     labelKey: string = 'label'
 
+    getInitialOptions(): Record<string, any> {
+        return {
+            items: [],
+            idKey: 'id',
+            valueKey: 'id',
+            labelKey: 'label',
+            multiple: false,
+            maxItems: 0,
+            minItems: 0,
+            onlySelectLeaf: false,
+            showAsPath: false,
+            onSelectionChange: () => { }
+        }
+    }
     connectedCallback() {
         super.connectedCallback()
-        if (this.field) {
-            this.idKey = this.field.idKey.value || 'id'
-            this.valueKey = this.field.valueKey.value || this.idKey
-            this.labelKey = this.field.labelKey.value || 'label'
-            const items = this.field.items.value
+        if (this.options) {
+            this.idKey = this.options.idKey
+            this.valueKey = this.options.valueKey
+            this.labelKey = this.options.labelKey
+            const items = this.options.items
             if (items) {
                 this.nodes = items
                 this._forEachTree((item: any, _, level, path) => {
@@ -83,7 +102,7 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
 
     isItemSelected(item: any) {
         if (this.value === undefined) return false
-        if (this.schema!.multiple === false) {
+        if (this.options.multiple === false) {
             return this.value === item[this.valueKey]
         } else {
             return this.value.includes(item[this.valueKey])
@@ -92,7 +111,7 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
 
     getStateValue() {
         const initial = super.getStateValue()
-        if (this.schema!.multiple) {
+        if (this.options.multiple) {
             return Array.isArray(initial) ? initial : [initial]
         } else {
             return initial
@@ -144,19 +163,6 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
         }
     }
 
-    getFieldOptions() {
-        const options = super.getFieldOptions()
-        initFieldOptions(options, {
-            multiple: false,
-            idKey: 'id',
-            valueKey: 'label',
-            labelKey: 'label',
-            showAsPath: true,
-            onlySelectLeaf: false
-        })
-        return options
-    }
-
     onSelectionChange(e: CustomEvent) {
         const selection = Array.from(e.detail.selection) as SlTreeItem[]
         if (selection) {
@@ -167,15 +173,15 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
                     path: item.dataset.path
                 }
             })
-            if (this.schema && typeof (this.schema.onSelectionChange) === 'function') {
-                this.schema.onSelectionChange(this.selection)
+            if (this.options && typeof (this.options.onSelectionChange) === 'function') {
+                this.options.onSelectionChange(this.selection)
             }
-            this.onFieldChange(e)
+            this.onFieldChange()
         }
 
     }
     getInputValue() {
-        if (this.field.multiple.value) {
+        if (this.options.multiple) {
             return this.selection.map(item => item.value)
         } else {
             return this.selection.length > 0 ? this.selection[0].value : undefined
@@ -189,7 +195,7 @@ export class AutoFieldTreeSelect extends AutoField<AutoTreeSelectOptions> {
             name="${this.name}"
             data-path = ${this.path}   
             size=${this.context.size}
-            selection = "${this.field.onlySelectLeaf.value ? 'leaf' : (this.field.multiple.value ? 'multiple' : 'single')}"
+            selection = "${this.options.onlySelectLeaf ? 'leaf' : (this.options.multiple ? 'multiple' : 'single')}"
             @sl-selection-change=${this.onSelectionChange.bind(this)}
         >${this._renderNodes(this.nodes)}</sl-tree> 
         `

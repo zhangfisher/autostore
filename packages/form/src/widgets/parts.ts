@@ -3,15 +3,10 @@ import { customElement } from "lit/decorators.js"
 import { repeat } from "lit/directives/repeat.js"
 import { when } from "lit/directives/when.js"
 import { AutoField } from "@/field"
+import type { SchemaPartsWidgetOptions } from "autostore"
 
-export type AutoFieldPartsOptions = {
-    template: string
-    /**
-     * 每一组之间的分割符
-     */
-    delimiter: string
-}
 
+export type AutoFieldPartsOptions = Required<SchemaPartsWidgetOptions>
 @customElement('auto-field-parts')
 export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
     static styles = [
@@ -42,12 +37,17 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
     delimiter: string = ""
     template: string = '0000'
     parts: string[] = []
-    split: boolean = true
-
     result: string = ''
 
+    getInitialOptions(): Record<string, any> {
+        return {
+            template: '0000',
+            delimiter: ''
+        }
+    }
+
     _onPartChange(e: any) {
-        const inputs = Array.from(this.shadowRoot!.querySelectorAll('sl-input'))
+        const inputs = Array.from(this.shadow.querySelectorAll('sl-input'))
         const chars = inputs.reduce((prev, input) => {
             prev += input.value
             return prev
@@ -119,9 +119,8 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
     }
     connectedCallback(): void {
         super.connectedCallback()
-        this.delimiter = this.getFieldOption('delimiter', '')
-        this.template = this.getFieldOption('template', '    ')
-        this.split = this.getFieldOption('split', true)
+        this.delimiter = this.options.delimiter
+        this.template = this.options.template
         this.parts = this.template.split(this.delimiter)
         this.value.split(this.delimiter).forEach((char: string, i: number) => {
             this.parts[i] = char
@@ -132,7 +131,7 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
         input.select();
     }
     renderPart(part: string) {
-        const chars = this.split ? part.split('') : part
+        const chars = part.split('')
         return html`            
         ${repeat(chars, (char) => {
             return html`<sl-input        

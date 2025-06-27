@@ -1,26 +1,38 @@
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
 import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
+import type { SchemaQrCodeWidgetOptions } from "autostore";
 
+export type AutoFieldQRCodeOptions = Required<SchemaQrCodeWidgetOptions>
 
 @customElement('auto-field-qrcode')
-export class AutoFieldQRCode extends AutoField {
+export class AutoFieldQRCode extends AutoField<AutoFieldQRCodeOptions> {
 
+    getInitialOptions(): Record<string, any> {
+        return {
+            fill: 'black',
+            background: 'white',
+            radius: 0,
+            errorCorrection: 'L',
+            size: 64
+        }
+    }
     renderInput() {
         return html`              
         <sl-qr-code 
             slot="value" 
-            name=${this.schema!.name || this.schema!.path.join('.')} 
-            data-path = ${this.schema!.path}
+            name=${this.name} 
+            data-path = ${this.path}
             value=${this.value} 
-            placeholder=${this.getFieldOption('placeholder')}
-            title=${this.getFieldOption('title')}
-            fill=${this.getFieldOption('fill', 'black')}
-            background=${this.getFieldOption('background', 'white')}
-            radius=${this.getFieldOption('radius')}
-            error-correction=${this.getFieldOption('errorCorrection', 'L')} 
-            size=${this.getFieldOption('size', 64)}
+            .placeholder=${this.options.placeholder}
+            title="${ifDefined(this.options.tips)}"
+            fill=${this.options.fill}
+            background=${this.options.background}
+            radius=${this.options.radius}
+            error-correction=${this.options.errorCorrection} 
+            size=${parseInt(String(this.options.size))}
         ></sl-qr-code > 
         `
     }

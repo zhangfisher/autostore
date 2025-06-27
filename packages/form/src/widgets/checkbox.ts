@@ -3,10 +3,13 @@ import { customElement } from "lit/decorators.js"
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import { AutoField } from "@/field"
+import type { SchemaCheckboxWidgetOptions } from "autostore";
 
+
+export type AutoFieldCheckboxOptions = Required<SchemaCheckboxWidgetOptions>
 
 @customElement('auto-field-checkbox')
-export class AutoFieldCheckbox extends AutoField {
+export class AutoFieldCheckbox extends AutoField<AutoFieldCheckboxOptions> {
     switchValues: any[] = []
     renderInput() {
         return html`        
@@ -15,33 +18,24 @@ export class AutoFieldCheckbox extends AutoField {
             name="${this.name}"
             data-path = ${this.path}            
             class="auto-input"
-            .value="${this.switchValues[0]}" 
+            ?disabled=${!this.options.enable}
+            .value="${this.options.switchValues[0]}" 
             .checked=${this._isChecked()} 
-            placeholder="${ifDefined(this.getFieldOption("placeholder"))}"
-            help-text="${ifDefined(this.getFieldOption("help"))}"
+            placeholder="${ifDefined(this.options.placeholder)}"
             @sl-change=${this.onFieldChange.bind(this)}
-        > ${this.schema!.checkLabel}</sl-checkbox> 
+        > ${this.options.checkLabel}</sl-checkbox> 
         `
+    }
+    getInitialOptions() {
+        return {
+            switchValues: [true, false]
+        }
     }
     _isChecked() {
         return this.value === this.switchValues[0]
     }
-    connectedCallback(): void {
-        super.connectedCallback()
-        if (this.schema?.switchValues) {
-            this.switchValues = this.field.switchValues?.value
-        } else {// 没有指定switchValues，就默认为[true,false]
-            if (typeof (this.value) === 'boolean') {
-                this.switchValues = [true, false]
-            } else if (this.value === undefined) {
-                this.switchValues = [true, false]
-            } else {
-                this.switchValues = [this.value, undefined]
-            }
-        }
-    }
     getInputValue() {
-        return this.input!.checked ? this.switchValues[0] : this.switchValues[1]
+        return this.input.checked ? this.options.switchValues[0] : this.options.switchValues[1]
     }
 }
 

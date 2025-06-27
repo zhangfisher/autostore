@@ -1,34 +1,41 @@
+import { ifDefined } from 'lit/directives/if-defined.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 import { AutoField } from "@/field"
 import { html } from "lit"
 import { customElement } from "lit/decorators.js"
+import type { SchemaTextareaWidgetOptions } from 'autostore';
 
+export type AutoFieldTextAreaOptions = Required<SchemaTextareaWidgetOptions>
 
 @customElement('auto-field-textarea')
-export class AutoFieldTextArea extends AutoField {
+export class AutoFieldTextArea extends AutoField<AutoFieldTextAreaOptions> {
 
     renderInput() {
         return html`              
         <sl-textarea 
-            slot="value"             
-            name=${this.schema!.name || this.schema!.path.join('.')} 
-            data-path = ${this.schema!.path.join('.')}
+            name=${this.name} 
+            data-path = ${this.path}
             value=${this.value} 
-            placeholder=${this.getFieldOption('placeholder')}
-            .rows=${this.getFieldOption('rows')}
-            minlength=${this.getFieldOption('minLength')}
-            maxlength=${this.getFieldOption('maxLength')}
-            .autocorrect=${this.getFieldOption('autocorrect')}
-            .autocomplete=${this.getFieldOption('autocomplete')}
-            ?autofocus=${this.getFieldOption('autofocus')}
-            .rows=${this.getFieldOption('rows')}
+            placeholder="${ifDefined(this.options.placeholder)}"
+            .minlength=${this.options.minLength}
+            .maxlength=${this.options.maxLength}
+            .autocorrect=${this.options.autocorrect}
+            .autocomplete=${this.options.autocomplete}
+            ?autofocus=${this.options.autofocus}
+            ?disabled=${!this.options.enable}                
+            .rows=${this.options.rows}
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
-        > ${this.schema!.label}</sl-textarea> 
+        > ${this.value}</sl-textarea> 
         `
     }
+    getInitialOptions(): Record<string, any> {
+        return {
+            rows: 3
+        }
+    }
     getInputValue() {
-        return this.input!.textContent
+        return this.input.textContent
     }
 }
 

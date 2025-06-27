@@ -2,14 +2,14 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
+import type { SchemaInputWidgetOptions } from 'autostore';
 
-export type InputType = 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url' | 'phone'
+export type InputType = "number" | "date" | "time" | "url" | "password" | "email" | "search" | "text" | "datetime-local" | "tel"
 
-export type AutoFieldInputOptions = {
+export type AutoFieldInputOptions = Required<SchemaInputWidgetOptions>
 
-}
 @customElement('auto-field-input')
-export class AutoFieldInput<Options = unknown> extends AutoField<AutoFieldInputOptions & Options> {
+export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<AutoFieldInputOptions & Options> {
     static styles = [
         AutoField.styles,
         css`
@@ -36,46 +36,43 @@ export class AutoFieldInput<Options = unknown> extends AutoField<AutoFieldInputO
             }
     `] as any
 
-    getInputType(): any {
-        return this.schema?.inputType || "input"
+    getInputType(): InputType {
+        return this.options.inputType || "input"
     }
-    connectedCallback(): void {
-        super.connectedCallback()
+
+    getInitialOptions(): Record<string, any> {
+        return {
+            inputType: 'input'
+        }
     }
     getPrefix() {
-        if (this.field.icon) {
-            return html`<sl-icon name="${this.field.icon.value}" slot="prefix"></sl-icon>`
+        if (this.options.icon) {
+            return html`<sl-icon name="${this.options.icon}" slot="prefix"></sl-icon>`
         }
     }
     renderInput() {
-        const schema = this.schema!
         return html`
             <sl-input 
                 slot="value" 
                 type="${this.getInputType()}"
                 .value=${this.value} 
                 name=${this.name} 
-                data-path = ${schema.path.join('.')}
-                .defaultValue=${this.getFieldOption('defaultValue')}                 
-                ?filled=${this.getFieldOption('filled')}
-                ?pill=${this.getFieldOption('pill', false)}
-                ?clearable=${this.getFieldOption('clearable', false)}
-                ?disabled=${this.getFieldOption('disabled', false)}                
-                ?required=${this.getFieldOption('required', false)}                
+                data-path = ${this.path}
+                ?filled=${this.options.filled}
+                ?pill=${this.options.pill}
+                ?clearable=${this.options.clearable}
+                ?required=${this.options.required}                
                 size=${this.context.size} 
-                placeholder=${ifDefined(this.getFieldOption('placeholder'))}
-                pattern=${ifDefined(this.getFieldOption('pattern'))}
-                minLength=${ifDefined(this.getFieldOption('minLength'))}
-                maxLength=${ifDefined(this.getFieldOption('maxLength'))}
-                .max=${this.getFieldOption('max')}
-                .min=${this.getFieldOption('min')}
-                .step=${this.getFieldOption('step')}
-                .passwordToggle=${this.getFieldOption('passwordToggle')}
-                .autocorrect=${this.getFieldOption('autocorrect')}
-                .autocomplete=${this.getFieldOption('autocomplete')}
-                ?autofocus=${this.getFieldOption('autofocus')}
+                placeholder=${ifDefined(this.options.placeholder)}
+                pattern=${ifDefined(this.options.pattern)}
+                minLength=${ifDefined(this.options.minLength)}
+                maxLength=${ifDefined(this.options.maxLength)}
+                ?disabled=${!this.options.enable}                
+                .autocorrect=${this.options.autocorrect}
+                .autocomplete=${this.options.autocomplete}
+                ?autofocus=${this.options.autofocus}
                 @sl-input=${this.onFieldInput.bind(this)}
-                spellcheck=${ifDefined(this.getFieldOption('spellcheck', "false"))}
+                spellcheck=${ifDefined(this.options.spellcheck)}
             >
             ${this.getPrefix()}${this.getSuffix()}${this.renderActions()}</sl-input>
         `

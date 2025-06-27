@@ -1,6 +1,6 @@
-import { SchemaOptions } from "autostore"
+import type { SchemaOptions } from "autostore"
 
-export function toSchemaValue<T = any>(value: any, schema: SchemaOptions): T {
+export function toSchemaValue<T = any>(value: any, schema?: SchemaOptions): T {
     if (!schema) return value
     const datatype = schema.datatype || 'any'
     if (datatype === 'any') return value

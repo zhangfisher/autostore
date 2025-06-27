@@ -1,15 +1,18 @@
 import { customElement } from "lit/decorators.js"
-import { AutoFieldInput, InputType } from "./input"
+import { AutoFieldInput, type InputType } from "./input"
+import type { SchemaPhoneWidgetOptions } from "autostore"
+
+export type AutoFieldPhoneOptions = Required<SchemaPhoneWidgetOptions>
+
 @customElement('auto-field-phone')
-export class AutoFieldPhone extends AutoFieldInput {
+export class AutoFieldPhone extends AutoFieldInput<AutoFieldPhoneOptions> {
     getInputType(): InputType {
-        return 'phone'
+        return 'tel'
     }
-    getFieldOptions() {
-        if (!this.schema?.icon) {
-            this.schema!.icon = 'phone'
+    getInitialOptions() {
+        return {
+            icon: 'phone'
         }
-        return super.getFieldOptions()
     }
 }
 

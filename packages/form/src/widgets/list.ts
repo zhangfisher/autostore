@@ -8,6 +8,7 @@ import '@shoelace-style/shoelace/dist/components/tag/tag.js';
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
+import type { SchemaListWidgetOptions, SchemaWidgetSelectItem } from "autostore";
 
 
 export type ListItem = {
@@ -27,9 +28,10 @@ export type AutoListOptions = {
     maxItems: number
     minItems: number
 }
+export type AutoFieldListOptions = Required<SchemaListWidgetOptions>
 
 @customElement('auto-field-list')
-export class AutoFieldList extends AutoField<AutoListOptions> {
+export class AutoFieldList extends AutoField<AutoFieldListOptions> {
     static styles = [
         AutoField.styles,
         css`
@@ -91,7 +93,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     selection: any[] = []
     valueKey: string = 'id'
     labelKey: string = 'label'
-    items: ListItem[] = []
+    items: SchemaWidgetSelectItem[] = []
 
     @state()
     selectedTips: string = ''
@@ -99,12 +101,25 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     @query('sl-menu')
     menu?: any
 
+    getInitialOptions() {
+        return {
+            valueKey: 'value',
+            labelKey: 'label',
+            multiple: false,
+            maxItems: 0,
+            minItems: 0,
+            showResults: false,
+            itemTemplate: undefined,
+            select: []
+        }
+    }
+
     connectedCallback() {
         super.connectedCallback()
-        if (this.field) {
-            this.valueKey = this.field.valueKey.value || 'value'
-            this.labelKey = this.field.labelKey.value || 'label'
-            const items = this.field.select!.value
+        if (this.options) {
+            this.valueKey = this.options.valueKey
+            this.labelKey = this.options.labelKey
+            const items = this.options.select
             if (items) {
                 this.items = items
                 this.items.forEach((item: any) => {
@@ -118,7 +133,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     }
     isItemSelected(item: any) {
         if (this.value === undefined) return false
-        if (this.schema!.multiple === false) {
+        if (this.options.multiple === false) {
             return this.value === item[this.valueKey]
         } else {
             return this.value.includes(item[this.valueKey])
@@ -127,10 +142,10 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     _addSecectItem(newItem: any) {
         const findIndex = this.selection.findIndex(item => {
             //@ts-ignore
-            return item[this.valueKey] == newItem[this.valueKey]
+            return item[this.valueKey] === newItem[this.valueKey]
         })
         if (findIndex === -1) {
-            if (this.field.multiple.value === false && this.selection.length > 0) {
+            if (this.options.multiple === false && this.selection.length > 0) {
                 this.selection.splice(0, this.selection.length)
             }
             this.selection.push(newItem[this.valueKey])
@@ -162,7 +177,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
     }
     renderList() {
         const values = Array.isArray(this.value) ? this.value : [this.value]
-        const itemTemplate = this.field.itemTemplate?.value
+        const itemTemplate = this.options.itemTemplate
         return html`
         <div class="items" >
             <div class="header">
@@ -171,7 +186,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
             <!-- 渲染列表项 -->
             ${this._renderWithSplitPanel(html`
                 <sl-menu slot="start" class="mark-err" style=${styleMap({
-            maxHeight: this.field.height?.value,
+            maxHeight: this.options.height,
         })}
                     @sl-select=${this._onSelectItem.bind(this)}>
                     ${repeat(this.items, (item: any, index: number) => {
@@ -199,8 +214,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
         `
     }
     _renderWithSplitPanel(list: any) {
-        //@ts-ignore
-        if (this.field?.showResults && this.field?.showResults.value) {
+        if (this.options.showResults) {
             return html`<sl-split-panel position="60">
                 ${list}
                 ${this.renderResults()}
@@ -267,14 +281,14 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
         }
     }
     getInputValue() {
-        if (this.field.multiple.value) {
+        if (this.options.multiple) {
             return this.selection
         } else {
             return this.selection.length > 0 ? this.selection[0] : undefined
         }
     }
     getShowLabel(item: ListItem) {
-        const labelKey = this.field.labelKey.value
+        const labelKey = this.options.labelKey
         if (labelKey) {
             if (labelKey in item) {
                 return (item as any)[labelKey]
@@ -288,7 +302,7 @@ export class AutoFieldList extends AutoField<AutoListOptions> {
             class="results mark-err" 
             no-padding 
             style="${styleMap({
-            maxHeight: this.field.height?.value
+            maxHeight: this.options.height
         })}">
             ${repeat(this.selection, (item: any) => {
             return html`<div class="item" >

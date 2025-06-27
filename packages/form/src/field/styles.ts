@@ -35,8 +35,8 @@ export default css`
                 color: var(--auto-gray-color);
                 padding:  calc(var(--auto-spacing) * 0.3) 0px;
             }    
-        }
-        
+        }    
+
         & > .autofield:hover{
             background-color: var(--sl-color-gray-50);
         }
@@ -63,7 +63,10 @@ export default css`
                 object-fit: contain;
             }
         }
-        
+    }        
+    /* 隐藏 */
+    :host(.hidden){
+        display: none!important;        
     }
     /* 错误样式 */
     :host(.error){
@@ -132,8 +135,7 @@ export default css`
                 cursor: not-allowed;
                 pointer-events: none;
             }
-        }
-        
+        }        
     }
     /* 网格线 */
     :host(.grid){ 
@@ -145,8 +147,7 @@ export default css`
         & > .autofield{
             &>.value{
                 display:flex;
-                align-items: center;
-                justify-content: end; 
+                align-items: end;
             }  
         }
     }

@@ -1,12 +1,15 @@
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
-import { ifDefined } from "lit/directives/if-defined.js"
 import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
+import type { SchemaRadioButtonWidgetOptions } from "autostore";
+
+
+export type AutoFieldRadioButtonOptions = Required<SchemaRadioButtonWidgetOptions>
 
 
 @customElement('auto-field-radio-button')
-export class AutoFieldRadioButton extends AutoField {
+export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions> {
     static styles = [
         AutoField.styles,
         css`
@@ -24,7 +27,7 @@ export class AutoFieldRadioButton extends AutoField {
     `] as any
 
     renderInput() {
-        const items = this.getFieldOption('select', []).map((item: any, index: number) => {
+        const items = this.getOptionValue('select', []).map((item: any, index: number) => {
             const selectItem: any = {}
             if (typeof (item) === 'object') {
                 Object.assign(selectItem, item)
@@ -35,14 +38,15 @@ export class AutoFieldRadioButton extends AutoField {
         })
         return html`              
         <sl-radio-group 
-            name=${this.schema!.name || this.schema!.path.join('.')} 
+            name=${this.name} 
+            data-path=${this.path} 
             value="${this.value}"            
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         >
         ${items.map((item: any) => html`<sl-radio-button
             value="${item.value}"
-            ${ifDefined(this.getFieldOption('disabled'))}
+            ?disabled =${this.options.enable}
         >${item.label}</sl-radio-button>`)}
         </sl-radio-group> 
         `

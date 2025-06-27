@@ -1,14 +1,12 @@
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
-import { ifDefined } from "lit/directives/if-defined.js"
 import { styleMap } from "lit/directives/style-map.js"
 import '@shoelace-style/shoelace/dist/components/radio/radio.js';
 import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
+import type { SchemaRadioWidgetOptions } from "autostore"
 
-export type AutoFieldRadioOptions = {
-    card: boolean
-}
+export type AutoFieldRadioOptions = Required<SchemaRadioWidgetOptions>
 
 @customElement('auto-field-radio')
 export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
@@ -104,13 +102,19 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             }             
         }
     `] as any
+    getInitialOptions(): Record<string, any> {
+        return {
+            card: false,
+            select: []
+        }
+    }
     renderOptionItemWithCard(option: any, item: any) {
-        if (this.field.card) {
+        if (this.options.card) {
             const value = item.value || item.label
-            const isSelected = this.value == value
+            const isSelected = this.value === value
             return html`<div class="card"
                 style=${styleMap({
-                width: this.field.itemWidth?.value
+                width: this.options.itemWidth
             })}
                 >
                     <div class="body ${isSelected ? 'selected' : ''}">
@@ -122,22 +126,22 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             return option
         }
     }
-    onRadioChange(e: any) {
-        this.onFieldChange(e)
-        if (this.field.card) this.requestUpdate()
+    onRadioChange() {
+        this.onFieldChange()
+        if (this.options.card) this.requestUpdate()
     }
     renderOptionItem(item: any) {
         const value = item.value || item.label
         return html`<sl-radio 
             value="${value}"
             style=${styleMap({
-            width: this.field.card === undefined ? this.field.itemWidth?.value : undefined
+            width: this.options.card === undefined ? this.options.itemWidth : undefined
         })}
-            ${ifDefined(this.getFieldOption('disabled'))}
+            ?disabled=${!this.options.enable}
         >${item.label}<br/><span class="memo">${item.memo}</span></sl-radio>`
     }
     renderInput() {
-        const items = this.getFieldOption('select', []).map((item: any) => {
+        const items = this.options.select.map((item: any) => {
             const selectItem: any = {}
             if (typeof (item) === 'object') {
                 Object.assign(selectItem, item)

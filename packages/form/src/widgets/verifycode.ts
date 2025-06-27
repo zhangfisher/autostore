@@ -46,9 +46,9 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptio
 
         // 调用实际的请求处理函数
         // @ts-ignore
-        if (this.field.onRequest && typeof (this.field.onRequest.value === 'function')) {
+        if (this.options.onRequest && typeof (this.options.onRequest.value === 'function')) {
             // @ts-ignore
-            this.field.onRequest.value.call(this)
+            this.options.onRequest.value.call(this)
         }
 
         // 开始倒计时
@@ -72,7 +72,7 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptio
             if (remainingSteps <= 0) {
                 // 倒计时结束，恢复按钮文本和状态
                 if (this.afterActions && this.afterActions.length > 0) {
-                    this.afterActions[0].label = this.getFieldOption('sendTips', '发送验证码');
+                    this.afterActions[0].label = this.getOptionValue('sendTips', '发送验证码');
                     this.requestUpdate();
                 }
                 this.countdowning = false;
@@ -93,14 +93,14 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptio
         }
         this.afterActions!.unshift({
             id: "send",
-            label: this.getFieldOption('sendTips', '发送验证码'),
+            label: this.getOptionValue('sendTips', '发送验证码'),
             onClick: this.sendRequest.bind(this)
         })
-        const timeout = this.getFieldOption('timeout', 60 * 1000)
+        const timeout = this.getOptionValue('timeout', 60 * 1000)
         this.timeout = Array.isArray(timeout) ? Number(timeout[0]) : Number(timeout)
         this.step = Array.isArray(timeout) ? Number(timeout[1]) : 1000
         this.stepCount = this.timeout / this.step
-        this.template = this.getFieldOption('template', '{timeout}秒后重新获取')
+        this.template = this.getOptionValue('template', '{timeout}秒后重新获取')
     }
 }
 

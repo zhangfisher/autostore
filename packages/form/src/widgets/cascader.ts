@@ -1,5 +1,5 @@
 import { customElement } from "lit/decorators.js"
-import { AutoFieldInput, InputType } from "./input"
+import { AutoFieldInput, type InputType } from "./input"
 
 
 @customElement('auto-field-cascader')

@@ -44,7 +44,7 @@ type SchemaArgs = {
  * 
  * 
  */
-function markActions(actions: SchemaWidgetAction[]) {
+function markRawActions(actions: SchemaWidgetAction[]) {
     if (Array.isArray(actions)) {
         actions.forEach(action => {
             if (typeof (action) === 'object') {
@@ -60,16 +60,22 @@ function markActions(actions: SchemaWidgetAction[]) {
 }
 
 // 将options里面的on和render开头的函数标识为raw
-function markOptions(options: SchemaOptions) {
+function markRawOptions(options: SchemaOptions) {
     if (isPlainObject(options)) {
         Object.entries(options).forEach(([key, value]) => {
-            if (isFunction(value) && (
-                key.startsWith('on')
-                || key.startsWith('render')
-                || key.startsWith('to')
-            )) {
-                options[key] = markRaw(value)
+            if (key === 'actions') {
+                markRawActions(value)
+            } else {
+                if (isFunction(value) && (
+                    key.startsWith('on')
+                    || key.startsWith('render')
+                    || key.startsWith('to')
+                )) {
+                    // @ts-ignore
+                    options[key] = markRaw(value)
+                }
             }
+
         })
     }
 }
@@ -80,69 +86,50 @@ function markOptions(options: SchemaOptions) {
  * @param args 参数数组，可能包含值、验证函数和选项对象
  * @returns 包含解析后参数的对象，结构为 { value, options?, validator? }
  * 
- * 参数解析规则：
- * 1. 第一个参数作为 value
- * 2. 最后一个参数如果是普通对象则作为 options
- * 3. 第二个参数如果是函数则作为验证器
- * 4. 第三个参数如果是字符串则作为验证错误提示
+ * 参数解析规则： 
  */
-function parseSchemaArgs(args: any[]): SchemaArgs {
+function parseSchemaOptions(args: any[]): SchemaArgs {
     const finalArgs: any = {
-        value: args[0]
-    }
-    let validator: SchemaValidator | undefined
-    if (args.length >= 2 && typeof (args[1]) === 'function') {
-        validator = {
+        value: args[0],
+        validator: {},
+        options: Object.assign({
             onFail: 'throw-pass',
-            validate: args[1]
+        }, args[1])
+    }
+    // 设置默认的widget
+    if (!finalArgs.options.widget) {
+        const datatype = typeof (finalArgs.value)
+        if (datatype === 'boolean') {
+            finalArgs.options.widget = 'checkbox'
+        } else if (datatype === 'number') {
+            finalArgs.options.widget = 'number'
+        }
+        if (Array.isArray(finalArgs.options.select)) {
+            finalArgs.options.widget = 'select'
         }
     }
-    if (validator && args.length >= 3 && typeof (args[2]) === 'string') {
-        validator.message = args[2]
+    if ('invalidMessage' in finalArgs.options) {
+        finalArgs.validator.message = finalArgs.options.invalidMessage
+        delete finalArgs.options.invalidMessage
     }
-    if (args.length >= 2 && isPlainObject(args[1]) && 'validate' in args[1]) {
-        validator = Object.assign({
-            onFail: 'throw-pass',
-        }, args[1]) as SchemaValidator
+    if ('onFail' in finalArgs.options) {
+        finalArgs.validator.onFail = finalArgs.options.onFail
+        delete finalArgs.options.onFail
     }
-    if (args.length >= 2 && isPlainObject(args[args.length - 1]) && !('validate' in args[args.length - 1])) {
-        finalArgs.options = Object.assign({}, args[args.length - 1])
+    if ('onValidate' in finalArgs.options) {
+        finalArgs.validator.validate = finalArgs.options.onValidate
+        delete finalArgs.options.onValidate
     }
-    if (validator) {
-        finalArgs.validator = validator
+    if (Object.keys(finalArgs.validator).length === 0) {
+        delete finalArgs.validator
     }
-    if (finalArgs.options) {
-        // 设置默认的widget
-        if (!finalArgs.options.widget) {
-            const datatype = typeof (finalArgs.value)
-            if (datatype === 'boolean') {
-                finalArgs.options.widget = 'checkbox'
-            } else if (datatype === 'number') {
-                finalArgs.options.widget = 'number'
-            }
-            if (Array.isArray(finalArgs.options.select)) {
-                finalArgs.options.widget = 'select'
-            }
-        }
-        if ('invalidMessage' in finalArgs.options) {
-            finalArgs.validator.message = finalArgs.options.invalidMessage
-            delete finalArgs.options.invalidMessage
-        }
-        if ('onFail' in finalArgs.options) {
-            finalArgs.validator.onFail = finalArgs.options.onFail
-            delete finalArgs.options.onFail
-        }
-        if (finalArgs.options.actions) {
-            markActions(finalArgs.options.actions)
-        }
-        markOptions(finalArgs.options)
-    }
+    markRawOptions(finalArgs.options)
     return finalArgs as SchemaArgs
 }
 
 
 export const schema = function () {
-    const args = parseSchemaArgs([...arguments])
+    const args = parseSchemaOptions([...arguments])
     const value = arguments[0]
     const datatype = Array.isArray(value) ? 'array' : typeof (value)
     const builder = () => ({
@@ -159,7 +146,7 @@ export const configurable = schema
 
 export function createTypeSchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
     const typeSchema = function () {
-        const args = parseSchemaArgs([...arguments]);
+        const args = parseSchemaOptions([...arguments]);
         if (!args.validator) {
             args.validator = {} as any;
         }
@@ -169,7 +156,7 @@ export function createTypeSchemaBuilder<Value = any>(isValid: (val: any) => bool
         if (!args.validator.message) {
             args.validator.message = defaultTips;
         }
-        return schema(args.value, args.validator, args.options)
+        return schema(args.value, args.options)
     }
     return typeSchema as SchemaBuilder<Value>
 }

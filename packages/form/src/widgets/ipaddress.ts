@@ -1,23 +1,15 @@
 import { AutoField } from "@/field"
+import type { SchemaIpAddressWidgetOptions } from "autostore"
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 
+export type AutoFieldIPAddressOptions = Required<SchemaIpAddressWidgetOptions>
 
 @customElement('auto-field-ipaddress')
-export class AutoFieldIpAddress extends AutoField {
+export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
     static styles = [
         AutoField.styles,
         css` 
-        
-            .value{
-                /* display: flex;
-                flex-direction: row;
-                border: 1px solid var(--sl-color-gray-500);
-                border-radius: var(--sl-border-radius-medium);
-                background-color: var(--sl-input-background-color);
-                border: solid var(--sl-input-border-width) var(--sl-input-border-color);
-                width: 15rem; */
-            }
             span.dot{
                 width:1em;                     
                 text-align: center;   
@@ -41,13 +33,18 @@ export class AutoFieldIpAddress extends AutoField {
                 letter-spacing: var(--sl-letter-spacing-denser);
             }
     `] as any
+    getInitialOptions(): Record<string, any> {
+        return {
+            size: 'medium'
+        }
+    }
     _getIpBits(): [number, number, number, number] {
         const bits = this.value?.split(".")
         return [
-            parseInt(bits![0] || "0"),
-            parseInt(bits![1] || "0"),
-            parseInt(bits![2] || "0"),
-            parseInt(bits![3] || "0")
+            parseInt(bits[0] || "0"),
+            parseInt(bits[1] || "0"),
+            parseInt(bits[2] || "0"),
+            parseInt(bits[3] || "0")
         ]
     }
     _onIpChange(_: number, e: Event) {
@@ -55,9 +52,10 @@ export class AutoFieldIpAddress extends AutoField {
         this._isLastInput(e)
     }
     getInputValue() {
-        const inputs = Array.from(this.shadowRoot!.querySelectorAll('sl-input'))
+        const inputs = Array.from(this.shadow.querySelectorAll('sl-input'))
         return inputs.map(input => input.value).join(".")
     }
+
     _isLastInput(e: Event) {
         const input = e.target as HTMLInputElement;
         // 检查输入值长度是否为3
@@ -112,14 +110,13 @@ export class AutoFieldIpAddress extends AutoField {
 
 
     renderInput() {
-        const schema = this.schema!
         return html`
             <auto-box flex="row" size="small" no-padding>
                 ${this._getIpBits().map((bit, index) => html`
                     <sl-input 
                         value="${bit}" 
                         name=${this.name} 
-                        data-path = ${schema.path.join('.')}
+                        data-path = ${this.path}
                         defaultValue='0' 
                         size=${this.context.size}
                         maxLength="3"

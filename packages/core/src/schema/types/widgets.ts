@@ -1,4 +1,4 @@
-import type { SchemaWidgetSelect } from "../.."
+import { SchemaWidgetSelectItem } from "."
 
 export type SchemaWidgetTypes = 'input'
     | 'select'
@@ -57,6 +57,7 @@ export type SchemaSelectWidgetOptions = {
     pill?: boolean
     filled?: boolean
     multiple?: boolean
+    select: (SchemaWidgetSelectItem | string)[]
 }
 export type SchemaTextareaWidgetOptions = {
     rows?: number
@@ -72,11 +73,13 @@ export type SchemaRangeWidgetOptions = {
     min?: number
     step?: number
     tooltip?: 'top' | 'bottom' | 'none'
-    tooltipFormatter?: string
+    tooltipFormatter?: (val: number) => string
+    format?: string
 }
 export type SchemaRadioWidgetOptions = {
     card?: boolean
     itemWidth?: number | string
+    select: (SchemaWidgetSelectItem | string | number)[]
 }
 export type SchemaRadioButtonWidgetOptions = {
     pill?: boolean
@@ -103,7 +106,7 @@ export type SchemaCheckboxWidgetOptions = {
 }
 export type SchemaCheckboxGroupWidgetOptions = {
     valueKey?: string
-    select: SchemaWidgetSelect
+    select: SchemaWidgetSelectItem[]
     card?: boolean
     itemWidth?: string
 }
@@ -125,7 +128,8 @@ export type SchemaIpAddressWidgetOptions = {
 export type SchemaColorPickerWidgetOptions = {
     opacity?: boolean
     inline?: boolean
-    pressets?: string[]
+    presets?: string[]
+    format?: 'hex' | 'rgb' | 'hsl' | 'hsv'
 }
 export type SchemaURLWidgetOptions = Omit<SchemaInputWidgetOptions,
     'inputType' | 'max' | 'min' | 'pattern'
@@ -177,7 +181,7 @@ export type SchemaTreeSelectWidgetOptions = {
     multiple?: boolean
     showAsPath?: boolean
     onlySelectLeaf?: boolean
-    onSelectionChange?: (selection: { id: any, label: any, path: any }[]) => void
+    onSelectionChange?: (selection: ({ id: any, value: any, path: any })[]) => void
     items: SchemaTreeSelectWidgetNode | SchemaTreeSelectWidgetNode[]
 }
 
@@ -192,8 +196,7 @@ export type SchemaListWidgetListItem = {
 
 
 export type SchemaListWidgetOptions = {
-    select: SchemaWidgetSelect
-    idKey?: string
+    select: SchemaWidgetSelectItem[]
     multiple?: boolean
     showIcon?: boolean
     valueKey?: string    // 用于值
@@ -207,8 +210,56 @@ export type SchemaListWidgetOptions = {
 
 export type SchemaUploadWidgetOptions = {
     fileTypes?: string[]
-    url?: string
+    url?: string,
+    fileFieldName?: string       // 上传文件字段名称，默认是file
+    onRemove?: (file: string) => Promise<void> | void
+    // 上传提示信息
+    tips?: string
+    /**
+     * 用于解析上传文件的url
+     * 
+     * data是/upload上传API返回的数据，一般应返回类似{url:string}
+     * 用于代表文件被上传的位置url
+     * 
+     * 由于不同Upload组件返回的数据格式不同，所以需要用户自己解析
+     * 
+     * 如果没有提供，默认的解析逻辑
+     * 
+     * - data:string       文件的URL
+     * - {url:string}      文件的URL
+     * 
+     * 如果不符合以上逻辑，则需要自行处理
+     * 
+     */
+    onResolve?: (data: any) => ({ url: string, name?: string })
     multiple?: boolean
+    preview?: boolean | string
+    /**
+     * 默认情况下，
+     * 
+     * 上传字段只保存上传文件的url，比如
+     * 
+     * {
+     *   file:configurable("",{
+     *      widget:"upload"
+     *  })
+     * }
+     * 
+     * 当上传abc.jpg时，服务器保存在upload/abc.jpg，或者重命名为upload/abc_123232.jpg
+     * 
+     * 此时state.file==`upload/abc_123232.jpg`
+     * 
+     * 就是字段值=上传文件的URL
+     * 
+     * 
+     * 而有时我们想保存一些额外的文件数据，比如文件大小，用途，名称等等。
+     * 
+     * 
+     * 
+     * 
+     * 
+     */
+    onlyFileUrl?: boolean
 }
 
 
@@ -216,47 +267,3 @@ export type SchemaPartsWidgetOptions = {
     delimiter?: string
     template?: string
 }
-
-
-
-// export interface SchemaWidgetOptions<State = Dict> {
-//     filled?: boolean | ComputedBuilder<boolean, State>
-//     pill?: boolean | ComputedBuilder<boolean, State>
-//     clearable?: boolean | ComputedBuilder<boolean, State>
-//     readonly?: boolean | ComputedBuilder<boolean, State>
-//     autocomplete?: string | ComputedBuilder<string, State>
-//     pattern?: string | ComputedBuilder<string, State>
-//     autocorrect?: 'on' | 'off'
-//     noSpinButtons?: boolean | ComputedBuilder<boolean, State>
-//     autofocus?: boolean | ComputedBuilder<boolean, State>
-//     maxLength?: number | ComputedBuilder<number, State>
-//     minLength?: number | ComputedBuilder<number, State>
-//     spellcheck?: boolean | ComputedBuilder<boolean, State>
-//     inputType?: 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url'
-//     selection?: 'signle' | 'multiple' | 'leaf'
-//     multiple?: boolean | ComputedBuilder<boolean, State>,
-//     maxOptionsVisible?: number | ComputedBuilder<number, State>,
-//     placement?: 'top' | 'bottom'
-//     max?: number | ComputedBuilder<number, State>
-//     precision?: number | ComputedBuilder<number, State>
-//     min?: number | ComputedBuilder<number, State>
-//     step?: number | ComputedBuilder<number, State>
-//     tooltip?: 'top' | 'bottom'
-//     format?: string | ComputedBuilder<string, State>
-//     inline?: boolean | ComputedBuilder<boolean, State>
-//     opacity?: boolean | ComputedBuilder<boolean, State>
-//     uppercase?: boolean | ComputedBuilder<boolean, State>
-//     swatches?: string | ComputedBuilder<string, State>
-//     background?: string | ComputedBuilder<string, State>
-//     radius?: number | ComputedBuilder<number, State>
-//     errorCorrection?: 'L' | 'M' | 'Q' | 'H'
-//     passwordToggle?: boolean | ComputedBuilder<boolean, State>
-//     passwordVisible?: boolean | ComputedBuilder<boolean, State>
-//     resize?: 'none' | 'vertical' | 'auto'
-//     items?: SchemaWidgetTreeNode | SchemaWidgetTreeNode[]
-//     renderHelp?: (ctx: AutoFormContext) => any
-//     renderLabel?: (ctx: AutoFormContext) => any
-//     renderValue?: (ctx: AutoFormContext) => any
-//     renderError?: (ctx: AutoFormContext) => any
-//     onFieldChange?: (event: Event) => any
-// }

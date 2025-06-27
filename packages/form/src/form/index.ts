@@ -32,11 +32,11 @@ import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { LitElement, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
-import { context, AutoFormContext } from '../context'
+import type { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
+import { context, type AutoFormContext } from '../context'
 import '../components/box'
 import { provide } from '@lit/context';
-import { IconLibrary, IconLibraryResolver, registerIconLibrary } from '@shoelace-style/shoelace/dist/components/icon/library.js';
+import { type IconLibrary, type IconLibraryResolver, registerIconLibrary } from '@shoelace-style/shoelace/dist/components/icon/library.js';
 import { ThemeController } from '@/controllers/theme';
 import { HostClasses } from '@/controllers/hostClasss';
 import '../field'
@@ -55,8 +55,7 @@ export class AutoForm extends LitElement {
     //@ts-ignore
     context: AutoFormContext = {}
 
-
-    schemas: ComputedSchemaState<SchemaOptions>[] = []
+    schemas: SchemaOptions[] = []
 
     /**
      * 是不显示初始错误
@@ -147,13 +146,11 @@ export class AutoForm extends LitElement {
 
     /**
      * 
-     * 注册图标库地址
-     * 
-      
+     * 注册图标库地址 
      * 
      */
     @property({ type: String })
-    iconLibrary: string = 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/${name}.svg'
+    iconLibrary: string = 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/{name}.svg'
 
 
     /**
@@ -176,12 +173,10 @@ export class AutoForm extends LitElement {
             if (name in presetIcons) {
                 return `data:image/svg+xml,${encodeURIComponent((presetIcons as any)[name])}`;
             } else {
-                return this.iconLibrary.replace('${name}', name)
+                return this.iconLibrary.replace('{name}', name)
             }
         })
     }
-
-
     _load() {
         const schmeaState = this.store!.schemas.store.state as Record<string, ComputedState<SchemaOptions>>
         this.schemas = Object.values(schmeaState)
@@ -225,9 +220,9 @@ export class AutoForm extends LitElement {
         })
         this.requestUpdate()
     }
-    _renderWidget(schema: SchemaOptions) {
-        const width = schema.width
-        const widget = schema.widget
+    _renderWidget(options: SchemaOptions) {
+        const width = options.width
+        const widget = options.widget
         let widgetEle: HTMLElement
         try {
             widgetEle = document.createElement(`auto-field-${widget || 'input'}`)
@@ -235,7 +230,7 @@ export class AutoForm extends LitElement {
             widgetEle = document.createElement('auto-field-input')
         }
         // @ts-ignore
-        widgetEle.schema = schema
+        widgetEle.schema = options
         widgetEle.setAttribute('grid', String(this.grid))
         // @ts-ignore
         if (width) widgetEle.style.width = width

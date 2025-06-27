@@ -1,13 +1,9 @@
 import { AutoField } from "@/field"
+import type { SchemaCheckboxGroupWidgetOptions } from "autostore";
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import { styleMap } from 'lit/directives/style-map.js';
 import { when } from 'lit/directives/when.js';
-
-
-export type AutoFieldCheckboxGroupOptions = {
-    card: boolean
-}
 
 
 type SelectItem = {
@@ -16,6 +12,7 @@ type SelectItem = {
     label: any
 } & Record<string, any>
 
+export type AutoFieldCheckboxGroupOptions = Required<SchemaCheckboxGroupWidgetOptions>
 
 @customElement('auto-field-checkbox-group')
 export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOptions> {
@@ -117,10 +114,18 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
     items: SelectItem[] = []
     isShowIcon: boolean = false
 
+    getInitialOptions() {
+        return {
+            valueKey: 'value',
+            card: false
+        }
+    }
+
+
     connectedCallback(): void {
         super.connectedCallback()
-        this.valueKey = this.getFieldOption('valueKey') || 'value'
-        this.items = this.getFieldOption('select', []).map((item: any, index: number) => {
+        this.valueKey = this.options.valueKey
+        this.items = this.options.select.map((item: any, index: number) => {
             const selectItem: any = {}
             if (typeof (item) === 'object') {
                 Object.assign(selectItem, item)
@@ -145,7 +150,6 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
         })} </div>
         `
     }
-
 
     renderCheckboxItem(item: any) {
         return html`              
@@ -176,7 +180,7 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                     this.selection.splice(index, 1)
                 }
             }
-            this.onFieldChange(e)
+            this.onFieldChange()
         }
     }
 
@@ -186,12 +190,12 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
     }
 
     renderCheckItemWithCard(option: any, item: any) {
-        if (this.field.card && this.field.card.value) {
+        if (this.options.card) {
             const isSelected = this.selection.includes(item[this.valueKey])
             return html`<div class="card ${isSelected ? 'selected' : ''}"
                 data-index ="${item.$index}"
                 style=${styleMap({
-                width: this.field.itemWidth?.value
+                width: this.options.itemWidth
             })}
                 @click=${this._onCheckChange.bind(this)}
             >

@@ -1,16 +1,20 @@
 import { customElement } from "lit/decorators.js"
-import { AutoFieldInput } from "./input"
-@customElement('auto-field-password')
-export class AutoFieldPassword extends AutoFieldInput {
+import { AutoFieldInput, type InputType } from "./input"
+import type { SchemaPasswordWidgetOptions } from "autostore"
 
-    getInputType() {
-        return 'password' as any
+export type AutoFieldPasswordOptions = Required<SchemaPasswordWidgetOptions>
+
+
+@customElement('auto-field-password')
+export class AutoFieldPassword extends AutoFieldInput<AutoFieldPasswordOptions> {
+
+    getInputType(): InputType {
+        return 'password'
     }
-    getFieldOptions() {
-        if (!this.schema?.icon) {
-            this.schema!.icon = 'lock'
+    getInitialOptions() {
+        return {
+            icon: 'lock'
         }
-        return super.getFieldOptions()
     }
 }
 

@@ -5,9 +5,6 @@ import type { ComputedState, Dict, GetTypeByPath, MutableRecord, StatePath, ToRa
 import type { SchemaCaptchaWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
 
 
-
-
-
 // 让对象的成员值允许是ComputedBuilder，可计算值 
 export type Computedable<Obj extends Record<string, any>> = {
     [Key in keyof Obj]: Obj[Key]
@@ -16,9 +13,6 @@ export type Computedable<Obj extends Record<string, any>> = {
     )
 
 }
-
-
-
 export type SchemaValidate<Value = any> = (newValue: Value, oldValue: Value, path: string) => boolean
 export type SchemaValidator<Value = any> = {
     // 校验函数
@@ -91,7 +85,7 @@ export type SchemaWidgetAction<State = Dict> = {
     variant?: 'primary' | 'neutral' | 'success' | 'danger' | 'warning' | 'default'
     onClick?: (value: any, ctx: {
         action: SchemaWidgetAction,
-        schema: SchemaOptions,
+        options: SchemaOptions,
         event: Event,
         update: (value: any) => void
     }) => void
@@ -100,7 +94,8 @@ export type SchemaWidgetAction<State = Dict> = {
     // 如果指定了items，则渲染为Dropdown
     items?: SchemaWidgetAction<State>[]
 }
-export type SchemaWidgetSelect<Value = any> = (({
+
+export type SchemaWidgetSelectItem<Value = any> = ({
     id?: any
     label?: string
     value?: ToRawType<Value>
@@ -109,21 +104,23 @@ export type SchemaWidgetSelect<Value = any> = (({
     default?: boolean
     enable?: boolean
     icon?: string
-} & Record<string, any>) | string | number)[]
-
+} & Record<string, any>)
 
 export type SchemaWidgetShareOptions<Value, State> = {
     name?: string
+    path?: string[]
+    datatype?: string
     required?: boolean
     visible?: boolean
     enable?: boolean
     description?: string
+    size?: string | number
     icon?: string
     // 用于验证
     invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
     onValidate?: (newValue: Value, oldValue: Value, path: string) => boolean;
     onFail?: 'pass' | 'throw' | 'ignore' | 'throw-pass'
-    // 提供一些元数据
+    // 提供一些元数据    
     label?: string
     labelPos?: string
     help?: string
@@ -135,8 +132,9 @@ export type SchemaWidgetShareOptions<Value, State> = {
     width?: number | string
     height?: number | string
     divider?: boolean // 是否在前面显示一条分割线
+    view?: 'left' | 'center' | 'right' // viewonly模式下显示方式
     tips?: string
-    select?: SchemaWidgetSelect<Value>
+    select?: (SchemaWidgetSelectItem<Value> | string | number)[]
     // 转换数据
     toView?: (value: any) => any
     toState?: (value: any) => any
@@ -194,8 +192,9 @@ export interface SchemaDescriptorBuilder<Value = any, State = Dict> {
     (): SchemaDescriptor<Value, State>
 }
 
-export type SchemaBuilder<Value = any> = <T = Value>(value: T, options?: ComputedableSchemaOptions<Value>) => SchemaDescriptorBuilder<ToRawType<T>>
 
+export type SchemaBuilder<Value = any> =
+    <T = Value>(value: T, options?: ComputedableSchemaOptions<Value>) => SchemaDescriptorBuilder<ToRawType<T>>
 
 
 export type ConfigurableState<State extends Dict> = {
@@ -213,3 +212,6 @@ export type ComputedSchemaState<State extends Dict> = {
         path: string[]
     }
 }
+
+
+export * from './widgets'

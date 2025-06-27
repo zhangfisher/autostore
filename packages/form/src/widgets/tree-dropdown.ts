@@ -4,11 +4,14 @@ import { customElement, query, state } from "lit/decorators.js"
 import { repeat } from "lit/directives/repeat.js";
 import '@shoelace-style/shoelace/dist/components/tag/tag.js';
 import { classMap } from "lit/directives/class-map.js";
-import { AutoFieldTreeSelect, TreeSelectedItem } from "./tree-select";
+import { AutoFieldTreeSelect, type TreeSelectedItem } from "./tree-select";
 import { when } from "lit/directives/when.js";
+import type { SchemaTreeDropdownWidgetOptions } from "autostore";
+
+export type AutoFieldTreeDropdownOptions = Required<SchemaTreeDropdownWidgetOptions>
 
 @customElement('auto-field-tree-dropdown')
-export class AutoFieldTreeDropdown extends AutoFieldTreeSelect {
+export class AutoFieldTreeDropdown extends AutoFieldTreeSelect<AutoFieldTreeDropdownOptions> {
     static styles = [
         AutoField.styles,
         AutoFieldTreeSelect.styles,
@@ -84,7 +87,7 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect {
 
     }
     getSelectedTagValue(value: TreeSelectedItem) {
-        const showAsPath = this.field.showAsPath.value
+        const showAsPath = this.options.showAsPath
         if (showAsPath) {
             return html`${value.path}`
         } else {
@@ -107,8 +110,8 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect {
     renderSelection() {
         return html`    
             <div class="selection" slot="trigger">              
-                ${when(this.selection.length === 0 && this.field.placeholder
-            , () => html`<span class='placeholder'>${this.field.placeholder!.value}</span>`)}
+                ${when(this.selection.length === 0 && this.options.placeholder
+            , () => html`<span class='placeholder'>${this.options.placeholder}</span>`)}
                 ${this.renderSelectedTags()}
                 <span class='suffix'>
                     <sl-icon library="system" class="chevron ${classMap({ active: this.active })}" 

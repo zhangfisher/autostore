@@ -1,15 +1,18 @@
 import { customElement } from "lit/decorators.js"
-import { AutoFieldInput, InputType } from "./input"
+import { AutoFieldInput, type InputType } from "./input"
+import type { SchemaEmailWidgetOptions } from "autostore"
+
+export type AutoFieldEmailOptions = Required<SchemaEmailWidgetOptions>
+
 @customElement('auto-field-email')
-export class AutoFieldEmail extends AutoFieldInput {
+export class AutoFieldEmail extends AutoFieldInput<AutoFieldEmailOptions> {
     getInputType(): InputType {
         return "email"
     }
-    getFieldOptions() {
-        if (!this.schema?.icon) {
-            this.schema!.icon = 'email'
+    getInitialOptions() {
+        return {
+            icon: 'email'
         }
-        return super.getFieldOptions()
     }
 }
 

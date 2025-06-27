@@ -83,28 +83,6 @@ const store = new AutoStore({
                 }
             ]
         }),
-        files: configurable([], {
-            label: "上传图片",
-            widget: 'upload'
-        }),
-        verifyCode: configurable('12-65', {
-            label: "邮件验证码",
-            widget: "parts",
-            // split: true // 是否拆分输入框
-            delimiter: '-', //当没有指定delimiter时，使用空格分隔
-            template: '00-00-00-00' // 每一组之间的分割符
-        }),
-        smsCode: configurable('', {
-            label: '短信验证码',
-            placeholder: '请输入验证码',
-            maxLength: 6,
-            widget: 'verifycode',
-            timeout: 60 * 1000,
-            template: '{timeout}秒后重新获取',
-            onRequest: () => {
-                console.log("发送短信")
-            }
-        }),
         admin: configurable(false, {
             label: '管理员',
             help: "管理员拥有所有权限",
@@ -112,294 +90,321 @@ const store = new AutoStore({
             checkLabel: "是",
             // switchValues: ['是', '否']
         }),
-        tcpFlags: configurable(3, {
-            label: 'TCP标识',
-            widget: 'checkbox-group',
-            select: [
-                { label: 'URG', value: 1 },
-                { label: 'ACK', value: 2 },
-                { label: 'PSH', value: 4 },
-                { label: 'RST', value: 8 },
-                { label: 'SYN', value: 16 },
-                { label: 'FIN', value: 32 },
-                { label: 'CRC', value: 64 }
-            ],
-            toInput: (value) => {
-                const vals: number[] = []
-                if ((value & 1) > 0) vals.push(1)
-                if ((value & 2) > 0) vals.push(2)
-                if ((value & 4) > 0) vals.push(4)
-                if ((value & 8) > 0) vals.push(8)
-                if ((value & 16) > 0) vals.push(16)
-                if ((value & 32) > 0) vals.push(32)
-                if ((value & 64) > 0) vals.push(64)
-                return vals
-            },
-            toState: (vals) => {
-                let value = 0
-                if (vals.includes(1)) value += 1
-                if (vals.includes(2)) value += 2
-                if (vals.includes(4)) value += 4
-                if (vals.includes(8)) value += 8
-                if (vals.includes(16)) value += 16
-                if (vals.includes(32)) value += 32
-                if (vals.includes(64)) value += 64
-                return value
+        files: configurable([], {
+            label: "上传图片",
+            widget: 'upload',
+            url: 'api/upload',
+            fileFieldName: "file",
+            onRemove: (files) => {
+
             }
         }),
-        layout: configurable('卡片集', {
-            // divider: true,
-            label: '布局',
-            required: true,
-            widget: 'radio',
-            itemWidth: '33.33%',
-            card: true,
-            select: [
-                { label: '简约风', description: '极简设计，突出内容' },
-                { label: '经典式', description: '传统布局，平衡稳重' },
-                { label: '卡片集', description: '模块化卡片，灵活组合' },
-                { label: '瀑布流', enable: false, description: '动态滚动，视觉延展' },
-                { label: '分屏式', description: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
-                { label: '导航型', description: '侧边主导，层级清晰' },
-                { label: '全屏化', description: '沉浸体验，无界视觉' },
-                { label: '网格阵', description: '整齐排列，规整直观' },
-                { label: '自由板', description: '可拖拽定制，随心布局' }
-            ]
-        }),
-        useLayout: configurable(['经典式', '全屏化'], {
-            label: '可用布局',
-            widget: 'checkbox-group',
-            itemWidth: '33.33%',
-            valueKey: "label",
-            card: true,
-            select: [
-                { label: '简约风', description: '极简设计，突出内容' },
-                { label: '经典式', description: '传统布局，平衡稳重' },
-                { label: '卡片集', description: '模块化卡片，灵活组合' },
-                { label: '瀑布流', enable: false, description: '动态滚动，视觉延展' },
-                { label: '分屏式', description: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
-                { label: '导航型', description: '侧边主导，层级清晰' },
-                { label: '全屏化', description: '沉浸体验，无界视觉' },
-                { label: '网格阵', description: '整齐排列，规整直观' },
-                { label: '自由板', description: '可拖拽定制，随心布局' }
-            ]
-        }),
-        products: configurable(['电脑'], {
-            label: '产品',
-            onValidate: (value) => {
-                return value.length > 2
-            },
-            widget: 'list',
-            multiple: true,
-            valueKey: 'label',     // 默认选择的是id
-            labelKey: 'label',     // 用于显示，当showResults为true时，显示的是label
-            invalidMessage: '至少选择两个产品',
-            itemTemplate: "<span>{label}</span><span>{price}</span>",
-            height: '200px',
-            showResults: true,// 是否显示结果框
-            select: [
-                { id: 1, label: "手机", price: 1000, icon: "phone" },
-                { id: 2, label: "电脑", price: 2000, icon: "laptop" },
-                { id: 3, label: "手表", price: 3000, icon: "watch" },
-                { id: 4, label: "耳机", price: 4000, icon: "headphones" },
-                { id: 5, label: "鼠标", price: 5000, icon: "mouse" },
-                { id: 6, label: "键盘", price: 6000, icon: "keyboard" },
-                { id: 7, label: "鼠标垫", price: 7000, icon: "mousepad" },
-                { id: 8, label: "U盘", price: 8000, icon: "usb" },
-                { id: 9, label: "硬盘", price: 9000, icon: "hdd" },
-                { id: 10, label: "内存", price: 10000, icon: "memory" },
-                { id: 11, label: "硬盘盒", price: 11000, icon: "hdd-box" },
-                { id: 12, label: "固态硬盘", price: 12000, icon: "ssd" },
-                { id: 13, label: "机械硬盘", price: 13000, icon: "hdd" },
-                { id: 14, label: "显卡", price: 14000, icon: "gpu" },
-                { id: 15, label: "蓝牙耳机", price: 15000, icon: "bluetooth" },
-                { id: 16, label: "电视", price: 16000, icon: "tv" },
-                { id: 17, label: "空调", price: 17000, icon: "air-conditioner" },
-                { id: 18, label: "冰箱", price: 18000, icon: "fridge" },
-                { id: 19, label: "洗衣机", price: 19000, icon: "washing-machine" },
-                { id: 20, label: "微波炉", price: 20000, icon: "microwave-oven" },
-                { id: 21, label: "电饭煲", price: 21000, icon: "rice-cooker" },
-                { id: 22, label: "电风扇", price: 22000, icon: "fan" },
-                { id: 23, label: "电吹风", price: 23000, icon: "hair-dryer" },
-                { id: 24, label: "吸尘器", price: 24000, icon: "vacuum-cleaner" },
-            ]
-        }),
-        salary: configurable(3000, {
-            label: '工资',
-            widget: 'number',
-            icon: 'japanese-yen',
-            actions: [
-                {
-                    label: '清空',
-                    icon: 'trash',
-                    onClick: (value, { update }) => {
-                        update('')
-                    }
-                }
-            ]
-        }),
-        captcha: configurable('', {
-            label: '验证码',
-            widget: 'captcha',
-            help: '单击刷新验证码',
-            labelPos: 'none',
-            placeholder: '请输入验证码',
-            url: "/captcha.png"
-        }),
-        birday: configurable('2025-11-01', { label: '生日', widget: 'date' }),
-        phone: configurable('138456789112', {
-            label: '电话号码',
-            widget: 'phone',
-            clearable: true,
-            width: '50%'
-        }),
-        search: configurable('', {
-            label: '搜索', widget: 'search',
-            width: '50%'
-        }),
-        age: configurable(18, {
-            widget: 'number',
-            onValidate: (value) => {
-                return value > 0 && value < 24
-            },
-            pill: true,
-            label: '年龄',
-            max: 100,
-            min: 1,
-            width: "50%",
-            toView: (value: any) => `<span style="color:red;border:1px solid red;padding:4px;">${value}岁</span>`
-        }),
-        password: configurable("18", {
-            label: '密码',
-            widget: 'password',
-            passwordToggle: true,
-            maxLength: 6,
-            minLength: 3,
-            pill: true,
-            width: "50%"
-        }),
-        homepage: configurable("www.autostore.com", { widget: "url", label: '主页' }),
-        sex: configurable('男', { label: '性别', widget: 'radio', select: ['男', '女'] }),
-        post: configurable('程序员', {
-            label: '职业',
-            widget: 'select',
-            select: ['程序员', '教师', '医生', '其他']
-        }),
-        ip: configurable('192.168.6.112', { label: '网络地址', widget: 'ipaddress' }),
-        access: configurable(false, {
-            label: '允许访问',
-            widget: 'switch'
-        }),
-        depts: configurable(['产品部'], {
-            label: '部门',
-            widget: 'tree-select',
-            multiple: true,
-            valueKey: 'label',     // 默认选择的是id
-            onlySelectLeaf: false,      // 只选择叶子节点
-            // maxItems: 3,    // 最多选择3个
-            // minItems:1
-            items: orgTree,
-            // onSelectionChange: (selection) => {}
-        }),
-        org: configurable(['工程部', '市场部'], {
-            label: '组织架构',
-            widget: 'tree-dropdown',
-            valueKey: "label",
-            multiple: true,
-            showAsPath: true,
-            items: Object.assign({}, orgTree)
-        }),
-        adminDept: configurable(undefined, {
-            label: '管理部门',
-            placeholder: '选择管理部门',
-            widget: 'tree-dropdown',
-            showAsPath: true,
-            valueKey: "label",
-            onlySelectLeaf: true,
-            items: Object.assign({}, orgTree)
-        }),
-        tags: configurable(['测试'], {
-            label: '标签',
-            widget: 'radio',
-            select: [
-                '前端', '后端', '测试', '运维'
-            ]
-        }),
-        rating: configurable(1, { label: '评分', widget: 'rating' }),
-        level: configurable(1, {
-            label: '级别',
-            widget: 'radio-button',
-            select: [
-                { label: '初级', value: 1 },
-                { label: '中级', value: 2 },
-                { label: '高级', value: 3 },
-                { label: '专家', value: 4 },
-            ]
-        }),
-        version: configurable(['2.0'], {
-            widget: 'select',
-            multiple: true,
-            label: '版本',
-            clearable: true,
-            actions: [{
-                label: '升级',
-                onClick: (value, { update }) => {
-                    console.log("升级版本到:", JSON.stringify(value))
-                    // update(['3.0', '4.0'])
-                }
-            }],
-            // 
-            placeholder: '请选择版本',
-            select: [
-                { label: '1.0' },
-                { label: '2.0' },
-                { label: '3.0' },
-                { label: '4.0' },
-                { label: '5.0' },
-                { label: '6.0' },
-                '-',
-                { label: '7.0' },
-                { label: '8.0' },
-            ]
-        }),
-        volume: configurable(18, {
-            widget: 'range',
-            label: '音量',
-            min: 0,
-            max: 100,
-            step: 5,
-            toView: (value: any) => `${value}%`
-        }),
-        worktime: configurable("12:12:11", { label: '上班时间', widget: 'time' }),
-        certificate: configurable(1, {
-            label: '证件类型', widget: 'radio', select: [
-                { label: '身份证', value: 1 },
-                { label: '护照', value: 2 },
-                { label: '军官证', value: 3 },
-                { label: '其他', value: 4 }
-            ]
-        }),
-        email: configurable('admin@autostore.com', { label: '电子邮件', widget: 'email' }),
-        color: configurable('#ff0000', { label: '颜色', widget: 'colorpicker' }),
-        qrcode: configurable('www.voerkai18n.com', { label: '扫描二维码', widget: 'qrcode' }),
-        notes: configurable('输入简历', {
-            label: '简历',
-            widget: 'textarea',
-            enable: computed<boolean>((state) => {
-                return state.user.admin
-            })
-        }),
-        address: {
-            city: configurable('北京', {
-                required: true,
-                label: '城市',
-                pill: true,
-                enable: computed<boolean>((state) => {
-                    return state.user.admin
-                })
-            }),
-            street: '长安街'
-        }
+        // verifyCode: configurable('12-65', {
+        //     label: "邮件验证码",
+        //     widget: "parts",
+        //     // split: true // 是否拆分输入框
+        //     delimiter: '-', //当没有指定delimiter时，使用空格分隔
+        //     template: '00-00-00-00' // 每一组之间的分割符
+        // }),
+        // smsCode: configurable('', {
+        //     label: '短信验证码',
+        //     placeholder: '请输入验证码',
+        //     maxLength: 6,
+        //     widget: 'verifycode',
+        //     timeout: 60 * 1000,
+        //     template: '{timeout}秒后重新获取',
+        //     onRequest: () => {
+        //         console.log("发送短信")
+        //     }
+        // }),
+        // tcpFlags: configurable(3, {
+        //     label: 'TCP标识',
+        //     widget: 'checkbox-group',
+        //     select: [
+        //         { label: 'URG', value: 1 },
+        //         { label: 'ACK', value: 2 },
+        //         { label: 'PSH', value: 4 },
+        //         { label: 'RST', value: 8 },
+        //         { label: 'SYN', value: 16 },
+        //         { label: 'FIN', value: 32 },
+        //         { label: 'CRC', value: 64 }
+        //     ],
+        //     toInput: (value) => {
+        //         const vals: number[] = []
+        //         if ((value & 1) > 0) vals.push(1)
+        //         if ((value & 2) > 0) vals.push(2)
+        //         if ((value & 4) > 0) vals.push(4)
+        //         if ((value & 8) > 0) vals.push(8)
+        //         if ((value & 16) > 0) vals.push(16)
+        //         if ((value & 32) > 0) vals.push(32)
+        //         if ((value & 64) > 0) vals.push(64)
+        //         return vals
+        //     },
+        //     toState: (vals) => {
+        //         let value = 0
+        //         if (vals.includes(1)) value += 1
+        //         if (vals.includes(2)) value += 2
+        //         if (vals.includes(4)) value += 4
+        //         if (vals.includes(8)) value += 8
+        //         if (vals.includes(16)) value += 16
+        //         if (vals.includes(32)) value += 32
+        //         if (vals.includes(64)) value += 64
+        //         return value
+        //     }
+        // }),
+        // layout: configurable('卡片集', {
+        //     // divider: true,
+        //     label: '布局',
+        //     required: true,
+        //     widget: 'radio',
+        //     itemWidth: '33.33%',
+        //     card: true,
+        //     select: [
+        //         { label: '简约风', description: '极简设计，突出内容' },
+        //         { label: '经典式', description: '传统布局，平衡稳重' },
+        //         { label: '卡片集', description: '模块化卡片，灵活组合' },
+        //         { label: '瀑布流', enable: false, description: '动态滚动，视觉延展' },
+        //         { label: '分屏式', description: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+        //         { label: '导航型', description: '侧边主导，层级清晰' },
+        //         { label: '全屏化', description: '沉浸体验，无界视觉' },
+        //         { label: '网格阵', description: '整齐排列，规整直观' },
+        //         { label: '自由板', description: '可拖拽定制，随心布局' }
+        //     ]
+        // }),
+        // useLayout: configurable(['经典式', '全屏化'], {
+        //     label: '可用布局',
+        //     widget: 'checkbox-group',
+        //     itemWidth: '33.33%',
+        //     valueKey: "label",
+        //     card: true,
+        //     select: [
+        //         { label: '简约风', description: '极简设计，突出内容' },
+        //         { label: '经典式', description: '传统布局，平衡稳重' },
+        //         { label: '卡片集', description: '模块化卡片，灵活组合' },
+        //         { label: '瀑布流', enable: false, description: '动态滚动，视觉延展' },
+        //         { label: '分屏式', description: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+        //         { label: '导航型', description: '侧边主导，层级清晰' },
+        //         { label: '全屏化', description: '沉浸体验，无界视觉' },
+        //         { label: '网格阵', description: '整齐排列，规整直观' },
+        //         { label: '自由板', description: '可拖拽定制，随心布局' }
+        //     ]
+        // }),
+        // products: configurable(['电脑'], {
+        //     label: '产品',
+        //     onValidate: (value) => {
+        //         return value.length > 2
+        //     },
+        //     widget: 'list',
+        //     multiple: true,
+        //     valueKey: 'label',     // 默认选择的是id
+        //     labelKey: 'label',     // 用于显示，当showResults为true时，显示的是label
+        //     invalidMessage: '至少选择两个产品',
+        //     itemTemplate: "<span>{label}</span><span>{price}</span>",
+        //     height: '200px',
+        //     showResults: true,// 是否显示结果框
+        //     select: [
+        //         { id: 1, label: "手机", price: 1000, icon: "phone" },
+        //         { id: 2, label: "电脑", price: 2000, icon: "laptop" },
+        //         { id: 3, label: "手表", price: 3000, icon: "watch" },
+        //         { id: 4, label: "耳机", price: 4000, icon: "headphones" },
+        //         { id: 5, label: "鼠标", price: 5000, icon: "mouse" },
+        //         { id: 6, label: "键盘", price: 6000, icon: "keyboard" },
+        //         { id: 7, label: "鼠标垫", price: 7000, icon: "mousepad" },
+        //         { id: 8, label: "U盘", price: 8000, icon: "usb" },
+        //         { id: 9, label: "硬盘", price: 9000, icon: "hdd" },
+        //         { id: 10, label: "内存", price: 10000, icon: "memory" },
+        //         { id: 11, label: "硬盘盒", price: 11000, icon: "hdd-box" },
+        //         { id: 12, label: "固态硬盘", price: 12000, icon: "ssd" },
+        //         { id: 13, label: "机械硬盘", price: 13000, icon: "hdd" },
+        //         { id: 14, label: "显卡", price: 14000, icon: "gpu" },
+        //         { id: 15, label: "蓝牙耳机", price: 15000, icon: "bluetooth" },
+        //         { id: 16, label: "电视", price: 16000, icon: "tv" },
+        //         { id: 17, label: "空调", price: 17000, icon: "air-conditioner" },
+        //         { id: 18, label: "冰箱", price: 18000, icon: "fridge" },
+        //         { id: 19, label: "洗衣机", price: 19000, icon: "washing-machine" },
+        //         { id: 20, label: "微波炉", price: 20000, icon: "microwave-oven" },
+        //         { id: 21, label: "电饭煲", price: 21000, icon: "rice-cooker" },
+        //         { id: 22, label: "电风扇", price: 22000, icon: "fan" },
+        //         { id: 23, label: "电吹风", price: 23000, icon: "hair-dryer" },
+        //         { id: 24, label: "吸尘器", price: 24000, icon: "vacuum-cleaner" },
+        //     ]
+        // }),
+        // salary: configurable(3000, {
+        //     label: '工资',
+        //     widget: 'number',
+        //     icon: 'japanese-yen',
+        //     actions: [
+        //         {
+        //             label: '清空',
+        //             icon: 'trash',
+        //             onClick: (value, { update }) => {
+        //                 update('')
+        //             }
+        //         }
+        //     ]
+        // }),
+        // captcha: configurable('', {
+        //     label: '验证码',
+        //     widget: 'captcha',
+        //     help: '单击刷新验证码',
+        //     labelPos: 'none',
+        //     placeholder: '请输入验证码',
+        //     url: "/captcha.png"
+        // }),
+        // birday: configurable('2025-11-01', { label: '生日', widget: 'date' }),
+        // phone: configurable('138456789112', {
+        //     label: '电话号码',
+        //     widget: 'phone',
+        //     clearable: true,
+        //     width: '50%'
+        // }),
+        // search: configurable('', {
+        //     label: '搜索', widget: 'search',
+        //     width: '50%'
+        // }),
+        // age: configurable(18, {
+        //     widget: 'number',
+        //     onValidate: (value) => {
+        //         return value > 0 && value < 24
+        //     },
+        //     pill: true,
+        //     label: '年龄',
+        //     max: 100,
+        //     min: 1,
+        //     width: "50%",
+        //     toView: (value: any) => `<span style="color:red;border:1px solid red;padding:4px;">${value}岁</span>`
+        // }),
+        // password: configurable("18", {
+        //     label: '密码',
+        //     widget: 'password',
+        //     passwordToggle: true,
+        //     maxLength: 6,
+        //     minLength: 3,
+        //     pill: true,
+        //     width: "50%"
+        // }),
+        // homepage: configurable("www.autostore.com", { widget: "url", label: '主页' }),
+        // sex: configurable('男', { label: '性别', widget: 'radio', select: ['男', '女'] }),
+        // post: configurable('程序员', {
+        //     label: '职业',
+        //     widget: 'select',
+        //     select: ['程序员', '教师', '医生', '其他']
+        // }),
+        // ip: configurable('192.168.6.112', { label: '网络地址', widget: 'ipaddress' }),
+        // access: configurable(false, {
+        //     label: '允许访问',
+        //     widget: 'switch'
+        // }),
+        // depts: configurable(['产品部'], {
+        //     label: '部门',
+        //     widget: 'tree-select',
+        //     multiple: true,
+        //     valueKey: 'label',     // 默认选择的是id
+        //     onlySelectLeaf: false,      // 只选择叶子节点
+        //     // maxItems: 3,    // 最多选择3个
+        //     // minItems:1
+        //     items: orgTree,
+        //     // onSelectionChange: (selection) => {}
+        // }),
+        // org: configurable(['工程部', '市场部'], {
+        //     label: '组织架构',
+        //     widget: 'tree-dropdown',
+        //     valueKey: "label",
+        //     multiple: true,
+        //     showAsPath: true,
+        //     items: Object.assign({}, orgTree)
+        // }),
+        // adminDept: configurable(undefined, {
+        //     label: '管理部门',
+        //     placeholder: '选择管理部门',
+        //     widget: 'tree-dropdown',
+        //     showAsPath: true,
+        //     valueKey: "label",
+        //     onlySelectLeaf: true,
+        //     items: Object.assign({}, orgTree)
+        // }),
+        // tags: configurable(['测试'], {
+        //     label: '标签',
+        //     widget: 'radio',
+        //     select: [
+        //         '前端', '后端', '测试', '运维'
+        //     ]
+        // }),
+        // rating: configurable(1, { label: '评分', widget: 'rating' }),
+        // level: configurable(1, {
+        //     label: '级别',
+        //     widget: 'radio-button',
+        //     select: [
+        //         { label: '初级', value: 1 },
+        //         { label: '中级', value: 2 },
+        //         { label: '高级', value: 3 },
+        //         { label: '专家', value: 4 },
+        //     ]
+        // }),
+        // version: configurable(['2.0'], {
+        //     widget: 'select',
+        //     multiple: true,
+        //     label: '版本',
+        //     clearable: true,
+        //     actions: [{
+        //         label: '升级',
+        //         onClick: (value, { update }) => {
+        //             console.log("升级版本到:", JSON.stringify(value))
+        //             // update(['3.0', '4.0'])
+        //         }
+        //     }],
+        //     // 
+        //     placeholder: '请选择版本',
+        //     select: [
+        //         { label: '1.0' },
+        //         { label: '2.0' },
+        //         { label: '3.0' },
+        //         { label: '4.0' },
+        //         { label: '5.0' },
+        //         { label: '6.0' },
+        //         '-',
+        //         { label: '7.0' },
+        //         { label: '8.0' },
+        //     ]
+        // }),
+        // volume: configurable(18, {
+        //     widget: 'range',
+        //     label: '音量',
+        //     min: 0,
+        //     max: 100,
+        //     step: 5,
+        //     toView: (value: any) => `${value}%`
+        // }),
+        // worktime: configurable("12:12:11", { label: '上班时间', widget: 'time' }),
+        // certificate: configurable(1, {
+        //     label: '证件类型', widget: 'radio', select: [
+        //         { label: '身份证', value: 1 },
+        //         { label: '护照', value: 2 },
+        //         { label: '军官证', value: 3 },
+        //         { label: '其他', value: 4 }
+        //     ]
+        // }),
+        // email: configurable('admin@autostore.com', { label: '电子邮件', widget: 'email' }),
+        // color: configurable('#ff0000', { label: '颜色', widget: 'colorpicker' }),
+        // qrcode: configurable('www.voerkai18n.com', { label: '扫描二维码', widget: 'qrcode' }),
+        // notes: configurable('输入简历', {
+        //     label: '简历',
+        //     widget: 'textarea',
+        //     enable: computed<boolean>((state) => {
+        //         return state.user.admin
+        //     })
+        // }),
+        // address: {
+        //     city: configurable('北京', {
+        //         required: true,
+        //         label: '城市',
+        //         pill: true,
+        //         enable: computed<boolean>((state) => {
+        //             return state.user.admin
+        //         })
+        //     }),
+        //     street: '长安街'
+        // }
     },
     x: 1
 

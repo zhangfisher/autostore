@@ -1,15 +1,20 @@
 import { customElement } from "lit/decorators.js"
-import { AutoFieldInput, InputType } from "./input"
+import { AutoFieldInput, type InputType } from "./input"
+import type { SchemaSearchWidgetOptions } from "autostore"
+
+export type AutoFieldSearchOptions = Required<SchemaSearchWidgetOptions>
+
 @customElement('auto-field-search')
 export class AutoFieldSearch extends AutoFieldInput {
     getInputType(): InputType {
         return 'search'
     }
-    getFieldOptions() {
-        if (!this.schema?.icon) {
-            this.schema!.icon = 'search'
+    getInitialOptions(): Record<string, any> {
+        return {
+            icon: 'search',
+            placeholder: 'Search'
         }
-        return super.getFieldOptions()
+
     }
 }
 

@@ -1,11 +1,9 @@
 import { customElement, query, state } from "lit/decorators.js"
 import { AutoFieldInput } from "./input"
 import { css } from "lit"
-//
+import type { SchemaCaptchaWidgetOptions } from "autostore"
 
-export type AutoFieldCaptchaOptions = {
-    captchaUrl: string
-}
+export type AutoFieldCaptchaOptions = Required<SchemaCaptchaWidgetOptions>
 
 @customElement('auto-field-captcha')
 export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
@@ -23,8 +21,14 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
     @state()
     loading: boolean = false
 
+    getInitialOptions() {
+        return {
+            url: '',
+            tips: '单击刷新验证码'
+        }
+    }
     getRefreshUrl() {
-        let url = this.getFieldOption('url');
+        const url = this.options.url
         const [baseUrl, query] = url.split('?');
         // 重建查询参数，保留原有参数并添加时间戳
         const params = new URLSearchParams(query);
@@ -50,13 +54,10 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
     }
     connectedCallback() {
         super.connectedCallback()
-        if (!this.afterActions) {
-            this.afterActions = []
-        }
-        this.afterActions!.unshift({
+        this.afterActions.unshift({
             type: 'image',
-            url: this.getFieldOption('url'),
-            tips: this.getFieldOption('tips', '单击刷新验证码'),
+            url: this.options.url,
+            tips: this.options.tips,
             onClick: this.refreshCaptchaImage.bind(this)
         })
 

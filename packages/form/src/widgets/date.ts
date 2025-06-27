@@ -1,16 +1,18 @@
 import { customElement } from "lit/decorators.js"
-import { AutoFieldInput, InputType } from "./input"
+import { AutoFieldInput, type InputType } from "./input"
+import type { SchemaDateWidgetOptions } from "autostore"
 
+
+export type AutoFieldDateOptions = Required<SchemaDateWidgetOptions>
 @customElement('auto-field-date')
-export class AutoFieldDate extends AutoFieldInput {
+export class AutoFieldDate extends AutoFieldInput<AutoFieldDateOptions> {
     getInputType(): InputType {
         return 'date'
     }
-    getFieldOptions() {
-        if (!this.schema?.icon) {
-            this.schema!.icon = 'date'
+    getInitialOptions() {
+        return {
+            icon: 'date'
         }
-        return super.getFieldOptions()
     }
 }
 

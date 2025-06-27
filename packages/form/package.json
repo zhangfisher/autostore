@@ -18,11 +18,12 @@
 	},
 	"devDependencies": {
 		"autostore": "workspace:*",
-		"esbuild-analyzer": "^0.2.0",
+		"sonda": "^0.8.2",
 		"tsup": "^8.5.0",
 		"typescript": "~5.7.2",
 		"unocss": "^66.0.0",
-		"vite": "^6.1.0"
+		"vite": "^6.1.0",
+		"vite-plugin-mock-dev-server": "^1.9.1"
 	},
 	"peerDependencies": {
 		"autostore": "workspace:*"

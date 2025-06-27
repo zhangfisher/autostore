@@ -1,9 +1,9 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
-import { Dict, } from '../types';
+import type { Dict, } from '../types';
 import { setVal } from "../utils";
 import { getVal } from "../utils/getVal";
-import { SchemaOptions, SchemaValidator, ComputedSchemaState, SchemaDescriptor } from "./types";
+import type { SchemaOptions, SchemaValidator, ComputedSchemaState, SchemaDescriptor } from "./types";
 
 
 export class SchemaManager<
@@ -60,7 +60,7 @@ export class SchemaManager<
         if (!this._descriptors) return
         this.store = this.shadow.shadow(this._descriptors) as unknown as SchemaStore
     }
-    get<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(path: T): SchemaStore['state'][T] | undefined {
+    get<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(path: T): SchemaOptions | undefined {
         return getVal(this.store.state, this._getKey(path as any))
     }
     has(path: keyof SchemaStore['state']): boolean {

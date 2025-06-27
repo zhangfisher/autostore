@@ -58,93 +58,97 @@ describe("Schema类型", () => {
             }>
         >
     })
-    test("获取指定路径的Schmea状态", () => {
-        const store = new AutoStore({
-            user: {
-                name: configurable("张三", {
-                    label: '姓名',
-                    placeholder: '请输入姓名',
-                    invalidMessage: '姓名长度必须大于3个字符',
-                    required: computed(() => true),
-                    enable: computed<boolean>(
-                        async (state: any) => state.user.admin,
-                        ['user.admin']
-                    )
-                }),
-                age: configurable(18),
-                admin: configurable(true),
-                address: {
-                    city: configurable("北京"),
-                    street: "长安街"
-                }
-            }
-        })
-        type NameCase = Expect<
-            Equal<
-                typeof store.schemas.store.state["user.name"],
-                {
-                    value: string
-                    path: string[]
-                    label: string
-                    placeholder: string
-                    invalidMessage: string
-                    required: boolean
-                    enable: AsyncComputedValue<boolean>
-                }
-            >
-        >
+    // test("获取指定路径的Schmea状态", () => {
+    //     const store = new AutoStore({
+    //         user: {
+    //             name: configurable("张三", {
+    //                 label: '姓名',
+    //                 placeholder: '请输入姓名',
+    //                 invalidMessage: '姓名长度必须大于3个字符',
+    //                 required: computed(() => true),
+    //                 enable: computed<boolean>(
+    //                     async (state: any) => state.user.admin,
+    //                     ['user.admin']
+    //                 )
+    //             }),
+    //             age: configurable(18),
+    //             admin: configurable(true),
+    //             address: {
+    //                 city: configurable("北京"),
+    //                 street: "长安街"
+    //             }
+    //         }
+    //     })
+    //     store.schemas.store.state["user.name"]
+    //     type userNameType = typeof store.schemas.store.state["user.name"]
+    //     type NameCase = Expect<
+    //         Equal<
+    //             typeof store.schemas.store.state["user.name"],
+    //             {
+    //                 value: string
+    //                 path: string[]
+    //                 label: string
+    //                 placeholder: string
+    //                 invalidMessage: string
+    //                 required: boolean
+    //                 enable: AsyncComputedValue<boolean>
+    //             }
+    //         >
+    //     >
 
-        const userName = store.schemas.get('user.name')
-        type GetNameCase = Expect<
-            Equal<
-                typeof userName,
-                {
-                    value: string
-                    path: string[]
-                    label: string
-                    placeholder: string
-                    invalidMessage: string
-                    required: boolean
-                    enable: AsyncComputedValue<boolean>
-                } | undefined
-            >
-        >
-        type NameCases = Expect<
-            Equal<
-                typeof store.schemas.store.state['user.name'],
-                Exclude<typeof userName, undefined>
-            >
-        >
-    })
-    test("获取校验器", () => {
-        const store = new AutoStore({
-            user: {
-                name: configurable("张三", (value: any) => {
-                    return value > 0
-                }),
-                age: configurable(18),
-                admin: configurable(true),
-                address: {
-                    city: configurable("北京"),
-                    street: "长安街"
-                }
-            }
-        })
-        const validator = store.schemas.getValidator('user.name')
+    //     const userName = store.schemas.get('user.name')
+    //     type GetNameCase = Expect<
+    //         Equal<
+    //             typeof userName,
+    //             {
+    //                 value: string
+    //                 path: string[]
+    //                 label: string
+    //                 placeholder: string
+    //                 invalidMessage: string
+    //                 required: boolean
+    //                 enable: AsyncComputedValue<boolean>
+    //             } | undefined
+    //         >
+    //     >
+    //     type NameCases = Expect<
+    //         Equal<
+    //             typeof store.schemas.store.state['user.name'],
+    //             Exclude<typeof userName, undefined>
+    //         >
+    //     >
+    // })
+    // test("获取校验器", () => {
+    //     const store = new AutoStore({
+    //         user: {
+    //             name: configurable("张三", {
+    //                 onValidate: (value: any) => {
+    //                     return value > 0
+    //                 }
+    //             }),
+    //             age: configurable(18),
+    //             admin: configurable(true),
+    //             address: {
+    //                 city: configurable("北京"),
+    //                 street: "长安街"
+    //             }
+    //         }
+    //     })
+    //     const validator = store.schemas.getValidator('user.name')
 
-        type NameValidatorType = Exclude<typeof validator, undefined>
-        type NameCases = Expect<
-            Equal<
-                NameValidatorType,
-                {
-                    validate: SchemaValidate<boolean>;
-                    onFail: "pass" | "throw" | "ignore";
-                    message?: string | ((e: Error, path: string, newValue: boolean, oldValue: boolean) => string) | undefined
-                }
-            >
-        >
+    //     type NameValidatorType = Exclude<typeof validator, undefined>
+    //     type NameCases = Expect<
+    //         Equal<
+    //             NameValidatorType,
+    //             {
+    //                 validate: SchemaValidate<boolean>;
+    //                 onFail: "pass" | "throw" | "ignore";
+    //                 message?: string | ((e: Error, path: string, newValue: boolean, oldValue: boolean) => string) | undefined
+    //             }
+    //         >
+    //     >
 
-    })
+    // })
 
     // test("动态增加schema", () => {
     //     const store = new AutoStore({

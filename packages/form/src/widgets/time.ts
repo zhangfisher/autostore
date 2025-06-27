@@ -1,17 +1,18 @@
 import { customElement } from "lit/decorators.js"
-import { AutoFieldInput, InputType } from "./input"
+import { AutoFieldInput, type InputType } from "./input"
+import type { SchemaTimeWidgetOptions } from 'autostore';
 
+export type AutoFieldTimeOptions = Required<SchemaTimeWidgetOptions>
 
 @customElement('auto-field-time')
-export class AutoFieldTime extends AutoFieldInput {
+export class AutoFieldTime extends AutoFieldInput<SchemaTimeWidgetOptions> {
     getInputType(): InputType {
         return 'time'
     }
-    getFieldOptions() {
-        if (!this.schema?.icon) {
-            this.schema!.icon = 'time'
+    getInitialOptions() {
+        return {
+            icon: 'time'
         }
-        return super.getFieldOptions()
     }
 }
 

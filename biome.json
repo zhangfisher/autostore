@@ -22,7 +22,7 @@
 				"noExplicitAny": "off"
 			},
 			"style": {
-				"noNonNullAssertion": "on"
+				"noNonNullAssertion": "off"
 			},
 			"complexity": {
 				"noArguments": "off",

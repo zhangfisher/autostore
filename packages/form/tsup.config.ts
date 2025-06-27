@@ -1,5 +1,5 @@
 import { defineConfig } from 'tsup'
-import AnalyzerPlugin from 'esbuild-analyzer'
+import Sonda from 'sonda/esbuild';
 
 // import copy from "esbuild-copy-files-plugin";
 
@@ -50,7 +50,7 @@ export default defineConfig([
         minify: true,
         noExternal: ['flex-tools', 'autostore'],
         esbuildPlugins: [
-            AnalyzerPlugin()
+            Sonda()
         ],
     },
 ])

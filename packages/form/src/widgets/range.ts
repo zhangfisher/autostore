@@ -2,9 +2,13 @@ import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import '@shoelace-style/shoelace/dist/components/range/range.js';
 import { AutoField } from "@/field"
+import type { SchemaRangeWidgetOptions } from "autostore";
+
+
+export type AutoFieldRangeOptions = Required<SchemaRangeWidgetOptions>
 
 @customElement('auto-field-range')
-export class AutoFieldRabge extends AutoField {
+export class AutoFieldRabge extends AutoField<AutoFieldRangeOptions> {
     static styles = [
         AutoField.styles,
         css`
@@ -37,11 +41,15 @@ export class AutoFieldRabge extends AutoField {
             }
         `
     ] as any
-    _formatValue() {
-        if (this.field.format?.value) {
-            return this.field.format.value.replace(/\{\s*value\s*\}/g, () => this.value)
+    getInitialOptions(): Record<string, any> {
+        return {
+            max: 100,
+            min: 0,
+            step: 1,
+            tooltip: 'top',
+            tooltipFormatter: undefined,
+            format: undefined
         }
-        return this.value
     }
     renderInput() {
         return html`       
@@ -50,16 +58,15 @@ export class AutoFieldRabge extends AutoField {
             <sl-range 
                 slot="value" 
                 name="${this.name}"
-                data-path = ${this.schema!.path.join('.')}
+                data-path = ${this.path}
                 value=${this.value} 
-                .placeholder=${this.getFieldOption("placeholder")}
-                .defaultValue=${this.getFieldOption("defaultValue", this.value)}
-                ?disabled=${!this.getFieldOption("enable", false)}
-                .max=${this.getFieldOption("max")}
-                .min=${this.getFieldOption("min")}
-                .step=${this.getFieldOption("step")}
-                .tooltip=${this.getFieldOption("tooltip", "top")}
-                .tooltipFormatter=${this.getFieldOption("tooltipFormatter")}
+                .placeholder=${this.options.placeholder}
+                ?disabled=${!this.options.enable}
+                .max=${this.options.max}
+                .min=${this.options.min}
+                .step=${this.options.step}
+                .tooltip=${this.options.tooltip}
+                .tooltipFormatter=${this.options.tooltipFormatter}
                 @sl-input=${this.onFieldInput.bind(this)}
                 @sl-change=${this.onFieldChange.bind(this)}
             >
