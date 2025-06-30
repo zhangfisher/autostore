@@ -10,12 +10,12 @@ export default defineMock([
         url: '/api/upload',
         method: 'POST',
         body(req) {
-            const body = req.body
-            // console.log("upload:", body.file)
-            // throw new Error('upload error')
-            return {
-                name: body.name,
-                url: `/uploads/${body.file.originalFilename}`,
-            }
+            const files = req.body.files
+            //throw new Error('upload error')
+            return `/uploads/${files[0].originalFilename}`
+            // return {
+            //     size: files[0].size,
+            //     url: `/uploads/${files[0].originalFilename}`,
+            // }
         },
     }])

@@ -1,6 +1,7 @@
 import { css } from "lit";
-
+import { vars } from './vars'
 export default css`
+    ${vars}
     :host{
         display: flex;
         position: relative;

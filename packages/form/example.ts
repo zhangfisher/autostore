@@ -90,12 +90,27 @@ const store = new AutoStore({
             checkLabel: "是",
             // switchValues: ['是', '否']
         }),
-        files: configurable([], {
+        files: configurable(['aaa.png', 'b.mp4'], {
             label: "上传图片",
             widget: 'upload',
             url: 'api/upload',
-            fileFieldName: "file",
-            onRemove: (files) => {
+            placeholder: '请选择图片',
+            fileFieldName: "files",
+            // multiple: false,
+            // 当删除文件时向服务器发起删除请求
+            onRemove: (file: string) => {
+
+            }
+        }),
+        file: configurable('aaa.png', {
+            label: "上传图片",
+            widget: 'upload',
+            url: 'api/upload',
+            placeholder: '请选择图片',
+            fileFieldName: "files",
+            multiple: false,
+            // 当删除文件时向服务器发起删除请求
+            onRemove: (file: string) => {
 
             }
         }),

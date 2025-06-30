@@ -207,32 +207,47 @@ export type SchemaListWidgetOptions = {
     itemTemplate?: string
 }
 
+export type SchemaUploadWidgetFile = {
+    id?: string
+    title?: string
+    url: string
+}
 
 export type SchemaUploadWidgetOptions = {
+    /**
+     * 文件输入元素的accept属性可以接受MIME类型和文件扩展名
+     * 例如: "image/jpeg, .jpg, .png"
+     */
     fileTypes?: string[]
     url?: string,
     fileFieldName?: string       // 上传文件字段名称，默认是file
     onRemove?: (file: string) => Promise<void> | void
+    // 返回预览内容
+    onPreview?: (file: string) => string
     // 上传提示信息
     tips?: string
     /**
      * 用于解析上传文件的url
      * 
-     * data是/upload上传API返回的数据，一般应返回类似{url:string}
-     * 用于代表文件被上传的位置url
-     * 
-     * 由于不同Upload组件返回的数据格式不同，所以需要用户自己解析
+     * response是/upload上传API返回的数据
      * 
      * 如果没有提供，默认的解析逻辑
      * 
-     * - data:string       文件的URL
-     * - {url:string}      文件的URL
+     * - string          : 只返回上传文件的URL
+     * - {url,title,id}  : 可以返回更复杂的内容
      * 
      * 如果不符合以上逻辑，则需要自行处理
      * 
      */
-    onResolve?: (data: any) => ({ url: string, name?: string })
+    onResolve?: (response: string | Record<string, any>) => SchemaUploadWidgetFile
+    /**
+     * 用于显示文件名称，如果没有指定则只显示文件名称
+     */
+    onFileLabel?: (file: SchemaUploadWidgetFile) => string
     multiple?: boolean
+    /**
+     * 显示预览的尺寸
+     */
     preview?: boolean | string
     /**
      * 默认情况下，
@@ -249,15 +264,9 @@ export type SchemaUploadWidgetOptions = {
      * 
      * 此时state.file==`upload/abc_123232.jpg`
      * 
-     * 就是字段值=上传文件的URL
+     * 就是字段值=上传文件的URL 
      * 
-     * 
-     * 而有时我们想保存一些额外的文件数据，比如文件大小，用途，名称等等。
-     * 
-     * 
-     * 
-     * 
-     * 
+     * 而有时我们想保存一些额外的文件数据，比如文件大小，用途，名称等等。 
      */
     onlyFileUrl?: boolean
 }

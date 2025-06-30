@@ -1,21 +1,21 @@
 import { AutoField } from "@/field"
-import type { SchemaUploadWidgetOptions } from "autostore"
+import type { SchemaUploadWidgetFile, SchemaUploadWidgetOptions } from "autostore"
 import { css, html } from "lit"
 import { customElement, state } from "lit/decorators.js"
+import { classMap } from "lit/directives/class-map.js"
+import { ifDefined } from "lit/directives/if-defined.js"
+import { repeat } from "lit/directives/repeat.js"
+import { when } from "lit/directives/when.js"
 
-type UploadTask = {
+
+type UploadFile = {
     id: string
     file: File
     progress: number
-    status: 'uploading' | 'completed' | 'error'
+    status: 'done' | 'uploading' | 'error'
     error?: string
+    value: SchemaUploadWidgetFile
 }
-
-type UploadItem = {
-    name?: string
-    url: string
-}
-
 
 export type AutoFieldUploadOptions = Required<SchemaUploadWidgetOptions>
 
@@ -25,174 +25,180 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
     static styles = [
         AutoField.styles,
         css`
-            .upload {
+            .value {
+                & > magic-flex{
+                    width: 100%;
+                    border: var(--auto-border);
+                    padding: 0.5rem;
+                    min-height: 2rem;
+                    border-radius: var(--auto-border-radius);
+                    &>magic-flex.files{
+                        position: relative;
+                        padding: 0.5rem;
+                        &>.file{                                
+                            position: relative;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            padding: 0.5rem;                        
+                            border: var(--auto-border);
+                            border-radius: var(--auto-border-radius);
+                            background-color: var(--auto-workspace-color);
+                            &>[name=remove]{
+                                cursor: pointer;
+                                &:hover{
+                                    color: var(--auto-theme-color);
+                                }                                
+                            }
+                            &.error{
+                                border: 1px solid red;
+                                background-color: #ff006221;  
+                                border-radius: var(--auto-border-radius);
+                                color:red;
+                            }
+                            &>sl-icon{
+                                cursor: pointer;                                
+                                &:hover{
+                                    color: var(--auto-theme-color);
+                                }
+                            }
+                            &>.progress{                       
+                                position: absolute;
+                                top:0px;
+                                left: 0px;
+                                width: 100%;
+                                height: 100%;
+                                background-color: rgba(0, 0, 0, 0.5);
+                                border-radius: var(--auto-border-radius);
+                                color: white;                    
+                                display: flex;
+                                align-items: center; 
+                                justify-content: center;
+                                width: 100%;
+                                text-align: center;
+                                z-index: 0;
+                                &>:first-child{
+                                    flex-grow: 1;
+                                    text-align: center;
+                                }
+                                &>[name=remove]{
+                                    cursor: pointer;
+                                    margin-right: 0.5rem;
+                                }
+                                &>.value{
+
+                                }
+                            }
+                        } 
+                    }
+                }
+                & > .actions{
+                    padding: 0px;
+                }
+            }
+            .indicator {
                 border: 2px dashed #ccc;
                 border-radius: 4px;
                 padding: 20px;
                 text-align: center;
                 cursor: pointer;
-                margin-bottom: 10px;
+                color: var(--auto-gray-color);
                 transition: all 0.2s ease;
+                &.dragover {
+                    border-color: #2196f3;
+                    background: rgba(33, 150, 243, 0.1);
+                }
+                &:hover {
+                    border-color: #999;
+                }
+            } 
+            .progressbar{
+                position: relative;                
+                & > .error{
+                    font-size: calc(var(--auto-font-size) * 0.8);
+                    padding: 0px 0.5rem;
+                }
+                &>.overlay{
+                    position: absolute;
+                    top:0px;
+                    left: 0px;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 1;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    border-radius: var(--auto-border-radius);
+                    color: white;                    
+                    display: flex;
+                    align-items: center; 
+                    justify-content: center;
+                    padding-right: 0.5rem;
+                    box-sizing: border-box;
+                    &>:first-child{
+                        flex-grow: 1;
+                        text-align: center;
+                    }
+                    &>.remove{                   
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;     
+                        border-radius: 50%;
+                        padding: 2px;
+                        width: 1rem;
+                        height: 1rem;
+                        cursor: pointer;
+                        color: #666;
+                        padding-bottom: 3px;
+                        background-color: rgba(0, 0, 0, 0.4);  
+                        &:hover{
+                            background-color: rgba(0, 0, 0, 0.3);  
+                            color: #aaa;
+                        }
+                    }
+                    &.error{
+                        border: 1px solid red;
+                        background-color: #ff006221;  
+                        border-radius: var(--auto-border-radius);
+                        color:red;
+                        &>.progress{
+                            display: none;
+                        }
+                    }
+                }
             }
-            .upload.dragover {
-                border-color: #2196f3;
-                background: rgba(33, 150, 243, 0.1);
-            }
-            .upload:hover {
-                border-color: #999;
-            }
-            .files {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            .file-item {
-                display: flex;
-                align-items: center;
-                padding: 8px;
-                border: 1px solid #eee;
-                border-radius: 4px;
-            }
-            .file-name {
-                flex: 1;
-                margin-right: 10px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .progress-bar {
-                height: 4px;
-                background: #eee;
-                border-radius: 2px;
-                overflow: hidden;
-                width: 100px;
-            }
-            .progress-fill {
-                height: 100%;
-                background: #2196f3;
-                transition: width 0.3s ease;
-            }
-            .error {
-                color: #f44336;
-            }
-            .file-actions {
-                display: flex;
-                gap: 5px;
-            }
-            .delete-btn {
-                cursor: pointer;
-                color: #f44336;
-                border: none;
-                background: none;
-                font-size: 16px;
-                padding: 0;
-                margin: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-            }
-            .delete-btn:hover {
-                background: rgba(244, 67, 54, 0.1);
-            }
-            .hidden-input {
-                display: none;
-            }
-            .retry-btn {
-                cursor: pointer;
-                color: #2196f3;
-                border: none;
-                background: none;
-                font-size: 14px;
-                padding: 2px 8px;
-                border-radius: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .retry-btn:hover {
-                background: rgba(33, 150, 243, 0.1);
-            }
+ 
         `
     ] as any
 
-    private retryUpload(task: UploadTask) {
-        // 更新任务状态为上传中
-        const taskIndex = this.tasks.findIndex(t => t.id === task.id)
-        if (taskIndex === -1) return
-
-        this.tasks = [
-            ...this.tasks.slice(0, taskIndex),
-            { ...this.tasks[taskIndex], status: 'uploading', progress: 0, error: undefined },
-            ...this.tasks.slice(taskIndex + 1)
-        ]
-
-        // 重新上传文件，但不创建新任务
-        this.uploadFileWithTask(task.file, task.id)
-    }
-
     @state()
-    private tasks: UploadTask[] = []
-
-    @state()
-    files: UploadItem[] = []
+    files: UploadFile[] = []
 
     private fileInputRef: HTMLInputElement | null = null
+
+
+    private retryUpload(file: UploadFile) {
+        this.startUpload(file.file, file.id)
+    }
+
 
     getInitialOptions(): Record<string, any> {
         return {
             fileTypes: [],
             url: '',
             multiple: true,
-            fileFieldName: 'file',
-            onResolve: this._resolveFileUrl.bind(this)
+            fileFieldName: 'files',
+            preview: '24px',
+            tips: '拖动文件到此处上传或点击选择文件',
+            onResolve: this._defaultFileResolver.bind(this),
+            onFileLabel(file: { url: string }) {
+                const parts = file.url.split('/')
+                return parts[parts.length - 1]
+            },
         }
     }
-
-    _resolveFileUrl(response: any): UploadItem {
-        // 默认的解析逻辑，与handleUploadResult中的默认逻辑相同
-        if (!response.url) {
-            throw new Error('上传响应缺少必要的url字段');
-        }
-
-        return {
-            name: response.name || undefined,
-            url: response.url
-        };
-    }
-
-    /**
-     * 处理上传结果
-     * @param response - 上传接口返回的响应数据
-     * @returns 解析后的上传项对象
-     * @throws 当响应缺少url字段时抛出错误
-     * @private 内部实现细节
-     */
-    private handleUploadResult(response: any): UploadItem {
-        if (typeof this.options.onResolve === 'function') {
-            // 使用自定义解析函数
-            return this.options.onResolve(response);
-        }
-
-        // 默认解析逻辑
-        if (!response.url) {
-            throw new Error('上传响应缺少必要的url字段');
-        }
-
-        return {
-            name: response.name || undefined,
-            url: response.url
-        };
-    }
-
-
-    firstUpdated() {
+    _createUploadInput() {
         // 创建文件输入元素
         this.fileInputRef = document.createElement('input')
         this.fileInputRef.type = 'file'
-        this.fileInputRef.className = 'hidden-input'
         this.fileInputRef.multiple = !!this.options?.multiple
 
         if (this.options.fileTypes.length > 0) {
@@ -202,9 +208,13 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                 .filter(type => type !== '*')
                 .join(',')
         }
-
+        this.fileInputRef.style.display = 'none'
         this.fileInputRef.addEventListener('change', this.handleFileInputChange.bind(this))
         this.renderRoot.appendChild(this.fileInputRef)
+    }
+
+    firstUpdated() {
+        this._createUploadInput()
     }
 
     private handleFileInputChange(e: Event) {
@@ -248,11 +258,9 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                 if (!this.options?.fileTypes) return false;
                 return !this.options.fileTypes.some(type => {
                     if (type === '*') return true;
-                    if (type.startsWith('.')) {
-                        // 检查文件扩展名
+                    if (type.startsWith('.')) {  // 检查文件扩展名                      
                         return file.name.toLowerCase().endsWith(type.toLowerCase());
-                    } else {
-                        // 检查MIME类型
+                    } else { // 检查MIME类型                       
                         return file.type.startsWith(type);
                     }
                 });
@@ -262,7 +270,6 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                 return
             }
         }
-
         files.forEach(file => this.uploadFile(file))
     }
 
@@ -281,130 +288,169 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
 
         // 如果不允许多文件上传，则先清除之前的任务
         if (!this.options?.multiple) {
-            this.tasks = []
+            this.files = []
         }
 
-        const task: UploadTask = {
+        const task: UploadFile = {
             id: this.generateId(),
             file,
             progress: 0,
-            status: 'uploading'
+            status: 'uploading',
+            value: {
+                url: file.name
+            },
         }
-        this.tasks = [...this.tasks, task]
-
+        this.files.push(task)
         // 使用共享的上传逻辑
-        return this.performUpload(file, task.id)
+        return this.startUpload(file, task.id)
     }
 
     private async uploadFileWithTask(file: File, taskId: string) {
         if (!this.options?.url) {
             throw new Error('Upload URL is not configured')
         }
-
         // 使用共享的上传逻辑，但使用现有任务ID
-        return this.performUpload(file, taskId)
+        return this.startUpload(file, taskId)
     }
 
-    private async performUpload(file: File, taskId: string) {
+
+    _updateFileRecord(fileId: string, data: Partial<UploadFile>) {
+        const index = this.files.findIndex(t => t.id === fileId)
+        if (index === -1) return
+        this.files = [
+            ...this.files.slice(0, index),
+            { ...this.files[index], ...data },
+            ...this.files.slice(index + 1)
+        ]
+    }
+
+    _getResponseError(request: XMLHttpRequest) {
+        let errorMessage = '上传失败';
+        try {  // 尝试解析服务器返回的错误信息          
+            const response = JSON.parse(request.responseText);
+            errorMessage = response.message || response.error || errorMessage;
+        } catch {
+            // 根据状态码提供友好的错误信息
+            switch (request.status) {
+                case 400:
+                    errorMessage = '请求无效，请检查上传参数';
+                    break;
+                case 401:
+                    errorMessage = '未授权，请先登录';
+                    break;
+                case 403:
+                    errorMessage = '无权限上传文件';
+                    break;
+                case 413:
+                    errorMessage = '文件太大';
+                    break;
+                case 415:
+                    errorMessage = '不支持的文件类型';
+                    break;
+                case 500:
+                    errorMessage = '服务器内部错误，请稍后重试';
+                    break;
+                case 503:
+                    errorMessage = '服务暂时不可用，请稍后重试';
+                    break;
+                default:
+                    errorMessage = `上传失败 (${request.status})`;
+            }
+        }
+        return new Error(errorMessage);
+    }
+
+    _defaultFileResolver(response: any) {
+        if (typeof (response) === 'string') {
+            return {
+                url: response
+            }
+        } else if (typeof (response) === 'object') {
+            if (!response.url) {
+                throw new Error('上传响应缺少必要的url字段');
+            }
+            return response
+        }
+    }
+
+    _parseUploadResponse(responseText: string) {
+        let result: any = {}
+        try {
+            Object.assign(result, JSON.parse(responseText))
+        } catch {
+            result = responseText
+        }
+        if (typeof this.options.onResolve === 'function') {
+            result = this.options.onResolve(result);
+        }
+        return result
+    }
+    private async startUpload(file: File, fileId: string) {
+        const fileIndex = this.files.findIndex(t => t.id === fileId)
+        if (fileIndex === -1) return
+        const fileRecord = this.files[fileIndex]
+
         return new Promise<void>((resolve, reject) => {
-            const xhr = new XMLHttpRequest()
+            const httpRequest = new XMLHttpRequest()
             const formData = new FormData()
             formData.append(this.options.fileFieldName, file)
-
             // 监听上传进度
-            xhr.upload.onprogress = (event) => {
+            httpRequest.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
                     const progress = Math.round((event.loaded / event.total) * 100)
-                    const taskIndex = this.tasks.findIndex(t => t.id === taskId)
-                    if (taskIndex === -1) return
-
-                    this.tasks = [
-                        ...this.tasks.slice(0, taskIndex),
-                        { ...this.tasks[taskIndex], progress },
-                        ...this.tasks.slice(taskIndex + 1)
-                    ]
+                    this._updateFileRecord(fileId, {
+                        progress
+                    })
                 }
             }
-
             // 处理上传完成
-            xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    const taskIndex = this.tasks.findIndex(t => t.id === taskId)
-                    if (taskIndex === -1) return
-
-                    this.tasks = [
-                        ...this.tasks.slice(0, taskIndex),
-                        { ...this.tasks[taskIndex], status: 'completed' },
-                        ...this.tasks.slice(taskIndex + 1)
-                    ]
-
+            httpRequest.onload = () => {
+                const fileIndex = this.files.findIndex(t => t.id === fileId)
+                if (fileIndex === -1) return
+                if (httpRequest.status >= 200 && httpRequest.status < 300) {
+                    this._updateFileRecord(fileId, {
+                        status: 'done'
+                    })
                     try {
-                        const response = JSON.parse(xhr.responseText);
-                        const result = this.handleUploadResult(response);
-                        this.files = [...this.files, result];
-                        this.updateValue();
+                        const response = this._parseUploadResponse(httpRequest.responseText)
+                        fileRecord.value = response
+                        this._updateFileRecord(fileId, {
+                            value: { ...fileRecord.value }
+                        })
+                        fileRecord.status = 'done'
+                        this.uploadComplate();
                         resolve();
-                    } catch (error) {
+                    } catch {
                         const parseError = new Error('解析上传响应失败');
-                        this.handleUploadError(taskId, parseError);
+                        this.handleUploadError(fileId, parseError);
                         reject(parseError);
                     }
                 } else {
-                    let errorMessage = '上传失败';
-                    try {
-                        // 尝试解析服务器返回的错误信息
-                        const response = JSON.parse(xhr.responseText);
-                        errorMessage = response.message || response.error || errorMessage;
-                    } catch {
-                        // 根据状态码提供友好的错误信息
-                        switch (xhr.status) {
-                            case 400:
-                                errorMessage = '请求无效，请检查上传参数';
-                                break;
-                            case 401:
-                                errorMessage = '未授权，请先登录';
-                                break;
-                            case 403:
-                                errorMessage = '无权限上传文件';
-                                break;
-                            case 413:
-                                errorMessage = '文件太大';
-                                break;
-                            case 415:
-                                errorMessage = '不支持的文件类型';
-                                break;
-                            case 500:
-                                errorMessage = '服务器内部错误，请稍后重试';
-                                break;
-                            case 503:
-                                errorMessage = '服务暂时不可用，请稍后重试';
-                                break;
-                            default:
-                                errorMessage = `上传失败 (${xhr.status})`;
-                        }
-                    }
-                    const error = new Error(errorMessage);
-                    this.handleUploadError(taskId, error);
+                    const error = this._getResponseError(httpRequest)
+                    this.handleUploadError(fileId, error);
                     reject(error);
                 }
             }
-
             // 处理上传错误
-            xhr.onerror = () => {
+            httpRequest.onerror = () => {
+                const fileIndex = this.files.findIndex(t => t.id === fileId)
+                if (fileIndex === -1) return
                 const error = new Error('网络错误，请检查网络连接');
-                this.handleUploadError(taskId, error);
+                this.handleUploadError(fileId, error);
                 reject(error);
             }
 
             // 处理超时
-            xhr.ontimeout = () => {
+            httpRequest.ontimeout = () => {
+                const fileIndex = this.files.findIndex(t => t.id === fileId)
+                if (fileIndex === -1) return
                 const error = new Error('上传超时，请重试');
-                this.handleUploadError(taskId, error);
+                this.handleUploadError(fileId, error);
                 reject(error);
             }
 
             // 开始上传
-            xhr.open('POST', this.options.url)
+            httpRequest.open('POST', this.options.url)
 
             // 注意：当使用FormData时，不要手动设置Content-Type
             // 浏览器会自动添加正确的Content-Type和boundary参数
@@ -412,102 +458,133 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
 
             // 如果有自定义头部，可以在这里添加
             // 例如：xhr.setRequestHeader('Authorization', 'Bearer token');
-
-            xhr.send(formData)
+            this._updateFileRecord(fileId, {
+                progress: 0,
+                status: 'uploading'
+            })
+            httpRequest.send(formData)
         })
     }
 
-    private handleUploadError(taskId: string, error: Error) {
-        const taskIndex = this.tasks.findIndex(t => t.id === taskId)
-        if (taskIndex === -1) return
-        this.tasks = [
-            ...this.tasks.slice(0, taskIndex),
-            {
-                ...this.tasks[taskIndex],
-                status: 'error',
-                error: error.message
-            },
-            ...this.tasks.slice(taskIndex + 1)
-        ]
+
+    private handleUploadError(fileId: string, error: Error) {
+        this._updateFileRecord(fileId, {
+            error: error.message,
+            status: 'error'
+        })
     }
 
-    private deleteTask(taskId: string) {
-        const taskIndex = this.tasks.findIndex(t => t.id === taskId)
-        if (taskIndex === -1) return
-
+    private deleteUploading(fileId: string) {
+        const fileIndex = this.files.findIndex(t => t.id === fileId)
+        if (fileIndex === -1) return
         // 只从tasks中删除任务，不影响files数组
-        this.tasks = [
-            ...this.tasks.slice(0, taskIndex),
-            ...this.tasks.slice(taskIndex + 1)
+        this.files = [
+            ...this.files.slice(0, fileIndex),
+            ...this.files.slice(fileIndex + 1)
         ]
-
-        this.updateValue()
     }
 
-    private updateValue() {
-        // 更新value为已完成上传的文件列表
-        this.value = this.files.map(file => ({
-            name: file.name || '',
-            url: file.url
-        }))
+    private deleteFile(fileId: string) {
+        this.deleteUploading(fileId)
+        this.uploadComplate()
+    }
 
+    private uploadComplate() {
         this.dispatchEvent(new CustomEvent('change', {
-            detail: { value: this.value }
+            detail: { value: this.files.map(file => file.value) }
         }))
+        this.onFieldChange()
+    }
+
+
+    getInputValue() {
+        if (this.options.multiple) {
+            return this.files.map(file => file.value)
+        } else {
+            return this.files.length > 0 ? this.files[0].value.url : undefined
+        }
+    }
+
+    getStateValue() {
+        let value = super.getStateValue()
+        if (!Array.isArray(value)) value = [value]
+        this.files = value.map((v: any, index: number) => {
+            const file = {
+                id: String(index),
+                file: undefined,
+                progress: 0,
+                status: 'done',
+                error: undefined,
+                value: { url: undefined }
+            } as any
+            if (typeof (v) === 'string') {
+                file.value.url = v
+            } else if (typeof (v) === 'object') {
+                Object.assign(file.value, v)
+            }
+            return file
+        })
+        return value
+    }
+
+    renderFilePreview(file: string) {
+        return html`<div class="file-preivew">
+            ${file}
+        </div>`
+    }
+
+    renderFile(file: UploadFile) {
+        const hasError = !!file.error
+        return html`
+            <magic-flex class="file ${classMap({ error: hasError })}" wrap align="center" gap="0.5rem"
+                title=${ifDefined(file.error)}
+            >
+                ${when(file.status === 'uploading', () => html`<span class="progress">
+                    <span class="value">${file.progress}%</span>
+                    <sl-icon name="remove" @click=${() => this.deleteUploading(file.id)}></sl-icon>
+                </span>`)} 
+                <span class="label">${this.options.onFileLabel(file.value)}</span>
+                <sl-icon name="remove" @click=${() => this.deleteFile(file.id)}></sl-icon>
+                ${when(file.status === 'error', () => {
+            return html`<sl-icon name="refresh" title="重新上传" @click=${() => this.retryUpload(file)}></sl-icon>`
+        })}                               
+            </magic-flex> 
+        `
     }
 
     renderFiels() {
-        return html``
+        if (this.files.length === 0) return
+        return html`<magic-flex class="files" grow='none' gap="0.5rem" wrap>
+            ${when(this.files.length > 0,
+            () => {
+                return repeat(this.files, (file) => {
+                    return this.renderFile(file)
+                })
+            },
+            () => {
+                return html`<span class=''>${this.options.placeholder || '暂无文件'}</span>`
+            }
+        )}
+        </magic-flex>`
     }
 
     renderInput() {
         return html`
-            <div class="upload"
-                @click=${this.handleUploadClick}
-                @dragover=${this.handleDragOver}
-                @dragleave=${this.handleDragLeave}
-                @drop=${this.handleDrop}>
-                拖动文件到此处上传或点击选择文件
-            </div>
-            <div class="files">
-                ${this.tasks.map(task => html`
-                    <div class="file-item">
-                        <div class="file-name" title="${task.file.name}">
-                            ${task.file.name}
-                        </div>
-                        ${task.status === 'uploading' ? html`
-                            <div class="progress-bar">
-                                <div class="progress-fill" 
-                                    style="width: ${task.progress}%">
-                                </div>
-                            </div>
-                        ` : task.status === 'completed' ? html`
-                            <div class="file-actions">
-                                <span>完成</span>
-                                <button class="delete-btn" 
-                                    @click=${() => this.deleteTask(task.id)}
-                                    title="删除文件">
-                                    ×
-                                </button>
-                            </div>
-                        ` : html`
-                            <div class="file-actions">
-                                <span class="error">${task.error}</span>
-                                <button class="retry-btn" 
-                                    @click=${() => this.retryUpload(task)}
-                                    title="重新上传">
-                                    重试
-                                </button>
-                                <button class="delete-btn" 
-                                    @click=${() => this.deleteTask(task.id)}
-                                    title="删除文件"></button>
-                                    ×
-                                </button>
-                            </div>
-                        `}
-                    </div>
-                `)}
-            </div>
+            <magic-flex grow="none" gap="0.5rem" direction="column">
+                ${this.renderFiels()}
+                ${when(this.options.multiple, () => {
+            return html`<div class="indicator"
+                            @click=${this.handleUploadClick}
+                            @dragover=${this.handleDragOver}
+                            @dragleave=${this.handleDragLeave}
+                            @drop=${this.handleDrop}>
+                            ${this.options.tips}
+                        </div>`
+        })}                
+                <magic-flex class="actions" align="center" grow="span">
+                    <sl-button @click=${this.handleUploadClick}>选择文件</sl-button>  
+                </magic-flex>
+            </magic-flex>
         `
     }
 }
@@ -518,3 +595,4 @@ declare global {
         'auto-field-upload': AutoFieldUpload
     }
 }
+

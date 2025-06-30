@@ -32,9 +32,9 @@ import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { LitElement, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import type { AutoStore, ComputedSchemaState, ComputedState, Dict, SchemaOptions } from 'autostore';
+import type { AutoStore, ComputedState, Dict, SchemaOptions } from 'autostore';
 import { context, type AutoFormContext } from '../context'
-import '../components/box'
+import '../components'
 import { provide } from '@lit/context';
 import { type IconLibrary, type IconLibraryResolver, registerIconLibrary } from '@shoelace-style/shoelace/dist/components/icon/library.js';
 import { ThemeController } from '@/controllers/theme';
