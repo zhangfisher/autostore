@@ -3,7 +3,6 @@ import { LitElement, css, html } from 'lit';
 import { AutoStore, computed, configurable } from 'autostore';
 import type { AutoForm } from './src/form/index';
 
-
 const orgTree = {
     id: 1,
     label: '美一',
@@ -73,6 +72,14 @@ const store = new AutoStore({
                     variant: "primary"
                 },
                 {
+                    label: '上传',
+                    icon: 'clipboard',
+                    onClick: (value, { update }) => {
+                        console.log('Action click:', value)
+                        update(value + "*")
+                    }
+                },
+                {
                     label: '前面',
                     position: 'before',
                     icon: 'atom',
@@ -83,26 +90,56 @@ const store = new AutoStore({
                 }
             ]
         }),
-        admin: configurable(false, {
+        admin: configurable('是', {
             label: '管理员',
             help: "管理员拥有所有权限",
             widget: 'checkbox',
-            checkLabel: "是",
+            // checkLabel: "是",
+            switchValues: ['是', '否']
+        }),
+        admin2: configurable(true, {
+            label: '管理员',
+            help: "管理员拥有所有权限",
+            widget: 'switch',
+            // checkLabel: "是",
             // switchValues: ['是', '否']
         }),
-        files: configurable(['aaa.png', 'b.mp4'], {
+        files: configurable(['aaa.png', 'b.pdf', '/updates/a.png'], {
             label: "上传图片",
             widget: 'upload',
             url: 'api/upload',
-            placeholder: '请选择图片',
+            placeholder: '请选择规格为128*128的相片',
             fileFieldName: "files",
+            help: '上传文件支持.pnp,.jpg,不能大于5M',
+            preview: true,
             // multiple: false,
             // 当删除文件时向服务器发起删除请求
-            onRemove: (file: string) => {
+            onRemove: async (file) => {
+                await delay(2000)
+                console.log("delete file:", file)
+            },
+            actions: [
+                {
+                    label: '验证',
+                    icon: 'clipboard',
+                    onClick: (value, { update }) => {
+                        console.log('Action click:', value)
+                        update(value + "*")
+                    },
+                    variant: "primary"
+                },
+                {
+                    label: '前面',
+                    position: 'before',
+                    icon: 'atom',
+                    onClick: (args) => {
+                        console.log('Action click:', args)
+                    },
 
-            }
+                }
+            ]
         }),
-        file: configurable('aaa.png', {
+        file: configurable({ url: 'aaa.png' }, {
             label: "上传图片",
             widget: 'upload',
             url: 'api/upload',
@@ -110,7 +147,7 @@ const store = new AutoStore({
             fileFieldName: "files",
             multiple: false,
             // 当删除文件时向服务器发起删除请求
-            onRemove: (file: string) => {
+            onRemove: (file) => {
 
             }
         }),

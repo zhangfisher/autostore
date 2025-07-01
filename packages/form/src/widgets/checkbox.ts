@@ -1,4 +1,4 @@
-import { html } from "lit"
+import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
@@ -10,7 +10,15 @@ export type AutoFieldCheckboxOptions = Required<SchemaCheckboxWidgetOptions>
 
 @customElement('auto-field-checkbox')
 export class AutoFieldCheckbox extends AutoField<AutoFieldCheckboxOptions> {
-    switchValues: any[] = []
+    static styles = [
+        AutoField.styles,
+        css`
+            sl-checkbox.viewonly{
+                user-select: none;
+                pointer-events: none;
+            }
+        `
+    ] as any
     renderInput() {
         return html`        
         <sl-checkbox 
@@ -23,7 +31,7 @@ export class AutoFieldCheckbox extends AutoField<AutoFieldCheckboxOptions> {
             .checked=${this._isChecked()} 
             placeholder="${ifDefined(this.options.placeholder)}"
             @sl-change=${this.onFieldChange.bind(this)}
-        > ${this.options.checkLabel}</sl-checkbox> 
+        > ${this.getCheckLabel()}</sl-checkbox> 
         `
     }
     getInitialOptions() {
@@ -32,10 +40,26 @@ export class AutoFieldCheckbox extends AutoField<AutoFieldCheckboxOptions> {
         }
     }
     _isChecked() {
-        return this.value === this.switchValues[0]
+        return this.value === this.options.switchValues[0]
     }
     getInputValue() {
         return this.input.checked ? this.options.switchValues[0] : this.options.switchValues[1]
+    }
+    getCheckLabel() {
+        if (this.options.checkLabel) {
+            return this.options.checkLabel
+        } else {
+            if (typeof (this.value) === 'boolean') return ''
+            return this.options.switchValues[this.value === this.options.switchValues[0] ? 0 : 1]
+        }
+    }
+    renderView() {
+        return html`        
+        <sl-checkbox 	
+            class="viewonly"
+            ?checked=${this._isChecked()}           
+        >${this.getCheckLabel()}</sl-checkbox> 
+        `
     }
 }
 

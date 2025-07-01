@@ -1,4 +1,4 @@
-import { SchemaWidgetSelectItem } from "."
+import type { SchemaWidgetSelectItem } from "."
 
 export type SchemaWidgetTypes = 'input'
     | 'select'
@@ -209,8 +209,9 @@ export type SchemaListWidgetOptions = {
 
 export type SchemaUploadWidgetFile = {
     id?: string
-    title?: string
     url: string
+    title?: string
+    size?: number
 }
 
 export type SchemaUploadWidgetOptions = {
@@ -221,9 +222,20 @@ export type SchemaUploadWidgetOptions = {
     fileTypes?: string[]
     url?: string,
     fileFieldName?: string       // 上传文件字段名称，默认是file
-    onRemove?: (file: string) => Promise<void> | void
+    /**
+     * 当删除文件时传入
+     */
+    onRemove?: (file: string | SchemaUploadWidgetFile) => Promise<void> | void
     // 返回预览内容
     onPreview?: (file: string) => string
+    /**
+     * 指定如何选取文件
+     * button: 显示一个上传选择文件按钮
+     * rectangle:  默认，显示一个矩形框架，可以拖动到了此
+     * auto:  默认，多选时显示rectangle,单选时显示button
+     */
+    selector?: 'button' | 'rectangle' | 'auto'
+    multiple?: boolean
     // 上传提示信息
     tips?: string
     /**
@@ -243,12 +255,15 @@ export type SchemaUploadWidgetOptions = {
     /**
      * 用于显示文件名称，如果没有指定则只显示文件名称
      */
-    onFileLabel?: (file: SchemaUploadWidgetFile) => string
-    multiple?: boolean
+    onFileLabel?: (file: string | SchemaUploadWidgetFile) => string
     /**
      * 显示预览的尺寸
+     * true代表显示一个默认的预览，一般只对图片和视频文件有效
+     * false代表不预览，只显示文件标题或url
+     * “字符串”： 代表预览大小，如:"64px"，代表预览元素大小为64px;
+     * 
      */
-    preview?: boolean | string
+    preview?: boolean | string | number
     /**
      * 默认情况下，
      * 

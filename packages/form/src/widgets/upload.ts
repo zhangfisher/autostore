@@ -1,11 +1,35 @@
 import { AutoField } from "@/field"
 import type { SchemaUploadWidgetFile, SchemaUploadWidgetOptions } from "autostore"
-import { css, html } from "lit"
+import { css, html, type TemplateResult } from "lit"
 import { customElement, state } from "lit/decorators.js"
 import { classMap } from "lit/directives/class-map.js"
 import { ifDefined } from "lit/directives/if-defined.js"
 import { repeat } from "lit/directives/repeat.js"
+import { styleMap } from "lit/directives/style-map.js"
 import { when } from "lit/directives/when.js"
+
+
+const imageTypes = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico', '.apng', '.avif']
+const videoTypes = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.avi', '.wmv', '.flv', '.mkv', '.m4v', '.3gp', '.mpeg', '.mpg', '.ts', '.m2ts', '.hevc', '.rm', '.rmvb', '.vob', '.asf']
+function isImageFile(url: string | undefined) {
+    if (!url) return false
+    if (typeof (url) !== 'string') return false
+    const path = url.split('?')[0]
+    const fileName = path.split('/').pop();
+    const fileExtension = fileName!.split('.').pop();
+    // 检查文件扩展名是否在 imageTypes 数组中
+    return imageTypes.includes(`.${fileExtension}`);
+}
+function isVideoFile(url: string | undefined) {
+    if (!url) return false
+    if (typeof (url) !== 'string') return false
+    const path = url.split('?')[0]
+    const fileName = path.split('/').pop();
+    const fileExtension = fileName!.split('.').pop();
+    // 检查文件扩展名是否在 imageTypes 数组中
+    return videoTypes.includes(`.${fileExtension}`);
+}
+
 
 
 type UploadFile = {
@@ -14,6 +38,7 @@ type UploadFile = {
     progress: number
     status: 'done' | 'uploading' | 'error'
     error?: string
+    size?: number
     value: SchemaUploadWidgetFile
 }
 
@@ -25,17 +50,12 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
     static styles = [
         AutoField.styles,
         css`
-            .value {
-                & > magic-flex{
-                    width: 100%;
-                    border: var(--auto-border);
-                    padding: 0.5rem;
-                    min-height: 2rem;
-                    border-radius: var(--auto-border-radius);
-                    &>magic-flex.files{
+            .value { 
+                  
+                    & magic-flex.files{
                         position: relative;
-                        padding: 0.5rem;
-                        &>.file{                                
+                        padding:  0px ;
+                        &>.file.default{                                
                             position: relative;
                             display: flex;
                             align-items: center;
@@ -61,40 +81,75 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                                 &:hover{
                                     color: var(--auto-theme-color);
                                 }
-                            }
-                            &>.progress{                       
-                                position: absolute;
-                                top:0px;
-                                left: 0px;
-                                width: 100%;
-                                height: 100%;
-                                background-color: rgba(0, 0, 0, 0.5);
-                                border-radius: var(--auto-border-radius);
-                                color: white;                    
-                                display: flex;
-                                align-items: center; 
-                                justify-content: center;
-                                width: 100%;
-                                text-align: center;
-                                z-index: 0;
-                                &>:first-child{
-                                    flex-grow: 1;
-                                    text-align: center;
-                                }
-                                &>[name=remove]{
-                                    cursor: pointer;
-                                    margin-right: 0.5rem;
-                                }
-                                &>.value{
-
-                                }
-                            }
+                            } 
                         } 
-                    }
-                }
-                & > .actions{
-                    padding: 0px;
-                }
+                        &>.file.preview{
+                            position: relative;
+                            display: flex;                        
+                            border: var(--auto-border);
+                            border-radius: var(--auto-border-radius);
+                            background-color: var(--auto-workspace-color);
+                            align-items: 0px;                            
+                            &.error{
+                                border: 1px solid red;
+                                background-color: #ff006221;  
+                                border-radius: var(--auto-border-radius);
+                                color:red;
+                                &>.error{
+                                    position: absolute;
+                                    top:0px;
+                                    left:0px;
+                                    width: 100%;
+                                    height: 100%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    flex-direction: column;
+                                    font-size: 0.8rem; 
+                                    &>*{
+                                        padding: 4px 0px;
+                                        cursor: pointer;
+                                    }
+                                    &>:last-child{
+                                        font-size: 1rem;
+                                    }
+                                }
+                            }
+                            &>img,video,.content{
+                                width: 100%;
+                                flex-grow: 1;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: var(--auto-text-color);                            
+                                &.img{
+                                    object-fit: cover;
+                                }
+                            }
+                            &>sl-icon[name=remove]{
+                                width: 16px;
+                                height: 16px;
+                                position: absolute;
+                                display: none;
+                                left: calc(100% - 8px);
+                                top:-8px;
+                                background-color: white;                                
+                                border-radius: 8px;
+                                cursor: pointer;
+                                color:red;
+                                z-index: 9;
+                                &:hover{
+                                    color: var(--auto-theme-color);
+                                }
+                            }
+                            &:hover>sl-icon[name=remove]{
+                                display: block;
+                            } 
+                        }
+                    } 
+            }
+            :host::part(after-actions){
+                text-align:right;
             }
             .indicator {
                 border: 2px dashed #ccc;
@@ -111,58 +166,35 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                 &:hover {
                     border-color: #999;
                 }
-            } 
-            .progressbar{
-                position: relative;                
-                & > .error{
-                    font-size: calc(var(--auto-font-size) * 0.8);
-                    padding: 0px 0.5rem;
-                }
-                &>.overlay{
-                    position: absolute;
+            }
+            .placeholder{
+                border-radius: var(--auto-border-radius);
+                padding: 0.5rem;
+                color: var(--auto-gray-color);
+                width: 100%;
+
+            }
+            .uploading.progressbar{
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.5);
+                border-radius: var(--auto-border-radius);
+                color: white;                    
+                display: flex;
+                align-items: center; 
+                justify-content: center;
+                text-align: center;
+                z-index: 1;
+                &.hori{
+                    left:0px;
                     top:0px;
-                    left: 0px;
+                    width: 0px;
+                    height:100%;
+                }
+                &.vert{
+                    left:0px;
+                    bottom:100%;                    
                     width: 100%;
-                    height: 100%;
-                    z-index: 1;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    border-radius: var(--auto-border-radius);
-                    color: white;                    
-                    display: flex;
-                    align-items: center; 
-                    justify-content: center;
-                    padding-right: 0.5rem;
-                    box-sizing: border-box;
-                    &>:first-child{
-                        flex-grow: 1;
-                        text-align: center;
-                    }
-                    &>.remove{                   
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;     
-                        border-radius: 50%;
-                        padding: 2px;
-                        width: 1rem;
-                        height: 1rem;
-                        cursor: pointer;
-                        color: #666;
-                        padding-bottom: 3px;
-                        background-color: rgba(0, 0, 0, 0.4);  
-                        &:hover{
-                            background-color: rgba(0, 0, 0, 0.3);  
-                            color: #aaa;
-                        }
-                    }
-                    &.error{
-                        border: 1px solid red;
-                        background-color: #ff006221;  
-                        border-radius: var(--auto-border-radius);
-                        color:red;
-                        &>.progress{
-                            display: none;
-                        }
-                    }
+                    height:0px;
                 }
             }
  
@@ -186,13 +218,18 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
             url: '',
             multiple: true,
             fileFieldName: 'files',
-            preview: '24px',
-            tips: '拖动文件到此处上传或点击选择文件',
+            preview: true,
+            tips: '拖动文件到此处或点击选择文件上传',
             onResolve: this._defaultFileResolver.bind(this),
-            onFileLabel(file: { url: string }) {
-                const parts = file.url.split('/')
-                return parts[parts.length - 1]
-            },
+            onFileLabel: this._getDefaultFileLabel.bind(this),
+            selector: 'rectangle'
+        }
+    }
+    _getDefaultFileLabel(file: string | SchemaUploadWidgetFile) {
+        if (typeof (file) === 'string') {
+            return file
+        } else {
+            return file.title || file.url.split('/').slice(-1)[0]
         }
     }
     _createUploadInput() {
@@ -305,15 +342,6 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
         return this.startUpload(file, task.id)
     }
 
-    private async uploadFileWithTask(file: File, taskId: string) {
-        if (!this.options?.url) {
-            throw new Error('Upload URL is not configured')
-        }
-        // 使用共享的上传逻辑，但使用现有任务ID
-        return this.startUpload(file, taskId)
-    }
-
-
     _updateFileRecord(fileId: string, data: Partial<UploadFile>) {
         const index = this.files.findIndex(t => t.id === fileId)
         if (index === -1) return
@@ -362,9 +390,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
 
     _defaultFileResolver(response: any) {
         if (typeof (response) === 'string') {
-            return {
-                url: response
-            }
+            return response
         } else if (typeof (response) === 'object') {
             if (!response.url) {
                 throw new Error('上传响应缺少必要的url字段');
@@ -413,12 +439,11 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                     })
                     try {
                         const response = this._parseUploadResponse(httpRequest.responseText)
-                        fileRecord.value = response
                         this._updateFileRecord(fileId, {
-                            value: { ...fileRecord.value }
+                            value: response
                         })
                         fileRecord.status = 'done'
-                        this.uploadComplate();
+                        this.onFieldChange();
                         resolve();
                     } catch {
                         const parseError = new Error('解析上传响应失败');
@@ -474,34 +499,46 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
         })
     }
 
-    private deleteUploading(fileId: string) {
-        const fileIndex = this.files.findIndex(t => t.id === fileId)
-        if (fileIndex === -1) return
-        // 只从tasks中删除任务，不影响files数组
-        this.files = [
-            ...this.files.slice(0, fileIndex),
-            ...this.files.slice(fileIndex + 1)
-        ]
-    }
-
     private deleteFile(fileId: string) {
-        this.deleteUploading(fileId)
-        this.uploadComplate()
+        const index = this.files.findIndex(t => t.id === fileId)
+        if (index === -1) return
+        const file = this.files[index]
+        const isUploading = file.status === 'uploading' || file.status === 'error'
+        const removeFile = () => {
+            // 只从tasks中删除任务，不影响files数组
+            this.files = [
+                ...this.files.slice(0, index),
+                ...this.files.slice(index + 1)
+            ]
+        }
+        if (isUploading) {
+            // 如果在上传时删除，由于文件还没有上传，所以只需要从列表中删除即可
+            removeFile()
+        } else {
+            // 如果在不在上传时删除，说明需要删除服务器上的文件
+            // 需要调用onRemove回调来删除服务器上的文件，然后才真正删除
+            if (typeof (this.options.onRemove) === 'function') {
+                Promise.resolve(this.options.onRemove.call(this, file.value)).then(() => {
+                    removeFile()
+                    this.onFieldChange()
+                }).catch((e) => {
+                    alert(e.message)
+                })
+            } else {//如果没有提供onRemove回调，则直接删除
+                removeFile()
+                this.onFieldChange()
+            }
+        }
     }
 
-    private uploadComplate() {
-        this.dispatchEvent(new CustomEvent('change', {
-            detail: { value: this.files.map(file => file.value) }
-        }))
-        this.onFieldChange()
-    }
+
 
 
     getInputValue() {
         if (this.options.multiple) {
             return this.files.map(file => file.value)
         } else {
-            return this.files.length > 0 ? this.files[0].value.url : undefined
+            return this.files.length > 0 ? this.files[0].value : undefined
         }
     }
 
@@ -515,34 +552,93 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                 progress: 0,
                 status: 'done',
                 error: undefined,
-                value: { url: undefined }
+                value: undefined
             } as any
             if (typeof (v) === 'string') {
-                file.value.url = v
+                file.value = v
             } else if (typeof (v) === 'object') {
-                Object.assign(file.value, v)
+                file.value = Object.assign({}, file.value, v)
             }
             return file
         })
         return value
     }
 
-    renderFilePreview(file: string) {
-        return html`<div class="file-preivew">
-            ${file}
-        </div>`
+    renderProgressbar(file: UploadFile, dir: 'hori' | 'vert') {
+        if (file.status !== 'uploading') return
+        const style = dir === 'hori' ? `width:${file.progress}%;`
+            : `height:${file.progress}%;top:${100 - file.progress}%`
+        return html`<span 
+            class="uploading progressbar ${classMap({
+            hori: dir === 'hori',
+            vert: dir === 'vert'
+        })}"
+            style="${style}"
+        >
+            <span class="value">${file.progress}%</span>
+        </span>
+        `
+    }
+
+    renderFileContent(file: UploadFile) {
+        if (file.error) return
+        const url = typeof (file.value) === 'string' ? file.value : file.value.url
+        let previewResult: TemplateResult
+        if (isImageFile(url)) {
+            previewResult = html`
+                <img class="content" src="${url}"/>
+            `
+        } else if (isVideoFile(url)) {
+            previewResult = html`
+                <video class="content" src="${url}"></video>
+            `
+        } else {
+            let extName = url.split("?")[0].split('.').slice(-1)[0]
+            extName = extName.length === 0 ? 'FILE' : `.${extName.toUpperCase()}`
+            previewResult = html`<div class="content">${extName}</div>`
+        }
+        return previewResult
+    }
+
+    renderFilePreview(file: UploadFile) {
+        const hasError = !!file.error
+        // 预览框大小
+        const size = typeof (this.options.preview) === 'boolean' ? '80px' : this.options.preview
+        return html`
+            <div class="file preview ${classMap({ error: hasError })}"
+                title=${file.error || this.options.onFileLabel(file.value)}
+                style="${styleMap({
+            width: size,
+            height: size
+        })}"
+            >   ${this.renderFileContent(file)}
+                ${this.renderProgressbar(file, 'vert')}
+                ${when(file.status === 'error',
+            () => {
+                return html`<div class="error" title="${file.error!}">
+                        <span>上传出错</span>
+                        <span>
+                            <sl-icon name="remove" title="取消上传" @click=${() => this.deleteFile(file.id)}></sl-icon>    
+                            <sl-icon name="refresh" title="重新上传" @click=${() => this.retryUpload(file)}></sl-icon>
+                        </span>
+                    </div>`
+            },
+            () => {
+                if (this.context.viewonly) return
+                return html`<sl-icon name="remove" @click=${() => this.deleteFile(file.id)}></sl-icon>`
+            })
+            }                               
+            </div> 
+        `
     }
 
     renderFile(file: UploadFile) {
         const hasError = !!file.error
         return html`
-            <magic-flex class="file ${classMap({ error: hasError })}" wrap align="center" gap="0.5rem"
+            <magic-flex class="file default ${classMap({ error: hasError })}" wrap align="center" gap="0.5rem"
                 title=${ifDefined(file.error)}
-            >
-                ${when(file.status === 'uploading', () => html`<span class="progress">
-                    <span class="value">${file.progress}%</span>
-                    <sl-icon name="remove" @click=${() => this.deleteUploading(file.id)}></sl-icon>
-                </span>`)} 
+            > 
+                ${this.renderProgressbar(file, 'hori')}
                 <span class="label">${this.options.onFileLabel(file.value)}</span>
                 <sl-icon name="remove" @click=${() => this.deleteFile(file.id)}></sl-icon>
                 ${when(file.status === 'error', () => {
@@ -553,16 +649,20 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
     }
 
     renderFiels() {
-        if (this.files.length === 0) return
         return html`<magic-flex class="files" grow='none' gap="0.5rem" wrap>
             ${when(this.files.length > 0,
             () => {
                 return repeat(this.files, (file) => {
-                    return this.renderFile(file)
+                    if (this.options.preview) {
+                        return this.renderFilePreview(file)
+                    } else {
+                        return this.renderFile(file)
+                    }
+
                 })
             },
             () => {
-                return html`<span class=''>${this.options.placeholder || '暂无文件'}</span>`
+                return html`<span class='placeholder'>${this.options.placeholder || '暂无文件'}</span>`
             }
         )}
         </magic-flex>`
@@ -572,7 +672,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
         return html`
             <magic-flex grow="none" gap="0.5rem" direction="column">
                 ${this.renderFiels()}
-                ${when(this.options.multiple, () => {
+                ${when(this.options.selector === 'rectangle', () => {
             return html`<div class="indicator"
                             @click=${this.handleUploadClick}
                             @dragover=${this.handleDragOver}
@@ -581,12 +681,19 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                             ${this.options.tips}
                         </div>`
         })}                
-                <magic-flex class="actions" align="center" grow="span">
-                    <sl-button @click=${this.handleUploadClick}>选择文件</sl-button>  
+                <magic-flex class="actions" align="center" grow=".actions.after" gap="0.5rem" >
+                    ${when(this.options.selector !== 'rectangle',
+            () => html`<sl-button @click=${this.handleUploadClick}>选择文件</sl-button>`
+        )}                    
+                    ${this.renderActions(false)}  
                 </magic-flex>
             </magic-flex>
         `
     }
+    renderView() {
+        return this.renderFiels()
+    }
+
 }
 
 

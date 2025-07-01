@@ -108,9 +108,9 @@ export class AutoField<Options = unknown> extends LitElement {
     getSuffix() {
 
     }
-    renderActions() {
-        return html`${this.renderBeforeActions()}
-                ${this.renderAfterActions()}`
+    renderActions(slot: boolean = true) {
+        return html`${this.renderBeforeActions(slot)}
+                ${this.renderAfterActions(slot)}`
     }
     _onClickAction(action: SchemaWidgetAction) {
         if (action.onClick && typeof (action.onClick) === 'function') {
@@ -126,17 +126,17 @@ export class AutoField<Options = unknown> extends LitElement {
             }
         }
     }
-    renderBeforeActions() {
+    renderBeforeActions(slot?: boolean) {
         if (Array.isArray(this.beforeActions) && this.beforeActions.length > 0) {
-            return html`<div class="actions before" slot="prefix">
+            return html`<div class="actions before" part="before-actions" slot="${ifDefined(slot ? 'prefix' : undefined)}">
             ${repeat(this.beforeActions, (action) => {
                 return this.renderActionWidget(action)
             })}</div>`
         }
     }
-    renderAfterActions() {
+    renderAfterActions(slot?: boolean) {
         if (Array.isArray(this.afterActions) && this.afterActions.length > 0) {
-            return html`<div class="actions after" slot="suffix">
+            return html`<div class="actions after" part="after-actions"  slot="${ifDefined(slot ? 'suffix' : undefined)}">
             ${repeat(this.afterActions, (action) => {
                 return this.renderActionWidget(action)
             })}</div>`
@@ -419,6 +419,9 @@ export class AutoField<Options = unknown> extends LitElement {
             }, {
                 flags: ctx.form.seq
             })
+            this.dispatchEvent(new CustomEvent('change', {
+                detail: { value }
+            }))
 
         } catch (e: any) {
             this.invalidMessage = e.message

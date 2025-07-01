@@ -11,11 +11,13 @@ export default defineMock([
         method: 'POST',
         body(req) {
             const files = req.body.files
-            //throw new Error('upload error')
-            return `/uploads/${files[0].originalFilename}`
-            // return {
-            //     size: files[0].size,
-            //     url: `/uploads/${files[0].originalFilename}`,
-            // }
+            // throw new Error('upload error')
+            // return `/uploads/${files[0].originalFilename}`
+            return {
+                id: `${Math.random().toString(36).substring(2, 6)}`,
+                size: files[0].size,
+                url: `/public/uploads/${files[0].originalFilename}`,
+                title: `文件${Math.random().toString(36).substring(2, 6)}`
+            }
         },
     }])

@@ -1,6 +1,6 @@
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from "@/field"
-import { html } from "lit"
+import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 import type { SchemaSwitchWidgetOptions } from 'autostore';
@@ -9,7 +9,15 @@ export type AutoFieldSwitchOptions = Required<SchemaSwitchWidgetOptions>
 
 @customElement('auto-field-switch')
 export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
-
+    static styles = [
+        AutoField.styles,
+        css`
+            sl-switch.viewonly{
+                user-select: none;
+                pointer-events: none;
+            }
+        `
+    ] as any
     renderInput() {
         return html`              
         <sl-switch 
@@ -22,8 +30,16 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
             placeholder="${ifDefined(this.options.placeholder)}"
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
-        > ${this.options.checkLabel}</sl-switch> 
+        > ${this.getCheckLabel()}</sl-switch> 
         `
+    }
+    getCheckLabel() {
+        if (this.options.checkLabel) {
+            return this.options.checkLabel
+        } else {
+            if (typeof (this.value) === 'boolean') return ''
+            return this.options.switchValues[this.value === this.options.switchValues[0] ? 0 : 1]
+        }
     }
     getInitialOptions() {
         return {
@@ -35,6 +51,15 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
     }
     getInputValue() {
         return this.input.checked ? this.options.switchValues[0] : this.options.switchValues[1]
+    }
+
+    renderView() {
+        return html`        
+        <sl-switch 	
+            class="viewonly"
+            ?checked=${this._isChecked()}           
+        >${this.getCheckLabel()}</sl-switch> 
+        `
     }
 }
 
