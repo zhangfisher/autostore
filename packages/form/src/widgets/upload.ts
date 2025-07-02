@@ -1,3 +1,4 @@
+import { ImagePreview } from "@/controllers"
 import { AutoField } from "@/field"
 import type { SchemaUploadWidgetFile, SchemaUploadWidgetOptions } from "autostore"
 import { css, html, type TemplateResult } from "lit"
@@ -115,13 +116,13 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                                     }
                                 }
                             }
-                            &>img,video,.content{
+                            &>img.content,video.content,.content{
                                 width: 100%;
                                 flex-grow: 1;
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                color: var(--auto-text-color);                            
+                                color: var(--auto-border-color);                            
                                 &.img{
                                     object-fit: cover;
                                 }
@@ -152,7 +153,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                 text-align:right;
             }
             .indicator {
-                border: 2px dashed #ccc;
+                border: 2px dashed var(--auto-border-color);
                 border-radius: 4px;
                 padding: 20px;
                 text-align: center;
@@ -164,7 +165,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                     background: rgba(33, 150, 243, 0.1);
                 }
                 &:hover {
-                    border-color: #999;
+                    border-color: var(--auto-gray-color);
                 }
             }
             .placeholder{
@@ -205,6 +206,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
     files: UploadFile[] = []
 
     private fileInputRef: HTMLInputElement | null = null
+    private _imagePreview = new ImagePreview(this)
 
 
     private retryUpload(file: UploadFile) {
@@ -222,7 +224,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
             tips: '拖动文件到此处或点击选择文件上传',
             onResolve: this._defaultFileResolver.bind(this),
             onFileLabel: this._getDefaultFileLabel.bind(this),
-            selector: 'rectangle'
+            selector: 'auto'
         }
     }
     _getDefaultFileLabel(file: string | SchemaUploadWidgetFile) {
@@ -672,7 +674,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
         return html`
             <magic-flex grow="none" gap="0.5rem" direction="column">
                 ${this.renderFiels()}
-                ${when(this.options.selector === 'rectangle', () => {
+                ${when(this.options.selector === 'rectangle' || (this.options.selector === 'auto' && this.options.multiple), () => {
             return html`<div class="indicator"
                             @click=${this.handleUploadClick}
                             @dragover=${this.handleDragOver}
@@ -682,7 +684,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                         </div>`
         })}                
                 <magic-flex class="actions" align="center" grow=".actions.after" gap="0.5rem" >
-                    ${when(this.options.selector !== 'rectangle',
+                    ${when(this.options.selector === 'button' || (this.options.selector === 'auto' && !this.options.multiple),
             () => html`<sl-button @click=${this.handleUploadClick}>选择文件</sl-button>`
         )}                    
                     ${this.renderActions(false)}  

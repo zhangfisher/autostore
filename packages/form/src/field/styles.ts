@@ -27,6 +27,9 @@ export default css`
                     }
                 }
             }    
+            &>.value{
+                position: relative;
+            }
             
             & .help{
                 display: flex;
@@ -125,14 +128,12 @@ export default css`
             }           
             & sl-input::part(base),sl-input::part(input){
                 color: var(--sl-color-gray-400);
-                user-select: none;
-                cursor: not-allowed;
+                user-select: none; 
                 pointer-events: none;
             }
             & sl-textarea::part(textarea){
                 color: var(--sl-color-gray-400);
-                user-select: none;
-                cursor: not-allowed;
+                user-select: none; 
                 pointer-events: none;
             }
         }        
@@ -144,13 +145,37 @@ export default css`
         }
     } 
     :host(.viewonly){
-        & > .autofield{
-            &>.value{
+        & > .autofield > .value{
                 display:flex;
                 align-items: end;
-            }  
+        } 
+    }
+    :host(.viewonly.view-left){
+        & > .autofield > .value{ 
+            align-items: start;
+        }
+    }    
+    :host(.viewonly.view-center){
+        & > .autofield > .value{ 
+            align-items: center;
         }
     }
 
+
+    :host(.readonly){
+        & > .autofield{
+            &>.value:after{
+                content: ' ';
+                position:absolute;
+                top:0px;
+                left:0px;
+                width:100%;
+                height:100%;
+                opacity: 0; 
+                user-select: none;
+                z-index: 1;
+            }
+        }
+    }
    
 `

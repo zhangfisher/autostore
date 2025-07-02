@@ -52,7 +52,7 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect<AutoFieldTreeDrop
                     margin-bottom: 0.2rem;
                 }
             } 
-            sl-icon{
+            sl-icon.chevron{
                 transition: all 0.2s ease-in;
                 &.active{
                     transform: rotate(-180deg);
@@ -120,11 +120,6 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect<AutoFieldTreeDrop
                 </span>  
             </div>`
     }
-    onSelectionChange(e: CustomEvent) {
-        super.onSelectionChange(e)
-        this.requestUpdate()
-    }
-
     _onShowPopup() {
         this.active = true
     }
@@ -146,6 +141,8 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect<AutoFieldTreeDrop
         </sl-dropdown> 
         `
     }
+
+
 }
 
 

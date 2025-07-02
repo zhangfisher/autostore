@@ -37,7 +37,7 @@ import { context, type AutoFormContext } from '../context'
 import '../components'
 import { provide } from '@lit/context';
 import { type IconLibrary, type IconLibraryResolver, registerIconLibrary } from '@shoelace-style/shoelace/dist/components/icon/library.js';
-import { ThemeController } from '@/controllers/theme';
+import { ContextController } from '@/controllers/context';
 import { HostClasses } from '@/controllers/hostClasss';
 import '../field'
 import styles from './styles'
@@ -49,7 +49,7 @@ export class AutoForm extends LitElement {
     static seq: number = 0
     static styles = styles
     classs = new HostClasses(this)
-    theme = new ThemeController(this)
+    theme = new ContextController(this)
 
     @provide({ context })
     //@ts-ignore
@@ -117,7 +117,7 @@ export class AutoForm extends LitElement {
     labelPos: string = 'top'
 
     @property({ type: String, reflect: true })
-    labelWidth?: string = '5rem'
+    labelWidth?: string = '6em'
 
     @property({ type: Boolean, reflect: true })
     dark: boolean = false
@@ -129,10 +129,17 @@ export class AutoForm extends LitElement {
     readonly: boolean = false
 
     /**
-     * 只读模式
+     * 浏览模式
      */
     @property({ type: Boolean, reflect: true })
     viewonly: boolean = false
+
+    /**
+     * 浏览模式下，值对齐方式，默认=right
+     */
+    @property({ type: String, reflect: true })
+    viewAlign: 'left' | 'center' | 'right' = 'right'
+
     /**
      * 
      * 布局
@@ -151,8 +158,6 @@ export class AutoForm extends LitElement {
      */
     @property({ type: String })
     iconLibrary: string = 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/{name}.svg'
-
-
     /**
      * 注册图标库
      * 
@@ -198,6 +203,7 @@ export class AutoForm extends LitElement {
             form: this,
             labelPos: this.labelPos,
             labelWidth: this.labelWidth,
+            viewAlign: this.viewAlign,
             grid: this.grid,
             dark: this.dark,
             dirty: false,
@@ -251,6 +257,7 @@ export class AutoForm extends LitElement {
             'auto-layout': this.layout === 'auto',
             'left-label': this.labelPos === 'left',
             'top-label': this.labelPos === 'top',
+            [`view-${this.viewAlign}`]: true
         })
         return html`            
             <div class="actions header" > 

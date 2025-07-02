@@ -19,9 +19,11 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
             sl-input::part(base){
                 border: none;
             }
-            auto-box{
+            magic-flex{
                 width:15rem;
                 justify-content: space-around;
+                border: var(--auto-border);
+                border-radius: var(--auto-border-radius);
             }
             sl-input{
                 width: 3rem;
@@ -37,6 +39,11 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
         return {
             size: 'medium'
         }
+    }
+
+    _onPartFocus(e: any) {
+        const input = e.target as HTMLInputElement;
+        input.select();
     }
     _getIpBits(): [number, number, number, number] {
         const bits = this.value?.split(".")
@@ -111,7 +118,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
 
     renderInput() {
         return html`
-            <auto-box flex="row" size="small" no-padding>
+            <magic-flex flex="row" size="small" no-padding grow="none">
                 ${this._getIpBits().map((bit, index) => html`
                     <sl-input 
                         value="${bit}" 
@@ -125,11 +132,12 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
                         min="0"
                         @sl-input=${(e: Event) => this._onIpChange(index, e)}
                         @sl-change=${(e: Event) => this._onIpChange(index, e)} 
+                        @sl-focus=${this._onPartFocus.bind(this)}
                         @paste=${(e: ClipboardEvent) => this._onPaste(e)}
                     ></sl-input>
                     ${index < 3 ? html`<span class="dot">.</span>` : ''}                    
                 `)} 
-            </auto-box>
+            </magic-flex>
         `
     }
 }

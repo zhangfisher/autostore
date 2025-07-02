@@ -33,7 +33,7 @@ export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<A
             .actions.before > sl-button::part(base){
                 border-left:none;
                 border-radius: 0px;
-            }
+            } 
     `] as any
 
     getInputType(): InputType {

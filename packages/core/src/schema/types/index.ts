@@ -2,7 +2,7 @@ import type { ComputedBuilder } from "../../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../../consts"
 import type { AutoStore } from "../../store";
 import type { ComputedState, Dict, GetTypeByPath, MutableRecord, StatePath, ToRawType } from '../../types';
-import type { SchemaCaptchaWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
+import type { SchemaCaptchaWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaCustomWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
 
 
 // 让对象的成员值允许是ComputedBuilder，可计算值 
@@ -132,13 +132,14 @@ export type SchemaWidgetShareOptions<Value, State> = {
     width?: number | string
     height?: number | string
     divider?: boolean // 是否在前面显示一条分割线
-    view?: 'left' | 'center' | 'right' // viewonly模式下显示方式
+    viewAlign?: 'left' | 'center' | 'right' // viewonly模式下显示方式
     tips?: string
     select?: (SchemaWidgetSelectItem<Value> | string | number)[]
     // 转换数据
     toView?: (value: any) => any
     toState?: (value: any) => any
     toInput?: (value: any) => any
+    toRender?: (value: any) => any
     actions?: SchemaWidgetAction<State>[]
 }
 
@@ -173,6 +174,7 @@ export type SchemaOptions<Value = any, State = Dict> = MutableRecord<{
     'checkbox-group': SchemaCheckboxGroupWidgetOptions
     'tree-dropdown': SchemaTreeDropdownWidgetOptions
     'tree-select': SchemaTreeSelectWidgetOptions
+    custom: SchemaCustomWidgetOptions
 }, 'widget', SchemaWidgetShareOptions<Value, State>, 'input'>
 
 

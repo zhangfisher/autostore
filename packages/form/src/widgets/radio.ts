@@ -24,8 +24,8 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             position: relative;
             & .memo{
                 color: var(--sl-color-gray-500);
-                font-size: 0.8rem;
-                max-height: 2.2rem; 
+                font-size: 0.8em;
+                max-height: 2.2em; 
                 overflow: hidden;
                 display: -webkit-box;
                 margin-top:2px;
@@ -38,7 +38,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             margin-right: 1em;            
         }
         .card{      
-            padding: calc(var(--auto-spacing) * 0.5);
+            padding: calc(var(--auto-spacing) * 0.3);
             box-sizing: border-box;                                    
             &>.body{
                 display: flex;
@@ -94,10 +94,9 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                 sl-icon.icon{
                     flex-shrink: 0;
                     color: var(--sl-color-gray-500);
-                    padding: 0.5rem;
                     padding-top: 0px;
-                    padding-left: 0px;
-                    font-size: 2rem;
+                    padding-left: 0px;                    
+                    font-size: calc(2 * var(--auto-font-size));
                 }
             }             
         }

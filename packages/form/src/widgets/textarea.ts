@@ -35,7 +35,7 @@ export class AutoFieldTextArea extends AutoField<AutoFieldTextAreaOptions> {
         }
     }
     getInputValue() {
-        return this.input.textContent
+        return this.input.value
     }
 }
 

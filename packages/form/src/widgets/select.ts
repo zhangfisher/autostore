@@ -17,7 +17,7 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
             valueKey: 'value',
             labelKey: 'label',
             select: [],
-            multiple: true,
+            multiple: false,
             clearable: true,
             maxOptionsVisible: 0,
             placement: 'top'
@@ -68,7 +68,14 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
     }
 
     getValue() {
-        return this.getOptionValue('multiple') ? this.value.join(' ') : this.value
+        return this.options.multiple ? this.value.join(' ') : this.value
+    }
+    getInputValue() {
+        if (this.options.multiple) {
+            return Array.isArray(this.input.value) ? this.input.value : this.input.value.split(' ')
+        } else {
+            return this.input.value
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 import { createContext } from '@lit/context';
-import { AutoStore, Dict } from 'autostore';
+import type { AutoStore, Dict } from 'autostore';
 import type { AutoForm } from './form';
 
 export type AutoFormContext = {
@@ -9,6 +9,7 @@ export type AutoFormContext = {
     labelWidth: string
     readonly: boolean
     viewonly: boolean
+    viewAlign: 'left' | 'center' | 'right'
     helpPos?: 'auto' | 'value' | 'label'
     grid: boolean                       // 显示网格线
     dark: boolean

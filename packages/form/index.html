@@ -21,6 +21,39 @@
         <div id="errors" style="border: 1px solid #ccc; color: red"></div>
         <script type="module" src="./example.ts"></script>
 
-         
+       
+        <div id="custom_panel" style="display:none;padding: 1rem;">
+            <label>
+                名称:
+                <input id="username" type="text" value="123"/>
+            </label>
+            <label>
+                电子邮件:
+                <input id="email" type="email" value=""/>                
+            </label>
+            <button>提交</button>
+        </div>
+             <script> 
+                let name = ''
+                let email=''
+                const nameInput = document.querySelector('#username');
+                const emailInput = document.querySelector('#email');
+                const triggerInput = (value) => {
+                    const event = new CustomEvent('auto-input', { 
+                        detail: { value },
+                        bubbles: true,
+                        composed:true                        
+                    });
+                    nameInput.dispatchEvent(event);
+                }
+                nameInput.addEventListener('input', (e) => {
+                    name = e.target.value;
+                    triggerInput(`${name}(${email})`)
+                })
+                emailInput.addEventListener('input', (e) => {
+                    email = e.target.value;
+                    triggerInput(`${name}(${email})`)
+                })                
+            </script>
     </body>
 </html>

@@ -30,6 +30,13 @@ export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions>
             height: 1rem;
             outline: 1px solid #aaa; 
             margin-right: 0.5rem;
+        }        
+        :host(.viewonly){
+            .value > span{
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
         }
     `] as any
     getInitialOptions() {
@@ -60,7 +67,7 @@ export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions>
         `
     }
     renderView() {
-        return html`<span class="color" style="background-color:${this.value};"></span>${this.value}`
+        return html`<span><span class="color" style="background-color:${this.value};"></span>${this.value}</span>`
     }
 }
 

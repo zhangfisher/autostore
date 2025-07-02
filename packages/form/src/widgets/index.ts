@@ -26,3 +26,5 @@ export * from "./captcha";
 export * from "./verifycode";
 export * from "./tree-select";
 export * from "./tree-dropdown";
+export * from "./custom";
+

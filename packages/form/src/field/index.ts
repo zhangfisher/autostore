@@ -13,7 +13,7 @@ import { type AutoFormContext, context } from '../context';
 import styles from './styles'
 import { toSchemaValue } from '@/utils/toSchemaValue';
 import { repeat } from 'lit/directives/repeat.js';
-import { ThemeController } from '@/controllers/theme';
+import { ContextController } from '@/controllers/context';
 import type { RequiredKeys } from 'flex-tools/types';
 import { styleMap } from 'lit/directives/style-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
@@ -45,7 +45,7 @@ export type FieldOptions<Options = unknown> = RequiredKeys<
 
 export class AutoField<Options = unknown> extends LitElement {
     static styles = styles
-    theme = new ThemeController(this)
+    theme = new ContextController(this)
     classs = new HostClasses(this)
 
     @property({ type: Object })
@@ -260,8 +260,6 @@ export class AutoField<Options = unknown> extends LitElement {
             ${ifDefined(this.getOptionValue('help'))}
         </span>`
     }
-
-
     renderLabel() {
         const ctx = this.context
         const labelPos = this.options.labelPos || ctx.labelPos
@@ -269,7 +267,7 @@ export class AutoField<Options = unknown> extends LitElement {
             return html``
         } else {
             const style: Record<string, any> = {}
-            if (ctx.labelWidth && labelPos === 'left') {
+            if ((ctx.labelWidth && labelPos === 'left') || ctx.viewonly) {
                 style.width = ctx.labelWidth
             }
             return html`<div class="label" style="${ifDefined(styleMap(style))}">
@@ -359,7 +357,6 @@ export class AutoField<Options = unknown> extends LitElement {
         super.connectedCallback()
         this.updateOptions()
     }
-
     updateOptions() {
         const ctx = this.context
         if (ctx?.store && this.schema) {
@@ -378,12 +375,9 @@ export class AutoField<Options = unknown> extends LitElement {
             }
         }
     }
-
-
     getInitialOptions(): Record<string, any> {
         return {}
     }
-
     disconnectedCallback(): void {
         super.disconnectedCallback()
         this._subscribers.forEach((subscriber) => subscriber.off())
@@ -406,14 +400,14 @@ export class AutoField<Options = unknown> extends LitElement {
     _updateFieldValue() {
         if (!this.schema) return
         const path = this.options.path
-        const value = this.getInputValue()
+        const value = this.toState(this.getInputValue())
         const ctx = this.context
         ctx.dirty = true
         this.dirty = true
         try {
             const store = this.context.store
             store.update((state) => {
-                const newVal = this.toState(toSchemaValue(value, this.schema))
+                const newVal = toSchemaValue(value, this.schema)
                 setVal(state, path, newVal)
                 this.invalidMessage = undefined
             }, {
@@ -441,10 +435,12 @@ export class AutoField<Options = unknown> extends LitElement {
             error: this.isShowError(),
             'left-label': ctx.labelPos === 'left' || ctx.viewonly,
             'top-label': ctx.labelPos === 'top' && !ctx.viewonly,
-            disable: this.options.enable === false || ctx.readonly,
+            disable: this.options.enable === false,
+            readonly: ctx.readonly,
             viewonly: ctx.viewonly,
             required: this.options.required === true,
-            hidden: !this.options.visible
+            hidden: !this.options.visible,
+            [`view-${ctx.viewAlign}`]: true
         })
         return html`           
             <div class="autofield">

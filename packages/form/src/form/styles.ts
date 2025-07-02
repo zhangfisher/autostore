@@ -44,11 +44,6 @@ export default css`
                 border-left: 1px solid var(--sl-input-border-color);
             }
         }
-    } 
-    /** 只读表单 */
-    :host([readonly]){
-        
     }
-       
     
 `

@@ -1,12 +1,13 @@
-import { AutoForm } from '@/form';
-import { ReactiveController, ReactiveControllerHost } from 'lit';
+import type { AutoForm } from '@/form';
+import type { ReactiveController } from 'lit';
 
-export class ThemeController implements ReactiveController {
+export class ContextController implements ReactiveController {
     host: AutoForm;
 
 
-    constructor(host: ReactiveControllerHost) {
-        (this.host = host as any).addController(this);
+    constructor(host: any) {
+        this.host = host
+        host.addController(this);
     }
     hostConnected() {
         const host: any = this.host
@@ -32,6 +33,7 @@ export class ThemeController implements ReactiveController {
             labelWidth: this.host.labelWidth,
             readonly: this.host.readonly,
             viewonly: this.host.viewonly,
+            viewAlign: this.host.viewAlign,
             grid: this.host.grid,
             size: this.host.size,
         })

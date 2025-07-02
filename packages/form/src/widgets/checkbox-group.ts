@@ -31,11 +31,14 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
             sl-checkbox::part(form-control-help-text){
                 max-height: 2.4rem; 
                 overflow: hidden;
+            }            
+            sl-checkbox::part(base){
+                font-size: var(--auto-font-size);
             }
         } 
         
         .card{      
-            padding: calc(var(--auto-spacing) * 0.5);
+            padding: calc(var(--auto-spacing) * 0.3);
             box-sizing: border-box;             
             cursor: pointer;
                 
@@ -50,23 +53,24 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 box-shadow: var(--auto-shadow);
                 padding: var(--auto-spacing);
                 box-sizing: border-box; 
-                position: relative;                          
+                position: relative;              
                 &:hover{
                     outline: 1px solid var(--sl-color-primary-500);
                 }
                 sl-icon.icon{
                     flex-shrink: 0;
                     color: var(--sl-color-gray-500);
-                    padding: 0.5rem;
+                    padding: 0.5em;
                     padding-top: 0px;
                     padding-left: 0px;
-                    font-size: 2rem;
+                    font-size: var(--auto-font-size);
                 }
                 sl-checkbox::part(label){
-                    margin-left: 0px;
+                    margin-left: 0px;                    
+                    font-size: var(--auto-font-size);
                 }
                 sl-checkbox::part(form-control-help-text){
-                    max-height: 2.4rem; 
+                    max-height: 2.4em; 
                     overflow: hidden;
                 }
                 sl-checkbox::part(control){

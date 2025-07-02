@@ -1,6 +1,6 @@
 import { customElement, query, state } from "lit/decorators.js"
 import { AutoFieldInput } from "./input"
-import { css } from "lit"
+import { css, html } from "lit"
 import type { SchemaCaptchaWidgetOptions } from "autostore"
 
 export type AutoFieldCaptchaOptions = Required<SchemaCaptchaWidgetOptions>
@@ -61,6 +61,9 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
             onClick: this.refreshCaptchaImage.bind(this)
         })
 
+    }
+    renderView() {
+        return html`${this.value}`
     }
 }
 

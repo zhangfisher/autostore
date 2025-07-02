@@ -27,6 +27,7 @@ export type SchemaWidgetTypes = 'input'
     | 'tree-select'
     | 'list'
     | 'upload'
+    | 'custom'
 
 
 export type SchemaInputWidgetOptions = {
@@ -205,6 +206,11 @@ export type SchemaListWidgetOptions = {
     minItems?: number
     showResults?: boolean
     itemTemplate?: string
+}
+// 自定义
+export type SchemaCustomWidgetOptions = {
+    multiple?: boolean
+    content: string
 }
 
 export type SchemaUploadWidgetFile = {
