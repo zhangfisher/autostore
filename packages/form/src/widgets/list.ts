@@ -66,6 +66,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                 justify-content: stretch;
                 padding: 4px;
                 box-sizing: border-box;
+                border: var(--auto-border);                
                 overflow-x: hidden;
                 & > .item{
                     display: flex;
@@ -298,7 +299,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
         }
     }
     renderResults() {
-        return html`<auto-box slot="end" 
+        return html`<div slot="end" 
             class="results mark-err" 
             no-padding 
             style="${styleMap({
@@ -310,7 +311,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                     <sl-icon-button name="x" @click=${() => this._removeSelectItem(item)}></sl-icon-button>
                 </div>`
         })}
-        </auto-box>`
+        </div>`
     }
     renderInput() {
         return html`<div class="list">   

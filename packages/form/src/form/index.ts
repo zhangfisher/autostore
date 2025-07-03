@@ -22,8 +22,8 @@
  * 
  */
 
-import '@shoelace-style/shoelace/dist/themes/dark.css'
-import '@shoelace-style/shoelace/dist/themes/light.css'
+// import '@shoelace-style/shoelace/dist/themes/dark.css'
+// import '@shoelace-style/shoelace/dist/themes/light.css'
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/divider/divider.js';
@@ -42,7 +42,6 @@ import { HostClasses } from '@/controllers/hostClasss';
 import '../field'
 import styles from './styles'
 import { presetIcons } from './icons';
-import '@/styles/base.css'
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
@@ -77,6 +76,12 @@ export class AutoForm extends LitElement {
     // 指定字段顺序，用,分割
     @property({ type: String })
     fields?: string
+
+    /**
+     * 压缩字段之间的空白
+     */
+    @property({ type: Boolean, reflect: true })
+    compact: boolean = false
 
 
     store?: AutoStore<Dict>
@@ -117,7 +122,14 @@ export class AutoForm extends LitElement {
     labelPos: string = 'top'
 
     @property({ type: String, reflect: true })
-    labelWidth?: string = '6em'
+    labelWidth?: string = '7em'
+
+    /**
+     * value: 显示在值下方
+     * label: 显示标签后面，当labe在左边时，只显示一个帮助图标，
+     */
+    @property({ type: String })
+    helpPos?: 'label' | 'value' = 'label'
 
     @property({ type: Boolean, reflect: true })
     dark: boolean = false
@@ -204,6 +216,7 @@ export class AutoForm extends LitElement {
             labelPos: this.labelPos,
             labelWidth: this.labelWidth,
             viewAlign: this.viewAlign,
+            helpPos: this.helpPos,
             grid: this.grid,
             dark: this.dark,
             dirty: false,
@@ -238,6 +251,7 @@ export class AutoForm extends LitElement {
         // @ts-ignore
         widgetEle.schema = options
         widgetEle.setAttribute('grid', String(this.grid))
+        widgetEle.setAttribute('part', 'field')
         // @ts-ignore
         if (width) widgetEle.style.width = width
         return widgetEle
@@ -252,12 +266,10 @@ export class AutoForm extends LitElement {
         this.classs.use(this.size, {
             'dark': this.context.dark,
             'grid': this.grid,
-            'row-layout': this.layout === 'row',
-            'col-layout': this.layout === 'col',
-            'auto-layout': this.layout === 'auto',
-            'left-label': this.labelPos === 'left',
-            'top-label': this.labelPos === 'top',
-            [`view-${this.viewAlign}`]: true
+            [`${this.layout}-layout`]: true,
+            [`${this.labelPos}-label`]: true,
+            [`view-${this.viewAlign}`]: true,
+            compact: this.compact
         })
         return html`            
             <div class="actions header" > 

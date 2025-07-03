@@ -207,10 +207,12 @@ export type SchemaListWidgetOptions = {
     showResults?: boolean
     itemTemplate?: string
 }
+
 // 自定义
 export type SchemaCustomWidgetOptions = {
     multiple?: boolean
     content: string
+    dropdown?: boolean// 显示为下拉
 }
 
 export type SchemaUploadWidgetFile = {

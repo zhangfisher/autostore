@@ -7,7 +7,7 @@
 import { LitElement, html } from 'lit'
 import { property, query, queryAssignedElements, state } from 'lit/decorators.js'
 import type { AsyncComputedValue, Watcher, SchemaOptions, StateOperate, SchemaWidgetAction } from 'autostore';
-import { createAsyncComptuedValue, isAsyncComputedValue, getVal, setVal } from 'autostore';
+import { createAsyncComptuedValue, isAsyncComputedValue, getVal, setVal, toggleWrapper } from '@/utils';
 import { consume } from '@lit/context';
 import { type AutoFormContext, context } from '../context';
 import styles from './styles'
@@ -252,14 +252,26 @@ export class AutoField<Options = unknown> extends LitElement {
         })
     }
 
-    renderHelp() {
-        const helpText = this.getOptionValue('help')
+    renderHelp(onlyIcon: boolean = false) {
+        const helpText = this.options.help
         if (!helpText) return
-        return html`<span class="help">
-            <sl-icon name="help"></sl-icon>
-            ${ifDefined(this.getOptionValue('help'))}
+        const urlMatches = helpText.match(/\(([^)]+)\)[^)]*$/)
+        const url = urlMatches ? urlMatches[1] : null
+        const help = url ? helpText.replace(`(${url})`, '') : helpText
+
+        return html`<span class="help" title="${ifDefined(onlyIcon ? help : undefined)}">
+            ${toggleWrapper(!!url,
+            html`
+                <sl-icon name="help"></sl-icon>
+                ${when(!onlyIcon, () => {
+                return html`${help}`
+            })}
+            `, (content: any) => {
+            return html`<a target="_blank" href="${url!}">${content}</a>`
+        })} 
         </span>`
     }
+
     renderLabel() {
         const ctx = this.context
         const labelPos = this.options.labelPos || ctx.labelPos
@@ -270,8 +282,13 @@ export class AutoField<Options = unknown> extends LitElement {
             if ((ctx.labelWidth && labelPos === 'left') || ctx.viewonly) {
                 style.width = ctx.labelWidth
             }
-            return html`<div class="label" style="${ifDefined(styleMap(style))}">
-            <span class="title">${this.getLabel()}${this._renderRequiredOption()}</span>            
+            return html`<div class="label" part="field-label" style="${ifDefined(styleMap(style))}">
+            <span class="title">
+                ${this.getLabel()}
+                ${when(labelPos === 'left', () => this.renderHelp(true))}
+                ${this._renderRequiredOption()}
+            </span>     
+            ${when(labelPos === 'top' && !ctx.viewonly, () => this.renderHelp())}
         </div>`
         }
     }
@@ -416,7 +433,6 @@ export class AutoField<Options = unknown> extends LitElement {
             this.dispatchEvent(new CustomEvent('change', {
                 detail: { value }
             }))
-
         } catch (e: any) {
             this.invalidMessage = e.message
         }
@@ -424,7 +440,7 @@ export class AutoField<Options = unknown> extends LitElement {
     renderValue() {
         return html`
             ${this.renderInput()}
-            ${this.renderHelp()}                    
+            ${when(this.options.helpPos === 'value' || this.context.viewonly, () => this.renderHelp())}         
             ${this.renderError()} 
         `
     }
@@ -438,6 +454,7 @@ export class AutoField<Options = unknown> extends LitElement {
             disable: this.options.enable === false,
             readonly: ctx.readonly,
             viewonly: ctx.viewonly,
+            compact: ctx.compact,
             required: this.options.required === true,
             hidden: !this.options.visible,
             [`view-${ctx.viewAlign}`]: true
@@ -447,7 +464,7 @@ export class AutoField<Options = unknown> extends LitElement {
                 ${this.options.divider ? html`<sl-divider></sl-divider>` : null
             }
                 ${this.renderLabel()}
-                <div class="value">
+                <div class="value" part="field-value">
                     ${when(ctx.viewonly,
                 () => this.renderView(),
                 () => this.renderValue()

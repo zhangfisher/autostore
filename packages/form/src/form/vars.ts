@@ -1,8 +1,6 @@
 import { css } from "lit";
 
 export const vars = css`
-    
- 
 :host{
     --auto-theme-color: var(--sl-color-primary-500);    
     --auto-text-color: var(--sl-color-gray-700);    
@@ -17,8 +15,6 @@ export const vars = css`
     --auto-shadow: var(--sl-shadow-medium);  
     --auto-workspace-color: var(--sl-color-gray-100);          
 }
-
-
 :host([size=small]){ 
     --auto-font-size: var(--sl-font-size-small);    
     --auto-spacing: var(--sl-spacing-small);                    /* 用于内边距和外边距 */

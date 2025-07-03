@@ -123,8 +123,13 @@ export type SchemaWidgetShareOptions<Value, State> = {
     // 提供一些元数据    
     label?: string
     labelPos?: string
+    // 帮助信息可以增加一个链接，如"至少需要增加(http://www.baidu.com)"
     help?: string
-    helpPos?: string
+    /**
+     * value: 显示在值下方
+     * label: 显示标签后面，当labe在左边时，只显示一个帮助图标，
+     */
+    helpPos?: 'label' | 'value'
     placeholder?: string
     group?: string
     advanced?: boolean

@@ -206,6 +206,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
     files: UploadFile[] = []
 
     private fileInputRef: HTMLInputElement | null = null
+    // @ts-ignore
     private _imagePreview = new ImagePreview(this)
 
 

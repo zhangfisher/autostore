@@ -35,6 +35,7 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptio
     template!: string
 
     sendRequest() {
+        if(this.countdowning) return
         // 清除现有的计时器（如果有的话）
         if (this.currentTimer) {
             clearTimeout(this.currentTimer);
@@ -46,9 +47,9 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptio
 
         // 调用实际的请求处理函数
         // @ts-ignore
-        if (this.options.onRequest && typeof (this.options.onRequest.value === 'function')) {
+        if (this.options.onRequest && typeof (this.options.onRequest === 'function')) {
             // @ts-ignore
-            this.options.onRequest.value.call(this)
+            this.options.onRequest.call(this)
         }
 
         // 开始倒计时
@@ -100,7 +101,7 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptio
         this.timeout = Array.isArray(timeout) ? Number(timeout[0]) : Number(timeout)
         this.step = Array.isArray(timeout) ? Number(timeout[1]) : 1000
         this.stepCount = this.timeout / this.step
-        this.template = this.getOptionValue('template', '{timeout}秒后重新获取')
+        this.template = this.getOptionValue('template', '{timeout}秒后重试')
     }
 }
 

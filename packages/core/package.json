@@ -38,10 +38,11 @@
     "@type-challenges/utils": "^0.1.1",
     "@types/node": "^22.5.5",
     "ts-node": "^10.9.2",
-    "tsup": "^8.3.0",
+    "tsup": "^8.5.0",
     "type-fest": "^4.26.1",
     "typescript": "^5.8.3",
-    "vitest": "^2.1.1"
+    "vitest": "^2.1.1",
+    "zlib": "^1.0.5"
   },
   "dependencies": {
     "flex-tools": "^1.4.9"

@@ -1,38 +1,41 @@
 {
-    "name": "autostore-docs",
-    "version": "1.0.0",
-    "description": "",
-    "private": true,
-    "main": "index.js",
-    "type": "module",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "dev": "vitepress dev",
-        "build": "vitepress build"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "@autostorejs/devtools": "workspace:*",
-        "@autostorejs/react": "workspace:*",
-        "@autostorejs/syncer": "workspace:*",
-        "@lite-tree/icons": "^1.0.6",
-        "@lite-tree/vue": "^1.1.4",
-        "flex-tools": "^1.4.9",
-        "flexstyled": "^2.1.2",
-        "react": "^18.3.1",
-        "react-dom": "^18.3.1",
-        "vitepress": "^1.6.3",
-        "vue": "^3.5.14",
-        "x-react-components": "workspace:*"
-    },
-    "devDependencies": {
-        "@shikijs/vitepress-twoslash": "^1.22.2",
-        "@types/react": "^18.3.12",
-        "@types/react-dom": "^18.3.1",
-        "code-inspector-plugin": "^0.17.7",
-        "typescript": "^5.8.3",
-        "vitepress-demo-plugin": "^1.4.4"
-    }
+	"name": "autostore-docs",
+	"version": "1.0.0",
+	"description": "",
+	"private": true,
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"dev": "vitepress dev",
+		"build": "vitepress build"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"@autostorejs/devtools": "workspace:*",
+		"@autostorejs/form": "workspace:*",
+		"@autostorejs/react": "workspace:*",
+		"@autostorejs/syncer": "workspace:*",
+		"@lite-tree/icons": "^1.0.6",
+		"@lite-tree/vue": "^1.1.4",
+		"@shoelace-style/shoelace": "^2.20.1",
+		"autostore": "workspace:*",
+		"flex-tools": "^1.4.9",
+		"flexstyled": "^2.1.2",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"vitepress": "^1.6.3",
+		"vue": "^3.5.14",
+		"x-react-components": "workspace:*"
+	},
+	"devDependencies": {
+		"@shikijs/vitepress-twoslash": "^1.22.2",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"code-inspector-plugin": "^0.17.7",
+		"typescript": "^5.8.3",
+		"vitepress-demo-plugin": "^1.4.4"
+	}
 }

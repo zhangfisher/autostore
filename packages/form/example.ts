@@ -56,7 +56,7 @@ const store = new AutoStore({
                 return value.length > 5;
             },
             invalidMessage: '姓名长度必须大于3个字符',
-            help: "中文姓名",
+            help: "中文姓名(http://www.autostore.com)",
             required: computed(async (state) => {
                 await delay(2000)
                 return state.user.admin
@@ -167,16 +167,25 @@ const store = new AutoStore({
             // 模板字符串
             template: '00-00-00-00' // 每一组之间的分割符
         }),
+
+
+        smsVerify: configurable(false, {
+            label: '短信验证',
+            widget: 'switch',
+            // checkLabel: "是",
+            // switchValues: ['是', '否']
+        }),
         smsCode: configurable('', {
             label: '短信验证码',
             placeholder: '请输入验证码',
             maxLength: 6,
             widget: 'verifycode',
             timeout: 60 * 1000,
-            template: '{timeout}秒后重新获取',
+            template: '{timeout}秒后重试',
             onRequest: () => {
                 console.log("发送短信")
-            }
+            },
+            visible: (state) => state.user.smsVerify
         }),
         tcpFlags: configurable(3, {
             label: 'TCP标识',
@@ -432,7 +441,6 @@ const store = new AutoStore({
             label: '音量',
             min: 0,
             max: 100,
-            step: 5,
             toView: (value: any) => `${value}%`
         }),
         worktime: configurable("12:12:11", { label: '上班时间', widget: 'time' }),
@@ -499,14 +507,21 @@ class AutoFormDebuger extends LitElement {
     static styles = css`
         .toolbar{
             display: flex;
-            flex-direction: row;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             position: relative;
             background-color: #fafafa;
             border-radius: 4px;
             padding: 8px;
-            & > span{
+            gap:0.5rem;
+            & > *{
                 flex-grow: 1;
+                display:flex;
+                flex-direction: row;                
+                align-items: center;
+                position: relative;
+                text-align:left;                
+                gap:0.5rem;
             }
         }
     `
@@ -584,6 +599,17 @@ class AutoFormDebuger extends LitElement {
             }
         }
     }
+
+    onToggleCompact(e) {
+        const ele = this.getNextAutoForm();
+        if (ele) {
+            if (e.target.checked) {
+                ele.setAttribute('compact', "");
+            } else {
+                ele.removeAttribute('compact');
+            }
+        }
+    }
     getJson() {
         return {
             user: {
@@ -625,6 +651,7 @@ class AutoFormDebuger extends LitElement {
     render() {
         return html`
             <div class="toolbar">
+                <div>
                 <sl-select label="标签位置" style="width:100px;" value="top" @sl-change=${this.onChangelabelPos.bind(this)}>
                     <sl-option value="top">上方</sl-option>
                     <sl-option value="left">左侧</sl-option>
@@ -635,20 +662,27 @@ class AutoFormDebuger extends LitElement {
                     <sl-option value="medium">中</sl-option>
                     <sl-option value="large">大</sl-option>
                 </sl-select>   
+                <sl-select label="帮助信息" style="width:100px;" value="label" @sl-change=${this.onChangeSize.bind(this)}>
+                    <sl-option value="label">标签</sl-option>
+                    <sl-option value="value">值</sl-option>
+                </sl-select>  
                 <sl-select label="浏览对齐" style="width:150px;" value="right" @sl-change=${this.onChangeViewAlign.bind(this)}>
                     <sl-option value="left">左对齐</sl-option>
                     <sl-option value="center">居中</sl-option>
                     <sl-option value="right">右对齐</sl-option>
                 </sl-select>   
-                <span>
+                </div>
+                <div>
                     <sl-checkbox @click=${this.onToggleDark.bind(this)}>暗色调</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleGridLine.bind(this)}>网格线</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleReadonly.bind(this)}>只读</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleView.bind(this)}>浏览视图</sl-checkbox>                    
-                </span>
-                
-                <sl-button @click=${this.onSubmit.bind(this)}>提交</sl-button>
-                <sl-button @click=${this.onReset.bind(this)}>重置</sl-button>                
+                    <sl-checkbox @click=${this.onToggleCompact.bind(this)}>紧凑模式</sl-checkbox>                    
+                </div>
+                <div>
+                    <sl-button @click=${this.onSubmit.bind(this)}>提交</sl-button>
+                    <sl-button @click=${this.onReset.bind(this)}>重置</sl-button> 
+                </div>               
             </div>
         `
     }

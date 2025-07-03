@@ -2,8 +2,6 @@ import path from 'path';
 import { defineConfig } from 'vitepress';
 import { vitepressDemoPlugin } from 'vitepress-demo-plugin';
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
-// import { codeInspectorPlugin } from 'code-inspector-plugin';
-
 
 export default defineConfig({
     base: '/autostore/',
@@ -19,6 +17,7 @@ export default defineConfig({
         nav: [
             { text: '首页', link: '/' },
             { text: '指南', link: '/zh/guide/' },
+            { text: '表单', link: '/zh/form/' },
             { text: '开源推荐', link: 'https://zhangfisher.github.io/repos/' },
         ],
         sidebar: {
@@ -143,6 +142,27 @@ export default defineConfig({
                         }
                     ]
                 }
+            ],
+            "/zh/form/": [
+                {
+                    text: '关于',
+                    items: [
+                        { text: '安装', link: '/zh/form/intro/install' },
+                        { text: '快速入门', link: '/zh/form/intro/get-started' },
+                    ]
+                },
+                {
+                    text: '指南',
+                    items: [
+
+                    ]
+                },
+                {
+                    text: '字段组件',
+                    items: [
+
+                    ]
+                },
             ]
         },
         socialLinks: [

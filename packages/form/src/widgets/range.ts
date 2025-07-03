@@ -25,7 +25,7 @@ export class AutoFieldRabge extends AutoField<AutoFieldRangeOptions> {
                 box-shadow: var(--auto-shadow);
             }
             sl-range{
-                 
+                --track-color-active: var(--auto-theme-color);        
                 box-sizing: border-box;
             }
             .value > div{

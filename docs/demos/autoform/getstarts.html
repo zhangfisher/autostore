@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body>
+        <auto-form id="login"></auto-form>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                username: configurable('', {
+                    label: '用户名',
+                    placeholder: '请输入用户名',
+                    onValidate: (value) => {
+                        return value.length > 5;
+                    },
+                }),
+                password: configurable('', {
+                    label: '密码',
+                    widget: 'password',
+                    placeholder: '请输入密码',
+                    onValidate: (value) => {
+                        return value.length > 5;
+                    },
+                }),
+                captcha: configurable('', {
+                    label: '验证码',
+                    widget: 'captcha',
+                    url: '/autostore/captcha.png',
+                    placeholder: '请输入验证码',
+                }),
+                remember: configurable(true, {
+                    label: '记住我',
+                    widget: 'switch',
+                }),
+            });
+            const form = document.querySelector('#login');
+            form.bind(store);
+        </script>
+    </body>
+</html>

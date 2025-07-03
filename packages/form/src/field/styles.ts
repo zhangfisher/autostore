@@ -3,20 +3,21 @@ import { css } from "lit";
 export default css`
     :host{
         display: flex;
-        position: relative; 
+        position: relative;  
+        box-sizing: border-box;
+        display: block;
         & > .autofield{
             display: flex;
             position: relative;
             flex-direction:column;
             background-color: var(--sl-color-neutral-0);        
             width:100%;        
-            padding: calc(var(--auto-spacing) * 0.5);
+            padding: calc(var(--auto-spacing) * 0.2);      
             box-sizing: border-box;
             padding-right: 0px;
             &>.label{
                 display: flex;   
                 color: var(--auto-text-color);   
-                padding: 4px; 
                 font-weight: 600;                             
                 &>.title{
                     font-size: var(--auto-font-size);
@@ -37,13 +38,20 @@ export default css`
                 font-size: calc(var(--auto-font-size) * 0.9);
                 color: var(--auto-gray-color);
                 padding:  calc(var(--auto-spacing) * 0.3) 0px;
+                font-weight: lighter;                
+                & a{
+                    text-decoration: none;
+                    color: var(--auto-gray-color);
+                    &:hover{
+                        color:var(--auto-theme-color);
+                    }
+                }
             }    
         }    
 
         & > .autofield:hover{
             background-color: var(--sl-color-gray-50);
-        }
-
+        } 
         sl-input::part(base){
             outline: none!important;
             box-shadow: none!important;
@@ -67,9 +75,9 @@ export default css`
             }
         }
     }        
-    /* 隐藏 */
+    /* 隐藏 */ 
     :host(.hidden){
-        display: none!important;        
+        display: none!important;
     }
     /* 错误样式 */
     :host(.error){
@@ -114,6 +122,12 @@ export default css`
                 justify-content: center;
                
             }
+            & .help{
+                display: inline;
+                a{
+                    text-decoration: none;
+                }
+            }
         }
     }
     
@@ -136,14 +150,24 @@ export default css`
                 user-select: none; 
                 pointer-events: none;
             }
-        }        
+        }
     }
     /* 网格线 */
     :host(.grid){ 
         & > .autofield{ 
-            padding: var(--auto-spacing);
+            padding: calc(var(--auto-spacing) * 0.5) var(--auto-spacing);        
         }
     } 
+    :host(.grid.compact){ 
+        & > .autofield{ 
+            padding: calc(var(--auto-spacing) * 0.3) var(--auto-spacing);        
+        }
+    } 
+    :host(.compact){ 
+        & > .autofield{ 
+            padding: calc(var(--auto-spacing) * 0.3) var(--auto-spacing);        
+        }
+    }
     :host(.viewonly){
         & > .autofield > .value{
                 display:flex;

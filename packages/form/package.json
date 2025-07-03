@@ -3,6 +3,24 @@
 	"version": "1.0.0",
 	"description": "form webcomponent for autostore",
 	"type": "module",
+	"main": "dist/index.js",
+	"exports": {
+		".": "./dist/index.js",
+		"./browser": "./dist/index.global.js",
+		"./styles": "./dist/index.css"
+	},
+	"publishConfig": {
+		"access": "public",
+		"main": "dist/index.js",
+		"exports": {
+			".": {
+				"import": "./dist/index.js",
+				"require": "./dist/index.cjs"
+			},
+			"./browser": "./dist/index.global.js",
+			"./styles": "./dist/index.css"
+		}
+	},
 	"scripts": {
 		"dev": "vite",
 		"build": "tsup",
@@ -18,12 +36,12 @@
 	},
 	"devDependencies": {
 		"autostore": "workspace:*",
-		"sonda": "^0.8.2",
+		"esbuild-copy-files-plugin": "^1.2.1",
 		"tsup": "^8.5.0",
-		"typescript": "~5.7.2",
-		"unocss": "^66.0.0",
+		"typescript": "~5.7.3",
 		"vite": "^6.1.0",
-		"vite-plugin-mock-dev-server": "^1.9.1"
+		"vite-plugin-mock-dev-server": "^1.9.1",
+		"zlib": "^1.0.5"
 	},
 	"peerDependencies": {
 		"autostore": "workspace:*"

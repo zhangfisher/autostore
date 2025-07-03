@@ -68,7 +68,8 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
 
     getInitialOptions(): Record<string, any> {
         return {
-            placeholder: '请选择'
+            placeholder: '请选择',
+            dropdown: false
         }
     }
     @state()
@@ -79,7 +80,6 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
 
 
     content: HTMLElement | null = null
-
 
     customValue: any
 
@@ -117,11 +117,20 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
             this.onFieldInput()
         })
     }
+
+    firstUpdated() {
+        if (this.content && !this.options.dropdown) {
+            const valueEle = this.shadow.querySelector('.value')
+            if (valueEle) {
+                valueEle.appendChild(this.content);
+            }
+            this.content.style.display = 'block'
+        }
+    }
+
     getInputValue() {
         return this.customValue
     }
-
-
 
     renderCustomValue() {
         return html`<span class="custom-value">${unsafeHTML(this.options.toRender ? this.options.toRender(this.customValue) : this.customValue)}</span>`
@@ -142,26 +151,26 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
             </div>`
     }
     renderCustom() {
-        return html`<div class="container">
-            
-        </div>`
+        return html`<div class="container"></div>`
     }
 
     renderInput() {
-        return html`
-            <sl-dropdown          
-                size="${this.context.size}"    
-                @sl-show="${this._onShowPopup.bind(this)}" 
-                @sl-after-hide="${this._onHidePopup.bind(this)}" 
-                sync="width"
-            >
-            ${this.renderSelection()}  
-            ${this.renderCustom()}      
-        </sl-dropdown> 
-        `
+        if (this.options.dropdown) {
+            return html`
+                <sl-dropdown          
+                    size="${this.context.size}"    
+                    @sl-show="${this._onShowPopup.bind(this)}" 
+                    @sl-after-hide="${this._onHidePopup.bind(this)}" 
+                    sync="width"
+                >
+                ${this.renderSelection()}  
+                ${this.renderCustom()}      
+            </sl-dropdown> 
+            `
+        } else {
+            return html``
+        }
     }
-
-
 }
 
 

@@ -32,16 +32,16 @@
     "@type-challenges/utils": "^0.1.1",
     "@types/node": "^22.5.5",
     "ts-node": "^10.9.2",
-    "tsup": "^8.3.0",
+    "tsup": "^8.5.0",
     "type-fest": "^4.26.1",
-    "typescript": "^5.6.2",
+    "typescript": "^5.8.3",
     "vitest": "^2.1.1",
     "vue": "3.2.0"
   },
   "dependencies": {
+    "autostore": "workspace:*",
     "flex-tools": "^1.4.9",
-    "reflect-metadata": "^0.2.2",
-    "autostore": "workspace:*"
+    "reflect-metadata": "^0.2.2"
   },
   "peerDependencies": {
     "vue": "3.2.0"

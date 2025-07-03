@@ -12,18 +12,19 @@ import Tree from "./Tree.vue"
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 
 import '@shikijs/vitepress-twoslash/style.css'
+import "@autostorejs/form"
 
 export default {
-  extends: DefaultTheme,
-  Layout: () => {
-    return h(DefaultTheme.Layout, null, {
-      // https://vitepress.dev/guide/extending-default-theme#layout-slots
-    })
-  },
-  enhanceApp({ app }) {
-    // ...
-    app.component('LiteTree',LiteTree )  
-    app.component('Tree',Tree )  
-    app.use(TwoslashFloatingVue) 
-  }
+    extends: DefaultTheme,
+    Layout: () => {
+        return h(DefaultTheme.Layout, null, {
+            // https://vitepress.dev/guide/extending-default-theme#layout-slots
+        })
+    },
+    enhanceApp({ app }) {
+        // ...
+        app.component('LiteTree', LiteTree)
+        app.component('Tree', Tree)
+        app.use(TwoslashFloatingVue)
+    }
 } satisfies Theme
