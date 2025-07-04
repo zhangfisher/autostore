@@ -12,7 +12,7 @@ export default css`
             flex-direction:column;
             background-color: var(--sl-color-neutral-0);        
             width:100%;        
-            padding: calc(var(--auto-spacing) * 0.2);      
+            padding: calc(var(--auto-spacing) * 0.2) var(--auto-spacing);      
             box-sizing: border-box;
             padding-right: 0px;
             &>.label{
@@ -155,7 +155,7 @@ export default css`
     /* 网格线 */
     :host(.grid){ 
         & > .autofield{ 
-            padding: calc(var(--auto-spacing) * 0.5) var(--auto-spacing);        
+            padding: calc(var(--auto-spacing) * 0.6) var(--auto-spacing);        
         }
     } 
     :host(.grid.compact){ 

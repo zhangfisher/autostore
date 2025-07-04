@@ -42,6 +42,7 @@ import { HostClasses } from '@/controllers/hostClasss';
 import '../field'
 import styles from './styles'
 import { presetIcons } from './icons';
+import { renderWidget } from '@/utils/renderWidget';
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
@@ -239,27 +240,10 @@ export class AutoForm extends LitElement {
         })
         this.requestUpdate()
     }
-    _renderWidget(options: SchemaOptions) {
-        const width = options.width
-        const widget = options.widget
-        let widgetEle: HTMLElement
-        try {
-            widgetEle = document.createElement(`auto-field-${widget || 'input'}`)
-        } catch {
-            widgetEle = document.createElement('auto-field-input')
-        }
-        // @ts-ignore
-        widgetEle.schema = options
-        widgetEle.setAttribute('grid', String(this.grid))
-        widgetEle.setAttribute('part', 'field')
-        // @ts-ignore
-        if (width) widgetEle.style.width = width
-        return widgetEle
-    }
     _renderFields() {
         return html`            
                 ${this.schemas!.map(schema => {
-            return html`${this._renderWidget(schema)}`
+            return html`${renderWidget(schema)}`
         })}`
     }
     render() {
@@ -272,14 +256,11 @@ export class AutoForm extends LitElement {
             compact: this.compact
         })
         return html`            
-            <div class="actions header" > 
-            </div>
+            <div class="actions header"></div>
             <div class="fields">
                 ${this._renderFields()}
             </div>
-            <div class="actions footer" >
-
-            </div>
+            <div class="actions footer"></div>
         `
     }
 

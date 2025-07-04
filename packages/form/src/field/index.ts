@@ -53,6 +53,8 @@ export class AutoField<Options = unknown> extends LitElement {
 
     // 根据schmea生成options
     options: FieldOptions<Options> = getDefaultFieldOptions() as unknown as FieldOptions<Options>
+    // 父字段，当嵌套时         
+    parent?: AutoField
 
     @state()
     value: any = ''
@@ -112,9 +114,12 @@ export class AutoField<Options = unknown> extends LitElement {
         return html`${this.renderBeforeActions(slot)}
                 ${this.renderAfterActions(slot)}`
     }
-    _onClickAction(action: SchemaWidgetAction) {
-        if (action.onClick && typeof (action.onClick) === 'function') {
-            return (e: any) => {
+    _onClickAction(action: SchemaWidgetAction, callback?: (e: any) => void) {
+        return (e: any) => {
+            if (typeof (callback) === 'function') {
+                callback(e)
+            }
+            if (action.onClick && typeof (action.onClick) === 'function') {
                 action.onClick?.call(this, this.getInputValue(), {
                     action,
                     options: this.options as SchemaOptions,
@@ -142,28 +147,65 @@ export class AutoField<Options = unknown> extends LitElement {
             })}</div>`
         }
     }
+    _renderDropdownAction(action: SchemaWidgetAction) {
+        return html`
+        <sl-dropdown class='action-widget'  hoist
+            title=${ifDefined(action.tips)}
+            placement=${action.pos === 'before' ? 'bottom-start' : 'bottom-end'}
+        >
+            <sl-button slot="trigger" ?caret=${action.caret}>
+                ${when(action.icon, () => html`<sl-icon name=${ifDefined(action.icon)}></sl-icon>`)}
+                ${action.label}
+            </sl-button>
+            <sl-menu>   
+                ${repeat(action.items || [], (item) => {
+            if (item === '-') {
+                return html`<sl-divider></sl-divider>`
+            }
+            if (typeof (item) === 'string') item = { label: item }
+            return html`<sl-menu-item  @click=${this._onClickAction.call(this, item, () => {
+                if (action.syncMenu) {
+                    action.label = item.label
+                    action.icon = item.icon
+                    action.tips = item.tips
+                    this.requestUpdate()
+                }
+            })}>
+                        ${when(item.icon, () => html`<sl-icon name=${ifDefined(item.icon)} slot="prefix"></sl-icon>`)}
+                    ${item.label}</sl-menu-item>`
+        })}
+            </sl-menu>
+        </sl-dropdown>
+        `
+    }
+    _renderButtonAction(action: SchemaWidgetAction) {
+        return html`
+        <sl-button class='action-widget' 
+            title=${ifDefined(action.tips)}
+            variant=${ifDefined(action.variant)}
+            size=${action.size || this.context.size} 
+            @click=${this._onClickAction.call(this, action)}>
+            ${when(action.icon, () => html`<sl-icon name=${ifDefined(action.icon)}></sl-icon>`)}
+            ${action.label}
+        </sl-button>
+    `
+    }
+    _renderImageAction(action: SchemaWidgetAction) {
+        return html`
+        <sl-button title="${ifDefined(action.tips)}" variant='text' class='action-widget image' @click=${this._onClickAction.call(this, action)}>                
+            <img src="${ifDefined(action.url)}"/>
+        </sl-button>
+    `
+    }
     renderActionWidget(action: SchemaWidgetAction) {
         if (typeof (action) !== 'object') return
         const type = action.type || 'button'
         if (type === 'dropdown') {
-
+            return this._renderDropdownAction(action)
         } else if (type === 'button') {
-            return html`
-            <sl-button class='action-widget' 
-                title=${ifDefined(action.tips)}
-                variant=${ifDefined(action.variant)}
-                size=${action.size || this.context.size} 
-                @click=${this._onClickAction.call(this, action)}>
-                ${when(action.icon, () => html`<sl-icon name=${ifDefined(action.icon)}></sl-icon>`)}
-                ${action.label}
-            </sl-button>
-        `
+            return this._renderButtonAction(action)
         } else if (type === 'image') {
-            return html`
-            <sl-button title="${ifDefined(action.tips)}" variant='text' class='action-widget image' @click=${this._onClickAction.call(this, action)}>                
-                <img src="${ifDefined(action.url)}"/>
-            </sl-button>
-        `
+            return this._renderImageAction(action)
         } else {
 
         }
@@ -330,7 +372,6 @@ export class AutoField<Options = unknown> extends LitElement {
                 if (ctx.form.seq === flags) return
                 const ops = type === 'batch' ? value : [operate]
                 ops.forEach((op: StateOperate) => {
-                    // const tpath = op.path.length === 2 ? [...op.path.slice(1), 'value'] : op.path.slice(1)
                     const tPath = op.path.slice(1)
                     setVal(this.schema, tPath, op.value);
                     (this.options as any)[tPath[0]] = op.value
@@ -368,7 +409,7 @@ export class AutoField<Options = unknown> extends LitElement {
         }
     }
     getStateValue() {
-        return this.toInput(getVal(this.context.store.state, this.options.path))
+        return this.toInput(getVal(this.context.store.state, this.getPath()))
     }
     connectedCallback(): void {
         super.connectedCallback()
@@ -381,14 +422,14 @@ export class AutoField<Options = unknown> extends LitElement {
             this.value = this.getStateValue()
             this._handleSchemaChange()
             this._handleStateChange()
-            this.path = this.options.path.join(".")
+            this.path = this.getPath().join(".")
             this.name = this.options.name || this.path
             if (this.path in ctx.store.schemas.errors) {
                 this.invalidMessage = ctx.store.schemas.errors[this.path]
             }
             if (Array.isArray(this.options.actions)) {
-                this.beforeActions = this.options.actions.filter((action) => action.position === 'before')
-                this.afterActions = this.options.actions.filter((action) => action.position !== 'before')
+                this.beforeActions = this.options.actions.filter((action) => action.pos === 'before')
+                this.afterActions = this.options.actions.filter((action) => action.pos !== 'before')
             }
         }
     }
@@ -444,13 +485,18 @@ export class AutoField<Options = unknown> extends LitElement {
             ${this.renderError()} 
         `
     }
+    getPath(): string[] {
+        return this.options.path || this.parent?.getPath()
+    }
+
     render() {
         const ctx = this.context
+        const labelPos = this.options.labelPos ? this.options.labelPos : ctx.labelPos
         this.classs.use(ctx.size, {
             grid: ctx.grid,
             error: this.isShowError(),
-            'left-label': ctx.labelPos === 'left' || ctx.viewonly,
-            'top-label': ctx.labelPos === 'top' && !ctx.viewonly,
+            'left-label': labelPos === 'left' || ctx.viewonly,
+            'top-label': labelPos === 'top' && !ctx.viewonly,
             disable: this.options.enable === false,
             readonly: ctx.readonly,
             viewonly: ctx.viewonly,

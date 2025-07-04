@@ -46,7 +46,7 @@ export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions>
         >
         ${items.map((item: any) => html`<sl-radio-button
             value="${item.value}"
-            ?disabled =${this.options.enable}
+            ?disabled =${!this.options.enable}
         >${item.label}</sl-radio-button>`)}
         </sl-radio-group> 
         `

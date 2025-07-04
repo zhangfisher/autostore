@@ -69,7 +69,7 @@ const store = new AutoStore({
                         console.log('Action click:', value)
                         update(value + "*")
                     },
-                    variant: "primary"
+                    variant: "success"
                 },
                 {
                     label: '上传',
@@ -80,14 +80,61 @@ const store = new AutoStore({
                     }
                 },
                 {
+                    label: '更新',
+                    icon: 'clipboard',
+                    type: 'dropdown',
+                    pos: 'before',
+                    syncMenu: true,
+                    items: ['a', 'b', 'c', '-', {
+                        label: '删除',
+                        icon: 'delete',
+                        onClick: (value, ctx) => {
+                            console.log(value, ctx)
+                        }
+                    }]
+                },
+                {
                     label: '前面',
-                    position: 'before',
+                    pos: 'before',
                     icon: 'atom',
                     onClick: (args) => {
                         console.log('Action click:', args)
                     },
 
                 }
+            ]
+        }),
+        homepage: configurable(
+            "http://www.autostore.com", {
+            widget: 'url',
+            label: '主页',
+            prefix: ['http://', 'https://'],
+            suffix: [
+                { label: "在新窗口打开", value: '?_blank' },
+                { label: "在当前窗口打开", value: '?_self' },
+                '-',
+                { label: "空白", value: '' }
+            ]
+        }),
+        padding: configurable("10px 10px", {
+            widget: 'combine',
+            label: '内边距',
+            fields: [
+                {
+                    label: "单位",
+                    widget: "radio-button",
+                    labelPos: 'left',
+                    select: [
+                        { label: 'px' },
+                        { label: 'em' },
+                        { label: 'rem' },
+                        { label: '%' },
+                    ]
+                },
+                { label: "上", widget: "range" },
+                { label: "下", widget: "range" },
+                { label: "左", widget: "range" },
+                { label: "右", widget: 'range' }
             ]
         }),
         admin: configurable('是', {
@@ -138,7 +185,7 @@ const store = new AutoStore({
                 },
                 {
                     label: '前面',
-                    position: 'before',
+                    pos: 'before',
                     icon: 'atom',
                     onClick: (args) => {
                         console.log('Action click:', args)
@@ -352,7 +399,6 @@ const store = new AutoStore({
             pill: true,
             width: "50%"
         }),
-        homepage: configurable("www.autostore.com", { widget: "url", label: '主页' }),
         sex: configurable('男', { label: '性别', widget: 'radio', select: ['男', '女'] }),
         post: configurable('程序员', {
             label: '职业',
@@ -400,7 +446,7 @@ const store = new AutoStore({
             ]
         }),
         rating: configurable(1, { label: '评分', widget: 'rating' }),
-        level: configurable(1, {
+        level: configurable(2, {
             label: '级别',
             widget: 'radio-button',
             select: [

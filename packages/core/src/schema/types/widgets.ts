@@ -1,4 +1,4 @@
-import type { SchemaWidgetSelectItem } from "."
+import type { SchemaOptions, SchemaWidgetAction, SchemaWidgetSelectItem } from "."
 
 export type SchemaWidgetTypes = 'input'
     | 'select'
@@ -28,6 +28,7 @@ export type SchemaWidgetTypes = 'input'
     | 'list'
     | 'upload'
     | 'custom'
+    | 'combine'
 
 
 export type SchemaInputWidgetOptions = {
@@ -46,6 +47,8 @@ export type SchemaInputWidgetOptions = {
     min?: number
     spellcheck?: boolean
     inputType?: 'date' | 'datetime-local' | 'email' | 'number' | 'password' | 'search' | 'tel' | 'text' | 'time' | 'url'
+    prefix?: (SchemaWidgetAction | string)[]
+    suffix?: (SchemaWidgetAction | string)[]
 }
 
 
@@ -298,4 +301,11 @@ export type SchemaUploadWidgetOptions = {
 export type SchemaPartsWidgetOptions = {
     delimiter?: string
     template?: string
+}
+
+/**
+ * 用于组合多个Widget显示状态值
+ */
+export type SchemaCombineWidgetOptions = {
+    fields: SchemaOptions[]
 }

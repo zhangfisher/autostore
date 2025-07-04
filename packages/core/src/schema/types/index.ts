@@ -2,7 +2,7 @@ import type { ComputedBuilder } from "../../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../../consts"
 import type { AutoStore } from "../../store";
 import type { ComputedState, Dict, GetTypeByPath, MutableRecord, StatePath, ToRawType } from '../../types';
-import type { SchemaCaptchaWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaCustomWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
+import type { SchemaCaptchaWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaCombineWidgetOptions, SchemaCustomWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
 
 
 // 让对象的成员值允许是ComputedBuilder，可计算值 
@@ -62,7 +62,7 @@ export interface SchemaWidgetTreeNode {
     children?: SchemaWidgetTreeNode[] //Array<SchemaWidgetTreeNode>
 }
 
-
+export type SchemaWidgetStyles = Record<string, string>
 
 
 export type AutoFormContext = {
@@ -77,12 +77,19 @@ export type SchemaWidgetAction<State = Dict> = {
     id?: string
     label?: string
     icon?: string
-    position?: 'before' | 'after'
+    pos?: 'before' | 'after'
     type?: 'button' | 'dropdown' | 'image' | string
     url?: string
     size?: 'small' | 'medium' | 'large'
     tips?: string
     variant?: 'primary' | 'neutral' | 'success' | 'danger' | 'warning' | 'default'
+    // 代表是否默认    
+    default?: boolean
+    checked?: boolean
+    value?: any
+    caret?: boolean
+    // 当type=dropdown时，单击下拉菜单时，将下拉菜单的label和图标更新到触发按钮上
+    syncMenu?: boolean
     onClick?: (value: any, ctx: {
         action: SchemaWidgetAction,
         options: SchemaOptions,
@@ -92,7 +99,7 @@ export type SchemaWidgetAction<State = Dict> = {
     disabled?: boolean | ComputedBuilder<boolean, State>
     visible?: boolean | ComputedBuilder<boolean, State>
     // 如果指定了items，则渲染为Dropdown
-    items?: SchemaWidgetAction<State>[]
+    items?: (SchemaWidgetAction<State> | string)[]
 }
 
 export type SchemaWidgetSelectItem<Value = any> = ({
@@ -146,6 +153,8 @@ export type SchemaWidgetShareOptions<Value, State> = {
     toInput?: (value: any) => any
     toRender?: (value: any) => any
     actions?: SchemaWidgetAction<State>[]
+    // 用于扩展widget样式，如{"<选择器>":"样式"}
+    styles?: SchemaWidgetStyles
 }
 
 
@@ -180,6 +189,7 @@ export type SchemaOptions<Value = any, State = Dict> = MutableRecord<{
     'tree-dropdown': SchemaTreeDropdownWidgetOptions
     'tree-select': SchemaTreeSelectWidgetOptions
     custom: SchemaCustomWidgetOptions
+    combine: SchemaCombineWidgetOptions
 }, 'widget', SchemaWidgetShareOptions<Value, State>, 'input'>
 
 
