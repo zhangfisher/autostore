@@ -1,8 +1,8 @@
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
-import { StateOperateType } from './types';
+import type { StateOperateType } from './types';
 import { CyleDependError, ValidateError } from '../errors';
-import { ComputedState, Dict } from '../types';
+import type { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
 import { isFunction } from '../utils';
 import type { SchemaValidator } from '../schema/types';
@@ -19,7 +19,7 @@ export type ReactiveNotifyParams<T = any> = {
 
 type CreateReactiveObjectOptions = {
     notify: (params: ReactiveNotifyParams) => void
-    createObserverObject: (path: string[], value: Function, parentPath: string[], parent: any) => any
+    createObserverObject: (path: string[], value: any, parentPath: string[], parent: any) => any
 };
 
 
@@ -62,7 +62,7 @@ function isValidPass(this: AutoStore<any>, _: any, key: string, newValue: any, o
                     const schemaOptions = schemas.get(key as never)
                     if (schemaOptions) {
                         errorMessage = errorMessage.replace(/\{([^}]+)\}/g, (_, varName) => {
-                            return schemaOptions[varName]
+                            return (schemaOptions as any)[varName]
                         })
                     }
                 }
@@ -131,7 +131,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
             const path = [...parentPath, String(key)]
             const isValid = isValidPass.call(this, proxyObj, path.join(this.delimiter) as string, value, oldValue, parentPath)
             if (isValid) {
-                let success = Reflect.set(obj, key, value, receiver);
+                const success = Reflect.set(obj, key, value, receiver);
                 if (key === __NOTIFY__) return true
                 if (success && key !== __NOTIFY__ && value !== oldValue) {
                     options.notify({ type: Array.isArray(obj) ? 'update' : 'set', path, indexs: [], value, oldValue, parentPath, parent: obj });

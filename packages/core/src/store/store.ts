@@ -588,8 +588,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      * 
      * @param fn 
      */
-    collectDependencies(fn: Function, operates: WatchListenerOptions['operates'] = '*'): string[][] {
-        let dependencies: string[][] = []
+    collectDependencies(fn: () => void, operates: WatchListenerOptions['operates'] = '*'): string[][] {
+        const dependencies: string[][] = []
         const watcher = this.watch((event) => {
             dependencies.push(event.path)
         }, { operates })
@@ -662,13 +662,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     trace(fn: () => any, operates: WatchListenerOptions['operates'] = '*'): StateTracker {
         let watcher: Watcher
         return {
-            stop: () => watcher && watcher.off(),
+            stop: () => watcher?.off(),
             start: async (isStop?: (operate: StateOperate) => boolean) => {
                 const ops: StateOperate[] = []
                 return new Promise((resolve) => {
                     watcher = this.watch((operate) => {
                         ops.push(operate)
-                        if (isStop && isStop(operate)) {
+                        if (isStop?.(operate)) {
                             watcher.off()
                             resolve(ops)
                         }
@@ -738,14 +738,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                     let tmId: any, subscriber: EventListener
                     if (timeout > 0) {
                         tmId = setTimeout(() => {
-                            subscriber && subscriber.off()
+                            subscriber?.off()
                             reject(new TimeoutError())
                         }, timeout)
                     }
                     subscriber = this.on('computed:done', ({ path: spath }) => {
                         if (isPathEq(keyPath, spath)) {
                             clearTimeout(tmId)
-                            subscriber && subscriber.off()
+                            subscriber?.off()
                             resolve(expandAsync ? val.value : val)
                         }
                     })

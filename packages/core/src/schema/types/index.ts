@@ -63,6 +63,7 @@ export interface SchemaWidgetTreeNode {
 }
 
 export type SchemaWidgetStyles = Record<string, string>
+export type SchemaWidgetClasss = Record<string, string>
 
 
 export type AutoFormContext = {
@@ -149,12 +150,14 @@ export type SchemaWidgetShareOptions<Value, State> = {
     select?: (SchemaWidgetSelectItem<Value> | string | number)[]
     // 转换数据
     toView?: (value: any) => any
-    toState?: (value: any) => any
+    toState?: (value: any, parentValue: any) => any
     toInput?: (value: any) => any
     toRender?: (value: any) => any
     actions?: SchemaWidgetAction<State>[]
     // 用于扩展widget样式，如{"<选择器>":"样式"}
     styles?: SchemaWidgetStyles
+    // 用于扩展widget类，如{"<选择器>":"类名"}
+    classs?: SchemaWidgetClasss
 }
 
 

@@ -71,6 +71,15 @@ export class AutoField<Options = unknown> extends LitElement {
     @state()
     dirty: boolean = false
 
+    /**
+     * 是否启用响应式
+     * 默认情况下，当字段更新时会自动更新state,并且在state变化时也会同步更新value
+     * 
+     * =false时则不会监听状态变更
+     */
+    @property({ type: Boolean, reflect: true })
+    reactive: boolean = true
+
     beforeActions: SchemaWidgetAction[] = []
     afterActions: SchemaWidgetAction[] = []
 
@@ -235,7 +244,7 @@ export class AutoField<Options = unknown> extends LitElement {
     }
     toState(value: any) {
         if (this.options.toState && typeof (this.options.toState) === 'function') {
-            return this.options.toState.call(this, value)
+            return this.options.toState.call(this, value, this.parent?.value)
         }
         return value
     }
@@ -363,7 +372,7 @@ export class AutoField<Options = unknown> extends LitElement {
     _handleSchemaChange() {
         const ctx = this.context
         if (ctx?.store && this.schema) {
-            const pathKeys = this.options.path.join("_$_")
+            const pathKeys = this.getPath().join("_$_")
             // 监听schema变化,schema什么会变化，当schema成员是一个计算函数时，会在所依赖的状态变化时重新计算而导致变化
             this._subscribers.push(ctx.store.schemas.store.watch(`${pathKeys}.**`, (operate) => {
                 const { reply, type, value, flags } = operate
@@ -400,7 +409,7 @@ export class AutoField<Options = unknown> extends LitElement {
     _handleStateChange() {
         const ctx = this.context
         if (ctx?.store && this.schema) {
-            this._subscribers.push(ctx.store.watch(this.options.path.join("."), (operate) => {
+            this._subscribers.push(ctx.store.watch(this.getPath().join("."), (operate) => {
                 // 当表单change/input时更新时设置flags=form.seq
                 // 此时应不需要更新到value，否则会导致死循环
                 //if (ctx.form.seq === operate.flags) return
@@ -457,7 +466,7 @@ export class AutoField<Options = unknown> extends LitElement {
      */
     _updateFieldValue() {
         if (!this.schema) return
-        const path = this.options.path
+        const path = this.getPath()
         const value = this.toState(this.getInputValue())
         const ctx = this.context
         ctx.dirty = true
@@ -471,8 +480,13 @@ export class AutoField<Options = unknown> extends LitElement {
             }, {
                 flags: ctx.form.seq
             })
-            this.dispatchEvent(new CustomEvent('change', {
-                detail: { value }
+            this.dispatchEvent(new CustomEvent('field-change', {
+                detail: {
+                    value,
+                    options: this.options
+                },
+                composed: true,
+                bubbles: true
             }))
         } catch (e: any) {
             this.invalidMessage = e.message
@@ -486,7 +500,9 @@ export class AutoField<Options = unknown> extends LitElement {
         `
     }
     getPath(): string[] {
-        return this.options.path || this.parent?.getPath()
+        return (this.options.path && this.options.path.length === 0)
+            ? this.parent?.getPath() as string[]
+            : this.options.path
     }
 
     render() {

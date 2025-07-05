@@ -17,9 +17,9 @@
 import { AutoStore } from "./store";
 import { PATH_DELIMITER } from '../consts';
 import type { Dict } from "../types"
-import { AutoStoreOptions } from "./types";
+import type { AutoStoreOptions } from "./types";
 import { isRelPath } from "../utils";
-import { ObserverDescriptor } from "../observer/types";
+import type { ObserverDescriptor } from "../observer/types";
 
 export function createShadow<T extends Dict>(store: AutoStore<any>, shadowObject: T, options?: AutoStoreOptions<T>): AutoStore<T> {
     const shadowStore = new AutoStore(shadowObject, Object.assign({}, options, {

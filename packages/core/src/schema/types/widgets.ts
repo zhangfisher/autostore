@@ -307,5 +307,5 @@ export type SchemaPartsWidgetOptions = {
  * 用于组合多个Widget显示状态值
  */
 export type SchemaCombineWidgetOptions = {
-    fields: SchemaOptions[]
+    children: SchemaOptions[]
 }
