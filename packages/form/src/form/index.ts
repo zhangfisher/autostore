@@ -88,14 +88,20 @@ export class AutoForm extends LitElement {
     store?: AutoStore<Dict>
     seq: number = ++AutoForm.seq
 
-    /**
-     * 
-     * 是否显示高级选项
-     * 
+    /** 
+     * 是否显示高级选项 
      */
     @property({ type: Boolean, reflect: true })
     advanced: boolean = true
 
+    /**
+     * 确定字段校验时机
+     * 
+     * - input:  输入时进行校验
+     * - lost-focus: 失去焦点时进行校验
+     */
+    @property({ type: String })
+    validAt: 'input' | 'lost-focus' = 'lost-focus'
     /**
      * 
      * 显示网络

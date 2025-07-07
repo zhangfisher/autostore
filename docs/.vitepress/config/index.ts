@@ -154,13 +154,43 @@ export default defineConfig({
                 {
                     text: '指南',
                     items: [
-
+                        { text: '创建表单', link: '/zh/form/guide/createform' },
+                        { text: '声明字段', link: '/zh/form/guide/createfield' },
+                        { text: '脏检查', link: '/zh/form/guide/dirty' },
+                        { text: '提交表单', link: '/zh/form/guide/submit' },
                     ]
                 },
                 {
                     text: '字段组件',
                     items: [
-
+                        { text: 'Input', link: '/zh/form/guide/fields/input' },
+                        { text: 'Number', link: '/zh/form/guide/fields/number' },
+                        { text: 'Date', link: '/zh/form/guide/fields/date' },
+                        { text: 'Time', link: '/zh/form/guide/fields/time' },
+                        { text: 'Phone', link: '/zh/form/guide/fields/phone' },
+                        { text: 'Email', link: '/zh/form/guide/fields/email' },
+                        { text: 'Url', link: '/zh/form/guide/fields/url' },
+                        { text: 'Search', link: '/zh/form/guide/fields/search' },
+                        { text: 'Checkbox', link: '/zh/form/guide/fields/checkbox' },
+                        { text: 'CheckboxGroup', link: '/zh/form/guide/fields/checkbox-group' },
+                        { text: 'Switch', link: '/zh/form/guide/fields/switch' },
+                        { text: 'Radio', link: '/zh/form/guide/fields/radio' },
+                        { text: 'RadioButton', link: '/zh/form/guide/fields/radio-button' },
+                        { text: 'List', link: '/zh/form/guide/fields/list' },
+                        { text: 'Select', link: '/zh/form/guide/fields/select' },
+                        { text: 'TreeSelect', link: '/zh/form/guide/fields/tree-select' },
+                        { text: 'TreeDropdown', link: '/zh/form/guide/fields/tree-dropdown' },
+                        { text: 'Rating', link: '/zh/form/guide/fields/rating' },
+                        { text: 'Range', link: '/zh/form/guide/fields/range' },
+                        { text: 'Textarea', link: '/zh/form/guide/fields/textarea' },
+                        { text: 'Upload', link: '/zh/form/guide/fields/upload' },
+                        { text: 'Parts', link: '/zh/form/guide/fields/parts' },
+                        { text: 'Captcha', link: '/zh/form/guide/fields/captcha' },
+                        { text: 'VerifyCode', link: '/zh/form/guide/fields/verify-code' },
+                        { text: 'IpAddress', link: '/zh/form/guide/fields/ipaddress' },
+                        { text: 'Custom', link: '/zh/form/guide/fields/custom' },
+                        { text: 'Combine', link: '/zh/form/guide/fields/combine' },
+                        { text: 'QrCode', link: '/zh/form/guide/fields/qrcode' },
                     ]
                 },
             ]

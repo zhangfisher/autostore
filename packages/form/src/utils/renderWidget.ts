@@ -1,6 +1,11 @@
 import type { SchemaOptions } from "autostore"
 
-export function renderWidget(options: SchemaOptions, parent?: HTMLElement, styles?: Record<string, any>) {
+export function renderWidget(options: SchemaOptions, args?: {
+    parent?: HTMLElement,
+    styles?: Record<string, any>,
+    attrs?: Record<string, any>,
+    classs?: Record<string, any> | string,
+}) {
     const width = options.width
     const widget = options.widget
     let widgetEle: HTMLElement
@@ -12,12 +17,30 @@ export function renderWidget(options: SchemaOptions, parent?: HTMLElement, style
     // @ts-ignore
     widgetEle.schema = options
     widgetEle.setAttribute('part', 'field')
-    if (styles) {
-        Object.assign(widgetEle.style, styles)
+    if (args?.styles) {
+        Object.assign(widgetEle.style, args.styles)
+    }
+    if (args?.attrs) {
+        for (const key in args.attrs) {
+            widgetEle.setAttribute(key, String(args.attrs[key]))
+        }
+        // @ts-ignore
+        widgetEle.parent = args.parent
     }
     // @ts-ignore
     if (width) widgetEle.style.width = width
-    // @ts-ignore
-    widgetEle.parent = parent
+    if (args?.classs) {
+        if (typeof (args.classs) === 'string') {
+            widgetEle.classList.add(args.classs)
+        } else if (typeof (args.classs) === 'object') {
+            Object.entries(args.classs).forEach(([key, value]) => {
+                if (value) {
+                    widgetEle.classList.add(key)
+                } else {
+                    widgetEle.classList.remove(key)
+                }
+            })
+        }
+    }
     return widgetEle
 }

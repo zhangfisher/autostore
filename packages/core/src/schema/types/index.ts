@@ -150,7 +150,7 @@ export type SchemaWidgetShareOptions<Value, State> = {
     select?: (SchemaWidgetSelectItem<Value> | string | number)[]
     // 转换数据
     toView?: (value: any) => any
-    toState?: (value: any, parentValue: any) => any
+    toState?: (value: any) => any
     toInput?: (value: any) => any
     toRender?: (value: any) => any
     actions?: SchemaWidgetAction<State>[]

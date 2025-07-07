@@ -78,7 +78,10 @@ export class AutoField<Options = unknown> extends LitElement {
      * =false时则不会监听状态变更
      */
     @property({ type: Boolean, reflect: true })
-    reactive: boolean = true
+    noreactive?: boolean
+
+    @property({ type: Boolean, reflect: true })
+    compact?: boolean
 
     beforeActions: SchemaWidgetAction[] = []
     afterActions: SchemaWidgetAction[] = []
@@ -244,7 +247,7 @@ export class AutoField<Options = unknown> extends LitElement {
     }
     toState(value: any) {
         if (this.options.toState && typeof (this.options.toState) === 'function') {
-            return this.options.toState.call(this, value, this.parent?.value)
+            return this.options.toState.call(this, value)
         }
         return value
     }
@@ -473,13 +476,15 @@ export class AutoField<Options = unknown> extends LitElement {
         this.dirty = true
         try {
             const store = this.context.store
-            store.update((state) => {
-                const newVal = toSchemaValue(value, this.schema)
-                setVal(state, path, newVal)
-                this.invalidMessage = undefined
-            }, {
-                flags: ctx.form.seq
-            })
+            if (!this.noreactive) {
+                store.update((state) => {
+                    const newVal = toSchemaValue(value, this.schema)
+                    setVal(state, path, newVal)
+                    this.invalidMessage = undefined
+                }, {
+                    flags: ctx.form.seq
+                })
+            }
             this.dispatchEvent(new CustomEvent('field-change', {
                 detail: {
                     value,
@@ -504,6 +509,19 @@ export class AutoField<Options = unknown> extends LitElement {
             ? this.parent?.getPath() as string[]
             : this.options.path
     }
+    /**
+     * 当表单字段更新时通过变更
+     * 
+     * 此操作后会
+     * - 从input中读取数据
+     * - 将数据写入state
+     * 
+     */
+    noticeChange() {
+        if (this.context.validAt==='input') {
+
+        }
+    }
 
     render() {
         const ctx = this.context
@@ -516,7 +534,7 @@ export class AutoField<Options = unknown> extends LitElement {
             disable: this.options.enable === false,
             readonly: ctx.readonly,
             viewonly: ctx.viewonly,
-            compact: ctx.compact,
+            compact: this.compact === undefined ? ctx.compact : this.compact,
             required: this.options.required === true,
             hidden: !this.options.visible,
             [`view-${ctx.viewAlign}`]: true

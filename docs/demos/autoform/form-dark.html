@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body>
+        <div style="display: flex">
+            <auto-form dark id="login"></auto-form>
+        </div>
+        <div>
+            <button id="dark" style="border: 1px solid gray; padding: 1em; margin-top: 1em">Dark</button>
+            <button id="light" style="border: 1px solid gray; padding: 1em; margin-top: 1em">Light</button>
+        </div>
+
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                user: {
+                    username: configurable('<NAME>', {
+                        label: '用户名',
+                    }),
+                    password: configurable('<PASSWORD>', {
+                        label: '密码',
+                    }),
+                },
+                order: {
+                    price: configurable(100, {
+                        label: '价格',
+                    }),
+                    count: configurable(1, {
+                        label: '数量',
+                    }),
+                    total: (order) => order.price * order.count,
+                },
+            });
+            const form = document.querySelector('#login');
+            form.bind(store);
+            const btnDark = document.getElementById('dark');
+            btnDark.addEventListener('click', () => {
+                form.dark = true;
+                <!-- form.setAttribute('dark', ''); -->
+            });
+
+            const btnLight = document.getElementById('light');
+            btnLight.addEventListener('click', () => {
+                form.dark = false;
+            });
+        </script>
+    </body>
+</html>

@@ -15,49 +15,41 @@
     <body>
         <div style="display: flex">
             <auto-form id="login"></auto-form>
-
             <json-viewer id="viewer" style="width: 40%; padding: 1em"></json-viewer>
+        </div>
+        <div>
+            <button id="updateCount" style="border: 1px solid gray; padding: 1em; margin-top: 1em">Change order.count</button>
         </div>
 
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
             const store = new AutoStore({
-                login: {
-                    username: configurable('', {
-                        label: '用户名',
-                        placeholder: '请输入用户名',
-                        onValidate: (value) => {
-                            return value.length > 5;
-                        },
-                        invalidMessage: '用户名长度必须大于5',
-                    }),
-                    password: configurable('', {
-                        label: '密码',
-                        widget: 'password',
-                        placeholder: '请输入密码',
-                        onValidate: (value) => {
-                            return value.length > 5;
-                        },
-                        invalidMessage: '密码长度必须大于5',
-                    }),
-                    captcha: configurable('', {
-                        label: '验证码',
-                        widget: 'captcha',
-                        url: '/autostore/captcha.png',
-                        placeholder: '请输入验证码',
-                    }),
-                    remember: configurable(true, {
-                        label: '记住我',
-                        widget: 'switch',
-                    }),
+                user: {
+                    username: configurable('<NAME>'),
+                    password: configurable('<PASSWORD>'),
+                },
+                order: {
+                    price: configurable(100),
+                    count: configurable(1),
+                    total: (order) => order.price * order.count,
                 },
             });
             const form = document.querySelector('#login');
             form.bind(store);
-            store.watch(() => {
+            const updateJsonViewer = () => {
                 const jsonViewer = document.getElementById('viewer');
                 jsonViewer.data = Object.assign({}, store.state);
                 jsonViewer.expandAll();
+            };
+            store.watch(() => {
+                updateJsonViewer();
+            });
+            updateJsonViewer();
+
+            const button = document.getElementById('updateCount');
+
+            button.addEventListener('click', () => {
+                store.state.order.count += 1;
             });
         </script>
     </body>

@@ -76,13 +76,6 @@ export class AutoFieldRabge extends AutoField<AutoFieldRangeOptions> {
   
         `
     }
-    renderScales() {
-        return html`
-            <span class="begin"></span>
-            <span class="value"></span>
-            <span class="end"></span>
-        `
-    }
 }
 
 

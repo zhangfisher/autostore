@@ -15,6 +15,7 @@ export type AutoFormContext = {
     dark: boolean
     compact: boolean
     size: 'small' | 'medium' | 'large'
+    validAt: 'input' | 'lost-focus'
     dirty: boolean
     showInitialError: boolean
 }
