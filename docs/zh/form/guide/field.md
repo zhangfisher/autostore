@@ -96,6 +96,8 @@ export type SchemaWidgetShareOptions<Value, State> = {
 
 可以通过`width`参数指定字段宽度。
 
+<demo html="autoform/field/width.html"/>
+
 ### 样式控制
 
 ### 状态数据转换
