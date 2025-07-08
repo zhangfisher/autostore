@@ -13,49 +13,52 @@
     </head>
 
     <body>
-        <div style="padding: 2em; border: 1px solid #ccc; margin: 2em;position:relative;">
-            <a href="examples/index.html">examples</a>
-            <div class="actions">
-            <auto-form-debuger></auto-form-debuger>
-            <auto-form id="form1" class="large"> </auto-form>
-        </div>
-        <textarea id="state" rows="10" style="margin-top:2rem;box-sizing:border-box; border: 1px solid #ccc; width:100%;"></textarea>
-        <div id="errors" style="border: 1px solid #ccc; color: red"></div>
-        <script type="module" src="./example.ts"></script>
-
-       
-        <div id="custom_panel" style="display:none;padding: 1rem;height: 5rem;">
+        <div id="custom_panel" style="display: none; padding: 1rem; height: 5rem">
             <label>
                 名称:
-                <input id="username" type="text" value="123"/>
+                <input id="username" type="text" value="123" />
             </label>
             <label>
                 电子邮件:
-                <input id="email" type="email" value=""/>                
+                <input id="email" type="email" value="" />
             </label>
             <button>提交</button>
         </div>
-             <script> 
-                let name = ''
-                let email=''
-                const nameInput = document.querySelector('#username');
-                const emailInput = document.querySelector('#email');
-                const triggerInput = (value) => {
-                    const event = new CustomEvent('auto-input', { 
-                        detail: { value },
-                        bubbles: true,
-                        composed:true                        
-                    });
-                    nameInput.dispatchEvent(event);
-                }
-                nameInput.addEventListener('input', (e) => {
-                    name = e.target.value;
-                    triggerInput(`${name}(${email})`)
-                })
-                emailInput.addEventListener('input', (e) => {
-                    email = e.target.value;
-                    triggerInput(`${name}(${email})`)
-                })                
-            </script>
+        <div style="padding: 2em; border: 1px solid #ccc; margin: 2em; position: relative">
+            <a href="examples/index.html">examples</a>
+            <div class="actions">
+                <auto-form id="row" layout="row" labelpos="left" grid="false" path="a.b.c"></auto-form>
+                <auto-form id="col" layout="col" path="a.b.c" style="margin-top: 1em"></auto-form>
+
+                <auto-form-debuger></auto-form-debuger>
+                <auto-form id="form1"> </auto-form>
+            </div>
+        </div>
+        <textarea id="state" rows="10" style="margin-top: 2rem; box-sizing: border-box; border: 1px solid #ccc; width: 100%"></textarea>
+        <div id="errors" style="border: 1px solid #ccc; color: red"></div>
+        <script type="module" src="./example.ts"></script>
+
+        <script>
+            let name = '';
+            let email = '';
+            const nameInput = document.querySelector('#username');
+            const emailInput = document.querySelector('#email');
+            const triggerInput = (value) => {
+                const event = new CustomEvent('auto-input', {
+                    detail: { value },
+                    bubbles: true,
+                    composed: true,
+                });
+                nameInput.dispatchEvent(event);
+            };
+            nameInput.addEventListener('input', (e) => {
+                name = e.target.value;
+                triggerInput(`${name}(${email})`);
+            });
+            emailInput.addEventListener('input', (e) => {
+                email = e.target.value;
+                triggerInput(`${name}(${email})`);
+            });
+        </script>
     </body>
 </html>

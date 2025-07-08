@@ -71,12 +71,24 @@ export class AutoForm extends LitElement {
     @property({ type: Boolean, reflect: true })
     showInitialError: boolean = false
 
-    @property({ type: String })
+    @property({ type: String, reflect: true })
     group?: string
 
-    // 指定字段顺序，用,分割
-    @property({ type: String })
-    fields?: string
+
+
+    /**
+     * 指定一个路径，用于过滤状态路径
+     * 
+     * 只有指定路径下的schema才会被渲染显示。
+     * 
+     * 如：
+     * <auto-form path="user.order,profile.add"></autoform>
+     * 
+     * 多个路径使用,分割
+     *  
+     */
+    @property({ type: String, reflect: true })
+    path?: string
 
     /**
      * 压缩字段之间的空白
@@ -100,14 +112,13 @@ export class AutoForm extends LitElement {
      * - input:  输入时进行校验
      * - lost-focus: 失去焦点时进行校验
      */
-    @property({ type: String })
+    @property({ type: String, reflect: true })
     validAt: 'input' | 'lost-focus' = 'lost-focus'
+
     /**
-     * 
      * 显示网络
-     * 
      */
-    @property({ type: Boolean, reflect: true })
+    @property({ type: Boolean, reflect: true, useDefault: true })
     grid: boolean = true
 
     /**
@@ -131,12 +142,6 @@ export class AutoForm extends LitElement {
     @property({ type: String, reflect: true })
     labelWidth?: string = '7em'
 
-    /**
-     * value: 显示在值下方
-     * label: 显示标签后面，当labe在左边时，只显示一个帮助图标，
-     */
-    @property({ type: String })
-    helpPos?: 'label' | 'value' = 'label'
 
     @property({ type: Boolean, reflect: true })
     dark: boolean = false
@@ -167,7 +172,7 @@ export class AutoForm extends LitElement {
      * - row: 使用flex:row布局
      * 
      */
-    @property({ type: String })
+    @property({ type: String, reflect: true })
     layout: 'auto' | 'row' | 'col' = 'auto'
 
     /**
@@ -201,37 +206,60 @@ export class AutoForm extends LitElement {
             }
         })
     }
-    _load() {
-        const schmeaState = this.store!.schemas.store.state as Record<string, ComputedState<SchemaOptions>>
-        this.schemas = Object.values(schmeaState)
-            .filter((schema) => {
-                if (this.group) {
-                    return schema.group === this.group
-                }
-                if (this.advanced === false && schema.advanced === true) return true
-                return true
-            }).sort((a, b) => {
-                // @ts-ignore
-                return (a.order || 0) - (b.order || 0)
-            })
+    attributeChangedCallback(name: string, _old: string | null, value: string | null): void {
+        super.attributeChangedCallback(name, _old, value)
+        if (['group', 'sort', 'advanced', 'path'].includes(name)) {
+            setTimeout(() => this._load())
+        }
     }
-    bind(store: AutoStore<Dict>) {
-        this.store = store
+    _load(update: boolean = true) {
+        if (!this.store) return
         Object.assign(this.context, {
-            store,
+            store: this.store,
             form: this,
             labelPos: this.labelPos,
             labelWidth: this.labelWidth,
             viewAlign: this.viewAlign,
-            helpPos: this.helpPos,
             grid: this.grid,
+            group: this.group,
+            advanced: this.advanced,
             dark: this.dark,
             dirty: false,
-            invalide: Object.keys(store.schemas.errors).length > 0,
+            invalide: Object.keys(this.store!.schemas.errors).length > 0,
             showInitialError: this.showInitialError
         })
+
+        const fields = this.path
+            ? this.store!.schemas.find(this.path)
+            : Object.values(this.store!.schemas.store.state) as ComputedState<SchemaOptions>[]
+
+        const isGroupMatched = (schema: SchemaOptions) => {
+            if (!this.group) return true
+            if (['', '*'].includes(this.group)) {
+                return true
+            }
+            const fieldGroups = (schema.group || '').split(',')
+            const groups = this.group.split(',')
+            return fieldGroups.some((name) => {
+                return groups.includes(name)
+            })
+        }
+
+        this.schemas = Object.values(fields)
+            .filter((schema) => {
+                if (!isGroupMatched(schema)) return false
+                if (this.advanced === false && schema.advanced) return false
+                return true
+            })
+            .sort((a: any, b: any) => {
+                return (a.order || 0) - (b.order || 0)
+            })
+        if (update) this.requestUpdate()
+    }
+
+    bind(store: AutoStore<Dict>) {
+        this.store = store
         this._load()
-        this.requestUpdate()
     }
     /**
      * 清除所有错误信息
@@ -254,8 +282,8 @@ export class AutoForm extends LitElement {
     }
     render() {
         this.classs.use(this.size, {
-            'dark': this.context.dark,
-            'grid': this.grid,
+            dark: this.context.dark,
+            grid: this.grid,
             [`${this.layout}-layout`]: true,
             [`${this.labelPos}-label`]: true,
             [`view-${this.viewAlign}`]: true,

@@ -24,13 +24,22 @@ export default css`
             }    
         }
     }
-    :host(.row-layout){
-        display: flex;
-        flex-direction: row;
+    :host([layout=row]){
+        & > .fields{
+            display: flex;
+            flex-direction: row;
+            & > * {
+                width: auto;
+                border-bottom: none!important; 
+            }
+        }
     }
-    :host(.col-layout){
-        display: flex;
-        flex-direction: column;
+
+    :host([layout=col]){
+        & > .fields{
+            display: flex;
+            flex-direction: column;
+        }
     }
     :host(.grid){
         border: 1px solid var(--sl-input-border-color);

@@ -142,6 +142,15 @@ export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<A
         }
     }
 
+    onInputChange(e: Event) {
+        const event = e.type
+        if (this.context.validAt === 'input' && event.includes('input')) {
+            this.onFieldInput()
+        } else if (event.includes('change')) {
+            this.onFieldChange()
+        }
+    }
+
     renderInput() {
         return html`
             <sl-input 
@@ -163,7 +172,8 @@ export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<A
                 .autocorrect=${this.options.autocorrect}
                 .autocomplete=${this.options.autocomplete}
                 ?autofocus=${this.options.autofocus}
-                @sl-input=${this.onFieldInput.bind(this)}
+                @sl-input=${this.onInputChange.bind(this)}
+                @sl-change=${this.onInputChange.bind(this)}
                 spellcheck=${ifDefined(this.options.spellcheck)}
             >
             ${this.renderActions()}${this.getPrefix()}${this.getSuffix()}</sl-input>

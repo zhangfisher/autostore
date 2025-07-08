@@ -153,6 +153,61 @@ const delay = (ms: number = 1000) => new Promise((resolve) => setTimeout(resolve
 const store = new AutoStore({
     price: 100,
     count: computed(scope => scope.price * 2),
+    a: {
+        b: {
+            c: {
+                name: configurable('fisher', {
+                    label: '名称',
+                    help: "管理员拥有所有权限",
+                }),
+                admin: configurable(true, {
+                    label: '管理员',
+                    help: "管理员拥有所有权限",
+                    widget: 'switch',
+                })
+            }
+        }
+    },
+    b: {
+        x: {
+            padding: configurable("10px 5px", {
+                widget: 'combine',
+                label: '内边距',
+                toState: (values) => toPadding(values),
+                group: 'a',
+                children: [
+                    {
+                        name: 'top',
+                        label: "上",
+                        widget: "range",
+                        width: '50%',
+                        toInput: (value) => parsePadding(value).top,
+                    },
+                    {
+                        name: 'right',
+                        label: "右",
+                        widget: 'range',
+                        width: '50%',
+                        toInput: (value) => parsePadding(value).right
+                    },
+                    {
+                        name: 'bottom',
+                        label: "下",
+                        widget: "range",
+                        width: '50%',
+                        toInput: (value) => parsePadding(value).bottom,
+                    },
+                    {
+                        name: "left",
+                        label: "左",
+                        widget: "range",
+                        width: '50%',
+                        toInput: (value) => parsePadding(value).left,
+                    }
+                ]
+            }),
+        }
+    },
     user: {
         name: configurable('Fish', {
             label: '姓名',
@@ -160,6 +215,7 @@ const store = new AutoStore({
             onValidate: (value) => {
                 return value.length > 5;
             },
+            group: 'a',
             invalidMessage: '姓名长度必须大于3个字符',
             help: "中文姓名(http://www.autostore.com)",
             required: computed(async (state) => {
@@ -172,7 +228,7 @@ const store = new AutoStore({
                     icon: 'clipboard',
                     onClick: (value, { update }) => {
                         console.log('Action click:', value)
-                        update(value + "*")
+                        update(`${value}*`)
                     },
                     variant: "success"
                 },
@@ -181,7 +237,7 @@ const store = new AutoStore({
                     icon: 'clipboard',
                     onClick: (value, { update }) => {
                         console.log('Action click:', value)
-                        update(value + "*")
+                        update(`${value}*`)
                     }
                 },
                 {
@@ -225,6 +281,7 @@ const store = new AutoStore({
             widget: 'combine',
             label: '内边距',
             toState: (values) => toPadding(values),
+            group: 'a',
             children: [
                 {
                     name: 'top',
@@ -333,8 +390,6 @@ const store = new AutoStore({
             // 模板字符串
             template: '00-00-00-00' // 每一组之间的分割符
         }),
-
-
         smsVerify: configurable(false, {
             label: '短信验证',
             widget: 'switch',
@@ -348,6 +403,7 @@ const store = new AutoStore({
             widget: 'verifycode',
             timeout: 60 * 1000,
             template: '{timeout}秒后重试',
+            group: 'c',
             onRequest: () => {
                 console.log("发送短信")
             },
@@ -356,6 +412,7 @@ const store = new AutoStore({
         tcpFlags: configurable(3, {
             label: 'TCP标识',
             widget: 'checkbox-group',
+            group: 'c',
             select: [
                 { label: 'URG', value: 1 },
                 { label: 'ACK', value: 2 },
@@ -412,6 +469,7 @@ const store = new AutoStore({
             widget: 'checkbox-group',
             itemWidth: '33.33%',
             valueKey: "label",
+            group: 'b',
             card: true,
             select: [
                 { label: '简约风', description: '极简设计，突出内容' },
@@ -431,6 +489,7 @@ const store = new AutoStore({
                 return value.length > 2
             },
             widget: 'list',
+            group: 'b',
             multiple: true,
             valueKey: 'label',     // 默认选择的是id
             labelKey: 'label',     // 用于显示，当showResults为true时，显示的是label
@@ -469,11 +528,12 @@ const store = new AutoStore({
             label: '工资',
             widget: 'number',
             icon: 'japanese-yen',
+            group: 'b',
             actions: [
                 {
                     label: '清空',
                     icon: 'trash',
-                    onClick: (value, { update }) => {
+                    onClick: (_, { update }) => {
                         update('')
                     }
                 }
@@ -660,9 +720,13 @@ store.on('validate', () => {
     ele!.innerHTML = JSON.stringify(store.schemas.errors);
 });
 updateState();
-const form = document.querySelector('auto-form') as AutoForm;
-// @ts-ignore
-form!.bind(store);
+const forms = Array.from(document.querySelectorAll('auto-form')) as AutoForm[];
+
+forms.forEach(form => {
+    // @ts-ignore
+    form!.bind(store);
+})
+
 
 
 
@@ -741,13 +805,28 @@ class AutoFormDebuger extends LitElement {
             }
         }
     }
+    onToggleAdvanced(e) {
+        const ele = this.getNextAutoForm();
+        if (ele) {
+            if (e.target.checked) {
+                ele.setAttribute('advanced', "");
+            } else {
+                ele.removeAttribute('advanced');
+            }
+        }
+    }
     onChangeViewAlign(e) {
         const ele = this.getNextAutoForm();
         if (ele) {
             ele.setAttribute('viewAlign', e.target.value);
         }
     }
-
+    onChangeGroup(e) {
+        const ele = this.getNextAutoForm();
+        if (ele) {
+            ele.setAttribute('group', e.target.value);
+        }
+    }
     onChangeSize(e) {
         const ele = this.getNextAutoForm();
         if (ele) {
@@ -813,29 +892,56 @@ class AutoFormDebuger extends LitElement {
             form.reset()
         }
     }
+    onShowGroup() {
+        const form = this.getNextAutoForm() as AutoForm
+        if (form) {
+            form.group = 'a'
+        }
+    }
+
+    onChangePath() {
+        const form = this.getNextAutoForm() as AutoForm
+        if (form) {
+            form.path = 'a.b.c,b.x'
+        }
+    }
+    onChangeHelpPos(e: any) {
+        const form = this.getNextAutoForm() as AutoForm
+        if (form) {
+            form.setAttribute('helppos', e.target.value);
+        }
+    }
     render() {
         return html`
-            <div class="toolbar">
+            <div class="toolbar" style="border: 1px solid #ccc; margin: 1em 0px;position: relative">
                 <div>
-                <sl-select label="标签位置" style="width:100px;" value="top" @sl-change=${this.onChangelabelPos.bind(this)}>
-                    <sl-option value="top">上方</sl-option>
-                    <sl-option value="left">左侧</sl-option>
-                    <sl-option value="none">隐藏</sl-option>
-                </sl-select>   
-                <sl-select label="尺寸" style="width:100px;" value="medium" @sl-change=${this.onChangeSize.bind(this)}>
-                    <sl-option value="small">小</sl-option>
-                    <sl-option value="medium">中</sl-option>
-                    <sl-option value="large">大</sl-option>
-                </sl-select>   
-                <sl-select label="帮助信息" style="width:100px;" value="label" @sl-change=${this.onChangeSize.bind(this)}>
-                    <sl-option value="label">标签</sl-option>
-                    <sl-option value="value">值</sl-option>
-                </sl-select>  
-                <sl-select label="浏览对齐" style="width:150px;" value="right" @sl-change=${this.onChangeViewAlign.bind(this)}>
-                    <sl-option value="left">左对齐</sl-option>
-                    <sl-option value="center">居中</sl-option>
-                    <sl-option value="right">右对齐</sl-option>
-                </sl-select>   
+                    <sl-select label="标签位置" style="width:120px;" value="top" @sl-change=${this.onChangelabelPos.bind(this)}>
+                        <sl-option value="top">上方</sl-option>
+                        <sl-option value="left">左侧</sl-option>
+                        <sl-option value="none">隐藏</sl-option>
+                    </sl-select>   
+                    <sl-select label="尺寸" style="width:100px;" value="medium" @sl-change=${this.onChangeSize.bind(this)}>
+                        <sl-option value="small">小</sl-option>
+                        <sl-option value="medium">中</sl-option>
+                        <sl-option value="large">大</sl-option>
+                    </sl-select>   
+                    <sl-select label="帮助信息" style="width:120px;" value="label" @sl-change=${this.onChangeHelpPos.bind(this)}>
+                        <sl-option value="label">标签</sl-option>
+                        <sl-option value="value">值</sl-option>
+                    </sl-select>  
+                    <sl-select label="浏览对齐" style="width:150px;" value="right" @sl-change=${this.onChangeViewAlign.bind(this)}>
+                        <sl-option value="left">左对齐</sl-option>
+                        <sl-option value="center">居中</sl-option>
+                        <sl-option value="right">右对齐</sl-option>
+                    </sl-select> 
+                    <sl-select label="显示组" style="width:120px;" value="right" @sl-change=${this.onChangeGroup.bind(this)}>
+                        <sl-option value="a">A组</sl-option>
+                        <sl-option value="b">B组</sl-option>
+                        <sl-option value="c">C组</sl-option>
+                        <sl-option value="a,b">A,B组</sl-option> 
+                        <sl-option value="b,c">B,C组</sl-option> 
+                        <sl-option value="*">全部</sl-option>
+                    </sl-select>    
                 </div>
                 <div>
                     <sl-checkbox @click=${this.onToggleDark.bind(this)}>暗色调</sl-checkbox>                    
@@ -843,10 +949,12 @@ class AutoFormDebuger extends LitElement {
                     <sl-checkbox @click=${this.onToggleReadonly.bind(this)}>只读</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleView.bind(this)}>浏览视图</sl-checkbox>                    
                     <sl-checkbox @click=${this.onToggleCompact.bind(this)}>紧凑模式</sl-checkbox>                    
+                    <sl-checkbox @click=${this.onToggleAdvanced.bind(this)}>高级选项</sl-checkbox>                    
                 </div>
                 <div>
                     <sl-button @click=${this.onSubmit.bind(this)}>提交</sl-button>
-                    <sl-button @click=${this.onReset.bind(this)}>重置</sl-button> 
+                    <sl-button @click=${this.onReset.bind(this)}>重置</sl-button>  
+                    <sl-button @click=${this.onChangePath.bind(this)}>改变路径</sl-button>  
                 </div>               
             </div>
         `

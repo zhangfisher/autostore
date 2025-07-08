@@ -14,6 +14,7 @@ export type AutoFormContext = {
     grid: boolean                       // 显示网格线
     dark: boolean
     compact: boolean
+    invalide: boolean
     size: 'small' | 'medium' | 'large'
     validAt: 'input' | 'lost-focus'
     dirty: boolean

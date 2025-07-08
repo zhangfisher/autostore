@@ -313,16 +313,13 @@ export class AutoField<Options = unknown> extends LitElement {
         const url = urlMatches ? urlMatches[1] : null
         const help = url ? helpText.replace(`(${url})`, '') : helpText
 
-        return html`<span class="help" title="${ifDefined(onlyIcon ? help : undefined)}">
+        return html`<span class="help" part="field-help" title="${ifDefined(onlyIcon ? help : undefined)}">
             ${toggleWrapper(!!url,
             html`
                 <sl-icon name="help"></sl-icon>
-                ${when(!onlyIcon, () => {
-                return html`${help}`
-            })}
-            `, (content: any) => {
-            return html`<a target="_blank" href="${url!}">${content}</a>`
-        })} 
+                ${when(!onlyIcon, () => html`${help}`)}
+            `, (content: any) => html`<a target="_blank" href="${url!}">${content}</a>`
+        )} 
         </span>`
     }
 
@@ -456,14 +453,6 @@ export class AutoField<Options = unknown> extends LitElement {
         return this.options.labelPos || this.context.labelPos
     }
     /**
-     * 
-     * auto bottom, label 
-     * 
-     */
-    getHelpPos() {
-        return this.options.helpPos || this.context.helpPos
-    }
-    /**
      * 当输入框值改变时更新状态
      * @returns 
      */
@@ -500,7 +489,7 @@ export class AutoField<Options = unknown> extends LitElement {
     renderValue() {
         return html`
             ${this.renderInput()}
-            ${when(this.options.helpPos === 'value' || this.context.viewonly, () => this.renderHelp())}         
+            ${when(this.context.viewonly, () => this.renderHelp())}         
             ${this.renderError()} 
         `
     }
@@ -518,7 +507,7 @@ export class AutoField<Options = unknown> extends LitElement {
      * 
      */
     noticeChange() {
-        if (this.context.validAt==='input') {
+        if (this.context.validAt === 'input') {
 
         }
     }

@@ -36,7 +36,8 @@ export class ContextController implements ReactiveController {
             viewAlign: this.host.viewAlign,
             compact: this.host.compact,
             grid: this.host.grid,
-            helpPos: this.host.helpPos,
+            group: this.host.group,
+            advanced: this.host.advanced,
             validAt: this.host.validAt,
             size: this.host.size,
         })

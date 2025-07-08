@@ -62,7 +62,6 @@ function markRawActions(actions: SchemaWidgetAction[]) {
 // 将options里面的on和render开头的函数标识为raw
 function markRawOptions(options: SchemaOptions) {
     if (isPlainObject(options)) {
-
         forEachObject(options, ({ value, key, parent }) => {
             if (isFunction(value) && (
                 key.startsWith('on')
@@ -73,21 +72,6 @@ function markRawOptions(options: SchemaOptions) {
                 parent[key] = markRaw(value)
             }
         })
-        // Object.entries(options).forEach(([key, value]) => {
-        //     if (key === 'actions') {
-        //         markRawActions(value)
-        //     } else {
-        //         if (isFunction(value) && (
-        //             key.startsWith('on')
-        //             || key.startsWith('render')
-        //             || key.startsWith('to')
-        //         )) {
-        //             // @ts-ignore
-        //             options[key] = markRaw(value)
-        //         }
-        //     }
-
-        // })
     }
 }
 

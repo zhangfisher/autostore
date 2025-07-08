@@ -1,7 +1,7 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
 import type { Dict, } from '../types';
-import { setVal } from "../utils";
+import { pathStartsWith, setVal } from "../utils";
 import { getVal } from "../utils/getVal";
 import type { SchemaOptions, SchemaValidator, ComputedSchemaState, SchemaDescriptor } from "./types";
 
@@ -17,12 +17,18 @@ export class SchemaManager<
     _descriptors?: Record<string, SchemaDescriptor<any, any>>
     constructor(public shadow: AutoStore<any>) {
     }
+
+    get fields() {
+        return this.store.state as Record<string, SchemaOptions>
+    }
+
     _getKey(path: any): string {
         return Array.isArray(path) ? path.join('_$_') : path.split(PATH_DELIMITER).join('_$_')
     }
     _getPath(path: string) {
         return path.split('_$_')
     }
+
     add<V = any, Options extends SchemaOptions<V> = SchemaOptions<V>>(
         path: string | string[],
         descriptor: SchemaDescriptor<V, Options>
@@ -95,6 +101,31 @@ export class SchemaManager<
         })
         return values
     }
+    /**
+     * 过滤出指定路径的schema
+     * 
+     * 如:
+     * schemas.find("user.order")
+     * schemas.find(["user.order","order"])
+     * 
+     * @param path 
+     */
+    find(path: string | (string | string[])[]) {
+        const paths = (Array.isArray(path)
+            ? path
+            : path.split(',')).map(p => {
+                return Array.isArray(p) ? p : p.split(this.store.options.delimiter)
+            })
+
+        return Object.entries(this.fields).filter(([key]) => {
+            return paths.some(base => {
+                return pathStartsWith(base, this._getPath(key))
+            })
+        }).map(([_, options]) => {
+            return options
+        })
+    }
+
 }
 
 

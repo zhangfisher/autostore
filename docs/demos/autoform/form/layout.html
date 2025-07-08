@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body>
+        <div style="display: flex; flex-direction: column; gap: 5px">
+            <div style="padding: 5px">
+                <auto-form id="auto" path="user"></auto-form>
+            </div>
+            <div style="padding: 5px">
+                <auto-form id="row" layout="row" path="user" style="display: inline-flex"></auto-form>
+            </div>
+            <div style="padding: 5px">
+                <auto-form id="col" layout="col" path="user"></auto-form>
+            </div>
+        </div>
+
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                user: {
+                    username: configurable('<NAME>', {
+                        label: '用户名',
+                    }),
+                    password: configurable('<PASSWORD>', {
+                        label: '密码',
+                    }),
+                },
+                order: {
+                    price: configurable(100, {
+                        label: '价格',
+                    }),
+                    count: configurable(1, {
+                        label: '数量',
+                    }),
+                    total: (order) => order.price * order.count,
+                },
+            });
+            const autoForm = document.querySelector('#auto');
+            autoForm.bind(store);
+
+            const rowForm = document.querySelector('#row');
+            rowForm.bind(store);
+
+            const colForm = document.querySelector('#col');
+            colForm.bind(store);
+        </script>
+    </body>
+</html>

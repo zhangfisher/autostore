@@ -23,6 +23,7 @@ export default css`
                     font-size: var(--auto-font-size);
                     flex-grow: 1;
                     line-height: var(--auto-line-height);
+                    display:flex;
                     &::after{
                         content: '：';                    
                     }

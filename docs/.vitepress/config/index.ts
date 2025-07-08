@@ -154,8 +154,9 @@ export default defineConfig({
                 {
                     text: '指南',
                     items: [
-                        { text: '创建表单', link: '/zh/form/guide/createform' },
-                        { text: '声明字段', link: '/zh/form/guide/createfield' },
+                        { text: '表单', link: '/zh/form/guide/form' },
+                        { text: '字段', link: '/zh/form/guide/field' },
+                        { text: '校验', link: '/zh/form/guide/dirty' },
                         { text: '脏检查', link: '/zh/form/guide/dirty' },
                         { text: '提交表单', link: '/zh/form/guide/submit' },
                     ]

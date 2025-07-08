@@ -17,6 +17,7 @@ export function renderWidget(options: SchemaOptions, args?: {
     // @ts-ignore
     widgetEle.schema = options
     widgetEle.setAttribute('part', 'field')
+    widgetEle.setAttribute('exportparts', 'field-value, field-label,field-help')
     if (args?.styles) {
         Object.assign(widgetEle.style, args.styles)
     }
