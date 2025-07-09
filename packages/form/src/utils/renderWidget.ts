@@ -7,6 +7,7 @@ export function renderWidget(options: SchemaOptions, args?: {
     classs?: Record<string, any> | string,
 }) {
     const width = options.width
+    const height = options.height
     const widget = options.widget
     let widgetEle: HTMLElement
     try {
@@ -28,8 +29,10 @@ export function renderWidget(options: SchemaOptions, args?: {
         // @ts-ignore
         widgetEle.parent = args.parent
     }
-    // @ts-ignore
-    if (width) widgetEle.style.width = width
+
+    if (width) widgetEle.style.width = String(width)
+    if (height) widgetEle.style.height = String(height)
+
     if (args?.classs) {
         if (typeof (args.classs) === 'string') {
             widgetEle.classList.add(args.classs)

@@ -17,7 +17,10 @@
             <auto-form id="login"></auto-form>
         </div>
         <div style="padding: 1em; border: 1px solid #ccc; margin-top: 0.5em">
-            <label> <input type="checkbox" name="grid" checked />显示/隐藏网络线</label>
+            网络线:
+            <label> <input type="radio" name="border" value="none" />None</label>
+            <label> <input type="radio" name="border" value="outline" />Outline </label>
+            <label> <input type="radio" name="border" value="grid" checked />Grid</label>
         </div>
 
         <script>
@@ -44,11 +47,13 @@
             const form = document.querySelector('#login');
             form.bind(store);
 
-            var onShowGrid = (e) => {
-                form.grid = e.target.checked;
+            var onShowBorder = (e) => {
+                form.border = e.target.value;
             };
 
-            document.querySelector('input[name="grid"]').addEventListener('change', onShowGrid);
+            document.querySelectorAll('input[name="border"]').forEach((input) => {
+                input.addEventListener('change', onShowBorder);
+            });
         </script>
     </body>
 </html>

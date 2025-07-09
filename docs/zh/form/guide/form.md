@@ -193,7 +193,7 @@ import '@autostorejs/form'; //   [!code ++]
 ### 网格线
 
 默认`AutoForm`会显示字段网格分割线，也可以控制不显示。
-<demo html="autoform/form/grid.html"/>
+<demo html="autoform/form/border.html"/>
 
 ### 浏览模式
 

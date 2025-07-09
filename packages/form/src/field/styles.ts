@@ -22,8 +22,7 @@ export default css`
                 &>.title{
                     font-size: var(--auto-font-size);
                     flex-grow: 1;
-                    line-height: var(--auto-line-height);
-                    display:flex;
+                    line-height: var(--auto-line-height); 
                     &::after{
                         content: '：';                    
                     }
@@ -154,21 +153,34 @@ export default css`
         }
     }
     /* 网格线 */
-    :host(.grid){ 
+    :host(.grid-border){ 
         & > .autofield{ 
             padding: calc(var(--auto-spacing) * 0.6) var(--auto-spacing);        
         }
     } 
-    :host(.grid.compact){ 
+    :host(.grid-border.compact){ 
         & > .autofield{ 
             padding: calc(var(--auto-spacing) * 0.3) var(--auto-spacing);        
         }
     } 
+    /* 布局 */
+    :host(.row-layout){
+        & > .autofield{
+            & > .label > .title{
+                display: flex;
+                align-items: center;
+            }
+        }
+    }
+
+    /* 紧凑模式 */
     :host(.compact){ 
         & > .autofield{ 
             padding: calc(var(--auto-spacing) * 0.3) var(--auto-spacing);        
         }
     }
+
+    /* 浏览视图  */
     :host(.viewonly){
         & > .autofield > .value{
                 display:flex;
@@ -202,5 +214,5 @@ export default css`
             }
         }
     }
-   
+
 `

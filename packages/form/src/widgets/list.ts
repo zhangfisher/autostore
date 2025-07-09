@@ -9,6 +9,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import type { SchemaListWidgetOptions, SchemaWidgetSelectItem } from "autostore";
+import { when } from "lit/directives/when.js";
 
 
 export type ListItem = {
@@ -45,7 +46,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                 flex-direction: row;
                 align-items: center;                
                 &>.detail{            
-                    flex-grow        : 1;
+                    flex-grow : 1;
                     text-align: right;
                     font-size: var(--sl-font-size-small);
                     color: var(--sl-color-neutral-400);
@@ -75,8 +76,9 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                     border-radius: 4px;
                     padding: 4px;
                     border: var(--auto-border);
-                    background-color: var(--sl-color-gray-100);
+                    background-color: var(--sl-color-gray-50);
                     margin-bottom: 4px; 
+                    box-shadow: 1px 1px 1px var(--sl-color-gray-200);
                     &:hover{
                         background-color: var(--sl-color-gray-100);
                     }
@@ -131,6 +133,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             }
             this.setPresetActions()
         }
+        this.style.height = 'auto'
     }
     isItemSelected(item: any) {
         if (this.value === undefined) return false
@@ -175,44 +178,6 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             this.selectedTips = `${this.selection.length}/${this.items.length}`
             this.onFieldChange()
         }
-    }
-    renderList() {
-        const values = Array.isArray(this.value) ? this.value : [this.value]
-        const itemTemplate = this.options.itemTemplate
-        return html`
-        <div class="items" >
-            <div class="header">
-                ${this.renderBeforeActions()}
-            </div>
-            <!-- 渲染列表项 -->
-            ${this._renderWithSplitPanel(html`
-                <sl-menu slot="start" class="mark-err" style=${styleMap({
-            maxHeight: this.options.height,
-        })}
-                    @sl-select=${this._onSelectItem.bind(this)}>
-                    ${repeat(this.items, (item: any, index: number) => {
-            const isSelected = values.includes((item as any)[this.valueKey])
-            return html`<sl-menu-item 
-                    type="checkbox"                
-                    data-index=${String(index)} 
-                    .checked=${isSelected}
-                >                
-                <auto-box no-border no-padding flex="row" grow="first" style="width:100%;">
-                        ${this._getItemLabel(item, itemTemplate)}
-                        </auto-box>
-                </sl-menu-item>`
-        })}
-                </sl-menu>                            
-                `)} 
-            <div class="footer">
-
-            ${this.renderAfterActions()}            
-                <span class="detail">
-                ${this.selection.length}/${this.items.length}
-                </span>
-            </div>
-        </div>
-        `
     }
     _renderWithSplitPanel(list: any) {
         if (this.options.showResults) {
@@ -313,10 +278,47 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
         })}
         </div>`
     }
-    renderInput() {
-        return html`<div class="list">   
-                ${this.renderList()}       
+    _renderList() {
+        const values = Array.isArray(this.value) ? this.value : [this.value]
+        const itemTemplate = this.options.itemTemplate
+        return html`${this._renderWithSplitPanel(html`
+            <sl-menu slot="start" class="mark-err" style=${styleMap({ maxHeight: this.options.height })}
+            @sl-select=${this._onSelectItem.bind(this)}>
+            ${repeat(this.items, (item: any, index: number) => {
+            const isSelected = values.includes((item as any)[this.valueKey])
+            return html`<sl-menu-item 
+                        type="checkbox"                
+                        data-index=${String(index)} 
+                        .checked=${isSelected}
+                    >                
+                        <auto-box no-border no-padding flex="row" grow="first" style="width:100%;">
+                            ${this._getItemLabel(item, itemTemplate)}
+                        </auto-box>
+                    </sl-menu-item>`
+        })}
+            </sl-menu>`)} `
+    }
+    _renderHeader() {
+        return html`${when(this.beforeActions.length > 0,
+            () => html`<div class="header">
+                ${this.renderBeforeActions()}
+            </div>`
+        )}`
+    }
+    _renderFooter() {
+        return html`<div class="footer">
+            ${this.renderAfterActions()}            
+            <span class="detail">
+                ${this.selection.length}/${this.items.length}
+            </span>
         </div>`
+    }
+    renderInput() {
+        return html`
+            ${this._renderHeader()}            
+            ${this._renderList()}
+            ${this._renderFooter()}
+        `
     }
 
 }

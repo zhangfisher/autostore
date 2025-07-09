@@ -15,7 +15,8 @@ export default css`
             }
         }    
     }   
-    :host(.auto-layout){
+    /* 布局 */
+    :host([layout=auto]){
         & > .fields{
             & > * {
                 width: 100%;
@@ -34,18 +35,35 @@ export default css`
             }
         }
     }
-
     :host([layout=col]){
         & > .fields{
             display: flex;
             flex-direction: column;
         }
     }
-    :host(.grid){
+
+    /* 网格线 */
+    :host([border=none]){
+        border: none; 
+        & > .fields {
+            & > * {
+                border: none;
+            }
+        }
+    }
+    :host([border=outline]){
+        border: 1px solid var(--sl-input-border-color); 
+        & > .fields {
+            & > * {
+                border: none;
+            }
+        }
+    }
+    :host([border=grid]){
         border: 1px solid var(--sl-input-border-color);
         border-left: none;
-        .fields > :last-child{
-            border-bottom:none;
+        & > .fields > :last-child{
+            border-bottom: none;
         }            
         & > .fields {
             & > * {

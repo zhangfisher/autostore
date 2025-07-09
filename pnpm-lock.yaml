@@ -193,10 +193,10 @@ importers:
         specifier: ^2.20.1
         version: 2.20.1(@floating-ui/utils@0.2.9)(@types/react@18.3.22)
       flex-tools:
-        specifier: ^1.4.41
-        version: 1.5.0
+        specifier: ^1.5.2
+        version: 1.5.2
       lit:
-        specifier: ^3.2.1
+        specifier: ^3.3.0
         version: 3.3.0
     devDependencies:
       autostore:
@@ -1988,6 +1988,9 @@ packages:
 
   flex-tools@1.5.0:
     resolution: {integrity: sha512-wV/lC0b2TqL00l7tfYmOMR10/fD1noV9fQF8kUKhCBNLwuKDVOR1QzX8wDIH+D8dCXHwOasDcXhc/6QI4Hf3MQ==}
+
+  flex-tools@1.5.2:
+    resolution: {integrity: sha512-+VbNhd9qsHD/dpIO+X0NZe2kTkp4GnBEHWnp5Lz/KR+QKy8XtSSPfvInJlk04ckUgukNV7X78OQns6wDqlE4Yw==}
 
   flexstyled@2.1.2:
     resolution: {integrity: sha512-EBvH01pUOiU+pwAu2dLYIM1cqrFkYCp+ZTCyqBUlnjwrz1zlJIem7FQoPYV79TAgYHXSnitN98A7ilhnaO97oA==}
@@ -5080,6 +5083,13 @@ snapshots:
       rollup: 4.41.1
 
   flex-tools@1.5.0:
+    dependencies:
+      art-template: 4.13.2
+      fastevent: 2.2.1
+      glob: 10.4.5
+      semver: 7.7.2
+
+  flex-tools@1.5.2:
     dependencies:
       art-template: 4.13.2
       fastevent: 2.2.1

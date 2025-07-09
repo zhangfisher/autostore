@@ -50,12 +50,14 @@ export class AutoForm extends LitElement {
     static styles = styles
     classs = new HostClasses(this)
     theme = new ContextController(this)
+    seq: number = ++AutoForm.seq
 
     @provide({ context })
+
     //@ts-ignore
     context: AutoFormContext = {}
-
     schemas: SchemaOptions[] = []
+    store?: AutoStore<Dict>
 
     /**
      * 是不显示初始错误
@@ -96,10 +98,6 @@ export class AutoForm extends LitElement {
     @property({ type: Boolean, reflect: true })
     compact: boolean = false
 
-
-    store?: AutoStore<Dict>
-    seq: number = ++AutoForm.seq
-
     /** 
      * 是否显示高级选项 
      */
@@ -116,10 +114,13 @@ export class AutoForm extends LitElement {
     validAt: 'input' | 'lost-focus' = 'lost-focus'
 
     /**
-     * 显示网络
+     * 显示网格线
+     * 
+     * border:  none | outline | grid
+     * 
      */
-    @property({ type: Boolean, reflect: true, useDefault: true })
-    grid: boolean = true
+    @property({ type: String, reflect: true })
+    border: 'none' | 'outline' | 'grid' = 'grid'
 
     /**
      * 
@@ -175,6 +176,8 @@ export class AutoForm extends LitElement {
     @property({ type: String, reflect: true })
     layout: 'auto' | 'row' | 'col' = 'auto'
 
+    _loading: boolean = false
+
     /**
      * 
      * 注册图标库地址 
@@ -214,47 +217,53 @@ export class AutoForm extends LitElement {
     }
     _load(update: boolean = true) {
         if (!this.store) return
-        Object.assign(this.context, {
-            store: this.store,
-            form: this,
-            labelPos: this.labelPos,
-            labelWidth: this.labelWidth,
-            viewAlign: this.viewAlign,
-            grid: this.grid,
-            group: this.group,
-            advanced: this.advanced,
-            dark: this.dark,
-            dirty: false,
-            invalide: Object.keys(this.store!.schemas.errors).length > 0,
-            showInitialError: this.showInitialError
-        })
-
-        const fields = this.path
-            ? this.store!.schemas.find(this.path)
-            : Object.values(this.store!.schemas.store.state) as ComputedState<SchemaOptions>[]
-
-        const isGroupMatched = (schema: SchemaOptions) => {
-            if (!this.group) return true
-            if (['', '*'].includes(this.group)) {
-                return true
-            }
-            const fieldGroups = (schema.group || '').split(',')
-            const groups = this.group.split(',')
-            return fieldGroups.some((name) => {
-                return groups.includes(name)
+        if (this._loading) return
+        try {
+            Object.assign(this.context, {
+                store: this.store,
+                form: this,
+                labelPos: this.labelPos,
+                labelWidth: this.labelWidth,
+                viewAlign: this.viewAlign,
+                border: this.border,
+                group: this.group,
+                advanced: this.advanced,
+                dark: this.dark,
+                dirty: false,
+                invalide: Object.keys(this.store!.schemas.errors).length > 0,
+                showInitialError: this.showInitialError
             })
+
+            const fields = this.path
+                ? this.store!.schemas.find(this.path)
+                : Object.values(this.store!.schemas.store.state) as ComputedState<SchemaOptions>[]
+
+            const isGroupMatched = (schema: SchemaOptions) => {
+                if (!this.group) return true
+                if (['', '*'].includes(this.group)) {
+                    return true
+                }
+                const fieldGroups = (schema.group || '').split(',')
+                const groups = this.group.split(',')
+                return fieldGroups.some((name) => {
+                    return groups.includes(name)
+                })
+            }
+
+            this.schemas = Object.values(fields)
+                .filter((schema) => {
+                    if (!isGroupMatched(schema)) return false
+                    if (this.advanced === false && schema.advanced) return false
+                    return true
+                })
+                .sort((a: any, b: any) => {
+                    return (a.order || 0) - (b.order || 0)
+                })
+            if (update) this.requestUpdate()
+        } finally {
+            this._loading = false
         }
 
-        this.schemas = Object.values(fields)
-            .filter((schema) => {
-                if (!isGroupMatched(schema)) return false
-                if (this.advanced === false && schema.advanced) return false
-                return true
-            })
-            .sort((a: any, b: any) => {
-                return (a.order || 0) - (b.order || 0)
-            })
-        if (update) this.requestUpdate()
     }
 
     bind(store: AutoStore<Dict>) {
@@ -283,8 +292,6 @@ export class AutoForm extends LitElement {
     render() {
         this.classs.use(this.size, {
             dark: this.context.dark,
-            grid: this.grid,
-            [`${this.layout}-layout`]: true,
             [`${this.labelPos}-label`]: true,
             [`view-${this.viewAlign}`]: true,
             compact: this.compact

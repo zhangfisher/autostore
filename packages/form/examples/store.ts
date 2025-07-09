@@ -1,158 +1,23 @@
-import { customElement } from 'lit/decorators.js';
-import { LitElement, css, html } from 'lit';
-import { AutoStore, computed, configurable } from 'autostore';
-import type { AutoForm } from './src/form/index';
-function parsePadding(padding: string): { left: number, right: number, top: number, bottom: number, unit: string } {
-    // 默认值
-    const result = {
-        left: 0,
-        right: 0,
-        top: 0,
-        bottom: 0,
-        unit: 'px' // 默认单位为 px
-    };
-
-    // 去除空格并按空格分割
-    const parts = padding.trim().split(/\s+/);
-
-    // 解析数值和单位
-    const parseValue = (value: string): number => {
-        const match = value.match(/^(\d+)([a-z%]*)$/);
-        if (!match) return 0;
-
-        // 更新单位（如果未设置，则使用默认值）
-        if (match[2]) result.unit = match[2];
-        return parseInt(match[1], 10) || 0;
-    };
-
-    // 根据输入值的数量设置边距
-    switch (parts.length) {
-        case 1: {      // 单值：所有边距相同
-            const value = parseValue(parts[0]);
-            result.top = value;
-            result.right = value;
-            result.bottom = value;
-            result.left = value;
-            break;
-        }
-        case 2: // 双值：上下、左右
-            result.top = parseValue(parts[0]);
-            result.right = parseValue(parts[1]);
-            result.bottom = parseValue(parts[0]);
-            result.left = parseValue(parts[1]);
-            break;
-
-        case 3: // 三值：上、左右、下
-            result.top = parseValue(parts[0]);
-            result.right = parseValue(parts[1]);
-            result.bottom = parseValue(parts[2]);
-            result.left = parseValue(parts[1]);
-            break;
-
-        case 4: // 四值：上、右、下、左
-            result.top = parseValue(parts[0]);
-            result.right = parseValue(parts[1]);
-            result.bottom = parseValue(parts[2]);
-            result.left = parseValue(parts[3]);
-            break;
-
-        default:
-            throw new Error(`Invalid padding format: "${padding}". Expected 1-4 values.`);
-    }
-
-    return result;
-}
-/**
- * 将输入的字符串数组转换为有效的 CSS padding 值，支持简写模式。
- * - 如果所有边值相同，则返回单个值（如 `['1px', '1px', '1px', '1px']` → `'1px'`）。
- * - 否则按标准 CSS padding 规则生成值：
- *   - 1 个值：所有边相同（如 `'1px'` → `'1px'`）
- *   - 2 个值：上下相同，左右相同（如 `['1px', '2px']` → `'1px 2px'`）
- *   - 3 个值：上、左右、下（如 `['1px', '2px', '3px']` → `'1px 2px 3px'`）
- *   - 4 个值：上、右、下、左（如 `['1px', '2px', '3px', '4px']` → `'1px 2px 3px 4px'`）
- *
- * @param values - 包含 padding 值的字符串数组，长度必须为 1、2、3 或 4。
- * @returns 返回格式化后的 CSS padding 字符串（自动简写）。
- * @throws 如果输入数组长度无效（不为 1、2、3 或 4），抛出错误。
- *
- * @example
- * toPadding(['1px']); // 返回 '1px'
- * toPadding(['1px', '1px']); // 返回 '1px'
- * toPadding(['1px', '2px', '1px']); // 返回 '1px 2px 1px'
- * toPadding(['1px', '2px', '1px', '2px']); // 返回 '1px 2px'
- */
-function toPadding(values: string[]): string {
-    const length = values.length;
-    if (length < 1 || length > 4) {
-        throw new Error('输入无效：数组长度必须为 1、2、3 或 4。');
-    }
-
-    // 检查是否所有值相同（支持简写）
-    const allEqual = values.every(v => v === values[0]);
-    if (allEqual) {
-        return `${values[0]}px`; // 简写为单个值
-    }
-
-    // 标准模式
-    switch (length) {
-        case 1: return `${values[0]}px`;
-        case 2: return `${values[0]}px ${values[1]}px`;
-        case 3: return `${values[0]}px ${values[1]}px ${values[2]}px`;
-        case 4:
-            // 检查是否可简写为 2 值模式（上下相同且左右相同）
-            if (values[0] === values[2] && values[1] === values[3]) {
-                return `${values[0]}px ${values[1]}px`;
-            }
-            return `${values[0]}px ${values[1]}px ${values[2]}px ${values[3]}px`;
-        default:
-            throw new Error('意外错误：无效的数组长度。');
-    }
-}
-const orgTree = {
-    id: 1,
-    label: '美一',
-    children: [
-        {
-            id: 1,
-            label: '研发中心',
-            children: [
-                { id: 11, label: '工程部' },
-                { id: 12, label: '产品部' },
-                { id: 13, label: '测试部' },
-                { id: 14, label: '运维部' },
-                { id: 15, label: '系统部' }
-            ]
-        },
-        {
-            id: 2,
-            label: "营销中心",
-            selected: true,
-            children: [
-                { id: 21, label: '销售部' },
-                { id: 22, label: '市场部' },
-                { id: 23, label: '客服部' }
-            ]
-        },
-        {
-            id: 3,
-            label: '生产中心',
-            children: [
-                { id: 31, label: '生产部' },
-                { id: 32, label: '采购部' },
-                { id: 33, label: '仓储部' },
-                { id: 34, label: '质检部' }
-            ]
-
-        }
-    ]
-}
+import { parsePadding, toPadding } from './utils';
+import { orgTree } from './data';
+import { AutoStore, computed, configurable, delay } from 'autostore';
+import type { AutoForm } from '../src/form';
 
 
-
-const delay = (ms: number = 1000) => new Promise((resolve) => setTimeout(resolve, ms));
 const store = new AutoStore({
     price: 100,
     count: computed(scope => scope.price * 2),
+    transform: {
+        age: configurable(1, {
+            label: '年龄',
+            toInput: (value) => {
+                return value === 0 ? '男' : '女';
+            },
+            toState: (value) => {
+                return value === '男' ? 0 : 1;
+            }
+        })
+    },
     a: {
         b: {
             c: {
@@ -495,7 +360,7 @@ const store = new AutoStore({
             labelKey: 'label',     // 用于显示，当showResults为true时，显示的是label
             invalidMessage: '至少选择两个产品',
             itemTemplate: "<span>{label}</span><span>{price}</span>",
-            height: '200px',
+            height: '250px',
             showResults: true,// 是否显示结果框
             select: [
                 { id: 1, label: "手机", price: 1000, icon: "phone" },
@@ -644,7 +509,7 @@ const store = new AutoStore({
                 label: '升级',
                 onClick: (value, { update }) => {
                     console.log("升级版本到:", JSON.stringify(value))
-                    // update(['3.0', '4.0'])
+                    update(['3.0', '4.0'])
                 }
             }],
             // 
@@ -707,19 +572,7 @@ const store = new AutoStore({
 });
 
 
-// @ts-ignore
-window.store = store;
-const updateState = () => {
-    const textarea = document.querySelector('#state');
-    // @ts-ignore
-    textarea.value = JSON.stringify(store.state);
-};
-store.watch(() => updateState());
-store.on('validate', () => {
-    const ele = document.querySelector('#errors');
-    ele!.innerHTML = JSON.stringify(store.schemas.errors);
-});
-updateState();
+
 const forms = Array.from(document.querySelectorAll('auto-form')) as AutoForm[];
 
 forms.forEach(form => {
@@ -728,243 +581,10 @@ forms.forEach(form => {
 })
 
 
+globalThis.store = store;
 
 
-
-@customElement("auto-form-debuger")
-class AutoFormDebuger extends LitElement {
-    static styles = css`
-        .toolbar{
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            position: relative;
-            background-color: #fafafa;
-            border-radius: 4px;
-            padding: 8px;
-            gap:0.5rem;
-            & > *{
-                flex-grow: 1;
-                display:flex;
-                flex-direction: row;                
-                align-items: center;
-                position: relative;
-                text-align:left;                
-                gap:0.5rem;
-            }
-        }
-    `
-    /**
-     * 获取下一下autoform表单元素
-     */
-    getNextAutoForm() {
-        // 获取当前元素的下一个兄弟节点开始遍历
-        let nextNode = this.nextElementSibling;
-
-        // 遍历后续的兄弟节点
-        while (nextNode) {
-            // 检查节点是否是auto-form元素
-            if (nextNode.tagName.toLowerCase() === 'auto-form') {
-                return nextNode as HTMLElement;
-            }
-            nextNode = nextNode.nextElementSibling;
-        }
-
-
-        // 如果没有找到则返回null
-        return null;
-    }
-    onToggleDark(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            // @ts-ignore
-            ele.dark = e.target.checked;
-        }
-    }
-    onChangelabelPos(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            // @ts-ignore
-            ele.labelPos = e.target.value;
-        }
-    }
-    onToggleGridLine(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            // @ts-ignore
-            ele.grid = e.target.checked;
-        }
-    }
-    onToggleReadonly(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            if (e.target.checked) {
-                ele.setAttribute('readonly', "");
-            } else {
-                ele.removeAttribute('readonly');
-            }
-        }
-    }
-    onToggleAdvanced(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            if (e.target.checked) {
-                ele.setAttribute('advanced', "");
-            } else {
-                ele.removeAttribute('advanced');
-            }
-        }
-    }
-    onChangeViewAlign(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            ele.setAttribute('viewAlign', e.target.value);
-        }
-    }
-    onChangeGroup(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            ele.setAttribute('group', e.target.value);
-        }
-    }
-    onChangeSize(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            ele.setAttribute('size', e.target.value);
-        }
-    }
-    onToggleView(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            if (e.target.checked) {
-                ele.setAttribute('viewonly', "");
-            } else {
-                ele.removeAttribute('viewonly');
-            }
-        }
-    }
-
-    onToggleCompact(e) {
-        const ele = this.getNextAutoForm();
-        if (ele) {
-            if (e.target.checked) {
-                ele.setAttribute('compact', "");
-            } else {
-                ele.removeAttribute('compact');
-            }
-        }
-    }
-    getJson() {
-        return {
-            user: {
-                name: '张三',
-                age: 18,
-                admin: true,
-                certificate: 1,
-                email: '<EMAIL>',
-                color: '#ff0000',
-                qrcode: 'www.voerkai18n.com',
-                notes: '输入简历',
-                address: {
-                    city: '北京',
-                    street: '长安街'
-                },
-            },
-            orders: [
-                { id: 1, name: 'iphone12', price: 10000, count: 10000, date: '2021-01-01' },
-                { id: 2, name: 'iphone12', price: 10000, count: 10000, date: '2021-01-01' },
-            ]
-        }
-    }
-    onSubmit() {
-        const form = this.getNextAutoForm() as AutoForm
-        if (form) {
-            form.submit((values, errors) => {
-                console.log("errors=", errors)
-                console.log("values=", JSON.stringify(values))
-            })
-        }
-    }
-
-    onReset() {
-        const form = this.getNextAutoForm() as AutoForm
-        if (form) {
-            form.reset()
-        }
-    }
-    onShowGroup() {
-        const form = this.getNextAutoForm() as AutoForm
-        if (form) {
-            form.group = 'a'
-        }
-    }
-
-    onChangePath() {
-        const form = this.getNextAutoForm() as AutoForm
-        if (form) {
-            form.path = 'a.b.c,b.x'
-        }
-    }
-    onChangeHelpPos(e: any) {
-        const form = this.getNextAutoForm() as AutoForm
-        if (form) {
-            form.setAttribute('helppos', e.target.value);
-        }
-    }
-    render() {
-        return html`
-            <div class="toolbar" style="border: 1px solid #ccc; margin: 1em 0px;position: relative">
-                <div>
-                    <sl-select label="标签位置" style="width:120px;" value="top" @sl-change=${this.onChangelabelPos.bind(this)}>
-                        <sl-option value="top">上方</sl-option>
-                        <sl-option value="left">左侧</sl-option>
-                        <sl-option value="none">隐藏</sl-option>
-                    </sl-select>   
-                    <sl-select label="尺寸" style="width:100px;" value="medium" @sl-change=${this.onChangeSize.bind(this)}>
-                        <sl-option value="small">小</sl-option>
-                        <sl-option value="medium">中</sl-option>
-                        <sl-option value="large">大</sl-option>
-                    </sl-select>   
-                    <sl-select label="帮助信息" style="width:120px;" value="label" @sl-change=${this.onChangeHelpPos.bind(this)}>
-                        <sl-option value="label">标签</sl-option>
-                        <sl-option value="value">值</sl-option>
-                    </sl-select>  
-                    <sl-select label="浏览对齐" style="width:150px;" value="right" @sl-change=${this.onChangeViewAlign.bind(this)}>
-                        <sl-option value="left">左对齐</sl-option>
-                        <sl-option value="center">居中</sl-option>
-                        <sl-option value="right">右对齐</sl-option>
-                    </sl-select> 
-                    <sl-select label="显示组" style="width:120px;" value="right" @sl-change=${this.onChangeGroup.bind(this)}>
-                        <sl-option value="a">A组</sl-option>
-                        <sl-option value="b">B组</sl-option>
-                        <sl-option value="c">C组</sl-option>
-                        <sl-option value="a,b">A,B组</sl-option> 
-                        <sl-option value="b,c">B,C组</sl-option> 
-                        <sl-option value="*">全部</sl-option>
-                    </sl-select>    
-                </div>
-                <div>
-                    <sl-checkbox @click=${this.onToggleDark.bind(this)}>暗色调</sl-checkbox>                    
-                    <sl-checkbox @click=${this.onToggleGridLine.bind(this)}>网格线</sl-checkbox>                    
-                    <sl-checkbox @click=${this.onToggleReadonly.bind(this)}>只读</sl-checkbox>                    
-                    <sl-checkbox @click=${this.onToggleView.bind(this)}>浏览视图</sl-checkbox>                    
-                    <sl-checkbox @click=${this.onToggleCompact.bind(this)}>紧凑模式</sl-checkbox>                    
-                    <sl-checkbox @click=${this.onToggleAdvanced.bind(this)}>高级选项</sl-checkbox>                    
-                </div>
-                <div>
-                    <sl-button @click=${this.onSubmit.bind(this)}>提交</sl-button>
-                    <sl-button @click=${this.onReset.bind(this)}>重置</sl-button>  
-                    <sl-button @click=${this.onChangePath.bind(this)}>改变路径</sl-button>  
-                </div>               
-            </div>
-        `
-    }
-
+declare namespace global {
+    var store: AutoStore<any>
 }
 
-
-declare global {
-    interface HTMLElementTagNameMap {
-        'auto-form-debuger': AutoFormDebuger
-    }
-}

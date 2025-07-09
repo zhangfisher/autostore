@@ -15,8 +15,10 @@ export type AutoFormContext = {
     dark: boolean
     compact: boolean
     invalide: boolean
+    border: 'none' | 'outline' | 'grid'
     size: 'small' | 'medium' | 'large'
     validAt: 'input' | 'lost-focus'
+    layout: 'auto' | 'row' | 'col'
     dirty: boolean
     showInitialError: boolean
 }

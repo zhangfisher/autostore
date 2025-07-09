@@ -336,7 +336,7 @@ export class AutoField<Options = unknown> extends LitElement {
             return html`<div class="label" part="field-label" style="${ifDefined(styleMap(style))}">
             <span class="title">
                 ${this.getLabel()}
-                ${when(labelPos === 'left', () => this.renderHelp(true))}
+                ${when(labelPos === 'left' || ctx.viewonly, () => this.renderHelp(true))}
                 ${this._renderRequiredOption()}
             </span>     
             ${when(labelPos === 'top' && !ctx.viewonly, () => this.renderHelp())}
@@ -498,25 +498,11 @@ export class AutoField<Options = unknown> extends LitElement {
             ? this.parent?.getPath() as string[]
             : this.options.path
     }
-    /**
-     * 当表单字段更新时通过变更
-     * 
-     * 此操作后会
-     * - 从input中读取数据
-     * - 将数据写入state
-     * 
-     */
-    noticeChange() {
-        if (this.context.validAt === 'input') {
-
-        }
-    }
-
     render() {
         const ctx = this.context
         const labelPos = this.options.labelPos ? this.options.labelPos : ctx.labelPos
         this.classs.use(ctx.size, {
-            grid: ctx.grid,
+            [`${ctx.border}-border`]: true,
             error: this.isShowError(),
             'left-label': labelPos === 'left' || ctx.viewonly,
             'top-label': labelPos === 'top' && !ctx.viewonly,
@@ -526,18 +512,18 @@ export class AutoField<Options = unknown> extends LitElement {
             compact: this.compact === undefined ? ctx.compact : this.compact,
             required: this.options.required === true,
             hidden: !this.options.visible,
-            [`view-${ctx.viewAlign}`]: true
+            [`view-${ctx.viewAlign}`]: true,
+            [`${ctx.layout}-layout`]: true
         })
         return html`           
             <div class="autofield">
-                ${this.options.divider ? html`<sl-divider></sl-divider>` : null
-            }
+                ${this.options.divider ? html`<sl-divider></sl-divider>` : null}
                 ${this.renderLabel()}
                 <div class="value" part="field-value">
                     ${when(ctx.viewonly,
-                () => this.renderView(),
-                () => this.renderValue()
-            )}
+            () => this.renderView(),
+            () => this.renderValue()
+        )}
                 </div>                            
             </div>
         `

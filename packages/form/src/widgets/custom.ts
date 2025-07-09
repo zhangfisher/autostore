@@ -78,7 +78,6 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
     @query('.container')
     container?: any
 
-
     content: HTMLElement | null = null
 
     customValue: any
@@ -96,7 +95,6 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
             this.ownerDocument.body.appendChild(this.content)
         }
     }
-
     _onShowPopup() {
         if (this.content) {
             this.container?.appendChild(this.content);
