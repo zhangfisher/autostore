@@ -15,35 +15,41 @@
     <body>
         <div style="display: flex">
             <auto-form id="form"></auto-form>
-            <div id="viewer" style="border: 1px solid #ccc; padding: 1em"></div>
         </div>
+
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
             const store = new AutoStore({
                 user: {
-                    age: configurable(1, {
-                        label: '年龄',
-                        help: '输入男或女',
-                        toInput: (value) => {
-                            return value === 1 ? '男' : '女';
-                        },
-                        toState: (value) => {
-                            return value === '男' ? 1 : 0;
-                        },
+                    a: configurable('a', {
+                        label: 'A',
+                        help: 'order=5',
+                        order: 5,
+                    }),
+                    b: configurable('b', {
+                        label: 'B',
+                        help: 'order=4',
+                        order: 4,
+                    }),
+                    c: configurable('c', {
+                        label: 'C',
+                        help: 'order=3',
+                        order: 3,
+                    }),
+                    d: configurable('d', {
+                        label: 'D',
+                        help: 'order=2',
+                        order: 2,
+                    }),
+                    e: configurable('e', {
+                        label: 'E',
+                        help: 'order=1',
+                        order: 1,
                     }),
                 },
             });
             const form = document.querySelector('#form');
             form.bind(store);
-
-            const updateJsonViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state, null, 2);
-            };
-            store.watch(() => {
-                updateJsonViewer();
-            });
-            updateJsonViewer();
         </script>
     </body>
 </html>

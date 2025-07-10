@@ -141,7 +141,7 @@ function createProxy(this: AutoStore<any>, target: any, parentPath: string[], pr
                 }
                 return success;
             } else {
-                return false
+                return true
             }
         },
         deleteProperty: (obj, prop) => {

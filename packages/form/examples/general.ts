@@ -1,20 +1,19 @@
 import { customElement, query } from 'lit/decorators.js';
-import { LitElement, PropertyValues, css, html } from 'lit';
+import { LitElement, css, html } from 'lit';
 import type { AutoStore } from 'autostore';
 import type { AutoForm } from '../src/form';
 
 
 @customElement("auto-form-example-general")
 class AutoFormExampleGeneral extends LitElement {
-    static styles = css`
-        `
 
-    @query("#state")
-    stateViewer?: any
-
+    //@ts-ignore
     @query("auto-form")
     form?: AutoForm
 
+    //@ts-ignore
+    @query("#viewer")
+    viewer?: any
 
     firstUpdated() {
         store.watch(() => this.updateState());
@@ -26,7 +25,7 @@ class AutoFormExampleGeneral extends LitElement {
     }
     updateState() {
         // @ts-ignore
-        this.stateViewer.value = JSON.stringify(store.state);
+        this.viewer.value = JSON.stringify(store.state);
     };
 
     updated() {
@@ -39,7 +38,7 @@ class AutoFormExampleGeneral extends LitElement {
             <auto-form-debuger></auto-form-debuger>
             <auto-form path="user"> </auto-form>
         </div>
-        <textarea id="state" rows="10" style="box-sizing: border-box; border: 1px solid #ccc; width: 100%"></textarea>
+        <textarea id="viewer" rows="10" style="box-sizing: border-box; border: 1px solid #ccc; width: 100%"></textarea>
         <div id="errors" style="border: 1px solid #ccc; color: red"></div>
     </div>`
     }

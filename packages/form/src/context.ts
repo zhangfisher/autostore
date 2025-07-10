@@ -11,10 +11,9 @@ export type AutoFormContext = {
     viewonly: boolean
     viewAlign: 'left' | 'center' | 'right'
     helpPos?: 'value' | 'label'
-    grid: boolean                       // 显示网格线
     dark: boolean
     compact: boolean
-    invalide: boolean
+    invalid: boolean
     border: 'none' | 'outline' | 'grid'
     size: 'small' | 'medium' | 'large'
     validAt: 'input' | 'lost-focus'

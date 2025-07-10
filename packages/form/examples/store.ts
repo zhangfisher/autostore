@@ -8,14 +8,24 @@ const store = new AutoStore({
     price: 100,
     count: computed(scope => scope.price * 2),
     transform: {
+        name: configurable('voerkai18n', {
+            label: '姓名',
+            advanced: true,
+            onValidate: (val) => val.length >= 5,
+            // onFail: 'ignore'
+        }),
         age: configurable(1, {
             label: '年龄',
+            required: true,
             toInput: (value) => {
-                return value === 0 ? '男' : '女';
+                return value === 1 ? '男' : '女'
             },
             toState: (value) => {
-                return value === '男' ? 0 : 1;
-            }
+                return value === '男' ? 1 : 0
+            },
+            styles: {
+                '.label': 'color: red;padding: 5px;border:1px solid blue;'
+            },
         })
     },
     a: {
@@ -40,6 +50,7 @@ const store = new AutoStore({
                 label: '内边距',
                 toState: (values) => toPadding(values),
                 group: 'a',
+                required: true,
                 children: [
                     {
                         name: 'top',
@@ -441,7 +452,8 @@ const store = new AutoStore({
             maxLength: 6,
             minLength: 3,
             pill: true,
-            width: "50%"
+            width: "50%",
+            required: true,
         }),
         sex: configurable('男', { label: '性别', widget: 'radio', select: ['男', '女'] }),
         post: configurable('程序员', {

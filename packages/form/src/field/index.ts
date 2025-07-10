@@ -20,6 +20,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { when } from 'lit/directives/when.js';
 import { HostClasses } from '@/controllers/hostClasss';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { applyCustomStyles } from '@/utils/applyCustomStyles';
 
 function getDefaultFieldOptions() {
     return {
@@ -183,8 +184,8 @@ export class AutoField<Options = unknown> extends LitElement {
                     this.requestUpdate()
                 }
             })}>
-                        ${when(item.icon, () => html`<sl-icon name=${ifDefined(item.icon)} slot="prefix"></sl-icon>`)}
-                    ${item.label}</sl-menu-item>`
+                    ${when(item.icon, () => html`<sl-icon name=${ifDefined(item.icon)} slot="prefix"></sl-icon>`)}
+                ${item.label}</sl-menu-item>`
         })}
             </sl-menu>
         </sl-dropdown>
@@ -228,7 +229,7 @@ export class AutoField<Options = unknown> extends LitElement {
         if (option.loading) {
             return html`<sl-spinner></sl-spinner>`
         } else {
-            return html`${render ? render(option.value) : option.value}</div>`
+            return html`${render ? render(this.options.required) : this.options.required}</div>`
         }
     }
     getLabel() {
@@ -290,19 +291,21 @@ export class AutoField<Options = unknown> extends LitElement {
 
     getInputValue(): any {
         if (!this.input) return ''
-        const datatype = this.options.datatype || 'string'
         let value: any = this.input.value
-        if (datatype === 'number') {
-            value = Number(value)
-        } else if (datatype === 'boolean') {
-            value = Boolean(value)
+        if (typeof (this.options.toState) !== 'function') {
+            const datatype = this.options.datatype || 'string'
+            if (datatype === 'number') {
+                value = Number(value)
+            } else if (datatype === 'boolean') {
+                value = Boolean(value)
+            }
         }
         return value
     }
 
     _renderRequiredOption() {
         return this.renderOption('required', (val) => {
-            return val ? html`<span style='color:red;padding:2px;'>*</span>` : ''
+            return val ? html`<span style='color:red;'>*</span>` : ''
         })
     }
 
@@ -497,6 +500,11 @@ export class AutoField<Options = unknown> extends LitElement {
         return (this.options.path && this.options.path.length === 0)
             ? this.parent?.getPath() as string[]
             : this.options.path
+    }
+    updated() {
+        if (this.options.styles) {
+            applyCustomStyles(this.shadow as unknown as HTMLElement, this.options.styles)
+        }
     }
     render() {
         const ctx = this.context

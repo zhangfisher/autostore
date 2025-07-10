@@ -156,7 +156,7 @@ export default defineConfig({
                     items: [
                         { text: '表单', link: '/zh/form/guide/form' },
                         { text: '字段', link: '/zh/form/guide/field' },
-                        { text: '校验', link: '/zh/form/guide/dirty' },
+                        { text: '校验', link: '/zh/form/guide/validate' },
                         { text: '脏检查', link: '/zh/form/guide/dirty' },
                         { text: '提交表单', link: '/zh/form/guide/submit' },
                     ]

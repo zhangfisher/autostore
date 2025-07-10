@@ -9,41 +9,36 @@
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
         <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
-        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
     </head>
 
-    <body>
+    <body style="overflow: hidden">
         <div style="display: flex">
             <auto-form id="form"></auto-form>
-            <div id="viewer" style="border: 1px solid #ccc; padding: 1em"></div>
         </div>
+
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
             const store = new AutoStore({
-                user: {
-                    age: configurable(1, {
-                        label: '年龄',
-                        help: '输入男或女',
-                        toInput: (value) => {
-                            return value === 1 ? '男' : '女';
+                product: {
+                    name: configurable('voerkai18n', {
+                        label: '产品名称',
+                        styles: {
+                            '.label': 'color: red;padding: 5px;margin:1em 0px; border: 1px solid red;border-radius: 5px;',
                         },
-                        toState: (value) => {
-                            return value === '男' ? 1 : 0;
+                    }),
+                    homepage: configurable('https://zhangfisher.github.io/voerka-i18n/', {
+                        label: '官网',
+                        widget: 'url',
+                        styles: {
+                            'sl-input': {
+                                border: '1px solid red',
+                            },
                         },
                     }),
                 },
             });
             const form = document.querySelector('#form');
             form.bind(store);
-
-            const updateJsonViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state, null, 2);
-            };
-            store.watch(() => {
-                updateJsonViewer();
-            });
-            updateJsonViewer();
         </script>
     </body>
 </html>

@@ -1,17 +1,17 @@
 import { isPathMatched } from "../utils";
 import { createEventEmitterScope } from "./scope";
-import { EventDefines } from "./types";
+import type { EventDefines } from "./types";
 
-export type EventHandler<T,P> = (payload:P,type:T)=>void
-export type EventListener = { off:()=>void }
-export type EventHandlerList = Array<EventHandler<any,any>>; 
- 
+export type EventHandler<T, P> = (payload: P, type: T) => void
+export type EventListener = { off: () => void }
+export type EventHandlerList = Array<EventHandler<any, any>>;
 
 
-export class EventEmitter<Events extends EventDefines>{     
-    private _listeners = new Map< keyof Events,EventHandlerList>()
-    
-    get listeners(){ return this._listeners }
+
+export class EventEmitter<Events extends EventDefines> {
+    private _listeners = new Map<keyof Events, EventHandlerList>()
+
+    get listeners() { return this._listeners }
 
     /**
      * 订阅事件
@@ -24,32 +24,32 @@ export class EventEmitter<Events extends EventDefines>{
      * @param handler 
      * @returns 
      */
-    
-    on<T extends keyof Events>(event: T, handler: EventHandler<T,Events[T]>,prepend ?:boolean):EventListener
-    on<P=any>(event: '**', handler: EventHandler<keyof Events,P>,prepend ?:boolean):EventListener
-    on<P=any>(event: string, handler: EventHandler<string,P>):EventListener
-    on():EventListener{
+
+    on<T extends keyof Events>(event: T, handler: EventHandler<T, Events[T]>, prepend?: boolean): EventListener
+    on<P = any>(event: '**', handler: EventHandler<keyof Events, P>, prepend?: boolean): EventListener
+    on<P = any>(event: string, handler: EventHandler<string, P>): EventListener
+    on(): EventListener {
         const event = arguments[0]
         const handler = arguments[1]
         const prepend = arguments[2]
         let phandler = handler
         // 当订阅时包含了通配符时，就需要订阅所有事件，然后在事件触发时判断是否匹配
-        if(event==='**'){
-            this.addHandler("*",phandler,prepend)
-        }else if(String(event).includes('*')){  
-            phandler = (payload:any,type:any)=>{ 
-                if(isPathMatched(type,event)){
-                    handler(payload,type)
+        if (event === '**') {
+            this.addHandler("*", phandler, prepend)
+        } else if (String(event).includes('*')) {
+            phandler = (payload: any, type: any) => {
+                if (isPathMatched(type, event)) {
+                    handler(payload, type)
                 }
             }
-            this.addHandler("*",phandler,prepend)
-        }else{
-            this.addHandler(event,phandler,prepend)
-        }               
-        return {
-            off:()=>this.off(event,phandler)
+            this.addHandler("*", phandler, prepend)
+        } else {
+            this.addHandler(event, phandler, prepend)
         }
-    } 
+        return {
+            off: () => this.off(event, phandler)
+        }
+    }
     /**
      * 向指定类型的事件添加事件处理程序。
      * @template T - 事件类型的键，必须是 Events 接口中的一个键。
@@ -57,32 +57,32 @@ export class EventEmitter<Events extends EventDefines>{
      * @param {EventHandler<Events[T]>} handler - 事件处理程序函数，它接受一个参数，该参数的类型是 Events 接口中对应 type 键的值的类型。
      * @param {boolean} [prepend=false] - 可选参数，如果为 true，则将处理程序添加到列表的开头，否则添加到末尾。这会影响事件的触发顺序。
      */
-    private addHandler<T extends  keyof Events>(type:  keyof Events, handler: EventHandler<T,Events[T]>,prepend ?:boolean){
-        const handlers: EventHandlerList | undefined = this._listeners.get(type);        
+    private addHandler<T extends keyof Events>(type: keyof Events, handler: EventHandler<T, Events[T]>, prepend?: boolean) {
+        const handlers: EventHandlerList | undefined = this._listeners.get(type);
         if (handlers) {
-            if(prepend){
-                handlers.unshift(handler) 
-            }else{
+            if (prepend) {
+                handlers.unshift(handler)
+            } else {
                 handlers.push(handler);
-            }            
+            }
         } else {
             this._listeners!.set(type, [handler]);
         }
     }
 
-    once<T extends  keyof Events>(type: T, handler: EventHandler<T,Events[T]>) :EventListener{
-        const plistener = (payload:Events[T],type:T) => {
-            try{
-                handler(payload,type as T)
-            }finally{            
-                this.off(type,plistener)
+    once<T extends keyof Events>(type: T, handler: EventHandler<T, Events[T]>): EventListener {
+        const plistener = (payload: Events[T], type: T) => {
+            try {
+                handler(payload, type as T)
+            } finally {
+                this.off(type, plistener)
             }
-        }  
-        return this.on<T>(type,plistener)
+        }
+        return this.on<T>(type, plistener)
     }
 
-    off<T extends  keyof Events>(type: T, handler?: EventHandler<T,Events[T]> | undefined){ 
-        if(String(type).includes("*")) type="*" as any
+    off<T extends keyof Events>(type: T, handler?: EventHandler<T, Events[T]> | undefined) {
+        if (String(type).includes("*")) type = "*" as any
         const handlers: EventHandlerList | undefined = this._listeners.get(type);
         if (handlers) {
             if (handler) {
@@ -91,8 +91,8 @@ export class EventEmitter<Events extends EventDefines>{
                 this._listeners.set(type, []);
             }
         }
-    }  
-    offAll(){
+    }
+    offAll() {
         this._listeners.clear()
     }
     /**
@@ -104,8 +104,8 @@ export class EventEmitter<Events extends EventDefines>{
      * @param before  将事件处理器添加到事件处理器列表的前面
      * @returns 
      */
-    onAny(handler:EventHandler<string,any>){ 
-        return this.on('**',handler) 
+    onAny(handler: EventHandler<string, any>) {
+        return this.on('**', handler)
     }
 
     /**
@@ -123,51 +123,51 @@ export class EventEmitter<Events extends EventDefines>{
      * 
      * 可以指定超时时间
      */
-    wait<T extends  keyof Events >(filter:(type:T,payload:Events[T])=>boolean | undefined | void,timeout?:number):Promise<Events[T]>
-    wait<T extends  keyof Events>(type:T,timeout?:number):Promise<Events[T]>
-    wait<T extends  keyof Events>():Promise<Events[T]>{
-        const firstArgType = typeof(arguments[0]) 
-        const eventType = firstArgType==='string' ? arguments[0] : undefined
+    wait<T extends keyof Events>(filter: (type: T, payload: Events[T]) => boolean | undefined | void, timeout?: number): Promise<Events[T]>
+    wait<T extends keyof Events>(type: T, timeout?: number): Promise<Events[T]>
+    wait<T extends keyof Events>(): Promise<Events[T]> {
+        const firstArgType = typeof (arguments[0])
+        const eventType = firstArgType === 'string' ? arguments[0] : undefined
         const timeout = arguments[1] || 0
-        const filter = firstArgType==='function' ? firstArgType : undefined
-        let timeId:any 
-        return new Promise<any>((resolve,reject)=>{
-            let listener:EventListener 
-            if(eventType){
-                listener= this.once(eventType,(payload)=>{
+        const filter = firstArgType === 'function' ? firstArgType : undefined
+        let timeId: any
+        return new Promise<any>((resolve, reject) => {
+            let listener: EventListener
+            if (eventType) {
+                listener = this.once(eventType, (payload) => {
                     clearTimeout(timeId)
                     resolve(payload)
                 })
-            }else if(typeof(filter)==='function'){
-                listener= this.onAny((payload,type)=>{                    
-                    const r= (filter as any)(type,payload)
-                    if(r!==false){
+            } else if (typeof (filter) === 'function') {
+                listener = this.onAny((payload, type) => {
+                    const r = (filter as any)(type, payload)
+                    if (r !== false) {
                         listener.off()
-                        clearTimeout(timeId)                                                       
+                        clearTimeout(timeId)
                         resolve(payload)
-                    }               
+                    }
                 })
-            }            
-            if(timeout >0 ){
-                timeId = setTimeout(()=>{
+            }
+            if (timeout > 0) {
+                timeId = setTimeout(() => {
                     listener.off()
                     reject(new Error('timeout'))
-                },timeout)
-            }            
+                }, timeout)
+            }
         })
     }
-    emit<T extends keyof Events>(type:T,payload:Events[T]){ 
+    emit<T extends keyof Events>(type: T, payload: Events[T]) {
         let handlers = this._listeners.get('*');
         if (handlers) {
             handlers.slice()
                 .map((handler) => {
-                    handler(payload,type );
+                    handler(payload, type);
                 })
         }
         handlers = this._listeners.get(type);
         if (handlers) {
             handlers.slice().map((handler) => {
-                handler(payload,type);
+                handler(payload, type);
             })
         }
     }
@@ -193,8 +193,8 @@ export class EventEmitter<Events extends EventDefines>{
      * @param prefix 
      * @returns 
      */
-    scope(prefix:string){
-        return createEventEmitterScope(this,prefix)
+    scope(prefix: string) {
+        return createEventEmitterScope(this, prefix)
     }
 
 

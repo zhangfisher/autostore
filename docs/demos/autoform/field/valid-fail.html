@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden">
+        <div style="display: flex">
+            <auto-form id="form" showInitialError validat="input"></auto-form>
+            <div id="viewer" style="border: 1px solid #ccc; padding: 1em"></div>
+        </div>
+
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                a: configurable('12345', {
+                    label: 'A:用户名',
+                    help: 'pass: 放行写入',
+                    onValidate: (value) => value.length >= 6,
+                    invalidMessage: '用户名长度必须大于等于6',
+                    onFail: 'pass',
+                }),
+                b: configurable('12345', {
+                    label: 'B:用户名',
+                    help: 'throw: 触发错误',
+                    onValidate: (value) => value.length >= 6,
+                    invalidMessage: '用户名长度必须大于等于6',
+                    onFail: 'throw',
+                }),
+                c: configurable('12345', {
+                    label: 'C:用户名',
+                    help: 'ignore: 忽略错误不写入',
+                    onValidate: (value) => value.length >= 6,
+                    invalidMessage: '用户名长度必须大于等于6',
+                    onFail: 'ignore',
+                }),
+                d: configurable('12345', {
+                    label: 'D:用户名',
+                    help: 'throw-pass: 触发错误且写入',
+                    onValidate: (value) => value.length >= 6,
+                    invalidMessage: '用户名长度必须大于等于6',
+                    onFail: 'throw-pass',
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+
+            const updateJsonViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state, null, 2);
+            };
+            store.watch(() => {
+                updateJsonViewer();
+            });
+            updateJsonViewer();
+        </script>
+    </body>
+</html>

@@ -308,6 +308,27 @@ const store = new AutoStore({
 
 <demo html="autoform/form/path.html"/>
 
+### 字段排序
+
+`AutoForm`可以通过`order`参数对字段进行排序，可以指定字段的顺序。按`order`参数值从小到大排列。
+
+```ts
+const store = new AutoStore({
+    user: {
+        username: configurable('NAME', {
+            label: '用户名',
+            order: 2, // [!code ++]
+        }),
+        password: configurable('PASSWORD', {
+            label: '密码',
+            order: 1, // [!code ++]
+        }),
+    },
+});
+```
+
+<demo html="autoform/form/order.html"/>
+
 ### 布局类型
 
 默认情况下，表单对内部的字段采用`inline-block`布局，可以控制表单的布局类型。
@@ -319,3 +340,25 @@ const store = new AutoStore({
 -   `col`: 采用`flex: column`布局
 
 <demo html="autoform/form/layout.html"/>
+
+### 高级字段
+
+`advanced`参数用于标识这是一个高级选项字段，当`advanced==true`时才会显示字段。
+
+```ts
+const store = new AutoStore({
+    user: {
+        username: configurable('NAME', {
+            label: '用户名',
+            advanced: true
+        }),
+        password: configurable('PASSWORD', {
+            label: '密码'
+        }),
+    }
+});
+// 默认显示所有字段，包括advanced字段
+<auto-form ></auto-form> // [!code ++]
+// 显示所有字段，但不显示advanced字段
+<auto-form advanced="false"></auto-form> // [!code ++]
+```

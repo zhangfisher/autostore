@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden">
+        <div style="display: flex">
+            <auto-form id="form"></auto-form>
+        </div>
+
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                network: {
+                    dhcp: configurable(false, {
+                        label: '自动获取IP地址',
+                        widget: 'switch',
+                    }),
+                    ip: configurable('192.168.1.100', {
+                        label: 'IP地址',
+                        widget: 'ipaddress',
+                        enable: (state) => !state.network.dhcp,
+                    }),
+                    mask: configurable('255.255.255.0', {
+                        label: '子网掩码',
+                        widget: 'ipaddress',
+                        visible: (state) => !state.network.dhcp,
+                    }),
+                    gateway: configurable('192.168.1.1', {
+                        label: '默认网关',
+                        widget: 'ipaddress',
+                        enable: (state) => !state.network.dhcp,
+                    }),
+                },
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+        </script>
+    </body>
+</html>

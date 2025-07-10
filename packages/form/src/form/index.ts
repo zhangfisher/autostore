@@ -32,7 +32,7 @@ import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { LitElement, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import type { AutoStore, ComputedState, Dict, SchemaOptions } from 'autostore';
+import { pathStartsWith, type AutoStore, type ComputedState, type Dict, type SchemaOptions } from 'autostore';
 import { context, type AutoFormContext } from '../context'
 import '../components'
 import { provide } from '@lit/context';
@@ -76,8 +76,6 @@ export class AutoForm extends LitElement {
     @property({ type: String, reflect: true })
     group?: string
 
-
-
     /**
      * 指定一个路径，用于过滤状态路径
      * 
@@ -102,7 +100,7 @@ export class AutoForm extends LitElement {
      * 是否显示高级选项 
      */
     @property({ type: Boolean, reflect: true })
-    advanced: boolean = true
+    advanced?: boolean
 
     /**
      * 确定字段校验时机
@@ -112,24 +110,17 @@ export class AutoForm extends LitElement {
      */
     @property({ type: String, reflect: true })
     validAt: 'input' | 'lost-focus' = 'lost-focus'
-
     /**
      * 显示网格线
-     * 
      * border:  none | outline | grid
-     * 
      */
     @property({ type: String, reflect: true })
     border: 'none' | 'outline' | 'grid' = 'grid'
-
     /**
-     * 
      * 显示网络
-     * 
      */
     @property({ type: String })
     size: 'small' | 'medium' | 'large' = 'medium'
-
     /**
      * 标签位置
      * 取值：
@@ -139,44 +130,43 @@ export class AutoForm extends LitElement {
      */
     @property({ type: String, reflect: true })
     labelPos: string = 'top'
-
     @property({ type: String, reflect: true })
     labelWidth?: string = '7em'
-
-
     @property({ type: Boolean, reflect: true })
     dark: boolean = false
-
     /**
      * 只读模式
      */
     @property({ type: Boolean, reflect: true })
     readonly: boolean = false
-
     /**
      * 浏览模式
      */
     @property({ type: Boolean, reflect: true })
     viewonly: boolean = false
-
     /**
      * 浏览模式下，值对齐方式，默认=right
      */
     @property({ type: String, reflect: true })
     viewAlign: 'left' | 'center' | 'right' = 'right'
-
     /**
-     * 
      * 布局
      * - auto：使用inline-block布局,或者叫流式布局
      * - col: 使用flex:col布局
-     * - row: 使用flex:row布局
-     * 
+     * - row: 使用flex:row布局 
      */
     @property({ type: String, reflect: true })
     layout: 'auto' | 'row' | 'col' = 'auto'
 
     _loading: boolean = false
+
+    get dirty() {
+        return this.context.dirty
+    }
+
+    get invalid() {
+        return this.context.invalid
+    }
 
     /**
      * 
@@ -189,7 +179,6 @@ export class AutoForm extends LitElement {
      * 注册图标库
      * 
      * registerIcons((name=?{})>)
-     * 
      * 
      */
     registerIcons(resolver: IconLibraryResolver, options?: Omit<IconLibrary, 'name' | 'resolver'>) {
@@ -215,25 +204,39 @@ export class AutoForm extends LitElement {
             setTimeout(() => this._load())
         }
     }
+    _initialContext() {
+        Object.assign(this.context, {
+            store: this.store,
+            form: this,
+            labelPos: this.labelPos,
+            labelWidth: this.labelWidth,
+            viewAlign: this.viewAlign,
+            border: this.border,
+            group: this.group,
+            advanced: this.advanced,
+            dark: this.dark,
+            dirty: false,
+            invalid: this._isValid(),
+            showInitialError: this.showInitialError
+        })
+    }
+
+    _isValid() {
+        if (this.path) {
+            const errors: Record<string, string> = this.store!.schemas.errors || {}
+            return Object.keys(errors).some((key) => {
+                return pathStartsWith(this.path!.split('.'), key.split('.'))
+            })
+        } else {
+            return Object.keys(this.store!.schemas.errors).length > 0
+        }
+    }
+
     _load(update: boolean = true) {
         if (!this.store) return
         if (this._loading) return
         try {
-            Object.assign(this.context, {
-                store: this.store,
-                form: this,
-                labelPos: this.labelPos,
-                labelWidth: this.labelWidth,
-                viewAlign: this.viewAlign,
-                border: this.border,
-                group: this.group,
-                advanced: this.advanced,
-                dark: this.dark,
-                dirty: false,
-                invalide: Object.keys(this.store!.schemas.errors).length > 0,
-                showInitialError: this.showInitialError
-            })
-
+            this._initialContext()
             const fields = this.path
                 ? this.store!.schemas.find(this.path)
                 : Object.values(this.store!.schemas.store.state) as ComputedState<SchemaOptions>[]
@@ -249,7 +252,6 @@ export class AutoForm extends LitElement {
                     return groups.includes(name)
                 })
             }
-
             this.schemas = Object.values(fields)
                 .filter((schema) => {
                     if (!isGroupMatched(schema)) return false
@@ -263,7 +265,6 @@ export class AutoForm extends LitElement {
         } finally {
             this._loading = false
         }
-
     }
 
     bind(store: AutoStore<Dict>) {
@@ -294,7 +295,9 @@ export class AutoForm extends LitElement {
             dark: this.context.dark,
             [`${this.labelPos}-label`]: true,
             [`view-${this.viewAlign}`]: true,
-            compact: this.compact
+            compact: this.compact,
+            dirty: this.context.dirty,
+            invalid: this.invalid
         })
         return html`            
             <div class="actions header"></div>
@@ -307,6 +310,7 @@ export class AutoForm extends LitElement {
 
     reset() {
         this.store?.reset()
+        this._initialContext()
     }
     submit(callback: (values: Record<string, string>, errors?: Record<string, string>) => void) {
         if (typeof (callback) === 'function') {

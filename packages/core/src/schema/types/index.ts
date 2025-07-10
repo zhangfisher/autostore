@@ -62,7 +62,7 @@ export interface SchemaWidgetTreeNode {
     children?: SchemaWidgetTreeNode[] //Array<SchemaWidgetTreeNode>
 }
 
-export type SchemaWidgetStyles = Record<string, string>
+export type SchemaWidgetStyles = Record<string, string | Record<string, string>>
 export type SchemaWidgetClasss = Record<string, string>
 
 
@@ -127,6 +127,16 @@ export type SchemaWidgetShareOptions<Value, State> = {
     // 用于验证
     invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
     onValidate?: (newValue: Value, oldValue: Value, path: string) => boolean;
+    /**
+     * 
+     * 当校验失败时的行为
+     * 
+     * pass: 继续写入;
+     * ignore: 静默忽略; 
+     * throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
+     * 
+     * 
+     */
     onFail?: 'pass' | 'throw' | 'ignore' | 'throw-pass'
     // 提供一些元数据    
     label?: string

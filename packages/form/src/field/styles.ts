@@ -9,8 +9,7 @@ export default css`
         & > .autofield{
             display: flex;
             position: relative;
-            flex-direction:column;
-            background-color: var(--sl-color-neutral-0);        
+            flex-direction:column;      
             width:100%;        
             padding: calc(var(--auto-spacing) * 0.2) var(--auto-spacing);      
             box-sizing: border-box;

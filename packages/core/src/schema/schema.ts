@@ -44,20 +44,20 @@ type SchemaArgs = {
  * 
  * 
  */
-function markRawActions(actions: SchemaWidgetAction[]) {
-    if (Array.isArray(actions)) {
-        actions.forEach(action => {
-            if (typeof (action) === 'object') {
-                Object.entries(action).forEach(([key, value]) => {
-                    if (key === 'items' || (typeof (value) === 'function' && key.startsWith('on'))) {
-                        //@ts-ignore
-                        action[key] = markRaw(value)
-                    }
-                })
-            }
-        })
-    }
-}
+// function markRawActions(actions: SchemaWidgetAction[]) {
+//     if (Array.isArray(actions)) {
+//         actions.forEach(action => {
+//             if (typeof (action) === 'object') {
+//                 Object.entries(action).forEach(([key, value]) => {
+//                     if (key === 'items' || (typeof (value) === 'function' && key.startsWith('on'))) {
+//                         //@ts-ignore
+//                         action[key] = markRaw(value)
+//                     }
+//                 })
+//             }
+//         })
+//     }
+// }
 
 // 将options里面的on和render开头的函数标识为raw
 function markRawOptions(options: SchemaOptions) {
@@ -91,8 +91,9 @@ function parseSchemaOptions(args: any[]): SchemaArgs {
             onFail: 'throw-pass',
         }, args[1])
     }
-    // 设置默认的widget
-    if (!finalArgs.options.widget) {
+    // 自动推断widget类型，但是如果指定了toInput参数，则不需要自动推断
+    // 因为无法判断toInput对值进行如何转换，所以不需要自动推断widget类型
+    if (!finalArgs.options.widget && typeof (finalArgs.options.toInput) !== 'function') {
         const datatype = typeof (finalArgs.value)
         if (datatype === 'boolean') {
             finalArgs.options.widget = 'checkbox'
