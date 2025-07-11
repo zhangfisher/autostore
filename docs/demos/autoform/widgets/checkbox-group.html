@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: row; postion: relative">
+            <auto-form id="form" labelpos="left"></auto-form>
+            <json-viewer id="viewer" style="width: 40%; padding: 1em"></json-viewer>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                tcpFlags: configurable(3, {
+                    label: 'TCP标识',
+                    widget: 'checkbox-group',
+                    select: [
+                        { label: 'URG', value: 1 },
+                        { label: 'ACK', value: 2 },
+                        { label: 'PSH', value: 4 },
+                        { label: 'RST', value: 8 },
+                        { label: 'SYN', value: 16 },
+                        { label: 'FIN', value: 32 },
+                        { label: 'CRC', value: 64 },
+                    ],
+                    toInput: (value) => {
+                        const vals: number[] = [];
+                        if ((value & 1) > 0) vals.push(1);
+                        if ((value & 2) > 0) vals.push(2);
+                        if ((value & 4) > 0) vals.push(4);
+                        if ((value & 8) > 0) vals.push(8);
+                        if ((value & 16) > 0) vals.push(16);
+                        if ((value & 32) > 0) vals.push(32);
+                        if ((value & 64) > 0) vals.push(64);
+                        return vals;
+                    },
+                    toState: (vals) => {
+                        let value = 0;
+                        if (vals.includes(1)) value += 1;
+                        if (vals.includes(2)) value += 2;
+                        if (vals.includes(4)) value += 4;
+                        if (vals.includes(8)) value += 8;
+                        if (vals.includes(16)) value += 16;
+                        if (vals.includes(32)) value += 32;
+                        if (vals.includes(64)) value += 64;
+                        return value;
+                    },
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.data = Object.assign({}, store.state);
+                jsonViewer.expandAll();
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

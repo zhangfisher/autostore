@@ -183,10 +183,10 @@ store.on('validate', ({
 
 ## 初始化校验
 
-`AutoForm`通过`showInitialError`参数用于配置是否在首次渲染时进行校验并显示校验错误。
+`AutoForm`通过`validAtInit`参数用于配置是否在首次渲染时进行校验并显示校验错误。
 
 ```ts
-<auto-form showInitialError></auto-form>
+<auto-form validAtInit></auto-form>
 ```
 
 ## 校验状态
@@ -200,3 +200,5 @@ store.on('validate', ({
     console.log(form.invalid); // true/false
 </script>
 ```
+
+当表单校验失败时，表单自动添加`invalid`类名。

@@ -2,7 +2,7 @@ import type { ComputedBuilder } from "../../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../../consts"
 import type { AutoStore } from "../../store";
 import type { ComputedState, Dict, GetTypeByPath, MutableRecord, StatePath, ToRawType } from '../../types';
-import type { SchemaCaptchaWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaCombineWidgetOptions, SchemaCustomWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
+import type { SchemaCaptchaWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaCombineWidgetOptions, SchemaCustomWidgetOptions, SchemaDateTimeWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
 
 
 // 让对象的成员值允许是ComputedBuilder，可计算值 
@@ -180,6 +180,7 @@ export type SchemaOptions<Value = any, State = Dict> = MutableRecord<{
     switch: SchemaSwitchWidgetOptions
     date: SchemaDateWidgetOptions
     time: SchemaTimeWidgetOptions
+    datetime: SchemaDateTimeWidgetOptions
     ipaddress: SchemaIpAddressWidgetOptions
     colorpicker: SchemaColorPickerWidgetOptions
     url: SchemaURLWidgetOptions

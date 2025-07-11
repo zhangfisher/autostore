@@ -153,6 +153,10 @@ const store = new AutoStore({
                 { label: "空白", value: '' }
             ]
         }),
+        datetime: configurable('2025-12-03T09:30', {
+            label: '日期时间',
+            widget: 'datetime'
+        }),
         padding: configurable("10px 5px", {
             widget: 'combine',
             label: '内边距',
@@ -427,6 +431,8 @@ const store = new AutoStore({
             label: '电话号码',
             widget: 'phone',
             clearable: true,
+            pattern: '13[0-9]{9}',
+            maxLength: 11,
             width: '50%'
         }),
         search: configurable('', {

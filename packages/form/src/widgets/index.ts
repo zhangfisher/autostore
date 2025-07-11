@@ -7,6 +7,7 @@ export * from "./radio-button";
 export * from "./number";
 export * from "./date";
 export * from "./time";
+export * from "./datetime";
 export * from "./email";
 export * from "./password";
 export * from "./url";

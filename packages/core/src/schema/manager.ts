@@ -84,6 +84,10 @@ export class SchemaManager<
         const key = this._getKey(path)
         return this.validators[key]
     }
+    addValidator(path: string, validator: SchemaValidator) {
+        const key = this._getKey(path)
+        this.validators[key] = validator
+    }
 
     remove(path: keyof SchemaStore['state']) {
         const key = this._getKey(path)

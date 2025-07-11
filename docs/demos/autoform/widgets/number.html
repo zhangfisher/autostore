@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex">
+            <auto-form id="form"></auto-form>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                icon: configurable(123, {
+                    label: '前缀图标',
+                    icon: 'email',
+                    widget: 'number',
+                    help: "icon='email'",
+                }),
+                filled: configurable(123, {
+                    label: '填充背景',
+                    filled: true,
+                    widget: 'number',
+                    help: 'filled=true',
+                }),
+                pill: configurable(123, {
+                    label: '椭圆边框',
+                    pill: true,
+                    widget: 'number',
+                    help: 'pill=true',
+                }),
+                clearable: configurable(1, {
+                    label: '清除按钮',
+                    clearable: true,
+                    widget: 'number',
+                    help: 'clearable=true',
+                }),
+                actions: configurable(100, {
+                    label: '动作',
+                    widget: 'number',
+                    actions: [
+                        {
+                            label: '默认值',
+                            onClick: (value, { update }) => {
+                                update(100);
+                            },
+                        },
+                        {
+                            label: '测试',
+                            icon: 'email',
+                            onClick: (value, { update }) => {
+                                alert('点击了');
+                            },
+                        },
+                        {
+                            label: '测试',
+                            icon: 'email',
+                            pos: 'before',
+                            onClick: (value, { action, update }) => {
+                                alert('点击了' + action.label);
+                            },
+                        },
+                    ],
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+        </script>
+    </body>
+</html>

@@ -25,7 +25,8 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
             name="${this.name}"
             data-path = ${this.path}
             value="${this.options.switchValues[0]}"   
-            .checked =${this._isChecked()}    
+            .checked =${this._isChecked()}                
+            ?disabled=${!this.options.enable}
             size="${ifDefined(this.context.size)}"    
             placeholder="${ifDefined(this.options.placeholder)}"
             @sl-input=${this.onFieldInput.bind(this)}
@@ -37,8 +38,8 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
         if (this.options.checkLabel) {
             return this.options.checkLabel
         } else {
-            if (typeof (this.value) === 'boolean') return ''
-            return this.options.switchValues[this.value === this.options.switchValues[0] ? 0 : 1]
+            const label = this.options.switchValues[this.value === this.options.switchValues[0] ? 0 : 1]
+            return typeof (label) === 'boolean' ? '' : label
         }
     }
     getInitialOptions() {
@@ -47,7 +48,11 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
         }
     }
     _isChecked() {
-        return this.value === this.options.switchValues[0]
+        if (typeof (this.value) === 'boolean') {
+            return this.options.switchValues[this.value ? 0 : 1]
+        } else {
+            return this.value === this.options.switchValues[0]
+        }
     }
     getInputValue() {
         return this.input.checked ? this.options.switchValues[0] : this.options.switchValues[1]

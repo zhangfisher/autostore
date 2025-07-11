@@ -343,7 +343,7 @@ const store = new AutoStore({
 
 ### 高级字段
 
-`advanced`参数用于标识这是一个高级选项字段，当`advanced==true`时才会显示字段。
+`advanced`参数用于标识这是一个高级选项字段，当`advanced`时才会显示字段。
 
 ```ts
 const store = new AutoStore({
@@ -360,5 +360,23 @@ const store = new AutoStore({
 // 默认显示所有字段，包括advanced字段
 <auto-form ></auto-form> // [!code ++]
 // 显示所有字段，但不显示advanced字段
-<auto-form advanced="false"></auto-form> // [!code ++]
+<auto-form advanced></auto-form> // [!code ++]
 ```
+
+:::warning 提示
+`advanced`参数用于当创建配置表单时，有时需要指定一些配置项是高级选项，仅在高级选项打开时才显示。
+:::
+
+### 表单是否修改
+
+当表单数据进行了更新后，会为表单增加一个`dirty`类，用于标识表单是否被修改过。
+
+```ts
+<auto-form class="dirty"></auto-form>
+```
+
+也可以通过读取`form.dirty`值来查看表单是否被修改过。
+
+### 重置表单
+
+可以通过`reset`方法重置表单。

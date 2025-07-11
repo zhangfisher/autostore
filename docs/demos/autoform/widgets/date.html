@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex">
+            <auto-form id="form"></auto-form>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                icon: configurable('2025-12-12', {
+                    label: '前缀图标',
+                    widget: 'date',
+                    help: "icon='email'",
+                    width: '50%',
+                }),
+                filled: configurable('2025-12-12', {
+                    label: '填充背景',
+                    filled: true,
+                    widget: 'date',
+                    width: '50%',
+                    pattern: 'yyyy/MM/dd',
+                    help: 'filled=true',
+                }),
+                pill: configurable('2025-12-12', {
+                    label: '指定日期范围',
+                    pill: true,
+                    widget: 'date',
+                    width: '50%',
+                    help: '通过max,min指定',
+                    min: '2025-01-01',
+                    max: '2025-12-30',
+                }),
+                clearable: configurable('2025/12/12', {
+                    label: '清除按钮',
+                    clearable: true,
+                    widget: 'date',
+                    width: '50%',
+                    pattern: '\d{4}/\d{2}/\d{2}',
+                    help: 'clearable=true',
+                }),
+                actions: configurable('2025-12-12', {
+                    label: '动作',
+                    widget: 'date',
+                    actions: [
+                        {
+                            label: '默认值',
+                            onClick: (value, { update }) => {
+                                update('2025/12/1');
+                            },
+                        },
+                        {
+                            label: '测试',
+                            icon: 'email',
+                            onClick: (value, { update }) => {
+                                alert('点击了');
+                            },
+                        },
+                        {
+                            label: '测试',
+                            icon: 'email',
+                            pos: 'before',
+                            onClick: (value, { action, update }) => {
+                                alert('点击了' + action.label);
+                            },
+                        },
+                    ],
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+        </script>
+    </body>
+</html>

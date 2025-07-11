@@ -19,7 +19,7 @@ export type AutoFormContext = {
     validAt: 'input' | 'lost-focus'
     layout: 'auto' | 'row' | 'col'
     dirty: boolean
-    showInitialError: boolean
+    validAtInit: boolean
 }
 
 export const context = createContext<AutoFormContext>('autoform');

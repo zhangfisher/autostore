@@ -43,6 +43,7 @@ import '../field'
 import styles from './styles'
 import { presetIcons } from './icons';
 import { renderWidget } from '@/utils/renderWidget';
+import { applyClass } from '@/utils/applyClass';
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {
@@ -71,7 +72,7 @@ export class AutoForm extends LitElement {
      * 
      */
     @property({ type: Boolean, reflect: true })
-    showInitialError: boolean = false
+    validAtInit: boolean = false
 
     @property({ type: String, reflect: true })
     group?: string
@@ -217,7 +218,7 @@ export class AutoForm extends LitElement {
             dark: this.dark,
             dirty: false,
             invalid: this._isValid(),
-            showInitialError: this.showInitialError
+            validAtInit: this.validAtInit
         })
     }
 
@@ -311,6 +312,8 @@ export class AutoForm extends LitElement {
     reset() {
         this.store?.reset()
         this._initialContext()
+        applyClass(this, 'dirty', false)
+        applyClass(this, 'invalid', false)
     }
     submit(callback: (values: Record<string, string>, errors?: Record<string, string>) => void) {
         if (typeof (callback) === 'function') {

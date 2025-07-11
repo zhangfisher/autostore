@@ -18,8 +18,7 @@ class AutoFormExampleGeneral extends LitElement {
     firstUpdated() {
         store.watch(() => this.updateState());
         store.on('validate', () => {
-            const ele = document.querySelector('#errors');
-            ele!.innerHTML = JSON.stringify(store.schemas.errors);
+            this.viewer.innerHTML = JSON.stringify(store.schemas.errors);
         });
         this.updateState()
     }

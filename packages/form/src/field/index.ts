@@ -21,6 +21,7 @@ import { when } from 'lit/directives/when.js';
 import { HostClasses } from '@/controllers/hostClasss';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { applyCustomStyles } from '@/utils/applyCustomStyles';
+import { applyClass } from '@/utils/applyClass';
 
 function getDefaultFieldOptions() {
     return {
@@ -350,7 +351,7 @@ export class AutoField<Options = unknown> extends LitElement {
         return html``
     }
     isShowError() {
-        if (this.context.showInitialError) {
+        if (this.context.validAtInit) {
             return !!this.invalidMessage
         } else { // 不显示
             return this.dirty ? !!this.invalidMessage
@@ -456,6 +457,14 @@ export class AutoField<Options = unknown> extends LitElement {
         return this.options.labelPos || this.context.labelPos
     }
     /**
+     * 当字段更新时，同步更新表单的类或样
+     */
+    _updateFormClasss() {
+        if (!this.context.form) return
+        applyClass(this.context.form, 'dirty', this.dirty)
+        applyClass(this.context.form, 'invalid', !!this.invalidMessage)
+    }
+    /**
      * 当输入框值改变时更新状态
      * @returns 
      */
@@ -487,6 +496,8 @@ export class AutoField<Options = unknown> extends LitElement {
             }))
         } catch (e: any) {
             this.invalidMessage = e.message
+        } finally {
+            this._updateFormClasss()
         }
     }
     renderValue() {

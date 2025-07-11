@@ -157,7 +157,6 @@ export default defineConfig({
                         { text: '表单', link: '/zh/form/guide/form' },
                         { text: '字段', link: '/zh/form/guide/field' },
                         { text: '校验', link: '/zh/form/guide/validate' },
-                        { text: '脏检查', link: '/zh/form/guide/dirty' },
                         { text: '提交表单', link: '/zh/form/guide/submit' },
                     ]
                 },
@@ -168,6 +167,7 @@ export default defineConfig({
                         { text: 'Number', link: '/zh/form/guide/fields/number' },
                         { text: 'Date', link: '/zh/form/guide/fields/date' },
                         { text: 'Time', link: '/zh/form/guide/fields/time' },
+                        { text: 'DateTime', link: '/zh/form/guide/fields/datetime' },
                         { text: 'Phone', link: '/zh/form/guide/fields/phone' },
                         { text: 'Email', link: '/zh/form/guide/fields/email' },
                         { text: 'Url', link: '/zh/form/guide/fields/url' },

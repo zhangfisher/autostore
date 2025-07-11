@@ -13,6 +13,7 @@ export type SchemaWidgetTypes = 'input'
     | 'checkbox-group'
     | 'switch'
     | 'date'
+    | 'datetime'
     | 'time'
     | 'ipaddress'
     | 'colorpicker'
@@ -120,8 +121,12 @@ export type SchemaSwitchWidgetOptions = {
 }
 
 export type SchemaDateWidgetOptions = Omit<SchemaInputWidgetOptions,
-    'inputType' | 'min' | 'max' | 'maxLength' | 'minLength' | 'pattern'
+    'inputType' | 'maxLength' | 'minLength'
 >
+export type SchemaDateTimeWidgetOptions = Omit<SchemaInputWidgetOptions,
+    'inputType' | 'maxLength' | 'minLength'
+>
+
 export type SchemaTimeWidgetOptions = Omit<SchemaInputWidgetOptions,
     'inputType' | 'min' | 'max' | 'maxLength' | 'minLength' | 'pattern'
 >

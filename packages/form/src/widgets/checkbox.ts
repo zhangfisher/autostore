@@ -40,7 +40,11 @@ export class AutoFieldCheckbox extends AutoField<AutoFieldCheckboxOptions> {
         }
     }
     _isChecked() {
-        return this.value === this.options.switchValues[0]
+        if (typeof (this.value) === 'boolean') {
+            return this.options.switchValues[this.value ? 0 : 1]
+        } else {
+            return this.value === this.options.switchValues[0]
+        }
     }
     getInputValue() {
         return this.input.checked ? this.options.switchValues[0] : this.options.switchValues[1]
@@ -49,8 +53,8 @@ export class AutoFieldCheckbox extends AutoField<AutoFieldCheckboxOptions> {
         if (this.options.checkLabel) {
             return this.options.checkLabel
         } else {
-            if (typeof (this.value) === 'boolean') return ''
-            return this.options.switchValues[this.value === this.options.switchValues[0] ? 0 : 1]
+            const label = this.options.switchValues[this.value === this.options.switchValues[0] ? 0 : 1]
+            return typeof (label) === 'boolean' ? '' : label
         }
     }
     renderView() {
