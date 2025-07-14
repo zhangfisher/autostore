@@ -35,8 +35,6 @@ export type AutoTreeSelectOptions = {
     valueKey: string    // 用于值
     labelKey: string    // 用于显示,默认为label 
     multiple: boolean
-    maxItems: number
-    minItems: number
     onlySelectLeaf: boolean             //只选择叶子节点    
     // 是否在选择项显示为路径, =true，则使用labelKey组成路径
     showAsPath: boolean

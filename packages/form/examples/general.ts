@@ -1,5 +1,5 @@
 import { customElement, query } from 'lit/decorators.js';
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 import type { AutoStore } from 'autostore';
 import type { AutoForm } from '../src/form';
 

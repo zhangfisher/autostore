@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc"></div>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                certificate: configurable(1, {
+                    label: '证件类型',
+                    widget: 'radio',
+                    select: [
+                        { label: '身份证', value: 1 },
+                        { label: '护照', value: 2 },
+                        { label: '军官证', value: 3 },
+                        { label: '其他', value: 4 },
+                    ],
+                }),
+                layout: configurable('卡片集', {
+                    // divider: true,
+                    label: '布局',
+                    required: true,
+                    widget: 'radio',
+                    itemWidth: '33.33%',
+                    card: true,
+                    select: [
+                        { label: '简约风', tips: '极简设计，突出内容' },
+                        { label: '经典式', tips: '传统布局，平衡稳重' },
+                        { label: '卡片集', tips: '模块卡片，灵活组合' },
+                        { label: '瀑布流', enable: false, tips: '动态滚动，视觉延展' },
+                        { label: '分屏式', tips: '双栏对比，高效浏览' },
+                        { label: '导航型', tips: '侧边主导，层级清晰' },
+                        { label: '全屏化', tips: '沉浸体验，无界视觉' },
+                        { label: '网格阵', tips: '整齐排列，规整直观' },
+                        { label: '自由板', tips: '可拖拽，随心布局' },
+                    ],
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

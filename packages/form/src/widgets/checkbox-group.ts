@@ -35,8 +35,10 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
             sl-checkbox::part(base){
                 font-size: var(--auto-font-size);
             }
-        } 
-        
+        }         
+        sl-icon::part(svg){
+            stroke-width: 1; 
+        }
         .card{      
             padding: calc(var(--auto-spacing) * 0.3);
             box-sizing: border-box;             
@@ -62,15 +64,16 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                     color: var(--sl-color-gray-500);
                     padding: 0.5em;
                     padding-top: 0px;
-                    padding-left: 0px;
-                    font-size: var(--auto-font-size);
+                    padding-left: 0px; 
+                    font-size: calc(2 * var(--auto-font-size));
                 }
                 sl-checkbox::part(label){
                     margin-left: 0px;                    
                     font-size: var(--auto-font-size);
                 }
                 sl-checkbox::part(form-control-help-text){
-                    max-height: 2.4em; 
+                    max-height: 2.5em; 
+                    line-height:120%;
                     overflow: hidden;
                 }
                 sl-checkbox::part(control){
@@ -162,7 +165,7 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 data-value="${item[this.valueKey]}"
                 .value="${item[this.valueKey]}" 
                 .checked=${this.value.includes(item[this.valueKey])} 
-                help-text="${item.memo}"
+                help-text="${item.tips}"
                 @sl-change=${this._onCheckChange.bind(this)}
             > ${item.label}</sl-checkbox> 
         `

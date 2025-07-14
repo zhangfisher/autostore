@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc"></div>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                products: configurable(['电脑'], {
+                    label: '产品',
+                    onValidate: (value) => {
+                        return value.length > 2;
+                    },
+                    widget: 'list',
+                    group: 'b',
+                    multiple: true,
+                    valueKey: 'label',
+                    labelKey: 'label',
+                    invalidMessage: '至少选择两个产品',
+                    renderItem: '<span>{label}</span><span style="color:red;">{price}</span>',
+                    height: '250px',
+                    showResults: true,
+                    select: [
+                        { id: 1, label: '手机', price: 1000, icon: 'phone' },
+                        { id: 2, label: '电脑', price: 2000, icon: 'laptop' },
+                        { id: 3, label: '手表', price: 3000, icon: 'watch' },
+                        { id: 4, label: '耳机', price: 4000, icon: 'headphones' },
+                        { id: 5, label: '鼠标', price: 5000, icon: 'mouse' },
+                        { id: 6, label: '键盘', price: 6000, icon: 'keyboard' },
+                        { id: 7, label: '鼠标垫', price: 7000, icon: 'mousepad' },
+                        { id: 8, label: 'U盘', price: 8000, icon: 'usb' },
+                        { id: 9, label: '硬盘', price: 9000, icon: 'hdd' },
+                        { id: 10, label: '内存', price: 10000, icon: 'memory' },
+                        { id: 11, label: '硬盘盒', price: 11000, icon: 'hdd-box' },
+                        { id: 12, label: '固态硬盘', price: 12000, icon: 'ssd' },
+                        { id: 13, label: '机械硬盘', price: 13000, icon: 'hdd' },
+                        { id: 14, label: '显卡', price: 14000, icon: 'gpu' },
+                        { id: 15, label: '蓝牙耳机', price: 15000, icon: 'bluetooth' },
+                        { id: 16, label: '电视', price: 16000, icon: 'tv' },
+                        { id: 17, label: '空调', price: 17000, icon: 'air-conditioner' },
+                        { id: 18, label: '冰箱', price: 18000, icon: 'fridge' },
+                        { id: 19, label: '洗衣机', price: 19000, icon: 'washing-machine' },
+                        { id: 20, label: '微波炉', price: 20000, icon: 'microwave-oven' },
+                        { id: 21, label: '电饭煲', price: 21000, icon: 'rice-cooker' },
+                        { id: 22, label: '电风扇', price: 22000, icon: 'fan' },
+                        { id: 23, label: '电吹风', price: 23000, icon: 'hair-dryer' },
+                        { id: 24, label: '吸尘器', price: 24000, icon: 'vacuum-cleaner' },
+                    ],
+                    actions: [
+                        {
+                            label: '计算总价',
+                            pos: 'before',
+                            onClick: (value, ctx) => {
+                                alert(value);
+                            },
+                        },
+                        {
+                            label: '产品主页',
+                            onClick: (value, ctx) => {},
+                        },
+                    ],
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

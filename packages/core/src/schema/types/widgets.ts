@@ -63,6 +63,7 @@ export type SchemaSelectWidgetOptions = {
     filled?: boolean
     multiple?: boolean
     select: (SchemaWidgetSelectItem | string)[]
+    renderItem?: string | ((item: SchemaWidgetSelectItem) => string)
 }
 export type SchemaTextareaWidgetOptions = {
     rows?: number
@@ -78,16 +79,16 @@ export type SchemaRangeWidgetOptions = {
     min?: number
     step?: number
     tooltip?: 'top' | 'bottom' | 'none'
-    tooltipFormatter?: (val: number) => string
-    format?: string
 }
 export type SchemaRadioWidgetOptions = {
     card?: boolean
     itemWidth?: number | string
     select: (SchemaWidgetSelectItem | string | number)[]
+    valueKey?: string
 }
 export type SchemaRadioButtonWidgetOptions = {
     pill?: boolean
+    valueKey?: string
 }
 export type SchemaCaptchaWidgetOptions = {
     url?: string                      // 获取验证码图片的地址
@@ -104,6 +105,8 @@ export type SchemaVerifyCodeWidgetOptions = {
 }
 export type SchemaRatingWidgetOptions = {
     size?: 'small' | 'medium' | 'large'
+    max?: number
+    precision?: number
 }
 export type SchemaCheckboxWidgetOptions = {
     switchValues?: any[]
@@ -185,8 +188,6 @@ export type SchemaTreeSelectWidgetOptions = {
     idKey?: string
     valueKey?: string
     labelKey?: string
-    maxItems?: number
-    minItems?: number
     multiple?: boolean
     showAsPath?: boolean
     onlySelectLeaf?: boolean
@@ -209,11 +210,9 @@ export type SchemaListWidgetOptions = {
     multiple?: boolean
     showIcon?: boolean
     valueKey?: string    // 用于值
-    labelKey?: string    // 用于显示,默认为label  
-    maxItems?: number
-    minItems?: number
+    labelKey?: string    // 用于显示,默认为label   
     showResults?: boolean
-    itemTemplate?: string
+    renderItem?: string | ((item: SchemaWidgetSelectItem) => string)
 }
 
 // 自定义
@@ -242,8 +241,6 @@ export type SchemaUploadWidgetOptions = {
      * 当删除文件时传入
      */
     onRemove?: (file: string | SchemaUploadWidgetFile) => Promise<void> | void
-    // 返回预览内容
-    onPreview?: (file: string) => string
     /**
      * 指定如何选取文件
      * button: 显示一个上传选择文件按钮

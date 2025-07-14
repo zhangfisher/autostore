@@ -333,15 +333,15 @@ const store = new AutoStore({
             itemWidth: '33.33%',
             card: true,
             select: [
-                { label: '简约风', description: '极简设计，突出内容' },
-                { label: '经典式', description: '传统布局，平衡稳重' },
-                { label: '卡片集', description: '模块化卡片，灵活组合' },
-                { label: '瀑布流', enable: false, description: '动态滚动，视觉延展' },
-                { label: '分屏式', description: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
-                { label: '导航型', description: '侧边主导，层级清晰' },
-                { label: '全屏化', description: '沉浸体验，无界视觉' },
-                { label: '网格阵', description: '整齐排列，规整直观' },
-                { label: '自由板', description: '可拖拽定制，随心布局' }
+                { label: '简约风', tips: '极简设计，突出内容' },
+                { label: '经典式', tips: '传统布局，平衡稳重' },
+                { label: '卡片集', tips: '模块化卡片，灵活组合' },
+                { label: '瀑布流', enable: false, tips: '动态滚动，视觉延展' },
+                { label: '分屏式', tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                { label: '导航型', tips: '侧边主导，层级清晰' },
+                { label: '全屏化', tips: '沉浸体验，无界视觉' },
+                { label: '网格阵', tips: '整齐排列，规整直观' },
+                { label: '自由板', tips: '可拖拽定制，随心布局' }
             ]
         }),
         useLayout: configurable(['经典式', '全屏化'], {
@@ -352,15 +352,15 @@ const store = new AutoStore({
             group: 'b',
             card: true,
             select: [
-                { label: '简约风', description: '极简设计，突出内容' },
-                { label: '经典式', description: '传统布局，平衡稳重' },
-                { label: '卡片集', description: '模块化卡片，灵活组合' },
-                { label: '瀑布流', enable: false, description: '动态滚动，视觉延展' },
-                { label: '分屏式', description: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
-                { label: '导航型', description: '侧边主导，层级清晰' },
-                { label: '全屏化', description: '沉浸体验，无界视觉' },
-                { label: '网格阵', description: '整齐排列，规整直观' },
-                { label: '自由板', description: '可拖拽定制，随心布局' }
+                { label: '简约风', icon: 'globe', tips: '极简设计，突出内容' },
+                { label: '经典式', icon: 'user', tips: '传统布局，平衡稳重' },
+                { label: '卡片集', icon: 'phone', tips: '模块化卡片，灵活组合' },
+                { label: '瀑布流', icon: 'search', enable: false, tips: '动态滚动，视觉延展' },
+                { label: '分屏式', icon: 'datetime', tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                { label: '导航型', icon: 'email', tips: '侧边主导，层级清晰' },
+                { label: '全屏化', icon: 'error', tips: '沉浸体验，无界视觉' },
+                { label: '网格阵', icon: 'settings', tips: '整齐排列，规整直观' },
+                { label: '自由板', icon: 'date', tips: '可拖拽定制，随心布局' }
             ]
         }),
         products: configurable(['电脑'], {
@@ -374,9 +374,9 @@ const store = new AutoStore({
             valueKey: 'label',     // 默认选择的是id
             labelKey: 'label',     // 用于显示，当showResults为true时，显示的是label
             invalidMessage: '至少选择两个产品',
-            itemTemplate: "<span>{label}</span><span>{price}</span>",
             height: '250px',
             showResults: true,// 是否显示结果框
+            renderItem: "<span>{label}</span><span>{price}</span>",
             select: [
                 { id: 1, label: "手机", price: 1000, icon: "phone" },
                 { id: 2, label: "电脑", price: 2000, icon: "laptop" },
@@ -402,7 +402,21 @@ const store = new AutoStore({
                 { id: 22, label: "电风扇", price: 22000, icon: "fan" },
                 { id: 23, label: "电吹风", price: 23000, icon: "hair-dryer" },
                 { id: 24, label: "吸尘器", price: 24000, icon: "vacuum-cleaner" },
-            ]
+            ],
+            actions: [
+                {
+                    label: '计算总价',
+                    pos: 'before',
+                    onClick: (value, ctx) => {
+                        alert(value);
+                    },
+                },
+                {
+                    label: '帮助',
+                    pos: 'after',
+                    onClick: (value, ctx) => { },
+                },
+            ],
         }),
         salary: configurable(3000, {
             label: '工资',
@@ -465,7 +479,36 @@ const store = new AutoStore({
         post: configurable('程序员', {
             label: '职业',
             widget: 'select',
-            select: ['程序员', '教师', '医生', '其他']
+            renderItem: (item) => `<span>${item.label}</span><span>${item.salary}</span>`,
+            select: [
+                { label: '程序员', icon: 'square-code', salary: 8700 },
+                { label: '教师', icon: 'user-round-pen', salary: 6200 },
+                { label: '医生', icon: 'graduation-cap', salary: 12200 },
+                { label: '律师', icon: 'scale', salary: 33400 },
+                { label: '其他', icon: 'contact', salary: 5200 }]
+        }),
+        accessories: configurable(['耳机'], {
+            label: '电脑配件',
+            multiple: true,
+            renderItem: "<span>{label}</span><span>{price}</span>",
+            select: [
+                { id: 1, label: "手机", price: 1000, icon: "phone" },
+                { id: 2, label: "电脑", price: 2000, icon: "laptop" },
+                { id: 3, label: "手表", price: 3000, icon: "watch" },
+                { id: 4, label: "耳机", price: 4000, icon: "headphones" },
+                { id: 5, label: "鼠标", price: 5000, icon: "mouse" },
+                { id: 6, label: "键盘", price: 6000, icon: "keyboard" },
+                { id: 8, label: "U盘", price: 8000, icon: "usb" },
+                { id: 13, label: "机械硬盘", price: 13000, icon: "hdd" },
+                { id: 14, label: "显卡", price: 14000, icon: "gpu" },
+                { id: 15, label: "蓝牙耳机", price: 15000, icon: "bluetooth" },
+            ],
+            actions: [
+                { label: '产品网站', pos: 'before' },
+                { label: '增加' },
+                { label: '减少' },
+                { label: '清空' },
+            ]
         }),
         ip: configurable('192.168.6.112', { label: '网络地址', widget: 'ipaddress' }),
         access: configurable(false, {
@@ -477,9 +520,7 @@ const store = new AutoStore({
             widget: 'tree-select',
             multiple: true,
             valueKey: 'label',     // 默认选择的是id
-            onlySelectLeaf: false,      // 只选择叶子节点
-            // maxItems: 3,    // 最多选择3个
-            // minItems:1
+            onlySelectLeaf: false,      // 只选择叶子节点 
             items: orgTree,
             // onSelectionChange: (selection) => {}
         }),

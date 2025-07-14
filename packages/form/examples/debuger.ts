@@ -1,6 +1,6 @@
 import { css, html, LitElement } from "lit";
 import { customElement } from "lit/decorators.js";
-import { AutoForm } from "../src/form";
+import type { AutoForm } from "../src/form";
 
 @customElement("auto-form-debuger")
 class AutoFormDebuger extends LitElement {
@@ -48,8 +48,11 @@ class AutoFormDebuger extends LitElement {
     onToggleDark(e) {
         const ele = this.getNextAutoForm();
         if (ele) {
-            // @ts-ignore
-            ele.dark = e.target.checked;
+            if (e.target.checked) {
+                ele.setAttribute('dark', "");
+            } else {
+                ele.removeAttribute('dark');
+            }
         }
     }
     onChangelabelPos(e) {

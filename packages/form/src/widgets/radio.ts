@@ -19,13 +19,16 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             align-items: center;
             flex-wrap: wrap;
             padding: 0.2em;
+        }         
+        sl-icon::part(svg){
+            stroke-width: 1; 
         }
         sl-radio{            
             position: relative;
             & .memo{
                 color: var(--sl-color-gray-500);
                 font-size: 0.8em;
-                max-height: 2.2em; 
+                max-height: 2.8em; 
                 overflow: hidden;
                 display: -webkit-box;
                 margin-top:2px;
@@ -104,7 +107,8 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
     getInitialOptions(): Record<string, any> {
         return {
             card: false,
-            select: []
+            select: [],
+            valueKey: 'value'
         }
     }
     renderOptionItemWithCard(option: any, item: any) {
@@ -130,14 +134,14 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
         if (this.options.card) this.requestUpdate()
     }
     renderOptionItem(item: any) {
-        const value = item.value || item.label
+        const value = item[this.options.valueKey]
         return html`<sl-radio 
             value="${value}"
             style=${styleMap({
             width: this.options.card === undefined ? this.options.itemWidth : undefined
         })}
             ?disabled=${!this.options.enable}
-        >${item.label}<br/><span class="memo">${item.memo}</span></sl-radio>`
+        >${item.label}<br/><span class="memo">${item.tips}</span></sl-radio>`
     }
     renderInput() {
         const items = this.options.select.map((item: any) => {

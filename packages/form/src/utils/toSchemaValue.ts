@@ -27,6 +27,8 @@ export function toSchemaValue<T = any>(value: any, schema?: SchemaOptions): T {
         return toStringValue(value) as T
     }
     if (datatype === 'number') return Number(value) as T
+    if (Array.isArray(value)) return [...value] as T
+    if (typeof (value) === 'object') return { ...value } as T
     if (typeof value === 'string') {
         if (datatype === 'boolean') {
             return (value.toLowerCase() === 'true') as T

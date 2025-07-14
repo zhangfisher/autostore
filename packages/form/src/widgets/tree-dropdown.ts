@@ -133,6 +133,7 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect<AutoFieldTreeDrop
             @sl-show="${this._onShowPopup.bind(this)}" 
             @sl-after-hide="${this._onHidePopup.bind(this)}" 
             sync="width"
+            hoist
         >
             ${this.renderSelection()}
             <div>

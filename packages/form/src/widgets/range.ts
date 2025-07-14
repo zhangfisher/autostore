@@ -32,8 +32,8 @@ export class AutoFieldRabge extends AutoField<AutoFieldRangeOptions> {
                 display: flex;
                 align-items: center;
                 & :first-child{
-                    padding: 1rem;
-                    padding-left:0.1rem;
+                    padding: 0 1em;
+                    padding-left:0.1em;
                 }
                 & :last-child{
                     flex-grow: 1;
@@ -46,9 +46,7 @@ export class AutoFieldRabge extends AutoField<AutoFieldRangeOptions> {
             max: 100,
             min: 0,
             step: 1,
-            tooltip: 'top',
-            tooltipFormatter: undefined,
-            format: undefined
+            tooltip: 'top'
         }
     }
     renderInput() {
@@ -65,8 +63,7 @@ export class AutoFieldRabge extends AutoField<AutoFieldRangeOptions> {
                 .max=${this.options.max}
                 .min=${this.options.min}
                 .step=${this.options.step}
-                .tooltip=${this.options.tooltip}
-                .tooltipFormatter=${this.options.tooltipFormatter}
+                .tooltip=${this.options.tooltip} 
                 @sl-input=${this.onFieldInput.bind(this)}
                 @sl-change=${this.onFieldChange.bind(this)}
             >

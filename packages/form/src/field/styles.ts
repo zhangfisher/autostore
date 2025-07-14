@@ -12,12 +12,12 @@ export default css`
             flex-direction:column;      
             width:100%;        
             padding: calc(var(--auto-spacing) * 0.2) var(--auto-spacing);      
+            background-color: var(--auto-bgcolor);
             box-sizing: border-box;
             padding-right: 0px;
             &>.label{
                 display: flex;   
                 color: var(--auto-text-color);   
-                font-weight: 600;                             
                 &>.title{
                     font-size: var(--auto-font-size);
                     flex-grow: 1;
@@ -52,6 +52,10 @@ export default css`
             background-color: var(--sl-color-gray-50);
         } 
         sl-input::part(base){
+            outline: none!important;
+            box-shadow: none!important;
+        }
+        sl-textarea::part(base){
             outline: none!important;
             box-shadow: none!important;
         }

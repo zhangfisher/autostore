@@ -7,7 +7,7 @@ export default css`
         position: relative;
         flex-direction:column;
         width:100%;         
-        font-family:"Microsoft YaHei",微软雅黑,"MicrosoftJhengHei",华文细黑,STHeiti,MingLiu;
+        font-family:"Microsoft YaHei",华文细黑,微软雅黑,"MicrosoftJhengHei",STHeiti,MingLiu;
         & > .fields{
             & > * {
                 width: 100%;
@@ -72,5 +72,4 @@ export default css`
             }
         }
     }
-    
 `

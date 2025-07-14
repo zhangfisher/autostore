@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc"></div>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                stars: configurable(3, {
+                    label: '评分',
+                    widget: 'range',
+                }),
+                maxstars: configurable(3, {
+                    label: '最大评分',
+                    max: 10,
+                    widget: 'range',
+                    toView: (value) => `${value}分`,
+                }),
+                halfstars: configurable(5, {
+                    label: '音量',
+                    max: 100,
+                    step: 5,
+                    toView: (value) => `${value}%`,
+                    widget: 'range',
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

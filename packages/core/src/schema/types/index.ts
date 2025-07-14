@@ -107,7 +107,7 @@ export type SchemaWidgetSelectItem<Value = any> = ({
     id?: any
     label?: string
     value?: ToRawType<Value>
-    description?: string
+    tips?: string
     help?: string
     default?: boolean
     enable?: boolean

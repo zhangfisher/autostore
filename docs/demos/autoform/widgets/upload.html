@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                files: configurable(['aaa.png', 'b.pdf', '/updates/a.png'], {
+                    label: '上传图片',
+                    widget: 'upload',
+                    url: 'api/upload',
+                    placeholder: '请选择规格为128*128的相片',
+                    fileFieldName: 'files',
+                    help: '上传文件支持.pnp,.jpg,不能大于5M',
+                    preview: true,
+                    // multiple: false,
+                    // 当删除文件时向服务器发起删除请求
+                    onRemove: async (file) => {
+                        await delay(2000);
+                        console.log('delete file:', file);
+                    },
+                    actions: [
+                        {
+                            label: '验证',
+                            icon: 'clipboard',
+                            onClick: (value, { update }) => {
+                                console.log('Action click:', value);
+                                update(value + '*');
+                            },
+                            variant: 'primary',
+                        },
+                        {
+                            label: '前面',
+                            pos: 'before',
+                            icon: 'atom',
+                            onClick: (args) => {
+                                console.log('Action click:', args);
+                            },
+                        },
+                    ],
+                }),
+                file: configurable(
+                    { url: '/public/uploads/d.jpg' },
+                    {
+                        label: '上传图片',
+                        widget: 'upload',
+                        url: 'api/upload',
+                        placeholder: '请选择图片',
+                        fileFieldName: 'files',
+                        multiple: false,
+                        // selector: 'rectangle',
+                        // 当删除文件时向服务器发起删除请求
+                        onRemove: (file) => {},
+                    },
+                ),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

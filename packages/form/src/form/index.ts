@@ -21,20 +21,20 @@
  *  </voerka-form>
  * 
  */
+import "../themes/light.css"
+import "../themes/dark.css"
 
-// import '@shoelace-style/shoelace/dist/themes/dark.css'
-// import '@shoelace-style/shoelace/dist/themes/light.css'
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/divider/divider.js';
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import '@shoelace-style/shoelace/dist/components/spinner/spinner.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import { LitElement, html } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { pathStartsWith, type AutoStore, type ComputedState, type Dict, type SchemaOptions } from 'autostore';
 import { context, type AutoFormContext } from '../context'
-import '../components'
 import { provide } from '@lit/context';
 import { type IconLibrary, type IconLibraryResolver, registerIconLibrary } from '@shoelace-style/shoelace/dist/components/icon/library.js';
 import { ContextController } from '@/controllers/context';
@@ -44,6 +44,7 @@ import styles from './styles'
 import { presetIcons } from './icons';
 import { renderWidget } from '@/utils/renderWidget';
 import { applyClass } from '@/utils/applyClass';
+import '../components'
 
 @customElement('auto-form')
 export class AutoForm extends LitElement {

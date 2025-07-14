@@ -25,7 +25,19 @@ export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions>
             padding: 0.2em;
         }
     `] as any
-
+    getInitialOptions() {
+        return {
+            valueKey: 'value'
+        }
+    }
+    renderRadioItem(item: any) {
+        const value = item[this.options.valueKey]
+        return html`<sl-radio-button
+            value="${value}"
+            ?pill=${this.options.pill}
+            ?disabled =${!this.options.enable}
+        >${item.label}</sl-radio-button>`
+    }
     renderInput() {
         const items = this.getOptionValue('select', []).map((item: any, index: number) => {
             const selectItem: any = {}
@@ -44,10 +56,7 @@ export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions>
             @sl-input=${this.onFieldInput.bind(this)}
             @sl-change=${this.onFieldChange.bind(this)}
         >
-        ${items.map((item: any) => html`<sl-radio-button
-            value="${item.value}"
-            ?disabled =${!this.options.enable}
-        >${item.label}</sl-radio-button>`)}
+        ${items.map((item: any) => this.renderRadioItem(item))}
         </sl-radio-group> 
         `
     }

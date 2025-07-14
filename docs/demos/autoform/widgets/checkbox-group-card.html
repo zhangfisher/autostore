@@ -13,9 +13,9 @@
     </head>
 
     <body style="overflow: hidden; padding: 1em 0px">
-        <div style="display: flex; flex-direction: row; postion: relative">
-            <auto-form id="form" labelpos="left"></auto-form>
-            <json-viewer id="viewer" style="width: 40%; padding: 1em"></json-viewer>
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form"></auto-form>
+            <div id="viewer" style="padding: 1em"></div>
         </div>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
@@ -23,6 +23,7 @@
                 product: configurable([], {
                     label: '产品',
                     widget: 'checkbox-group',
+                    card: true,
                     select: [
                         { label: '产品1', value: 1 },
                         { label: '产品2', value: 2 },
@@ -32,14 +33,16 @@
                 tcpFlags: configurable(3, {
                     label: 'TCP标识',
                     widget: 'checkbox-group',
+                    card: true,
+                    itemWidth: '33.33%',
                     select: [
-                        { label: 'URG', value: 1 },
-                        { label: 'ACK', value: 2 },
-                        { label: 'PSH', value: 4 },
-                        { label: 'RST', value: 8 },
-                        { label: 'SYN', value: 16 },
-                        { label: 'FIN', value: 32 },
-                        { label: 'CRC', value: 64 },
+                        { label: 'URG', value: 1, icon: 'help', tips: '紧急指针' },
+                        { label: 'ACK', value: 2, icon: 'error', tips: '确认号' },
+                        { label: 'PSH', value: 4, icon: 'email', tips: '推送数据' },
+                        { label: 'RST', value: 8, icon: 'user', tips: '连接重置' },
+                        { label: 'SYN', value: 16, icon: 'globe', tips: '同步序列号' },
+                        { label: 'FIN', value: 32, icon: 'phone', tips: '释放连接' },
+                        { label: 'CRC', value: 64, icon: 'datetime', tips: '校验和' },
                     ],
                     toInput: (value) => {
                         const vals = [];
@@ -69,8 +72,7 @@
             form.bind(store);
             const refreshViewer = () => {
                 const jsonViewer = document.getElementById('viewer');
-                jsonViewer.data = Object.assign({}, store.state);
-                jsonViewer.expandAll();
+                jsonViewer.innerHTML = JSON.stringify(store.state);
             };
             store.watch(refreshViewer);
             refreshViewer();

@@ -80,7 +80,7 @@ export class AutoField<Options = unknown> extends LitElement {
      * =false时则不会监听状态变更
      */
     @property({ type: Boolean, reflect: true })
-    noreactive?: boolean
+    noreactive?: boolean = false
 
     @property({ type: Boolean, reflect: true })
     compact?: boolean

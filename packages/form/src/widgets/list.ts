@@ -26,8 +26,6 @@ export type AutoListOptions = {
     valueKey: string    // 用于值
     labelKey: string    // 用于显示,默认为label 
     multiple: boolean
-    maxItems: number
-    minItems: number
 }
 export type AutoFieldListOptions = Required<SchemaListWidgetOptions>
 
@@ -39,6 +37,10 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             sl-menu-item[checked]{
                 background-color: var(--sl-color-primary-100);                
             } 
+            .header{
+                padding:4px  0px ;
+                padding-bottom:8px;
+            }
             .footer{
                 padding:4px  0px ;
                 padding-top:8px;
@@ -50,6 +52,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                     text-align: right;
                     font-size: var(--sl-font-size-small);
                     color: var(--sl-color-neutral-400);
+                    padding: 0px 1em;
                 }
             }
             sl-menu-item::part(label){
@@ -189,11 +192,14 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             return list
         }
     }
-    _getItemLabel(item: ListItem, template: string | undefined) {
-        if (template) {
-            return html`${unsafeHTML(template.replace(/\{(.+?)\}/g, (_: string, key: string) => {
+    _renderItem(item: ListItem) {
+        const renderItem = this.options.renderItem
+        if (typeof (renderItem) === 'string') {
+            return html`${unsafeHTML(renderItem.replace(/\{(.+?)\}/g, (_: string, key: string) => {
                 return item[key]
             }))}`
+        } else if (typeof (renderItem) === 'function') {
+            return html`${unsafeHTML(renderItem(item))}`
         } else {
             return item.label
         }
@@ -214,9 +220,9 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
     }
     setPresetActions() {
         const presetActions = [
-            { id: "all", label: '全选', size: 'small', onClick: () => this._onClickPresetAction('all') },
-            { id: "reverse", label: '反选', size: 'small', onClick: () => this._onClickPresetAction('reverse') },
-            { id: "clear", label: '清空', size: 'small', onClick: () => this._onClickPresetAction('clear') }
+            { id: "all", label: '全选', onClick: () => this._onClickPresetAction('all') },
+            { id: "reverse", label: '反选', onClick: () => this._onClickPresetAction('reverse') },
+            { id: "clear", label: '清空', onClick: () => this._onClickPresetAction('clear') }
         ]
         const toggleAction = (action: any) => {
             for (let i = presetActions.length - 1; i >= 0; i--) {
@@ -241,9 +247,9 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             })
         }
         if (presetActions.length > 0) {
-            if (!this.afterActions) this.afterActions = []
+            if (!this.afterActions) this.beforeActions = []
             // @ts-ignore
-            this.afterActions.push(...presetActions)
+            this.afterActions.splice(0, 0, ...presetActions)
         }
     }
     getInputValue() {
@@ -263,6 +269,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             return item.label
         }
     }
+
     renderResults() {
         return html`<div slot="end" 
             class="results mark-err" 
@@ -280,7 +287,6 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
     }
     _renderList() {
         const values = Array.isArray(this.value) ? this.value : [this.value]
-        const itemTemplate = this.options.itemTemplate
         return html`${this._renderWithSplitPanel(html`
             <sl-menu slot="start" class="mark-err" style=${styleMap({ maxHeight: this.options.height })}
             @sl-select=${this._onSelectItem.bind(this)}>
@@ -291,9 +297,12 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                         data-index=${String(index)} 
                         .checked=${isSelected}
                     >                
-                        <auto-box no-border no-padding flex="row" grow="first" style="width:100%;">
-                            ${this._getItemLabel(item, itemTemplate)}
-                        </auto-box>
+                        ${when(item.icon, () => {
+                return html`<sl-icon slot="prefix" name="${item.icon}"></sl-icon>`
+            })}
+                        <magic-flex no-border no-padding flex="row" style="width:100%;">
+                            ${this._renderItem(item)}
+                        </magic-flex>
                     </sl-menu-item>`
         })}
             </sl-menu>`)} `
@@ -307,10 +316,10 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
     }
     _renderFooter() {
         return html`<div class="footer">
-            ${this.renderAfterActions()}            
+            ${this.renderAfterActions()}          
             <span class="detail">
                 ${this.selection.length}/${this.items.length}
-            </span>
+            </span>           
         </div>`
     }
     renderInput() {
