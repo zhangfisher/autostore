@@ -5,6 +5,8 @@ import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { when } from "lit/directives/when.js"
 import { classMap } from "lit/directives/class-map.js"
+import { cache } from 'lit/directives/cache.js';
+import { keyed } from 'lit/directives/keyed.js';
 
 export type AutoFieldCustomOptions = Required<SchemaCustomWidgetOptions>
 
@@ -69,7 +71,8 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
     getInitialOptions(): Record<string, any> {
         return {
             placeholder: '请选择',
-            dropdown: false
+            dropdown: false,
+            inputSelectors: 'input'
         }
     }
     @state()
@@ -78,69 +81,41 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
     @query('.container')
     container?: any
 
-    content: HTMLElement | null = null
-
-    customValue: any
-
     connectedCallback(): void {
         super.connectedCallback()
-        this.content = this.ownerDocument.querySelector(this.options.content)
-        this.customValue = this.value
         this._onCustomInput()
     }
-    disconnectedCallback(): void {
-        super.disconnectedCallback()
-        if (this.content) {
-            this.content.style.display = 'none'
-            this.ownerDocument.body.appendChild(this.content)
-        }
-    }
     _onShowPopup() {
-        if (this.content) {
-            this.container?.appendChild(this.content);
-            this.content.style.display = 'block'
-        }
         this.active = true
     }
     _onHidePopup() {
         this.active = false
     }
-    /**
-     * 
-     */
     _onCustomInput() {
-        this.content?.addEventListener('auto-input', (e: Event) => {
-            // @ts-ignore
-            this.customValue = e.detail.value
+        this.addEventListener('input', () => {
             this.onFieldInput()
         })
     }
-
-    firstUpdated() {
-        if (this.content && !this.options.dropdown) {
-            const valueEle = this.shadow.querySelector('.value')
-            if (valueEle) {
-                valueEle.appendChild(this.content);
-            }
-            this.content.style.display = 'block'
-        }
-    }
-
     getInputValue() {
-        return this.customValue
+        const inputs = Array.from(this.shadowRoot!.querySelectorAll(this.options.inputSelectors))
+        const values = inputs.map(input => {
+            return (input as any).value
+        })
+        return values
     }
 
-    renderCustomValue() {
-        return html`<span class="custom-value">${unsafeHTML(this.options.toRender ? this.options.toRender(this.customValue) : this.customValue)}</span>`
-    }
     renderSelection() {
         return html`    
             <div class="selection" slot="trigger">              
-                ${when(!this.customValue && this.options.placeholder
+                ${when(!this.value && this.options.placeholder
             , () => html`<span class='placeholder'>${this.options.placeholder}</span>`)}
-                ${this.renderCustomValue()}
+                <span class="custom-value">
+                ${unsafeHTML(this.options.renderSelection ?
+                this.options.renderSelection(this.value) : this.value)}
+                </span>
                 <span class='suffix'>
-                    <sl-icon library="system" 
+                    <sl-icon 
+                        library="system" 
                         class="chevron ${classMap({ active: this.active })}" 
                         name="chevron-down" 
                         aria-hidden="true">
@@ -148,8 +123,11 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
                 </span>  
             </div>`
     }
-    renderCustom() {
-        return html`<div class="container"></div>`
+
+    renderContent() {
+        return html`<div class="container">
+            ${cache(unsafeHTML(this.options.renderContent(this.value)))}
+        </div>`
     }
 
     renderInput() {
@@ -162,11 +140,11 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
                     sync="width"
                 >
                 ${this.renderSelection()}  
-                ${this.renderCustom()}      
+                ${this.renderContent()}      
             </sl-dropdown> 
             `
         } else {
-            return html``
+            return html`${this.renderContent()}`
         }
     }
 }

@@ -13,16 +13,20 @@
 
     <body style="overflow: hidden; padding: 1em 0px">
         <div style="display: flex; flex-direction: column; postion: relative">
-            <auto-form id="form"></auto-form>
+            <auto-form id="form" validat="input"></auto-form>
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
+
             const store = new AutoStore({
-                memo: configurable('产品简介', {
-                    label: '产品简介',
-                    widget: 'textarea',
-                    rows: 5,
+                custom: configurable('AAA', {
+                    label: '自定义',
+                    widget: 'custom',
+                    content: '#custom_panel',
+                    toRender: (value) => {
+                        return `<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;">${value}</span>`;
+                    },
                 }),
             });
             const form = document.querySelector('#form');
@@ -34,5 +38,17 @@
             store.watch(refreshViewer);
             refreshViewer();
         </script>
+
+        <div id="custom_panel" style="display: none; padding: 1rem; height: 3rem">
+            <label>
+                名称:
+                <input id="username" type="text" value="123" />
+            </label>
+            <label>
+                电子邮件:
+                <input id="email" type="email" value="" />
+            </label>
+            <button>提交</button>
+        </div>
     </body>
 </html>

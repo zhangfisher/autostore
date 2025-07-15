@@ -1,24 +1,16 @@
 import { customElement, state } from "lit/decorators.js"
 import { AutoFieldInput } from "./input"
-import { css } from "lit"
+import type { SchemaVerifyCodeWidgetOptions } from "autostore"
 
 
 
 // 短信验证码
 
-export type AutoFieldSmsCaptchaOptions = {
-    onRequest: () => Promise<void> | void
-    timeout: number | [number, number]
-    template: string
-}
-
+export type AutoFieldVerifyCodeOptions = SchemaVerifyCodeWidgetOptions
 @customElement('auto-field-verifycode')
-export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptions> {
+export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldVerifyCodeOptions> {
     static styles = [
         AutoFieldInput.styles,
-        css`
-            
-        `
     ]
 
     @state()
@@ -35,7 +27,7 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptio
     template!: string
 
     sendRequest() {
-        if(this.countdowning) return
+        if (this.countdowning) return
         // 清除现有的计时器（如果有的话）
         if (this.currentTimer) {
             clearTimeout(this.currentTimer);
@@ -101,7 +93,7 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldSmsCaptchaOptio
         this.timeout = Array.isArray(timeout) ? Number(timeout[0]) : Number(timeout)
         this.step = Array.isArray(timeout) ? Number(timeout[1]) : 1000
         this.stepCount = this.timeout / this.step
-        this.template = this.getOptionValue('template', '{timeout}秒后重试')
+        this.template = this.getOptionValue('template', '{timeout}秒后重发')
     }
 }
 

@@ -189,8 +189,8 @@ export default defineConfig({
                         { text: 'Captcha', link: '/zh/form/guide/fields/captcha' },
                         { text: 'VerifyCode', link: '/zh/form/guide/fields/verify-code' },
                         { text: 'IpAddress', link: '/zh/form/guide/fields/ipaddress' },
-                        { text: 'Custom', link: '/zh/form/guide/fields/custom' },
                         { text: 'Combine', link: '/zh/form/guide/fields/combine' },
+                        { text: 'Custom', link: '/zh/form/guide/fields/custom' },
                         { text: 'QrCode', link: '/zh/form/guide/fields/qrcode' },
                     ]
                 },

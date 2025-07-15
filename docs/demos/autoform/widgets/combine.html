@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form" validat="input"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+
+            function parsePadding(padding) {
+                // 默认值
+                const result = {
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    unit: 'px', // 默认单位为 px
+                };
+
+                // 去除空格并按空格分割
+                const parts = padding.trim().split(/\s+/);
+
+                // 解析数值和单位
+                const parseValue = (value) => {
+                    const match = value.match(/^(\d+)([a-z%]*)$/);
+                    if (!match) return 0;
+
+                    // 更新单位（如果未设置，则使用默认值）
+                    if (match[2]) result.unit = match[2];
+                    return parseInt(match[1], 10) || 0;
+                };
+
+                // 根据输入值的数量设置边距
+                switch (parts.length) {
+                    case 1: {
+                        // 单值：所有边距相同
+                        const value = parseValue(parts[0]);
+                        result.top = value;
+                        result.right = value;
+                        result.bottom = value;
+                        result.left = value;
+                        break;
+                    }
+                    case 2: // 双值：上下、左右
+                        result.top = parseValue(parts[0]);
+                        result.right = parseValue(parts[1]);
+                        result.bottom = parseValue(parts[0]);
+                        result.left = parseValue(parts[1]);
+                        break;
+
+                    case 3: // 三值：上、左右、下
+                        result.top = parseValue(parts[0]);
+                        result.right = parseValue(parts[1]);
+                        result.bottom = parseValue(parts[2]);
+                        result.left = parseValue(parts[1]);
+                        break;
+
+                    case 4: // 四值：上、右、下、左
+                        result.top = parseValue(parts[0]);
+                        result.right = parseValue(parts[1]);
+                        result.bottom = parseValue(parts[2]);
+                        result.left = parseValue(parts[3]);
+                        break;
+
+                    default:
+                        throw new Error(`Invalid padding format: "${padding}". Expected 1-4 values.`);
+                }
+
+                return result;
+            }
+            function toPadding(values) {
+                const length = values.length;
+                if (length < 1 || length > 4) {
+                    throw new Error('输入无效：数组长度必须为 1、2、3 或 4。');
+                }
+
+                // 检查是否所有值相同（支持简写）
+                const allEqual = values.every((v) => v === values[0]);
+                if (allEqual) {
+                    return `${values[0]}px`; // 简写为单个值
+                }
+
+                // 标准模式
+                switch (length) {
+                    case 1:
+                        return `${values[0]}px`;
+                    case 2:
+                        return `${values[0]}px ${values[1]}px`;
+                    case 3:
+                        return `${values[0]}px ${values[1]}px ${values[2]}px`;
+                    case 4:
+                        // 检查是否可简写为 2 值模式（上下相同且左右相同）
+                        if (values[0] === values[2] && values[1] === values[3]) {
+                            return `${values[0]}px ${values[1]}px`;
+                        }
+                        return `${values[0]}px ${values[1]}px ${values[2]}px ${values[3]}px`;
+                    default:
+                        throw new Error('意外错误：无效的数组长度。');
+                }
+            }
+            const store = new AutoStore({
+                padding: configurable('10px 5px', {
+                    widget: 'combine',
+                    label: '内边距',
+                    toState: (values) => toPadding(values),
+                    required: true,
+                    children: [
+                        {
+                            name: 'top',
+                            label: '上',
+                            widget: 'range',
+                            width: '50%',
+                            toInput: (value) => parsePadding(value).top,
+                        },
+                        {
+                            name: 'right',
+                            label: '右',
+                            widget: 'range',
+                            width: '50%',
+                            toInput: (value) => parsePadding(value).right,
+                        },
+                        {
+                            name: 'bottom',
+                            label: '下',
+                            widget: 'range',
+                            width: '50%',
+                            toInput: (value) => parsePadding(value).bottom,
+                        },
+                        {
+                            name: 'left',
+                            label: '左',
+                            widget: 'range',
+                            width: '50%',
+                            toInput: (value) => parsePadding(value).left,
+                        },
+                    ],
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

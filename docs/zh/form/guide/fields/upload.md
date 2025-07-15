@@ -127,5 +127,133 @@ type SchemaUploadWidgetFile = {
 
 -   `url`: 上传文件后的网址，可以用于预览。
 -   `id`: 可选的文件唯一标识，如果您在数据库中保存文件上传记录，一般可以返回对应的 id。此值在删除时提供。
--   `title`: 可选的,友好名称
+-   `title`: 可选的,友好名称,用于显示
 -   `size`: 可选的，实际上传大小。
+
+### 删除文件
+
+当单击删除文件时，调用`onRemove`
+
+```ts
+configurable([], {
+    label: '文件',
+    onRemove: (file: SchemaUploadWidgetFile) => {
+        // 在此向服务器发起删除请求
+    },
+});
+```
+
+### 上传数量
+
+支持上传一个文件或多个文件。
+
+```ts
+// 默认上传单个文件
+configurable('', {
+    label: '文件',
+    widget: 'upload',
+});
+// 上传多个文件
+configurable([], {
+    label: '文件',
+    widget: 'upload',
+    multiple: true, //[!code ++]
+});
+```
+
+### 解析上传响应数据
+
+`onResolve`用于对上传文件`API`的结果进行解析。
+
+一般情况下，我们约定，服务器上部署的上传文件 API 应返回`SchemaUploadWidgetFile`.
+
+在旧项目或其他因素下，返回的不是`SchemaUploadWidgetFile`，则需要使用`onResolve`将返回内容解析为`SchemaUploadWidgetFile`.
+
+比如：当`POST http://myserver.com/upload`文件时，返回的是:
+
+```ts
+{
+    file: 'images/a.png';
+}
+```
+
+需要转换为`SchemaUploadWidgetFile`.
+
+```ts
+configurable([], {
+    label: '文件',
+    widget: 'upload',
+    onResolve: (response) => {
+        response.url = response.file;
+        return response;
+    },
+});
+```
+
+### 限制文件类型
+
+`fileTypes`参数用于限制上传的文件类型，可以接受 MIME 类型和文件扩展名,参考[accept](https://developer.mozilla.org/zh-CN/docs/Web/HTML/Reference/Attributes/accept)参数.
+
+```ts
+configurable([], {
+    label: '文件',
+    widget: 'upload',
+    fileTypes: [
+        '.jpg',
+        '.png'，
+        'image/*',
+        'video/*',
+        'audio/*'
+    ],
+});
+```
+
+### 预览
+
+`preview`用于控制是否显示预览，特别是上传图片时。
+
+-   `true`: 代表显示一个默认的预览元素，一般只对图片和视频文件有效
+-   `false`: 代表不预览，只显示文件标题或 url
+-   `字符串`： 代表预览元素大小，默认是"64px";
+
+:::warning 提示
+单击图片时可以放大预览显示。
+:::
+
+### 文件选择器
+
+`selector`用于控制如何选择文件。
+
+-   `auto`: 单选时只显示上传按钮，多选时显示接收文件矩形区域
+-   `button`: 显示一个上传选择文件按钮，单击后选择文件。
+-   `rectangle`: 显示一个接收文件矩形区域，单击后选择文件或者拖动文件到此上传。
+
+### 保存上传数据
+
+默认情况下，上传字段只保存上传文件的`URL`。
+
+如下：
+
+```ts
+const store = new AutoStore({
+    file:configurable('', {
+    label: '文件',
+    widget: 'upload'
+});
+}
+```
+
+-   当上传`abc.jpg`到`api/upload`时，服务器将文件保存在`upload/abc.jpg`，
+-   然后服务器返回`{url:'upload/abc.jpg',size:12984,id:'da1412f3',title:'我的头像'}`（如果不是则应该使用`onResolve`进行解析转换）。
+-   再将`url`写入状态中。即此时`store.state.file==='upload/abc.jpg'`
+
+**也就是说，在`AutoStore`的状态中只保留了上传文件的`url`。**
+
+有时，我们需要在数据中保存更多的信息，包括文件大小，id，title 等。
+
+这时可以配置`onlyFileUrl=false`，则将整个`SchemaUploadWidgetFile`写入状态。
+因此，此时`store.state.file==={url:'upload/abc.jpg',size:12984,id:'da1412f3',title:'我的头像'}`
+
+### tips
+
+配置上传提示信息， 默认是`拖动文件到此处或点击选择文件上传`

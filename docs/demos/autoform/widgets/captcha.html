@@ -12,26 +12,29 @@
     </head>
 
     <body style="overflow: hidden; padding: 1em 0px">
-        <div style="display: flex">
-            <auto-form id="form"></auto-form>
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form" validat="input"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
             const store = new AutoStore({
-                icon: configurable('0595-22181234', {
-                    label: '电话号码',
-                    widget: 'phone',
-                    pattern: '[0-9]{4}-[0-9]{8}',
-                }),
-                filled: configurable('1382525336', {
-                    label: '手机号码',
-                    filled: true,
-                    widget: 'phone',
-                    pattern: '13[0-9]{9}',
+                captcha: configurable('', {
+                    label: '验证码',
+                    url: '/autostore/captcha.png',
+                    maxLength: 6,
+                    help: '单击图片刷新验证码',
+                    widget: 'captcha',
                 }),
             });
             const form = document.querySelector('#form');
             form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
         </script>
     </body>
 </html>

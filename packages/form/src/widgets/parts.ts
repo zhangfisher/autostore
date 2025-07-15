@@ -1,7 +1,6 @@
 import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import { repeat } from "lit/directives/repeat.js"
-import { when } from "lit/directives/when.js"
 import { AutoField } from "@/field"
 import type { SchemaPartsWidgetOptions } from "autostore"
 
@@ -27,6 +26,9 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
                 line-height: 3rem;
                 text-align: center;                
             }
+            sl-input::part(input){
+                text-align: center;
+            }
             sl-input::part(input)::selection{
                 background: none;
             }
@@ -34,37 +36,67 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
                 background-color: var(--sl-color-gray-100);
             }
         `] as any
-    delimiter: string = ""
-    template: string = '0000'
+
     parts: string[] = []
-    result: string = ''
 
     getInitialOptions(): Record<string, any> {
         return {
             template: '0000',
-            delimiter: ''
+            delimiter: '',
+            caseType: 'both',
+            includeDelimiter: true,
+            onlyNumber: false
         }
     }
 
-    _onPartChange(e: any) {
+    _isValidChar(c: string) {
+        if (!this.options.chars) return true
+        return new RegExp(this.options.chars!).test(c)
+    }
+
+    _onKeyDown(e: KeyboardEvent) {
+        // 获取按键的字符
+        const key = e.key;
+        // 如果是功能键（如Backspace、Delete等）或修饰键，允许通过
+        if (key.length !== 1) return;
+        // 检查字符是否有效
+        if (!this._isValidChar(key)) {
+            // 如果无效，阻止默认行为，即阻止字符输入
+            e.preventDefault();
+        }
+        e.stopPropagation()
+    }
+    _onPartInput(e: any) {
         const inputs = Array.from(this.shadow.querySelectorAll('sl-input'))
         const chars = inputs.reduce((prev, input) => {
             prev += input.value
-            return prev
-        }, '')
-        let i: number = 0
-        this.result = Array.from(this.template).map((char: string) => {
-            if (char === this.delimiter) {
-                return char
+            if (this.options.caseType === 'upper') {
+                return prev.toUpperCase();
+            } else if (this.options.caseType === 'lower') {
+                return prev.toLowerCase();
             } else {
-                return chars[i++]
+                return prev
             }
-        }).join('')
+        }, '')
+
+        let charIndex: number = 0
+        this.parts.forEach((part, i) => {
+            if (!this.options.delimiter.includes(part)) {
+                this.parts[i] = chars[charIndex++]
+            }
+        })
         this.onFieldChange()
         this._isLastInput(e)
     }
     getInputValue() {
-        return this.result
+        return this.options.includeDelimiter ?
+            this.parts.join('')
+            : this.parts.reduce((r, cur) => {
+                if (!this.options.delimiter.includes(cur)) {
+                    return `${r}${cur}`
+                }
+                return r
+            }, '')
     }
     _isLastInput(e: Event) {
         const input = e.target as HTMLInputElement;
@@ -82,7 +114,7 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
     _onPaste(e: ClipboardEvent) {
         e.preventDefault(); // 阻止默认粘贴行为 
         const clipboardData = e.clipboardData?.getData('text/plain') || '';
-        const parts = clipboardData.split('')
+        const parts = this._parseParts(clipboardData)
 
         const getNextInput = (input: Element | undefined | null) => {
             if (!input) return
@@ -100,7 +132,7 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
         let inputEle: Element | null | undefined = this.shadow.querySelector('sl-input');
         if (inputEle) {
             for (const part of parts) {
-                if (part === this.options.delimiter) continue
+                if (this.options.delimiter.includes(part)) continue
                 // @ts-ignore  
                 inputEle.value = part
                 inputEle = getNextInput(inputEle)
@@ -110,42 +142,59 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
     }
     connectedCallback(): void {
         super.connectedCallback()
-        this.delimiter = this.options.delimiter
-        this.template = this.options.template
-        this.parts = this.template.split(this.delimiter)
-        this.value.split(this.delimiter).forEach((char: string, i: number) => {
-            this.parts[i] = char
+        this.parts = this._parseParts(this.value)
+    }
+
+    _parseParts(value: string) {
+        const delimiter = this.options.delimiter
+        const template = this.options.template
+        let vIndex: number = 0
+        return Array.from(template).map((char) => {
+            if (delimiter.includes(char)) {
+                if (value[vIndex] === char) {
+                    vIndex++
+                }
+                return char
+            } else {
+                const c = value[vIndex++] || char
+                if (this.options.caseType === 'upper') {
+                    return c.toUpperCase()
+                } else if (this.options.caseType === 'lower') {
+                    return c.toLowerCase()
+                } else {
+                    return c
+                }
+            }
         })
     }
+
     _onPartFocus(e: any) {
         const input = e.target as HTMLInputElement;
         input.select();
     }
     renderPart(part: string) {
-        const chars = part.split('')
-        return html`            
-        ${repeat(chars, (char) => {
-            return html`<sl-input        
-                maxLength = "1"
-                .value=${char} 
-                noSpinButtons
-                autocorrect="off"
-                autocomplete="off"
-                spellcheck="false"
-                @paste=${(e: ClipboardEvent) => this._onPaste(e)}
-                @sl-focus=${this._onPartFocus.bind(this)}
-                @sl-input=${this._onPartChange.bind(this)}></sl-input>`
-
-        })}`
+        return html`<sl-input        
+            maxLength = "1"
+            .value=${part} 
+            noSpinButtons
+            autocorrect="off"
+            autocomplete="off"
+            spellcheck="false"
+            @paste=${(e: ClipboardEvent) => this._onPaste(e)}
+            @sl-focus=${this._onPartFocus.bind(this)}
+            @keydown=${this._onKeyDown.bind(this)}
+            @sl-input=${this._onPartInput.bind(this)}></sl-input>`
     }
+
     renderInput() {
         return html`
             <magic-flex grow="none" align="center" gap="0.5em">
-                ${repeat(this.parts, (part: string, index: number) => {
-            return html`                    
-                        ${this.renderPart(part)}
-                        ${when(index < this.parts.length - 1, () => html`${this.delimiter}`)}
-                        `
+                ${repeat(this.parts, (part: string) => {
+            if (this.options.delimiter.includes(part)) {
+                return html`${part}`
+            } else {
+                return this.renderPart(part)
+            }
         })}
             </magic-flex>
         `

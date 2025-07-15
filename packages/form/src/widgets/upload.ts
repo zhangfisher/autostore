@@ -225,7 +225,8 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
             tips: '拖动文件到此处或点击选择文件上传',
             onResolve: this._defaultFileResolver.bind(this),
             onFileLabel: this._getDefaultFileLabel.bind(this),
-            selector: 'auto'
+            selector: 'auto',
+            onlyFileUrl: true
         }
     }
     _getDefaultFileLabel(file: string | SchemaUploadWidgetFile) {
@@ -539,10 +540,19 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
 
     getInputValue() {
         if (this.options.multiple) {
-            return this.files.map(file => file.value)
+            const files = this.files.map(file => file.value)
+            return this.options.onlyFileUrl ?
+                files.map(file => typeof (file) === 'object' ? file.url : file)
+                : files
         } else {
-            return this.files.length > 0 ? this.files[0].value : undefined
+            const file = this.files.length > 0 ? this.files[0].value : undefined
+            if (file) {
+                return this.options.onlyFileUrl
+                    ? (typeof (file) === 'object' ? file.url : file)
+                    : file
+            }
         }
+
     }
 
     getStateValue() {

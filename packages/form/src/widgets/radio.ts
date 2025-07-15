@@ -113,7 +113,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
     }
     renderOptionItemWithCard(option: any, item: any) {
         if (this.options.card) {
-            const value = item.value || item.label
+            const value = item[this.options.valueKey] || item.label
             const isSelected = this.value === value
             return html`<div class="card"
                 style=${styleMap({
@@ -134,7 +134,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
         if (this.options.card) this.requestUpdate()
     }
     renderOptionItem(item: any) {
-        const value = item[this.options.valueKey]
+        const value = item[this.options.valueKey] || item.label
         return html`<sl-radio 
             value="${value}"
             style=${styleMap({

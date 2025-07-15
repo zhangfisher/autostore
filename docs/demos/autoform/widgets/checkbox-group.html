@@ -9,13 +9,12 @@
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
         <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
-        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
     </head>
 
     <body style="overflow: hidden; padding: 1em 0px">
-        <div style="display: flex; flex-direction: row; postion: relative">
+        <div style="display: flex; flex-direction: column; postion: relative">
             <auto-form id="form" labelpos="left"></auto-form>
-            <json-viewer id="viewer" style="width: 40%; padding: 1em"></json-viewer>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
@@ -67,10 +66,10 @@
             });
             const form = document.querySelector('#form');
             form.bind(store);
+
             const refreshViewer = () => {
                 const jsonViewer = document.getElementById('viewer');
-                jsonViewer.data = Object.assign({}, store.state);
-                jsonViewer.expandAll();
+                jsonViewer.innerHTML = JSON.stringify(store.state);
             };
             store.watch(refreshViewer);
             refreshViewer();

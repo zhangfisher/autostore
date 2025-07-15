@@ -13,16 +13,29 @@
 
     <body style="overflow: hidden; padding: 1em 0px">
         <div style="display: flex; flex-direction: column; postion: relative">
-            <auto-form id="form"></auto-form>
+            <auto-form id="form" validat="input"></auto-form>
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
             const store = new AutoStore({
-                memo: configurable('产品简介', {
-                    label: '产品简介',
-                    widget: 'textarea',
-                    rows: 5,
+                mailcode: configurable('', {
+                    label: '邮件验证码',
+                    maxLength: 6,
+                    icon: 'mail',
+                    widget: 'verifycode',
+                }),
+                sms: configurable('', {
+                    label: '短信验证码',
+                    maxLength: 6,
+                    icon: 'smartphone',
+                    sendTips: '向我的手机发送验证码',
+                    template: '{timeout}秒后重新发送',
+                    widget: 'verifycode',
+                    onRequest: () => {
+                    onRequest: () => {
+                        alert('在此向服务发起重新发送的请求');
+                    },
                 }),
             });
             const form = document.querySelector('#form');

@@ -210,10 +210,28 @@ const store = new AutoStore({
         custom: configurable('AAA', {
             label: '自定义',
             widget: 'custom',
-            content: "#custom_panel",
-            toRender: (value) => {
+            dropdown: false,
+            inputSelectors: 'input',
+            renderSelection: (value) => {
                 return `<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;">${value}</span>`
+            },
+            // 会监听所有input事件
+            renderContent: (values) => {
+                return `
+                    <div style="padding:1em">
+                        <label>电子邮件:
+                        <input type="text" value="${values[0]}" />
+                        @<input type="text" value="${values[1] || ''}" />
+                        </label>
+                    </div>`
+            },
+            toState: (values) => {
+                return values.join("@")
+            },
+            toInput: (value) => {
+                return value.split("@")
             }
+
         }),
         files: configurable(['aaa.png', 'b.pdf', '/updates/a.png'], {
             label: "上传图片",
@@ -257,18 +275,24 @@ const store = new AutoStore({
             placeholder: '请选择图片',
             fileFieldName: "files",
             multiple: false,
+            onlyFileUrl: false,
             // selector: 'rectangle',
             // 当删除文件时向服务器发起删除请求
             onRemove: (file) => {
 
             }
         }),
-        verifyCode: configurable('12-65', {
+        verifyCode: configurable('1265', {
             label: "邮件验证码",
             widget: "parts",
-            delimiter: '-', //当没有指定delimiter时，使用空格分隔
+            delimiter: '-#', //当没有指定delimiter时，使用空格分隔
+            includeDelimiter: true,
+            // 约束字符
+            // chars: "[0-9]",
+            // 大小写
+            caseType: 'lower',
             // 模板字符串
-            template: '00-00-00-00' // 每一组之间的分割符
+            template: '00#00-00#00' // 每一组之间的分割符
         }),
         smsVerify: configurable(false, {
             label: '短信验证',
@@ -594,7 +618,10 @@ const store = new AutoStore({
         }),
         worktime: configurable("12:12:11", { label: '上班时间', widget: 'time' }),
         certificate: configurable(1, {
-            label: '证件类型', widget: 'radio', select: [
+            label: '证件类型',
+            widget: 'radio',
+            valueKey: 'label',
+            select: [
                 { label: '身份证', value: 1 },
                 { label: '护照', value: 2 },
                 { label: '军官证', value: 3 },

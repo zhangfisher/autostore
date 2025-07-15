@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                mailcode: configurable('1234', {
+                    label: '邮件验证码',
+                    help: '默认4位',
+                    widget: 'parts',
+                }),
+                code: configurable('AB-CD-000', {
+                    label: '验证码',
+                    help: '指定模板',
+                    widget: 'parts',
+                    delimiter: '-',
+                    template: '00-00-000',
+                }),
+                code2: configurable('ab#123', {
+                    label: '验证码',
+                    help: '分隔符自定义',
+                    widget: 'parts',
+                    delimiter: '-#',
+                    template: '00#00-000',
+                }),
+                code3: configurable('abcdefg', {
+                    label: '多种分隔符字符,不包含分隔符',
+                    widget: 'parts',
+                    delimiter: '-#',
+                    includeDelimiter: false,
+                    template: '00#00-000',
+                }),
+                code4: configurable('0000000', {
+                    label: '只输入数字',
+                    widget: 'parts',
+                    delimiter: '-#',
+                    includeDelimiter: true,
+                    chars: '[0-9]',
+                    template: '00#00-000',
+                }),
+                code5: configurable('0000000', {
+                    label: '输入大写字符',
+                    widget: 'parts',
+                    delimiter: '-',
+                    template: '00-00-000',
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

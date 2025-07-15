@@ -218,8 +218,10 @@ export type SchemaListWidgetOptions = {
 // 自定义
 export type SchemaCustomWidgetOptions = {
     multiple?: boolean
-    content: string
-    dropdown?: boolean// 显示为下拉
+    dropdown?: boolean
+    inputSelectors?: string
+    renderSelection?: (value: any) => string
+    renderContent?: (value: any) => string
 }
 
 export type SchemaUploadWidgetFile = {
@@ -301,8 +303,16 @@ export type SchemaUploadWidgetOptions = {
 
 
 export type SchemaPartsWidgetOptions = {
+    // 输入中的分割字符，不作为输入，仅显示
     delimiter?: string
     template?: string
+    // 限制能输入的字符,使用正则表达式，如只输入数字，则设置为[\d]{1}
+    chars?: string
+    //输入值是否包含分割符，=false，则在最终结果中移除delimiter    
+    includeDelimiter?: boolean
+    upper?: boolean
+    // 限制大小写
+    caseType?: 'upper' | 'lower' | 'both'
 }
 
 /**
