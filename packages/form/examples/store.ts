@@ -157,6 +157,43 @@ const store = new AutoStore({
             label: '日期时间',
             widget: 'datetime'
         }),
+        icons: configurable('help', {
+            label: '图标',
+            dropdown: true,
+            widget: 'icons',
+            multiple: true,
+            icons: "award,apple,alarm-clock,aperture,cassette-tape,chart-spline,combine,image,ear,lock,map,plus"
+        }),
+        custom: configurable('admin@autostore.com', {
+            label: '自定义',
+            widget: 'custom',
+            dropdown: true,
+            inputSelectors: 'input',
+            renderSelection: (values, html) => {
+                const text = values[2] === true ? '已订阅' : '没有订阅';
+                return html`<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;"> ${values[0]}@${values[1]}(${text})</span>`;
+            },
+            renderContent: (values, html) => {
+                return html` <div style="padding:1em">
+                    <label>
+                        电子邮件:
+                        <input .value=${values[0]} />
+                        @<input .value=${values[1]} />
+                    </label>
+                    <br />
+                    <label> 订阅新闻:<input type="checkbox" ?checked=${values[3]} /> </label>
+                </div>`;
+            },
+            toState: (values) => {
+                return `${values[0]}@${values[1]}(${values[2] ? '已订阅' : '没有订阅'})`;
+            },
+            toInput: (values) => {
+                const matched = values.match(/\(([^)]+)\)[^)]*$/);
+                const mail = matched ? values.substring(0, values.length - matched[0].length) : values;
+                const checkText = matched ? matched[1] : '没有订阅';
+                return [...mail.split('@'), checkText === '已订阅'];
+            },
+        }),
         padding: configurable("10px 5px", {
             widget: 'combine',
             label: '内边距',
@@ -206,32 +243,6 @@ const store = new AutoStore({
             widget: 'switch',
             // checkLabel: "是",
             // switchValues: ['是', '否']
-        }),
-        custom: configurable('AAA', {
-            label: '自定义',
-            widget: 'custom',
-            dropdown: false,
-            inputSelectors: 'input',
-            renderSelection: (value) => {
-                return `<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;">${value}</span>`
-            },
-            // 会监听所有input事件
-            renderContent: (values) => {
-                return `
-                    <div style="padding:1em">
-                        <label>电子邮件:
-                        <input type="text" value="${values[0]}" />
-                        @<input type="text" value="${values[1] || ''}" />
-                        </label>
-                    </div>`
-            },
-            toState: (values) => {
-                return values.join("@")
-            },
-            toInput: (value) => {
-                return value.split("@")
-            }
-
         }),
         files: configurable(['aaa.png', 'b.pdf', '/updates/a.png'], {
             label: "上传图片",

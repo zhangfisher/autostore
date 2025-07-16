@@ -2,8 +2,6 @@
 
 日期时间输入，继承自[Input](input.md)
 
-## 示例
-
 <demo html="autoform/widgets/datetime.html"/>
 
 :::warning 提示

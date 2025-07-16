@@ -1,12 +1,11 @@
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { customElement, query, state } from "lit/decorators.js"
 import type { SchemaCustomWidgetOptions } from "autostore"
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { when } from "lit/directives/when.js"
 import { classMap } from "lit/directives/class-map.js"
-import { cache } from 'lit/directives/cache.js';
-import { keyed } from 'lit/directives/keyed.js';
+import { live } from 'lit/directives/live.js';
+import { getInputValue } from "@/utils/getInputValue"
 
 export type AutoFieldCustomOptions = Required<SchemaCustomWidgetOptions>
 
@@ -35,9 +34,9 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
                 overflow-y: auto;
                 overflow-x: hidden;
                 &>.custom-value{
-                    flex-grow: 1;
-                    padding-left: 0.5em;
-                    padding-right: 0.5em;
+                    flex-grow: 1; 
+                    display: flex;
+                    align-items: center;
                 }
                 &>.suffix{
                     cursor: pointer;
@@ -72,7 +71,7 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
         return {
             placeholder: '请选择',
             dropdown: false,
-            inputSelectors: 'input'
+            inputSelectors: 'input,textarea'
         }
     }
     @state()
@@ -81,9 +80,10 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
     @query('.container')
     container?: any
 
+
     connectedCallback(): void {
         super.connectedCallback()
-        this._onCustomInput()
+        this._onFieldInput()
     }
     _onShowPopup() {
         this.active = true
@@ -91,18 +91,24 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
     _onHidePopup() {
         this.active = false
     }
-    _onCustomInput() {
-        this.addEventListener('input', () => {
-            this.onFieldInput()
+    _onFieldInput() {
+        this._subscribers.push({
+            off: () => {
+                this.removeEventListener('input', this.onFieldInput)
+                this.removeEventListener('change', this.onFieldInput)
+            }
         })
+        this.addEventListener('input', this.onFieldInput)
+        this.addEventListener('change', this.onFieldInput)
     }
     getInputValue() {
-        const inputs = Array.from(this.shadowRoot!.querySelectorAll(this.options.inputSelectors))
-        const values = inputs.map(input => {
-            return (input as any).value
+        const inputs = Array.from(this.shadowRoot!.querySelectorAll(this.options.inputSelectors)) as HTMLInputElement[]
+        const values = inputs.map((input: HTMLInputElement) => {
+            return getInputValue(input)
         })
         return values
     }
+
 
     renderSelection() {
         return html`    
@@ -110,8 +116,8 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
                 ${when(!this.value && this.options.placeholder
             , () => html`<span class='placeholder'>${this.options.placeholder}</span>`)}
                 <span class="custom-value">
-                ${unsafeHTML(this.options.renderSelection ?
-                this.options.renderSelection(this.value) : this.value)}
+                ${this.options.renderSelection ?
+                this.options.renderSelection(this.value, html) : this.value}
                 </span>
                 <span class='suffix'>
                     <sl-icon 
@@ -123,10 +129,10 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
                 </span>  
             </div>`
     }
-
     renderContent() {
+        const values = this.value.map((v: any) => live(v))
         return html`<div class="container">
-            ${cache(unsafeHTML(this.options.renderContent(this.value)))}
+            ${this.options.renderContent(values, html)}
         </div>`
     }
 
@@ -134,13 +140,13 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
         if (this.options.dropdown) {
             return html`
                 <sl-dropdown          
-                    size="${this.context.size}"    
-                    @sl-show="${this._onShowPopup.bind(this)}" 
-                    @sl-after-hide="${this._onHidePopup.bind(this)}" 
+                    size="${this.context.size}"
+                    @sl-show="${this._onShowPopup.bind(this)}"
+                    @sl-after-hide="${this._onHidePopup.bind(this)}"
                     sync="width"
                 >
-                ${this.renderSelection()}  
-                ${this.renderContent()}      
+                ${this.renderSelection()}
+                ${this.renderContent()}
             </sl-dropdown> 
             `
         } else {
@@ -155,3 +161,4 @@ declare global {
         'auto-field-custom-dropdown': AutoFieldCustom
     }
 }
+

@@ -2,7 +2,7 @@
 
 文件上传组件
 
-## 属性
+## 参数
 
 ```ts
 type SchemaUploadWidgetFile = {

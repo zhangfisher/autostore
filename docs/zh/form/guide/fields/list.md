@@ -2,7 +2,7 @@
 
 从列表中选择一项或多项
 
-## 属性
+## 参数
 
 ```ts
 type SchemaListWidgetListItem = {

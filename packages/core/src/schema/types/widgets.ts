@@ -30,6 +30,7 @@ export type SchemaWidgetTypes = 'input'
     | 'upload'
     | 'custom'
     | 'combine'
+    | 'icons'
 
 
 export type SchemaInputWidgetOptions = {
@@ -158,10 +159,9 @@ export type SchemaPasswordWidgetOptions = Omit<SchemaInputWidgetOptions,
 
 export type SchemaQrCodeWidgetOptions = {
     errorCorrection?: 'L' | 'M' | 'Q' | 'H'
-    fill?: boolean
+    fill?: string
     radius?: number
     background?: string
-
 }
 export type SchemaEmailWidgetOptions = Omit<SchemaInputWidgetOptions,
     'inputType' | 'max' | 'min'
@@ -214,14 +214,14 @@ export type SchemaListWidgetOptions = {
     showResults?: boolean
     renderItem?: string | ((item: SchemaWidgetSelectItem) => string)
 }
+export type htmlTemplate = (strings: TemplateStringsArray, ...values: unknown[]) => any
 
 // 自定义
 export type SchemaCustomWidgetOptions = {
-    multiple?: boolean
     dropdown?: boolean
     inputSelectors?: string
-    renderSelection?: (value: any) => string
-    renderContent?: (value: any) => string
+    renderSelection?: (value: any, html: htmlTemplate) => string
+    renderContent?: (value: any, html: htmlTemplate) => string
 }
 
 export type SchemaUploadWidgetFile = {
@@ -320,4 +320,12 @@ export type SchemaPartsWidgetOptions = {
  */
 export type SchemaCombineWidgetOptions = {
     children: SchemaOptions[]
+}
+
+export type SchemaIconsWidgetOptions = {
+    icons?: string | string[] // 使用,分割多个图标
+    builtIn?: boolean // 是否包括内置图标
+    dropdown?: boolean
+    size?: string
+    multiple?: boolean  // 是否多选
 }

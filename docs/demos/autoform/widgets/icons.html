@@ -13,28 +13,36 @@
 
     <body style="overflow: hidden; padding: 1em 0px">
         <div style="display: flex; flex-direction: column; postion: relative">
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc"></div>
             <auto-form id="form" validat="input"></auto-form>
-            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
+
             const store = new AutoStore({
-                mailcode: configurable('', {
-                    label: '邮件验证码',
-                    maxLength: 6,
-                    icon: 'mail',
-                    widget: 'verifycode',
+                icons: configurable('admin@autostore.com', {
+                    label: '默认图标',
+                    widget: 'icons',
                 }),
-                sms: configurable('', {
-                    label: '短信验证码',
-                    maxLength: 6,
-                    icon: 'smartphone',
-                    sendTips: '向我的手机发送验证码',
-                    template: '{timeout}秒后重新发送',
-                    widget: 'verifycode',
-                    onRequest: () => {
-                        alert('在此向服务发起重新发送的请求');
-                    },
+                myicons: configurable('admin@autostore.com', {
+                    label: '下拉选择图标',
+                    dropdown: true,
+                    widget: 'icons',
+                    multiple: true,
+                    size: '32px',
+                    icons: 'award,apple,alarm-clock,aperture,cassette-tape,chart-spline,combine,image,ear,lock,map,plus',
+                }),
+                myicons2: configurable('', {
+                    label: '自定义图标',
+                    widget: 'icons',
+                    multiple: true,
+                    icons: 'award,apple,alarm-clock,aperture,cassette-tape,chart-spline,combine,image,ear,lock,map,plus',
+                }),
+                myicons3: configurable([], {
+                    label: '自定义图标数组',
+                    widget: 'icons',
+                    multiple: true,
+                    icons: 'award,apple,alarm-clock,aperture,cassette-tape,chart-spline,combine,image,ear,lock,map,plus',
                 }),
             });
             const form = document.querySelector('#form');

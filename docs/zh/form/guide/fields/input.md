@@ -2,7 +2,7 @@
 
 常规输入字段
 
-## 属性
+## 参数
 
 ```ts
 type SchemaInputWidgetOptions = {

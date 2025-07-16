@@ -158,6 +158,7 @@ export default defineConfig({
                         { text: '字段', link: '/zh/form/guide/field' },
                         { text: '校验', link: '/zh/form/guide/validate' },
                         { text: '提交表单', link: '/zh/form/guide/submit' },
+                        { text: '图标', link: '/zh/form/guide/icons' },
                     ]
                 },
                 {
@@ -174,6 +175,7 @@ export default defineConfig({
                         { text: 'Search', link: '/zh/form/guide/fields/search' },
                         { text: 'Checkbox', link: '/zh/form/guide/fields/checkbox' },
                         { text: 'CheckboxGroup', link: '/zh/form/guide/fields/checkbox-group' },
+                        { text: 'ColorPicker', link: '/zh/form/guide/fields/colorpicker' },
                         { text: 'Switch', link: '/zh/form/guide/fields/switch' },
                         { text: 'Radio', link: '/zh/form/guide/fields/radio' },
                         { text: 'RadioButton', link: '/zh/form/guide/fields/radio-button' },
@@ -189,6 +191,7 @@ export default defineConfig({
                         { text: 'Captcha', link: '/zh/form/guide/fields/captcha' },
                         { text: 'VerifyCode', link: '/zh/form/guide/fields/verify-code' },
                         { text: 'IpAddress', link: '/zh/form/guide/fields/ipaddress' },
+                        { text: 'Icons', link: '/zh/form/guide/fields/icons' },
                         { text: 'Combine', link: '/zh/form/guide/fields/combine' },
                         { text: 'Custom', link: '/zh/form/guide/fields/custom' },
                         { text: 'QrCode', link: '/zh/form/guide/fields/qrcode' },

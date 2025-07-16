@@ -2,7 +2,7 @@
 
 树选择框。
 
-## 属性
+## 参数
 
 ```ts
 type TreeNodes = TreeNode[] | TreeNode;

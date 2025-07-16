@@ -11,28 +11,27 @@
         <script src="/autostore/autoform.js"></script>
     </head>
 
-    <body style="overflow: hidden; padding: 1em 0px">
-        <div style="display: flex; flex-direction: column">
-            <auto-form id="form"></auto-form>
+    <body style="padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative">
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
+            <auto-form id="form"></auto-form>
         </div>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
             const store = new AutoStore({
-                icon: configurable('www.autostore.com', {
-                    label: 'AutoStore',
-                    widget: 'url',
+                themeColor: configurable('#e23a31', {
+                    label: '主题色',
+                    widget: 'colorpicker',
                 }),
-                filled: configurable('http://www.voerkai18n.com', {
-                    label: 'VoerkaI18n',
-                    widget: 'url',
-                    prefix: ['http://', 'https://'],
-                    suffix: [
-                        { label: '在新窗口打开', value: '?_blank' },
-                        { label: '在当前窗口打开', value: '?_self' },
-                        '-', // 分割线
-                        { label: '空白', value: '' },
-                    ],
+                colors: configurable('#1890ff', {
+                    label: '选择颜色',
+                    widget: 'colorpicker',
+                    presets: ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 'gray', 'black', 'white'],
+                }),
+                inlineColor: configurable('#e23a31', {
+                    label: '主题色',
+                    widget: 'colorpicker',
+                    inline: true,
                 }),
             });
             const form = document.querySelector('#form');

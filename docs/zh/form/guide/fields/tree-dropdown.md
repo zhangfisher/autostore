@@ -2,7 +2,7 @@
 
 下拉树选择框,继承自`TreeSelect`。
 
-## 属性
+## 参数
 
 ```ts
 type SchemaTreeDropdownWidgetOptions = SchemaTreeSelectWidgetOptions;

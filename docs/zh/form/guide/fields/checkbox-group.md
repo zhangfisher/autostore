@@ -2,7 +2,7 @@
 
 复选框组
 
-## 属性
+## 参数
 
 ```ts
 type SchemaWidgetSelectItem<Value = any> = ({

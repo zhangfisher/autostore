@@ -29,4 +29,5 @@ export * from "./tree-select";
 export * from "./tree-dropdown";
 export * from "./custom";
 export * from "./combine";
+export * from "./icons";
 

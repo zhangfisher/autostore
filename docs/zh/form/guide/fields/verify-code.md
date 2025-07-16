@@ -2,7 +2,7 @@
 
 邮件或短信验证码
 
-## 属性
+## 参数
 
 ```ts
 type SchemaVerifyCodeWidgetOptions = {

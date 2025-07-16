@@ -2,7 +2,7 @@
 
 分段字符输入。
 
-## 属性
+## 参数
 
 ```ts
 type SchemaPartsWidgetOptions = {

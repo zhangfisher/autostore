@@ -7,13 +7,13 @@ function toStringValue(val: any) {
     const valueType = typeof (val)
     if (valueType === 'boolean') {
         return String(val)
-    } else if (Array.isArray(valueType)) {
-        return val.split(',').map((v: string) => v.trim())
+    } else if (Array.isArray(val)) {
+        return val.join(',')
     } else if (valueType === 'object') {
         try {
             return JSON.stringify(val)
         } catch {
-            return '{} '
+            return '{}'
         }
     }
     return String(val)

@@ -14,18 +14,63 @@
     <body style="overflow: hidden; padding: 1em 0px">
         <div style="display: flex; flex-direction: column; postion: relative">
             <auto-form id="form" validat="input"></auto-form>
-            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 4em"></div>
         </div>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
 
             const store = new AutoStore({
-                custom: configurable('AAA', {
-                    label: '自定义',
+                email: configurable('admin@autostore.com', {
+                    label: '电子邮件',
                     widget: 'custom',
-                    content: '#custom_panel',
-                    toRender: (value) => {
-                        return `<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;">${value}</span>`;
+                    inputSelectors: 'input',
+                    renderSelection: (values, html) => {
+                        return html`<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;">${values.join('@')}</span>`;
+                    },
+                    renderContent: (values, html) => {
+                        return html` <div style="padding:1em">
+                            <label>
+                                电子邮件:
+                                <input .value=${values[0]} />
+                                @<input .value=${values[1]} />
+                            </label>
+                        </div>`;
+                    },
+                    toState: (values) => {
+                        return values.join('@');
+                    },
+                    toInput: (values) => {
+                        return values.split('@');
+                    },
+                }),
+                demail: configurable('admin@autostore.com', {
+                    label: '订阅邮件',
+                    widget: 'custom',
+                    dropdown: true,
+                    inputSelectors: 'input',
+                    renderSelection: (values, html) => {
+                        const text = values[2] === true ? '已订阅' : '没有订阅';
+                        return html`<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;"> ${values[0]}@${values[1]}(${text})</span>`;
+                    },
+                    renderContent: (values, html) => {
+                        return html` <div style="padding:1em">
+                            <label>
+                                电子邮件:
+                                <input .value=${values[0]} />
+                                @<input .value=${values[1]} />
+                            </label>
+                            <br />
+                            <label> 订阅新闻:<input type="checkbox" ?checked=${values[3]} /> </label>
+                        </div>`;
+                    },
+                    toState: (values) => {
+                        return `${values[0]}@${values[1]}(${values[2] ? '已订阅' : '没有订阅'})`;
+                    },
+                    toInput: (values) => {
+                        const matched = values.match(/\(([^)]+)\)[^)]*$/);
+                        const mail = matched ? values.substring(0, values.length - matched[0].length) : values;
+                        const checkText = matched ? matched[1] : '没有订阅';
+                        return [...mail.split('@'), checkText === '已订阅'];
                     },
                 }),
             });
@@ -38,17 +83,5 @@
             store.watch(refreshViewer);
             refreshViewer();
         </script>
-
-        <div id="custom_panel" style="display: none; padding: 1rem; height: 3rem">
-            <label>
-                名称:
-                <input id="username" type="text" value="123" />
-            </label>
-            <label>
-                电子邮件:
-                <input id="email" type="email" value="" />
-            </label>
-            <button>提交</button>
-        </div>
     </body>
 </html>

@@ -2,7 +2,7 @@
 
 以按钮形式显示单选框。
 
-## 属性
+## 参数
 
 ```ts
 type SchemaRadioWidgetOptions = {

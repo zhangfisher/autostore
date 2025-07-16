@@ -19,7 +19,7 @@
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
             const store = new AutoStore({
-                files: configurable(['aaa.png', 'b.pdf', '/updates/a.png'], {
+                files: configurable(['/autostore/public/a.png', '/autostore/public/b.png', '/autostore/public/c.png'], {
                     label: '上传图片',
                     widget: 'upload',
                     url: 'api/upload',
@@ -54,7 +54,7 @@
                     ],
                 }),
                 file: configurable(
-                    { url: '/public/uploads/d.jpg' },
+                    { url: '/autostore/public/b.png' },
                     {
                         label: '上传图片',
                         widget: 'upload',

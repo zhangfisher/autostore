@@ -37,28 +37,6 @@ type SchemaArgs = {
     validator: SchemaValidator
 }
 
-/**
- * 对Schema.options里面的actions进行标记
- * 
- * 将actions里面所有onXXX开头的事件处理函数全局markRaw
- * 
- * 
- */
-// function markRawActions(actions: SchemaWidgetAction[]) {
-//     if (Array.isArray(actions)) {
-//         actions.forEach(action => {
-//             if (typeof (action) === 'object') {
-//                 Object.entries(action).forEach(([key, value]) => {
-//                     if (key === 'items' || (typeof (value) === 'function' && key.startsWith('on'))) {
-//                         //@ts-ignore
-//                         action[key] = markRaw(value)
-//                     }
-//                 })
-//             }
-//         })
-//     }
-// }
-
 // 将options里面的on和render开头的函数标识为raw
 function markRawOptions(options: SchemaOptions) {
     if (isPlainObject(options)) {

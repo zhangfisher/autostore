@@ -363,13 +363,9 @@ export class AutoField<Options = unknown> extends LitElement {
             ${this.invalidMessage}
         </div>` : html``
     }
-    onFieldChange() {
-        this._updateFieldValue()
-    }
-    // @ts-ignore
-    onFieldInput() {
-        this._updateFieldValue()
-    }
+    onFieldChange = () => this._updateFieldValue()
+    onFieldInput = () => this._updateFieldValue()
+
     /**
      * 当schmeaOption发生变化时
      */
