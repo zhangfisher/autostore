@@ -1,22 +1,33 @@
-import { customElement, query, state } from "lit/decorators.js"
-import type { SchemaCustomWidgetOptions } from "autostore"
-import { AutoField } from "@/field"
-import { css, html } from "lit"
-import { when } from "lit/directives/when.js"
-import { classMap } from "lit/directives/class-map.js"
-import { live } from 'lit/directives/live.js';
-import { getInputValue } from "@/utils/getInputValue"
+/**
+ * 
+ * 通供通用的下拉选择组件框架
+ * 
+ * 
+ * 
+ * 
+ */
+import { css, html } from "lit";
+import { AutoField } from ".";
+import { when } from "lit/directives/when.js";
+import { classMap } from "lit/directives/class-map.js";
+import { state } from "lit/decorators.js";
 
-export type AutoFieldCustomOptions = Required<SchemaCustomWidgetOptions>
+export type AutoDropdownFieldOptions = {
+    dropdown?: boolean
+}
 
-@customElement('auto-field-custom')
-export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
+
+export class AutoDropdownField<Options = unknown> extends AutoField<Options & AutoDropdownFieldOptions> {
     static styles = [
         AutoField.styles,
         css`
             sl-dropdown{
                 width: 100%;                
             } 
+            .placeholder{
+                color: var(--auto-border-color);                
+                flex-grow: 1; 
+            }
             .selection{
                 position: relative;
                 display: flex;
@@ -33,7 +44,7 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
                 max-height:1rem;
                 overflow-y: auto;
                 overflow-x: hidden;
-                &>.custom-value{
+                &>.select-value{
                     flex-grow: 1; 
                     display: flex;
                     align-items: center;
@@ -65,60 +76,30 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
     ] as any
 
 
-    selection: any[] = []
     @state()
     active: boolean = false
 
-    @query('.container')
-    container?: any
-
-
-    getInitialOptions(): Record<string, any> {
+    getInitialOptions() {
         return {
-            placeholder: '请选择',
-            dropdown: false,
-            inputSelectors: 'input,textarea'
+            dropdown: true
         }
     }
-
-    connectedCallback(): void {
-        super.connectedCallback()
-        this._onFieldInput()
-    }
-    _onShowPopup() {
-        this.active = true
-    }
-    _onHidePopup() {
-        this.active = false
-    }
-    _onFieldInput() {
-        this._subscribers.push({
-            off: () => {
-                this.removeEventListener('input', this.onFieldInput)
-                this.removeEventListener('change', this.onFieldInput)
-            }
-        })
-        this.addEventListener('input', this.onFieldInput)
-        this.addEventListener('change', this.onFieldInput)
-    }
-    getInputValue() {
-        const inputs = Array.from(this.shadowRoot!.querySelectorAll(this.options.inputSelectors)) as HTMLInputElement[]
-        const values = inputs.map((input: HTMLInputElement) => {
-            return getInputValue(input)
-        })
-        return values
+    _isEmpty() {
+        return Array.isArray(this.value) ? this.value.length === 0 : this.value.trim() === ''
     }
 
-
-    renderSelection() {
+    _renderSelection() {
         return html`    
             <div class="selection" slot="trigger">              
-                ${when(!this.value && this.options.placeholder
-            , () => html`<span class='placeholder'>${this.options.placeholder}</span>`)}
-                <span class="custom-value">
-                ${this.options.renderSelection ?
-                this.options.renderSelection(this.value, html) : this.value}
-                </span>
+                ${when(this._isEmpty() && this.options.placeholder
+            , () => html`<span class='placeholder'>${this.options.placeholder}</span>`
+            , () => {
+                return html`<span class="select-value">
+                    ${this.renderSelection()}
+                </span>`
+            }
+        )}
+                
                 <span class='suffix'>
                     <sl-icon 
                         library="system" 
@@ -129,36 +110,34 @@ export class AutoFieldCustom extends AutoField<AutoFieldCustomOptions> {
                 </span>  
             </div>`
     }
-    renderContent() {
-        const values = this.value.map((v: any) => live(v))
+    _renderContent() {
         return html`<div class="container">
-            ${this.options.renderContent(values, html)}
+            ${this.renderDropdown()}
         </div>`
     }
+    renderDropdown() {
 
+    }
+    renderSelection() {
+
+    }
     renderInput() {
         if (this.options.dropdown) {
             return html`
                 <sl-dropdown          
                     size="${this.context.size}"
-                    @sl-show="${this._onShowPopup.bind(this)}"
-                    @sl-after-hide="${this._onHidePopup.bind(this)}"
+                    @sl-show="${() => { this.active = true }}"
+                    @sl-after-hide="${() => { this.active = false }}"
                     sync="width"
                 >
-                ${this.renderSelection()}
-                ${this.renderContent()}
+                ${this._renderSelection()}
+                ${this._renderContent()}
             </sl-dropdown> 
             `
         } else {
-            return html`${this.renderContent()}`
+            return html`${this._renderContent()}`
         }
     }
+
+
 }
-
-
-declare global {
-    interface HTMLElementTagNameMap {
-        'auto-field-custom-dropdown': AutoFieldCustom
-    }
-}
-

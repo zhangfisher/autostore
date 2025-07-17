@@ -106,7 +106,7 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
             //@ts-ignore
             const nextInput = (input.nextElementSibling || input.nextElementSibling?.nextElementSibling) as HTMLInputElement;
             if (nextInput) {
-                nextInput.focus();
+                nextInput.focusItems();
                 nextInput.select();
             }
         }

@@ -71,7 +71,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
             // 可选：自动跳转到下一个输入框（如果有的话）
             const nextInput = input.nextElementSibling?.nextElementSibling as HTMLInputElement;
             if (nextInput) {
-                nextInput.focus();
+                nextInput.focusItems();
                 nextInput.select();
             }
         }
@@ -110,7 +110,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
         // 自动聚焦到最后一个被填充的输入框
         if (inputs.length > 0) {
             const lastInput = inputs[Math.min(3, inputs.length - 1)];
-            lastInput.focus();
+            lastInput.focusItems();
             lastInput.select();
         }
     }

@@ -2,7 +2,7 @@ import { parsePadding, toPadding } from './utils';
 import { orgTree } from './data';
 import { AutoStore, computed, configurable, delay } from 'autostore';
 import type { AutoForm } from '../src/form';
-
+import areaData from './0.json'
 
 const store = new AutoStore({
     price: 100,
@@ -140,6 +140,16 @@ const store = new AutoStore({
 
                 }
             ]
+        }),
+        area: configurable('福建省泉州市丰泽区', {
+            label: '地区',
+            widget: 'cascader',
+            placeholder: '选择行政地区',
+            data: areaData,
+            rootKey: '0',
+            labelKey: 'n',
+            valueKey: 'n',
+            idKey: 'c'
         }),
         homepage: configurable(
             "http://www.autostore.com", {

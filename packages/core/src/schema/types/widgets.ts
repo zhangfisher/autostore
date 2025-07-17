@@ -323,9 +323,29 @@ export type SchemaCombineWidgetOptions = {
 }
 
 export type SchemaIconsWidgetOptions = {
-    icons?: string | string[] // 使用,分割多个图标
-    builtIn?: boolean // 是否包括内置图标
+    icons?: string | string[]       // 使用,分割多个图标
+    builtIn?: boolean               // 是否包括内置图标
     dropdown?: boolean
     size?: string
-    multiple?: boolean  // 是否多选
+    multiple?: boolean              // 是否多选
+}
+
+
+export type SchemaCascaderDataItem = {
+    id?: string
+    label?: string
+    value?: string
+    icon?: string
+    children?: SchemaCascaderDataItem[]
+}
+export type SchemaCascaderWidgetOptions = {
+    dropdown?: boolean
+    rootKey?: string
+    idKey?: string
+    labelKey?: string
+    valueKey?: string
+    childrenKey?: string         // 如果指定则说明data是嵌套格式
+    maxLevel?: number            // 最大级数,默认是3
+    delimiter?: string           // 默认为''，用于合并级联值
+    data: Record<string, any>
 }
