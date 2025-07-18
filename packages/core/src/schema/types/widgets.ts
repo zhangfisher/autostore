@@ -320,6 +320,7 @@ export type SchemaPartsWidgetOptions = {
  */
 export type SchemaCombineWidgetOptions = {
     children: SchemaOptions[]
+    dropdown?: boolean
 }
 
 export type SchemaIconsWidgetOptions = {

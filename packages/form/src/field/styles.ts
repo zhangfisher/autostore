@@ -38,7 +38,7 @@ export default css`
                 color: var(--auto-gray-color);
                 padding:  calc(var(--auto-spacing) * 0.3) 0px;
                 font-weight: lighter;                
-                & a{
+                & a {
                     text-decoration: none;
                     color: var(--auto-gray-color);
                     &:hover{
@@ -47,7 +47,6 @@ export default css`
                 }
             }    
         }    
-
         & > .autofield:hover{
             background-color: var(--sl-color-gray-50);
         } 
@@ -59,7 +58,6 @@ export default css`
             outline: none!important;
             box-shadow: none!important;
         }
-
         & sl-input::part(suffix) .action-widget{
             color: red;
         }
@@ -108,8 +106,7 @@ export default css`
             & .mark-err{
                 border-color: red;
             }
-        }
-        
+        }        
     } 
     :host(.left-label){
         & > .autofield{
@@ -132,8 +129,7 @@ export default css`
                 }
             }
         }
-    }
-    
+    }    
     /* 禁用样式 */
     :host(.disable){
         & > .autofield{
@@ -175,14 +171,12 @@ export default css`
             }
         }
     }
-
     /* 紧凑模式 */
     :host(.compact){ 
         & > .autofield{ 
             padding: calc(var(--auto-spacing) * 0.3) var(--auto-spacing);        
         }
     }
-
     /* 浏览视图  */
     :host(.viewonly){
         & > .autofield > .value{
@@ -200,8 +194,6 @@ export default css`
             align-items: center;
         }
     }
-
-
     :host(.readonly){
         & > .autofield{
             &>.value:after{

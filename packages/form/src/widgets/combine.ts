@@ -13,7 +13,7 @@ export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
     static styles = [
         AutoField.styles,
         css`
-            .value > .children{
+            .value .children{
                 display: flex;
                 flex-wrap: wrap;
             }
@@ -21,16 +21,17 @@ export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
 
     ] as any
     getInitialOptions() {
-        return {
+        return Object.assign({}, super.getInitialOptions(), {
             children: []
-        }
+        })
     }
     connectedCallback(): void {
         super.connectedCallback()
         this._onChildrenChange()
     }
     disconnectedCallback(): void {
-        this.shadow.removeEventListener('field-change', this._handleChildrenChange)
+        this.shadow.removeEventListener('change', this._handleChildrenChange)
+        this.shadow.removeEventListener('input', this._handleChildrenChange)
 
     }
     // 使用箭头函数绑定 this
@@ -43,7 +44,8 @@ export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
      */
     _onChildrenChange() {
         if (this.options.children.length > 0) {
-            this.shadow.addEventListener('field-change', this._handleChildrenChange)
+            this.shadow.addEventListener('change', this._handleChildrenChange)
+            this.shadow.addEventListener('input', this._handleChildrenChange)
         }
     }
 
@@ -60,6 +62,7 @@ export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
         return values
 
     }
+
 
     renderInput() {
         return html`

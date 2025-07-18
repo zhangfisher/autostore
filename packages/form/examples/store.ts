@@ -3,6 +3,7 @@ import { orgTree } from './data';
 import { AutoStore, computed, configurable, delay } from 'autostore';
 import type { AutoForm } from '../src/form';
 import areaData from './0.json'
+import areaData5 from './pcas-code.json'
 
 const store = new AutoStore({
     price: 100,
@@ -141,15 +142,62 @@ const store = new AutoStore({
                 }
             ]
         }),
+        area0: configurable('福建省泉州市丰泽区', {
+            label: '乡镇',
+            widget: 'cascader',
+            placeholder: '选择行政地区',
+            data: areaData5,
+            icon: 'map-pin',
+            labelKey: 'name',
+            valueKey: 'name',
+            idKey: 'code',
+            delimiter: '/',
+            maxLevel: 5
+        }),
         area: configurable('福建省泉州市丰泽区', {
             label: '地区',
             widget: 'cascader',
             placeholder: '选择行政地区',
             data: areaData,
+            icon: 'map-pin',
             rootKey: '0',
             labelKey: 'n',
             valueKey: 'n',
-            idKey: 'c'
+            idKey: 'c',
+            delimiter: '/',
+            actions: [
+                {
+                    label: '验证',
+                    icon: 'clipboard',
+                    onClick: (value, { update }) => {
+                        console.log('Action click:', value)
+                        update(value + "*")
+                    },
+                    variant: "success"
+                },
+                {
+                    icon: 'settings',
+                    onClick: (value, { update }) => {
+                        console.log('Action click:', value)
+                        update(value + "*")
+                    }
+                },
+                {
+                    label: '前面',
+                    pos: 'before',
+                    icon: 'atom',
+                    onClick: (args) => {
+                        console.log('Action click:', args)
+                    }
+                },
+                {
+                    pos: 'before',
+                    icon: 'email',
+                    onClick: (args) => {
+                        console.log('Action click:', args)
+                    }
+                }
+            ]
         }),
         homepage: configurable(
             "http://www.autostore.com", {
@@ -172,7 +220,18 @@ const store = new AutoStore({
             dropdown: true,
             widget: 'icons',
             multiple: true,
-            icons: "award,apple,alarm-clock,aperture,cassette-tape,chart-spline,combine,image,ear,lock,map,plus"
+            icons: "award,apple,alarm-clock,aperture,cassette-tape,chart-spline,combine,image,ear,lock,map,plus",
+            actions: [
+                {
+                    label: '验证',
+                    icon: 'clipboard',
+                    onClick: (value, { update }) => {
+                        console.log('Action click:', value)
+                        update(value + "*")
+                    },
+                    variant: "success"
+                }
+            ]
         }),
         custom: configurable('admin@autostore.com', {
             label: '自定义',
@@ -208,7 +267,6 @@ const store = new AutoStore({
             widget: 'combine',
             label: '内边距',
             toState: (values) => toPadding(values),
-            group: 'a',
             children: [
                 {
                     name: 'top',
@@ -234,9 +292,19 @@ const store = new AutoStore({
                 {
                     name: "left",
                     label: "左",
-                    widget: "range",
                     width: '50%',
+                    widget: 'number',
                     toInput: (value) => parsePadding(value).left,
+                }
+            ],
+            actions: [
+                {
+                    label: '验证',
+                    icon: 'clipboard',
+                    onClick: (value, { update }) => {
+                        console.log('Action click:', value)
+                        update(value + "*")
+                    }
                 }
             ]
         }),
@@ -289,7 +357,7 @@ const store = new AutoStore({
                 }
             ]
         }),
-        file: configurable({ url: '/public/uploads/d.jpg' }, {
+        file: configurable({ url: '/uploads/d.jpg' }, {
             label: "上传图片",
             widget: 'upload',
             url: 'api/upload',

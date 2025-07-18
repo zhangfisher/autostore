@@ -289,7 +289,11 @@ export class AutoForm extends LitElement {
     _renderFields() {
         return html`            
                 ${this.schemas!.map(schema => {
-            return html`${renderWidget(schema)}`
+            return html`${renderWidget(schema, {
+                attrs: {
+                    size: this.size,
+                }
+            })}`
         })}`
     }
     render() {

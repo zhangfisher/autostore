@@ -5,6 +5,10 @@ interface ScrollbarHTMLElement extends HTMLElement {
     mouseDownHandler?: (e: MouseEvent) => boolean | void;
 }
 
+
+type ScrollbarOptions = {
+    width?: string
+}
 /**
  * 滚动条类，用于为元素添加自定义滚动条
  */
@@ -17,12 +21,15 @@ export class Scrollbar {
     private wrapper: HTMLDivElement;
     private el: HTMLDivElement;
     private scrollRatio: number;
-
+    options: Required<ScrollbarOptions>
     /**
      * 创建一个新的滚动条实例
      * @param el 要添加滚动条的HTML元素
      */
-    constructor(el: HTMLElement) {
+    constructor(el: HTMLElement, options?: ScrollbarOptions) {
+        this.options = Object.assign({
+            width: '8px'
+        }, options)
         this.target = el;
         this.content = el.firstElementChild as Element;
         this.direction = window.getComputedStyle(this.target).direction;
@@ -49,8 +56,9 @@ export class Scrollbar {
         this.target.appendChild(this.wrapper);
 
         // 添加滚动条元素
-        this.target.insertAdjacentHTML('beforeend', '<div class="ss-scroll">');
+        this.target.insertAdjacentHTML('beforeend', `<div class="ss-scroll">`);
         this.bar = this.target.lastChild as HTMLElement;
+        this.bar.style.width = this.options.width
 
         // 绑定事件处理
         this.mB = this.moveBar.bind(this);
@@ -248,7 +256,7 @@ export class ScrollbarController implements ReactiveController {
         .ss-scroll {
             position: relative;
             background: rgba(0, 0, 0, 0.1);
-            width: 10px;
+            width: 8px;
             border-radius: 4px;
             top: 0;
             z-index: 2;
@@ -285,8 +293,8 @@ export class ScrollbarController implements ReactiveController {
         this.host = host;
         host.addController(this);
     }
-    create(el: any) {
-        return new Scrollbar(el);
+    create(el: any, options?: ScrollbarOptions) {
+        return new Scrollbar(el, options);
     }
 
     /**

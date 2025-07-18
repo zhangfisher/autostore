@@ -10,6 +10,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import type { SchemaListWidgetOptions, SchemaWidgetSelectItem } from "autostore";
 import { when } from "lit/directives/when.js";
+import { ScrollbarController } from "@/controllers/scrollbar";
 
 
 export type ListItem = {
@@ -33,6 +34,7 @@ export type AutoFieldListOptions = Required<SchemaListWidgetOptions>
 export class AutoFieldList extends AutoField<AutoFieldListOptions> {
     static styles = [
         AutoField.styles,
+        ScrollbarController.styles,
         css`
             sl-menu-item[checked]{
                 background-color: var(--sl-color-primary-100);                
@@ -55,23 +57,30 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                     padding: 0px 1em;
                 }
             }
+            sl-menu{
+                border: 0px;
+            }
             sl-menu-item::part(label){
                 display: flex;
                 flex-direction: row;
                 align-items: center;
+                font-size: var(--auto-font-size);
                 & :first-child{
                     flex-grow: 1;
                 }
             }
-            .results{                
+            sl-split-panel{                
+                border: var(--auto-border);     
+            }
+            .results>.ss-wrapper>.ss-content{                
                 position: relative;
                 display: flex;
                 flex-direction: column;
                 justify-content: stretch;
                 padding: 4px;
-                box-sizing: border-box;
-                border: var(--auto-border);                
+                box-sizing: border-box;         
                 overflow-x: hidden;
+                font-size: var(--auto-font-size);
                 & > .item{
                     display: flex;
                     flex-direction: row;
@@ -100,6 +109,8 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
     valueKey: string = 'id'
     labelKey: string = 'label'
     items: SchemaWidgetSelectItem[] = []
+    scrollbar = new ScrollbarController(this)
+    scrollbars: any[] = []
 
     @state()
     selectedTips: string = ''
@@ -119,7 +130,18 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             select: []
         }
     }
+    _createScrollbars() {
+        const menus = this.shadowRoot?.querySelectorAll('sl-menu,.results')
+        menus?.forEach((menu) => {
+            this.scrollbars.push(this.scrollbar.create(menu, { width: "5px" }))
+        })
+    }
 
+    _destoryScrollbars() {
+        this.scrollbars?.forEach((scrollbar) => {
+            scrollbar.destroy()
+        })
+    }
     connectedCallback() {
         super.connectedCallback()
         if (this.options) {
@@ -137,6 +159,14 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             this.setPresetActions()
         }
         this.style.height = 'auto'
+    }
+
+    firstUpdated(): void {
+        this._createScrollbars()
+    }
+    disconnectedCallback(): void {
+        super.disconnectedCallback()
+        this._destoryScrollbars()
     }
     isItemSelected(item: any) {
         if (this.value === undefined) return false
@@ -300,10 +330,10 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                         ${when(item.icon, () => {
                 return html`<sl-icon slot="prefix" name="${item.icon}"></sl-icon>`
             })}
-                        <magic-flex no-border no-padding flex="row" style="width:100%;">
-                            ${this._renderItem(item)}
-                        </magic-flex>
-                    </sl-menu-item>`
+                <magic-flex no-border no-padding flex="row" style="width:100%;">
+                    ${this._renderItem(item)}
+                </magic-flex>
+            </sl-menu-item>`
         })}
             </sl-menu>`)} `
     }

@@ -1,11 +1,9 @@
 import { ScrollbarController } from "@/controllers"
 import { AutoField } from "@/field"
 import { AutoDropdownField } from "@/field/dropdown"
-import type { SlMenuItem } from "@shoelace-style/shoelace"
 import type { SchemaCascaderDataItem, SchemaCascaderWidgetOptions } from "autostore"
 import { css, html } from "lit"
 import { customElement, state } from "lit/decorators.js"
-import { classMap } from "lit/directives/class-map.js"
 import { ifDefined } from "lit/directives/if-defined.js"
 import { repeat } from "lit/directives/repeat.js"
 import { when } from "lit/directives/when.js"
@@ -32,6 +30,11 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
                     padding: 0;
                     border-radius: 0;
                     padding: 0.5em;
+                    border: none;
+                    border-right: var(--auto-border);
+                }
+                & > sl-menu.level:last-child{
+                    border-right: none;
                 }
             }
             sl-menu-item::part(submenu-icon){
@@ -42,8 +45,7 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
             } 
             sl-menu-item.selected::part(base){
                 background-color: var(--auto-workspace-color); 
-            }
-        `
+            }`
     ] as any
 
     scrollbar = new ScrollbarController(this)
@@ -81,12 +83,8 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 
     connectedCallback(): void {
         super.connectedCallback()
-        this.data = this.options.childrenKey ? this._toFlatData(this.options.data as any) : this.options.data
-        const delimiter = this.options.delimiter || ''
+        this.data = this.options.childrenKey || Array.isArray(this.options.data) ? this._normalizeData(this.options.data as any) : this.options.data
         this.selected = this._parseValues(this.value)
-
-        console.log("this.selected=", this.selected)
-
         this.focusItems = Array.from({ length: this.options.maxLevel - 1 }).fill(null)
     }
     firstUpdated(): void {
@@ -114,27 +112,31 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
      * 将具有children的嵌套对象转换为
      * key为id{}的平面结构
      */
-    _toFlatData(items: Record<string, SchemaCascaderDataItem>) {
+    _normalizeData(items: Record<string, any> | Record<string, any>[]) {
         const result: Record<string, SchemaCascaderDataItem> = {};
         const handleNode = (item: SchemaCascaderDataItem, root: boolean = false) => {
             // 使用提供的id或生成的key作为标识符
-            const id = (item as any)[this.options.idKey] || root ? 'root' : undefined
+            const id = (item as any)[this.options.idKey] || (root ? 'root' : undefined)
             if (!id) return;
             // 添加到结果对象
             result[id] = item;
 
             // 如果有子节点，递归处理
-            const children = (item as any)[this.options.childrenKey]
+            const children = (item as any)[this.options.childrenKey || 'children']
             if (children && Array.isArray(children) && children.length > 0) {
                 children.forEach((item) => {
                     handleNode(item);
                 });
             }
         };
-        handleNode(items, true);
+        handleNode(Array.isArray(items)
+            ? items.reduce((r, cur) => {
+                r.push(cur)
+                return r
+            }, []) : items
+            , true)
         return result;
     }
-
 
     _clearFocusItems(level: number) {
         for (let i = level; i <= this.options.maxLevel; i++) {
@@ -164,31 +166,78 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
     }
 
     _onSelectItem(e: any) {
-        const item = (e.detail as any).item as SlMenuItem
-        const path = this.focusItems.map(item => {
-            return this.data[item]
-        })
+        const target = e.detail.item
+        const level = Number(target.dataset.level)
+        if (level !== this.options.maxLevel) return
 
+        const values: any[] = []
 
+        const getItemValue = (cid: any, pid: any) => {
+            const index = this.data[pid].findIndex((item: any) => {
+                return String(item[this.options.idKey]) === String(cid)
+            })
+            if (index > -1) {
+                return this.data[pid][index][this.options.valueKey]
+            }
+        }
+
+        let pid: any = this.options.rootKey
+
+        for (let i = 0; i < this.focusItems.length; i++) {
+            const id = this.focusItems[i]
+            const val = getItemValue(id, pid)
+            if (!val) return
+            values.push(val)
+            pid = id
+        }
+
+        this.selected = values
+        this.onFieldChange()
+    }
+
+    _getSelectedValue(ids: any[]) {
+        const values: any[] = []
+        const getItemValue = (cid: any, pid: any) => {
+            const index = this.data[pid].findIndex((item: any) => {
+                return String(item[this.options.idKey]) === String(cid)
+            })
+            if (index > -1) {
+                return this.data[pid][index][this.options.valueKey]
+            }
+        }
+        let pid: any = this.options.rootKey
+        for (let i = 0; i < ids.length; i++) {
+            const id = this.focusItems[i]
+            const val = getItemValue(id, pid)
+            if (!val) return
+            values.push(val)
+            pid = id
+        }
+        return values
     }
 
     getInputValue() {
-        return this.selected.map((item) => {
-            return (item as any)[this.options.labelKey]
-        }).join(this.options.delimiter)
+        if (typeof (this.value) === 'string') {
+            return this.selected.join(this.options.delimiter || '')
+        } else {
+            return this.selected
+        }
     }
 
-    _renderLevel(items: any[], level: number = 1) {
-
+    _renderLevel(items: any[], level: number = 1, pid?: any) {
+        if (!Array.isArray(items)) {
+            debugger
+        }
         return html`<sl-menu class="level" 
             @sl-select=${level === this.options.maxLevel ? this._onSelectItem.bind(this) : null}>
                 ${repeat(items, (item) => {
             const isSelected: boolean = this.selected[level - 1] === item[this.options.valueKey]
             return html`
                 <sl-menu-item
-                 type="checkbox"
+                    type="checkbox"
                     data-level=${level}
                     data-id=${item[this.options.idKey]}
+                    data-pid=${ifDefined(pid)}
                     @mouseover=${this._onItemMouseOverr.bind(this)}
                     ?checked=${isSelected}
                     class="${ifDefined(isSelected ? 'selected' : undefined)}"
@@ -232,37 +281,23 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 
     renderSelection() {
         return html`
-            ${this.selected}
+            ${this.selected.join(this.options.delimiter || '')}
         `
-        //     return html`<div class="selection" slot="trigger">              
-        //     ${when(this.selected.length === 0 && this.options.placeholder
-        //         , () => html`<span class='placeholder'>${this.options.placeholder}</span>`)}
-        //     ${this._renderItems(this.selected, false)}
-        //     <span class='suffix'>
-        //         <sl-icon 
-        //             library="system" 
-        //             class="chevron ${classMap({ active: this.active })}" 
-        //             name="chevron-down" 
-        //             aria-hidden="true">
-        //         </sl-icon>
-        //     </span>  
-        // </div>`
     }
     renderDropdown() {
         const root = this.data[this.options.rootKey]
-        const selected = this.selected
         const focusItems = this.focusItems
         return html`<div class="levels">
                 ${repeat(Array.from({ length: this.options.maxLevel }), (_, index) => {
             if (index === 0) {
-                return this._renderLevel(root, index + 1)
+                return this._renderLevel(root, index + 1, this.options.rootKey)
             } else {
                 const curId = focusItems[index - 1]
                 const items = this.data[curId]
                 if (items) {
-                    return this._renderLevel(items, index + 1)
+                    return this._renderLevel(items, index + 1, curId)
                 } else {
-                    return this._renderLevel([], index + 1)
+                    return this._renderLevel([], index + 1, curId)
                 }
             }
         })}</div>`

@@ -5,13 +5,17 @@ import { css, html } from "lit"
 import { repeat } from "lit/directives/repeat.js"
 import { when } from "lit/directives/when.js"
 import { classMap } from "lit/directives/class-map.js"
+import { AutoDropdownField } from "@/field/dropdown"
 
 const builtIns = ['help', 'error', 'email', 'search', 'lock', 'user', 'globe', 'date', 'time', 'phone', 'copy', 'remove', 'refresh', 'datetime']
 
 export type AutoFieldIconsOptions = Required<SchemaIconsWidgetOptions>
 @customElement('auto-field-icons')
-export class AutoFieldIcons extends AutoField<AutoFieldIconsOptions> {
-    static styles = [AutoField.styles, css`
+export class AutoFieldIcons extends AutoDropdownField<AutoFieldIconsOptions> {
+    static styles = [
+        AutoField.styles,
+        AutoDropdownField.styles,
+        css`
         sl-dropdown{
             width: 100%;                
             & >.icons{
@@ -39,33 +43,9 @@ export class AutoFieldIcons extends AutoField<AutoFieldIconsOptions> {
                 }
             }            
         }
-        .selection{
-                position: relative;
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                border: var(--auto-border);
-                font-size: var(--auto-font-size);
-                color: var(--auto-text-color);
-                min-height: var(--sl-input-height-medium);
-                padding: 0px 0.5em;
-                border-radius: var(--sl-input-border-radius-medium);    
-                letter-spacing: var(--sl-input-letter-spacing);
-                background-color: var(--sl-input-background-color);
-                max-height:1rem;
-                overflow-y: auto;
-                overflow-x: hidden;
-                &>.icons{
-                    flex-grow: 1; 
-                    display: flex;
-                    align-items: center;
-                }
-                &>.suffix{
-                    cursor: pointer;
-                    padding-left: 0.5em;
-                    padding-right: 0.5em;
-                }
-            } 
+        .popoup-container{
+            padding: 1em;
+        }
     `] as any
 
     @state()
@@ -99,16 +79,10 @@ export class AutoFieldIcons extends AutoField<AutoFieldIconsOptions> {
                 }
             })
         }
-        this.selected = Array.isArray(this.value) ? this.value : [this.value]
+        this.selected = Array.isArray(this.value) ? this.value : this.value.split(',')
     }
     renderView() {
         return this.renderIcons(this.selected)
-    }
-    _onShowPopup() {
-        this.active = true
-    }
-    _onHidePopup() {
-        this.active = false
     }
     _isSelected(name: string) {
         if (this.options.multiple) {
@@ -117,7 +91,6 @@ export class AutoFieldIcons extends AutoField<AutoFieldIconsOptions> {
             return this.selected[0] === name
         }
     }
-
     _onClickIcon(name: string) {
         if (this.options.multiple) {
             const index = this.selected.findIndex((v) => v === name)
@@ -155,36 +128,10 @@ export class AutoFieldIcons extends AutoField<AutoFieldIconsOptions> {
         })}</div>`
     }
     renderSelection() {
-        return html`<div class="selection" slot="trigger">              
-        ${when(this.selected.length === 0 && this.options.placeholder
-            , () => html`<span class='placeholder'>${this.options.placeholder}</span>`)}
-        ${this.renderIcons(this.selected, false)}
-        <span class='suffix'>
-            <sl-icon 
-                library="system" 
-                class="chevron ${classMap({ active: this.active })}" 
-                name="chevron-down" 
-                aria-hidden="true">
-            </sl-icon>
-        </span>  
-    </div>`
+        return this.renderIcons(this.selected, false)
     }
-    renderInput() {
-        if (this.options.dropdown) {
-            return html`
-                <sl-dropdown          
-                    size="${this.context.size}"
-                    @sl-show="${this._onShowPopup.bind(this)}"
-                    @sl-after-hide="${this._onHidePopup.bind(this)}"
-                    sync="width"
-                >
-                ${this.renderSelection()}
-                ${this.renderIcons(this.icons)}
-            </sl-dropdown> 
-            `
-        } else {
-            return html`${this.renderIcons(this.icons)}`
-        }
+    renderDropdown() {
+        return this.renderIcons(this.icons)
     }
 }
 

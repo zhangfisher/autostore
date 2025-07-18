@@ -28,26 +28,61 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
                 color: var(--auto-border-color);                
                 flex-grow: 1; 
             }
+            :host>.autofield>.value>.content{
+                display: flex;
+                flex-direction: row;                
+                border: var(--auto-border);
+                font-size: var(--auto-font-size);
+                color: var(--auto-text-color);
+                border-radius: var(--sl-input-border-radius-medium);    
+                letter-spacing: var(--sl-input-letter-spacing);
+                background-color: var(--sl-input-background-color); 
+                overflow-y: auto;
+                overflow-x: hidden;
+                &>.dropdown{
+                    display: flex;
+                    align-items: center;
+                    flex-grow: 1;
+                    &>sl-dropdown{
+                        &::slotted(*){
+                            align-items: center;
+                        }
+                    }
+                }
+                &>.actions{
+                    display: flex;
+                    align-items: center;
+                    &>*::part(base){
+                        border: 0px;
+                        border-radius: 0px;
+                    }
+                }
+                &>.actions.before{                    
+                    &>*::part(base){
+                        border-right: var(--auto-border);
+                    }
+                }
+                &>.actions.after{
+                    &>*::part(base){
+                        border-left: var(--auto-border);
+                    }
+                }
+            }
             .selection{
                 position: relative;
                 display: flex;
                 flex-direction: row;
                 align-items: center;
-                border: var(--auto-border);
                 font-size: var(--auto-font-size);
-                color: var(--auto-text-color);
-                min-height: var(--sl-input-height-medium);
-                padding: 0px 0.5em;
+                color: var(--auto-text-color); 
                 border-radius: var(--sl-input-border-radius-medium);    
                 letter-spacing: var(--sl-input-letter-spacing);
                 background-color: var(--sl-input-background-color);
-                max-height:1rem;
-                overflow-y: auto;
-                overflow-x: hidden;
-                &>.select-value{
+                &>.select-value,&>.content{
                     flex-grow: 1; 
                     display: flex;
                     align-items: center;
+                    padding: 0 0.5em;
                 }
                 &>.suffix{
                     cursor: pointer;
@@ -59,8 +94,14 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
                     margin-top: 0.rem;
                     margin-bottom: 0.2em;
                 }
+                &>.icon{
+                    display: flex;
+                    align-items: center;
+                    font-size: var(--auto-font-size);
+                    padding-left: 0.5em;
+                }
             } 
-            .container{
+            .popoup-container{
                 min-height: 1em;
                 position: relative;
                 border: var(--auto-border);
@@ -89,17 +130,16 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
     }
 
     _renderSelection() {
-        return html`    
-            <div class="selection" slot="trigger">              
-                ${when(this._isEmpty() && this.options.placeholder
+        return html`<div class="selection" slot="trigger">                    
+                    ${when(this.options.icon, () => html`<span class='icon'><sl-icon name="${this.options.icon!}"></sl-icon></span>`)}
+                    ${when(this._isEmpty() && this.options.placeholder
             , () => html`<span class='placeholder'>${this.options.placeholder}</span>`
             , () => {
                 return html`<span class="select-value">
-                    ${this.renderSelection()}
-                </span>`
+                                ${this.renderSelection()}
+                            </span>`
             }
         )}
-                
                 <span class='suffix'>
                     <sl-icon 
                         library="system" 
@@ -107,11 +147,11 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
                         name="chevron-down" 
                         aria-hidden="true">
                     </sl-icon>
-                </span>  
-            </div>`
+                </span>
+            </div>       `
     }
     _renderContent() {
-        return html`<div class="container">
+        return html`<div class="popoup-container">
             ${this.renderDropdown()}
         </div>`
     }
@@ -124,15 +164,22 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
     renderInput() {
         if (this.options.dropdown) {
             return html`
-                <sl-dropdown          
-                    size="${this.context.size}"
-                    @sl-show="${() => { this.active = true }}"
-                    @sl-after-hide="${() => { this.active = false }}"
-                    sync="width"
-                >
-                ${this._renderSelection()}
-                ${this._renderContent()}
-            </sl-dropdown> 
+            <div class="content">
+                ${this.renderBeforeActions(false)}
+                <span class="dropdown">
+                    <sl-dropdown          
+                        size="${this.context.size}"
+                        @sl-show="${() => { this.active = true }}"
+                        @sl-after-hide="${() => { this.active = false }}"
+                        sync="width"
+                        distance="10"
+                    >
+                    ${this._renderSelection()}
+                    ${this._renderContent()}
+                </sl-dropdown>
+            </span>
+            ${this.renderAfterActions(false)}
+            </div>
             `
         } else {
             return html`${this._renderContent()}`
