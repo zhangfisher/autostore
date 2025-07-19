@@ -54,13 +54,13 @@ import { ComputedObjects } from "../computed/computedObjects";
 import { assignObject } from "flex-tools/object/assignObject"
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from "./types";
 import type { Dict, ObjectKeyPaths, StatePath } from "../types";
-import { log, LogLevel, LogMessageArgs } from "../utils/log";
+import { log, type LogLevel, type LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";
-import { ComputedObject } from "../computed/computedObject";
+import type { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
-import { ComputedContext, ComputedDescriptor, } from "../computed/types";
-import { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
-import { StoreEvents } from "../events/types";
+import type { ComputedContext, ComputedDescriptor, } from "../computed/types";
+import type { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
+import type { StoreEvents } from "../events/types";
 import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPathEq, setVal } from "../utils";
 import { BATCH_UPDATE_EVENT } from '../consts';
 import { createReactiveObject } from "./reactive";
@@ -69,15 +69,15 @@ import { WatchObjects } from "../watch/watchObjects";
 import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
-import { EventEmitter, EventListener } from "../events";
+import { EventEmitter, type EventListener } from "../events";
 import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor"
 import { isMatchOperates } from "../utils/isMatchOperates";
-import { GetTypeByPath } from '../types';
-import { SchemaManager, SchemaState, SchemaKeyPaths } from "../schema";
+import type { GetTypeByPath } from '../types';
+import { SchemaManager, type SchemaState, type SchemaKeyPaths } from "../schema";
 import { createShadow } from "./shadow";
 import { TimeoutError } from "../errors";
-import { ObserverDescriptor } from "../observer/types";
+import type { ObserverDescriptor } from "../observer/types";
 import { isSchemaBuilder } from "../utils/isSchemaBuilder";
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
@@ -107,7 +107,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this._options = assignObject({
             id: getId(),
             debug: false,
-            lazy: false,
             enableComputed: true,
             reentry: true,
             resetable: false,
@@ -509,7 +508,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                 this._batching = false
                 this._peeping = false
                 this._updateFlags = 0
-                this._updateValidateBehavior = validate
+                this._updateValidateBehavior = undefined
                 this.replyBatchOperates(reply, batch)
             }
         } else {

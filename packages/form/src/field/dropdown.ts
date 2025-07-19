@@ -11,9 +11,12 @@ import { AutoField } from ".";
 import { when } from "lit/directives/when.js";
 import { classMap } from "lit/directives/class-map.js";
 import { state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import type { htmlTemplate } from "autostore";
 
 export type AutoDropdownFieldOptions = {
     dropdown?: boolean
+    renderSelection?: (value: any, html: htmlTemplate) => string
 }
 
 
@@ -78,6 +81,7 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
                 border-radius: var(--sl-input-border-radius-medium);    
                 letter-spacing: var(--sl-input-letter-spacing);
                 background-color: var(--sl-input-background-color);
+                height:var(--auto-line-height);
                 &>.select-value,&>.content{
                     flex-grow: 1; 
                     display: flex;
@@ -103,9 +107,12 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
             } 
             .popoup-container{
                 min-height: 1em;
-                position: relative;
-                border: var(--auto-border);
-                background-color: var(--sl-input-background-color);
+                position: relative;                
+                &.dropdown{
+                    border: var(--auto-border);
+                    background-color: var(--sl-input-background-color);
+                    border-radius: var(--auto-border-radius);
+                }
             }            
             sl-icon.chevron{
                 transition: all 0.2s ease-in;
@@ -136,8 +143,8 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
             , () => html`<span class='placeholder'>${this.options.placeholder}</span>`
             , () => {
                 return html`<span class="select-value">
-                                ${this.renderSelection()}
-                            </span>`
+                    ${this.renderSelection()}
+                </span>`
             }
         )}
                 <span class='suffix'>
@@ -151,15 +158,18 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
             </div>       `
     }
     _renderContent() {
-        return html`<div class="popoup-container">
+        return html`<div class="popoup-container ${ifDefined(this.options.dropdown ? 'dropdown' : undefined)}">
             ${this.renderDropdown()}
         </div>`
     }
     renderDropdown() {
 
     }
-    renderSelection() {
-
+    renderSelection(val?: any) {
+        return html`    
+        ${this.options.renderSelection ?
+                this.options.renderSelection(val || this.value, html) : val || this.value}
+            `
     }
     renderInput() {
         if (this.options.dropdown) {
@@ -172,7 +182,7 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
                         @sl-show="${() => { this.active = true }}"
                         @sl-after-hide="${() => { this.active = false }}"
                         sync="width"
-                        distance="10"
+                        distance="2"
                     >
                     ${this._renderSelection()}
                     ${this._renderContent()}

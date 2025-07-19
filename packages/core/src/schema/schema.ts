@@ -41,11 +41,11 @@ type SchemaArgs = {
 function markRawOptions(options: SchemaOptions) {
     if (isPlainObject(options)) {
         forEachObject(options, ({ value, key, parent }) => {
-            if (isFunction(value) && (
+            if ((isFunction(value) && (
                 key.startsWith('on')
                 || key.startsWith('render')
                 || key.startsWith('to')
-            )) {
+            )) || key === 'select') {
                 // @ts-ignore
                 parent[key] = markRaw(value)
             }
@@ -120,17 +120,14 @@ export const configurable = schema
 
 export function createTypeSchemaBuilder<Value = any>(isValid: (val: any) => boolean, defaultTips: string) {
     const typeSchema = function () {
-        const args = parseSchemaOptions([...arguments]);
-        if (!args.validator) {
-            args.validator = {} as any;
+        const opts = Object.assign({}, arguments[1])
+        if (typeof (opts.onValidate) !== 'function') {
+            opts.onValidate = isValid;
         }
-        if (typeof (args.validator.validate) !== 'function') {
-            args.validator.validate = isValid;
+        if (!opts.invalidMessage) {
+            opts.invalidMessage = defaultTips;
         }
-        if (!args.validator.message) {
-            args.validator.message = defaultTips;
-        }
-        return schema(args.value, args.options)
+        return schema(arguments[0], opts)
     }
     return typeSchema as SchemaBuilder<Value>
 }

@@ -126,20 +126,20 @@ describe("所有异步计算基础功能", () => {
                         return scope.price * scope.count
                     }, ['price', 'count'])
                 }, {
-                    lazy: true
+                    onComputedCreated: () => {
+                        setTimeout(() => {
+                            expect("value" in store.state.total).toBe(true)
+                            expect("error" in store.state.total).toBe(true)
+                            expect("loading" in store.state.total).toBe(true)
+                            expect("retry" in store.state.total).toBe(true)
+                            expect("run" in store.state.total).toBe(true)
+                            expect("cancel" in store.state.total).toBe(true)
+                            expect("progress" in store.state.total).toBe(true)
+                            expect("timeout" in store.state.total).toBe(true)
+                            resolve()
+                        })
+                    }
                 })
-                store.on("computed:created", () => {
-                    expect("value" in store.state.total).toBe(true)
-                    expect("error" in store.state.total).toBe(true)
-                    expect("loading" in store.state.total).toBe(true)
-                    expect("retry" in store.state.total).toBe(true)
-                    expect("run" in store.state.total).toBe(true)
-                    expect("cancel" in store.state.total).toBe(true)
-                    expect("progress" in store.state.total).toBe(true)
-                    expect("timeout" in store.state.total).toBe(true)
-                    resolve()
-                })
-                store.state.total
             })
         })
 
@@ -152,23 +152,22 @@ describe("所有异步计算基础功能", () => {
                         return scope.price * scope.count
                     }, ['price', 'count'], { id: 'x' })
                 }, {
-                    lazy: true,
                     onComputedCreated: (computedObject) => {
-                        expect(store.computedObjects.has('x')).toBe(true)
-                        expect(computedObject.id).toBe("x")
-                        expect(computedObject).toBeInstanceOf(ComputedObject)
-                        const obj = store.computedObjects.get("x")!
-                        expect(computedObject).toBe(obj)
-                        expect(obj).toBeInstanceOf(ComputedObject)
-                        expect(obj.id).toBe("x")
-                        expect(obj.enable).toBe(true)
-                        expect(obj.depends).toEqual([["price"], ["count"]])
-                        expect(obj.path).toEqual(['total'])
-                        resolve()
+                        setTimeout(() => {
+                            expect(store.computedObjects.has('x')).toBe(true)
+                            expect(computedObject.id).toBe("x")
+                            expect(computedObject).toBeInstanceOf(ComputedObject)
+                            const obj = store.computedObjects.get("x")!
+                            expect(computedObject).toBe(obj)
+                            expect(obj).toBeInstanceOf(ComputedObject)
+                            expect(obj.id).toBe("x")
+                            expect(obj.enable).toBe(true)
+                            expect(obj.depends).toEqual([["price"], ["count"]])
+                            expect(obj.path).toEqual(['total'])
+                            resolve()
+                        })
                     }
                 })
-                // 如果没有配置immediate:true,则需要读取一次计算属性，才会触发创建
-                store.state.total
             })
         })
 

@@ -82,13 +82,15 @@ describe("同步计算属性的基本特性", () => {
                     }
                     return scope.price * scope.count
                 }, { id: 'x' }),
-            }, { lazy: true })
-            store.on("computed:created", () => {
-                store.computedObjects.get("x")!.run()
-                expect(store.state.total).toBe(6)
-                resolve()
+            }, {
+                onComputedCreated: () => {
+                    setTimeout(() => {
+                        store.computedObjects.get("x")!.run()
+                        expect(store.state.total).toBe(6)
+                        resolve()
+                    })
+                }
             })
-            store.state.total // 读取触发计算属性的创建
         })
     })
     test("手动传参覆盖默认的计算属性参数，然后运行", () => {
@@ -108,14 +110,13 @@ describe("同步计算属性的基本特性", () => {
                         scope.price * scope.count
                     }
                 }, { id: 'x' }),
-            }, { lazy: true })
-            store.on("computed:created", () => {
-                setTimeout(() => {
-                    store.computedObjects.get("x")!.run({ scope: "price" })
-                })
+            }, {
+                onComputedCreated: () => {
+                    setTimeout(() => {
+                        store.computedObjects.get("x")!.run({ scope: "price" })
+                    })
+                }
             })
-            store.state.total // 读取触发计算属性的创建
-
         })
     })
     test('侦听同步计算属性的变更事件', async () => {

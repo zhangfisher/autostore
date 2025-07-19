@@ -146,19 +146,20 @@ const store = new AutoStore({
             label: '乡镇',
             widget: 'cascader',
             placeholder: '选择行政地区',
-            data: areaData5,
+            select: areaData5,
             icon: 'map-pin',
             labelKey: 'name',
             valueKey: 'name',
+            rootKey: '35',
             idKey: 'code',
             delimiter: '/',
-            maxLevel: 5
+            maxLevel: 3
         }),
         area: configurable('福建省泉州市丰泽区', {
             label: '地区',
             widget: 'cascader',
             placeholder: '选择行政地区',
-            data: areaData,
+            select: areaData,
             icon: 'map-pin',
             rootKey: '0',
             labelKey: 'n',
@@ -210,6 +211,10 @@ const store = new AutoStore({
                 '-',
                 { label: "空白", value: '' }
             ]
+        }),
+        daterange: configurable('2024-12-03,2025-12-03', {
+            label: '日期范围',
+            widget: 'date-range'
         }),
         datetime: configurable('2025-12-03T09:30', {
             label: '日期时间',
@@ -267,6 +272,9 @@ const store = new AutoStore({
             widget: 'combine',
             label: '内边距',
             toState: (values) => toPadding(values),
+            renderSelection: (values, html) => {
+                return html`<span style="border: 1px solid red;padding:4px;"> ${values} </span>`;
+            },
             children: [
                 {
                     name: 'top',

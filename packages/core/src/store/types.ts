@@ -55,6 +55,9 @@ export interface AutoStoreOptions<State extends Dict> {
      * 
      * @default true
      * 
+     * @deprecated
+     * 
+     * 
     */
     lazy?: boolean
     /**

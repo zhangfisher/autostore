@@ -9,22 +9,19 @@
  * @param fn  ({value:any,key:string[],parent:object})=>void
  */
 
-import { Dict } from "../types"
+import type { Dict } from "../types"
 
-
-
-export function forEachObject<T extends Dict>(obj:T,callback?:(params:{key:string,value:any,path:string[],parent:T})=>void){     
-    function _forEachObject(obj:T,key:string[]){
-        for(let k in obj){
+export function forEachObject<T extends Dict>(obj: T, callback?: (params: { key: string, value: any, path: string[], parent: T }) => void) {
+    function _forEachObject(obj: T, key: string[]) {
+        for (const k in obj) {
             const value = obj[k]
-            if(typeof(callback) === 'function'){
-                callback({value,key:k,parent:obj,path:key.concat(k)})
+            if (typeof (callback) === 'function') {
+                callback({ value, key: k, parent: obj, path: key.concat(k) })
             }
-            if(typeof(value)==='object'){
-                _forEachObject(value,key.concat(k))
+            if (typeof (value) === 'object') {
+                _forEachObject(value, key.concat(k))
             }
         }
     }
-    _forEachObject(obj,[])
+    _forEachObject(obj, [])
 }
- 

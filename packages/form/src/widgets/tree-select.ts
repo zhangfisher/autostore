@@ -6,6 +6,7 @@ import '@shoelace-style/shoelace/dist/components/tree/tree.js';
 import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 
 import type { SchemaTreeSelectWidgetOptions } from 'autostore';
+import { when } from "lit/directives/when.js";
 
 export type AutoFieldTreeSelectOptions = Required<SchemaTreeSelectWidgetOptions>
 
@@ -47,9 +48,9 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
         AutoField.styles,
         css`
             sl-tree{
-                padding: 0.2em;
                 border: 1px solid var(--sl-input-border-color);
-                border-radius: var(--sl-border-radius-medium);
+                border-radius: var(--sl-border-radius-medium);                
+                font-size: var(--auto-font-size);
             }
     `] as any
     nodes: TreeNodes = {}
@@ -136,31 +137,6 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
             forEachItem(item, undefined, 0, [])
         })
     }
-    _renderNode(item: TreeNode & Record<string, any>, values: any, parentPath: string[]): any {
-        const isSelected = values.includes((item as any)[this.valueKey])
-        const curPath = [...parentPath, (item as any)[this.labelKey]]
-        return html`<sl-tree-item 
-            data-id=${String(item[this.idKey])}
-            data-value=${String(item[this.valueKey])}
-            data-path=${curPath.join('/')}
-            ?selected=${isSelected}
-            ?expanded=${item.expanded}
-        >${item.label}        
-        ${Array.isArray(item.children) ? html`${item.children.map((child) => {
-            return this._renderNode(child, values, curPath)
-        })}` : ''}</sl-tree-item>`
-    }
-    _renderNodes(nodes: TreeNodes): any {
-        const values = Array.isArray(this.value) ? this.value : [this.value]
-        if (Array.isArray(nodes)) {
-            return nodes.map(node => {
-                return this._renderNode(node as TreeNode, values, [])
-            })
-        } else {
-            return this._renderNode(nodes as TreeNode, values, [])
-        }
-    }
-
     onSelectionChange(e: CustomEvent) {
         const selection = Array.from(e.detail.selection) as SlTreeItem[]
         if (selection) {
@@ -186,10 +162,36 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
         }
     }
 
+    _renderNode(item: TreeNode & Record<string, any>, values: any, parentPath: string[]): any {
+        const isSelected = values.includes((item as any)[this.valueKey])
+        const curPath = [...parentPath, (item as any)[this.labelKey]]
+        return html`<sl-tree-item 
+            data-id=${String(item[this.idKey])}
+            data-value=${String(item[this.valueKey])}
+            data-path=${curPath.join('/')}
+            ?selected=${isSelected}
+            ?expanded=${item.expanded}
+        >
+        ${when(item.icon, () => html`<sl-icon name="${item.icon!}"></sl-icon>`)}
+        ${item.label}        
+        ${Array.isArray(item.children) ? html`${item.children.map((child) => {
+            return this._renderNode(child, values, curPath)
+        })}` : ''}</sl-tree-item>`
+    }
+    _renderNodes(nodes: TreeNodes): any {
+        const values = Array.isArray(this.value) ? this.value : [this.value]
+        if (Array.isArray(nodes)) {
+            return nodes.map(node => {
+                return this._renderNode(node as TreeNode, values, [])
+            })
+        } else {
+            return this._renderNode(nodes as TreeNode, values, [])
+        }
+    }
+
     renderTree() {
         return html`
-        <sl-tree 
-            slot="value" 
+        <sl-tree  
             name="${this.name}"
             data-path = ${this.path}   
             size=${this.context.size}

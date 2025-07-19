@@ -174,7 +174,7 @@ export default css`
     /* 紧凑模式 */
     :host(.compact){ 
         & > .autofield{ 
-            padding: calc(var(--auto-spacing) * 0.3) var(--auto-spacing);        
+            padding: calc(var(--auto-spacing) * 0.2) ;          
         }
     }
     /* 浏览视图  */

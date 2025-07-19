@@ -52,38 +52,33 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 
     @state()
     active: boolean = false
-
     @state()
     data: any = {}
-
     @state()
     level: number = 3
-
     @state()
     selected: any[] = []
-
     @state()
     focusItems: any[] = []
 
     scrollbars: any[] = []
 
-
     getInitialOptions() {
         const opts = Object.assign(super.getInitialOptions(), {
             idKey: 'id',
-            rootKey: 'root',
+            rootKey: '$root',
             labelKey: 'label',
             maxLevel: 3,
-            data: {}
+            select: {}
         }) as AutoFieldCascaderOptions
         if (!opts.valueKey) opts.valueKey = opts.idKey
         if (!opts.idKey) opts.idKey = opts.labelKey
         return opts
     }
-
     connectedCallback(): void {
         super.connectedCallback()
-        this.data = this.options.childrenKey || Array.isArray(this.options.data) ? this._normalizeData(this.options.data as any) : this.options.data
+        this.data = (this.options.childrenKey || Array.isArray(this.options.select))
+            ? this._normalizeData(this.options.select as any) : this.options.select
         this.selected = this._parseValues(this.value)
         this.focusItems = Array.from({ length: this.options.maxLevel - 1 }).fill(null)
     }
@@ -113,28 +108,33 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
      * key为id{}的平面结构
      */
     _normalizeData(items: Record<string, any> | Record<string, any>[]) {
-        const result: Record<string, SchemaCascaderDataItem> = {};
+        const result: Record<string, any[]> = {};
         const handleNode = (item: SchemaCascaderDataItem, root: boolean = false) => {
             // 使用提供的id或生成的key作为标识符
-            const id = (item as any)[this.options.idKey] || (root ? 'root' : undefined)
+            const id = (item as any)[this.options.idKey] || (root ? '$root' : undefined)
             if (!id) return;
-            // 添加到结果对象
-            result[id] = item;
 
             // 如果有子节点，递归处理
             const children = (item as any)[this.options.childrenKey || 'children']
+            // 添加到结果对象
             if (children && Array.isArray(children) && children.length > 0) {
+                result[id] = children
                 children.forEach((item) => {
                     handleNode(item);
                 });
             }
         };
-        handleNode(Array.isArray(items)
-            ? items.reduce((r, cur) => {
+
+        if (Array.isArray(items)) {
+            result.$root = items.reduce((r, cur) => {
                 r.push(cur)
+                handleNode(cur)
                 return r
-            }, []) : items
-            , true)
+            }, [])
+
+        } else {
+            handleNode(items, true)
+        }
         return result;
     }
 
@@ -225,9 +225,7 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
     }
 
     _renderLevel(items: any[], level: number = 1, pid?: any) {
-        if (!Array.isArray(items)) {
-            debugger
-        }
+        if (!items) return
         return html`<sl-menu class="level" 
             @sl-select=${level === this.options.maxLevel ? this._onSelectItem.bind(this) : null}>
                 ${repeat(items, (item) => {

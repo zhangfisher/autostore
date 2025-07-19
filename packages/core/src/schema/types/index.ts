@@ -2,7 +2,7 @@ import type { ComputedBuilder } from "../../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../../consts"
 import type { AutoStore } from "../../store";
 import type { ComputedState, Dict, GetTypeByPath, MutableRecord, StatePath, ToRawType } from '../../types';
-import type { SchemaCaptchaWidgetOptions, SchemaCascaderWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaCombineWidgetOptions, SchemaCustomWidgetOptions, SchemaDateTimeWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaIconsWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
+import type { SchemaCaptchaWidgetOptions, SchemaCascaderWidgetOptions, SchemaCheckboxGroupWidgetOptions, SchemaCheckboxWidgetOptions, SchemaColorPickerWidgetOptions, SchemaCombineWidgetOptions, SchemaCustomWidgetOptions, SchemaDateRangeWidgetOptions, SchemaDateTimeWidgetOptions, SchemaDateWidgetOptions, SchemaEmailWidgetOptions, SchemaIconsWidgetOptions, SchemaInputWidgetOptions, SchemaIpAddressWidgetOptions, SchemaListWidgetOptions, SchemaNumberWidgetOptions, SchemaPartsWidgetOptions, SchemaPasswordWidgetOptions, SchemaPhoneWidgetOptions, SchemaQrCodeWidgetOptions, SchemaRadioButtonWidgetOptions, SchemaRadioWidgetOptions, SchemaRangeWidgetOptions, SchemaRatingWidgetOptions, SchemaSearchWidgetOptions, SchemaSelectWidgetOptions, SchemaSwitchWidgetOptions, SchemaTextareaWidgetOptions, SchemaTimeWidgetOptions, SchemaTreeDropdownWidgetOptions, SchemaTreeSelectWidgetOptions, SchemaUploadWidgetOptions, SchemaURLWidgetOptions, SchemaVerifyCodeWidgetOptions, SchemaWidgetTypes } from "./widgets";
 
 
 // 让对象的成员值允许是ComputedBuilder，可计算值 
@@ -152,7 +152,7 @@ export type SchemaWidgetShareOptions<Value, State> = {
     divider?: boolean // 是否在前面显示一条分割线
     viewAlign?: 'left' | 'center' | 'right' // viewonly模式下显示方式
     tips?: string
-    select?: (SchemaWidgetSelectItem<Value> | string | number)[]
+    select?: Record<string, any> | ((SchemaWidgetSelectItem<Value> | string | number)[])
     // 转换数据
     toView?: (value: any) => any
     toState?: (value: any) => any
@@ -201,6 +201,7 @@ export type SchemaOptions<Value = any, State = Dict> = MutableRecord<{
     'checkbox-group': SchemaCheckboxGroupWidgetOptions
     'tree-dropdown': SchemaTreeDropdownWidgetOptions
     'tree-select': SchemaTreeSelectWidgetOptions
+    'date-range': SchemaDateRangeWidgetOptions
 }, 'widget', SchemaWidgetShareOptions<Value, State>, 'input'>
 
 

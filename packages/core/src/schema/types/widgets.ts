@@ -31,6 +31,7 @@ export type SchemaWidgetTypes = 'input'
     | 'custom'
     | 'combine'
     | 'icons'
+    | 'date-range'
 
 
 export type SchemaInputWidgetOptions = {
@@ -321,6 +322,7 @@ export type SchemaPartsWidgetOptions = {
 export type SchemaCombineWidgetOptions = {
     children: SchemaOptions[]
     dropdown?: boolean
+    renderSelection?: (value: any, html: htmlTemplate) => string
 }
 
 export type SchemaIconsWidgetOptions = {
@@ -348,5 +350,9 @@ export type SchemaCascaderWidgetOptions = {
     childrenKey?: string         // 如果指定则说明data是嵌套格式
     maxLevel?: number            // 最大级数,默认是3
     delimiter?: string           // 默认为''，用于合并级联值
-    data: Record<string, any>
+    select: Record<string, any> | (Record<string, any>)[]
+}
+
+export type SchemaDateRangeWidgetOptions = {
+    delimiter?: string           // 默认为','
 }

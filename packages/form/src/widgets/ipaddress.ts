@@ -13,8 +13,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
             span.dot{
                 width:1em;                     
                 text-align: center;   
-                font-weight: bold;
-                margin-top: 0.8rem;                
+                font-weight: bold;             
             }
             sl-input::part(base){
                 border: none;
@@ -24,9 +23,10 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
                 justify-content: space-around;
                 border: var(--auto-border);
                 border-radius: var(--auto-border-radius);
+                align-items: baseline;
             }
             sl-input{
-                width: 3rem;
+                width: 2em;
             }
             sl-input::part(input){
                 text-align: center; 
@@ -71,7 +71,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
             // 可选：自动跳转到下一个输入框（如果有的话）
             const nextInput = input.nextElementSibling?.nextElementSibling as HTMLInputElement;
             if (nextInput) {
-                nextInput.focusItems();
+                nextInput.focus();
                 nextInput.select();
             }
         }
@@ -110,7 +110,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
         // 自动聚焦到最后一个被填充的输入框
         if (inputs.length > 0) {
             const lastInput = inputs[Math.min(3, inputs.length - 1)];
-            lastInput.focusItems();
+            lastInput.focus();
             lastInput.select();
         }
     }

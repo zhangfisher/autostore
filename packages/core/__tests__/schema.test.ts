@@ -23,7 +23,7 @@ describe("validator", () => {
         })
         expect(store.state.order.price).toBe(100)
         expect(() => { store.state.order.price = 10 }).toThrow(ValidateError)
-        expect(store.state.order.price).toBe(100)
+        expect(store.state.order.price).toBe(10)
     })
 
     test("赋值时校验出错时不触发错误忽略", () => {
@@ -114,8 +114,8 @@ describe("validator", () => {
             store.state.order.price = 10
         } catch (e: any) {
             expect(e).toBeInstanceOf(ValidateError)
-            expect(e.message).toBe("order.price:价格必须大于10")
-            expect(store.schemas.errors["order.price"]).toBe("order.price:价格必须大于10")
+            expect(e.message).toBe("价格必须大于10")
+            expect(store.schemas.errors["order.price"]).toBe("价格必须大于10")
         }
     })
     test("通过err.message返回校验错误信息", () => {

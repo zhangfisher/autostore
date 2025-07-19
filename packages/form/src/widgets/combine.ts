@@ -1,17 +1,17 @@
-import { AutoField } from "@/field"
+import { AutoDropdownField, type AutoDropdownFieldOptions } from "@/field/dropdown"
 import { renderWidget } from "@/utils/renderWidget"
 import type { SchemaCombineWidgetOptions } from "autostore"
-import { css, html } from "lit"
-import { customElement } from "lit/decorators.js"
+import { css, html, nothing, render } from "lit"
+import { customElement, query } from "lit/decorators.js"
 import { repeat } from "lit/directives/repeat.js"
 
 export type AutoFieldCombineOptions = Required<SchemaCombineWidgetOptions>
 
 
 @customElement('auto-field-combine')
-export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
+export class AutoFieldCombine extends AutoDropdownField<AutoFieldCombineOptions & AutoDropdownFieldOptions> {
     static styles = [
-        AutoField.styles,
+        AutoDropdownField.styles,
         css`
             .value .children{
                 display: flex;
@@ -20,6 +20,10 @@ export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
         `
 
     ] as any
+
+    @query(".selection>.select-value")
+    selection: any
+
     getInitialOptions() {
         return Object.assign({}, super.getInitialOptions(), {
             children: []
@@ -37,16 +41,34 @@ export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
     // 使用箭头函数绑定 this
     private _handleChildrenChange = () => {
         this.onFieldChange()
+        this._updateSelection()
     };
 
-    /**
-     * 
-     */
+    _isFirst: boolean = true
+
+    _updateSelection() {
+        if (!this.selection) return
+        setTimeout(() => {
+            const values = this.toState(this.getInputValue())
+            const selection = super.renderSelection(values)
+            if (this._isFirst) {
+                // this.selection.innerHTML = ''
+                render(nothing, this.selection)
+                this._isFirst = false
+            }
+            render(nothing, this.selection, { isConnected: true })
+            render(selection, this.selection, { isConnected: true })
+        })
+    }
     _onChildrenChange() {
         if (this.options.children.length > 0) {
             this.shadow.addEventListener('change', this._handleChildrenChange)
             this.shadow.addEventListener('input', this._handleChildrenChange)
         }
+    }
+    renderSelection() {
+        setTimeout(() => this._updateSelection())
+        return html``
     }
 
     getInputValue() {
@@ -60,11 +82,10 @@ export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
             }
         })
         return values
-
     }
 
 
-    renderInput() {
+    renderDropdown() {
         return html`
             <div class="children">
                 ${repeat(this.options.children, (field) => {
@@ -82,6 +103,13 @@ export class AutoFieldCombine extends AutoField<AutoFieldCombineOptions> {
     /**
      * 不响应状态变化
      * combine字段只是一个容器，内部widget才需要响应状态变化
+     * 
+     * 为什么不响应变化？
+     * 
+     * 因为当children更新时，如果不阻止状态变化，会导致combine重新渲染
+     * combine重新渲染会导致children也重新渲染，这会导致children失去焦点
+     * 这样如果children中包括input就会因为失去焦点而无法进行连续输入
+     * 
      * 
      */
     _handleStateChange() {

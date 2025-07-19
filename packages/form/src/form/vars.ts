@@ -13,7 +13,9 @@ export const vars = css`
     --auto-border: 1px solid var(--auto-border-color);    
     --auto-border-radius: var(--sl-border-radius-medium);
     --auto-shadow: var(--sl-shadow-medium);  
-    --auto-workspace-color: var(--sl-color-gray-100);          
+    --auto-workspace-color: var(--sl-color-gray-100);       
+    
+    
 }
 :host([size=small]){ 
     --auto-font-size: var(--sl-font-size-small);    

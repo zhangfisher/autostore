@@ -92,6 +92,7 @@ export class AutoFieldIcons extends AutoDropdownField<AutoFieldIconsOptions> {
         }
     }
     _onClickIcon(name: string) {
+        if (this.context.viewonly) return
         if (this.options.multiple) {
             const index = this.selected.findIndex((v) => v === name)
             if (index > -1) {

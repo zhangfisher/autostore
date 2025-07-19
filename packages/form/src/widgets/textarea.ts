@@ -1,7 +1,7 @@
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 import { AutoField } from "@/field"
-import { html } from "lit"
+import { css, html } from "lit"
 import { customElement } from "lit/decorators.js"
 import type { SchemaTextareaWidgetOptions } from 'autostore';
 
@@ -9,7 +9,14 @@ export type AutoFieldTextAreaOptions = Required<SchemaTextareaWidgetOptions>
 
 @customElement('auto-field-textarea')
 export class AutoFieldTextArea extends AutoField<AutoFieldTextAreaOptions> {
+    static styles = [
+        AutoField.styles,
+        css` 
+            sl-textarea::part(textarea){
+                font-size: var(--auto-font-size);
+            }
 
+    `] as any
     renderInput() {
         return html`              
         <sl-textarea 

@@ -91,7 +91,9 @@ export class SchemaManager<
 
     remove(path: keyof SchemaStore['state']) {
         const key = this._getKey(path)
-        delete (this.store.state as any)[key]
+        if (this.store) {
+            delete (this.store.state as any)[key]
+        }
     }
 
     getValues() {
