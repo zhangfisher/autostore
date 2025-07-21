@@ -42,12 +42,12 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
         this.img.onerror = () => {
             console.error('验证码图片加载失败');
             this.loading = false;
-            this.input?.focusItems();
+            this.input?.focus();
             this.input?.select();
         };
         this.img.onload = () => {
             this.loading = false;
-            this.input?.focusItems();
+            this.input?.focus();
             this.input?.select();
         };
         this.loading = true;

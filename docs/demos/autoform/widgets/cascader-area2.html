@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px; min-height: 430px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <auto-form id="form" validat="input"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
+        </div>
+        <script>
+            async function load() {
+                const res = await fetch('/autostore/area2.json');
+                const data = await res.json();
+                const { AutoStore, configurable } = AutoStoreSpaces;
+                const store = new AutoStore({
+                    address: configurable('泉州市/丰泽区', {
+                        label: '乡镇',
+                        widget: 'cascader',
+                        placeholder: '选择行政地区',
+                        select: data,
+                        icon: 'map-pin',
+                        labelKey: 'name',
+                        valueKey: 'name',
+                        idKey: 'code',
+                        delimiter: '/',
+                        maxLevel: 4,
+                    }),
+                });
+                const form = document.querySelector('#form');
+                form.bind(store);
+                return store;
+            }
+            load().then((store) => {
+                const refreshViewer = () => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.innerHTML = JSON.stringify(store.state).replaceAll(',"car', ',<p></p>"car');
+                };
+                store.watch(refreshViewer);
+                refreshViewer();
+            });
+        </script>
+    </body>
+</html>

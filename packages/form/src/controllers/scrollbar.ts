@@ -136,7 +136,7 @@ export class Scrollbar {
     /**
      * 更新滚动条位置和大小
      */
-    private moveBar(e?: Event): void {
+    private moveBar(): void {
         if (!this.el || !this.target) return; // 防止在对象销毁后调用
 
         const totalHeight = this.el.scrollHeight;

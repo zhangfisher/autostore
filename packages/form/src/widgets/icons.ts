@@ -3,8 +3,6 @@ import type { SchemaIconsWidgetOptions } from "autostore"
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 import { repeat } from "lit/directives/repeat.js"
-import { when } from "lit/directives/when.js"
-import { classMap } from "lit/directives/class-map.js"
 import { AutoDropdownField } from "@/field/dropdown"
 
 const builtIns = ['help', 'error', 'email', 'search', 'lock', 'user', 'globe', 'date', 'time', 'phone', 'copy', 'remove', 'refresh', 'datetime']

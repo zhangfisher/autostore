@@ -149,7 +149,11 @@ export type SchemaWidgetShareOptions<Value, State> = {
     order?: number
     width?: number | string
     height?: number | string
-    divider?: boolean // 是否在前面显示一条分割线
+    /**
+     *  是否在前面显示一条分割线
+     *  当不显示网格线是生效
+     * */
+    divider?: boolean
     viewAlign?: 'left' | 'center' | 'right' // viewonly模式下显示方式
     tips?: string
     select?: Record<string, any> | ((SchemaWidgetSelectItem<Value> | string | number)[])
@@ -159,6 +163,13 @@ export type SchemaWidgetShareOptions<Value, State> = {
     toInput?: (value: any) => any
     toRender?: (value: any) => any
     actions?: SchemaWidgetAction<State>[]
+    /**
+     * 声明哪些字段是响应式字段
+     * 默认情况下，所有字段均使用markRaw包裹，
+     * 通过此字段指定哪些字段是响应式字段，即不使用markRaw包裹
+     * 默认值是enable,visible,required
+     */
+    reactiveFields?: string[]
     // 用于扩展widget样式，如{"<选择器>":"样式"}
     styles?: SchemaWidgetStyles
     // 用于扩展widget类，如{"<选择器>":"类名"}

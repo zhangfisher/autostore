@@ -49,3 +49,88 @@ export const orgTree = {
         }
     ]
 }
+
+
+export const cars = {
+    label: '汽车',
+    id: '0',
+    children: [
+        {
+            label: '乘用车',
+            id: '1',
+            children: [
+                {
+                    label: '轿车',
+                    id: '1-1',
+                    children: [
+                        { label: '紧凑型轿车', id: '1-1-1' },
+                        { label: '中型轿车', id: '1-1-2' },
+                        { label: '豪华轿车', id: '1-1-3' },
+                    ],
+                },
+                {
+                    label: 'SUV',
+                    id: '1-2',
+                    children: [
+                        { label: '小型SUV', id: '1-2-1' },
+                        { label: '中型SUV', id: '1-2-2' },
+                        { label: '大型SUV', id: '1-2-3' },
+                    ],
+                },
+                {
+                    label: 'MPV',
+                    id: '1-3',
+                    children: [
+                        { label: '家用MPV', id: '1-3-1' },
+                        { label: '商务MPV', id: '1-3-2' },
+                    ],
+                },
+            ],
+        },
+        {
+            label: '商用车',
+            id: '2',
+            children: [
+                {
+                    label: '客车',
+                    id: '2-1',
+                    children: [
+                        { label: '小型客车', id: '2-1-1' },
+                        { label: '中型客车', id: '2-1-2' },
+                        { label: '大型客车', id: '2-1-3' },
+                    ],
+                },
+                {
+                    label: '货车',
+                    id: '2-2',
+                    children: [
+                        { label: '轻型货车', id: '2-2-1' },
+                        { label: '重型货车', id: '2-2-2' },
+                    ],
+                },
+            ],
+        },
+        {
+            label: '新能源车',
+            id: '3',
+            children: [
+                {
+                    label: '纯电动车',
+                    id: '3-1',
+                    children: [
+                        { label: '微型电动车', id: '3-1-1' },
+                        { label: '家用电动车', id: '3-1-2' },
+                    ],
+                },
+                {
+                    label: '混合动力车',
+                    id: '3-2',
+                    children: [
+                        { label: '插电式混动', id: '3-2-1' },
+                        { label: '油电混动', id: '3-2-2' },
+                    ],
+                },
+            ],
+        },
+    ],
+};

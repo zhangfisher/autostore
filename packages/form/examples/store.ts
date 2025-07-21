@@ -1,5 +1,5 @@
 import { parsePadding, toPadding } from './utils';
-import { orgTree } from './data';
+import { cars, orgTree } from './data';
 import { AutoStore, computed, configurable, delay } from 'autostore';
 import type { AutoForm } from '../src/form';
 import areaData from './0.json'
@@ -142,7 +142,16 @@ const store = new AutoStore({
                 }
             ]
         }),
-        area0: configurable('福建省泉州市丰泽区', {
+        car: configurable('1#1-1', {
+            label: '车型',
+            widget: 'cascader',
+            placeholder: '选择车型',
+            select: cars,
+            icon: 'car',
+            help: '选择id',
+            delimiter: '#',
+        }),
+        area0: configurable('泉州市/丰泽区', {
             label: '乡镇',
             widget: 'cascader',
             placeholder: '选择行政地区',
@@ -165,7 +174,6 @@ const store = new AutoStore({
             labelKey: 'n',
             valueKey: 'n',
             idKey: 'c',
-            delimiter: '/',
             actions: [
                 {
                     label: '验证',
@@ -212,9 +220,10 @@ const store = new AutoStore({
                 { label: "空白", value: '' }
             ]
         }),
-        daterange: configurable('2024-12-03,2025-12-03', {
+        daterange: configurable('2024-12-03#2025-12-03', {
             label: '日期范围',
-            widget: 'date-range'
+            widget: 'date-range',
+            delimiter: '#'
         }),
         datetime: configurable('2025-12-03T09:30', {
             label: '日期时间',

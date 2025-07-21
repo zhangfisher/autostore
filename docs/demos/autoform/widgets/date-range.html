@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc"></div>
+            <auto-form id="form"></auto-form>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                dates: configurable('2025-12-12', {
+                    label: '日期范围',
+                    help: '使用,分割',
+                    widget: 'date-range',
+                }),
+                dateArray: configurable(['2025-12-12'], {
+                    label: '日期范围',
+                    help: '值为数组',
+                    widget: 'date-range',
+                }),
+                dateDelimiter: configurable('2025-12-12', {
+                    label: '日期范围',
+                    help: '自定义分割符',
+                    delimiter: '#',
+                    widget: 'date-range',
+                }),
+                datetime: configurable('2025-12-12', {
+                    label: '日期范围',
+                    help: '包含时间',
+                    includeTime: true,
+                    widget: 'date-range',
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

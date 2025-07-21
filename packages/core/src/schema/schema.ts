@@ -39,13 +39,17 @@ type SchemaArgs = {
 
 // 将options里面的on和render开头的函数标识为raw
 function markRawOptions(options: SchemaOptions) {
+    const reactiveFields = options.reactiveFields || []
+    if (reactiveFields.length === 0) {
+        reactiveFields.push('enable', 'required', 'visible', 'label', 'tips', 'icon')
+    }
     if (isPlainObject(options)) {
         forEachObject(options, ({ value, key, parent }) => {
             if ((isFunction(value) && (
                 key.startsWith('on')
                 || key.startsWith('render')
                 || key.startsWith('to')
-            )) || key === 'select') {
+            )) || !reactiveFields.includes(key)) {
                 // @ts-ignore
                 parent[key] = markRaw(value)
             }

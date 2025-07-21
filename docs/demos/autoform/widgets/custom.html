@@ -73,6 +73,37 @@
                         return [...mail.split('@'), checkText === '已订阅'];
                     },
                 }),
+                demail2: configurable('admin@autostore.com', {
+                    label: '订阅邮件',
+                    widget: 'custom',
+                    help: 'dropdown=false',
+                    dropdown: false,
+                    inputSelectors: 'input',
+                    renderSelection: (values, html) => {
+                        const text = values[2] === true ? '已订阅' : '没有订阅';
+                        return html`<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;"> ${values[0]}@${values[1]}(${text})</span>`;
+                    },
+                    renderContent: (values, html) => {
+                        return html` <div style="padding:1em">
+                            <label>
+                                电子邮件:
+                                <input .value=${values[0]} />
+                                @<input .value=${values[1]} />
+                            </label>
+                            <br />
+                            <label> 订阅新闻:<input type="checkbox" ?checked=${values[3]} /> </label>
+                        </div>`;
+                    },
+                    toState: (values) => {
+                        return `${values[0]}@${values[1]}(${values[2] ? '已订阅' : '没有订阅'})`;
+                    },
+                    toInput: (values) => {
+                        const matched = values.match(/\(([^)]+)\)[^)]*$/);
+                        const mail = matched ? values.substring(0, values.length - matched[0].length) : values;
+                        const checkText = matched ? matched[1] : '没有订阅';
+                        return [...mail.split('@'), checkText === '已订阅'];
+                    },
+                }),
             });
             const form = document.querySelector('#form');
             form.bind(store);

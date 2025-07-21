@@ -24,6 +24,7 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
                 justify-content: space-between;
                 gap:0;
                 max-height: 20em;
+                border: var(--auto-border);              
                 & > sl-menu.level{
                     flex-grow: 1;
                     flex-basis: 0;
@@ -45,7 +46,12 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
             } 
             sl-menu-item.selected::part(base){
                 background-color: var(--auto-workspace-color); 
-            }`
+            }
+            .popoup-container.dropdown>.levels{
+                border: none;
+            }
+            
+            `
     ] as any
 
     scrollbar = new ScrollbarController(this)
@@ -58,6 +64,7 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
     level: number = 3
     @state()
     selected: any[] = []
+
     @state()
     focusItems: any[] = []
 
@@ -69,6 +76,7 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
             rootKey: '$root',
             labelKey: 'label',
             maxLevel: 3,
+            childrenKey: 'children',
             select: {}
         }) as AutoFieldCascaderOptions
         if (!opts.valueKey) opts.valueKey = opts.idKey
@@ -77,7 +85,12 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
     }
     connectedCallback(): void {
         super.connectedCallback()
-        this.data = (this.options.childrenKey || Array.isArray(this.options.select))
+        const isChildrenFmt = (typeof (this.options.select) === 'object' && this.options.childrenKey in this.options.select)
+        // @ts-ignore
+        if (isChildrenFmt) this.options.rootKey = this.options.select[this.options.idKey]
+        this.data = (
+            isChildrenFmt
+            || Array.isArray(this.options.select))
             ? this._normalizeData(this.options.select as any) : this.options.select
         this.selected = this._parseValues(this.value)
         this.focusItems = Array.from({ length: this.options.maxLevel - 1 }).fill(null)
@@ -131,7 +144,6 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
                 handleNode(cur)
                 return r
             }, [])
-
         } else {
             handleNode(items, true)
         }
@@ -170,14 +182,17 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
         const level = Number(target.dataset.level)
         if (level !== this.options.maxLevel) return
 
-        const values: any[] = []
+        const selected: any[] = []
 
         const getItemValue = (cid: any, pid: any) => {
             const index = this.data[pid].findIndex((item: any) => {
                 return String(item[this.options.idKey]) === String(cid)
             })
             if (index > -1) {
-                return this.data[pid][index][this.options.valueKey]
+                return [
+                    this.data[pid][index][this.options.labelKey],
+                    this.data[pid][index][this.options.valueKey]
+                ]
             }
         }
 
@@ -187,11 +202,11 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
             const id = this.focusItems[i]
             const val = getItemValue(id, pid)
             if (!val) return
-            values.push(val)
+            selected.push([id, ...val])
             pid = id
         }
 
-        this.selected = values
+        this.selected = selected
         this.onFieldChange()
     }
 
@@ -217,10 +232,13 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
     }
 
     getInputValue() {
+        const vals = this.selected.map(v => {
+            return v[2]
+        })
         if (typeof (this.value) === 'string') {
-            return this.selected.join(this.options.delimiter || '')
+            return vals.join(this.options.delimiter || '')
         } else {
-            return this.selected
+            return vals
         }
     }
 
@@ -229,7 +247,8 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
         return html`<sl-menu class="level" 
             @sl-select=${level === this.options.maxLevel ? this._onSelectItem.bind(this) : null}>
                 ${repeat(items, (item) => {
-            const isSelected: boolean = this.selected[level - 1] === item[this.options.valueKey]
+
+            const isSelected: boolean = this.selected[level - 1]?.[0] === item[this.options.idKey]
             return html`
                 <sl-menu-item
                     type="checkbox"
@@ -248,15 +267,16 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
     }
 
     _parseValues(value: any) {
+        let values: any[] = []
+        const selected: any[] = []
         if (Array.isArray(value)) {
-            return value
+            values = value
         } else if (value && typeof value === 'string') {
             if (this.options.delimiter && this.options.delimiter.length > 0) {
-                return value.split(this.options.delimiter)
-            } else {
+                values = value.split(this.options.delimiter)
+            } else { // 没有指定分割符时
                 let items = this.data[this.options.rootKey] as any[]
                 let r = value
-                const values: any[] = []
                 while (true) {
                     const item = items.find((item) => {
                         return r.startsWith(item[this.options.valueKey])
@@ -270,16 +290,36 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
                         break
                     }
                 }
-                return values
             }
-        } else {
-            return []
         }
+        if (values.length > 0) {
+            let level = this.data[this.options.rootKey] as any[]
+            for (let i = 0; i < values.length; i++) {
+                const val = values[i]
+                const item = level.find((item) => {
+                    return item[this.options.valueKey] === val
+                })
+                if (item) {
+                    selected.push([
+                        item[this.options.idKey],
+                        item[this.options.labelKey],
+                        item[this.options.valueKey]
+                    ])
+                    level = this.data[item[this.options.idKey]]
+                    if (!level) break
+                } else {
+                    break
+                }
+            }
+        }
+        return selected
     }
 
     renderSelection() {
         return html`
-            ${this.selected.join(this.options.delimiter || '')}
+            ${this.selected.map(item => {
+            return item[1]
+        }).join(this.options.delimiter || '')}
         `
     }
     renderDropdown() {

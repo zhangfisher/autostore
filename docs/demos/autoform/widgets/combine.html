@@ -11,7 +11,7 @@
         <script src="/autostore/autoform.js"></script>
     </head>
 
-    <body style="overflow: hidden; padding: 1em 0px">
+    <body style="overflow: hidden; padding: 1em 0px; height: 500px">
         <div style="display: flex; flex-direction: column; postion: relative">
             <auto-form id="form" validat="input"></auto-form>
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
@@ -142,6 +142,44 @@
                             name: 'left',
                             label: '左',
                             widget: 'range',
+                            width: '50%',
+                            toInput: (value) => parsePadding(value).left,
+                        },
+                    ],
+                }),
+                padding2: configurable('10px 5px', {
+                    widget: 'combine',
+                    label: '内边距',
+                    help: '指定dropdown=false',
+                    dropdown: false,
+                    toState: (values) => toPadding(values),
+                    required: true,
+                    children: [
+                        {
+                            name: 'top',
+                            label: '上',
+                            widget: 'range',
+                            width: '50%',
+                            toInput: (value) => parsePadding(value).top,
+                        },
+                        {
+                            name: 'right',
+                            label: '右',
+                            widget: 'range',
+                            width: '50%',
+                            toInput: (value) => parsePadding(value).right,
+                        },
+                        {
+                            name: 'bottom',
+                            label: '下',
+                            widget: 'number',
+                            width: '50%',
+                            toInput: (value) => parsePadding(value).bottom,
+                        },
+                        {
+                            name: 'left',
+                            label: '左',
+                            widget: 'number',
                             width: '50%',
                             toInput: (value) => parsePadding(value).left,
                         },

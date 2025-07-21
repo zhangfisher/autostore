@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px; min-height: 400px">
+        <div style="display: flex; flex-direction: column; postion: relative">
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-bottom: 1em"></div>
+            <auto-form id="form" validat="input"></auto-form>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const cars = {
+                label: '汽车',
+                id: '0',
+                children: [
+                    {
+                        label: '乘用车',
+                        id: '1',
+                        children: [
+                            {
+                                label: '轿车',
+                                id: '1-1',
+                                children: [
+                                    { label: '紧凑型轿车', id: '1-1-1' },
+                                    { label: '中型轿车', id: '1-1-2' },
+                                    { label: '豪华轿车', id: '1-1-3' },
+                                ],
+                            },
+                            {
+                                label: 'SUV',
+                                id: '1-2',
+                                children: [
+                                    { label: '小型SUV', id: '1-2-1' },
+                                    { label: '中型SUV', id: '1-2-2' },
+                                    { label: '大型SUV', id: '1-2-3' },
+                                ],
+                            },
+                            {
+                                label: 'MPV',
+                                id: '1-3',
+                                children: [
+                                    { label: '家用MPV', id: '1-3-1' },
+                                    { label: '商务MPV', id: '1-3-2' },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        label: '商用车',
+                        id: '2',
+                        children: [
+                            {
+                                label: '客车',
+                                id: '2-1',
+                                children: [
+                                    { label: '小型客车', id: '2-1-1' },
+                                    { label: '中型客车', id: '2-1-2' },
+                                    { label: '大型客车', id: '2-1-3' },
+                                ],
+                            },
+                            {
+                                label: '货车',
+                                id: '2-2',
+                                children: [
+                                    { label: '轻型货车', id: '2-2-1' },
+                                    { label: '重型货车', id: '2-2-2' },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        label: '新能源车',
+                        id: '3',
+                        children: [
+                            {
+                                label: '纯电动车',
+                                id: '3-1',
+                                children: [
+                                    { label: '微型电动车', id: '3-1-1' },
+                                    { label: '家用电动车', id: '3-1-2' },
+                                ],
+                            },
+                            {
+                                label: '混合动力车',
+                                id: '3-2',
+                                children: [
+                                    { label: '插电式混动', id: '3-2-1' },
+                                    { label: '油电混动', id: '3-2-2' },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            };
+            const store = new AutoStore({
+                car: configurable('', {
+                    label: '车型',
+                    widget: 'cascader',
+                    placeholder: '选择车型',
+                    select: cars,
+                    icon: 'car',
+                    valueKey: 'label',
+                    delimiter: '/',
+                }),
+                car2: configurable(['商用车', '客车'], {
+                    label: '车型',
+                    widget: 'cascader',
+                    placeholder: '选择车型',
+                    select: cars,
+                    icon: 'car',
+                    help: '数组类型',
+                    valueKey: 'label',
+                }),
+                car3: configurable('', {
+                    label: '车型',
+                    widget: 'cascader',
+                    placeholder: '选择车型',
+                    select: cars,
+                    icon: 'car',
+                    help: '选择id',
+                    delimiter: '#',
+                }),
+                car4: configurable('', {
+                    label: '车型',
+                    widget: 'cascader',
+                    placeholder: '选择车型',
+                    select: cars,
+                    icon: 'car',
+                    valueKey: 'label',
+                    dropdown: false,
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state).replaceAll(',"car', ',<p></p>"car');
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

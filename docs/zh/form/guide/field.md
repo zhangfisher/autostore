@@ -351,3 +351,36 @@ const store = new AutoStore({
 :::warning 提示
 `configurable`函数的所有参数均可以是计算属性,并且计算属性的`scope`始终指向的状态根。
 :::
+
+### 响应式属性
+
+默认情况下，`configurable`函数第 2 个参数用来配置字段属性。
+
+```ts
+configurable('192.168.1.100', {
+    label: 'IP地址,
+    widget: 'ipaddress',
+    enable: true,
+    ///.....字段属性
+}
+```
+
+大部份字段属性均为可选参数，
+
+并且除了`enable`, `required`, `visible`, `label`, `tips`, `icon`为响应式属性外，其余属性均为静态属性。
+
+:::warning 提示
+**Q**:什么样是响应式属性？
+
+**A**:响应式属性是指当该属性的值发生变化时，**会触发字段组件的重新渲染**。
+:::
+
+可以通过`reactiveFields`来指定哪些属性是响应式属性。
+
+```ts
+configurable('192.168.1.100', {
+    label: 'IP地址,
+    widget: 'ipaddress',
+    reactiveFields:['widget','prefix']
+}
+```

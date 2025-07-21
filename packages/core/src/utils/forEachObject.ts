@@ -10,6 +10,7 @@
  */
 
 import type { Dict } from "../types"
+import { isRaw } from "./isRaw"
 
 export function forEachObject<T extends Dict>(obj: T, callback?: (params: { key: string, value: any, path: string[], parent: T }) => void) {
     function _forEachObject(obj: T, key: string[]) {
@@ -18,7 +19,7 @@ export function forEachObject<T extends Dict>(obj: T, callback?: (params: { key:
             if (typeof (callback) === 'function') {
                 callback({ value, key: k, parent: obj, path: key.concat(k) })
             }
-            if (typeof (value) === 'object') {
+            if (typeof (value) === 'object' && !isRaw(value)) {
                 _forEachObject(value, key.concat(k))
             }
         }

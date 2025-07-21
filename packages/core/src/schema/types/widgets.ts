@@ -355,4 +355,8 @@ export type SchemaCascaderWidgetOptions = {
 
 export type SchemaDateRangeWidgetOptions = {
     delimiter?: string           // 默认为','
+    pill?: boolean
+    filled?: boolean
+    includeTime?: boolean
+    clearable?: boolean
 }

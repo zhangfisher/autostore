@@ -1,10 +1,10 @@
 import { customElement, queryAll } from "lit/decorators.js"
-import type { SchemaDateWidgetOptions } from "autostore"
+import type { SchemaDateRangeWidgetOptions } from "autostore"
 import { AutoField } from "@/field"
 import { css, html } from "lit"
 
 
-export type AutoFieldDateRangeOptions = Required<SchemaDateWidgetOptions>
+export type AutoFieldDateRangeOptions = Required<SchemaDateRangeWidgetOptions>
 @customElement('auto-field-date-range')
 export class AutoFieldDateRange extends AutoField<AutoFieldDateRangeOptions> {
     static styles = [
@@ -25,7 +25,9 @@ export class AutoFieldDateRange extends AutoField<AutoFieldDateRangeOptions> {
     ] as any
     getInitialOptions() {
         return {
-            icon: 'date'
+            icon: 'date',
+            delimiter: ",",
+            includeTime: false
         }
     }
 
@@ -43,7 +45,7 @@ export class AutoFieldDateRange extends AutoField<AutoFieldDateRangeOptions> {
 
     _getDate(index: number) {
         const values = Array.isArray(this.value)
-            ? this.value : this.value.split(",")
+            ? this.value : this.value.split(this.options.delimiter)
         return values[index]
     }
 
@@ -55,7 +57,7 @@ export class AutoFieldDateRange extends AutoField<AutoFieldDateRangeOptions> {
 
     _renderDate(index: number) {
         return html`<sl-input 
-            type="date" 
+            type="${this.options.includeTime ? 'datetime-local' : 'date'}" 
             .value=${this._getDate(index)}
             size=${this.context.size} 
             ?disabled=${!this.options.enable}
@@ -80,7 +82,11 @@ export class AutoFieldDateRange extends AutoField<AutoFieldDateRangeOptions> {
         const values = (Array.from(this.inputs || [])).map(input => {
             return input.value
         })
-        return values
+        if (Array.isArray(this.value)) {
+            return values
+        } else {
+            return values.join(this.options.delimiter)
+        }
     }
 }
 
