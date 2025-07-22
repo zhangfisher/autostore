@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 2.0.1
+
+### Patch Changes
+
+-   [`f2b8429`](https://github.com/zhangfisher/autostore/commit/f2b8429c58ce6b91d3ea11009ce7db89da86528f) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 优化 webcomponent 重复加载时提示组件已注册的问题
+
+-   Updated dependencies []:
+    -   autostore@2.0.1
+
 ## 2.0.0
 
 ### Major Changes
