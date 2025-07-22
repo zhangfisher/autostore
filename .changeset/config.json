@@ -1,20 +1,11 @@
 {
-  "$schema": "https://unpkg.com/@changesets/config@3.0.3/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "zhangfisher/autostore" }],
-  "commit": true,
-  "access": "public",
-  "fixed": [
-    [
-      "autostore",
-      "@autostorejs/react",
-      "@autostorejs/syncer"
-    ]
-  ],
-  "linked": [], 
-  "baseBranch": "master",
-  "updateInternalDependencies": "patch",
-  "ignore": [
-    "autostore-docs",
-    "@autostorejs/vue"
-  ]
+    "$schema": "https://unpkg.com/@changesets/config@3.0.3/schema.json",
+    "changelog": ["@changesets/changelog-github", { "repo": "zhangfisher/autostore" }],
+    "commit": true,
+    "access": "public",
+    "fixed": [["autostore", "@autostorejs/react", "@autostorejs/syncer", "@autostorejs/form"]],
+    "linked": [],
+    "baseBranch": "master",
+    "updateInternalDependencies": "patch",
+    "ignore": ["autostore-docs", "@autostorejs/vue"]
 }
