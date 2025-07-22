@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 2.0.2
+
+### Patch Changes
+
+-   [`b0b9b03`](https://github.com/zhangfisher/autostore/commit/b0b9b035ac3a96679bdc4ef83db0642e72f10bd3) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 优化组件重复注册一
+
+-   Updated dependencies []:
+    -   autostore@2.0.2
+
 ## 2.0.1
 
 ### Patch Changes
