@@ -1,44 +1,43 @@
-import { AutoField } from "@/field"
-import type { SchemaIpAddressWidgetOptions } from "autostore"
-import { css, html } from "lit"
-import { customElement } from "lit/decorators.js"
+import { AutoField } from '@/field';
+import type { SchemaIpAddressWidgetOptions } from 'autostore';
+import { css, html } from 'lit';
 
-export type AutoFieldIPAddressOptions = Required<SchemaIpAddressWidgetOptions>
+export type AutoFieldIPAddressOptions = Required<SchemaIpAddressWidgetOptions>;
 
-@customElement('auto-field-ipaddress')
 export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
     static styles = [
         AutoField.styles,
-        css` 
-            span.dot{
-                width:1em;                     
-                text-align: center;   
-                font-weight: bold;             
+        css`
+            span.dot {
+                width: 1em;
+                text-align: center;
+                font-weight: bold;
             }
-            sl-input::part(base){
+            sl-input::part(base) {
                 border: none;
             }
-            magic-flex{
-                width:15rem;
+            magic-flex {
+                width: 15rem;
                 justify-content: space-around;
                 border: var(--auto-border);
                 border-radius: var(--auto-border-radius);
                 align-items: baseline;
             }
-            sl-input{
+            sl-input {
                 width: 2em;
             }
-            sl-input::part(input){
-                text-align: center; 
-                padding: 0px 2px ;
+            sl-input::part(input) {
+                text-align: center;
+                padding: 0px 2px;
                 padding-inline: 0px;
                 letter-spacing: var(--sl-letter-spacing-denser);
             }
-    `] as any
+        `,
+    ] as any;
     getInitialOptions(): Record<string, any> {
         return {
-            size: 'medium'
-        }
+            size: 'medium',
+        };
     }
 
     _onPartFocus(e: any) {
@@ -46,21 +45,16 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
         input.select();
     }
     _getIpBits(): [number, number, number, number] {
-        const bits = this.value?.split(".")
-        return [
-            parseInt(bits[0] || "0"),
-            parseInt(bits[1] || "0"),
-            parseInt(bits[2] || "0"),
-            parseInt(bits[3] || "0")
-        ]
+        const bits = this.value?.split('.');
+        return [parseInt(bits[0] || '0'), parseInt(bits[1] || '0'), parseInt(bits[2] || '0'), parseInt(bits[3] || '0')];
     }
     _onIpChange(_: number, e: Event) {
-        this.onFieldChange()
-        this._isLastInput(e)
+        this.onFieldChange();
+        this._isLastInput(e);
     }
     getInputValue() {
-        const inputs = Array.from(this.shadow.querySelectorAll('sl-input'))
-        return inputs.map(input => input.value).join(".")
+        const inputs = Array.from(this.shadow.querySelectorAll('sl-input'));
+        return inputs.map((input) => input.value).join('.');
     }
 
     _isLastInput(e: Event) {
@@ -115,36 +109,40 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
         }
     }
 
-
     renderInput() {
         return html`
             <magic-flex flex="row" size="small" no-padding grow="none">
-                ${this._getIpBits().map((bit, index) => html`
-                    <sl-input 
-                        value="${bit}" 
-                        name=${this.name} 
-                        data-path = ${this.path}
-                        defaultValue='0' 
-                        size=${this.context.size}
-                        maxLength="3"
-                        minLength="1"
-                        max="255"
-                        min="0"
-                        @sl-input=${(e: Event) => this._onIpChange(index, e)}
-                        @sl-change=${(e: Event) => this._onIpChange(index, e)} 
-                        @sl-focus=${this._onPartFocus.bind(this)}
-                        @paste=${(e: ClipboardEvent) => this._onPaste(e)}
-                    ></sl-input>
-                    ${index < 3 ? html`<span class="dot">.</span>` : ''}                    
-                `)} 
+                ${this._getIpBits().map(
+                    (bit, index) => html`
+                        <sl-input
+                            value="${bit}"
+                            name=${this.name}
+                            data-path=${this.path}
+                            defaultValue="0"
+                            size=${this.context.size}
+                            maxLength="3"
+                            minLength="1"
+                            max="255"
+                            min="0"
+                            @sl-input=${(e: Event) => this._onIpChange(index, e)}
+                            @sl-change=${(e: Event) => this._onIpChange(index, e)}
+                            @sl-focus=${this._onPartFocus.bind(this)}
+                            @paste=${(e: ClipboardEvent) => this._onPaste(e)}
+                        ></sl-input>
+                        ${index < 3 ? html`<span class="dot">.</span>` : ''}
+                    `,
+                )}
             </magic-flex>
-        `
+        `;
     }
 }
 
-
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-ipaddress': AutoFieldIpAddress
+        'auto-field-ipaddress': AutoFieldIpAddress;
     }
+}
+
+if (!customElements.get('auto-field-ipaddress')) {
+    customElements.define('auto-field-ipaddress', AutoFieldIpAddress);
 }

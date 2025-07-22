@@ -1,33 +1,28 @@
-import { customElement, state } from "lit/decorators.js"
-import { AutoFieldInput } from "./input"
-import type { SchemaVerifyCodeWidgetOptions } from "autostore"
-
-
+import { state } from 'lit/decorators.js';
+import { AutoFieldInput } from './input';
+import type { SchemaVerifyCodeWidgetOptions } from 'autostore';
 
 // 短信验证码
 
-export type AutoFieldVerifyCodeOptions = SchemaVerifyCodeWidgetOptions
-@customElement('auto-field-verifycode')
+export type AutoFieldVerifyCodeOptions = SchemaVerifyCodeWidgetOptions;
 export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldVerifyCodeOptions> {
-    static styles = [
-        AutoFieldInput.styles,
-    ]
+    static styles = [AutoFieldInput.styles];
 
     @state()
-    countdowning: boolean = false
+    countdowning: boolean = false;
 
-    timeout: number = 60 * 1000
-    step: number = 1000
-    stepCount: number = 1000
+    timeout: number = 60 * 1000;
+    step: number = 1000;
+    stepCount: number = 1000;
 
     // 存储当前计时器的引用，用于清除
-    private currentTimer?: number
+    private currentTimer?: number;
 
     @state()
-    template!: string
+    template!: string;
 
     sendRequest() {
-        if (this.countdowning) return
+        if (this.countdowning) return;
         // 清除现有的计时器（如果有的话）
         if (this.currentTimer) {
             clearTimeout(this.currentTimer);
@@ -41,7 +36,7 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldVerifyCodeOptio
         // @ts-ignore
         if (this.options.onRequest && typeof (this.options.onRequest === 'function')) {
             // @ts-ignore
-            this.options.onRequest.call(this)
+            this.options.onRequest.call(this);
         }
 
         // 开始倒计时
@@ -50,7 +45,7 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldVerifyCodeOptio
         // 更新按钮文本
         const updateButtonText = () => {
             // 计算剩余秒数
-            const remainingSeconds = Math.ceil(remainingSteps * this.step / 1000);
+            const remainingSeconds = Math.ceil((remainingSteps * this.step) / 1000);
 
             // 更新按钮文本
             if (this.afterActions && this.afterActions.length > 0) {
@@ -80,26 +75,29 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldVerifyCodeOptio
         updateButtonText();
     }
     connectedCallback() {
-        super.connectedCallback()
+        super.connectedCallback();
         if (!this.afterActions) {
-            this.afterActions = []
+            this.afterActions = [];
         }
         this.afterActions!.unshift({
-            id: "send",
+            id: 'send',
             label: this.getOptionValue('sendTips', '发送验证码'),
-            onClick: this.sendRequest.bind(this)
-        })
-        const timeout = this.getOptionValue('timeout', 60 * 1000)
-        this.timeout = Array.isArray(timeout) ? Number(timeout[0]) : Number(timeout)
-        this.step = Array.isArray(timeout) ? Number(timeout[1]) : 1000
-        this.stepCount = this.timeout / this.step
-        this.template = this.getOptionValue('template', '{timeout}秒后重发')
+            onClick: this.sendRequest.bind(this),
+        });
+        const timeout = this.getOptionValue('timeout', 60 * 1000);
+        this.timeout = Array.isArray(timeout) ? Number(timeout[0]) : Number(timeout);
+        this.step = Array.isArray(timeout) ? Number(timeout[1]) : 1000;
+        this.stepCount = this.timeout / this.step;
+        this.template = this.getOptionValue('template', '{timeout}秒后重发');
     }
 }
 
-
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-verifycode': AutoFieldVerifyCode
+        'auto-field-verifycode': AutoFieldVerifyCode;
     }
+}
+
+if (!customElements.get('auto-field-verifycode')) {
+    customElements.define('auto-field-verifycode', AutoFieldVerifyCode);
 }

@@ -1,24 +1,24 @@
-import { customElement } from "lit/decorators.js"
-import { AutoFieldInput, type InputType } from "./input"
-import type { SchemaDateWidgetOptions } from "autostore"
+import { AutoFieldInput, type InputType } from './input';
+import type { SchemaDateWidgetOptions } from 'autostore';
 
-
-export type AutoFieldDateOptions = Required<SchemaDateWidgetOptions>
-@customElement('auto-field-date')
+export type AutoFieldDateOptions = Required<SchemaDateWidgetOptions>;
 export class AutoFieldDate extends AutoFieldInput<AutoFieldDateOptions> {
     getInputType(): InputType {
-        return 'date'
+        return 'date';
     }
     getInitialOptions() {
         return {
-            icon: 'date'
-        }
+            icon: 'date',
+        };
     }
 }
 
-
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-date': AutoFieldDate
+        'auto-field-date': AutoFieldDate;
     }
+}
+
+if (!customElements.get('auto-field-date')) {
+    customElements.define('auto-field-date', AutoFieldDate);
 }

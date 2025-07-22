@@ -1,6 +1,5 @@
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
-import { customElement } from 'lit/decorators.js';
 import type { SlTreeItem } from '@shoelace-style/shoelace';
 import '@shoelace-style/shoelace/dist/components/tree/tree.js';
 import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
@@ -40,7 +39,6 @@ export type AutoTreeSelectOptions = {
     onSelectionChange: (selection: TreeSelectedItem[]) => void;
 };
 
-@customElement('auto-field-tree-select')
 export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldTreeSelectOptions & Options> {
     static styles = [
         AutoField.styles,
@@ -210,4 +208,8 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-tree-select': AutoFieldTreeSelect;
     }
+}
+
+if (!customElements.get('auto-field-tree-select')) {
+    customElements.define('auto-field-tree-select', AutoFieldTreeSelect);
 }

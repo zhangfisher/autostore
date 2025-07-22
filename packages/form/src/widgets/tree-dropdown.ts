@@ -1,28 +1,27 @@
-import { AutoField } from "@/field"
-import { css, html } from "lit"
-import { customElement, query, state } from "lit/decorators.js"
-import { repeat } from "lit/directives/repeat.js";
+import { AutoField } from '@/field';
+import { css, html } from 'lit';
+import { query, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import '@shoelace-style/shoelace/dist/components/tag/tag.js';
-import { classMap } from "lit/directives/class-map.js";
-import { AutoFieldTreeSelect, type TreeSelectedItem } from "./tree-select";
-import { when } from "lit/directives/when.js";
-import type { SchemaTreeDropdownWidgetOptions } from "autostore";
+import { classMap } from 'lit/directives/class-map.js';
+import { AutoFieldTreeSelect, type TreeSelectedItem } from './tree-select';
+import { when } from 'lit/directives/when.js';
+import type { SchemaTreeDropdownWidgetOptions } from 'autostore';
 
-export type AutoFieldTreeDropdownOptions = Required<SchemaTreeDropdownWidgetOptions>
+export type AutoFieldTreeDropdownOptions = Required<SchemaTreeDropdownWidgetOptions>;
 
-@customElement('auto-field-tree-dropdown')
 export class AutoFieldTreeDropdown extends AutoFieldTreeSelect<AutoFieldTreeDropdownOptions> {
     static styles = [
         AutoField.styles,
         AutoFieldTreeSelect.styles,
         css`
-            sl-dropdown{
-                width: 100%;                
-            } 
-            sl-tree{ 
-                background-color: var(--sl-color-neutral-0); 
+            sl-dropdown {
+                width: 100%;
             }
-            .selection{
+            sl-tree {
+                background-color: var(--sl-color-neutral-0);
+            }
+            .selection {
                 position: relative;
                 display: flex;
                 flex-direction: row;
@@ -30,125 +29,111 @@ export class AutoFieldTreeDropdown extends AutoFieldTreeSelect<AutoFieldTreeDrop
                 border: solid var(--sl-input-border-width) var(--sl-input-border-color);
                 font-size: var(--auto-font-size);
                 min-height: var(--sl-input-height-medium);
-                border-radius: var(--sl-input-border-radius-medium);    
+                border-radius: var(--sl-input-border-radius-medium);
                 letter-spacing: var(--sl-input-letter-spacing);
                 background-color: var(--sl-input-background-color);
-                max-height:12rem;
+                max-height: 12rem;
                 overflow-y: auto;
                 overflow-x: hidden;
-                &>.tags{
+                & > .tags {
                     flex-grow: 1;
                     padding-left: 0.5rem;
                     padding-right: 0.5rem;
                 }
-                &>.suffix{
+                & > .suffix {
                     cursor: pointer;
                     padding-left: 0.5rem;
                     padding-right: 0.5rem;
                 }
-                sl-tag{
+                sl-tag {
                     margin-right: 0.5rem;
                     margin-top: 0.2rem;
                     margin-bottom: 0.2rem;
                 }
-            } 
-            sl-icon.chevron{
+            }
+            sl-icon.chevron {
                 transition: all 0.2s ease-in;
-                &.active{
+                &.active {
                     transform: rotate(-180deg);
                 }
             }
-            .placeholder{
+            .placeholder {
                 padding-left: 0.5rem;
                 color: var(--sl-input-placeholder-color);
             }
-        `] as any
+        `,
+    ] as any;
 
     @state()
-    active: boolean = false
+    active: boolean = false;
 
     @query('sl-tree')
-    tree!: HTMLElement
+    tree!: HTMLElement;
 
     _onRemoveSelection(e: any) {
-        const id = e.target.dataset.id
+        const id = e.target.dataset.id;
         for (let i = 0; i < this.selection.length; i++) {
             if (String(this.selection[i].id) === id) {
-                this.selection.splice(i, 1)
-                this.onFieldChange()
-                this.requestUpdate()
-                break
+                this.selection.splice(i, 1);
+                this.onFieldChange();
+                this.requestUpdate();
+                break;
             }
         }
         e.stopPropagation();
     }
     getShowItemValue(value: any, valueKey: string, showKey: string) {
-        if (valueKey === showKey) return value
-
+        if (valueKey === showKey) return value;
     }
     getSelectedTagValue(value: TreeSelectedItem) {
-        const showAsPath = this.options.showAsPath
+        const showAsPath = this.options.showAsPath;
         if (showAsPath) {
-            return html`${value.path}`
+            return html`${value.path}`;
         } else {
-            const paths = value.path.split("/")
-            return paths[paths.length - 1]
+            const paths = value.path.split('/');
+            return paths[paths.length - 1];
         }
     }
     renderSelectedTags() {
-        const items = this.selection
-        return html`<span class="tags">${repeat(items, (item) => {
-            return html`<sl-tag 
-                    data-id="${item.id}" 
-                    title=${item.path}
-                    @sl-remove=${this._onRemoveSelection.bind(this)}
-                    @click=${(e: any) => e.stopPropagation()}
-                    removable
-                    >${this.getSelectedTagValue(item)}</sl-tag>`
-        })}</span>`
+        const items = this.selection;
+        return html`<span class="tags"
+            >${repeat(items, (item) => {
+                return html`<sl-tag data-id="${item.id}" title=${item.path} @sl-remove=${this._onRemoveSelection.bind(this)} @click=${(e: any) => e.stopPropagation()} removable
+                    >${this.getSelectedTagValue(item)}</sl-tag
+                >`;
+            })}</span
+        >`;
     }
     renderSelection() {
-        return html`    
-            <div class="selection" slot="trigger">              
-                ${when(this.selection.length === 0 && this.options.placeholder
-            , () => html`<span class='placeholder'>${this.options.placeholder}</span>`)}
-                ${this.renderSelectedTags()}
-                <span class='suffix'>
-                    <sl-icon library="system" class="chevron ${classMap({ active: this.active })}" 
-                        name="chevron-down" aria-hidden="true">
-                    </sl-icon>
-                </span>  
-            </div>`
+        return html` <div class="selection" slot="trigger">
+            ${when(this.selection.length === 0 && this.options.placeholder, () => html`<span class="placeholder">${this.options.placeholder}</span>`)} ${this.renderSelectedTags()}
+            <span class="suffix">
+                <sl-icon library="system" class="chevron ${classMap({ active: this.active })}" name="chevron-down" aria-hidden="true"> </sl-icon>
+            </span>
+        </div>`;
     }
     _onShowPopup() {
-        this.active = true
+        this.active = true;
     }
     _onHidePopup() {
-        this.active = false
+        this.active = false;
     }
     renderInput() {
-        return html`             
-        <sl-dropdown          
-            size="${this.context.size}"    
-            @sl-show="${this._onShowPopup.bind(this)}" 
-            @sl-after-hide="${this._onHidePopup.bind(this)}" 
-            sync="width"
-            hoist
-        >
-            ${this.renderSelection()}
-            <div>
-                ${this.renderTree()}            
-            </div>
-        </sl-dropdown> 
-        `
+        return html`
+            <sl-dropdown size="${this.context.size}" @sl-show="${this._onShowPopup.bind(this)}" @sl-after-hide="${this._onHidePopup.bind(this)}" sync="width" hoist>
+                ${this.renderSelection()}
+                <div>${this.renderTree()}</div>
+            </sl-dropdown>
+        `;
     }
-
-
 }
-
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-tree-dropdown': AutoFieldTreeDropdown
+        'auto-field-tree-dropdown': AutoFieldTreeDropdown;
     }
+}
+
+if (!customElements.get('auto-field-tree-dropdown')) {
+    customElements.define('auto-field-tree-dropdown', AutoFieldTreeDropdown);
 }

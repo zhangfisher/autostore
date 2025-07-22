@@ -1,21 +1,20 @@
-import { customElement } from "lit/decorators.js"
-import { AutoFieldInput } from "./input"
-import type { SchemaNumberWidgetOptions } from "autostore"
+import { AutoFieldInput } from './input';
+import type { SchemaNumberWidgetOptions } from 'autostore';
 
+export type AutoFieldNumberOptions = Required<SchemaNumberWidgetOptions>;
 
-
-export type AutoFieldNumberOptions = Required<SchemaNumberWidgetOptions>
-
-@customElement('auto-field-number')
 export class AutoFieldNumber extends AutoFieldInput<AutoFieldNumberOptions> {
     getInputType() {
-        return 'number' as any
+        return 'number' as any;
     }
 }
 
-
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-number': AutoFieldNumber
+        'auto-field-number': AutoFieldNumber;
     }
+}
+
+if (!customElements.get('auto-field-number')) {
+    customElements.define('auto-field-number', AutoFieldNumber);
 }

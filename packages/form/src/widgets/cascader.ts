@@ -3,14 +3,13 @@ import { AutoField } from '@/field';
 import { AutoDropdownField } from '@/field/dropdown';
 import type { SchemaCascaderWidgetOptions } from 'autostore';
 import { css, html } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { when } from 'lit/directives/when.js';
 
 export type AutoFieldCascaderOptions = Required<SchemaCascaderWidgetOptions>;
 
-@customElement('auto-field-cascader')
 export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOptions> {
     static styles = [
         AutoField.styles,
@@ -397,4 +396,8 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-cascader': AutoFieldCascader;
     }
+}
+
+if (!customElements.get('auto-field-cascader')) {
+    customElements.define('auto-field-cascader', AutoFieldCascader);
 }

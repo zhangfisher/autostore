@@ -1,23 +1,23 @@
-import { customElement } from "lit/decorators.js"
-import { AutoFieldInput, InputType } from "./input"
+import { AutoFieldInput, type InputType } from './input';
 
-@customElement('auto-field-url')
 export class AutoFieldUrl extends AutoFieldInput {
     getInputType(): InputType {
-        return 'url'
+        return 'url';
     }
     getFieldOptions() {
         if (!this.schema?.icon) {
-            this.schema!.icon = 'globe'
+            this.schema!.icon = 'globe';
         }
-        return super.getFieldOptions()
+        return super.getFieldOptions();
     }
-
 }
-
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-url': AutoFieldUrl
+        'auto-field-url': AutoFieldUrl;
     }
+}
+
+if (!customElements.get('auto-field-url')) {
+    customElements.define('auto-field-url', AutoFieldUrl);
 }

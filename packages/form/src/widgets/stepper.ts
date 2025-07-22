@@ -1,10 +1,8 @@
-import { customElement } from "lit/decorators.js"
-import { html } from "lit"
-import { AutoField } from "@/field"
+import { html } from 'lit';
+import { AutoField } from '@/field';
 
-export type AutoFieldStepperOptions = {}
+export type AutoFieldStepperOptions = {};
 
-@customElement('auto-field-stepper')
 export class AutoFieldStepper extends AutoField {
     render() {
         return html`
@@ -13,12 +11,16 @@ export class AutoFieldStepper extends AutoField {
                 <sl-input></sl-input>
                 <sl-button>+</sl-button>
             </div>
-        `
+        `;
     }
 }
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-stepper': AutoFieldStepper
+        'auto-field-stepper': AutoFieldStepper;
     }
+}
+
+if (!customElements.get('auto-field-stepper')) {
+    customElements.define('auto-field-stepper', AutoFieldStepper);
 }

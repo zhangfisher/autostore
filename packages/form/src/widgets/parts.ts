@@ -1,43 +1,42 @@
-import { css, html } from "lit"
-import { customElement } from "lit/decorators.js"
-import { repeat } from "lit/directives/repeat.js"
-import { AutoField } from "@/field"
-import type { SchemaPartsWidgetOptions } from "autostore"
+import { css, html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
+import { AutoField } from '@/field';
+import type { SchemaPartsWidgetOptions } from 'autostore';
 
+export type AutoFieldPartsOptions = Required<SchemaPartsWidgetOptions>;
 
-export type AutoFieldPartsOptions = Required<SchemaPartsWidgetOptions>
-@customElement('auto-field-parts')
 export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
     static styles = [
         AutoField.styles,
         css`
-            :host > .autofield{
-                &>.value{
+            :host > .autofield {
+                & > .value {
                     display: flex;
                     flex-direction: row;
                     align-items: center;
                     justify-content: center;
                     gap: 0.5rem;
-                } 
+                }
             }
-            sl-input{
+            sl-input {
                 width: 3rem;
                 height: 3rem;
                 line-height: 3rem;
-                text-align: center;                
-            }
-            sl-input::part(input){
                 text-align: center;
             }
-            sl-input::part(input)::selection{
+            sl-input::part(input) {
+                text-align: center;
+            }
+            sl-input::part(input)::selection {
                 background: none;
             }
-            sl-input::part(input):focus{
+            sl-input::part(input):focus {
                 background-color: var(--sl-color-gray-100);
             }
-        `] as any
+        `,
+    ] as any;
 
-    parts: string[] = []
+    parts: string[] = [];
 
     getInitialOptions(): Record<string, any> {
         return {
@@ -45,13 +44,13 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
             delimiter: '',
             caseType: 'both',
             includeDelimiter: true,
-            onlyNumber: false
-        }
+            onlyNumber: false,
+        };
     }
 
     _isValidChar(c: string) {
-        if (!this.options.chars) return true
-        return new RegExp(this.options.chars!).test(c)
+        if (!this.options.chars) return true;
+        return new RegExp(this.options.chars!).test(c);
     }
 
     _onKeyDown(e: KeyboardEvent) {
@@ -64,39 +63,39 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
             // 如果无效，阻止默认行为，即阻止字符输入
             e.preventDefault();
         }
-        e.stopPropagation()
+        e.stopPropagation();
     }
     _onPartInput(e: any) {
-        const inputs = Array.from(this.shadow.querySelectorAll('sl-input'))
+        const inputs = Array.from(this.shadow.querySelectorAll('sl-input'));
         const chars = inputs.reduce((prev, input) => {
-            prev += input.value
+            prev += input.value;
             if (this.options.caseType === 'upper') {
                 return prev.toUpperCase();
             } else if (this.options.caseType === 'lower') {
                 return prev.toLowerCase();
             } else {
-                return prev
+                return prev;
             }
-        }, '')
+        }, '');
 
-        let charIndex: number = 0
+        let charIndex: number = 0;
         this.parts.forEach((part, i) => {
             if (!this.options.delimiter.includes(part)) {
-                this.parts[i] = chars[charIndex++]
+                this.parts[i] = chars[charIndex++];
             }
-        })
-        this.onFieldChange()
-        this._isLastInput(e)
+        });
+        this.onFieldChange();
+        this._isLastInput(e);
     }
     getInputValue() {
-        return this.options.includeDelimiter ?
-            this.parts.join('')
+        return this.options.includeDelimiter
+            ? this.parts.join('')
             : this.parts.reduce((r, cur) => {
-                if (!this.options.delimiter.includes(cur)) {
-                    return `${r}${cur}`
-                }
-                return r
-            }, '')
+                  if (!this.options.delimiter.includes(cur)) {
+                      return `${r}${cur}`;
+                  }
+                  return r;
+              }, '');
     }
     _isLastInput(e: Event) {
         const input = e.target as HTMLInputElement;
@@ -112,60 +111,60 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
         }
     }
     _onPaste(e: ClipboardEvent) {
-        e.preventDefault(); // 阻止默认粘贴行为 
+        e.preventDefault(); // 阻止默认粘贴行为
         const clipboardData = e.clipboardData?.getData('text/plain') || '';
-        const parts = this._parseParts(clipboardData)
+        const parts = this._parseParts(clipboardData);
 
         const getNextInput = (input: Element | undefined | null) => {
-            if (!input) return
+            if (!input) return;
             while (true) {
-                inputEle = inputEle!.nextElementSibling
+                inputEle = inputEle!.nextElementSibling;
                 if (inputEle) {
                     if (inputEle.tagName === 'SL-INPUT') {
-                        return inputEle
+                        return inputEle;
                     }
                 } else {
-                    break
+                    break;
                 }
             }
-        }
+        };
         let inputEle: Element | null | undefined = this.shadow.querySelector('sl-input');
         if (inputEle) {
             for (const part of parts) {
-                if (this.options.delimiter.includes(part)) continue
-                // @ts-ignore  
-                inputEle.value = part
-                inputEle = getNextInput(inputEle)
-                if (!inputEle) break
+                if (this.options.delimiter.includes(part)) continue;
+                // @ts-ignore
+                inputEle.value = part;
+                inputEle = getNextInput(inputEle);
+                if (!inputEle) break;
             }
         }
     }
     connectedCallback(): void {
-        super.connectedCallback()
-        this.parts = this._parseParts(this.value)
+        super.connectedCallback();
+        this.parts = this._parseParts(this.value);
     }
 
     _parseParts(value: string) {
-        const delimiter = this.options.delimiter
-        const template = this.options.template
-        let vIndex: number = 0
+        const delimiter = this.options.delimiter;
+        const template = this.options.template;
+        let vIndex: number = 0;
         return Array.from(template).map((char) => {
             if (delimiter.includes(char)) {
                 if (value[vIndex] === char) {
-                    vIndex++
+                    vIndex++;
                 }
-                return char
+                return char;
             } else {
-                const c = value[vIndex++] || char
+                const c = value[vIndex++] || char;
                 if (this.options.caseType === 'upper') {
-                    return c.toUpperCase()
+                    return c.toUpperCase();
                 } else if (this.options.caseType === 'lower') {
-                    return c.toLowerCase()
+                    return c.toLowerCase();
                 } else {
-                    return c
+                    return c;
                 }
             }
-        })
+        });
     }
 
     _onPartFocus(e: any) {
@@ -173,9 +172,9 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
         input.select();
     }
     renderPart(part: string) {
-        return html`<sl-input        
-            maxLength = "1"
-            .value=${part} 
+        return html`<sl-input
+            maxLength="1"
+            .value=${part}
             noSpinButtons
             autocorrect="off"
             autocomplete="off"
@@ -183,29 +182,31 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
             @paste=${(e: ClipboardEvent) => this._onPaste(e)}
             @sl-focus=${this._onPartFocus.bind(this)}
             @keydown=${this._onKeyDown.bind(this)}
-            @sl-input=${this._onPartInput.bind(this)}></sl-input>`
+            @sl-input=${this._onPartInput.bind(this)}
+        ></sl-input>`;
     }
 
     renderInput() {
         return html`
             <magic-flex grow="none" align="center" gap="0.5em" wrap>
                 ${repeat(this.parts, (part: string) => {
-            if (this.options.delimiter.includes(part)) {
-                return html`${part}`
-            } else {
-                return this.renderPart(part)
-            }
-        })}
+                    if (this.options.delimiter.includes(part)) {
+                        return html`${part}`;
+                    } else {
+                        return this.renderPart(part);
+                    }
+                })}
             </magic-flex>
-        `
+        `;
     }
-
-
 }
-
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-parts': AutoFieldParts
+        'auto-field-parts': AutoFieldParts;
     }
+}
+
+if (!customElements.get('auto-field-parts')) {
+    customElements.define('auto-field-parts', AutoFieldParts);
 }

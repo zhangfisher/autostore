@@ -20,7 +20,6 @@
 
 import { AutoDropdownField } from '@/field/dropdown';
 import { html } from 'lit';
-import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 
@@ -28,8 +27,7 @@ export type AutoFieldTableOptions = {
     fields: any[];
 };
 
-@customElement('auto-field-table')
-export class AutoFieldCustom extends AutoDropdownField<AutoFieldTableOptions> {
+export class AutoFieldTable extends AutoDropdownField<AutoFieldTableOptions> {
     static styles = [AutoDropdownField.styles] as any;
 
     selection: any[] = [];
@@ -83,6 +81,10 @@ export class AutoFieldCustom extends AutoDropdownField<AutoFieldTableOptions> {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-table': AutoFieldCustom;
+        'auto-field-table': AutoFieldTable;
     }
+}
+
+if (!customElements.get('auto-field-table')) {
+    customElements.define('auto-field-table', AutoFieldTable);
 }
