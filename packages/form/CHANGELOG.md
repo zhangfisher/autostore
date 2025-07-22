@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 2.0.3
+
+### Patch Changes
+
+-   [`d454069`](https://github.com/zhangfisher/autostore/commit/d454069fbaeaae0eac34393543dfb79453bf23e9) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 将 magic-flex 更名为 auto-flex
+
+-   Updated dependencies []:
+    -   autostore@2.0.3
+
 ## 2.0.2
 
 ### Patch Changes
