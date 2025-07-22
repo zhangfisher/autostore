@@ -188,7 +188,7 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
 
     renderInput() {
         return html`
-            <magic-flex grow="none" align="center" gap="0.5em" wrap>
+            <auto-flex grow="none" align="center" gap="0.5em" wrap>
                 ${repeat(this.parts, (part: string) => {
                     if (this.options.delimiter.includes(part)) {
                         return html`${part}`;
@@ -196,7 +196,7 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
                         return this.renderPart(part);
                     }
                 })}
-            </magic-flex>
+            </auto-flex>
         `;
     }
 }

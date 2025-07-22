@@ -106,12 +106,12 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
                 ${items.map((item: any) => {
                     if (item.type === 'divider') return html`<sl-divider></sl-divider>`;
                     return html`<sl-option value="${item[this.valueKey] || item.label}" ?disabled=${!this.options.enable}>
-                        <magic-flex class="item" gap="1em" align="center" grow="sl-icon + *,:first-child:not(sl-icon)" style="text-align:left;">
+                        <auto-flex class="item" gap="1em" align="center" grow="sl-icon + *,:first-child:not(sl-icon)" style="text-align:left;">
                             ${when(item.icon, () => {
                                 return html`<sl-icon name="${item.icon}"></sl-icon>`;
                             })}
                             ${this._renderItem(item)}
-                        </magic-flex>
+                        </auto-flex>
                     </sl-option>`;
                 })}
                 ${this.renderAfterActions()}

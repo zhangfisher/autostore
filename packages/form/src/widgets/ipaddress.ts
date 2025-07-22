@@ -16,7 +16,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
             sl-input::part(base) {
                 border: none;
             }
-            magic-flex {
+            auto-flex {
                 width: 15rem;
                 justify-content: space-around;
                 border: var(--auto-border);
@@ -111,7 +111,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
 
     renderInput() {
         return html`
-            <magic-flex flex="row" size="small" no-padding grow="none">
+            <auto-flex flex="row" size="small" no-padding grow="none">
                 ${this._getIpBits().map(
                     (bit, index) => html`
                         <sl-input
@@ -132,7 +132,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
                         ${index < 3 ? html`<span class="dot">.</span>` : ''}
                     `,
                 )}
-            </magic-flex>
+            </auto-flex>
         `;
     }
 }

@@ -328,7 +328,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                     ${when(item.icon, () => {
                         return html`<sl-icon slot="prefix" name="${item.icon}"></sl-icon>`;
                     })}
-                    <magic-flex no-border no-padding flex="row" style="width:100%;"> ${this._renderItem(item)} </magic-flex>
+                    <auto-flex no-border no-padding flex="row" style="width:100%;"> ${this._renderItem(item)} </auto-flex>
                 </sl-menu-item>`;
             })}
         </sl-menu>`)} `;

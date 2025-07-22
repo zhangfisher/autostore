@@ -68,7 +68,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
         AutoField.styles,
         css`
             .value {
-                & magic-flex.files {
+                & auto-flex.files {
                     position: relative;
                     padding: 0px;
                     & > .file.default {
@@ -645,19 +645,19 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
     renderFile(file: UploadFile) {
         const hasError = !!file.error;
         return html`
-            <magic-flex class="file default ${classMap({ error: hasError })}" wrap align="center" gap="0.5rem" title=${ifDefined(file.error)}>
+            <auto-flex class="file default ${classMap({ error: hasError })}" wrap align="center" gap="0.5rem" title=${ifDefined(file.error)}>
                 ${this.renderProgressbar(file, 'hori')}
                 <span class="label">${this.options.onFileLabel(file.value)}</span>
                 <sl-icon name="remove" @click=${() => this.deleteFile(file.id)}></sl-icon>
                 ${when(file.status === 'error', () => {
                     return html`<sl-icon name="refresh" title="重新上传" @click=${() => this.retryUpload(file)}></sl-icon>`;
                 })}
-            </magic-flex>
+            </auto-flex>
         `;
     }
 
     renderFiels() {
-        return html`<magic-flex class="files" grow="none" gap="0.5rem" wrap>
+        return html`<auto-flex class="files" grow="none" gap="0.5rem" wrap>
             ${when(
                 this.files.length > 0,
                 () => {
@@ -673,12 +673,12 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                     return html`<span class="placeholder">${this.options.placeholder || '暂无文件'}</span>`;
                 },
             )}
-        </magic-flex>`;
+        </auto-flex>`;
     }
 
     renderInput() {
         return html`
-            <magic-flex grow="none" gap="0.5rem" direction="column">
+            <auto-flex grow="none" gap="0.5rem" direction="column">
                 ${this.renderFiels()}
                 ${when(this.options.selector === 'rectangle' || (this.options.selector === 'auto' && this.options.multiple), () => {
                     return html`<div
@@ -691,14 +691,14 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                         ${this.options.tips}
                     </div>`;
                 })}
-                <magic-flex class="actions" align="center" grow=".actions.after" gap="0.5rem">
+                <auto-flex class="actions" align="center" grow=".actions.after" gap="0.5rem">
                     ${when(
                         this.options.selector === 'button' || (this.options.selector === 'auto' && !this.options.multiple),
                         () => html`<sl-button @click=${this.handleUploadClick}>选择文件</sl-button>`,
                     )}
                     ${this.renderActions(false)}
-                </magic-flex>
-            </magic-flex>
+                </auto-flex>
+            </auto-flex>
         `;
     }
     renderView() {

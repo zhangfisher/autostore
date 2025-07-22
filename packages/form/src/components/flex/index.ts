@@ -2,10 +2,6 @@
 /**
  *
  *
- *  <maic-flex>
- *
- *  </magic-flex>
- *
  */
 
 import { LitElement, html } from 'lit';
@@ -13,7 +9,7 @@ import { property } from 'lit/decorators.js';
 import { HostClasses } from '@/controllers/hostClasss';
 import styles from './styles';
 
-export class MagicFlex extends LitElement {
+export class AutoFlex extends LitElement {
     static styles = styles;
 
     classes = new HostClasses(this);
@@ -84,10 +80,10 @@ export class MagicFlex extends LitElement {
 
 declare global {
     interface HTMLElementTagNameMap {
-        'magic-flex': MagicFlex;
+        'auto-flex': AutoFlex;
     }
 }
 
-if (!customElements.get('magic-flex')) {
-    customElements.define('magic-flex', MagicFlex);
+if (!customElements.get('auto-flex')) {
+    customElements.define('auto-flex', AutoFlex);
 }
