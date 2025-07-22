@@ -134,7 +134,7 @@ import '@autostorejs/form'; //   [!code ++]
 
 :::warning 注意
 在上例中，我们可以看到渲染出的表单的外观、样式、label 等并不理想。
-实际场景中，一般需要进行更精细的控制，这就需要为`configurable`提供更多的控制参数，详见[表单字段](./createfield)章节。
+实际场景中，一般需要进行更精细的控制，这就需要为`configurable`提供更多的控制参数，详见[表单字段](./field)章节。
 :::
 
 ## 指南
@@ -234,7 +234,7 @@ auto-form::part(field-label) { color: red; }
 :::warning 提示
 
 -   `CSS::Part`是`WebComponent`规范中定义的，详见[这里](https://developer.mozilla.org/zh-CN/docs/Web/CSS/::part)。
--   使用`CSS::Part`进行样式控制时也有一定的限制，在字段中有更丰富的样式控制，详见[表单字段](./createfield)章节。
+-   使用`CSS::Part`进行样式控制时也有一定的限制，在字段中有更丰富的样式控制，详见[表单字段](./field)章节。
 
 :::
 

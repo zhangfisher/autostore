@@ -125,6 +125,12 @@ const cars = {
 
 `rootKey`用于指定根节点
 
+### 懒加载
+
+指定`onLoad`加载函数，并且在`select`数据中的指定`lazy=true`用于配置懒加载，即在第一次展开时才加载数据。
+
+<demo html="autoform/widgets/cascader-lazy.html"/>
+
 ### 行政区划联动
 
 -   **显示级别=3**

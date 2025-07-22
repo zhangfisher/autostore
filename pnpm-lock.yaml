@@ -106,8 +106,8 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
       vitepress-demo-plugin:
-        specifier: ^1.4.4
-        version: 1.4.4(shiki@2.5.0)(vitepress@1.6.3(@algolia/client-search@5.25.0)(@types/node@22.15.21)(@types/react@18.3.22)(less@4.3.0)(postcss@8.5.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.39.2)(typescript@5.8.3))(vue@3.5.14(typescript@5.8.3))
+        specifier: ^1.4.5
+        version: 1.4.5(shiki@2.5.0)(vitepress@1.6.3(@algolia/client-search@5.25.0)(@types/node@22.15.21)(@types/react@18.3.22)(less@4.3.0)(postcss@8.5.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.39.2)(typescript@5.8.3))(vue@3.5.14(typescript@5.8.3))
 
   packages/components:
     dependencies:
@@ -3273,8 +3273,8 @@ packages:
       yaml:
         optional: true
 
-  vitepress-demo-plugin@1.4.4:
-    resolution: {integrity: sha512-dF+9EttkRwXwbTLQjAbTFv8I0NQMQn6MGXX+OdVzV3ZrmAToAQUY6lNpsq2Ygtpt5CKz7qgO8UulstQPDgwm6A==}
+  vitepress-demo-plugin@1.4.5:
+    resolution: {integrity: sha512-MMlXnbmT3luAaxPmp6nO1LFmT8FZybcaD6j6M/efa9L1GbZdZe3x0zT/tVIxvbGiIUSXHvzjhsbKQHuhw075rA==}
     peerDependencies:
       shiki: '*'
       vitepress: '*'
@@ -6532,7 +6532,7 @@ snapshots:
       terser: 5.39.2
       tsx: 4.19.4
 
-  vitepress-demo-plugin@1.4.4(shiki@2.5.0)(vitepress@1.6.3(@algolia/client-search@5.25.0)(@types/node@22.15.21)(@types/react@18.3.22)(less@4.3.0)(postcss@8.5.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.39.2)(typescript@5.8.3))(vue@3.5.14(typescript@5.8.3)):
+  vitepress-demo-plugin@1.4.5(shiki@2.5.0)(vitepress@1.6.3(@algolia/client-search@5.25.0)(@types/node@22.15.21)(@types/react@18.3.22)(less@4.3.0)(postcss@8.5.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.39.2)(typescript@5.8.3))(vue@3.5.14(typescript@5.8.3)):
     dependencies:
       shiki: 2.5.0
       vitepress: 1.6.3(@algolia/client-search@5.25.0)(@types/node@22.15.21)(@types/react@18.3.22)(less@4.3.0)(postcss@8.5.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.39.2)(typescript@5.8.3)

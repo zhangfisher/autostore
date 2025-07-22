@@ -4,9 +4,9 @@
 
 ## 使用方法
 
-```warning 提示
+:::warning 提示
 同步功能由`@autostorejs/syncer`提供，只需要导入即可。
-```
+:::
 
 ### 完全同步
 
