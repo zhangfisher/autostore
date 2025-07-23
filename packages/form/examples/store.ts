@@ -160,6 +160,7 @@ const store = new AutoStore(
                 help: '选择id',
                 delimiter: '#',
                 onLoad: onLazyLoad,
+                group: 'car',
             }),
             car: configurable('1#1-1', {
                 label: '车型',
@@ -169,6 +170,7 @@ const store = new AutoStore(
                 icon: 'car',
                 help: '选择id',
                 delimiter: '#',
+                group: 'car',
             }),
             area0: configurable('泉州市/丰泽区', {
                 label: '乡镇',
@@ -182,6 +184,7 @@ const store = new AutoStore(
                 idKey: 'code',
                 delimiter: '/',
                 maxLevel: 3,
+                group: 'car',
             }),
             area: configurable('福建省泉州市丰泽区', {
                 label: '地区',
@@ -193,6 +196,7 @@ const store = new AutoStore(
                 labelKey: 'n',
                 valueKey: 'n',
                 idKey: 'c',
+                group: 'car',
                 actions: [
                     {
                         label: '验证',
@@ -232,15 +236,18 @@ const store = new AutoStore(
                 label: '主页',
                 prefix: ['http://', 'https://'],
                 suffix: [{ label: '在新窗口打开', value: '?_blank' }, { label: '在当前窗口打开', value: '?_self' }, '-', { label: '空白', value: '' }],
+                group: 'network',
             }),
             daterange: configurable('2024-12-03#2025-12-03', {
                 label: '日期范围',
                 widget: 'date-range',
                 delimiter: '#',
+                group: 'network',
             }),
             datetime: configurable('2025-12-03T09:30', {
                 label: '日期时间',
                 widget: 'datetime',
+                group: 'network',
             }),
             icons: configurable('help', {
                 label: '图标',
@@ -259,6 +266,7 @@ const store = new AutoStore(
                         variant: 'success',
                     },
                 ],
+                group: 'network',
             }),
             custom: configurable('admin@autostore.com', {
                 label: '自定义',
@@ -344,11 +352,13 @@ const store = new AutoStore(
                 widget: 'checkbox',
                 // checkLabel: "是",
                 switchValues: ['是', '否'],
+                group: 'admin',
             }),
             admin2: configurable(true, {
                 label: '管理员',
                 help: '管理员拥有所有权限',
                 widget: 'switch',
+                group: 'admin',
                 // checkLabel: "是",
                 // switchValues: ['是', '否']
             }),
@@ -360,6 +370,7 @@ const store = new AutoStore(
                 fileFieldName: 'files',
                 help: '上传文件支持.pnp,.jpg,不能大于5M',
                 preview: true,
+                group: 'admin',
                 // multiple: false,
                 // 当删除文件时向服务器发起删除请求
                 onRemove: async (file) => {
@@ -399,6 +410,7 @@ const store = new AutoStore(
                     // selector: 'rectangle',
                     // 当删除文件时向服务器发起删除请求
                     onRemove: (file) => {},
+                    group: 'admin',
                 },
             ),
             verifyCode: configurable('1265', {
@@ -412,10 +424,12 @@ const store = new AutoStore(
                 caseType: 'lower',
                 // 模板字符串
                 template: '00#00-00#00', // 每一组之间的分割符
+                group: 'safe',
             }),
             smsVerify: configurable(false, {
                 label: '短信验证',
                 widget: 'switch',
+                group: 'safe',
                 // checkLabel: "是",
                 // switchValues: ['是', '否']
             }),
@@ -426,7 +440,7 @@ const store = new AutoStore(
                 widget: 'verifycode',
                 timeout: 60 * 1000,
                 template: '{timeout}秒后重试',
-                group: 'c',
+                group: 'safe',
                 onRequest: () => {
                     console.log('发送短信');
                 },
@@ -435,7 +449,7 @@ const store = new AutoStore(
             tcpFlags: configurable(3, {
                 label: 'TCP标识',
                 widget: 'checkbox-group',
-                group: 'c',
+                group: 'network',
                 select: [
                     { label: 'URG', value: 1 },
                     { label: 'ACK', value: 2 },

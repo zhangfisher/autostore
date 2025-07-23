@@ -18,10 +18,13 @@
 
     <body>
         <sl-tab-group>
+            <sl-tab slot="nav" panel="tabs">tabs分组</sl-tab>
             <sl-tab slot="nav" panel="general">默认</sl-tab>
             <sl-tab slot="nav" panel="transform">状态转换</sl-tab>
             <sl-tab slot="nav" panel="usepath">绑定路径</sl-tab>
-            <sl-tab slot="nav" panel="disabled">Disabled</sl-tab>
+            <sl-tab-panel name="tabs">
+                <auto-form-example-tabs></auto-form-example-tabs>
+            </sl-tab-panel>
             <sl-tab-panel name="general">
                 <auto-form-example-general></auto-form-example-general>
             </sl-tab-panel>
@@ -31,20 +34,7 @@
             <sl-tab-panel name="usepath">
                 <auto-form-example-path></auto-form-example-path>
             </sl-tab-panel>
-            <sl-tab-panel name="disabled">This is a disabled tab panel.</sl-tab-panel>
         </sl-tab-group>
-
-        <div id="custom_panel" style="display: none; padding: 1rem; height: 5rem">
-            <label>
-                名称:
-                <input id="username" type="text" value="123" />
-            </label>
-            <label>
-                电子邮件:
-                <input id="email" type="email" value="" />
-            </label>
-            <button>提交</button>
-        </div>
 
         <script type="module" src="./examples/index.ts"></script>
     </body>

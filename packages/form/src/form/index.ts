@@ -21,9 +21,6 @@
  *  </voerka-form>
  *
  */
-import '../themes/light.css';
-import '../themes/dark.css';
-
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/divider/divider.js';
@@ -76,6 +73,9 @@ export class AutoForm extends LitElement {
 
     @property({ type: String, reflect: true })
     group?: string;
+
+    @property({ type: String, reflect: true })
+    icon?: string;
 
     /**
      * 指定一个路径，用于过滤状态路径
@@ -242,6 +242,11 @@ export class AutoForm extends LitElement {
 
             const isGroupMatched = (schema: SchemaOptions) => {
                 if (!this.group) return true;
+
+                if (['default', 'general'].includes(this.group) && schema.group == undefined) {
+                    return true;
+                }
+
                 if (['', '*'].includes(this.group)) {
                     return true;
                 }
