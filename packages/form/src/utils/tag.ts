@@ -19,7 +19,7 @@ export function tag(tagName: string) {
         // 检查该标签是否已经被注册
         if (customElements.get(tagName)) {
             // 如果已注册，返回原始类，不执行注册
-            console.warn(`Custom element with tag "${tagName}" is already defined. Skipping registration.`);
+            //console.warn(`Custom element with tag "${tagName}" is already defined. Skipping registration.`);
             return classOrDescriptor;
         }
 

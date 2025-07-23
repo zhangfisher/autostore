@@ -242,6 +242,10 @@ export default defineConfig({
                         { text: 'QrCode', link: '/zh/form/guide/fields/qrcode' },
                     ],
                 },
+                {
+                    text: '示例',
+                    items: [{ text: '综合', link: '/examples/demo.html', target: '_blank' }],
+                },
             ],
         },
         socialLinks: [{ icon: 'github', link: 'https://github.com/zhangfisher/autostore/' }],
