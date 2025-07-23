@@ -2,9 +2,11 @@ import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
 import type { SchemaRadioButtonWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldRadioButtonOptions = Required<SchemaRadioButtonWidgetOptions>;
 
+@tag('auto-field-radio-button')
 export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions> {
     static styles = [
         AutoField.styles,
@@ -53,8 +55,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-radio-button': AutoFieldRadioButton;
     }
-}
-
-if (!customElements.get('auto-field-radio-button')) {
-    customElements.define('auto-field-radio-button', AutoFieldRadioButton);
 }

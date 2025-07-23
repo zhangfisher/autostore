@@ -2,9 +2,11 @@ import { css, html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { AutoField } from '@/field';
 import type { SchemaPartsWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldPartsOptions = Required<SchemaPartsWidgetOptions>;
 
+@tag('auto-field-parts')
 export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
     static styles = [
         AutoField.styles,
@@ -205,8 +207,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-parts': AutoFieldParts;
     }
-}
-
-if (!customElements.get('auto-field-parts')) {
-    customElements.define('auto-field-parts', AutoFieldParts);
 }

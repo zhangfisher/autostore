@@ -2,8 +2,11 @@ import { queryAll } from 'lit/decorators.js';
 import type { SchemaDateRangeWidgetOptions } from 'autostore';
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldDateRangeOptions = Required<SchemaDateRangeWidgetOptions>;
+
+@tag('auto-field-date-range')
 export class AutoFieldDateRange extends AutoField<AutoFieldDateRangeOptions> {
     static styles = [
         AutoField.styles,
@@ -92,8 +95,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-date-range': AutoFieldDateRange;
     }
-}
-
-if (!customElements.get('auto-field-date-range')) {
-    customElements.define('auto-field-date-range', AutoFieldDateRange);
 }

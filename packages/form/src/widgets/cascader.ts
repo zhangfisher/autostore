@@ -1,6 +1,7 @@
 import { ScrollbarController } from '@/controllers';
 import { AutoField } from '@/field';
 import { AutoDropdownField } from '@/field/dropdown';
+import { tag } from '@/utils/tag';
 import type { SchemaCascaderWidgetOptions } from 'autostore';
 import { css, html } from 'lit';
 import { state } from 'lit/decorators.js';
@@ -10,6 +11,7 @@ import { when } from 'lit/directives/when.js';
 
 export type AutoFieldCascaderOptions = Required<SchemaCascaderWidgetOptions>;
 
+@tag('auto-field-cascader')
 export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOptions> {
     static styles = [
         AutoField.styles,
@@ -396,8 +398,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-cascader': AutoFieldCascader;
     }
-}
-
-if (!customElements.get('auto-field-cascader')) {
-    customElements.define('auto-field-cascader', AutoFieldCascader);
 }

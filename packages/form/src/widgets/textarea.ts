@@ -3,9 +3,11 @@ import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import type { SchemaTextareaWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldTextAreaOptions = Required<SchemaTextareaWidgetOptions>;
 
+@tag('auto-field-textarea')
 export class AutoFieldTextArea extends AutoField<AutoFieldTextAreaOptions> {
     static styles = [
         AutoField.styles,
@@ -50,8 +52,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-textarea': AutoFieldTextArea;
     }
-}
-
-if (!customElements.get('auto-field-textarea')) {
-    customElements.define('auto-field-textarea', AutoFieldTextArea);
 }

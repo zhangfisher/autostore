@@ -2,9 +2,11 @@ import { AutoField } from '@/field';
 import { html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/rating/rating.js';
 import type { SchemaRatingWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldRatingOptions = Required<SchemaRatingWidgetOptions>;
 
+@tag('auto-field-rating')
 export class AutoFieldRating extends AutoField<AutoFieldRatingOptions> {
     getInitialOptions() {
         return {
@@ -38,8 +40,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-rating': AutoFieldRating;
     }
-}
-
-if (!customElements.get('auto-field-rating')) {
-    customElements.define('auto-field-rating', AutoFieldRating);
 }

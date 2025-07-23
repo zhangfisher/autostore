@@ -1,5 +1,6 @@
 import { ImagePreview } from '@/controllers';
 import { AutoField } from '@/field';
+import { tag } from '@/utils/tag';
 import type { SchemaUploadWidgetFile, SchemaUploadWidgetOptions } from 'autostore';
 import { css, html, type TemplateResult } from 'lit';
 import { state } from 'lit/decorators.js';
@@ -63,6 +64,7 @@ type UploadFile = {
 
 export type AutoFieldUploadOptions = Required<SchemaUploadWidgetOptions>;
 
+@tag('auto-field-upload')
 export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
     static styles = [
         AutoField.styles,
@@ -710,8 +712,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-upload': AutoFieldUpload;
     }
-}
-
-if (!customElements.get('auto-field-upload')) {
-    customElements.define('auto-field-upload', AutoFieldUpload);
 }

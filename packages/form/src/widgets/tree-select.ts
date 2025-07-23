@@ -6,6 +6,7 @@ import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 
 import type { SchemaTreeSelectWidgetOptions } from 'autostore';
 import { when } from 'lit/directives/when.js';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldTreeSelectOptions = Required<SchemaTreeSelectWidgetOptions>;
 
@@ -39,6 +40,7 @@ export type AutoTreeSelectOptions = {
     onSelectionChange: (selection: TreeSelectedItem[]) => void;
 };
 
+@tag('auto-field-tree-select')
 export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldTreeSelectOptions & Options> {
     static styles = [
         AutoField.styles,
@@ -208,8 +210,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-tree-select': AutoFieldTreeSelect;
     }
-}
-
-if (!customElements.get('auto-field-tree-select')) {
-    customElements.define('auto-field-tree-select', AutoFieldTreeSelect);
 }

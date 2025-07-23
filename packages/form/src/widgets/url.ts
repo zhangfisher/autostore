@@ -1,5 +1,7 @@
+import { tag } from '@/utils/tag';
 import { AutoFieldInput, type InputType } from './input';
 
+@tag('auto-field-url')
 export class AutoFieldUrl extends AutoFieldInput {
     getInputType(): InputType {
         return 'url';
@@ -16,8 +18,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-url': AutoFieldUrl;
     }
-}
-
-if (!customElements.get('auto-field-url')) {
-    customElements.define('auto-field-url', AutoFieldUrl);
 }

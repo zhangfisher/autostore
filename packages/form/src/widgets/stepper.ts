@@ -1,8 +1,10 @@
 import { html } from 'lit';
 import { AutoField } from '@/field';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldStepperOptions = {};
 
+@tag('auto-field-stepper')
 export class AutoFieldStepper extends AutoField {
     render() {
         return html`
@@ -19,8 +21,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-stepper': AutoFieldStepper;
     }
-}
-
-if (!customElements.get('auto-field-stepper')) {
-    customElements.define('auto-field-stepper', AutoFieldStepper);
 }

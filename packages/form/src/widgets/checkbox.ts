@@ -3,9 +3,11 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import { AutoField } from '@/field';
 import type { SchemaCheckboxWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldCheckboxOptions = Required<SchemaCheckboxWidgetOptions>;
 
+@tag('auto-field-checkbox')
 export class AutoFieldCheckbox extends AutoField<AutoFieldCheckboxOptions> {
     static styles = [
         AutoField.styles,
@@ -65,8 +67,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-checkbox': AutoFieldCheckbox;
     }
-}
-
-if (!customElements.get('auto-field-checkbox')) {
-    customElements.define('auto-field-checkbox', AutoFieldCheckbox);
 }

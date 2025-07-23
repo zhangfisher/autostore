@@ -3,9 +3,11 @@ import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 import type { SchemaSwitchWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldSwitchOptions = Required<SchemaSwitchWidgetOptions>;
 
+@tag('auto-field-switch')
 export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
     static styles = [
         AutoField.styles,
@@ -67,8 +69,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-switch': AutoFieldSwitch;
     }
-}
-
-if (!customElements.get('auto-field-switch')) {
-    customElements.define('auto-field-switch', AutoFieldSwitch);
 }

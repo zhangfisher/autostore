@@ -4,11 +4,13 @@ import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { AutoDropdownField } from '@/field/dropdown';
+import { tag } from '@/utils/tag';
 
 const builtIns = ['help', 'error', 'email', 'search', 'lock', 'user', 'globe', 'date', 'time', 'phone', 'copy', 'remove', 'refresh', 'datetime'];
 
 export type AutoFieldIconsOptions = Required<SchemaIconsWidgetOptions>;
 
+@tag('auto-field-icons')
 export class AutoFieldIcons extends AutoDropdownField<AutoFieldIconsOptions> {
     static styles = [
         AutoField.styles,
@@ -136,8 +138,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-icons': AutoFieldIcons;
     }
-}
-
-if (!customElements.get('auto-field-icons')) {
-    customElements.define('auto-field-icons', AutoFieldIcons);
 }

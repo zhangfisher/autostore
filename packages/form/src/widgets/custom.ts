@@ -4,9 +4,11 @@ import { html } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { getInputValue } from '@/utils/getInputValue';
 import { AutoDropdownField } from '@/field/dropdown';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldCustomOptions = Required<SchemaCustomWidgetOptions>;
 
+@tag('auto-field-custom')
 export class AutoFieldCustom extends AutoDropdownField<AutoFieldCustomOptions> {
     static styles = [AutoDropdownField.styles] as any;
 
@@ -54,8 +56,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-custom': AutoFieldCustom;
     }
-}
-
-if (!customElements.get('auto-field-custom')) {
-    customElements.define('auto-field-custom', AutoFieldCustom);
 }

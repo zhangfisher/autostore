@@ -2,9 +2,11 @@ import { css, html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/range/range.js';
 import { AutoField } from '@/field';
 import type { SchemaRangeWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldRangeOptions = Required<SchemaRangeWidgetOptions>;
 
+@tag('auto-field-range')
 export class AutoFieldRabge extends AutoField<AutoFieldRangeOptions> {
     static styles = [
         AutoField.styles,
@@ -74,8 +76,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-range': AutoFieldRabge;
     }
-}
-
-if (!customElements.get('auto-field-range')) {
-    customElements.define('auto-field-range', AutoFieldRabge);
 }

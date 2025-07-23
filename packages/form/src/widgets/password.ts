@@ -1,8 +1,10 @@
+import { tag } from '@/utils/tag';
 import { AutoFieldInput, type InputType } from './input';
 import type { SchemaPasswordWidgetOptions } from 'autostore';
 
 export type AutoFieldPasswordOptions = Required<SchemaPasswordWidgetOptions>;
 
+@tag('auto-field-password')
 export class AutoFieldPassword extends AutoFieldInput<AutoFieldPasswordOptions> {
     getInputType(): InputType {
         return 'password';
@@ -18,8 +20,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-password': AutoFieldPassword;
     }
-}
-
-if (!customElements.get('auto-field-password')) {
-    customElements.define('auto-field-password', AutoFieldPassword);
 }

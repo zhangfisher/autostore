@@ -1,8 +1,10 @@
+import { tag } from '@/utils/tag';
 import { AutoFieldInput, type InputType } from './input';
 import type { SchemaSearchWidgetOptions } from 'autostore';
 
 export type AutoFieldSearchOptions = Required<SchemaSearchWidgetOptions>;
 
+@tag('auto-field-search')
 export class AutoFieldSearch extends AutoFieldInput {
     getInputType(): InputType {
         return 'search';
@@ -19,8 +21,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-search': AutoFieldSearch;
     }
-}
-
-if (!customElements.get('auto-field-search')) {
-    customElements.define('auto-field-search', AutoFieldSearch);
 }

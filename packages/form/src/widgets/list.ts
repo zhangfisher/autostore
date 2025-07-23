@@ -11,6 +11,7 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { SchemaListWidgetOptions, SchemaWidgetSelectItem } from 'autostore';
 import { when } from 'lit/directives/when.js';
 import { ScrollbarController } from '@/controllers/scrollbar';
+import { tag } from '@/utils/tag';
 
 export type ListItem = {
     id: any;
@@ -29,6 +30,7 @@ export type AutoListOptions = {
 };
 export type AutoFieldListOptions = Required<SchemaListWidgetOptions>;
 
+@tag('auto-field-list')
 export class AutoFieldList extends AutoField<AutoFieldListOptions> {
     static styles = [
         AutoField.styles,
@@ -351,8 +353,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-list': AutoFieldList;
     }
-}
-
-if (!customElements.get('auto-field-list')) {
-    customElements.define('auto-field-list', AutoFieldList);
 }

@@ -2,11 +2,13 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import type { SchemaInputWidgetOptions, SchemaWidgetAction, SchemaWidgetSelectItem } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type InputType = 'number' | 'date' | 'time' | 'url' | 'password' | 'email' | 'search' | 'text' | 'datetime-local' | 'tel';
 
 export type AutoFieldInputOptions = Required<SchemaInputWidgetOptions>;
 
+@tag('auto-field-input')
 export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<AutoFieldInputOptions & Options> {
     static styles = [
         AutoField.styles,
@@ -211,8 +213,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-input': AutoFieldInput;
     }
-}
-
-if (!customElements.get('auto-field-input')) {
-    customElements.define('auto-field-input', AutoFieldInput);
 }

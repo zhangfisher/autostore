@@ -1,10 +1,13 @@
 import { state } from 'lit/decorators.js';
 import { AutoFieldInput } from './input';
 import type { SchemaVerifyCodeWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 // 短信验证码
 
 export type AutoFieldVerifyCodeOptions = SchemaVerifyCodeWidgetOptions;
+
+@tag('auto-field-verifycode')
 export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldVerifyCodeOptions> {
     static styles = [AutoFieldInput.styles];
 
@@ -96,8 +99,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-verifycode': AutoFieldVerifyCode;
     }
-}
-
-if (!customElements.get('auto-field-verifycode')) {
-    customElements.define('auto-field-verifycode', AutoFieldVerifyCode);
 }

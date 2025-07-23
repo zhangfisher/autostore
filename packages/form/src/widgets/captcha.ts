@@ -2,9 +2,11 @@ import { query, state } from 'lit/decorators.js';
 import { AutoFieldInput } from './input';
 import { css, html } from 'lit';
 import type { SchemaCaptchaWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldCaptchaOptions = Required<SchemaCaptchaWidgetOptions>;
 
+@tag('auto-field-captcha')
 export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
     static styles = [
         AutoFieldInput.styles,
@@ -69,8 +71,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-captcha': AutoFieldCaptcha;
     }
-}
-
-if (!customElements.get('auto-field-captcha')) {
-    customElements.define('auto-field-captcha', AutoFieldCaptcha);
 }

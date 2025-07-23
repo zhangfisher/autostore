@@ -1,9 +1,11 @@
 import { AutoField } from '@/field';
+import { tag } from '@/utils/tag';
 import type { SchemaIpAddressWidgetOptions } from 'autostore';
 import { css, html } from 'lit';
 
 export type AutoFieldIPAddressOptions = Required<SchemaIpAddressWidgetOptions>;
 
+@tag('auto-field-ipaddress')
 export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
     static styles = [
         AutoField.styles,
@@ -141,8 +143,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-ipaddress': AutoFieldIpAddress;
     }
-}
-
-if (!customElements.get('auto-field-ipaddress')) {
-    customElements.define('auto-field-ipaddress', AutoFieldIpAddress);
 }

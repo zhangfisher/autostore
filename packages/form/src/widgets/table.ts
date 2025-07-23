@@ -19,6 +19,7 @@
  */
 
 import { AutoDropdownField } from '@/field/dropdown';
+import { tag } from '@/utils/tag';
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -27,6 +28,7 @@ export type AutoFieldTableOptions = {
     fields: any[];
 };
 
+@tag('auto-field-table')
 export class AutoFieldTable extends AutoDropdownField<AutoFieldTableOptions> {
     static styles = [AutoDropdownField.styles] as any;
 
@@ -83,8 +85,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-table': AutoFieldTable;
     }
-}
-
-if (!customElements.get('auto-field-table')) {
-    customElements.define('auto-field-table', AutoFieldTable);
 }

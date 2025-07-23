@@ -7,9 +7,11 @@ import type { SchemaSelectWidgetOptions } from 'autostore';
 import { when } from 'lit/directives/when.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { vars } from '@/form/vars';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldSelectOptions = Required<SchemaSelectWidgetOptions>;
 
+@tag('auto-field-select')
 export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
     static styles = [
         AutoField.styles,
@@ -136,7 +138,4 @@ declare global {
         'auto-field-select': AutoFieldSelect;
     }
 }
-
-if (!customElements.get('auto-field-select')) {
-    customElements.define('auto-field-select', AutoFieldSelect);
-}
+ 

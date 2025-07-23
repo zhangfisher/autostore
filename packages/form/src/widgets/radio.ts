@@ -4,9 +4,11 @@ import { styleMap } from 'lit/directives/style-map.js';
 import '@shoelace-style/shoelace/dist/components/radio/radio.js';
 import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
 import type { SchemaRadioWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldRadioOptions = Required<SchemaRadioWidgetOptions>;
 
+@tag('auto-field-radio')
 export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
     static styles = [
         AutoField.styles,
@@ -167,8 +169,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-radio': AutoFieldRadio;
     }
-}
-
-if (!customElements.get('auto-field-radio')) {
-    customElements.define('auto-field-radio', AutoFieldRadio);
 }

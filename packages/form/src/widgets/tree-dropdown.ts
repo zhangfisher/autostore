@@ -7,9 +7,11 @@ import { classMap } from 'lit/directives/class-map.js';
 import { AutoFieldTreeSelect, type TreeSelectedItem } from './tree-select';
 import { when } from 'lit/directives/when.js';
 import type { SchemaTreeDropdownWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldTreeDropdownOptions = Required<SchemaTreeDropdownWidgetOptions>;
 
+@tag('auto-field-tree-dropdown')
 export class AutoFieldTreeDropdown extends AutoFieldTreeSelect<AutoFieldTreeDropdownOptions> {
     static styles = [
         AutoField.styles,
@@ -132,8 +134,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-tree-dropdown': AutoFieldTreeDropdown;
     }
-}
-
-if (!customElements.get('auto-field-tree-dropdown')) {
-    customElements.define('auto-field-tree-dropdown', AutoFieldTreeDropdown);
-}
+} 

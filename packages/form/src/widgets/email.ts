@@ -1,8 +1,10 @@
+import { tag } from '@/utils/tag';
 import { AutoFieldInput, type InputType } from './input';
 import type { SchemaEmailWidgetOptions } from 'autostore';
 
 export type AutoFieldEmailOptions = Required<SchemaEmailWidgetOptions>;
 
+@tag('auto-field-email')
 export class AutoFieldEmail extends AutoFieldInput<AutoFieldEmailOptions> {
     getInputType(): InputType {
         return 'email';
@@ -34,8 +36,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-email': AutoFieldEmail;
     }
-}
-
-if (!customElements.get('auto-field-email')) {
-    customElements.define('auto-field-email', AutoFieldEmail);
 }

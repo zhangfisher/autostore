@@ -8,7 +8,9 @@ import { LitElement, html } from 'lit';
 import { property } from 'lit/decorators.js';
 import { HostClasses } from '@/controllers/hostClasss';
 import styles from './styles';
+import { tag } from '@/utils/tag';
 
+@tag('auto-flex')
 export class AutoFlex extends LitElement {
     static styles = styles;
 
@@ -82,8 +84,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-flex': AutoFlex;
     }
-}
-
-if (!customElements.get('auto-flex')) {
-    customElements.define('auto-flex', AutoFlex);
 }

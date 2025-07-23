@@ -2,6 +2,7 @@ import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/color-picker/color-picker.js';
 import type { SchemaColorPickerWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 const defaultColors = [
     '#ffffff',
@@ -24,6 +25,7 @@ const defaultColors = [
 
 export type AutoFieldColorPickerOptions = Required<SchemaColorPickerWidgetOptions>;
 
+@tag('auto-field-colorpicker')
 export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions> {
     static styles = [
         AutoField.styles,
@@ -84,8 +86,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-colorpicker': AutoFieldColorPicker;
     }
-}
-
-if (!customElements.get('auto-field-colorpicker')) {
-    customElements.define('auto-field-colorpicker', AutoFieldColorPicker);
 }

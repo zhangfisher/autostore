@@ -1,4 +1,5 @@
 import { AutoField } from '@/field';
+import { tag } from '@/utils/tag';
 import type { SchemaCheckboxGroupWidgetOptions } from 'autostore';
 import { css, html } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -12,6 +13,7 @@ type SelectItem = {
 
 export type AutoFieldCheckboxGroupOptions = Required<SchemaCheckboxGroupWidgetOptions>;
 
+@tag('auto-field-checkbox-group')
 export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOptions> {
     static styles = [
         AutoField.styles,
@@ -218,8 +220,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-checkbox-group': AutoFieldCheckboxGroup;
     }
-}
-
-if (!customElements.get('auto-field-checkbox-group')) {
-    customElements.define('auto-field-checkbox-group', AutoFieldCheckboxGroup);
 }

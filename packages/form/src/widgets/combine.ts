@@ -1,5 +1,6 @@
 import { AutoDropdownField, type AutoDropdownFieldOptions } from '@/field/dropdown';
 import { renderWidget } from '@/utils/renderWidget';
+import { tag } from '@/utils/tag';
 import type { SchemaCombineWidgetOptions } from 'autostore';
 import { css, html, nothing, render } from 'lit';
 import { query } from 'lit/decorators.js';
@@ -7,6 +8,7 @@ import { repeat } from 'lit/directives/repeat.js';
 
 export type AutoFieldCombineOptions = Required<SchemaCombineWidgetOptions>;
 
+@tag('auto-field-combine')
 export class AutoFieldCombine extends AutoDropdownField<AutoFieldCombineOptions & AutoDropdownFieldOptions> {
     static styles = [
         AutoDropdownField.styles,
@@ -114,8 +116,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-combine': AutoFieldCombine;
     }
-}
-
-if (!customElements.get('auto-field-combine')) {
-    customElements.define('auto-field-combine', AutoFieldCombine);
 }

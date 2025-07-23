@@ -3,9 +3,11 @@ import { AutoField } from '@/field';
 import { html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
 import type { SchemaQrCodeWidgetOptions } from 'autostore';
+import { tag } from '@/utils/tag';
 
 export type AutoFieldQRCodeOptions = Required<SchemaQrCodeWidgetOptions>;
 
+@tag('auto-field-qrcode')
 export class AutoFieldQRCode extends AutoField<AutoFieldQRCodeOptions> {
     getInitialOptions(): Record<string, any> {
         return {
@@ -39,8 +41,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-qrcode': AutoFieldQRCode;
     }
-}
-
-if (!customElements.get('auto-field-qrcode')) {
-    customElements.define('auto-field-qrcode', AutoFieldQRCode);
 }
