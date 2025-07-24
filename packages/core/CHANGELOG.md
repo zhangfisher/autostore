@@ -1,5 +1,11 @@
 # autostore
 
+## 2.0.4
+
+### Patch Changes
+
+-   [`6a82d92`](https://github.com/zhangfisher/autostore/commit/6a82d92cc331f71a3903700569c6da7cec08af9d) Thanks [@zhangfisher](https://github.com/zhangfisher)! - 新增加 onForEachObject 回调在初始化时回调
+
 ## 2.0.3
 
 ## 2.0.2
