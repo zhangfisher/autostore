@@ -5,10 +5,9 @@ interface ScrollbarHTMLElement extends HTMLElement {
     mouseDownHandler?: (e: MouseEvent) => boolean | void;
 }
 
-
 type ScrollbarOptions = {
-    width?: string
-}
+    width?: string;
+};
 /**
  * 滚动条类，用于为元素添加自定义滚动条
  */
@@ -21,15 +20,18 @@ export class Scrollbar {
     private wrapper: HTMLDivElement;
     private el: HTMLDivElement;
     private scrollRatio: number;
-    options: Required<ScrollbarOptions>
+    options: Required<ScrollbarOptions>;
     /**
      * 创建一个新的滚动条实例
      * @param el 要添加滚动条的HTML元素
      */
     constructor(el: HTMLElement, options?: ScrollbarOptions) {
-        this.options = Object.assign({
-            width: '8px'
-        }, options)
+        this.options = Object.assign(
+            {
+                width: '8px',
+            },
+            options,
+        );
         this.target = el;
         this.content = el.firstElementChild as Element;
         this.direction = window.getComputedStyle(this.target).direction;
@@ -58,7 +60,7 @@ export class Scrollbar {
         // 添加滚动条元素
         this.target.insertAdjacentHTML('beforeend', `<div class="ss-scroll">`);
         this.bar = this.target.lastChild as HTMLElement;
-        this.bar.style.width = this.options.width
+        this.bar.style.width = this.options.width;
 
         // 绑定事件处理
         this.mB = this.moveBar.bind(this);
@@ -73,7 +75,7 @@ export class Scrollbar {
         this.target.classList.add('ss-container');
 
         // 处理高度设置
-        const css = window.getComputedStyle(el) as any
+        const css = window.getComputedStyle(el) as any;
         if (css['height'] === '0px' && css['max-height'] !== '0px') {
             el.style.height = css['max-height'];
         }
@@ -92,7 +94,8 @@ export class Scrollbar {
 
             // 存储requestAnimationFrame的ID以便可以取消
             this.requestAnimationFrame(() => {
-                if (this.el) {  // 确保元素仍然存在
+                if (this.el) {
+                    // 确保元素仍然存在
                     this.el.scrollTop += delta / this.scrollRatio;
                 }
             });
@@ -103,7 +106,6 @@ export class Scrollbar {
             document.body.classList.remove('ss-grabbed');
             document.removeEventListener('mousemove', drag);
             document.removeEventListener('mouseup', stop);
-
         };
 
         // 存储mousedown事件处理函数的引用，以便在destroy时移除
@@ -128,9 +130,7 @@ export class Scrollbar {
      * 动画帧请求的兼容实现
      */
     private requestAnimationFrame(callback: () => void) {
-        window.requestAnimationFrame ?
-            window.requestAnimationFrame(callback) :
-            window.setTimeout(callback, 0);
+        window.requestAnimationFrame ? window.requestAnimationFrame(callback) : window.setTimeout(callback, 0);
     }
 
     /**
@@ -145,9 +145,7 @@ export class Scrollbar {
         this.scrollRatio = ownHeight / totalHeight;
 
         const isRtl = this.direction === 'rtl';
-        const right = isRtl && this.bar ?
-            (this.target.clientWidth - this.bar.clientWidth + 18) :
-            this.bar ? (this.target.clientWidth - this.bar.clientWidth) * -1 : 0;
+        const right = isRtl && this.bar ? this.target.clientWidth - this.bar.clientWidth + 18 : this.bar ? (this.target.clientWidth - this.bar.clientWidth) * -1 : 0;
 
         this.requestAnimationFrame(() => {
             // Hide scrollbar if no scrolling is possible
@@ -156,9 +154,7 @@ export class Scrollbar {
             } else {
                 this.bar?.classList.remove('ss-hidden');
                 if (this.bar) {
-                    this.bar.style.cssText = 'height:' + Math.max(this.scrollRatio * 100, 10) +
-                        '%; top:' + (this.el.scrollTop / totalHeight) * 100 +
-                        '%;right:' + right + 'px;';
+                    this.bar.style.cssText = 'height:' + Math.max(this.scrollRatio * 100, 10) + '%; top:' + (this.el.scrollTop / totalHeight) * 100 + '%;right:' + right + 'px;';
                 }
             }
         });
@@ -168,7 +164,6 @@ export class Scrollbar {
      * 解绑所有事件并移除滚动条
      */
     public destroy() {
-
         // 移除事件监听
         window.removeEventListener('resize', this.mB);
 
@@ -252,7 +247,7 @@ export class ScrollbarController implements ReactiveController {
             width: calc(100% + 18px);
             right: auto;
         }
-        
+
         .ss-scroll {
             position: relative;
             background: rgba(0, 0, 0, 0.1);
@@ -268,7 +263,7 @@ export class ScrollbarController implements ReactiveController {
         .ss-hidden {
             display: none;
         }
-        .ss-container{
+        .ss-container {
             overflow-x: clip;
         }
         .ss-container:hover .ss-scroll,
@@ -283,8 +278,8 @@ export class ScrollbarController implements ReactiveController {
             -webkit-user-select: none;
             user-select: none;
         }
-    `
-
+    `;
+    _scrollbars: Scrollbar[] = [];
     /**
      * 创建一个新的滚动条控制器
      * @param host 宿主元素，通常是一个Lit组件
@@ -294,14 +289,15 @@ export class ScrollbarController implements ReactiveController {
         host.addController(this);
     }
     create(el: any, options?: ScrollbarOptions) {
-        return new Scrollbar(el, options);
+        const scrollbar = new Scrollbar(el, options);
+        this._scrollbars.push(scrollbar);
+        return scrollbar;
     }
 
     /**
      * 当宿主元素连接到DOM时调用的生命周期方法
      */
-    hostConnected(): void {
-    }
+    hostConnected(): void {}
 
     /**
      * 当宿主元素更新时调用的生命周期方法
@@ -310,7 +306,10 @@ export class ScrollbarController implements ReactiveController {
         // 如果需要在更新时重新合并样式，可以在这里调用mergeStyles
     }
 
-
-
-
+    hostDisconnected() {
+        for (const scrollbar of this._scrollbars) {
+            scrollbar.destroy();
+        }
+        this._scrollbars = [];
+    }
 }

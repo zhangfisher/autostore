@@ -75,8 +75,9 @@ export class AutoFormGroupBase extends LitElement {
                 const icon = formEl.getAttribute('icon') || group;
                 const label = formEl.getAttribute('label');
                 const title = formEl.getAttribute('title');
+                const active = this.active == undefined ? (i == 0 ? true : false) : this.active.split(',').includes(group);
                 return {
-                    active: this.active == undefined ? (i == 0 ? true : false) : formEl.group === this.active,
+                    active,
                     group,
                     icon,
                     title,
