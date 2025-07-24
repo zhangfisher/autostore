@@ -5,6 +5,7 @@ import type { ObserverType } from '../observer/types';
 import type { Dict } from '../types';
 import type { SchemaOptions } from '../schema';
 import type { AutoStore } from './store';
+import { ForEachObjectCallback } from '../utils/forEachObject';
 
 export type BatchChangeEvent = '__batch_update__';
 export type StateChangeEvents = Record<string, StateOperate>;
@@ -208,6 +209,10 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     getShadowStore?: () => AutoStore<any>;
+    /**
+     * 当第一次遍历对象时执行此回调函数
+     */
+    onForEachObject?: ForEachObjectCallback<any>;
 }
 
 export type UpdateOptions = {
