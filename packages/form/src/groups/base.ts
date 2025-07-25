@@ -12,17 +12,16 @@
 
 import { query, state } from 'lit/decorators.js';
 import { css, html, LitElement } from 'lit';
-import { AutoStore, type Dict } from 'autostore';
+import type { AutoStore, Dict } from 'autostore';
 import type { AutoForm } from '@/form';
 import styles from '../form/styles';
 
 export type AutoFormGroupItem = {
     el: AutoForm;
-    group: string;
-    label?: string | null;
-    name?: string | null;
-    icon?: string | null;
-    title?: string | null;
+    label?: string;
+    name?: string;
+    icon?: string;
+    title?: string;
     active: boolean;
 };
 
@@ -72,16 +71,14 @@ export class AutoFormGroupBase extends LitElement {
                 const formEl = el as AutoForm;
                 if (this.store) formEl.bind(this.store);
                 formEl.setAttribute('border', 'none');
-                const group = formEl.dataset.group || '';
-                const icon = formEl.dataset.icon || group;
-                const label = formEl.dataset.label;
-                const title = formEl.dataset.title;
-                const name = formEl.dataset.name;
-                const active = this.active == undefined ? (i == 0 ? true : false) : this.active.split(',').includes(group);
+                const icon = formEl.getAttribute('icon') || formEl.dataset.icon;
+                const label = formEl.getAttribute('label') || formEl.dataset.label;
+                const title = formEl.getAttribute('title') || formEl.dataset.title;
+                const name = formEl.getAttribute('name') || formEl.dataset.name || '';
+                const active = !this.active ? i === 0 : this.active.split(',').includes(name);
                 return {
                     name,
                     active,
-                    group,
                     icon,
                     title,
                     label,

@@ -13,11 +13,13 @@ class AutoFormExampleTabs extends LitElement {
     }
 
     render() {
-        return html`<div style="padding: 1em; border: 1px solid #ccc; margin: 1em; position: relative">
+        return html`<div
+            style="padding: 1em; border: 1px solid #ccc; margin: 1em; position: relative"
+        >
             <auto-form-tabs direction="bottom" style="border: 1px solid #ccc;height:500px">
                 <auto-form group="general" icon="settings"> </auto-form>
-                <auto-form group="car"> </auto-form>
-                <auto-form group="network" label="网络"> </auto-form>
+                <auto-form group="car" icon="car"> </auto-form>
+                <auto-form group="network" icon="network" label="网络"> </auto-form>
                 <auto-form group="admin" icon="apple"> </auto-form>
                 <auto-form group="safe" icon="lock"> </auto-form>
             </auto-form-tabs>

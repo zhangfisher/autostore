@@ -115,4 +115,11 @@ export default css`
         pointer-events: none;
     }
     ${scrollbar}
+
+    :host:first-child {
+        border-top: none;
+    }
+    .header:last-of-type:not(.active) {
+        border-bottom: none;
+    }
 `;

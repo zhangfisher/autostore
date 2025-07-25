@@ -51,7 +51,6 @@ export class AutoCollapse extends LitElement {
     firstUpdated() {
         // 在组件首次更新后获取面板元素
         this.updatePanels();
-
         // 确保slotchange事件监听器已设置
         // 这是一个额外的保障，以防在connectedCallback中设置失败
         this.setupSlotChangeListener();
@@ -61,25 +60,14 @@ export class AutoCollapse extends LitElement {
         super.connectedCallback();
         // 将字符串转换为内部数组
         this._activeArray = this.active ? this.active.split(',') : [];
-        // 确保在组件连接到DOM后立即获取面板元素
-        this.updatePanels();
-
         // 添加slotchange事件监听器
         this.setupSlotChangeListener();
-
-        // 使用setTimeout确保在DOM完全更新后再次尝试获取面板元素
-        setTimeout(() => {
-            this.updatePanels();
-        }, 100); // 使用稍长的延迟，确保DOM完全更新
     }
-
     disconnectedCallback() {
         super.disconnectedCallback();
-
         // 移除slotchange事件监听器
         this.removeSlotChangeListener();
     }
-
     // 设置slotchange事件监听器
     private setupSlotChangeListener() {
         const slot = this.shadowRoot?.querySelector('slot');
@@ -88,7 +76,6 @@ export class AutoCollapse extends LitElement {
             slot.addEventListener('slotchange', this.handleSlotChange);
         }
     }
-
     // 移除slotchange事件监听器
     private removeSlotChangeListener() {
         const slot = this.shadowRoot?.querySelector('slot');
@@ -96,7 +83,6 @@ export class AutoCollapse extends LitElement {
             slot.removeEventListener('slotchange', this.handleSlotChange);
         }
     }
-
     // 处理slotchange事件
     private handleSlotChange = (e: Event) => {
         this.updatePanels(e);
@@ -114,13 +100,11 @@ export class AutoCollapse extends LitElement {
     private updatePanels(e?: Event) {
         // 确保组件已经连接到DOM
         if (!this.isConnected) return;
-
         // 获取slot元素
         const slot = (e?.target as HTMLSlotElement) || this.shadowRoot?.querySelector('slot');
         if (!slot) {
             return;
         }
-
         // 获取分配给slot的元素
         const elements = slot.assignedElements() as HTMLElement[];
 
@@ -128,7 +112,6 @@ export class AutoCollapse extends LitElement {
         if (elements.length > 0) {
             // 检查是否与之前的面板元素相同
             const hasChanged = this.panelsHaveChanged(elements);
-
             if (hasChanged) {
                 // 更新之前的面板元素
                 this.previousPanels = [...elements];
@@ -139,21 +122,18 @@ export class AutoCollapse extends LitElement {
         } else {
             // 如果没有元素分配给slot，可能是因为组件还没有完全初始化
             // 我们可以使用setTimeout来延迟执行，等待DOM更新
-            setTimeout(() => {
-                const updatedElements = slot.assignedElements() as HTMLElement[];
-                if (updatedElements.length > 0) {
-                    // 检查是否与之前的面板元素相同
-                    const hasChanged = this.panelsHaveChanged(updatedElements);
-
-                    if (hasChanged) {
-                        // 更新之前的面板元素
-                        this.previousPanels = [...updatedElements];
-                        // 更新当前面板列表
-                        this.panels = updatedElements;
-                        this.requestUpdate();
-                    }
+            const updatedElements = slot.assignedElements() as HTMLElement[];
+            if (updatedElements.length > 0) {
+                // 检查是否与之前的面板元素相同
+                const hasChanged = this.panelsHaveChanged(updatedElements);
+                if (hasChanged) {
+                    // 更新之前的面板元素
+                    this.previousPanels = [...updatedElements];
+                    // 更新当前面板列表
+                    this.panels = updatedElements;
+                    this.requestUpdate();
                 }
-            }, 0);
+            }
         }
     }
 
@@ -164,21 +144,21 @@ export class AutoCollapse extends LitElement {
             return true;
         }
 
-        // 比较每个面板元素
-        for (let i = 0; i < newPanels.length; i++) {
-            // 如果面板元素不同，或者面板的属性发生了变化，则认为面板发生了变化
-            if (
-                this.previousPanels[i] !== newPanels[i] ||
-                this.previousPanels[i].getAttribute('data-name') !==
-                    newPanels[i].getAttribute('data-name') ||
-                this.previousPanels[i].getAttribute('data-label') !==
-                    newPanels[i].getAttribute('data-label') ||
-                this.previousPanels[i].getAttribute('data-icon') !==
-                    newPanels[i].getAttribute('data-icon')
-            ) {
-                return true;
-            }
-        }
+        // // 比较每个面板元素
+        // for (let i = 0; i < newPanels.length; i++) {
+        //     // 如果面板元素不同，或者面板的属性发生了变化，则认为面板发生了变化
+        //     if (
+        //         this.previousPanels[i] !== newPanels[i] ||
+        //         this.previousPanels[i].getAttribute('data-name') !==
+        //             newPanels[i].getAttribute('data-name') ||
+        //         this.previousPanels[i].getAttribute('data-label') !==
+        //             newPanels[i].getAttribute('data-label') ||
+        //         this.previousPanels[i].getAttribute('data-icon') !==
+        //             newPanels[i].getAttribute('data-icon')
+        //     ) {
+        //         return true;
+        //     }
+        // }
 
         // 如果所有面板元素都相同，则没有变化
         return false;
@@ -245,9 +225,9 @@ export class AutoCollapse extends LitElement {
     }
 
     _renderHeader(panel: HTMLElement) {
-        const name = panel.getAttribute('data-name') || '';
-        const label = panel.getAttribute('data-label') || '';
-        const icon = panel.getAttribute('data-icon') || '';
+        const name = panel.getAttribute('name') || panel.dataset.name || '';
+        const label = panel.getAttribute('label') || panel.dataset.label || '';
+        const icon = panel.getAttribute('icon') || panel.dataset.icon || '';
         const isActive = this.isPanelActive(name);
         return html`
             <div

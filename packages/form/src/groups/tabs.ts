@@ -19,6 +19,8 @@ import '@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { AutoFormGroupBase } from './base';
 import { ScrollbarController } from '@/controllers';
+import { ifDefined } from 'lit/directives/if-defined.js';
+import { when } from 'lit/directives/when.js';
 
 @tag('auto-form-tabs')
 export class AutoFormTabs extends AutoFormGroupBase {
@@ -121,16 +123,30 @@ export class AutoFormTabs extends AutoFormGroupBase {
 
     renderGroups() {
         return html`
-            <sl-tab-group placement="${this._getPlacement()}" @sl-tab-show="${() => this.dispatchEvent(new CustomEvent('tab-change'))}">
+            <sl-tab-group
+                placement="${this._getPlacement()}"
+                @sl-tab-show="${() => this.dispatchEvent(new CustomEvent('tab-change'))}"
+            >
                 ${this.groups.map(
                     (group, index) => html`
-                        <sl-tab ?active=${group.active} slot="nav" title=${group.title || group.label || group.group} panel="${index}">
+                        <sl-tab
+                            ?active=${group.active}
+                            slot="nav"
+                            title="${ifDefined(group.title || group.label)}"
+                            panel="${index}"
+                        >
                             ${group.icon ? html`<sl-icon name="${group.icon}"></sl-icon>` : ''}
-                            <span class="label">${group.label}</span>
+                            ${when(
+                                group.label,
+                                () => html`<span class="label">${group.label}</span>`,
+                            )}
                         </sl-tab>
                     `,
                 )}
-                ${this.groups.map((group, index) => html` <sl-tab-panel name="${index}">${group.el}</sl-tab-panel> `)}
+                ${this.groups.map(
+                    (group, index) =>
+                        html` <sl-tab-panel name="${index}">${group.el}</sl-tab-panel> `,
+                )}
             </sl-tab-group>
         `;
     }
