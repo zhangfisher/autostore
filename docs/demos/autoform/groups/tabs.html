@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+    </head>
+
+    <body>
+        <div style="display: flex">
+            <auto-form id="form" viewonly></auto-form>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const store = new AutoStore({
+                user: {
+                    sex: configurable(18, {
+                        label: '性别',
+                        toView: (value) => {
+                            return `<span 
+                                style="color:red;border:1px solid red;padding:4px;">
+                                ${value}岁
+                            </span>`;
+                        },
+                    }),
+                },
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+        </script>
+    </body>
+</html>

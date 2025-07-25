@@ -110,11 +110,26 @@ export default defineConfig({
                                     collapsed: false,
                                     items: [
                                         { text: '关于', link: '/zh/react/form/field/about' },
-                                        { text: '简单字段', link: '/zh/react/form/field/simple-field' },
-                                        { text: 'useField', link: '/zh/react/form/field/use-field' },
-                                        { text: 'useFields', link: '/zh/react/form/field/use-fields' },
-                                        { text: '字段拆分', link: '/zh/react/form/field/split-field' },
-                                        { text: '字段组件', link: '/zh/react/form/field/field-component' },
+                                        {
+                                            text: '简单字段',
+                                            link: '/zh/react/form/field/simple-field',
+                                        },
+                                        {
+                                            text: 'useField',
+                                            link: '/zh/react/form/field/use-field',
+                                        },
+                                        {
+                                            text: 'useFields',
+                                            link: '/zh/react/form/field/use-fields',
+                                        },
+                                        {
+                                            text: '字段拆分',
+                                            link: '/zh/react/form/field/split-field',
+                                        },
+                                        {
+                                            text: '字段组件',
+                                            link: '/zh/react/form/field/field-component',
+                                        },
                                     ],
                                 },
                                 {
@@ -205,7 +220,7 @@ export default defineConfig({
                     ],
                 },
                 {
-                    text: '字段组件',
+                    text: '字段',
                     items: [
                         { text: 'Input', link: '/zh/form/guide/fields/input' },
                         { text: 'Number', link: '/zh/form/guide/fields/number' },
@@ -243,6 +258,13 @@ export default defineConfig({
                     ],
                 },
                 {
+                    text: '字段组',
+                    items: [
+                        { text: 'Tabs', link: '/zh/form/guide/groups/tabs' },
+                        { text: 'Collapse', link: '/zh/form/guide/groups/collapse' },
+                    ],
+                },
+                {
                     text: '示例',
                     items: [{ text: '综合', link: '/examples/demo.html', target: '_blank' }],
                 },
@@ -269,9 +291,6 @@ export default defineConfig({
                 },
             });
         },
-        //   codeTransformers: [
-        //     transformerTwoslash()
-        //   ]
     },
     // @ts-ignore
     build: {

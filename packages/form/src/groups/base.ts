@@ -20,6 +20,7 @@ export type AutoFormGroupItem = {
     el: AutoForm;
     group: string;
     label?: string | null;
+    name?: string | null;
     icon?: string | null;
     title?: string | null;
     active: boolean;
@@ -71,12 +72,14 @@ export class AutoFormGroupBase extends LitElement {
                 const formEl = el as AutoForm;
                 if (this.store) formEl.bind(this.store);
                 formEl.setAttribute('border', 'none');
-                const group = formEl.getAttribute('group') || '';
-                const icon = formEl.getAttribute('icon') || group;
-                const label = formEl.getAttribute('label');
-                const title = formEl.getAttribute('title');
+                const group = formEl.dataset.group || '';
+                const icon = formEl.dataset.icon || group;
+                const label = formEl.dataset.label;
+                const title = formEl.dataset.title;
+                const name = formEl.dataset.name;
                 const active = this.active == undefined ? (i == 0 ? true : false) : this.active.split(',').includes(group);
                 return {
+                    name,
                     active,
                     group,
                     icon,

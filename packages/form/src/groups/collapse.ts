@@ -1,3 +1,4 @@
+import { ifDefined } from 'lit/directives/if-defined.js';
 /**
  *
  * <auto-form-collapse active="a,b" >
@@ -15,13 +16,12 @@ import { tag } from '@/utils/tag';
 import '@shoelace-style/shoelace/dist/components/details/details.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { AutoFormGroupBase } from './base';
-import { ScrollbarController } from '@/controllers';
-
+import '../components/collapse';
+import { property } from 'lit/decorators.js';
 @tag('auto-form-collapse')
 export class AutoFormCollapse extends AutoFormGroupBase {
     static styles = [
         AutoFormGroupBase.styles,
-        ScrollbarController.styles,
         css`
             auto-form {
                 padding: 1.5em;
@@ -75,31 +75,27 @@ export class AutoFormCollapse extends AutoFormGroupBase {
         `,
     ] as any;
 
-    scrollbars = new ScrollbarController(this);
+    @property({ type: String, reflect: true })
+    active: string = '';
 
-    _createScrollbars() {
-        const panels = this.shadowRoot?.querySelectorAll('sl-tab-panel');
-        panels?.forEach((panel) => {
-            this.scrollbars.create(panel, { width: '5em' });
-        });
-    }
+    @property({ type: String, reflect: true })
+    padding?: string;
 
-    firstUpdated() {
-        setTimeout(() => {
-            this._createScrollbars();
-        });
-    }
+    @property({ type: Boolean, reflect: true })
+    accordion: boolean = false;
 
     renderGroups() {
         return html`
-            ${this.groups.map(
-                (group) => html`
-                    <sl-details ?open=${group.active}>
-                        <div class="header" slot="summary">${group.icon ? html`<sl-icon name="${group.icon}"></sl-icon>` : ''} <span class="label">${group.label}</span></div>
-                        ${group.el}
-                    </sl-details>
-                `,
-            )}
+            <auto-collapse
+                style="flex-grow:1;min-height:0"
+                active=${ifDefined(this.active)}
+                padding=${ifDefined(this.padding)}
+                ?accordion=${this.accordion}
+            >
+                ${this.groups.map((group) => {
+                    return group.el;
+                })}
+            </auto-collapse>
         `;
     }
 }

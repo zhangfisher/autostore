@@ -13,13 +13,31 @@ class AutoFormExampleCollapse extends LitElement {
     }
 
     render() {
-        return html`<div style="padding: 1em; border: 1px solid #ccc; margin: 1em; position: relative">
-            <auto-form-collapse style="border: 1px solid #ccc;height:500px;">
-                <auto-form group="general" label="常规" icon="settings"> </auto-form>
-                <auto-form group="car" label="汽车"> </auto-form>
-                <auto-form group="network" label="网络"> </auto-form>
-                <auto-form group="admin" label="管理" icon="apple"> </auto-form>
-                <auto-form group="safe" label="安全" icon="lock"> </auto-form>
+        return html`<div
+            style="padding: 1em; border: 1px solid #ccc; margin: 1em; position: relative"
+        >
+            <auto-form-collapse style="border: 1px solid #ccc;height:500px;" active="network">
+                <auto-form
+                    data-name="general"
+                    group="general"
+                    data-label="常规"
+                    data-icon="settings"
+                    data-actions="settings"
+                >
+                </auto-form>
+                <auto-form data-name="car" group="car" data-label="汽车" data-icon="car">
+                </auto-form>
+                <auto-form
+                    data-name="network"
+                    group="network"
+                    data-label="网络"
+                    data-icon="network"
+                >
+                </auto-form>
+                <auto-form data-name="admin" group="admin" data-label="管理" data-icon="apple">
+                </auto-form>
+                <auto-form data-name="safe" group="safe" data-label="安全" data-icon="lock">
+                </auto-form>
             </auto-form-collapse>
         </div>`;
     }

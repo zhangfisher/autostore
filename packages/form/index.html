@@ -9,7 +9,10 @@
         <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/dark.css" /> -->
 
-        <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
+        <script
+            type="module"
+            src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"
+        ></script>
         <link rel="stylesheet" href="./index.css" />
         <link rel="stylesheet" href="./src/themes/light.css" />
         <link rel="stylesheet" href="./src/themes/dark.css" />
@@ -22,9 +25,79 @@
             <sl-tab slot="nav" panel="general">默认</sl-tab>
             <sl-tab slot="nav" panel="transform">状态转换</sl-tab>
             <sl-tab slot="nav" panel="usepath">绑定路径</sl-tab>
-            <sl-tab-panel name="tabs">
+            <sl-tab-panel name="tabs" style="padding: 2em">
+                <auto-collapse
+                    active="panel1,panel2"
+                    style="border: 1px solid #ccc; height: 500px"
+                    accordion
+                >
+                    <div
+                        data-name="panel1"
+                        data-label="第一个面板"
+                        data-icon="settings"
+                        data-actions="aperture,expand:展开"
+                    >
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                    </div>
+                    <div
+                        data-name="panel2"
+                        data-label="第二个面板"
+                        data-icon="award"
+                        data-actions="close:关闭,alarm-clock-check:告警"
+                    >
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p>
+                    </div>
+                    <div
+                        data-name="panel3"
+                        data-label="第三个面板"
+                        data-icon="aperture"
+                        data-actions="atom:原子,fullscreen:全屏,scan-eye:扫描"
+                    >
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p>
+                    </div>
+                </auto-collapse>
+
                 <auto-form-example-collapse></auto-form-example-collapse>
-                <auto-form-example-tabs></auto-form-example-tabs>
+                <!-- <auto-form-example-tabs></auto-form-example-tabs> -->
             </sl-tab-panel>
             <sl-tab-panel name="general">
                 <auto-form-example-general></auto-form-example-general>
