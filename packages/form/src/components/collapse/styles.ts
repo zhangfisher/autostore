@@ -29,13 +29,11 @@ export default css`
         border-bottom: 1px solid var(--sl-color-neutral-200, #e2e8f0);
         box-sizing: border-box;
     }
-
     .header:hover {
-        background-color: var(--sl-color-neutral-100, #f1f5f9);
+        background-color: var(--sl-color-neutral-50, #f1f5f9);
     }
-
     .header.active {
-        background-color: var(--sl-color-neutral-100, #f1f5f9);
+        background-color: var(--sl-color-neutral-50, #f1f5f9);
         font-weight: 500;
     }
     .icon {
@@ -54,26 +52,21 @@ export default css`
             background-color: var(--sl-color-neutral-100);
         }
     }
-
     sl-icon-button sl-icon::part(svg) {
         stroke-width: 1;
     }
-
     .icon::part(svg) {
         stroke-width: 1;
     }
     .label {
         flex-grow: 1;
     }
-
     .panel-arrow {
         transition: transform 0.3s ease;
     }
-
     .header.active .panel-arrow {
         transform: rotate(180deg);
     }
-
     .content {
         position: relative;
         max-height: 0;
@@ -87,7 +80,6 @@ export default css`
         transition: max-height 0.3s ease-out, padding 0.2s ease, opacity 0.2s ease,
             visibility 0s 0.3s; /* 延迟visibility变化，确保在动画完成后才隐藏 */
     }
-
     .content.active {
         max-height: 2000px;
         padding: 15px;
@@ -96,17 +88,14 @@ export default css`
         flex-grow: 1; /* 当指定高度时，内容区域配置flex-grow=1 */
         display: flex;
     }
-
     /* 当组件有高度时，内容区域自动填充剩余空间 */
     :host([style*='height']) .content.active {
         overflow: auto;
     }
-
     /* 最后一个面板的内容区域不需要底部边框 */
     .content:last-of-type {
         border-bottom: none;
     }
-
     /* 隐藏slot元素但保持其功能 */
     .hidden-slot {
         display: none !important;
@@ -114,12 +103,11 @@ export default css`
         position: absolute;
         pointer-events: none;
     }
-    ${scrollbar}
-
     :host:first-child {
         border-top: none;
     }
-    .header:last-of-type:not(.active) {
+    .header:last-of-type {
         border-bottom: none;
     }
+    ${scrollbar}
 `;

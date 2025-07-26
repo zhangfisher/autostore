@@ -42,6 +42,8 @@ export class AutoCollapse extends LitElement {
     @state()
     private panels: HTMLElement[] = [];
     // 内部使用的活动面板数组
+
+    @state()
     private _activeArray: string[] = [];
 
     firstUpdated() {
@@ -150,7 +152,7 @@ export class AutoCollapse extends LitElement {
     // 渲染面板
     private renderPanels() {
         return this.panels.map((panel) => {
-            const name = panel.getAttribute('data-name') || '';
+            const name = panel.getAttribute('name') || panel.dataset.name || '';
             const isActive = this.isPanelActive(name);
             const style = styleMap({
                 padding: this.padding,

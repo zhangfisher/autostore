@@ -13,6 +13,8 @@
 </auto-form-tabs>
 ```
 
+## 属性
+
 -   **auto-form-tabs**
 
 用于内嵌一个或多个`auto-form`元素。
@@ -24,6 +26,8 @@
 
 -   **auto-form**
 
+`auto-form`元素可以指定以下属性，用以定义如何被`auto-form-tabs`使用。
+
 | 名称    | 类型     | 说明                                       |
 | ------- | -------- | ------------------------------------------ |
 | `name`  | `String` | 唯一标识`form`对象，`active`值为此时将显示 |
@@ -31,8 +35,6 @@
 | `path`  | `String` | 用于过滤`auto-form`显示字段                |
 | `label` | `String` | 页签标题文字                               |
 | `icon`  | `String` | 页签图标,参考[icon 属性](../icons)         |
-
-## 属性
 
 ## 示例
 

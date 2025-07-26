@@ -61,7 +61,7 @@ export class AutoFormTabs extends AutoFormGroupBase {
             }
 
             sl-tab::part(base) {
-                padding: var(--auto-spacing);
+                padding: calc(0.8 * var(--auto-spacing));
             }
             sl-tab-panel::part(base) {
                 padding: 0;
@@ -91,9 +91,11 @@ export class AutoFormTabs extends AutoFormGroupBase {
                 flex-grow: 1;
                 min-height: 0;
             }
-            sl-tab-group[placement='top']::part(active-tab-indicator),
+            sl-tab-group[placement='top']::part(active-tab-indicator) {
+                bottom: calc(var(--track-width) - 2px);
+            }
             sl-tab-group[placement='bottom']::part(active-tab-indicator) {
-                bottom: calc(var(--track-width) - 1px);
+                top: calc(var(--track-width) - 2px);
             }
             .label {
                 font-size: var(--auto-font-size);
