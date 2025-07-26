@@ -10,24 +10,16 @@
  *
  */
 
-import { query, state } from 'lit/decorators.js';
+import { query, state, property } from 'lit/decorators.js';
 import { css, html, LitElement } from 'lit';
 import type { AutoStore, Dict } from 'autostore';
-import type { AutoForm } from '@/form';
 import styles from '../form/styles';
-
-export type AutoFormGroupItem = {
-    el: AutoForm;
-    label?: string;
-    name?: string;
-    icon?: string;
-    title?: string;
-    active: boolean;
-};
+import { scrollbar } from '@/styles/utils';
 
 export class AutoFormGroupBase extends LitElement {
     static styles = [
         styles,
+        scrollbar,
         css`
             :host {
                 display: block;
@@ -41,57 +33,51 @@ export class AutoFormGroupBase extends LitElement {
 
     store?: AutoStore<Dict>;
 
-    @state()
-    groups: AutoFormGroupItem[] = [];
-
-    @state()
+    @property()
     active?: string;
+    @state()
+    forms: Array<HTMLElement> = [];
 
-    connectedCallback() {
-        super.connectedCallback();
-        this.updateComplete.then(() => this.onSlotChange());
+    firstUpdated() {
+        this.forms = this.getForms();
+        if (this.forms.length === 0) {
+            setTimeout(() => {
+                this.forms = this.getForms();
+            });
+        }
     }
-
+    getForms() {
+        const slot = this.shadowRoot!.querySelector('slot');
+        if (slot) {
+            return slot.assignedElements({ flatten: true }) as any;
+        } else {
+            return [];
+        }
+    }
     bind(store: AutoStore<Dict>) {
         this.store = store;
-        if (this.groups) {
-            this.groups.forEach((group) => {
-                group.el.bind(store);
+        if (this.forms) {
+            this.forms.forEach((group) => {
+                // @ts-ignore
+                if (group.bind) group.bind(store);
             });
         }
     }
 
-    onSlotChange() {
-        if (!this.slotElement) return;
-        if (this.groups && this.groups.length > 0) return;
-        const assignedElements = this.slotElement.assignedElements();
-        this.groups = assignedElements
-            .filter((el) => el.tagName.toLowerCase() === 'auto-form')
-            .map((el, i) => {
-                const formEl = el as AutoForm;
-                if (this.store) formEl.bind(this.store);
-                formEl.setAttribute('border', 'none');
-                const icon = formEl.getAttribute('icon') || formEl.dataset.icon;
-                const label = formEl.getAttribute('label') || formEl.dataset.label;
-                const title = formEl.getAttribute('title') || formEl.dataset.title;
-                const name = formEl.getAttribute('name') || formEl.dataset.name || '';
-                const active = !this.active ? i === 0 : this.active.split(',').includes(name);
-                return {
-                    name,
-                    active,
-                    icon,
-                    title,
-                    label,
-                    el: formEl,
-                };
-            });
-        this.requestUpdate();
+    getFormInfo(formEl: any, i: number) {
+        const icon = formEl.getAttribute('icon') || formEl.dataset.icon;
+        const label = formEl.getAttribute('label') || formEl.dataset.label;
+        const title = formEl.getAttribute('title') || formEl.dataset.title;
+        const name = formEl.getAttribute('name') || formEl.dataset.name || '';
+        const active = !this.active ? i === 0 : this.active.split(',').includes(name);
+        return { icon, label, title, name, active };
     }
+
     renderGroups() {}
     render() {
         return html`
             ${this.renderGroups()}
-            <slot @slotchange="${this.onSlotChange}" style="display: none;"></slot>
+            <slot style="display: none"></slot>
         `;
     }
 }

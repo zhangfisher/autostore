@@ -92,8 +92,12 @@ export class AutoFormCollapse extends AutoFormGroupBase {
                 padding=${ifDefined(this.padding)}
                 ?accordion=${this.accordion}
             >
-                ${this.groups.map((group) => {
-                    return group.el;
+                ${this.forms.map((form) => {
+                    if (form.tagName !== 'AUTO-FORM') return;
+                    // @ts-ignore
+                    if (form.bind) form.bind(this.store);
+                    form.setAttribute('border', 'none');
+                    return form;
                 })}
             </auto-collapse>
         `;

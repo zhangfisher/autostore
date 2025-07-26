@@ -41,127 +41,32 @@ export class AutoCollapse extends LitElement {
 
     @state()
     private panels: HTMLElement[] = [];
-
-    // 存储之前的面板元素，用于比较
-    private previousPanels: HTMLElement[] = [];
-
     // 内部使用的活动面板数组
     private _activeArray: string[] = [];
 
     firstUpdated() {
-        // 在组件首次更新后获取面板元素
-        this.updatePanels();
-        // 确保slotchange事件监听器已设置
-        // 这是一个额外的保障，以防在connectedCallback中设置失败
-        this.setupSlotChangeListener();
+        this.panels = this.getPanels();
     }
 
     connectedCallback() {
         super.connectedCallback();
-        // 将字符串转换为内部数组
         this._activeArray = this.active ? this.active.split(',') : [];
-        // 添加slotchange事件监听器
-        this.setupSlotChangeListener();
     }
-    disconnectedCallback() {
-        super.disconnectedCallback();
-        // 移除slotchange事件监听器
-        this.removeSlotChangeListener();
-    }
-    // 设置slotchange事件监听器
-    private setupSlotChangeListener() {
-        const slot = this.shadowRoot?.querySelector('slot');
-        if (slot) {
-            // 使用箭头函数保持this上下文
-            slot.addEventListener('slotchange', this.handleSlotChange);
-        }
-    }
-    // 移除slotchange事件监听器
-    private removeSlotChangeListener() {
-        const slot = this.shadowRoot?.querySelector('slot');
-        if (slot) {
-            slot.removeEventListener('slotchange', this.handleSlotChange);
-        }
-    }
-    // 处理slotchange事件
-    private handleSlotChange = (e: Event) => {
-        this.updatePanels(e);
-    };
 
+    getPanels() {
+        const slot = this.shadowRoot!.querySelector('slot');
+        if (slot) {
+            return slot.assignedElements({ flatten: true }) as any;
+        } else {
+            return [];
+        }
+    }
     updated(changedProperties: Map<string, any>) {
         if (changedProperties.has('active') && typeof this.active === 'string') {
             // 当active属性从外部更新时，同步更新内部数组
             this._activeArray = this.active ? this.active.split(',') : [];
         }
         super.updated(changedProperties);
-    }
-
-    // 更新面板列表
-    private updatePanels(e?: Event) {
-        // 确保组件已经连接到DOM
-        if (!this.isConnected) return;
-        // 获取slot元素
-        const slot = (e?.target as HTMLSlotElement) || this.shadowRoot?.querySelector('slot');
-        if (!slot) {
-            return;
-        }
-        // 获取分配给slot的元素
-        const elements = slot.assignedElements() as HTMLElement[];
-
-        // 只有当有元素分配给slot时才更新面板列表
-        if (elements.length > 0) {
-            // 检查是否与之前的面板元素相同
-            const hasChanged = this.panelsHaveChanged(elements);
-            if (hasChanged) {
-                // 更新之前的面板元素
-                this.previousPanels = [...elements];
-                // 更新当前面板列表
-                this.panels = elements;
-                this.requestUpdate();
-            }
-        } else {
-            // 如果没有元素分配给slot，可能是因为组件还没有完全初始化
-            // 我们可以使用setTimeout来延迟执行，等待DOM更新
-            const updatedElements = slot.assignedElements() as HTMLElement[];
-            if (updatedElements.length > 0) {
-                // 检查是否与之前的面板元素相同
-                const hasChanged = this.panelsHaveChanged(updatedElements);
-                if (hasChanged) {
-                    // 更新之前的面板元素
-                    this.previousPanels = [...updatedElements];
-                    // 更新当前面板列表
-                    this.panels = updatedElements;
-                    this.requestUpdate();
-                }
-            }
-        }
-    }
-
-    // 检查面板元素是否发生变化
-    private panelsHaveChanged(newPanels: HTMLElement[]): boolean {
-        // 如果长度不同，肯定发生了变化
-        if (this.previousPanels.length !== newPanels.length) {
-            return true;
-        }
-
-        // // 比较每个面板元素
-        // for (let i = 0; i < newPanels.length; i++) {
-        //     // 如果面板元素不同，或者面板的属性发生了变化，则认为面板发生了变化
-        //     if (
-        //         this.previousPanels[i] !== newPanels[i] ||
-        //         this.previousPanels[i].getAttribute('data-name') !==
-        //             newPanels[i].getAttribute('data-name') ||
-        //         this.previousPanels[i].getAttribute('data-label') !==
-        //             newPanels[i].getAttribute('data-label') ||
-        //         this.previousPanels[i].getAttribute('data-icon') !==
-        //             newPanels[i].getAttribute('data-icon')
-        //     ) {
-        //         return true;
-        //     }
-        // }
-
-        // 如果所有面板元素都相同，则没有变化
-        return false;
     }
 
     // 切换面板的展开/折叠状态
@@ -263,10 +168,27 @@ export class AutoCollapse extends LitElement {
         });
     }
 
+    _onSlotChange() {
+        const panels = this.getPanels() as HTMLElement[];
+        if (panels.length > 0) {
+            const names = this.panels
+                .map((panel) => {
+                    return panel.getAttribute('name') || panel.dataset.name;
+                })
+                .filter((name) => !!name);
+
+            const newPanels = panels.filter((panel) => {
+                return !names.includes(panel.getAttribute('name') || panel.dataset.name);
+            });
+            this.panels.push(...newPanels);
+            this.requestUpdate();
+        }
+    }
+
     render() {
         return html`
             ${this.renderPanels()}
-            <slot @slotchange=${(e: Event) => this.updatePanels(e)} class="hidden-slot"></slot>
+            <slot @slotchange=${this._onSlotChange.bind(this)} style="display:none;"></slot>
         `;
     }
 }

@@ -2,7 +2,7 @@
 
 页签字段组
 
-## 指南
+## 使用方法
 
 ```html
 <auto-form-tabs active="general">
@@ -12,6 +12,27 @@
     <auto-form name="d" group="advanced" label="高级" icon="advanced"></auto-form>
 </auto-form-tabs>
 ```
+
+-   **auto-form-tabs**
+
+用于内嵌一个或多个`auto-form`元素。
+
+| 名称        | 类型     | 说明                                           |
+| ----------- | -------- | ---------------------------------------------- |
+| `direction` | `top`    | 页签方向,取值:`top`, `right`, `bottom`, `left` |
+| `active`    | `String` | 活动页签的 `name`属性,未指定时为第一项         |
+
+-   **auto-form**
+
+| 名称    | 类型     | 说明                                       |
+| ------- | -------- | ------------------------------------------ |
+| `name`  | `String` | 唯一标识`form`对象，`active`值为此时将显示 |
+| `group` | `String` | 用于过滤`auto-form`显示字段                |
+| `path`  | `String` | 用于过滤`auto-form`显示字段                |
+| `label` | `String` | 页签标题文字                               |
+| `icon`  | `String` | 页签图标,参考[icon 属性](../icons)         |
+
+## 属性
 
 ## 示例
 

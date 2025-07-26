@@ -30,10 +30,20 @@ import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import { LitElement, html } from 'lit';
 import { property } from 'lit/decorators.js';
-import { pathStartsWith, type AutoStore, type ComputedState, type Dict, type SchemaOptions } from 'autostore';
+import {
+    pathStartsWith,
+    type AutoStore,
+    type ComputedState,
+    type Dict,
+    type SchemaOptions,
+} from 'autostore';
 import { context, type AutoFormContext } from '../context';
 import { provide } from '@lit/context';
-import { type IconLibrary, type IconLibraryResolver, registerIconLibrary } from '@shoelace-style/shoelace/dist/components/icon/library.js';
+import {
+    type IconLibrary,
+    type IconLibraryResolver,
+    registerIconLibrary,
+} from '@shoelace-style/shoelace/dist/components/icon/library.js';
 import { ContextController } from '@/controllers/context';
 import { HostClasses } from '@/controllers/hostClasss';
 import '../field';
@@ -221,7 +231,6 @@ export class AutoForm extends LitElement {
             validAtInit: this.validAtInit,
         });
     }
-
     _isValid() {
         if (this.path) {
             const errors: Record<string, string> = this.store!.schemas.errors || {};
@@ -238,12 +247,16 @@ export class AutoForm extends LitElement {
         if (this._loading) return;
         try {
             this._initialContext();
-            const fields = this.path ? this.store!.schemas.find(this.path) : (Object.values(this.store!.schemas.store.state) as ComputedState<SchemaOptions>[]);
+            const fields = this.path
+                ? this.store!.schemas.find(this.path)
+                : (Object.values(
+                      this.store!.schemas.store.state,
+                  ) as ComputedState<SchemaOptions>[]);
 
             const isGroupMatched = (schema: SchemaOptions) => {
                 if (!this.group) return true;
 
-                if (['default', 'general'].includes(this.group) && schema.group == undefined) {
+                if (['default', 'general'].includes(this.group) && schema.group === undefined) {
                     return true;
                 }
 
@@ -280,7 +293,9 @@ export class AutoForm extends LitElement {
      */
     clearErrors() {
         this.store!.schemas.errors = {};
-        const fields = Array.from(this.shadowRoot!.querySelectorAll('.fields > *')) as HTMLElement[];
+        const fields = Array.from(
+            this.shadowRoot!.querySelectorAll('.fields > *'),
+        ) as HTMLElement[];
         fields.forEach((field) => {
             if (field.tagName.startsWith('auto-field')) {
                 (field as any).invalidMessage = undefined;

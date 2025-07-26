@@ -11,25 +11,26 @@
         <script src="/autostore/autoform.js"></script>
     </head>
 
-    <body>
-        <div style="display: flex">
-            <auto-form-tabs direction="top" active="network" style="border: 1px solid #ccc">
-                <auto-form name="user" path="user" icon="user" label="用户资料"></auto-form>
-                <auto-form name="safe" group="safe" icon="lock" label="安全设置"></auto-form>
-                <auto-form
-                    name="network"
-                    group="network"
-                    icon="network"
-                    label="网络设置"
-                ></auto-form>
-                <auto-form
-                    name="advanced"
-                    group="advanced"
-                    icon="airplay"
-                    label="高级设置"
-                ></auto-form>
-            </auto-form-tabs>
+    <body style="overflow: hidden; padding: 1em">        
+        <div style="border:1px solid #ccc;margin-bottom:10px;padding:1em;">
+            <div id="direction" style="padding:0.5em 0;">            
+                页签方向:
+                <label><input type="radio" name="direction" value="top" checked/> 上方</label>
+                <label><input type="radio" name="direction" value="bottom"/> 下方</label>
+                <label><input type="radio" name="direction" value="left"/> 左边</label>
+                <label><input type="radio" name="direction" value="right"/> 右边</label>
+            </div>
+            <div style="padding:0.5em 0;">
+                <label><input type="checkbox" id="hidelabel" />隐藏标签</label>
+            </div>
         </div>
+        <div>
+        <auto-form-tabs direction="top" active="network" style="border: 1px solid #ccc">
+            <auto-form name="user" path="user" icon="user" label="用户资料"></auto-form>
+            <auto-form name="safe" group="safe" icon="lock" label="安全设置"></auto-form>
+            <auto-form name="network" group="network" icon="network" label="网络设置"></auto-form>
+            <auto-form name="advanced" group="advanced" icon="airplay" label="高级设置"></auto-form>
+        </auto-form-tabs>
         <script>
             const { AutoStore, configurable } = AutoStoreSpaces;
             const store = new AutoStore({
@@ -58,7 +59,7 @@
                             { label: '泰国', value: 'Thailand' },
                             { label: '印度', value: 'India' },
                             { label: '墨西哥', value: 'Mexico' },
-                            { label: '南非', value: 'South Africa' },
+                            { label: '南非', value: 'SouthAfrica' },
                             { label: '法国', value: 'France' },
                             { label: '荷兰', value: 'Netherlands' },
                             { label: '德国', value: 'Germany' },
@@ -139,6 +140,19 @@
             });
             const form = document.querySelector('auto-form-tabs');
             form.bind(store);
+         
+            const dirEl= document.querySelector("#direction")
+            dirEl.addEventListener('change', (e) => {  
+                const input = e.target
+                form.direction= input.value
+            })
+            const hideLabelEl= document.querySelector("#hidelabel")
+            hideLabelEl.addEventListener('change', (e) => {  
+                const input = e.target
+                console.log("input.checked=",input.checked)
+                form.hideLabel= input.checked
+            })
+
         </script>
     </body>
 </html>
