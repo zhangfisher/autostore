@@ -1,5 +1,11 @@
 # autostore
 
+## 3.0.1
+
+### Patch Changes
+
+-   [`62bd346`](https://github.com/zhangfisher/autostore/commit/62bd346ebcd105ef49b8d95e63427d1104b3b75b) Thanks [@zhangfisher](https://github.com/zhangfisher)! - rename onForEachObject to onForEachState
+
 ## 3.0.0
 
 ### Minor Changes
