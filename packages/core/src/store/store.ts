@@ -52,7 +52,13 @@
 
 import { ComputedObjects } from '../computed/computedObjects';
 import { assignObject } from 'flex-tools/object/assignObject';
-import type { AutoStoreOptions, StateChangeEvents, StateOperate, StateTracker, UpdateOptions } from './types';
+import type {
+    AutoStoreOptions,
+    StateChangeEvents,
+    StateOperate,
+    StateTracker,
+    UpdateOptions,
+} from './types';
 import type { Dict, ObjectKeyPaths, StatePath } from '../types';
 import { log, type LogLevel, type LogMessageArgs } from '../utils/log';
 import { getId } from '../utils/getId';
@@ -61,7 +67,14 @@ import { SyncComputedObject } from '../computed/sync';
 import type { ComputedContext, ComputedDescriptor } from '../computed/types';
 import type { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from '../watch/types';
 import type { StoreEvents } from '../events/types';
-import { forEachObject, getSnapshot, getVal, isAsyncComputedValue, isPathEq, setVal } from '../utils';
+import {
+    forEachObject,
+    getSnapshot,
+    getVal,
+    isAsyncComputedValue,
+    isPathEq,
+    setVal,
+} from '../utils';
 import { BATCH_UPDATE_EVENT } from '../consts';
 import { createReactiveObject } from './reactive';
 import { AsyncComputedObject } from '../computed/async';
@@ -134,7 +147,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
         this.installExtends();
-        forEachObject(this._data as any, this._options.onForEachObject);
+        forEachObject(this._data as any, this._options.onForEachState);
         this.schemas.build();
         if (this._options.resetable) this.resetable = true;
         // @ts-ignore
@@ -239,11 +252,16 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         }
     }
     private subscribeCallbacks() {
-        if (this._options.onComputedCreated) this.on('computed:created', this._options.onComputedCreated.bind(this));
-        if (this._options.onComputedDone) this.on('computed:done', this._options.onComputedDone.bind(this));
-        if (this._options.onComputedError) this.on('computed:error', this._options.onComputedError.bind(this));
-        if (this._options.onComputedCancel) this.on('computed:cancel', this._options.onComputedCancel.bind(this));
-        if (this._options.onObserverBeforeCreate) this.on('observer:beforeCreate', this._options.onObserverBeforeCreate.bind(this));
+        if (this._options.onComputedCreated)
+            this.on('computed:created', this._options.onComputedCreated.bind(this));
+        if (this._options.onComputedDone)
+            this.on('computed:done', this._options.onComputedDone.bind(this));
+        if (this._options.onComputedError)
+            this.on('computed:error', this._options.onComputedError.bind(this));
+        if (this._options.onComputedCancel)
+            this.on('computed:cancel', this._options.onComputedCancel.bind(this));
+        if (this._options.onObserverBeforeCreate)
+            this.on('observer:beforeCreate', this._options.onObserverBeforeCreate.bind(this));
     }
     /**
      *
@@ -296,14 +314,31 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      * @returns {Watcher} - 返回一个表示监听器的数字标识符，用来取消监听。
      */
     watch(listener: WatchListener, options?: WatchListenerOptions): Watcher;
-    watch(paths: StatePath<State> | StatePath<State>[], listener: WatchListener, options?: WatchListenerOptions): Watcher;
-    watch(paths: '*' | string | (string | string[])[], listener: WatchListener, options?: WatchListenerOptions): Watcher;
+    watch(
+        paths: StatePath<State> | StatePath<State>[],
+        listener: WatchListener,
+        options?: WatchListenerOptions,
+    ): Watcher;
+    watch(
+        paths: '*' | string | (string | string[])[],
+        listener: WatchListener,
+        options?: WatchListenerOptions,
+    ): Watcher;
     watch(): Watcher {
-        const isWatchAll = typeof arguments[0] === 'function' || ['*', '**'].includes(arguments[0]) || (Array.isArray(arguments[0]) && arguments[0].length === 0);
+        const isWatchAll =
+            typeof arguments[0] === 'function' ||
+            ['*', '**'].includes(arguments[0]) ||
+            (Array.isArray(arguments[0]) && arguments[0].length === 0);
         const listener = typeof arguments[0] === 'function' ? arguments[0] : arguments[1];
-        const options = arguments.length >= 2 && typeof arguments[arguments.length - 1] === 'object' ? arguments[arguments.length - 1] : undefined;
+        const options =
+            arguments.length >= 2 && typeof arguments[arguments.length - 1] === 'object'
+                ? arguments[arguments.length - 1]
+                : undefined;
 
-        const createEventHandler = (operates: WatchListenerOptions['operates'], filter: WatchListenerOptions['filter']) => {
+        const createEventHandler = (
+            operates: WatchListenerOptions['operates'],
+            filter: WatchListenerOptions['filter'],
+        ) => {
             return (operate: StateOperate) => {
                 if (!isMatchOperates(operate, operates)) return;
                 if (typeof filter === 'function' && !filter(operate)) return;
@@ -317,7 +352,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                     this._peeping = true;
                     // 如果是批量操作，则需要过滤一下，比如operates=write，批量操作变化所有
                     if (operate.type === 'batch') {
-                        const ops = (operate.value as StateOperate[]).filter((op) => isMatchOperates(op, operates));
+                        const ops = (operate.value as StateOperate[]).filter((op) =>
+                            isMatchOperates(op, operates),
+                        );
                         if (ops.length > 0) {
                             operate.value = ops;
                         } else {
@@ -332,15 +369,25 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         };
         if (isWatchAll) {
             // 侦听全部
-            const { operates, filter } = Object.assign({ once: false, operates: 'write' }, options) as Required<WatchListenerOptions>;
+            const { operates, filter } = Object.assign(
+                { once: false, operates: 'write' },
+                options,
+            ) as Required<WatchListenerOptions>;
             const handler = createEventHandler(operates, filter);
             return this.operates.onAny(handler);
         } else {
             // 只侦听指定路径
             const keyPaths = arguments[0] as string | (string | string[])[];
-            const paths: string[] = Array.isArray(keyPaths) ? keyPaths.map((v) => (typeof v === 'string' ? v : v.join(this._delimiter))) : [keyPaths];
-            const { once, operates, filter } = Object.assign({ once: false, operates: 'write' }, options) as Required<WatchListenerOptions>;
-            const subscribeMethod = once ? this.operates.once.bind(this.operates) : this.operates.on.bind(this.operates);
+            const paths: string[] = Array.isArray(keyPaths)
+                ? keyPaths.map((v) => (typeof v === 'string' ? v : v.join(this._delimiter)))
+                : [keyPaths];
+            const { once, operates, filter } = Object.assign(
+                { once: false, operates: 'write' },
+                options,
+            ) as Required<WatchListenerOptions>;
+            const subscribeMethod = once
+                ? this.operates.once.bind(this.operates)
+                : this.operates.on.bind(this.operates);
             const listeners: EventListener[] = [];
             const handler = createEventHandler(operates, filter);
             paths.forEach((path) => {
@@ -392,10 +439,18 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.emit('observer:beforeCreate', descriptor as ObserverDescriptor<any, any, any>);
         if (descriptor.options.async) {
             // 异步计算
-            computedObj = new AsyncComputedObject(this, descriptor as ComputedDescriptor, computedContext) as unknown as ComputedObject;
+            computedObj = new AsyncComputedObject(
+                this,
+                descriptor as ComputedDescriptor,
+                computedContext,
+            ) as unknown as ComputedObject;
         } else {
             // 同步计算
-            computedObj = new SyncComputedObject(this, descriptor as ComputedDescriptor, computedContext) as unknown as ComputedObject;
+            computedObj = new SyncComputedObject(
+                this,
+                descriptor as ComputedDescriptor,
+                computedContext,
+            ) as unknown as ComputedObject;
         }
         if (computedObj) {
             // 更新不会触发事件
@@ -516,7 +571,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      *  })
      */
     update(fn: (state: ComputedState<State>) => void, options?: UpdateOptions) {
-        const { batch = false, reply = true, silent = false, peep = false, flags = 0, validate } = Object.assign({}, options);
+        const {
+            batch = false,
+            reply = true,
+            silent = false,
+            peep = false,
+            flags = 0,
+            validate,
+        } = Object.assign({}, options);
         if (typeof fn === 'function') {
             this._updateFlags = flags;
             this._updateValidateBehavior = validate;
@@ -528,7 +590,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             if (peep) this._peeping = true;
             try {
                 const r = fn(this.state);
-                if (batch && isPromise(r)) throw new Error("Batch update method can't be async function");
+                if (batch && isPromise(r))
+                    throw new Error("Batch update method can't be async function");
             } finally {
                 this._silenting = false;
                 this._batching = false;
@@ -577,13 +640,25 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      *
      */
     peep<Value = any>(getter: (state: State) => Value): Value;
-    peep<PATH extends StatePath<State> = StatePath<State>, VALUE extends GetTypeByPath<ComputedState<State>, PATH> = GetTypeByPath<ComputedState<State>, PATH>>(path: PATH): VALUE;
+    peep<
+        PATH extends StatePath<State> = StatePath<State>,
+        VALUE extends GetTypeByPath<ComputedState<State>, PATH> = GetTypeByPath<
+            ComputedState<State>,
+            PATH
+        >,
+    >(path: PATH): VALUE;
     peep<Value = any>(path: string[]): Value;
     peep() {
         const getter =
             typeof arguments[0] === 'function'
                 ? () => arguments[0](this.state)
-                : () => getVal(this.state, Array.isArray(arguments[0]) ? arguments[0] : arguments[0].split(this._delimiter));
+                : () =>
+                      getVal(
+                          this.state,
+                          Array.isArray(arguments[0])
+                              ? arguments[0]
+                              : arguments[0].split(this._delimiter),
+                      );
         this._peeping = true;
         try {
             return getter();
@@ -612,7 +687,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      *
      * @param fn
      */
-    collectDependencies(fn: () => void, operates: WatchListenerOptions['operates'] = '*'): string[][] {
+    collectDependencies(
+        fn: () => void,
+        operates: WatchListenerOptions['operates'] = '*',
+    ): string[][] {
         const dependencies: string[][] = [];
         const watcher = this.watch(
             (event) => {
@@ -735,7 +813,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      */
     getSnap<Entry extends string>(options?: { entry?: Entry; reserveAsync?: boolean }) {
         const { reserveAsync, entry } = Object.assign({ reserveAsync: true }, options);
-        return getSnapshot(entry ? getVal(this._data, entry) : this._data, reserveAsync) as GetTypeByPath<ComputedState<State>, Entry>;
+        return getSnapshot(
+            entry ? getVal(this._data, entry) : this._data,
+            reserveAsync,
+        ) as GetTypeByPath<ComputedState<State>, Entry>;
     }
 
     shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>) {
@@ -758,8 +839,21 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      *
      *
      */
-    get<T extends ObjectKeyPaths<State>>(path: T, options?: { defaultValue?: any; waitAsyncDone?: boolean; timeout?: number; expandAsync?: boolean }) {
-        const { defaultValue, timeout = 0, expandAsync = false, waitAsyncDone = false } = Object.assign({}, options);
+    get<T extends ObjectKeyPaths<State>>(
+        path: T,
+        options?: {
+            defaultValue?: any;
+            waitAsyncDone?: boolean;
+            timeout?: number;
+            expandAsync?: boolean;
+        },
+    ) {
+        const {
+            defaultValue,
+            timeout = 0,
+            expandAsync = false,
+            waitAsyncDone = false,
+        } = Object.assign({}, options);
         const keyPath = Array.isArray(path) ? path : path.split(this.delimiter);
         const val = getVal(this.state, keyPath, defaultValue);
         if (isAsyncComputedValue(val)) {

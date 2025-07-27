@@ -97,7 +97,10 @@ export interface AutoStoreOptions<State extends Dict> {
      * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
      *
      */
-    getRootScope?: (state: State, options: { observerType: ObserverType; valuePath: string[] | undefined }) => any;
+    getRootScope?: (
+        state: State,
+        options: { observerType: ObserverType; valuePath: string[] | undefined },
+    ) => any;
 
     /**
      *
@@ -162,7 +165,10 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param computedObject
      * @returns
      */
-    onComputedDone?: (this: AutoStore<State>, args: { id: string; path: string[]; value: any; computedObject: ComputedObject }) => void;
+    onComputedDone?: (
+        this: AutoStore<State>,
+        args: { id: string; path: string[]; value: any; computedObject: ComputedObject },
+    ) => void;
 
     /**
      * 当计算出错时调用
@@ -171,7 +177,10 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param computedObject
      * @returns
      */
-    onComputedError?: (this: AutoStore<State>, args: { id: string; path: string[]; error: Error; computedObject: ComputedObject }) => void;
+    onComputedError?: (
+        this: AutoStore<State>,
+        args: { id: string; path: string[]; error: Error; computedObject: ComputedObject },
+    ) => void;
     /**
      * 当每一次计算对象被取消时调用
      * 仅在异步计算时有效
@@ -181,7 +190,12 @@ export interface AutoStoreOptions<State extends Dict> {
      */
     onComputedCancel?: (
         this: AutoStore<State>,
-        args: { id: string; path: string[]; reason: 'timeout' | 'abort' | 'reentry' | 'error'; computedObject: ComputedObject<any> },
+        args: {
+            id: string;
+            path: string[];
+            reason: 'timeout' | 'abort' | 'reentry' | 'error';
+            computedObject: ComputedObject<any>;
+        },
     ) => void;
     /**
      *
@@ -212,7 +226,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 当第一次遍历对象时执行此回调函数
      */
-    onForEachObject?: ForEachObjectCallback<any>;
+    onForEachState?: ForEachObjectCallback<any>;
 }
 
 export type UpdateOptions = {
