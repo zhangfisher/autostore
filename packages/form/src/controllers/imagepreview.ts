@@ -6,14 +6,14 @@ export type ImagePreviewOptions = {
     overlayColor?: string;
     overlayOpacity?: number;
     animationDuration?: number;
-}
+};
 
 /**
  * 当点击组件内部的任意指定的img时:
  * - 覆盖显示一个全局半透明的黑色背景
  * - 同时将图片从原始位置动画恢复显示在黑色背景中间
  * - 点击图片或黑色背景时恢复
- * 
+ *
  */
 export class ImagePreview implements ReactiveController {
     host: LitElement;
@@ -21,7 +21,7 @@ export class ImagePreview implements ReactiveController {
         selector: 'img',
         overlayColor: '#000',
         overlayOpacity: 0.8,
-        animationDuration: 300
+        animationDuration: 300,
     };
 
     private overlay: HTMLDivElement | null = null;
@@ -137,9 +137,7 @@ export class ImagePreview implements ReactiveController {
         this.overlay.addEventListener('click', this.closePreview.bind(this));
 
         // 防止点击图片时关闭预览（可选）
-        this.previewImage.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
+        this.previewImage.addEventListener('click', this.closePreview.bind(this));
 
         // 强制重排，以便动画正常工作
         void this.overlay.offsetWidth;
@@ -156,7 +154,7 @@ export class ImagePreview implements ReactiveController {
             img.naturalWidth,
             img.naturalHeight,
             viewportWidth * 0.9,
-            viewportHeight * 0.9
+            viewportHeight * 0.9,
         );
 
         const targetTop = (viewportHeight - targetHeight) / 2;
@@ -193,7 +191,7 @@ export class ImagePreview implements ReactiveController {
             this.originalImage.naturalWidth,
             this.originalImage.naturalHeight,
             viewportWidth * 0.9,
-            viewportHeight * 0.9
+            viewportHeight * 0.9,
         );
 
         const targetTop = (viewportHeight - targetHeight) / 2;
@@ -263,7 +261,7 @@ export class ImagePreview implements ReactiveController {
         srcWidth: number,
         srcHeight: number,
         maxWidth: number,
-        maxHeight: number
+        maxHeight: number,
     ): { width: number; height: number } {
         // 如果原始尺寸已经小于最大尺寸，则直接返回原始尺寸
         if (srcWidth <= maxWidth && srcHeight <= maxHeight) {
@@ -273,20 +271,23 @@ export class ImagePreview implements ReactiveController {
         const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
         return {
             width: srcWidth * ratio,
-            height: srcHeight * ratio
+            height: srcHeight * ratio,
         };
     }
 
     /**
      * 将十六进制颜色转换为 RGB 值
      */
-    private hexToRgb(hex: string): { r: number, g: number, b: number } {
+    private hexToRgb(hex: string): { r: number; g: number; b: number } {
         // 移除 # 前缀（如果有）
         hex = hex.replace(/^#/, '');
 
         // 处理缩写形式（如 #fff）
         if (hex.length === 3) {
-            hex = hex.split('').map(char => char + char).join('');
+            hex = hex
+                .split('')
+                .map((char) => char + char)
+                .join('');
         }
 
         // 解析 RGB 值
@@ -298,7 +299,7 @@ export class ImagePreview implements ReactiveController {
         return {
             r: isNaN(r) ? 0 : r,
             g: isNaN(g) ? 0 : g,
-            b: isNaN(b) ? 0 : b
+            b: isNaN(b) ? 0 : b,
         };
     }
 
