@@ -1,5 +1,12 @@
 # @autostorejs/devtools
 
+## 2.0.1
+
+### Patch Changes
+
+-   [`2a5f532`](https://github.com/zhangfisher/autostore/commit/2a5f532396c2bae75f70a535f0e9d72a54d01fe4) Thanks [@zhangfisher](https://github.com/zhangfisher)! - - [feat] 新增加`onObserverInitial`参数，用于在创建`computedt`或`watched`等`observer`可观察对象前调用，允许`return false`来阻止创建，将函数标识为`raw`
+    -   [feat] 优化了`AutoForm`的图标注册逻辑
+
 ## 2.0.0
 
 ### Major Changes
