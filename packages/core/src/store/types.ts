@@ -206,7 +206,25 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     onObserverCreated?: (observerObject: ObserverObject<any, any>) => void;
+
     onObserverBeforeCreate?: (observerObject: ObserverObject<any, any>) => void;
+    /**
+     *
+     *
+     *
+     * 当状态值是一个函数时，创建对应的可观察对象前调用
+     *
+     * 即第一次读取时调用，
+     *
+     * 返回false则不创建对应的可观察对象，将函数标志为raw
+     *
+     */
+    onObserverInitial?: (
+        this: AutoStore<State>,
+        path: string[],
+        value: any,
+        parent: any,
+    ) => void | boolean;
     /**
      * 默认的値模式
      */
@@ -223,10 +241,6 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     getShadowStore?: () => AutoStore<any>;
-    /**
-     * 当第一次遍历对象时执行此回调函数
-     */
-    onForEachState?: ForEachObjectCallback<any>;
 }
 
 export type UpdateOptions = {

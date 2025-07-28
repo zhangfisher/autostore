@@ -147,7 +147,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
         this.installExtends();
-        forEachObject(this._data as any, this._options.onForEachState);
+        forEachObject(this._data as any);
         this.schemas.build();
         if (this._options.resetable) this.resetable = true;
         // @ts-ignore

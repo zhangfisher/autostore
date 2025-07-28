@@ -235,7 +235,12 @@ const store = new AutoStore(
                 widget: 'url',
                 label: '主页',
                 prefix: ['http://', 'https://'],
-                suffix: [{ label: '在新窗口打开', value: '?_blank' }, { label: '在当前窗口打开', value: '?_self' }, '-', { label: '空白', value: '' }],
+                suffix: [
+                    { label: '在新窗口打开', value: '?_blank' },
+                    { label: '在当前窗口打开', value: '?_self' },
+                    '-',
+                    { label: '空白', value: '' },
+                ],
                 group: 'network',
             }),
             daterange: configurable('2024-12-03#2025-12-03', {
@@ -275,7 +280,11 @@ const store = new AutoStore(
                 inputSelectors: 'input',
                 renderSelection: (values, html) => {
                     const text = values[2] === true ? '已订阅' : '没有订阅';
-                    return html`<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;"> ${values[0]}@${values[1]}(${text})</span>`;
+                    return html`<span
+                        style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;"
+                    >
+                        ${values[0]}@${values[1]}(${text})</span
+                    >`;
                 },
                 renderContent: (values, html) => {
                     return html` <div style="padding:1em">
@@ -293,7 +302,9 @@ const store = new AutoStore(
                 },
                 toInput: (values) => {
                     const matched = values.match(/\(([^)]+)\)[^)]*$/);
-                    const mail = matched ? values.substring(0, values.length - matched[0].length) : values;
+                    const mail = matched
+                        ? values.substring(0, values.length - matched[0].length)
+                        : values;
                     const checkText = matched ? matched[1] : '没有订阅';
                     return [...mail.split('@'), checkText === '已订阅'];
                 },
@@ -303,7 +314,9 @@ const store = new AutoStore(
                 label: '内边距',
                 toState: (values) => toPadding(values),
                 renderSelection: (values, html) => {
-                    return html`<span style="border: 1px solid red;padding:4px;"> ${values} </span>`;
+                    return html`<span style="border: 1px solid red;padding:4px;">
+                        ${values}
+                    </span>`;
                 },
                 children: [
                     {
@@ -494,7 +507,10 @@ const store = new AutoStore(
                     { label: '经典式', tips: '传统布局，平衡稳重' },
                     { label: '卡片集', tips: '模块化卡片，灵活组合' },
                     { label: '瀑布流', enable: false, tips: '动态滚动，视觉延展' },
-                    { label: '分屏式', tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                    {
+                        label: '分屏式',
+                        tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览',
+                    },
                     { label: '导航型', tips: '侧边主导，层级清晰' },
                     { label: '全屏化', tips: '沉浸体验，无界视觉' },
                     { label: '网格阵', tips: '整齐排列，规整直观' },
@@ -513,7 +529,11 @@ const store = new AutoStore(
                     { label: '经典式', icon: 'user', tips: '传统布局，平衡稳重' },
                     { label: '卡片集', icon: 'phone', tips: '模块化卡片，灵活组合' },
                     { label: '瀑布流', icon: 'search', enable: false, tips: '动态滚动，视觉延展' },
-                    { label: '分屏式', icon: 'datetime', tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                    {
+                        label: '分屏式',
+                        icon: 'datetime',
+                        tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览',
+                    },
                     { label: '导航型', icon: 'email', tips: '侧边主导，层级清晰' },
                     { label: '全屏化', icon: 'error', tips: '沉浸体验，无界视觉' },
                     { label: '网格阵', icon: 'settings', tips: '整齐排列，规整直观' },
@@ -547,7 +567,7 @@ const store = new AutoStore(
                     { id: 10, label: '内存', price: 10000, icon: 'memory' },
                     { id: 11, label: '硬盘盒', price: 11000, icon: 'hdd-box' },
                     { id: 12, label: '固态硬盘', price: 12000, icon: 'ssd' },
-                    { id: 13, label: '机械硬盘', price: 13000, icon: 'hdd' },
+                    { id: 13, label: '机械硬盘', price: 13000, icon: 'hard-drive' },
                     { id: 14, label: '显卡', price: 14000, icon: 'gpu' },
                     { id: 15, label: '蓝牙耳机', price: 15000, icon: 'bluetooth' },
                     { id: 16, label: '电视', price: 16000, icon: 'tv' },
@@ -621,7 +641,8 @@ const store = new AutoStore(
                 max: 100,
                 min: 1,
                 width: '50%',
-                toView: (value: any) => `<span style="color:red;border:1px solid red;padding:4px;">${value}岁</span>`,
+                toView: (value: any) =>
+                    `<span style="color:red;border:1px solid red;padding:4px;">${value}岁</span>`,
             }),
             password: configurable('18', {
                 label: '密码',
@@ -662,7 +683,12 @@ const store = new AutoStore(
                     { id: 14, label: '显卡', price: 14000, icon: 'gpu' },
                     { id: 15, label: '蓝牙耳机', price: 15000, icon: 'bluetooth' },
                 ],
-                actions: [{ label: '产品网站', pos: 'before' }, { label: '增加' }, { label: '减少' }, { label: '清空' }],
+                actions: [
+                    { label: '产品网站', pos: 'before' },
+                    { label: '增加' },
+                    { label: '减少' },
+                    { label: '清空' },
+                ],
             }),
             ip: configurable('192.168.6.112', { label: '网络地址', widget: 'ipaddress' }),
             access: configurable(false, {
@@ -727,7 +753,17 @@ const store = new AutoStore(
                 ],
                 //
                 placeholder: '请选择版本',
-                select: [{ label: '1.0' }, { label: '2.0' }, { label: '3.0' }, { label: '4.0' }, { label: '5.0' }, { label: '6.0' }, '-', { label: '7.0' }, { label: '8.0' }],
+                select: [
+                    { label: '1.0' },
+                    { label: '2.0' },
+                    { label: '3.0' },
+                    { label: '4.0' },
+                    { label: '5.0' },
+                    { label: '6.0' },
+                    '-',
+                    { label: '7.0' },
+                    { label: '8.0' },
+                ],
             }),
             volume: configurable(18, {
                 widget: 'range',

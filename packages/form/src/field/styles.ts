@@ -46,9 +46,6 @@ export default css`
                 }
             }
         }
-        & > .autofield:hover {
-            background-color: var(--sl-color-gray-50);
-        }
         sl-input::part(base) {
             outline: none !important;
             box-shadow: none !important;

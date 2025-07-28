@@ -39,19 +39,14 @@ import {
 } from 'autostore';
 import { context, type AutoFormContext } from '../context';
 import { provide } from '@lit/context';
-import {
-    type IconLibrary,
-    type IconLibraryResolver,
-    registerIconLibrary,
-} from '@shoelace-style/shoelace/dist/components/icon/library.js';
 import { ContextController } from '@/controllers/context';
 import { HostClasses } from '@/controllers/hostClasss';
 import '../field';
 import styles from './styles';
-import { presetIcons } from './icons';
 import { renderWidget } from '@/utils/renderWidget';
 import { applyClass } from '@/utils/applyClass';
 import '../components';
+import { registerIcons } from '@/utils';
 
 export class AutoForm extends LitElement {
     static seq: number = 0;
@@ -169,6 +164,9 @@ export class AutoForm extends LitElement {
     @property({ type: String, reflect: true })
     layout: 'auto' | 'row' | 'col' = 'auto';
 
+    @property({ type: String, reflect: true })
+    icons?: string;
+
     _loading: boolean = false;
 
     get dirty() {
@@ -178,37 +176,11 @@ export class AutoForm extends LitElement {
     get invalid() {
         return this.context.invalid;
     }
-
-    /**
-     *
-     * 注册图标库地址
-     *
-     */
-    @property({ type: String })
-    iconLibrary: string = 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/{name}.svg';
-    /**
-     * 注册图标库
-     *
-     * registerIcons((name=?{})>)
-     *
-     */
-    registerIcons(resolver: IconLibraryResolver, options?: Omit<IconLibrary, 'name' | 'resolver'>) {
-        registerIconLibrary('default', {
-            resolver,
-            ...(options || {}),
-        });
-    }
-
     connectedCallback(): void {
         super.connectedCallback();
-        this.registerIcons((name) => {
-            if (name in presetIcons) {
-                return `data:image/svg+xml,${encodeURIComponent((presetIcons as any)[name])}`;
-            } else {
-                return this.iconLibrary.replace('{name}', name);
-            }
-        });
+        registerIcons();
     }
+
     attributeChangedCallback(name: string, _old: string | null, value: string | null): void {
         super.attributeChangedCallback(name, _old, value);
         if (['group', 'sort', 'advanced', 'path'].includes(name)) {

@@ -15,6 +15,7 @@ import { css, html, LitElement } from 'lit';
 import type { AutoStore, Dict } from 'autostore';
 import styles from '../form/styles';
 import { scrollbar } from '@/styles/utils';
+import { registerIcons } from '@/utils';
 
 export class AutoFormGroupBase extends LitElement {
     static styles = [
@@ -37,6 +38,11 @@ export class AutoFormGroupBase extends LitElement {
     active?: string;
     @state()
     forms: Array<HTMLElement> = [];
+
+    constructor() {
+        super();
+        registerIcons();
+    }
 
     firstUpdated() {
         this.forms = this.getForms();

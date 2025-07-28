@@ -25,6 +25,7 @@ import { property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { repeat } from 'lit/directives/repeat.js';
+import { registerIcons } from '@/utils';
 
 @tag('auto-collapse')
 export class AutoCollapse extends LitElement {
@@ -52,6 +53,7 @@ export class AutoCollapse extends LitElement {
 
     connectedCallback() {
         super.connectedCallback();
+        registerIcons();
         this._activeArray = this.active ? this.active.split(',') : [];
     }
 

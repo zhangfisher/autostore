@@ -36,7 +36,7 @@ describe('reactive', () => {
         store.state.x.total;
         store.state.total;
     });
-    test('onForEachState', () => {
+    test('onObserverInitial', () => {
         const store = new AutoStore(
             {
                 user: {
@@ -54,16 +54,17 @@ describe('reactive', () => {
                 },
             },
             {
-                onForEachState({ path, value }) {
+                onObserverInitial(path, value) {
                     const name = path[path.length - 1];
                     if (name && typeof value === 'function') {
                         if (name.startsWith('render') || name.startsWith('on')) {
-                            markRaw(value);
+                            return false;
                         }
                     }
                 },
             },
         );
-        store.state.user.items[0];
+        const onClick = store.state.user.items[0].onClick;
+        expect(onClick).toBeInstanceOf(Function);
     });
 });
