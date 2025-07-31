@@ -84,6 +84,7 @@ export class SchemaManager<
     get<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(
         path: T,
     ): SchemaOptions | undefined {
+        if (!this.store) return;
         return getVal(this.store.state, [this._getKey(path as any)]);
     }
     has(path: keyof SchemaStore['state']): boolean {

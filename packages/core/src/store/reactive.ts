@@ -80,7 +80,7 @@ function isValidPass(
                     }
                 }
             }
-            schemas.errors[path.join('_$_')] = errorMessage as string;
+            schemas.errors[path.join(this.options.delimiter)] = errorMessage as string;
         }
         this.emit('validate', {
             path: [...parentPath, ...path],
