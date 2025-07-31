@@ -1,8 +1,9 @@
 import { PATH_DELIMITER } from '../consts';
 import type { AutoStore } from '../store/store';
 import type { Dict } from '../types';
-import { markRaw, pathStartsWith, setVal } from '../utils';
+import { isFunction, markRaw, pathStartsWith, setVal } from '../utils';
 import { getVal } from '../utils/getVal';
+import { parseFunc } from '../utils/parseFunc';
 import type {
     SchemaOptions,
     SchemaValidator,
@@ -20,7 +21,7 @@ export class SchemaManager<
     _subscribers: any[] = [];
     store!: SchemaStore;
     validators: Record<string, SchemaValidator<any>> = {};
-    _descriptors?: Record<string, SchemaDescriptor<any, any>>;
+    _descriptors?: Record<string, SchemaDescriptor['options']>;
     constructor(public shadow: AutoStore<any>) {}
 
     get fields() {
@@ -41,14 +42,9 @@ export class SchemaManager<
         const pathKey = Array.isArray(path) ? path : path.split(PATH_DELIMITER);
         const key = this._getKey(path);
         if (!this._descriptors) this._descriptors = {};
-        if (descriptor.validator) {
-            if (!descriptor.validator.onFail) descriptor.validator.onFail='throw-pass'
-            if(typeof(descriptor.validator.validate)==='function'){
-                markRaw(descriptor.validator.validate);
-            }
-        }
-        
-        this._descriptors[key] = Object.assign(
+        if (!descriptor.options.onFail) descriptor.options.onFail = 'throw-pass';
+
+        const finalDescriptor = Object.assign(
             {},
             this.shadow.options.defaultSchemaOptions,
             descriptor.options,
@@ -56,27 +52,25 @@ export class SchemaManager<
                 path: pathKey,
                 datatype: descriptor.datatype,
                 value: descriptor.value,
-                validator: descriptor.validator,
             },
-        ) as unknown as SchemaDescriptor;
+        ) as unknown as SchemaDescriptor['options'];
 
-        // if (descriptor.validator) {
-        //     this.validators[key] = Object.assign(
-        //         {
-        //             onFail: 'throw-pass',
-        //         },
-        //         descriptor.validator,
-        //     );
-        // }
-        //
-        this.shadow.update(
-            (state) => {
-                setVal(state, pathKey, descriptor.value);
-            },
-            {
-                validate: 'pass',
-            },
-        );
+        if (typeof finalDescriptor.onValidate === 'string') {
+            finalDescriptor.onValidate = parseFunc(finalDescriptor.onValidate) as any;
+        }
+
+        this._descriptors[key] = finalDescriptor;
+
+        if (this.shadow) {
+            this.shadow.update(
+                (state) => {
+                    setVal(state, pathKey, descriptor.value);
+                },
+                {
+                    validate: 'pass',
+                },
+            );
+        }
     }
     /**
      * 等store的所有计算属性处理完毕再创建schemas
@@ -90,7 +84,7 @@ export class SchemaManager<
     get<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(
         path: T,
     ): SchemaOptions | undefined {
-        return getVal(this.store.state, this._getKey(path as any));
+        return getVal(this.store.state, [this._getKey(path as any)]);
     }
     has(path: keyof SchemaStore['state']): boolean {
         if (!this.store) return false;
@@ -104,14 +98,15 @@ export class SchemaManager<
     getValidator<T extends keyof SchemaStore['state'] = keyof SchemaStore['state']>(
         path: T,
     ): SchemaValidator<SchemaStore['state'][T]> | undefined {
-        const key = this._getKey(path);
-        return this.validators[key];
+        if (!this.store) return;
+        const options = this.get(path);
+        if (!options) return;
+        return {
+            validate: options.onValidate!,
+            onFail: options.onFail!,
+            message: options.invalidTips!,
+        };
     }
-    addValidator(path: string, validator: SchemaValidator) {
-        const key = this._getKey(path);
-        this.validators[key] = validator;
-    }
-
     remove(path: keyof SchemaStore['state']) {
         const key = this._getKey(path);
         if (this.store) {

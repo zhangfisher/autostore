@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, test } from 'vitest';
-import { computed, AutoStore, configurable, StateOperate } from '../../../core/src';
+import { computed, AutoStore, configurable, c, ValidateError } from '../../../core/src';
 import '..';
+import { getSnapshot } from '../../../core/src/utils/getSnapshot';
 
 describe('本地Store同步', () => {
     test('一对一全同步', async () => {
@@ -381,7 +382,7 @@ describe('本地Store同步', () => {
             },
         });
     });
-    test('同步schema数据', async () => {
+    test('全量同步schema数据', async () => {
         // order.a <-> myorder['order.a']
         const fromStore = new AutoStore(
             {
@@ -398,19 +399,36 @@ describe('本地Store同步', () => {
             },
             { id: 'local' },
         );
+        const toStore = new AutoStore({}, { id: 'to' });
+        fromStore.sync(toStore);
+        expect(Object.keys(toStore.schemas.store.state)).toEqual(['order_$_b', 'user_$_tags_$_1']);
+    });
+    test('全量同步schema数据时进行路径转换', async () => {
+        const fromStore = new AutoStore(
+            {
+                order: {
+                    a: 1,
+                    b: configurable(2, {
+                        onValidate: (value: any) => {
+                            return value > 2;
+                        },
+                    }),
+                    c: 3,
+                },
+                user: {
+                    tags: ['x', configurable('y'), 'z'],
+                },
+            },
+            { id: 'from' },
+        );
         const toStore = new AutoStore(
             {
                 myorder: {},
             },
-            { id: 'remote' },
+            { id: 'to' },
         );
-        const filter = (path: string[], value: any) => {
-            const keyPath = path.join('.');
-            return fromStore.schemas.has(keyPath);
-        };
         fromStore.sync(toStore, {
             to: 'myorder',
-            filter,
             pathMap: {
                 toRemote: (path: string[], value: any) => {
                     if (typeof value !== 'object') {
@@ -427,37 +445,18 @@ describe('本地Store同步', () => {
                 },
             },
         });
-        expect(toStore.state).toEqual({
-            myorder: {
-                'order.b': 2,
-                'user.tags.1': 'y',
-            },
-        });
-
-        fromStore.state.order.a = 11;
-        fromStore.state.order.b = 12;
-        fromStore.state.order.c = 13;
-
-        expect(toStore.state).toEqual({
-            myorder: {
-                'order.b': 12,
-                'user.tags.1': 'y',
-            },
-        });
+        expect(Object.keys(toStore.schemas.store.state)).toEqual([
+            'myorder_$_order.b',
+            'myorder_$_user.tags.1',
+        ]);
         // @ts-ignore
-        toStore.state.myorder['order.b'] = 22;
+        expect(() => (toStore.state.myorder['order.b'] = 0)).toThrow(ValidateError);
         // @ts-ignore
-        toStore.state.myorder['user.tags.1'] = 'yy';
+        const fromSchema = fromStore.schemas.get('order.b')!;
 
-        expect(fromStore.state).toEqual({
-            order: {
-                a: 11,
-                b: 22,
-                c: 13,
-            },
-            user: {
-                tags: ['x', 'yy', 'z'],
-            },
-        });
+        // @ts-ignore
+        const toSchema = toStore.schemas.get(['myorder', 'order.b'])!;
+
+        expect(fromSchema.onValidate !== toSchema.onValidate).toBe(true);
     });
 });

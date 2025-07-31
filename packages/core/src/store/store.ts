@@ -73,6 +73,7 @@ import {
     getVal,
     isAsyncComputedValue,
     isPathEq,
+    markRaw,
     setVal,
 } from '../utils';
 import { BATCH_UPDATE_EVENT } from '../consts';
@@ -92,6 +93,7 @@ import { createShadow } from './shadow';
 import { TimeoutError } from '../errors';
 import type { ObserverDescriptor } from '../observer/types';
 import { isSchemaBuilder } from '../utils/isSchemaBuilder';
+import { parseFunc } from '../utils/parseFunc';
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
@@ -126,6 +128,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                 resetable: false,
                 delimiter: '.',
                 log,
+                shadow: false,
             },
             options,
         ) as Required<AutoStoreOptions<State>>;
@@ -147,8 +150,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
         this.installExtends();
-        forEachObject(this._data as any);
-        this.schemas.build();
+        forEachObject(this._data as any, this._onFirstEachState.bind(this));
+        if (!this._options.shadow) this.schemas.build();
         if (this._options.resetable) this.resetable = true;
         // @ts-ignore
         if (this._options.debug && typeof globalThis.__AUTOSTORE_DEVTOOLS__ === 'object') {
@@ -239,7 +242,32 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             this.log('resetable option is not enabled', 'warn');
         }
     }
-
+    _onFirstEachState({
+        key,
+        value,
+        path,
+        parent,
+    }: {
+        path: string[];
+        key: string;
+        value: any;
+        parent: any;
+    }) {
+        if (typeof value === 'string') {
+            if (value.startsWith('```') && value.endsWith('```')) {
+                this.update(
+                    (state) => {
+                        const func = parseFunc(value.slice(3, value.length - 3));
+                        markRaw(func);
+                        setVal(state, path, func);
+                    },
+                    {
+                        silent: true,
+                    },
+                );
+            }
+        }
+    }
     log(message: LogMessageArgs, level?: LogLevel) {
         if (this._options.debug) {
             this.options.log.call(this, message, level);
@@ -811,12 +839,16 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      *      异步对象的值是一个AsyncComputedValue对象。=true时会保留。=false时会只返回value值
      *  @returns
      */
-    getSnap<Entry extends string>(options?: { entry?: Entry; reserveAsync?: boolean }) {
-        const { reserveAsync, entry } = Object.assign({ reserveAsync: true }, options);
-        return getSnapshot(
-            entry ? getVal(this._data, entry) : this._data,
+    getSnap<Entry extends string>(options?: {
+        entry?: Entry;
+        reserveAsync?: boolean;
+        includeFunc?: boolean;
+    }) {
+        const { reserveAsync, entry, includeFunc } = Object.assign({ reserveAsync: true }, options);
+        return getSnapshot(entry ? getVal(this._data, entry) : this._data, {
             reserveAsync,
-        ) as GetTypeByPath<ComputedState<State>, Entry>;
+            includeFunc,
+        }) as GetTypeByPath<ComputedState<State>, Entry>;
     }
 
     shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>) {

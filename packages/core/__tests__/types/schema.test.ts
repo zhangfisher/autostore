@@ -1,70 +1,70 @@
-import { describe, test } from "vitest"
-import type { Equal, Expect } from '@type-challenges/utils'
-import { AutoStore, computed, configurable, SchemaValidate } from "../../src"
+import { describe, test } from 'vitest';
+import type { Equal, Expect } from '@type-challenges/utils';
+import { AutoStore, computed, configurable, SchemaValidate } from '../../src';
 import { AsyncComputedValue } from '../../src/computed/types';
 
-describe("Schema类型", () => {
-
-    test("Schmea路径", () => {
+describe('Schema类型', () => {
+    test('Schmea路径', () => {
         const store = new AutoStore({
             user: {
-                name: configurable("张三"),
+                name: configurable('张三'),
                 age: configurable(18),
                 admin: configurable(true),
                 address: {
-                    city: configurable("北京"),
-                    street: "长安街"
+                    city: configurable('北京'),
+                    street: '长安街',
                 },
-                tags: [
-                    configurable("其他")
-                ]
-            }
-        })
+                tags: [configurable('其他')],
+            },
+        });
 
-        type KeyCase = Expect<Equal<typeof store.types.schemaKeys,
-            "user.name"
-            | "user.age"
-            | "user.admin"
-            | "user.address.city"
-            | `user.tags.${number}`>
-        >
+        type KeyCase = Expect<
+            Equal<
+                typeof store.types.schemaKeys,
+                | 'user.name'
+                | 'user.age'
+                | 'user.admin'
+                | 'user.address.city'
+                | `user.tags.${number}`
+            >
+        >;
         // 获取配置项
-        type GetType = Parameters<typeof store.schemas.get>[0]
+        type GetType = Parameters<typeof store.schemas.get>[0];
 
-        type KeyCase2 = Expect<Equal<
-            typeof store.types.schemaKeys,
-            GetType>
-        >
-    })
-    test("Schmea状态", () => {
+        type KeyCase2 = Expect<Equal<typeof store.types.schemaKeys, GetType>>;
+    });
+    test('Schmea状态', () => {
         const store = new AutoStore({
             user: {
-                name: configurable("张三"),
+                name: configurable('张三'),
                 age: configurable(18),
                 admin: configurable(true),
                 address: {
-                    city: configurable("北京"),
-                    street: "长安街"
+                    city: configurable('北京'),
+                    street: '长安街',
+                },
+            },
+        });
+        type Keys = typeof store.types.schemas;
+        type KeyCase = Expect<
+            Equal<
+                typeof store.types.schemas,
+                {
+                    'user.name': string;
+                    'user.age': number;
+                    'user.admin': boolean;
+                    'user.address.city': string;
                 }
-            }
-        })
-        type Keys = typeof store.types.schemas
-        type KeyCase = Expect<Equal<typeof store.types.schemas,
-            {
-                "user.name": string,
-                "user.age": number,
-                "user.admin": boolean,
-                "user.address.city": string
-            }>
-        >
-    })
+            >
+        >;
+    });
     // test("获取指定路径的Schmea状态", () => {
     //     const store = new AutoStore({
     //         user: {
     //             name: configurable("张三", {
     //                 label: '姓名',
     //                 placeholder: '请输入姓名',
-    //                 invalidMessage: '姓名长度必须大于3个字符',
+    //                 invalidTips: '姓名长度必须大于3个字符',
     //                 required: computed(() => true),
     //                 enable: computed<boolean>(
     //                     async (state: any) => state.user.admin,
@@ -89,7 +89,7 @@ describe("Schema类型", () => {
     //                 path: string[]
     //                 label: string
     //                 placeholder: string
-    //                 invalidMessage: string
+    //                 invalidTips: string
     //                 required: boolean
     //                 enable: AsyncComputedValue<boolean>
     //             }
@@ -105,7 +105,7 @@ describe("Schema类型", () => {
     //                 path: string[]
     //                 label: string
     //                 placeholder: string
-    //                 invalidMessage: string
+    //                 invalidTips: string
     //                 required: boolean
     //                 enable: AsyncComputedValue<boolean>
     //             } | undefined
@@ -159,7 +159,7 @@ describe("Schema类型", () => {
     //     const newSchema = store.schemas.add("sss", {
     //         label: '姓名',
     //         placeholder: '请输入姓名',
-    //         invalidMessage: '姓名长度必须大于3个字符',
+    //         invalidTips: '姓名长度必须大于3个字符',
     //         required: computed(() => true),
     //         enable: computed<boolean>(
     //             async (state: any) => state.user.admin,
@@ -169,7 +169,7 @@ describe("Schema类型", () => {
     //     newSchema.label
     //     newSchema.placeholder
     //     newSchema.placeholder
-    //     newSchema.invalidMessage
+    //     newSchema.invalidTips
     //     newSchema.required
     //     newSchema.enable
     //     type cases = Expect<
@@ -178,13 +178,11 @@ describe("Schema类型", () => {
     //             {
     //                 label: string;
     //                 placeholder: string;
-    //                 invalidMessage: string;
+    //                 invalidTips: string;
     //                 required: boolean;
     //                 enable: AsyncComputedValue<boolean>;
     //             }
     //         >
     //     >
     // })
-
-
-})
+});

@@ -5,7 +5,8 @@ import { CyleDependError, ValidateError } from '../errors';
 import type { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
 import { isFunction, markRaw } from '../utils';
-import type { SchemaValidator } from '../schema/types';
+import type { SchemaOptions, SchemaValidator } from '../schema/types';
+import { isNumber } from '../utils/isNumber';
 
 const __NOTIFY__ = Symbol('__NOTIFY__');
 
@@ -28,7 +29,7 @@ type CreateReactiveObjectOptions = {
 function isValidPass(
     this: AutoStore<any>,
     _: any,
-    key: string,
+    path: string[],
     newValue: any,
     oldValue: any,
     parentPath: string[],
@@ -37,32 +38,33 @@ function isValidPass(
     const behavior = this._updateValidateBehavior;
     if (behavior === 'none') return true;
     const schemas = this.schemas;
-    const validator = schemas.getValidator(key as never) as SchemaValidator;
-    if (!validator) return true;
 
-    const validate = validator.validate || this.options.onValidate;
+    const schema = schemas.get(path as never) as SchemaOptions;
+    if (!schema) return true;
+
+    const validate = schema.onValidate || this.options.onValidate;
     if (typeof validate !== 'function') return true;
 
-    const onFail = behavior !== undefined ? behavior : validator.onFail || 'throw';
+    const onFail = behavior !== undefined ? behavior : schema.onFail || 'throw';
 
     let isValid: boolean = true;
-    let errorMessage: SchemaValidator['message'] | undefined =
-        validator.message || 'validate error';
+    let errorMessage: SchemaOptions['invalidTips'] | undefined =
+        schema.invalidTips || 'validate error';
 
     let isPass: boolean | Error = true;
     let hasError: any;
 
     try {
-        isValid = !(validate!.call(this, newValue, oldValue, key) === false);
+        isValid = !(validate!.call(this, newValue, oldValue, path) === false);
     } catch (e: any) {
         hasError = e;
     } finally {
         if (isValid) {
-            delete schemas.errors[key];
+            delete schemas.errors[path.join('_$_')];
         } else {
             if (isFunction(errorMessage)) {
                 try {
-                    errorMessage = errorMessage.call(this, hasError, key, newValue, oldValue);
+                    errorMessage = errorMessage.call(this, hasError, path, newValue, oldValue);
                 } catch {}
             } else if (hasError && !errorMessage) {
                 errorMessage = hasError.message;
@@ -70,7 +72,7 @@ function isValidPass(
             // 错误信息可以使用插值变量
             if (typeof errorMessage === 'string') {
                 if (errorMessage.includes('{') && errorMessage.includes('}')) {
-                    const schemaOptions = schemas.get(key as never);
+                    const schemaOptions = schemas.get(path as never);
                     if (schemaOptions) {
                         errorMessage = errorMessage.replace(/\{([^}]+)\}/g, (_, varName) => {
                             return (schemaOptions as any)[varName];
@@ -78,10 +80,10 @@ function isValidPass(
                     }
                 }
             }
-            schemas.errors[key] = errorMessage as string;
+            schemas.errors[path.join('_$_')] = errorMessage as string;
         }
         this.emit('validate', {
-            path: [...parentPath, key],
+            path: [...parentPath, ...path],
             newValue,
             oldValue,
             error: errorMessage as string,
@@ -123,7 +125,7 @@ function createProxy(
             const path = [...parentPath, String(key)];
             if (typeof value === 'function' || !Object.hasOwn(obj, key)) {
                 if (typeof value === 'function') {
-                    if (Array.isArray(obj)) {
+                    if (Array.isArray(obj) && !isNumber(key)) {
                         return hookArrayMethods(
                             options.notify,
                             obj,
@@ -131,7 +133,8 @@ function createProxy(
                             value,
                             parentPath,
                         );
-                    } else if (!isRaw(value) && Object.hasOwn(obj, key)) {
+                    }
+                    if (!isRaw(value) && Object.hasOwn(obj, key)) {
                         // 拦截
                         if (typeof this.options.onObserverInitial === 'function') {
                             try {
@@ -187,14 +190,7 @@ function createProxy(
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
             const path = [...parentPath, String(key)];
-            const isValid = isValidPass.call(
-                this,
-                proxyObj,
-                path.join(this.delimiter) as string,
-                value,
-                oldValue,
-                parentPath,
-            );
+            const isValid = isValidPass.call(this, proxyObj, path, value, oldValue, parentPath);
             if (isValid) {
                 const success = Reflect.set(obj, key, value, receiver);
                 if (key === __NOTIFY__) return true;

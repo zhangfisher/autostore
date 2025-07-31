@@ -90,7 +90,7 @@ export type SchemaWidgetShareOptions<Value, State> = {
     size?: string | number;
     icon?: string;
     // 用于验证
-    invalidMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
+    invalidTips?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
     onValidate?: (newValue: Value, oldValue: Value, path: string) => boolean;
     onFail?: 'pass' | 'throw' | 'ignore' | 'throw-pass';
     // 提供一些元数据

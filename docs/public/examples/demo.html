@@ -109,7 +109,7 @@
                                 return value.length > 5;
                             },
                             group: 'a',
-                            invalidMessage: '姓名长度必须大于3个字符',
+                            invalidTips: '姓名长度必须大于3个字符',
                             help: '中文姓名(http://www.autostore.com)',
                             required: computed(
                                 async (state) => {
@@ -233,7 +233,12 @@
                             widget: 'url',
                             label: '主页',
                             prefix: ['http://', 'https://'],
-                            suffix: [{ label: '在新窗口打开', value: '?_blank' }, { label: '在当前窗口打开', value: '?_self' }, '-', { label: '空白', value: '' }],
+                            suffix: [
+                                { label: '在新窗口打开', value: '?_blank' },
+                                { label: '在当前窗口打开', value: '?_self' },
+                                '-',
+                                { label: '空白', value: '' },
+                            ],
                         }),
                         daterange: configurable('2024-12-03#2025-12-03', {
                             label: '日期范围',
@@ -269,7 +274,11 @@
                             inputSelectors: 'input',
                             renderSelection: (values, html) => {
                                 const text = values[2] === true ? '已订阅' : '没有订阅';
-                                return html`<span style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;"> ${values[0]}@${values[1]}(${text})</span>`;
+                                return html`<span
+                                    style="color:red;border:1px solid red;padding: 4px;border-radius: 4px;"
+                                >
+                                    ${values[0]}@${values[1]}(${text})</span
+                                >`;
                             },
                             renderContent: (values, html) => {
                                 return html` <div style="padding:1em">
@@ -279,15 +288,21 @@
                                         @<input .value=${values[1]} />
                                     </label>
                                     <br />
-                                    <label> 订阅新闻:<input type="checkbox" ?checked=${values[3]} /> </label>
+                                    <label>
+                                        订阅新闻:<input type="checkbox" ?checked=${values[3]} />
+                                    </label>
                                 </div>`;
                             },
                             toState: (values) => {
-                                return `${values[0]}@${values[1]}(${values[2] ? '已订阅' : '没有订阅'})`;
+                                return `${values[0]}@${values[1]}(${
+                                    values[2] ? '已订阅' : '没有订阅'
+                                })`;
                             },
                             toInput: (values) => {
                                 const matched = values.match(/\(([^)]+)\)[^)]*$/);
-                                const mail = matched ? values.substring(0, values.length - matched[0].length) : values;
+                                const mail = matched
+                                    ? values.substring(0, values.length - matched[0].length)
+                                    : values;
                                 const checkText = matched ? matched[1] : '没有订阅';
                                 return [...mail.split('@'), checkText === '已订阅'];
                             },
@@ -297,7 +312,9 @@
                             label: '内边距',
                             toState: (values) => toPadding(values),
                             renderSelection: (values, html) => {
-                                return html`<span style="border: 1px solid red;padding:4px;"> ${values} </span>`;
+                                return html`<span style="border: 1px solid red;padding:4px;">
+                                    ${values}
+                                </span>`;
                             },
                             children: [
                                 {
@@ -482,7 +499,10 @@
                                 { label: '经典式', tips: '传统布局，平衡稳重' },
                                 { label: '卡片集', tips: '模块化卡片，灵活组合' },
                                 { label: '瀑布流', enable: false, tips: '动态滚动，视觉延展' },
-                                { label: '分屏式', tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                                {
+                                    label: '分屏式',
+                                    tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览',
+                                },
                                 { label: '导航型', tips: '侧边主导，层级清晰' },
                                 { label: '全屏化', tips: '沉浸体验，无界视觉' },
                                 { label: '网格阵', tips: '整齐排列，规整直观' },
@@ -500,8 +520,17 @@
                                 { label: '简约风', icon: 'globe', tips: '极简设计，突出内容' },
                                 { label: '经典式', icon: 'user', tips: '传统布局，平衡稳重' },
                                 { label: '卡片集', icon: 'phone', tips: '模块化卡片，灵活组合' },
-                                { label: '瀑布流', icon: 'search', enable: false, tips: '动态滚动，视觉延展' },
-                                { label: '分屏式', icon: 'datetime', tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览' },
+                                {
+                                    label: '瀑布流',
+                                    icon: 'search',
+                                    enable: false,
+                                    tips: '动态滚动，视觉延展',
+                                },
+                                {
+                                    label: '分屏式',
+                                    icon: 'datetime',
+                                    tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览',
+                                },
                                 { label: '导航型', icon: 'email', tips: '侧边主导，层级清晰' },
                                 { label: '全屏化', icon: 'error', tips: '沉浸体验，无界视觉' },
                                 { label: '网格阵', icon: 'settings', tips: '整齐排列，规整直观' },
@@ -518,7 +547,7 @@
                             multiple: true,
                             valueKey: 'label', // 默认选择的是id
                             labelKey: 'label', // 用于显示，当showResults为true时，显示的是label
-                            invalidMessage: '至少选择两个产品',
+                            invalidTips: '至少选择两个产品',
                             height: '250px',
                             showResults: true, // 是否显示结果框
                             renderItem: '<span>{label}</span><span>{price}</span>',
@@ -609,7 +638,8 @@
                             max: 100,
                             min: 1,
                             width: '50%',
-                            toView: (value) => `<span style="color:red;border:1px solid red;padding:4px;">${value}岁</span>`,
+                            toView: (value) =>
+                                `<span style="color:red;border:1px solid red;padding:4px;">${value}岁</span>`,
                         }),
                         password: configurable('18', {
                             label: '密码',
@@ -621,11 +651,16 @@
                             width: '50%',
                             required: true,
                         }),
-                        sex: configurable('男', { label: '性别', widget: 'radio', select: ['男', '女'] }),
+                        sex: configurable('男', {
+                            label: '性别',
+                            widget: 'radio',
+                            select: ['男', '女'],
+                        }),
                         post: configurable('程序员', {
                             label: '职业',
                             widget: 'select',
-                            renderItem: (item) => `<span>${item.label}</span><span>${item.salary}</span>`,
+                            renderItem: (item) =>
+                                `<span>${item.label}</span><span>${item.salary}</span>`,
                             select: [
                                 { label: '程序员', icon: 'square-code', salary: 8700 },
                                 { label: '教师', icon: 'user-round-pen', salary: 6200 },
@@ -650,9 +685,17 @@
                                 { id: 14, label: '显卡', price: 14000, icon: 'gpu' },
                                 { id: 15, label: '蓝牙耳机', price: 15000, icon: 'bluetooth' },
                             ],
-                            actions: [{ label: '产品网站', pos: 'before' }, { label: '增加' }, { label: '减少' }, { label: '清空' }],
+                            actions: [
+                                { label: '产品网站', pos: 'before' },
+                                { label: '增加' },
+                                { label: '减少' },
+                                { label: '清空' },
+                            ],
                         }),
-                        ip: configurable('192.168.6.112', { label: '网络地址', widget: 'ipaddress' }),
+                        ip: configurable('192.168.6.112', {
+                            label: '网络地址',
+                            widget: 'ipaddress',
+                        }),
                         access: configurable(false, {
                             label: '允许访问',
                             widget: 'switch',
@@ -746,9 +789,15 @@
                                 { label: '其他', value: 4 },
                             ],
                         }),
-                        email: configurable('admin@autostore.com', { label: '电子邮件', widget: 'email' }),
+                        email: configurable('admin@autostore.com', {
+                            label: '电子邮件',
+                            widget: 'email',
+                        }),
                         color: configurable('#ff0000', { label: '颜色', widget: 'colorpicker' }),
-                        qrcode: configurable('www.voerkai18n.com', { label: '扫描二维码', widget: 'qrcode' }),
+                        qrcode: configurable('www.voerkai18n.com', {
+                            label: '扫描二维码',
+                            widget: 'qrcode',
+                        }),
                         notes: configurable('输入简历', {
                             label: '简历',
                             widget: 'textarea',

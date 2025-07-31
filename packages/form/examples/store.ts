@@ -94,7 +94,7 @@ const store = new AutoStore(
                     return value.length > 5;
                 },
                 group: 'a',
-                invalidMessage: '姓名长度必须大于3个字符',
+                invalidTips: '姓名长度必须大于3个字符',
                 help: '中文姓名(http://www.autostore.com)',
                 required: computed(
                     async (state) => {
@@ -550,7 +550,7 @@ const store = new AutoStore(
                 multiple: true,
                 valueKey: 'label', // 默认选择的是id
                 labelKey: 'label', // 用于显示，当showResults为true时，显示的是label
-                invalidMessage: '至少选择两个产品',
+                invalidTips: '至少选择两个产品',
                 height: '250px',
                 showResults: true, // 是否显示结果框
                 renderItem: '<span>{label}</span><span>{price}</span>',

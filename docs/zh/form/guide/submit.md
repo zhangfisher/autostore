@@ -14,7 +14,7 @@
             onValidate: (value) => {
                 return value.length > 5;
             },
-            invalidMessage: '用户名长度必须大于5',
+            invalidTips: '用户名长度必须大于5',
         }),
         //....
     });

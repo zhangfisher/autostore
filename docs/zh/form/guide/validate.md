@@ -29,7 +29,7 @@ const store = new AutoStore({
 
 当校验出错时，可以通过以下方式提供错误信息：
 
--   `invalidMessage`:
+-   `invalidTips`:
 
 **类型**: `string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string)`
 
@@ -43,14 +43,14 @@ const store = new AutoStore({
             onValidate: (value) => {
                 return value.length > 6;
             },
-            invalidMessage: '用户名长度必须大于6',
+            invalidTips: '用户名长度必须大于6',
         },
         password: configurable('PASSWORD', {
             label: '密码',
             onValidate: (value) => {
                 return value.length > 6;
             },
-            invalidMessage: (e, path, newValue, oldValue) => {
+            invalidTips: (e, path, newValue, oldValue) => {
                 return `密码长度不满足要求：` + e.message;
             }
         }),
@@ -60,7 +60,7 @@ const store = new AutoStore({
 
 -   从`onValidate`触发的错误中提取
 
-如果没有指定`invalidMessage`，则也可以从`onValidate`触发的错误中提取。
+如果没有指定`invalidTips`，则也可以从`onValidate`触发的错误中提取。
 
 ```ts {7}
 const store = new AutoStore({
@@ -77,7 +77,7 @@ const store = new AutoStore({
 });
 ```
 
--   如果同时提供`onValidate`和`invalidMessage`，则优先使用`invalidMessage`，当`invalidMessage`为函数时，会将的错误对象作为参数传递给`invalidMessage`。
+-   如果同时提供`onValidate`和`invalidTips`，则优先使用`invalidTips`，当`invalidTips`为函数时，会将的错误对象作为参数传递给`invalidTips`。
 
 -   错误信息还支持`插值变量`，所有配置参数均可以作为插值变量，比如：
 
@@ -89,7 +89,7 @@ const store = new AutoStore({
             onValidate: (value) => {
                 return value.length >= 6
             },
-            invalidMessage: '{label}长度必须大于6'
+            invalidTips: '{label}长度必须大于6'
         }
     }
 })
@@ -115,25 +115,25 @@ const store = new AutoStore({
     a: configurable('12345', {
         label: '用户名',
         onValidate: (value) => value.length >= 6,
-        invalidMessage: '用户名长度必须大于等于6',
+        invalidTips: '用户名长度必须大于等于6',
         onFail: 'pass',
     }),
     b: configurable('12345', {
         label: '用户名',
         onValidate: (value) => value.length >= 6,
-        invalidMessage: '用户名长度必须大于等于6',
+        invalidTips: '用户名长度必须大于等于6',
         onFail: 'throw',
     }),
     c: configurable('12345', {
         label: '用户名',
         onValidate: (value) => value.length >= 6,
-        invalidMessage: '用户名长度必须大于等于6',
+        invalidTips: '用户名长度必须大于等于6',
         onFail: 'ignore',
     }),
     d: configurable('12345', {
         label: '用户名',
         onValidate: (value) => value.length >= 6,
-        invalidMessage: '用户名长度必须大于等于6',
+        invalidTips: '用户名长度必须大于等于6',
         onFail: 'throw-pass',
     }),
 });

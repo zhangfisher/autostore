@@ -48,7 +48,10 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     debug?: boolean;
-
+    /**
+     * 声明是否shadow,默认false
+     */
+    shadow?: boolean;
     /**
      *  是否马上创建动态对象
      *

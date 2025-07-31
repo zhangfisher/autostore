@@ -13,7 +13,7 @@ const store = new AutoStore({
     order:{
         price: schema(100,{
             onValidate:(val)=>val>10
-            invalidMessage:"价格必须大于10",
+            invalidTips:"价格必须大于10",
             title:"价格",
             required:true
             help:"产品价格",
@@ -27,8 +27,16 @@ const store = new AutoStore({
 
 ```ts
 function schema<Value = any>(value: Value, options?: SchemaObjectArgs): SchemaObject<Value>;
-function schema<Value = any>(value: Value, validate?: AutoStoreValidate<Value>, options?: SchemaObjectArgs): SchemaObject<Value>;
-function schema<Value = any>(value: Value, validate?: AutoStoreValidate<Value>, errorTips?: SchemaObjectArgs['errorTips']): SchemaObject<Value>;
+function schema<Value = any>(
+    value: Value,
+    validate?: AutoStoreValidate<Value>,
+    options?: SchemaObjectArgs,
+): SchemaObject<Value>;
+function schema<Value = any>(
+    value: Value,
+    validate?: AutoStoreValidate<Value>,
+    errorTips?: SchemaObjectArgs['errorTips'],
+): SchemaObject<Value>;
 ```
 
 ## 指南
@@ -83,7 +91,7 @@ s.number(100,{
 })
 s.number(100,{
     onValidate:(val)=>val>10,
-    invalidMessage:"价格必须大于10",
+    invalidTips:"价格必须大于10",
     title:"价格",
     required:true
     description:"产品价格",
@@ -94,7 +102,7 @@ s.string("1234",{
     onValidate:(val)=>val.length>3,"密码长度必须大于3"
 })
 s.string("1234",{
-    invalidMessage:"密码长度必须大于3",
+    invalidTips:"密码长度必须大于3",
     title:"密码",
     required:true,
     placeholder:"请输入密码"
@@ -112,7 +120,7 @@ s.string("1234",{
 ```ts
 s.string('1234', {
     onValidate: (val) => val.length > 3,
-    invalidMessage: '密码长度必须大于3', // [!code++]
+    invalidTips: '密码长度必须大于3', // [!code++]
 });
 ```
 
@@ -136,25 +144,25 @@ const store = new AutoStore({
     a: configurable('12345', {
         label: '用户名',
         onValidate: (value) => value.length >= 6,
-        invalidMessage: '用户名长度必须大于等于6',
+        invalidTips: '用户名长度必须大于等于6',
         onFail: 'pass',
     }),
     b: configurable('12345', {
         label: '用户名',
         onValidate: (value) => value.length >= 6,
-        invalidMessage: '用户名长度必须大于等于6',
+        invalidTips: '用户名长度必须大于等于6',
         onFail: 'throw',
     }),
     c: configurable('12345', {
         label: '用户名',
         onValidate: (value) => value.length >= 6,
-        invalidMessage: '用户名长度必须大于等于6',
+        invalidTips: '用户名长度必须大于等于6',
         onFail: 'ignore',
     }),
     d: configurable('12345', {
         label: '用户名',
         onValidate: (value) => value.length >= 6,
-        invalidMessage: '用户名长度必须大于等于6',
+        invalidTips: '用户名长度必须大于等于6',
         onFail: 'throw-pass',
     }),
 });

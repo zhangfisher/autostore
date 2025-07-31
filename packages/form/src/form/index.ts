@@ -270,7 +270,7 @@ export class AutoForm extends LitElement {
         ) as HTMLElement[];
         fields.forEach((field) => {
             if (field.tagName.startsWith('auto-field')) {
-                (field as any).invalidMessage = undefined;
+                (field as any).invalidTips = undefined;
             }
         });
         this.requestUpdate();

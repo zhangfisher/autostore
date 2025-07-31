@@ -29,7 +29,7 @@
                         onValidate: (value) => {
                             return value.length > 5;
                         },
-                        invalidMessage: '用户名长度必须大于5',
+                        invalidTips: '用户名长度必须大于5',
                     }),
                     password: configurable('', {
                         label: '密码',
@@ -38,7 +38,7 @@
                         onValidate: (value) => {
                             return value.length > 5;
                         },
-                        invalidMessage: '密码长度必须大于5',
+                        invalidTips: '密码长度必须大于5',
                     }),
                     captcha: configurable('', {
                         label: '验证码',
