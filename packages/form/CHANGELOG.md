@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 3.0.3
+
+### Patch Changes
+
+-   [`0283110`](https://github.com/zhangfisher/autostore/commit/0283110525143d76197f409955089c73fcb0b763) Thanks [@zhangfisher](https://github.com/zhangfisher)! - feat: add upload preview image to close
+
+-   Updated dependencies []:
+    -   autostore@3.0.3
+
 ## 3.0.2
 
 ### Patch Changes
