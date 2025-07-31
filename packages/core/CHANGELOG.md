@@ -1,5 +1,7 @@
 # autostore
 
+## 3.0.3
+
 ## 3.0.2
 
 ### Patch Changes
