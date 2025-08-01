@@ -116,14 +116,14 @@ describe('本地Store同步', () => {
 
         const syncer = toStore.sync(fromStore, {});
 
-        expect(toStore.state.myorder).toEqual(fromStore.state.order);
+        expect(toStore.state).toEqual({});
         fromStore.state.order.count = 4;
         // @ts-ignore
-        expect(toStore.state.myorder.count).toBe(4);
+        expect(toStore.state.order.count).toBe(4);
         // @ts-ignore
-        expect(toStore.state.myorder.total).toBe(8);
+        expect(toStore.state.order.total).toBe(8);
         // @ts-ignore
-        toStore.state.myorder.count = 5;
+        toStore.state.order.count = 5;
         expect(fromStore.state.order.count).toBe(5);
         expect(fromStore.state.order.total).toBe(10);
     });
@@ -487,6 +487,46 @@ describe('本地Store同步', () => {
                 tags: ['x', 'y', 'z'],
             },
         });
+    });
+    test('只同步更新变更部分部分', async () => {
+        const store1 = new AutoStore({
+            order: {
+                name: 'fisher',
+                price: 2,
+                count: 3,
+                total: computed((order) => order.price * order.count),
+            },
+        });
+        const store2 = new AutoStore<{ myorder: typeof store1.state.order }>({
+            // @ts-ignore
+            myorder: {},
+        });
+        store1.sync(store2, {
+            local: ['order'],
+            remote: ['myorder'],
+            immediate: false,
+            pathMap: {
+                toRemote: (path: string[], value: any) => {
+                    if (typeof value !== 'object') {
+                        return [path.join('.')];
+                    }
+                },
+                toLocal: (path: string[], value: any) => {
+                    if (typeof value !== 'object') {
+                        return path.reduce<string[]>((result, cur) => {
+                            result.push(...cur.split('.'));
+                            return result;
+                        }, []);
+                    }
+                },
+            },
+        });
+        store1.state.order.count = 4;
+        expect(store2.state.myorder.count).toBe(4);
+        expect(store2.state.myorder.total).toBe(8);
+        store2.state.myorder.count = 5;
+        expect(store1.state.order.count).toBe(5);
+        expect(store1.state.order.total).toBe(10);
     });
     test('全量同步schema数据', async () => {
         // order.a <-> myorder['order.a']

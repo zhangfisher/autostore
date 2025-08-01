@@ -108,6 +108,20 @@ export class SchemaManager<
             message: options.invalidTips!,
         };
     }
+
+    addValidator(path: string[], validator: SchemaValidator) {
+        if (!this.store) return;
+        const state = this.store.state || this._descriptors;
+        const key = this._getKey(path);
+        this.store.update((state) => {
+            Object.assign((state as any)[key], {
+                onValidate: markRaw(validator.validate),
+                onFail: validator.onFail || 'throw-pass',
+                invalidTips: validator.message,
+            });
+        });
+    }
+
     remove(path: keyof SchemaStore['state']) {
         const key = this._getKey(path);
         if (this.store) {

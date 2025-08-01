@@ -14,6 +14,7 @@ export default css`
             background-color: var(--auto-bgcolor);
             box-sizing: border-box;
             padding-right: 0px;
+            padding: calc(0.2 * var(--auto-spacing));
             & > .label {
                 display: flex;
                 color: var(--auto-text-color);
@@ -170,7 +171,7 @@ export default css`
     /* 紧凑模式 */
     :host(.compact) {
         & > .autofield {
-            padding: calc(var(--auto-spacing) * 0.2);
+            padding: calc(var(--auto-spacing) * 0.1);
         }
     }
     /* 浏览视图  */

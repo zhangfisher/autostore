@@ -202,20 +202,12 @@ fromStore.sync(toStore, {
     to: 'myorder',
     immediate: false,
     pathMap: {
-<<<<<<< .mine
-        toRemote: (path: string[], value: any) => {
-            return [path.join('.')];
-=======
         toLocal: (path: string[]) => {
             if (typeof path[0] !== 'object') {
->>>>>>> .theirs
-<<<<<<< .mine
-
-=======
+                return [path.join('.')];
             }
->>>>>>> .theirs
         },
-        toLocal: (path: string[]) => {
+        toRemote: (path: string[]) => {
             return path.reduce<string[]>((result, cur) => {
                 result.push(...cur.split('.'));
                 return result;
@@ -492,7 +484,11 @@ const localStore = new AutoStore({
     y: {},
 });
 const remoteSyncer = new AutoStoreSyncer(remoteStore, { transport: remoteTransport });
-const localSyncer = new AutoStoreSyncer(localStore, { transport: localTransport, entry: ['y'], remoteEntry: ['x'] });
+const localSyncer = new AutoStoreSyncer(localStore, {
+    transport: localTransport,
+    entry: ['y'],
+    remoteEntry: ['x'],
+});
 
 expect(localStore.state.y).toEqual({});
 localSyncer.push(); // [!code ++]
@@ -523,6 +519,7 @@ syncer.stop();
 
 | 属性           | 类型                                | 说明                                                                                              |
 | -------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `mode`         | `push \| pull`                      | 工作模式                                                                                          |
 | `autostart`    | `boolean`                           | 自动开始同步                                                                                      |
 | `from`         | `string`                            | 当前`store`的`state`的路径                                                                        |
 | `to`           | `string`                            | 目标`store`的`state`的路径                                                                        |
