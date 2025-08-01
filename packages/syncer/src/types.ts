@@ -8,9 +8,10 @@ import type {
 import { AutoStoreSyncer } from './syncer';
 
 export type AutoStoreSyncerOptions = {
+    mode?: 'push' | 'pull';
     id?: string;
-    from?: string[] | string;
-    to?: string[] | string;
+    local?: string[] | string;
+    remote?: string[] | string;
     transport?: IAutoStoreSyncTransport;
     autostart?: boolean;
     // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送

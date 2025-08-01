@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest';
 import { computed, AutoStore, configurable, c, ValidateError } from '../../../core/src';
 import '..';
-import { getSnapshot } from '../../../core/src/utils/getSnapshot';
+import { isFunction } from '../../../core/src/utils/isFunction';
 
 describe('本地Store同步', () => {
     test('一对一全同步', async () => {
@@ -25,7 +25,110 @@ describe('本地Store同步', () => {
         expect(store1.state.order.total).toBe(10);
     });
 
+    test('主动拉取一对一全同步', async () => {
+        const fromStore = new AutoStore({
+            order: {
+                name: 'fisher',
+                price: 2,
+                count: 3,
+                total: computed((order) => order.price * order.count),
+            },
+        });
+        const toStore = new AutoStore<typeof fromStore.state>();
+        const syncer = toStore.sync(fromStore, { immediate: false });
+        expect(toStore.state).toEqual({});
+
+        syncer.pull();
+
+        expect(toStore.state).toEqual(fromStore.state);
+        fromStore.state.order.count = 4;
+        expect(toStore.state.order.count).toBe(4);
+        expect(toStore.state.order.total).toBe(8);
+        toStore.state.order.count = 5;
+        expect(fromStore.state.order.count).toBe(5);
+        expect(fromStore.state.order.total).toBe(10);
+    });
+
     test('将本地指定路径同步到其他store的指定路径', async () => {
+        const fromStore = new AutoStore({
+            order: {
+                name: 'fisher',
+                price: 2,
+                count: 3,
+                total: computed((order) => order.price * order.count),
+            },
+        });
+        const toStore = new AutoStore<typeof fromStore.state.order>();
+
+        const syncer = toStore.sync(fromStore, { remote: ['order'], immediate: false });
+
+        expect(toStore.state).toEqual({});
+        syncer.pull();
+        expect(toStore.state).toEqual(fromStore.state.order);
+        fromStore.state.order.count = 4;
+        expect(toStore.state.count).toBe(4);
+        expect(toStore.state.total).toBe(8);
+        toStore.state.count = 5;
+        expect(fromStore.state.order.count).toBe(5);
+        expect(fromStore.state.order.total).toBe(10);
+    });
+
+    test('将本地指定路径同步到其他myorder的指定路径', async () => {
+        const fromStore = new AutoStore({
+            order: {
+                name: 'fisher',
+                price: 2,
+                count: 3,
+                total: computed((order) => order.price * order.count),
+            },
+        });
+        const toStore = new AutoStore({
+            myorder: {},
+        });
+
+        const syncer = toStore.sync(fromStore, {
+            mode: 'pull',
+            local: ['myorder'],
+            remote: ['order'],
+        });
+
+        expect(toStore.state.myorder).toEqual(fromStore.state.order);
+        fromStore.state.order.count = 4;
+        // @ts-ignore
+        expect(toStore.state.myorder.count).toBe(4);
+        // @ts-ignore
+        expect(toStore.state.myorder.total).toBe(8);
+        // @ts-ignore
+        toStore.state.myorder.count = 5;
+        expect(fromStore.state.order.count).toBe(5);
+        expect(fromStore.state.order.total).toBe(10);
+    });
+    test('只同步变化部分同步', async () => {
+        const fromStore = new AutoStore({
+            order: {
+                name: 'fisher',
+                price: 2,
+                count: 3,
+                total: computed((order) => order.price * order.count),
+            },
+        });
+        const toStore = new AutoStore();
+
+        const syncer = toStore.sync(fromStore, {});
+
+        expect(toStore.state.myorder).toEqual(fromStore.state.order);
+        fromStore.state.order.count = 4;
+        // @ts-ignore
+        expect(toStore.state.myorder.count).toBe(4);
+        // @ts-ignore
+        expect(toStore.state.myorder.total).toBe(8);
+        // @ts-ignore
+        toStore.state.myorder.count = 5;
+        expect(fromStore.state.order.count).toBe(5);
+        expect(fromStore.state.order.total).toBe(10);
+    });
+
+    test('主动拉取将本地指定路径同步到其他store的指定路径', async () => {
         const store1 = new AutoStore({
             order: {
                 name: 'fisher',
@@ -35,7 +138,9 @@ describe('本地Store同步', () => {
             },
         });
         const store2 = new AutoStore<typeof store1.state.order>();
-        store1.sync(store2, { from: ['order'] });
+
+        store1.sync(store2, { local: ['order'] });
+
         expect(store2.state).toEqual(store1.state.order);
         store1.state.order.count = 4;
         expect(store2.state.count).toBe(4);
@@ -57,7 +162,7 @@ describe('本地Store同步', () => {
             // @ts-ignore
             myorder: {},
         });
-        store1.sync(store2, { from: ['order'], to: ['myorder'] });
+        store1.sync(store2, { local: ['order'], remote: ['myorder'] });
         expect(store2.state.myorder).toEqual(store1.state.order);
         store1.state.order.count = 4;
         expect(store2.state.myorder.count).toBe(4);
@@ -81,7 +186,7 @@ describe('本地Store同步', () => {
                 count: 1,
             },
         });
-        store1.sync(store2, { from: ['order', 'count'], to: ['myorder', 'count'] });
+        store1.sync(store2, { local: ['order', 'count'], remote: ['myorder', 'count'] });
         expect(store2.state.myorder.count).toEqual(store1.state.order.count);
         store1.state.order.count = 4;
         expect(store2.state.myorder.count).toBe(4);
@@ -89,6 +194,7 @@ describe('本地Store同步', () => {
         expect(store1.state.order.count).toBe(5);
         expect(store1.state.order.total).toBe(10);
     });
+
     test('同步数组到其他store', async () => {
         const store1 = new AutoStore(
             {
@@ -107,7 +213,7 @@ describe('本地Store同步', () => {
             },
             { id: 'b' },
         );
-        store1.sync(store2, { from: 'order.values', to: 'myorder.values' });
+        store1.sync(store2, { local: 'order.values', remote: 'myorder.values' });
         expect(store2.state.myorder.values).toEqual(store1.state.order.values);
         store1.state.order.values.push(0);
         expect(store2.state.myorder.values).toEqual(store1.state.order.values);
@@ -126,7 +232,7 @@ describe('本地Store同步', () => {
             order: { a: 1, b: 2, c: 3 },
         });
 
-        store1.sync(store2, { to: 'x.y' });
+        store1.sync(store2, { remote: 'x.y' });
         // @ts-ignore
         expect(store2.state.x.y).toEqual(store1.state);
     });
@@ -142,19 +248,19 @@ describe('本地Store同步', () => {
             b1: 2,
             c1: 3,
         });
-        store1.sync(store, { to: 'x' });
+        store1.sync(store, { remote: 'x' });
         const store2 = new AutoStore({
             a2: 1,
             b2: 2,
             c2: 3,
         });
-        store2.sync(store, { to: 'y' });
+        store2.sync(store, { remote: 'y' });
         const store3 = new AutoStore({
             a3: 1,
             b3: 2,
             c3: 3,
         });
-        store3.sync(store, { to: 'z' });
+        store3.sync(store, { remote: 'z' });
 
         store1.state.a1 = 10;
         expect(store.state.x.a1).toBe(10);
@@ -182,21 +288,21 @@ describe('本地Store同步', () => {
             b1: 2,
             c1: 3,
         });
-        store.sync(store1, { from: 'x' });
+        store.sync(store1, { local: 'x' });
 
         const store2 = new AutoStore({
             a2: 1,
             b2: 2,
             c2: 3,
         });
-        store.sync(store2, { from: 'y' });
+        store.sync(store2, { local: 'y' });
 
         const store3 = new AutoStore({
             a3: 1,
             b3: 2,
             c3: 3,
         });
-        store.sync(store3, { from: 'z' });
+        store.sync(store3, { local: 'z' });
 
         store1.state.a1 = 10;
         expect(store.state.x.a1).toBe(10);
@@ -226,7 +332,7 @@ describe('本地Store同步', () => {
             myorder: {},
         });
         fromStore.sync(toStore, {
-            to: 'myorder',
+            remote: 'myorder',
             immediate: false, // 不马上同步
             pathMap: {
                 toRemote: (path: string[], value) => {
@@ -281,7 +387,7 @@ describe('本地Store同步', () => {
             myorder: {},
         });
         fromStore.sync(toStore, {
-            to: 'myorder',
+            remote: 'myorder',
             // immediate: true, 默认会马上同步
             pathMap: {
                 toRemote: (path: string[], value) => {
@@ -322,7 +428,7 @@ describe('本地Store同步', () => {
             myorder: {},
         });
         fromStore.sync(toStore, {
-            to: 'myorder',
+            remote: 'myorder',
             pathMap: {
                 toRemote: (path: string[], value: any) => {
                     if (typeof value !== 'object') {
@@ -399,10 +505,38 @@ describe('本地Store同步', () => {
             },
             { id: 'local' },
         );
-        const toStore = new AutoStore({}, { id: 'to' });
+        // @ts-ignore
+        const toStore = new AutoStore<typeof fromStore.types.rawState>({}, { id: 'to' });
         fromStore.sync(toStore);
         expect(Object.keys(toStore.schemas.store.state)).toEqual(['order_$_b', 'user_$_tags_$_1']);
+        // @ts-ignore
+        expect(isFunction(toStore.schemas.store.state['order_$_b'].onValidate)).toBeTruthy();
     });
+    test('主动接取全量同步schema数据', async () => {
+        // order.a <-> myorder['order.a']
+        const fromStore = new AutoStore(
+            {
+                order: {
+                    a: 1,
+                    b: configurable(2, {
+                        onValidate: (value: any) => value > 2,
+                    }),
+                    c: 3,
+                },
+                user: {
+                    tags: ['x', configurable('y'), 'z'],
+                },
+            },
+            { id: 'local' },
+        );
+        const toStore = new AutoStore({}, { id: 'to' });
+        const syncer = toStore.sync(fromStore, { immediate: false });
+        syncer.pull();
+        expect(Object.keys(toStore.schemas.store.state)).toEqual(['order_$_b', 'user_$_tags_$_1']);
+        // @ts-ignore
+        expect(isFunction(toStore.schemas.store.state['order_$_b'].onValidate)).toBeTruthy();
+    });
+
     test('全量同步schema数据时进行路径转换', async () => {
         const fromStore = new AutoStore(
             {
@@ -428,7 +562,7 @@ describe('本地Store同步', () => {
             { id: 'to' },
         );
         fromStore.sync(toStore, {
-            to: 'myorder',
+            remote: 'myorder',
             pathMap: {
                 toRemote: (path: string[], value: any) => {
                     if (typeof value !== 'object') {
@@ -436,6 +570,63 @@ describe('本地Store同步', () => {
                     }
                 },
                 toLocal: (path: string[], value: any) => {
+                    if (typeof value !== 'object') {
+                        return path.reduce<string[]>((result, cur) => {
+                            result.push(...cur.split('.'));
+                            return result;
+                        }, []);
+                    }
+                },
+            },
+        });
+        expect(Object.keys(toStore.schemas.store.state)).toEqual([
+            'myorder_$_order.b',
+            'myorder_$_user.tags.1',
+        ]);
+        // @ts-ignore
+        expect(() => (toStore.state.myorder['order.b'] = 0)).toThrow(ValidateError);
+        // @ts-ignore
+        const fromSchema = fromStore.schemas.get('order.b')!;
+
+        // @ts-ignore
+        const toSchema = toStore.schemas.get(['myorder', 'order.b'])!;
+
+        expect(fromSchema.onValidate !== toSchema.onValidate).toBe(true);
+    });
+    test('主动拉取同步schema数据时进行路径转换', async () => {
+        const fromStore = new AutoStore(
+            {
+                order: {
+                    a: 1,
+                    b: configurable(2, {
+                        onValidate: (value: any) => {
+                            return value > 2;
+                        },
+                    }),
+                    c: 3,
+                },
+                user: {
+                    tags: ['x', configurable('y'), 'z'],
+                },
+            },
+            { id: 'from' },
+        );
+        const toStore = new AutoStore(
+            {
+                myorder: {},
+            },
+            { id: 'to' },
+        );
+        const syncer = toStore.sync(fromStore, {
+            mode: 'pull',
+            local: 'myorder',
+            pathMap: {
+                toLocal: (path: string[], value: any) => {
+                    if (typeof value !== 'object') {
+                        return [path.join('.')];
+                    }
+                },
+                toRemote: (path: string[], value: any) => {
                     if (typeof value !== 'object') {
                         return path.reduce<string[]>((result, cur) => {
                             result.push(...cur.split('.'));

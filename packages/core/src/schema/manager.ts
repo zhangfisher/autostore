@@ -56,7 +56,7 @@ export class SchemaManager<
         ) as unknown as SchemaDescriptor['options'];
 
         if (typeof finalDescriptor.onValidate === 'string') {
-            finalDescriptor.onValidate = parseFunc(finalDescriptor.onValidate) as any;
+            finalDescriptor.onValidate = markRaw(parseFunc(finalDescriptor.onValidate)) as any;
         }
 
         this._descriptors[key] = finalDescriptor;
