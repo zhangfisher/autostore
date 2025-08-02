@@ -623,8 +623,10 @@ describe('本地Store同步', () => {
             'myorder_$_order.b',
             'myorder_$_user.tags.1',
         ]);
-        // @ts-ignore
-        expect(() => (toStore.state.myorder['order.b'] = 0)).toThrow(ValidateError);
+        expect(() => {
+            // @ts-ignore
+            toStore.state.myorder['order.b'] = 0;
+        }).toThrow(ValidateError);
         // @ts-ignore
         const fromSchema = fromStore.schemas.get('order.b')!;
 
@@ -681,7 +683,10 @@ describe('本地Store同步', () => {
             'myorder_$_user.tags.1',
         ]);
         // @ts-ignore
-        expect(() => (toStore.state.myorder['order.b'] = 0)).toThrow(ValidateError);
+        expect(() => {
+            // @ts-ignore
+            toStore.state.myorder['order.b'] = 0;
+        }).toThrow(ValidateError);
         // @ts-ignore
         const fromSchema = fromStore.schemas.get('order.b')!;
 

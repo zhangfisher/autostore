@@ -11,7 +11,7 @@ export default css`
             position: relative;
             flex-direction: column;
             width: 100%;
-            background-color: var(--auto-bgcolor);
+
             box-sizing: border-box;
             padding-right: 0px;
             padding: calc(0.2 * var(--auto-spacing));
@@ -29,6 +29,7 @@ export default css`
             }
             & > .value {
                 position: relative;
+                color: var(--auto-text-color);
             }
 
             & .help {

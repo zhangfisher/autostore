@@ -9,6 +9,7 @@ export default css`
         box-sizing: border-box;
         width: 100%;
         font-family: 'Microsoft YaHei', 华文细黑, 微软雅黑, 'MicrosoftJhengHei', STHeiti, MingLiu;
+        background-color: var(--auto-workspace-color);
         & > .fields {
             & > * {
                 width: 100%;

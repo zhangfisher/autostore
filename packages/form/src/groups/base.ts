@@ -16,6 +16,7 @@ import type { AutoStore, Dict } from 'autostore';
 import styles from '../form/styles';
 import { scrollbar } from '@/styles/utils';
 import { registerIcons } from '@/utils';
+import { ThemeController } from '@/controllers/theme';
 
 export class AutoFormGroupBase extends LitElement {
     static styles = [
@@ -25,9 +26,11 @@ export class AutoFormGroupBase extends LitElement {
             :host {
                 display: block;
                 width: 100%;
+                background-color: var(--auto-bgcolor);
             }
         `,
     ] as any;
+    // theme = new ThemeController(this);
 
     @query('slot')
     slotElement!: HTMLSlotElement;

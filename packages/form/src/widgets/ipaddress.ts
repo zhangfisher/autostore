@@ -24,6 +24,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
                 border: var(--auto-border);
                 border-radius: var(--auto-border-radius);
                 align-items: baseline;
+                background-color: var(--auto-bgcolor);
             }
             sl-input {
                 width: 2em;
@@ -48,7 +49,12 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
     }
     _getIpBits(): [number, number, number, number] {
         const bits = this.value?.split('.');
-        return [parseInt(bits[0] || '0'), parseInt(bits[1] || '0'), parseInt(bits[2] || '0'), parseInt(bits[3] || '0')];
+        return [
+            parseInt(bits[0] || '0'),
+            parseInt(bits[1] || '0'),
+            parseInt(bits[2] || '0'),
+            parseInt(bits[3] || '0'),
+        ];
     }
     _onIpChange(_: number, e: Event) {
         this.onFieldChange();

@@ -19,7 +19,7 @@
         <script type="module" src="/src/index.ts"></script>
     </head>
 
-    <body>
+    <body class="dark">
         <sl-tab-group>
             <sl-tab slot="nav" panel="tabs">tabs分组</sl-tab>
             <sl-tab slot="nav" panel="general">默认</sl-tab>
@@ -27,7 +27,6 @@
             <sl-tab slot="nav" panel="usepath">绑定路径</sl-tab>
             <sl-tab-panel name="tabs" style="padding: 2em">
                 <auto-form-example-tabs2></auto-form-example-tabs2>
-
                 <auto-collapse
                     active="panel1,panel2"
                     style="border: 1px solid #ccc; height: 500px"
@@ -111,7 +110,6 @@
                 <auto-form-example-path></auto-form-example-path>
             </sl-tab-panel>
         </sl-tab-group>
-
         <script type="module" src="./examples/index.ts"></script>
     </body>
 </html>

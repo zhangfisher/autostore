@@ -1,7 +1,9 @@
+import { vars } from '@/form/vars';
 import { scrollbar } from '@/styles/utils';
 import { css } from 'lit';
 
 export default css`
+    ${vars}
     :host {
         display: flex;
         position: relative;
@@ -9,6 +11,7 @@ export default css`
         box-sizing: border-box;
         width: 100%;
         --auto-icon-size: 1.5em;
+        background-color: var(--auto-bgcolor);
     }
 
     :host([fit]) {
@@ -24,16 +27,18 @@ export default css`
         padding: 10px 15px;
         gap: 0.5em;
         cursor: pointer;
-        background-color: var(--sl-color-neutral-50, #f8fafc);
         transition: background-color 0.2s ease;
         border-bottom: 1px solid var(--sl-color-neutral-200, #e2e8f0);
+
+        background-color: var(--auto-bgcolor);
+        filter: brightness(1.2);
         box-sizing: border-box;
+        color: var(--auto-text-color);
     }
     .header:hover {
-        background-color: var(--sl-color-neutral-50, #f1f5f9);
+        color: var(--auto-theme-color);
     }
     .header.active {
-        background-color: var(--sl-color-neutral-50, #f1f5f9);
         font-weight: 500;
     }
     .icon {
@@ -72,11 +77,12 @@ export default css`
         max-height: 0;
         padding: 0 15px;
         overflow: hidden;
-        background-color: var(--sl-color-neutral-0, #ffffff);
+        background-color: var(--auto-workspace-color);
         border-bottom: 1px solid var(--sl-color-neutral-200, #e2e8f0);
         visibility: hidden;
         flex-direction: column;
         box-sizing: border-box;
+        color: var(--auto-text-color);
         transition: max-height 0.3s ease-out, padding 0.2s ease, opacity 0.2s ease,
             visibility 0s 0.3s; /* 延迟visibility变化，确保在动画完成后才隐藏 */
     }

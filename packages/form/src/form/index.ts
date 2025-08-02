@@ -47,13 +47,14 @@ import styles from './styles';
 import { renderWidget } from '@/utils/renderWidget';
 import { applyClass } from '@/utils/applyClass';
 import '../components';
-import { registerIcons } from '@/utils';
+import { registerIcons } from '@/utils'; 
 
 export class AutoForm extends LitElement {
     static seq: number = 0;
     static styles = styles;
     classs = new HostClasses(this);
-    theme = new ContextController(this);
+    ctxController = new ContextController(this);
+    // themeController = new ThemeController(this);
     seq: number = ++AutoForm.seq;
 
     @provide({ context })
