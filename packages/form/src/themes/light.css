@@ -268,7 +268,7 @@
     --sl-color-danger-950: var(--t-color-danger-10);
 
     --sl-color-neutral-50: var(--t-color-info-0);
-    --sl-color-neutral-100: var(--t-color-info-1);
+    --sl-color-neutral-100: var(--t-color-theme-2);
     --sl-color-neutral-200: var(--t-color-info-2);
     --sl-color-neutral-300: var(--t-color-info-3);
     --sl-color-neutral-400: var(--t-color-info-4);
@@ -360,8 +360,8 @@
     --sl-input-height-medium: 2.5rem;
     --sl-input-height-large: 3.125rem;
 
-    --sl-input-background-color: var(--sl-color-neutral-0);
-    --sl-input-background-color-hover: var(--sl-input-background-color);
+    --sl-input-background-color: var(--auto-input-bgcolor);
+    --sl-input-background-color-hover: var(--auto-input-bgcolor);
     --sl-input-background-color-focus: var(--sl-input-background-color);
     --sl-input-background-color-disabled: var(--sl-color-neutral-100);
     --sl-input-border-color: var(--auto-border-color);
@@ -384,14 +384,14 @@
     --sl-input-font-size-large: var(--sl-font-size-large);
     --sl-input-letter-spacing: var(--sl-letter-spacing-normal);
 
-    --sl-input-color: var(--sl-color-neutral-700);
-    --sl-input-color-hover: var(--sl-color-neutral-700);
-    --sl-input-color-focus: var(--sl-color-neutral-700);
-    --sl-input-color-disabled: var(--sl-color-neutral-900);
-    --sl-input-icon-color: var(--sl-color-neutral-500);
-    --sl-input-icon-color-hover: var(--sl-color-neutral-600);
-    --sl-input-icon-color-focus: var(--sl-color-neutral-600);
-    --sl-input-placeholder-color: var(--sl-color-neutral-300);
+    --sl-input-color: var(--auto-color);
+    --sl-input-color-hover: var(--auto-primary-color);
+    --sl-input-color-focus: var(--auto-primary-color);
+    --sl-input-color-disabled: var(--auto-disable-color);
+    --sl-input-icon-color: var(--auto-color);
+    --sl-input-icon-color-hover: var(--auto-primary-color);
+    --sl-input-icon-color-focus: var(--auto-primary-color);
+    --sl-input-placeholder-color: var(--auto-theme-color);
     --sl-input-placeholder-color-disabled: var(--sl-color-neutral-400);
     --sl-input-spacing-small: var(--sl-spacing-small);
     --sl-input-spacing-medium: var(--sl-spacing-medium);
@@ -401,7 +401,7 @@
     --sl-input-focus-ring-offset: 0;
 
     --sl-input-filled-background-color: var(--sl-color-neutral-100);
-    --sl-input-filled-background-color-hover: var(--sl-color-neutral-100);
+    --sl-input-filled-background-color-hover: var(--auto-primary-color);
     --sl-input-filled-background-color-focus: var(--sl-color-neutral-100);
     --sl-input-filled-background-color-disabled: var(--sl-color-neutral-100);
     --sl-input-filled-color: var(--sl-color-neutral-800);

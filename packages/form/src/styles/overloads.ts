@@ -5,5 +5,5 @@ export const overloads = css`
     sl-input::part(input),
     sl-popup::part(display-input){        
         color: var(--auto-color);
-    }
+    }  
 `;
