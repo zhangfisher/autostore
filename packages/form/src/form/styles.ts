@@ -1,7 +1,5 @@
-import { css } from 'lit';
-import { vars } from './vars';
-export default css`
-    ${vars}
+import { css } from "lit";
+export default css`    
     :host {
         display: flex;
         position: relative;
@@ -9,7 +7,7 @@ export default css`
         box-sizing: border-box;
         width: 100%;
         font-family: 'Microsoft YaHei', 华文细黑, 微软雅黑, 'MicrosoftJhengHei', STHeiti, MingLiu;
-        background-color: var(--auto-workspace-color);
+        background-color: var(--auto-panel-bgcolor);
         & > .fields {
             & > * {
                 width: 100%;

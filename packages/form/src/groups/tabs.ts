@@ -10,22 +10,22 @@
  *
  */
 
-import { property } from 'lit/decorators.js';
-import { css, html } from 'lit';
-import { tag } from '@/utils/tag';
-import '@shoelace-style/shoelace/dist/components/tab/tab.js';
-import '@shoelace-style/shoelace/dist/components/tab-group/tab-group.js';
-import '@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js';
-import '@shoelace-style/shoelace/dist/components/icon/icon.js';
-import { AutoFormGroupBase } from './base';
-import { ifDefined } from 'lit/directives/if-defined.js';
-import { when } from 'lit/directives/when.js';
+import { property } from "lit/decorators.js";
+import { css, html } from "lit";
+import { tag } from "@/utils/tag";
+import "@shoelace-style/shoelace/dist/components/tab/tab.js";
+import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
+import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
+import "@shoelace-style/shoelace/dist/components/icon/icon.js";
+import { AutoFormGroupBase } from "./base";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
-@tag('auto-form-tabs')
+@tag("auto-form-tabs")
 export class AutoFormTabs extends AutoFormGroupBase {
-    static styles = [
-        AutoFormGroupBase.styles,
-        css`
+	static styles = [
+		AutoFormGroupBase.styles,
+		css`
             auto-form {
                 padding: 1.5em;
             }
@@ -37,6 +37,7 @@ export class AutoFormTabs extends AutoFormGroupBase {
                 display: flex;
                 align-items: center;
                 font-size: calc(1.5 * var(--auto-font-size));
+                color: var(--auto-color);
             }
             sl-tab sl-icon {
                 &::part(svg) {
@@ -102,60 +103,57 @@ export class AutoFormTabs extends AutoFormGroupBase {
                 padding-left: 0.5em;
             }
         `,
-    ] as any;
+	] as any;
 
-    @property({ type: String, reflect: true })
-    direction: 'top' | 'left' | 'right' | 'bottom' = 'top';
+	@property({ type: String, reflect: true })
+	direction: "top" | "left" | "right" | "bottom" = "top";
 
-    @property({ type: Boolean, reflect: true })
-    hideLabel: boolean = false;
+	@property({ type: Boolean, reflect: true })
+	hideLabel: boolean = false;
 
-    _getPlacement(): 'top' | 'bottom' | 'start' | 'end' {
-        if (this.direction === 'left') return 'start';
-        if (this.direction === 'right') return 'end';
-        return this.direction;
-    }
+	_getPlacement(): "top" | "bottom" | "start" | "end" {
+		if (this.direction === "left") return "start";
+		if (this.direction === "right") return "end";
+		return this.direction;
+	}
 
-    renderGroups() {
-        return html`
+	renderGroups() {
+		return html`
             <sl-tab-group
                 placement="${this._getPlacement()}"
-                @sl-tab-show="${() => this.dispatchEvent(new CustomEvent('tab-change'))}"
+                @sl-tab-show="${() => this.dispatchEvent(new CustomEvent("tab-change"))}"
             >
                 ${this.forms.map((form, index) => {
-                    if (form.tagName !== 'AUTO-FORM') return;
-                    const info = this.getFormInfo(form, index);
-                    // @ts-ignore
-                    if (form.bind) form.bind(this.store);
-                    form.setAttribute('border', 'none');
-                    return html`
+					if (form.tagName !== "AUTO-FORM") return;
+					const info = this.getFormInfo(form, index);
+					// @ts-ignore
+					if (form.bind) form.bind(this.store);
+					form.setAttribute("border", "none");
+					return html`
                         <sl-tab
                             ?active=${info.active}
                             slot="nav"
                             title="${ifDefined(info.title || info.label)}"
                             panel="${index}"
                         >
-                            ${info.icon ? html`<sl-icon name="${info.icon}"></sl-icon>` : ''}
-                            ${when(
-                                !this.hideLabel && info.label,
-                                () => html`<span class="label">${info.label}</span>`,
-                            )}
+                            ${info.icon ? html`<sl-icon name="${info.icon}"></sl-icon>` : ""}
+                            ${when(!this.hideLabel && info.label, () => html`<span class="label">${info.label}</span>`)}
                         </sl-tab>
                     `;
-                })}
+				})}
                 ${this.forms.map(
-                    (group, index) =>
-                        html`<sl-tab-panel name="${index}" class="scrollbar"
+					(group, index) =>
+						html`<sl-tab-panel name="${index}" class="scrollbar"
                             >${group}</sl-tab-panel
                         >`,
-                )}
+				)}
             </sl-tab-group>
         `;
-    }
+	}
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'auto-form-tabs': AutoFormTabs;
-    }
+	interface HTMLElementTagNameMap {
+		"auto-form-tabs": AutoFormTabs;
+	}
 }

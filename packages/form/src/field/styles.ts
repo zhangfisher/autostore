@@ -1,6 +1,8 @@
-import { css } from 'lit';
+import { overloads } from "@/styles/overloads";
+import { css } from "lit";
 
 export default css`
+    ${overloads}
     :host {
         display: flex;
         position: relative;
@@ -17,7 +19,7 @@ export default css`
             padding: calc(0.2 * var(--auto-spacing));
             & > .label {
                 display: flex;
-                color: var(--auto-text-color);
+                color: var(--auto-color);
                 & > .title {
                     font-size: var(--auto-font-size);
                     flex-grow: 1;
@@ -29,19 +31,19 @@ export default css`
             }
             & > .value {
                 position: relative;
-                color: var(--auto-text-color);
+                color: var(--auto-color);
             }
 
             & .help {
                 display: flex;
                 align-items: center;
                 font-size: calc(var(--auto-font-size) * 0.9);
-                color: var(--auto-gray-color);
+                color: var(--auto-disable-color);
                 padding: calc(var(--auto-spacing) * 0.3) 0px;
                 font-weight: lighter;
                 & a {
                     text-decoration: none;
-                    color: var(--auto-gray-color);
+                    color: var(--auto-disable-color);
                     &:hover {
                         color: var(--auto-theme-color);
                     }
@@ -66,7 +68,7 @@ export default css`
             align-items: center;
             justify-content: center;
             padding: 0px;
-            border-left: 1px solid var(--sl-input-border-color);
+            border-left: var(--auto-border);
             & img {
                 width: 100%;
                 height: 100%;

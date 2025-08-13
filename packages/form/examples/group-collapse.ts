@@ -1,22 +1,22 @@
-import { customElement, query } from 'lit/decorators.js';
-import { LitElement, html } from 'lit';
-import type { AutoStore } from 'autostore';
+import { customElement, query } from "lit/decorators.js";
+import { LitElement, html } from "lit";
+import type { AutoStore } from "autostore";
 
-@customElement('auto-form-example-collapse')
+@customElement("auto-form-example-collapse")
 class AutoFormExampleCollapse extends LitElement {
-    //@ts-ignore
-    @query('auto-form-collapse')
-    collapse?: any;
+	//@ts-ignore
+	@query("auto-form-collapse")
+	collapse?: any;
 
-    updated() {
-        this.collapse?.bind(store);
-    }
+	updated() {
+		this.collapse?.bind(store);
+	}
 
-    render() {
-        return html`<div
-            style="padding: 1em; border: 1px solid #ccc; margin: 1em; position: relative"
+	render() {
+		return html`<div
+            style="padding: 1em; var(--auto-border); margin: 1em; position: relative"
         >
-            <auto-form-collapse style="border: 1px solid #ccc;height:500px;" active="network">
+            <auto-form-collapse style="border: var(--auto-border);height:500px;" active="network">
                 <auto-form
                     data-name="general"
                     group="general"
@@ -40,14 +40,14 @@ class AutoFormExampleCollapse extends LitElement {
                 </auto-form>
             </auto-form-collapse>
         </div>`;
-    }
+	}
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'auto-form-example-collapse': AutoFormExampleCollapse;
-    }
-    var store: AutoStore<any>;
+	interface HTMLElementTagNameMap {
+		"auto-form-example-collapse": AutoFormExampleCollapse;
+	}
+	var store: AutoStore<any>;
 }
 
 // <auto-form group="general" title="常规"> </auto-form>
