@@ -36,16 +36,20 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
                 flex-direction: row;                
                 border: var(--auto-border);
                 font-size: var(--auto-font-size);
-                color: var(--auto-text-color);
-                border-radius: var(--sl-input-border-radius-medium);    
-                letter-spacing: var(--sl-input-letter-spacing);
-                background-color: var(--sl-input-background-color); 
+                color: var(--auto-color);
+                border-radius: var(--auto-border-radius);    
+                letter-spacing: var(--auto-letter-spacing);
+                background-color: var(--auto-input-bgcolor); 
                 overflow-y: auto;
                 overflow-x: hidden;
+                align-items: anchor-center;
                 &>.dropdown{
                     display: flex;
                     align-items: center;
                     flex-grow: 1;
+                    background-color: var(--auto-input-bgcolor);                    
+                    padding: calc(0.5 * var(--auto-padding));
+                    box-sizing: border-box;
                     &>sl-dropdown{
                         &::slotted(*){
                             align-items: center;
@@ -111,7 +115,6 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
                 &.dropdown{
                     border: var(--auto-border);
                     background-color: var(--sl-input-background-color);
-                    border-radius: var(--auto-border-radius);
                 }
             }            
             sl-icon.chevron{
@@ -182,7 +185,7 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
                         @sl-show="${() => { this.active = true }}"
                         @sl-after-hide="${() => { this.active = false }}"
                         sync="width"
-                        distance="2"
+                        distance="12"
                     >
                     ${this._renderSelection()}
                     ${this._renderContent()}

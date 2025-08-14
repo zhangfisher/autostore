@@ -46,6 +46,7 @@ export class AutoFormTabs extends AutoFormGroupBase {
             }
             sl-tab-group::part(tabs) {
                 border: none;
+                background-color: var(--auto-title-bgcolor);
             }
             /* 边框架 */
             sl-tab-group[placement='start']::part(nav) {

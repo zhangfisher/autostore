@@ -65,7 +65,9 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
                     display: none;
                 }
             }
-
+            .popoup-container.dropdown {
+                                
+            }
             .popoup-container.dropdown > .levels {
                 border: none;
             }

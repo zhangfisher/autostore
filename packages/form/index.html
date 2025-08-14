@@ -23,6 +23,12 @@
     </head>
 
     <body class="dark">
+        <div class="themes">
+            <sl-button>Light</sl-button>
+            <sl-button variant="primary">Dark</sl-button>
+            <sl-button variant="success">Blue</sl-button>
+            <sl-button variant="warning">Red</sl-button>
+        </div>
         <sl-tab-group>
             <sl-tab slot="nav" panel="tabs">tabs分组</sl-tab>
             <sl-tab slot="nav" panel="general">默认</sl-tab>
@@ -114,5 +120,12 @@
             </sl-tab-panel>
         </sl-tab-group>
         <script type="module" src="./examples/index.ts"></script>
+        <script>
+            const themes = document.querySelector('.themes');
+            themes.addEventListener('click', (e) => {
+                console.log('e.target', e.target);
+                ThemePro.theme = e.target.innerText.toLowerCase();
+            });
+        </script>
     </body>
 </html>

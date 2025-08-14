@@ -81,7 +81,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                         padding: 0.5rem;
                         border: var(--auto-border);
                         border-radius: var(--auto-border-radius);
-                        background-color: var(--auto-workspace-color);
+                        background-color: var(--auto-input-bgcolor);
                         & > [name='remove'] {
                             cursor: pointer;
                             &:hover {
@@ -106,7 +106,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                         display: flex;
                         border: var(--auto-border);
                         border-radius: var(--auto-border-radius);
-                        background-color: var(--auto-workspace-color);
+                        background-color: var(--auto-input-bgcolor);
                         align-items: 0px;
                         &.error {
                             border: 1px solid red;

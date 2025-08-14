@@ -6,7 +6,13 @@ export const overloads = css`
     sl-popup::part(display-input){        
         color: var(--auto-color);
     }  
-    sl-button::part(base){        
-        background: none;
+    sl-button::part(label){
+        color: color-mix(in hsl, var(--auto-primary-color), white 80%);
+    }
+     sl-button[variant=default]::part(label){
+        color: var(--auto-color);
+    }
+    input,textarea{
+        background-color: var(--auto-input-bgcolor);
     }
 `;
