@@ -14,7 +14,7 @@ class AutoFormExampleTabs extends LitElement {
 
 	render() {
 		return html`
-            <auto-form-tabs direction="bottom" style="border: 1px solid #ccc;height:500px">
+            <auto-form-tabs direction="bottom" style="border: var(--auto-border);height:500px">
                 <auto-form group="general" icon="settings"> </auto-form>
                 <auto-form group="car" icon="car"> </auto-form>
                 <auto-form group="network" icon="network" label="网络"> </auto-form>

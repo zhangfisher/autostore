@@ -41,7 +41,7 @@ export class AutoFormTabs extends AutoFormGroupBase {
             }
             sl-tab sl-icon {
                 &::part(svg) {
-                    stroke-width: 1;
+                    stroke-width: 1.1;
                 }
             }
             sl-tab-group::part(tabs) {

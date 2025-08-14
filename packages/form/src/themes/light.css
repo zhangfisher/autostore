@@ -267,20 +267,20 @@
     --sl-color-danger-900: var(--t-color-danger-9);
     --sl-color-danger-950: var(--t-color-danger-10);
 
-    --sl-color-neutral-50: var(--t-color-info-0);
-    --sl-color-neutral-100: var(--t-color-theme-2);
-    --sl-color-neutral-200: var(--t-color-info-2);
-    --sl-color-neutral-300: var(--t-color-info-3);
-    --sl-color-neutral-400: var(--t-color-info-4);
-    --sl-color-neutral-500: var(--t-color-info-5);
-    --sl-color-neutral-600: var(--t-color-info-6);
-    --sl-color-neutral-700: var(--t-color-info-7);
-    --sl-color-neutral-800: var(--t-color-info-8);
-    --sl-color-neutral-900: var(--t-color-info-9);
-    --sl-color-neutral-950: var(--t-color-info-10);
+    --sl-color-neutral-50: var(--t-color-theme-0);
+    --sl-color-neutral-100: var(--t-color-theme-1);
+    --sl-color-neutral-200: var(--t-color-theme-2);
+    --sl-color-neutral-300: var(--t-color-theme-3);
+    --sl-color-neutral-400: var(--t-color-theme-4);
+    --sl-color-neutral-500: var(--t-color-theme-5);
+    --sl-color-neutral-600: var(--t-color-theme-6);
+    --sl-color-neutral-700: var(--t-color-theme-7);
+    --sl-color-neutral-800: var(--t-color-theme-8);
+    --sl-color-neutral-900: var(--t-color-theme-9);
+    --sl-color-neutral-950: var(--t-color-theme-10);
 
-    --sl-color-neutral-0: var(--auto-bgcolor);
-    --sl-color-neutral-1000: var(--auto-color);
+    --sl-color-neutral-0: var(--t-color-theme-0);
+    --sl-color-neutral-1000: var(--t-color-theme-10);
 
     --sl-border-radius-small: var(--t-border-radius-small);
     --sl-border-radius-medium: var(--t-border-radius-medium);

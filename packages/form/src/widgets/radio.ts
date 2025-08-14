@@ -1,18 +1,18 @@
-import { AutoField } from '@/field';
-import { css, html } from 'lit';
-import { styleMap } from 'lit/directives/style-map.js';
-import '@shoelace-style/shoelace/dist/components/radio/radio.js';
-import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
-import type { SchemaRadioWidgetOptions } from 'autostore';
-import { tag } from '@/utils/tag';
+import { AutoField } from "@/field";
+import { css, html } from "lit";
+import { styleMap } from "lit/directives/style-map.js";
+import "@shoelace-style/shoelace/dist/components/radio/radio.js";
+import "@shoelace-style/shoelace/dist/components/radio-group/radio-group.js";
+import type { SchemaRadioWidgetOptions } from "autostore";
+import { tag } from "@/utils/tag";
 
 export type AutoFieldRadioOptions = Required<SchemaRadioWidgetOptions>;
 
-@tag('auto-field-radio')
+@tag("auto-field-radio")
 export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
-    static styles = [
-        AutoField.styles,
-        css`
+	static styles = [
+		AutoField.styles,
+		css`
             sl-radio-group::part(form-control-input) {
                 display: flex;
                 flex-direction: row;
@@ -26,11 +26,13 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
             sl-radio {
                 position: relative;
                 & .memo {
-                    color: var(--sl-color-gray-500);
+                    color: var(--auto-color);                    
+                    filter: opacity(0.5);
                     font-size: 0.8em;
                     max-height: 2.8em;
                     overflow: hidden;
                     display: -webkit-box;
+                    line-height: 150%;
                     margin-top: 2px;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
@@ -65,8 +67,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                         margin-right: 0px;
                     }
                     &.selected {
-                        border: 1px solid var(--sl-color-primary-500);
-                        background-color: var(--sl-color-primary-50);
+                        border: 1px solid var(--sl-color-primary-500); 
                     }
                     &.selected:before {
                         content: ' ';
@@ -95,7 +96,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                     }
                     sl-icon.icon {
                         flex-shrink: 0;
-                        color: var(--sl-color-gray-500);
+                        color: var(--auto-color);
                         padding-top: 0px;
                         padding-left: 0px;
                         font-size: calc(2 * var(--auto-font-size));
@@ -103,70 +104,70 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                 }
             }
         `,
-    ] as any;
-    getInitialOptions(): Record<string, any> {
-        return {
-            card: false,
-            select: [],
-            valueKey: 'value',
-        };
-    }
-    renderOptionItemWithCard(option: any, item: any) {
-        if (this.options.card) {
-            const value = item[this.options.valueKey] || item.label;
-            const isSelected = this.value === value;
-            return html`<div
+	] as any;
+	getInitialOptions(): Record<string, any> {
+		return {
+			card: false,
+			select: [],
+			valueKey: "value",
+		};
+	}
+	renderOptionItemWithCard(option: any, item: any) {
+		if (this.options.card) {
+			const value = item[this.options.valueKey] || item.label;
+			const isSelected = this.value === value;
+			return html`<div
                 class="card"
                 style=${styleMap({
-                    width: this.options.itemWidth,
-                })}
+					width: this.options.itemWidth,
+				})}
             >
-                <div class="body ${isSelected ? 'selected' : ''}">
+                <div class="body ${isSelected ? "selected" : ""}">
                     <sl-icon class="icon" name="settings"></sl-icon>
                     ${option}
                 </div>
             </div>`;
-        } else {
-            return option;
-        }
-    }
-    onRadioChange() {
-        this.onFieldChange();
-        if (this.options.card) this.requestUpdate();
-    }
-    renderOptionItem(item: any) {
-        const value = item[this.options.valueKey] || item.label;
-        return html`<sl-radio
+		} else {
+			return option;
+		}
+	}
+	onRadioChange() {
+		this.onFieldChange();
+		if (this.options.card) this.requestUpdate();
+	}
+	renderOptionItem(item: any) {
+		const value = item[this.options.valueKey] || item.label;
+		return html`<sl-radio
             value="${value}"
             style=${styleMap({
-                width: this.options.card === undefined ? this.options.itemWidth : undefined,
-            })}
+				width: this.options.card === undefined ? this.options.itemWidth : undefined,
+			})}
             ?disabled=${!this.options.enable}
             >${item.label}<br /><span class="memo">${item.tips}</span></sl-radio
         >`;
-    }
-    renderInput() {
-        const items = this.options.select.map((item: any) => {
-            const selectItem: any = {};
-            if (typeof item === 'object') {
-                Object.assign(selectItem, item);
-            } else {
-                Object.assign(selectItem, { label: item });
-            }
-            return selectItem;
-        });
-        return html`
+	}
+	renderInput() {
+		const items = this.options.select.map((item: any) => {
+			const selectItem: any = {};
+			if (typeof item === "object") {
+				Object.assign(selectItem, item);
+			} else {
+				Object.assign(selectItem, { label: item });
+			}
+			return selectItem;
+		});
+		return html`
             <sl-radio-group class="value" name=${this.name} value="${this.value}" size="${this.context.size}" @sl-change=${this.onRadioChange.bind(this)}>
                 ${items.map((item: any) => {
-                    return this.renderOptionItemWithCard(this.renderOptionItem(item), item);
-                })}
+					return this.renderOptionItemWithCard(this.renderOptionItem(item), item);
+				})}
             </sl-radio-group>
         `;
-    }
+	}
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'auto-field-radio': AutoFieldRadio;
-    }
+	interface HTMLElementTagNameMap {
+		"auto-field-radio": AutoFieldRadio;
+	}
 }

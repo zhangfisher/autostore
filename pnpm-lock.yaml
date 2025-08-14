@@ -199,8 +199,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       themepro:
-        specifier: ^1.0.2
-        version: 1.0.2(typescript@5.7.3)
+        specifier: ^1.0.3
+        version: 1.0.3(typescript@5.7.3)
     devDependencies:
       autostore:
         specifier: workspace:*
@@ -2955,8 +2955,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  themepro@1.0.2:
-    resolution: {integrity: sha512-5XtswKPbTjV2FQu0XNfi5wN1pKDi5Q6FaVUlE03wSFAmajId1WXOSP4V4s+8jFkJlLxkK3S0wKPd6pm9NiiO5g==}
+  themepro@1.0.3:
+    resolution: {integrity: sha512-505/5TQGk0e7qpPsw4miaCpKNE1xoJXc5hzpNzKIGz/9yRTLlC1G/7qaPQ3aTth5/KfbSYoDmVl9/4eZKzvCqw==}
     peerDependencies:
       typescript: ^5
 
@@ -6208,7 +6208,7 @@ snapshots:
       commander: 2.20.3
       source-map-support: 0.5.21
 
-  themepro@1.0.2(typescript@5.7.3):
+  themepro@1.0.3(typescript@5.7.3):
     dependencies:
       typescript: 5.7.3
 

@@ -40,9 +40,9 @@ class AutoFormExampleGeneral extends LitElement {
             <textarea
                 id="viewer"
                 rows="10"
-                style="box-sizing: border-box; border: 1px solid #ccc; width: 100%"
+                style="box-sizing: border-box; border: var(--auto-border); width: 100%"
             ></textarea>
-            <div id="errors" style="border: 1px solid #ccc; color: red"></div>
+            <div id="errors" style="border: var(--auto-border); color: red"></div>
         </div>`;
 	}
 }

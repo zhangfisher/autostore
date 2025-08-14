@@ -1,23 +1,23 @@
-import { AutoField } from '@/field';
-import { tag } from '@/utils/tag';
-import type { SchemaCheckboxGroupWidgetOptions } from 'autostore';
-import { css, html } from 'lit';
-import { styleMap } from 'lit/directives/style-map.js';
-import { when } from 'lit/directives/when.js';
+import { AutoField } from "@/field";
+import { tag } from "@/utils/tag";
+import type { SchemaCheckboxGroupWidgetOptions } from "autostore";
+import { css, html } from "lit";
+import { styleMap } from "lit/directives/style-map.js";
+import { when } from "lit/directives/when.js";
 
 type SelectItem = {
-    id: any;
-    value: any;
-    label: any;
+	id: any;
+	value: any;
+	label: any;
 } & Record<string, any>;
 
 export type AutoFieldCheckboxGroupOptions = Required<SchemaCheckboxGroupWidgetOptions>;
 
-@tag('auto-field-checkbox-group')
+@tag("auto-field-checkbox-group")
 export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOptions> {
-    static styles = [
-        AutoField.styles,
-        css`
+	static styles = [
+		AutoField.styles,
+		css`
             .items {
                 display: flex;
                 flex-direction: row;
@@ -60,7 +60,7 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                     }
                     sl-icon.icon {
                         flex-shrink: 0;
-                        color: var(--sl-color-gray-500);
+                        color: var(--auto-color);
                         padding: 0.5em;
                         padding-top: 0px;
                         padding-left: 0px;
@@ -71,8 +71,10 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                         font-size: var(--auto-font-size);
                     }
                     sl-checkbox::part(form-control-help-text) {
-                        max-height: 2.5em;
-                        line-height: 120%;
+                        max-height: 2.8em;
+                        line-height: 150%;                        
+                        color: var(--auto-color);
+                        filter: opacity(0.5);
                         overflow: hidden;
                     }
                     sl-checkbox::part(control) {
@@ -82,7 +84,6 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 &.card.selected {
                     & > .body {
                         border: 1px solid var(--sl-color-primary-500);
-                        background-color: var(--sl-color-primary-50);
                         &:hover {
                             outline: 1px solid var(--sl-color-primary-500);
                         }
@@ -115,51 +116,51 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 }
             }
         `,
-    ] as any;
-    valueKey: string = 'value';
-    selection: any[] = [];
-    items: SelectItem[] = [];
-    isShowIcon: boolean = false;
+	] as any;
+	valueKey: string = "value";
+	selection: any[] = [];
+	items: SelectItem[] = [];
+	isShowIcon: boolean = false;
 
-    getInitialOptions() {
-        return {
-            valueKey: 'value',
-            card: false,
-        };
-    }
+	getInitialOptions() {
+		return {
+			valueKey: "value",
+			card: false,
+		};
+	}
 
-    connectedCallback(): void {
-        super.connectedCallback();
-        this.valueKey = this.options.valueKey;
-        this.items = this.options.select.map((item: any, index: number) => {
-            const selectItem: any = {};
-            if (typeof item === 'object') {
-                Object.assign(selectItem, item);
-            } else {
-                Object.assign(selectItem, {
-                    id: item,
-                    label: item,
-                    value: item,
-                });
-            }
-            if (selectItem.icon) this.isShowIcon = true;
-            selectItem.$index = index;
-            return selectItem;
-        });
-        this.selection = this.value;
-    }
-    renderInput() {
-        return html`
+	connectedCallback(): void {
+		super.connectedCallback();
+		this.valueKey = this.options.valueKey;
+		this.items = this.options.select.map((item: any, index: number) => {
+			const selectItem: any = {};
+			if (typeof item === "object") {
+				Object.assign(selectItem, item);
+			} else {
+				Object.assign(selectItem, {
+					id: item,
+					label: item,
+					value: item,
+				});
+			}
+			if (selectItem.icon) this.isShowIcon = true;
+			selectItem.$index = index;
+			return selectItem;
+		});
+		this.selection = this.value;
+	}
+	renderInput() {
+		return html`
             <div class="items">
                 ${this.items.map((item: any) => {
-                    return this.renderCheckItemWithCard(this.renderCheckboxItem(item), item);
-                })}
+					return this.renderCheckItemWithCard(this.renderCheckboxItem(item), item);
+				})}
             </div>
         `;
-    }
+	}
 
-    renderCheckboxItem(item: any) {
-        return html`
+	renderCheckboxItem(item: any) {
+		return html`
             <sl-checkbox
                 data-index="${item.$index}"
                 data-value="${item[this.valueKey]}"
@@ -171,53 +172,53 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 ${item.label}</sl-checkbox
             >
         `;
-    }
+	}
 
-    _onCheckChange(e: any) {
-        const ele = e.target.closest('.card') || e.target;
-        const index = Number(ele.dataset.index);
-        const checked = ele.checked ?? !ele.classList.contains('selected');
-        const item = this.items[index];
-        if (item) {
-            if (checked) {
-                if (!this.selection.includes(item[this.valueKey])) {
-                    this.selection.push(item[this.valueKey]);
-                }
-            } else {
-                const index = this.selection.findIndex((selItem: any) => selItem === item[this.valueKey]);
-                if (index > -1) {
-                    this.selection.splice(index, 1);
-                }
-            }
-            this.onFieldChange();
-        }
-    }
+	_onCheckChange(e: any) {
+		const ele = e.target.closest(".card") || e.target;
+		const index = Number(ele.dataset.index);
+		const checked = ele.checked ?? !ele.classList.contains("selected");
+		const item = this.items[index];
+		if (item) {
+			if (checked) {
+				if (!this.selection.includes(item[this.valueKey])) {
+					this.selection.push(item[this.valueKey]);
+				}
+			} else {
+				const index = this.selection.findIndex((selItem: any) => selItem === item[this.valueKey]);
+				if (index > -1) {
+					this.selection.splice(index, 1);
+				}
+			}
+			this.onFieldChange();
+		}
+	}
 
-    getInputValue() {
-        return this.selection; //.map((item) => item[this.valueKey])
-    }
+	getInputValue() {
+		return this.selection; //.map((item) => item[this.valueKey])
+	}
 
-    renderCheckItemWithCard(option: any, item: any) {
-        if (this.options.card) {
-            const isSelected = this.selection.includes(item[this.valueKey]);
-            return html`<div
-                class="card ${isSelected ? 'selected' : ''}"
+	renderCheckItemWithCard(option: any, item: any) {
+		if (this.options.card) {
+			const isSelected = this.selection.includes(item[this.valueKey]);
+			return html`<div
+                class="card ${isSelected ? "selected" : ""}"
                 data-index="${item.$index}"
                 style=${styleMap({
-                    width: this.options.itemWidth,
-                })}
+					width: this.options.itemWidth,
+				})}
                 @click=${this._onCheckChange.bind(this)}
             >
-                <div class="body">${when(this.isShowIcon, () => html`<sl-icon class="icon" name="${item.icon || ''}"></sl-icon>`)} ${option}</div>
+                <div class="body">${when(this.isShowIcon, () => html`<sl-icon class="icon" name="${item.icon || ""}"></sl-icon>`)} ${option}</div>
             </div>`;
-        } else {
-            return option;
-        }
-    }
+		} else {
+			return option;
+		}
+	}
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'auto-field-checkbox-group': AutoFieldCheckboxGroup;
-    }
+	interface HTMLElementTagNameMap {
+		"auto-field-checkbox-group": AutoFieldCheckboxGroup;
+	}
 }

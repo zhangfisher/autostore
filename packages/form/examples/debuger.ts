@@ -185,8 +185,9 @@ class AutoFormDebuger extends LitElement {
 	}
 	render() {
 		return html`
-            <div class="toolbar" style="border: 1px solid #ccc; margin: 1em 0px;position: relative">
-                <div>
+            <div class="auto-card">
+                <div class="auto-card-header">表单配置</div>
+                <div class="auto-card-body">
                     <sl-select label="标签位置" style="width:120px;" value="top" @sl-change=${this.onChangelabelPos.bind(this)}>
                         <sl-option value="top">上方</sl-option>
                         <sl-option value="left">左侧</sl-option>

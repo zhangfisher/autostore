@@ -33,7 +33,7 @@
         "@shoelace-style/shoelace": "^2.20.1",
         "flex-tools": "^1.5.2",
         "lit": "^3.3.0",
-        "themepro": "^1.0.2"
+        "themepro": "^1.0.3"
     },
     "devDependencies": {
         "autostore": "workspace:*",

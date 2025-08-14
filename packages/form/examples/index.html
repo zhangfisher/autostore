@@ -8,10 +8,13 @@
         <link rel="stylesheet" href="/dist/index.css" />
         <script src="/dist/index.global.js"></script>
         <script src="/node_modules/autostore/dist/index.global.js"></script>
+        <script src="/node_modules/themepro/dist/index.css"></script>
     </head>
 
     <body>
-        <div style="padding: 2em; border: 1px solid #ccc; margin: 2em; position: relative"></div>
+        <div
+            style="padding: 2em; border: var(--auto-border); margin: 2em; position: relative"
+        ></div>
         <auto-form id="a"></auto-form>
         <script>
             const orgTree = {
