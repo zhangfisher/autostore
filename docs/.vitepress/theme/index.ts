@@ -13,7 +13,7 @@ import Tree from "./Tree.vue";
 import TwoslashFloatingVue from "@shikijs/vitepress-twoslash/client";
 
 import "@shikijs/vitepress-twoslash/style.css";
-import "themepro/styles";
+import "themepro/themes/index.css"
 
 //@ts-ignore
 if (!import.meta.env.SSR) {
