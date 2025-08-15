@@ -36,7 +36,7 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 }
             }
             sl-icon::part(svg) {
-                stroke-width: 1;
+                stroke-width: 1.1;
             }
             .card {
                 padding: calc(var(--auto-spacing) * 0.3);
@@ -55,12 +55,13 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                     padding: var(--auto-spacing);
                     box-sizing: border-box;
                     position: relative;
+                        overflow: hidden;
                     &:hover {
                         outline: 1px solid var(--sl-color-primary-500);
                     }
                     sl-icon.icon {
                         flex-shrink: 0;
-                        color: var(--auto-color);
+                        color: var(--auto-primary-color);
                         padding: 0.5em;
                         padding-top: 0px;
                         padding-left: 0px;
@@ -84,8 +85,9 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 &.card.selected {
                     & > .body {
                         border: 1px solid var(--sl-color-primary-500);
+                        background: color-mix(in srgb, var(--t-color-primary-5) 20%, transparent);
                         &:hover {
-                            outline: 1px solid var(--sl-color-primary-500);
+                            outline: 1px solid var(--sl-color-primary-500); 
                         }
                         &:before {
                             content: ' ';

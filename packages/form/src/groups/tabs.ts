@@ -36,8 +36,9 @@ export class AutoFormTabs extends AutoFormGroupBase {
             sl-tab::part(base) {
                 display: flex;
                 align-items: center;
+                font: var(--auto-font);
                 font-size: calc(1.5 * var(--auto-font-size));
-                color: var(--auto-color);
+                color: var(--auto-color);                    
             }
             sl-tab sl-icon {
                 &::part(svg) {

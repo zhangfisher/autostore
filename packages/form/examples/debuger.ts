@@ -102,6 +102,7 @@ class AutoFormDebuger extends LitElement {
 	onChangeSize(e) {
 		const ele = this.getNextAutoForm();
 		if (ele) {
+			ThemePro.size = e.target.value;
 			ele.setAttribute("size", e.target.value);
 		}
 	}
@@ -194,9 +195,11 @@ class AutoFormDebuger extends LitElement {
                         <sl-option value="none">隐藏</sl-option>
                     </sl-select>   
                     <sl-select label="尺寸" style="width:100px;" value="medium" @sl-change=${this.onChangeSize.bind(this)}>
+                        <sl-option value="x-small">迷你</sl-option>
                         <sl-option value="small">小</sl-option>
                         <sl-option value="medium">中</sl-option>
                         <sl-option value="large">大</sl-option>
+                        <sl-option value="x-large">超大大</sl-option>
                     </sl-select>   
                     <sl-select label="帮助信息" style="width:120px;" value="label" @sl-change=${this.onChangeHelpPos.bind(this)}>
                         <sl-option value="label">标签</sl-option>

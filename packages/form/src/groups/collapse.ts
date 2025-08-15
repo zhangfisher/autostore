@@ -1,4 +1,4 @@
-import { ifDefined } from 'lit/directives/if-defined.js';
+import { ifDefined } from "lit/directives/if-defined.js";
 /**
  *
  * <auto-form-collapse active="a,b" >
@@ -11,18 +11,18 @@ import { ifDefined } from 'lit/directives/if-defined.js';
  *
  */
 
-import { css, html } from 'lit';
-import { tag } from '@/utils/tag';
-import '@shoelace-style/shoelace/dist/components/details/details.js';
-import '@shoelace-style/shoelace/dist/components/icon/icon.js';
-import { AutoFormGroupBase } from './base';
-import '../components/collapse';
-import { property } from 'lit/decorators.js';
-@tag('auto-form-collapse')
+import { css, html } from "lit";
+import { tag } from "@/utils/tag";
+import "@shoelace-style/shoelace/dist/components/details/details.js";
+import "@shoelace-style/shoelace/dist/components/icon/icon.js";
+import { AutoFormGroupBase } from "./base";
+import "../components/collapse";
+import { property } from "lit/decorators.js";
+@tag("auto-form-collapse")
 export class AutoFormCollapse extends AutoFormGroupBase {
-    static styles = [
-        AutoFormGroupBase.styles,
-        css`
+	static styles = [
+		AutoFormGroupBase.styles,
+		css`
             auto-form {
                 padding: 1.5em;
             }
@@ -47,7 +47,7 @@ export class AutoFormCollapse extends AutoFormGroupBase {
             sl-icon {
                 &::part(svg) {
                     font-size: calc(1.5 * var(--auto-font-size));
-                    stroke-width: 1;
+                    stroke-width: 1.1;
                 }
             }
             sl-details::part(header) {
@@ -65,6 +65,7 @@ export class AutoFormCollapse extends AutoFormGroupBase {
                 align-items: center;
                 gap: 0.5em;
                 .label {
+                    font: var(--auto-font);
                     font-size: var(--auto-font-size);
                 }
             }
@@ -73,19 +74,19 @@ export class AutoFormCollapse extends AutoFormGroupBase {
                 flex-direction: column;
             }
         `,
-    ] as any;
+	] as any;
 
-    @property({ type: String, reflect: true })
-    active: string = '';
+	@property({ type: String, reflect: true })
+	active: string = "";
 
-    @property({ type: String, reflect: true })
-    padding?: string;
+	@property({ type: String, reflect: true })
+	padding?: string;
 
-    @property({ type: Boolean, reflect: true })
-    accordion: boolean = false;
+	@property({ type: Boolean, reflect: true })
+	accordion: boolean = false;
 
-    renderGroups() {
-        return html`
+	renderGroups() {
+		return html`
             <auto-collapse
                 style="flex-grow:1;min-height:0"
                 active=${ifDefined(this.active)}
@@ -93,19 +94,19 @@ export class AutoFormCollapse extends AutoFormGroupBase {
                 ?accordion=${this.accordion}
             >
                 ${this.forms.map((form) => {
-                    if (form.tagName !== 'AUTO-FORM') return;
-                    // @ts-ignore
-                    if (form.bind) form.bind(this.store);
-                    form.setAttribute('border', 'none');
-                    return form;
-                })}
+					if (form.tagName !== "AUTO-FORM") return;
+					// @ts-ignore
+					if (form.bind) form.bind(this.store);
+					form.setAttribute("border", "none");
+					return form;
+				})}
             </auto-collapse>
         `;
-    }
+	}
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'auto-form-collapse': AutoFormCollapse;
-    }
+	interface HTMLElementTagNameMap {
+		"auto-form-collapse": AutoFormCollapse;
+	}
 }

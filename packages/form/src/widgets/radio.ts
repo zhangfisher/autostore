@@ -21,7 +21,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                 padding: 0.2em;
             }
             sl-icon::part(svg) {
-                stroke-width: 1;
+                stroke-width: 1.1;
             }
             sl-radio {
                 position: relative;
@@ -53,6 +53,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                     padding: var(--auto-spacing);
                     box-sizing: border-box;
                     position: relative;
+                    overflow: hidden;
                     &:hover {
                         outline: 1px solid var(--sl-color-primary-500);
                     }
@@ -68,6 +69,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                     }
                     &.selected {
                         border: 1px solid var(--sl-color-primary-500); 
+                        background: color-mix(in srgb, var(--t-color-primary-5) 20%, transparent);
                     }
                     &.selected:before {
                         content: ' ';
@@ -96,7 +98,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
                     }
                     sl-icon.icon {
                         flex-shrink: 0;
-                        color: var(--auto-color);
+                        color: var(--auto-primary-color);
                         padding-top: 0px;
                         padding-left: 0px;
                         font-size: calc(2 * var(--auto-font-size));

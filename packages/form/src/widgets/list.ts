@@ -37,7 +37,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 		ScrollbarController.styles,
 		css`
             sl-menu-item[checked] {
-                background-color: color-mix(in srgb, var(--auto-primary-color) 20%, transparent);
+                background-color: color-mix(in srgb, var(--auto-theme-color) 10%, transparent);
             }
             .header {
                 padding: 4px 0px;
@@ -77,22 +77,20 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
                 display: flex;
                 flex-direction: column;
                 justify-content: stretch;
-                padding: 4px;
+                padding: calc(0.5 * var(--auto-padding));
                 box-sizing: border-box;
                 overflow-x: hidden;
+                gap: 0.2rem;
                 font-size: var(--auto-font-size);
                 & > .item {
                     display: flex;
                     flex-direction: row;
                     align-items: center;
-                    border-radius: 4px;
-                    padding: 4px;
-                    border: var(--auto-border);
-                    background-color: var(--sl-color-gray-50);
-                    margin-bottom: 4px;
-                    box-shadow: 1px 1px 1px var(--sl-color-gray-200);
+                    border-radius: var(--auto-border-radius);
+                    padding: calc(0.2 * var(--auto-padding));
+                    border: var(--auto-border);  
                     &:hover {
-                        background-color: color-mix(in srgb, var(--auto-primary-color) 10%, transparent);
+                        background-color: color-mix(in srgb, var(--auto-theme-color) 20%, transparent);
                     }
                     & > :first-child {
                         flex-grow: 1;

@@ -5,20 +5,26 @@
         <link rel="icon" type="image/svg+xml" href="/vite.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>AutoStore</title>
-        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
-        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themepro/dist/index.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themepro/dist/light.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themepro/dist/dark.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themepro/dist/red.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themepro/dist/blue.css" />
+
         <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
-        <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+        <script src="/autostore/autoform.css"></script>
     </head>
 
     <body>
         <div style="display: flex">
             <auto-form dark id="login"></auto-form>
         </div>
-        <div>
-            <button id="dark" style="border: 1px solid gray; padding: 1em; margin-top: 1em">Dark</button>
-            <button id="light" style="border: 1px solid gray; padding: 1em; margin-top: 1em">Light</button>
+        <div class="themes">
+            <button style="border: 1px solid gray; padding: 1em; margin-top: 1em">Light</button>
+            <button style="border: 1px solid gray; padding: 1em; margin-top: 1em">Dark</button>
+            <button style="border: 1px solid gray; padding: 1em; margin-top: 1em">Red</button>
+            <button style="border: 1px solid gray; padding: 1em; margin-top: 1em">Blue</button>
         </div>
 
         <script>
@@ -44,15 +50,12 @@
             });
             const form = document.querySelector('#login');
             form.bind(store);
-            const btnDark = document.getElementById('dark');
-            btnDark.addEventListener('click', () => {
-                form.dark = true;
-                <!-- form.setAttribute('dark', ''); -->
-            });
-
-            const btnLight = document.getElementById('light');
-            btnLight.addEventListener('click', () => {
-                form.dark = false;
+        </script>
+        <script>
+            const themes = document.querySelector('.themes');
+            themes.addEventListener('click', (e) => {
+                console.log('e.target', e.target);
+                ThemePro.theme = e.target.innerText.toLowerCase();
             });
         </script>
     </body>

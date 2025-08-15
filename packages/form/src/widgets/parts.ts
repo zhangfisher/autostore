@@ -106,7 +106,7 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
 			input.blur();
 			//@ts-ignore
 			const nextInput = (input.nextElementSibling ||
-				input.nextElementSibling?.nextElementSibling) as HTMLInputElement;
+				(input.nextElementSibling as any)?.nextElementSibling) as HTMLInputElement;
 			if (nextInput) {
 				nextInput.focus();
 				nextInput.select();

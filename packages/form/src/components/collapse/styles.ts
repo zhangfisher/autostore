@@ -12,6 +12,7 @@ export default css`
         width: 100%;
         --auto-icon-size: 1.5em;
         background-color: var(--auto-bgcolor);
+            font: var(--auto-font);
     }
 
     :host([fit]) {
@@ -29,7 +30,7 @@ export default css`
         cursor: pointer;
         transition: background-color 0.2s ease;
         border-bottom:var(--auto-border);
-
+        font: var(--auto-font);
         background-color: var(--auto-title-bgcolor);
         box-sizing: border-box;
         color: var(--auto-color);
@@ -49,9 +50,7 @@ export default css`
             box-sizing: border-box;
         }
         &.action:hover {
-            color: var(--auto-theme-color);
-            border-radius: 50%;
-            background-color: var(--auto-bgcolor);
+            color: var(--auto-color);
         }
         &.action:active {
             background-color:var(--auto-bgcolor);

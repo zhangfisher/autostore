@@ -38,9 +38,8 @@ export default css`
                 display: flex;
                 align-items: center;
                 font-size: calc(var(--auto-font-size) * 0.9);
-                color: var(--auto-disable-color);
+                color: var(--auto-secondary-color);
                 padding: calc(var(--auto-spacing) * 0.3) 0px;
-                font-weight: lighter;
                 & a {
                     text-decoration: none;
                     color: var(--auto-disable-color);
@@ -51,10 +50,12 @@ export default css`
             }
         }
         sl-input::part(base) {
+            font: var(--auto-font) !important;
             outline: none !important;
             box-shadow: none !important;
         }
         sl-textarea::part(base) {
+            font: var(--auto-font) !important;
             outline: none !important;
             box-shadow: none !important;
         }

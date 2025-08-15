@@ -14,11 +14,24 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>AutoForm</title>
         <!-- 引入 AutoForm 样式 -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/index.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/index.css" />
         <!-- 引入 AutoForm 代码 -->
         <script src="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/index.global.js"></script>
         <!-- 引入 AutoStore 代码 -->
         <script src="https://cdn.jsdelivr.net/npm/autostore/dist/index.global.js"></script>
+        <!-- 可选的主题样式 -->
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/dark.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/blue.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/red.css"
+        />
     </head>
     <body>
         ...

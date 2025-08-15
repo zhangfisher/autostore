@@ -67,7 +67,10 @@ const store = new AutoStore({
 <!-- 引入 AutoForm 样式: 黑暗模式 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/dark.css" />
 <!-- 引入 AutoForm 样式: 默认亮模式 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/light.css" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/light.css"
+/>
 <!-- 引入 AutoForm 代码 -->
 <script src="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/index.global.js"></script>
 <!-- 引入 AutoStore 代码 -->
@@ -160,20 +163,25 @@ import '@autostorejs/form'; //   [!code ++]
 -   当`AutoStore`中的数据发生变化时，`AutoForm`会自动更新表单数据。
 -   当`AutoForm`中的数据发生变化时，`AutoStore`会自动更新`AutoStore`中的数据。
 
-### 暗黑模式
+### 主题
 
-`AutoForm`默认使用亮色主题，如果需要使用暗色主题，可以引入`dark.css`文件。
-并且指定属性`dark`就可以切换为暗色主题。
+`AutoForm`使用[ThemePro](https://zhangfisher.github.io/themepro/)用为主题方案，可以提供灵活实时的动态主题
 
 ```tsx
-// 引入暗色主题
-<link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/dark.css" />
+<link href="https://cdn.jsdelivr.net/npm/@autostorejs/form/index.css" />
+<link href="https://cdn.jsdelivr.net/npm/@autostorejs/form/themes/dark.css" />
+<link href="https://cdn.jsdelivr.net/npm/@autostorejs/form/themes/red.css" />
+<link href="https://cdn.jsdelivr.net/npm/@autostorejs/form/themes/blue.css" />
 
-<auto-form dark></auto-frm>     // [!code ++]
+<auto-form></auto-frm>     // [!code ++]
 ```
 
 <demo html="autoform/form/dark.html"/>
+
+:::warning 提示
+除了预设的`light`、`dark`、`blue`、`red`共四种颜色的主题外，还可以动态生成主题。
+详见[ThemePro](https://zhangfisher.github.io/themepro/)介绍。
+:::
 
 ### 尺寸
 

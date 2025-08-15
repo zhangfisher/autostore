@@ -1,8 +1,12 @@
+import { css } from 'lit';
+/**
+ * 将@shoelace-style/shoelace的样式映射到ThemePro
+ */
+export const themeMap = css`
 :root,
 :host,
 .sl-theme-light {
     color-scheme: light;
-
     --sl-color-gray-50: var(--t-color-gray-0);
     --sl-color-gray-100: var(--t-color-gray-1);
     --sl-color-gray-200: var(--t-color-gray-2);
@@ -483,3 +487,4 @@
 .sl-toast-stack sl-alert::part(base) {
     box-shadow: var(--sl-shadow-large);
 }
+`

@@ -1,12 +1,13 @@
+import { themeMap } from "@/styles/themeMap";
 import { css } from "lit";
 export default css`    
+    ${themeMap}
     :host {
         display: flex;
         position: relative;
         flex-direction: column;
         box-sizing: border-box;
         width: 100%;
-        font-family: 'Microsoft YaHei', 华文细黑, 微软雅黑, 'MicrosoftJhengHei', STHeiti, MingLiu;
         background-color: var(--auto-panel-bgcolor);
         & > .fields {
             & > * {

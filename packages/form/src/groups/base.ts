@@ -26,6 +26,7 @@ export class AutoFormGroupBase extends LitElement {
                 display: block;
                 width: 100%;
                 background-color: var(--auto-bgcolor);
+                    font: var(--auto-font);
             }
         `,
 	] as any;
