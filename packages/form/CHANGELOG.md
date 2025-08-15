@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 3.1.4
+
+### Patch Changes
+
+-   [`f5171f6`](https://github.com/zhangfisher/autostore/commit/f5171f60ffc7872c75b1bf79c0a0d7b354cf381c) Thanks [@zhangfisher](https://github.com/zhangfisher)! - add theme support for form
+
+-   Updated dependencies []:
+    -   autostore@3.1.4
+
 ## 3.0.3
 
 ### Patch Changes
