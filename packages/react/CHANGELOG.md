@@ -1,5 +1,14 @@
 # @autostorejs/react
 
+## 3.1.6
+
+### Patch Changes
+
+-   [`664ba52`](https://github.com/zhangfisher/autostore/commit/664ba52a0dab9b3e69bd91677fdbe76fc035b965) Thanks [@zhangfisher](https://github.com/zhangfisher)! - upgrade deps
+
+-   Updated dependencies [[`664ba52`](https://github.com/zhangfisher/autostore/commit/664ba52a0dab9b3e69bd91677fdbe76fc035b965)]:
+    -   autostore@3.1.6
+
 ## 3.1.5
 
 ### Patch Changes
