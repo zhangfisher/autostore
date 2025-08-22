@@ -1,50 +1,50 @@
 {
-    "name": "autostore",
-    "version": "3.1.4",
-    "description": "Very easy and elegant state management library.",
-    "main": "src/index.ts",
-    "access": "public",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/zhangfisher/autostore.git"
-    },
-    "publishConfig": {
-        "access": "public",
-        "main": "dist/index.cjs",
-        "module": "dist/index.js"
-    },
-    "type": "module",
-    "scripts": {
-        "build": "tsup",
-        "bench": "tsx src/index.ts",
-        "test": "vitest"
-    },
-    "files": [
-        "readme.md",
-        "dist"
-    ],
-    "keywords": [
-        "autostore",
-        "state",
-        "store",
-        "state management",
-        "react",
-        "redux",
-        "mobx"
-    ],
-    "author": "",
-    "license": "MIT",
-    "devDependencies": {
-        "@type-challenges/utils": "^0.1.1",
-        "@types/node": "^22.5.5",
-        "ts-node": "^10.9.2",
-        "tsup": "^8.5.0",
-        "type-fest": "^4.26.1",
-        "typescript": "^5.8.3",
-        "vitest": "^2.1.1",
-        "zlib": "^1.0.5"
-    },
-    "dependencies": {
-        "flex-tools": "^1.4.9"
-    }
+	"name": "autostore",
+	"version": "3.1.4",
+	"description": "Very easy and elegant state management library.",
+	"main": "src/index.ts",
+	"access": "public",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/zhangfisher/autostore.git"
+	},
+	"publishConfig": {
+		"access": "public",
+		"main": "dist/index.cjs",
+		"module": "dist/index.js"
+	},
+	"type": "module",
+	"scripts": {
+		"build": "tsup",
+		"bench": "tsx src/index.ts",
+		"test": "vitest"
+	},
+	"files": [
+		"readme.md",
+		"dist"
+	],
+	"keywords": [
+		"autostore",
+		"state",
+		"store",
+		"state management",
+		"react",
+		"redux",
+		"mobx"
+	],
+	"author": "zhangfisher",
+	"license": "MIT",
+	"devDependencies": {
+		"@type-challenges/utils": "^0.1.1",
+		"@types/node": "^22.5.5",
+		"ts-node": "^10.9.2",
+		"tsup": "^8.5.0",
+		"type-fest": "^4.26.1",
+		"typescript": "^5.8.3",
+		"vitest": "^2.1.1",
+		"zlib": "^1.0.5"
+	},
+	"dependencies": {
+		"flex-tools": "^1.4.9"
+	}
 }
