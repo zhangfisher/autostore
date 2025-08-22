@@ -1,5 +1,12 @@
 # @autostorejs/syncer
 
+## 3.1.5
+
+### Patch Changes
+
+-   Updated dependencies [[`57ab216`](https://github.com/zhangfisher/autostore/commit/57ab216f05334845b426a8774027502de77a0e83)]:
+    -   autostore@3.1.5
+
 ## 3.1.4
 
 ### Patch Changes
