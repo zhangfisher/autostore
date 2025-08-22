@@ -202,8 +202,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       themepro:
-        specifier: ^1.0.5
-        version: 1.0.5(typescript@5.7.3)
+        specifier: ^1.0.6
+        version: 1.0.6(typescript@5.7.3)
     devDependencies:
       autostore:
         specifier: workspace:*
@@ -2996,6 +2996,11 @@ packages:
 
   themepro@1.0.5:
     resolution: {integrity: sha512-sjFVOO3b2anwaZMtK14reOqfQd8AiE16o9Qf3/T90OIZlfJU77M0L4TkH5sC1PVD9mIQx54XHLQ3pQVSWOvPpg==}
+    peerDependencies:
+      typescript: ^5
+
+  themepro@1.0.6:
+    resolution: {integrity: sha512-VvY0RtMOJmp5qBMEHfBUf7Gx544A18MPZ6/b1woakGJJZ7SvvR3BeW1hmtyt/mlyPJjLDfdhBFTZxbuQzJ7t7A==}
     peerDependencies:
       typescript: ^5
 
@@ -6306,13 +6311,13 @@ snapshots:
       commander: 2.20.3
       source-map-support: 0.5.21
 
-  themepro@1.0.5(typescript@5.7.3):
-    dependencies:
-      typescript: 5.7.3
-
   themepro@1.0.5(typescript@5.8.3):
     dependencies:
       typescript: 5.8.3
+
+  themepro@1.0.6(typescript@5.7.3):
+    dependencies:
+      typescript: 5.7.3
 
   thenify-all@1.6.0:
     dependencies:
