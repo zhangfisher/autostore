@@ -1,5 +1,11 @@
 # autostore
 
+## 3.1.5
+
+### Patch Changes
+
+-   [`57ab216`](https://github.com/zhangfisher/autostore/commit/57ab216f05334845b426a8774027502de77a0e83) Thanks [@zhangfisher](https://github.com/zhangfisher)! - feat: add schemaManager.size method
+
 ## 3.1.4
 
 ## 3.0.3

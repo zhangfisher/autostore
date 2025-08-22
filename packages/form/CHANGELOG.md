@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 3.1.5
+
+### Patch Changes
+
+-   [`86c9839`](https://github.com/zhangfisher/autostore/commit/86c9839186f6685e2bd18f60e66aa56dbcd193fe) Thanks [@zhangfisher](https://github.com/zhangfisher)! - upgrade themepro deps
+
+-   Updated dependencies [[`57ab216`](https://github.com/zhangfisher/autostore/commit/57ab216f05334845b426a8774027502de77a0e83)]:
+    -   autostore@3.1.5
+
 ## 3.1.4
 
 ### Patch Changes
