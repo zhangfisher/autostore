@@ -1,6 +1,44 @@
-import { customElement, query } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { LitElement, html } from "lit";
-import type { AutoStore } from "autostore";
+import { AutoStore, configurable } from "autostore";
+
+const store1 = new AutoStore({
+	order: {
+		product: configurable("电脑", {
+			label: "产品",
+		}),
+		price: configurable(100, {
+			label: "价格",
+			widget: "number",
+		}),
+		count: configurable(10, {
+			label: "数量",
+			widget: "number",
+		}),
+		total: (order) => order.price * order.count,
+	},
+});
+const store2 = new AutoStore({
+	username: configurable("Bob", {
+		label: "用户名",
+	}),
+	password: configurable(100, {
+		label: "密码",
+		widget: "password",
+	}),
+	age: configurable(10, {
+		label: "年龄",
+		widget: "number",
+	}),
+	sex: configurable("male", {
+		label: "性别",
+		widget: "radio",
+		select: [
+			{ label: "男", value: "male" },
+			{ label: "女", value: "female" },
+		],
+	}),
+});
 
 @customElement("auto-form-example-tabs")
 class AutoFormExampleTabs extends LitElement {
@@ -11,9 +49,23 @@ class AutoFormExampleTabs extends LitElement {
 	updated() {
 		this.tabs?.bind(store);
 	}
+	//@ts-ignore
+	@state()
+	refStore: any = store1;
 
+	//@ts-ignore
+	@state()
+	count: number = 0;
 	render() {
 		return html`
+        <div style="border: var(--auto-border);padding:1rem;margin-bottom:1rem;">
+            <auto-form .store=${this.refStore}> </auto-form>
+            <button style="margin:1rem;padding: 1rem" @click=${() => {
+				this.refStore = this.count % 2 === 0 ? store2 : store1;
+				this.count = this.count++;
+			}} >切换Store</button>
+        </div>
+        <auto-form group="car" icon="car"> </auto-form>
             <auto-form-tabs direction="bottom" style="border: var(--auto-border);height:500px">
                 <auto-form group="general" icon="settings"> </auto-form>
                 <auto-form group="car" icon="car"> </auto-form>
