@@ -8,7 +8,8 @@
 type SchemaColorPickerWidgetOptions = {
     opacity?: boolean;
     inline?: boolean;
-    presets?: string[];
+    swatches?: string[]; // 色样
+    presets?: string[]; // 预选色
     format?: 'hex' | 'rgb' | 'hsl' | 'hsv';
 };
 ```

@@ -11,9 +11,12 @@
         <script src="/autostore/autoform.js"></script>
     </head>
 
-    <body style="padding: 1em 0px">
+    <body style="padding: 1em 0px; overflow: hidden">
         <div style="display: flex; flex-direction: column; postion: relative">
-            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
+            <div
+                id="viewer"
+                style="padding: 1em; border: 1px solid #ccc; margin-top: 1em; word-wrap: break-word"
+            ></div>
             <auto-form id="form"></auto-form>
         </div>
         <script>
@@ -26,12 +29,40 @@
                 colors: configurable('#1890ff', {
                     label: '选择颜色',
                     widget: 'colorpicker',
-                    presets: ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 'gray', 'black', 'white'],
+                    presets: [
+                        'red',
+                        'blue',
+                        'green',
+                        'yellow',
+                        'orange',
+                        'purple',
+                        'pink',
+                        'brown',
+                        'gray',
+                        'black',
+                    ],
                 }),
                 inlineColor: configurable('#e23a31', {
                     label: '主题色',
                     widget: 'colorpicker',
                     inline: true,
+                    swatches: [
+                        '#e23a31',
+                        '#1890ff',
+                        '#2f54eb',
+                        '#f5222d',
+                        '#faad14',
+                        '#13c2c2',
+                        '#722ed1',
+                        '#52c41a',
+                        '#faad14',
+                    ],
+                }),
+                inlineColor2: configurable('#e23a31', {
+                    label: '主题色',
+                    widget: 'colorpicker',
+                    inline: true,
+                    swatches: [],
                 }),
             });
             const form = document.querySelector('#form');
