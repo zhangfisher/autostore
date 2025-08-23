@@ -1,10 +1,16 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
-import { markRaw, pathStartsWith, setVal } from "../utils";
+import { isSchemaBuilder, markRaw, pathStartsWith, setVal } from "../utils";
 import { getVal } from "../utils/getVal";
 import { parseFunc } from "../utils/parseFunc";
-import type { SchemaOptions, SchemaValidator, ComputedSchemaState, SchemaDescriptor } from "./types";
+import type {
+	SchemaOptions,
+	SchemaValidator,
+	ComputedSchemaState,
+	SchemaDescriptor,
+	SchemaDescriptorBuilder,
+} from "./types";
 
 export class SchemaManager<
 	State extends Dict,
@@ -13,7 +19,7 @@ export class SchemaManager<
 	errors: Dict<string> = {}; // {<路径名称>:"错误信息"}
 	_subscribers: any[] = [];
 	store!: SchemaStore;
-	_descriptors?: Record<string, SchemaDescriptor["options"]>;
+	_descriptors: Record<string, SchemaDescriptor["options"]> = {};
 	constructor(public shadow: AutoStore<any>) {}
 
 	get fields() {
@@ -32,11 +38,12 @@ export class SchemaManager<
 
 	add<V = any, Options extends SchemaOptions<V> = SchemaOptions<V>>(
 		path: string | string[],
-		descriptor: SchemaDescriptor<V, Options>,
-	): void {
+		schema: SchemaDescriptorBuilder | SchemaDescriptor<V, Options>,
+	) {
+		const descriptor = isSchemaBuilder(schema) ? schema() : schema;
+
 		const pathKey = Array.isArray(path) ? path : path.split(PATH_DELIMITER);
 		const key = this._getKey(path);
-		if (!this._descriptors) this._descriptors = {};
 		if (!descriptor.options.onFail) descriptor.options.onFail = "throw-pass";
 
 		const finalDescriptor = Object.assign({}, this.shadow.options.defaultSchemaOptions, descriptor.options, {
@@ -61,6 +68,7 @@ export class SchemaManager<
 				},
 			);
 		}
+		return descriptor;
 	}
 	/**
 	 * 等store的所有计算属性处理完毕再创建schemas
