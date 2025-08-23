@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 3.1.8
+
+### Patch Changes
+
+-   [`2c96658`](https://github.com/zhangfisher/autostore/commit/2c9665884b67a440bcbaecd5be25f0ec2141b186) Thanks [@zhangfisher](https://github.com/zhangfisher)! - add color-picker preset colors
+
+-   Updated dependencies [[`2c96658`](https://github.com/zhangfisher/autostore/commit/2c9665884b67a440bcbaecd5be25f0ec2141b186)]:
+    -   autostore@3.1.8
+
 ## 3.1.7
 
 ### Patch Changes
