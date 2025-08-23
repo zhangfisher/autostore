@@ -1,6 +1,6 @@
 {
     "name": "@autostorejs/form",
-    "version": "3.1.7",
+    "version": "3.1.8",
     "description": "form webcomponent for autostore",
     "type": "module",
     "exports": {
