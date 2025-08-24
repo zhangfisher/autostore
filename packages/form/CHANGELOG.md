@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 3.1.9
+
+### Patch Changes
+
+-   [`4e02e01`](https://github.com/zhangfisher/autostore/commit/4e02e014c214ed18dc18b71b40005476083705f9) Thanks [@zhangfisher](https://github.com/zhangfisher)! - auto store
+
+-   Updated dependencies []:
+    -   autostore@3.1.9
+
 ## 3.1.8
 
 ### Patch Changes
