@@ -60,9 +60,9 @@ class AutoFormExampleTabs extends LitElement {
 		return html`
         <div style="border: var(--auto-border);padding:1rem;margin-bottom:1rem;">
             <auto-form .store=${this.refStore}> </auto-form>
-            <button style="margin:1rem;padding: 1rem" @click=${() => {
+            <button style="margin-top:1rem;padding: 0.5rem;cursor:pointer" @click=${() => {
 				this.refStore = this.count % 2 === 0 ? store2 : store1;
-				this.count = this.count++;
+				this.count = this.count + 1;
 			}} >切换Store</button>
         </div>
         <auto-form group="car" icon="car"> </auto-form>

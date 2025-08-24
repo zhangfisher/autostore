@@ -182,7 +182,7 @@ export class AutoForm extends LitElement {
 		if (changedProperties.has("store")) {
 			this.bind(this.store!);
 		}
-		return changedProperties.has("store");
+		return true;
 	}
 	attributeChangedCallback(name: string, _old: string | null, value: string | null): void {
 		super.attributeChangedCallback(name, _old, value);
