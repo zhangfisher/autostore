@@ -1,5 +1,18 @@
 # @autostorejs/form
 
+## 3.1.10
+
+### Patch Changes
+
+-   [`77307c9`](https://github.com/zhangfisher/autostore/commit/77307c9893661d6a729373dd9ce47e9343382c6f) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix some errors
+
+-   [`123760b`](https://github.com/zhangfisher/autostore/commit/123760b77062eeb75c79d6ac8bd6ec0ea1601863) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix export errors
+
+-   [`4e02e01`](https://github.com/zhangfisher/autostore/commit/4e02e014c214ed18dc18b71b40005476083705f9) Thanks [@zhangfisher](https://github.com/zhangfisher)! - auto store
+
+-   Updated dependencies [[`77307c9`](https://github.com/zhangfisher/autostore/commit/77307c9893661d6a729373dd9ce47e9343382c6f), [`123760b`](https://github.com/zhangfisher/autostore/commit/123760b77062eeb75c79d6ac8bd6ec0ea1601863)]:
+    -   autostore@3.1.10
+
 ## 3.1.8
 
 ### Patch Changes
