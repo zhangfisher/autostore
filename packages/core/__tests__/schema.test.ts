@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { configurable, s } from "../src/schema";
+import { configurable, s, schema } from "../src/schema";
 import { AutoStore, type StateOperate } from "../src/store";
 import { computed, delay, setVal, ValidateError } from "../src";
 
@@ -374,8 +374,8 @@ describe("validator", () => {
 		expect(store.state.order.price).toBe(10);
 		expect("order.price" in store.schemas.errors).toBe(true);
 	});
-    test("使用find获取schema", () => {
-		return new Promise<void>((resolve) => { 
+	test("使用find获取schema", () => {
+		return new Promise<void>((resolve) => {
 			const store = new AutoStore({
 				order: {
 					price: configurable(10),
@@ -391,11 +391,35 @@ describe("validator", () => {
 					}),
 				},
 			});
-			const orders = store.schemas.find(['order'])
-			const pay = store.schemas.find(['order','pay'])
-            expect(orders.length).toBe(3)
-            expect(pay.length).toBe(1)
-            resolve()
+			const orders = store.schemas.find(["order"]);
+			const pay = store.schemas.find(["order", "pay"]);
+			expect(orders.length).toBe(3);
+			expect(pay.length).toBe(1);
+			resolve();
+		});
+	});
+	test("动态添加schema", () => {
+		return new Promise<void>((resolve) => {
+			const store = new AutoStore({
+				order: {
+					price: 100,
+				},
+			});
+
+			store.schemas.add(
+				"order.price",
+				schema(100, {
+					onValidate: (val: any) => val > 10,
+				}),
+			);
+
+			store.watch((operate: StateOperate) => {
+				expect(operate.path).toEqual(["order", "price"]);
+				expect(operate.value).toBe(101);
+				resolve();
+			});
+			setVal(store.state, ["order", "price"], 101);
+			// store.state.order.price = 101
 		});
 	});
 });
