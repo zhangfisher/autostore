@@ -144,16 +144,11 @@ export class SchemaManager<
 	 *
 	 * @param path
 	 */
-	find(path: string | (string | string[])[]) {
-		const paths = (Array.isArray(path) ? path : path.split(",")).map((p) => {
-			return Array.isArray(p) ? p : p.split(this.store.options.delimiter);
-		});
+	find(path: string[]) {
 
 		return Object.entries(this.fields)
 			.filter(([key]) => {
-				return paths.some((base) => {
-					return pathStartsWith(base, this._getPath(key));
-				});
+				return pathStartsWith(path, this._getPath(key));
 			})
 			.map(([_, options]) => {
 				return options;

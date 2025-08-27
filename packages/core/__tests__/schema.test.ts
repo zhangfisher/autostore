@@ -374,4 +374,28 @@ describe("validator", () => {
 		expect(store.state.order.price).toBe(10);
 		expect("order.price" in store.schemas.errors).toBe(true);
 	});
+    test("使用find获取schema", () => {
+		return new Promise<void>((resolve) => { 
+			const store = new AutoStore({
+				order: {
+					price: configurable(10),
+					count: configurable(0),
+					pay: configurable(true, {
+						enable: computed(
+							async (state) => {
+								await delay(100);
+								return state.order.count > 0;
+							},
+							["order.count"],
+						),
+					}),
+				},
+			});
+			const orders = store.schemas.find(['order'])
+			const pay = store.schemas.find(['order','pay'])
+            expect(orders.length).toBe(3)
+            expect(pay.length).toBe(1)
+            resolve()
+		});
+	});
 });

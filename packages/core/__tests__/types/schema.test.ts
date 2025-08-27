@@ -1,6 +1,6 @@
 import { describe, test } from 'vitest';
 import type { Equal, Expect } from '@type-challenges/utils';
-import { AutoStore, computed, configurable, SchemaValidate } from '../../src';
+import { AutoStore, computed, configurable, SchemaManager, SchemaValidate } from '../../src';
 import { AsyncComputedValue } from '../../src/computed/types';
 
 describe('Schema类型', () => {
@@ -57,7 +57,7 @@ describe('Schema类型', () => {
                 }
             >
         >;
-    });
+    }); 
     // test("获取指定路径的Schmea状态", () => {
     //     const store = new AutoStore({
     //         user: {
