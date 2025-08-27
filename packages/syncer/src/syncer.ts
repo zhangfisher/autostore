@@ -5,13 +5,13 @@ import {
 	PATH_DELIMITER,
 	pathStartsWith,
 	setVal,
+	getSnapshot,
+	isFunction,
+	forEachObject,
 	type StateOperate,
 	type Watcher,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
-import { forEachObject } from "./utils/forEachObject";
-import { isFunction } from "./utils/isFunction";
-import { getSnapshot } from "../../core/src/utils/getSnapshot";
 
 type NormalizeAutoStoreSyncerOptions = Required<
 	Omit<AutoStoreSyncerOptions, "local" | "remote"> & {
