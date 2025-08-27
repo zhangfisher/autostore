@@ -8,28 +8,26 @@
         "url": "https://github.com/zhangfisher/autostore.git"
     },
     "scripts": {
-        "lint": "oxlint --fix -c .oxlintrc.json",
         "docs:dev": "vitepress dev docs",
         "docs:build": "vitepress build docs",
         "changeset": "changeset",
         "publish:all": "turbo build  && changeset version && changeset publish",
         "build": "turbo build",
         "docs:preview": "vitepress preview new-docs",
-        "sync": "cnpm sync autostore @autostorejs/react @autostorejs/syncer @autostorejs/form",
+        "sync": "cnpm sync autostore @autostorejs/react @autostorejs/form @autostorejs/syncer",
         "update:changelog": "cpx packages/core/CHANGELOG.md docs/zh/guide/intro/core.changelog.md"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "devDependencies": {
-        "@biomejs/biome": "2.0.5",
+        "@biomejs/biome": "2.2.2",
         "@changesets/changelog-github": "^0.5.0",
-        "@changesets/cli": "^2.27.9",
+        "@changesets/cli": "^2.29.6",
         "@types/node": "^22.5.0",
-        "oxlint": "^0.9.10",
         "ts-node": "^10.9.2",
         "tsx": "^4.19.1",
-        "turbo": "^2.5.3",
+        "turbo": "^2.5.6",
         "typescript": "^5.8.3",
         "vitepress": "^1.6.3",
         "vue": "^3.5.14"
@@ -38,5 +36,5 @@
         "packages/*",
         "docs"
     ],
-    "packageManager": "pnpm@10.12.2"
+    "packageManager": "pnpm@10.15.0"
 }
