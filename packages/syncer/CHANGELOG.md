@@ -1,5 +1,16 @@
 # @autostorejs/syncer
 
+## 3.1.9
+
+### Patch Changes
+
+-   [`77307c9`](https://github.com/zhangfisher/autostore/commit/77307c9893661d6a729373dd9ce47e9343382c6f) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix some errors
+
+-   [`55b991b`](https://github.com/zhangfisher/autostore/commit/55b991bb23e454c3a43f4cb0fd7a48a903a7949c) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix import errors
+
+-   Updated dependencies [[`77307c9`](https://github.com/zhangfisher/autostore/commit/77307c9893661d6a729373dd9ce47e9343382c6f)]:
+    -   autostore@3.1.9
+
 ## 3.1.8
 
 ### Patch Changes
