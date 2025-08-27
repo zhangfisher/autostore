@@ -1,5 +1,14 @@
 # @autostorejs/form
 
+## 3.1.11
+
+### Patch Changes
+
+-   [`4ee96ff`](https://github.com/zhangfisher/autostore/commit/4ee96ffec9243825153f9ad5a371a68af2678891) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix syncer
+
+-   Updated dependencies [[`4ee96ff`](https://github.com/zhangfisher/autostore/commit/4ee96ffec9243825153f9ad5a371a68af2678891)]:
+    -   autostore@3.1.11
+
 ## 3.1.10
 
 ### Patch Changes
