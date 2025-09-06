@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 2.0.4
+
+### Patch Changes
+
+-   [`4ee96ff`](https://github.com/zhangfisher/autostore/commit/4ee96ffec9243825153f9ad5a371a68af2678891) Thanks [@zhangfisher](https://github.com/zhangfisher)! - fix syncer
+
 ## 2.0.3
 
 ### Patch Changes
