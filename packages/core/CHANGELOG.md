@@ -1,5 +1,11 @@
 # autostore
 
+## 3.1.12
+
+### Patch Changes
+
+-   [`e851fe0`](https://github.com/zhangfisher/autostore/commit/e851fe0d42bffcd35a003b51534961473bd9557f) Thanks [@zhangfisher](https://github.com/zhangfisher)! - schema 增加签名调用，可以省略初始化值
+
 ## 3.1.11
 
 ### Patch Changes
