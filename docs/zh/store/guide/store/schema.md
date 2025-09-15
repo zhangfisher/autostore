@@ -199,6 +199,22 @@ store.on('validate', ({
 
 ```
 
+### 动态创建
+
+可以动态创建`schema`对象。
+
+```ts
+import { s } from 'autostore';
+const store = new AutoStore({
+    user: {
+        name: 'voerkai18n'
+    }
+})
+
+store.schemas.add('user.name', schema({.....}))
+
+```
+
 ### 访问数据
 
 `store.schemas.getState()`用来提取出所以`schema`标注过的所有数据。

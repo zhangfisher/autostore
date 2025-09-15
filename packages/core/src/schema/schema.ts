@@ -101,8 +101,12 @@ function parseSchemaOptions(args: any[]): SchemaArgs {
 }
 
 export const schema = function () {
-    const args = parseSchemaOptions([...arguments]);
-    const value = arguments[0];
+    const [initial, options] =
+        arguments.length === 1 && typeof arguments[0] === 'object'
+            ? [undefined, arguments[0]]
+            : [...arguments];
+    const args = parseSchemaOptions([initial, options]);
+    const value = initial;
     const datatype = Array.isArray(value) ? 'array' : typeof value;
     const builder = () => ({
         value,
