@@ -38,3 +38,7 @@ type SchemaSelectWidgetOptions = {
 ## 示例
 
 <demo html="autoform/widgets/select.html"/>
+
+`select`属性也可以是一个`AutoStore`的计算属性，利用此特殊可以实现延迟加载。
+
+<demo html="autoform/widgets/lazy-select.html"/>

@@ -3,12 +3,12 @@ import { AutoField } from "@/field";
 import { css, html } from "lit";
 import "@shoelace-style/shoelace/dist/components/select/select.js";
 import "@shoelace-style/shoelace/dist/components/option/option.js";
-import type { SchemaSelectWidgetOptions } from "autostore";
+import { type SchemaSelectWidgetOptions } from "autostore";
 import { when } from "lit/directives/when.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { vars } from "@/form/vars";
-import { tag } from "@/utils/tag";
-
+import { tag } from "@/utils/tag"; 
+import { AsyncOptionState } from "@/controllers/asyncState";
 export type AutoFieldSelectOptions = Required<SchemaSelectWidgetOptions>;
 
 @tag("auto-field-select")
@@ -28,7 +28,6 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
                 background-color: var(--auto-bgcolor);
                 z-index: 9;
             }
-
             .actions.after {
                 position: sticky;
                 bottom: 0;
@@ -42,12 +41,30 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
             }
             sl-select::part(listbox) {
                 padding: 0;
-            }
-            
+            } 
         `,
 	] as any;
 	valueKey: string = "value";
 	labelKey: string = "label";
+    
+    items =  new AsyncOptionState<any[]>(this,'select',(items)=>{
+        if(!items) return []
+        return items.map((item: any) => {
+			const selectItem: any = {};
+			if (typeof item === "object") {
+				Object.assign(selectItem, item);
+			} else {
+				if (typeof item === "string" && item.startsWith("-")) {
+					Object.assign(selectItem, { type: "divider" });
+				} else {
+					Object.assign(selectItem, { label: item });
+				}
+			}
+			return selectItem;
+		});
+    })
+
+
 	getInitialOptions(): Record<string, any> {
 		return {
 			valueKey: "value",
@@ -73,21 +90,11 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
 		} else {
 			return item.label || item.value;
 		}
-	}
-	renderInput() {
-		const items = this.options.select.map((item: any) => {
-			const selectItem: any = {};
-			if (typeof item === "object") {
-				Object.assign(selectItem, item);
-			} else {
-				if (typeof item === "string" && item.startsWith("-")) {
-					Object.assign(selectItem, { type: "divider" });
-				} else {
-					Object.assign(selectItem, { label: item });
-				}
-			}
-			return selectItem;
-		});
+	}     
+    _onDropdownMenu(){
+        
+    }
+	renderInput() { 
 		return html`
             <sl-select
                 name="${this.name}"
@@ -104,20 +111,28 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
                 help-text="${ifDefined(this.options.help)}"
                 .placement=${this.options.placement}
                 @sl-input=${this.onFieldInput.bind(this)}
+                @sl-show=${this._onDropdownMenu.bind(this)}
+                hoist
             >
-                ${this.renderBeforeActions()}
-                ${items.map((item: any) => {
-					if (item.type === "divider") return html`<sl-divider></sl-divider>`;
-					return html`<sl-option value="${item[this.valueKey] || item.label}" ?disabled=${!this.options.enable}>
-                        <auto-flex class="item" gap="1em" align="center" grow="sl-icon + *,:first-child:not(sl-icon)" style="text-align:left;">
-                            ${when(item.icon, () => {
-								return html`<sl-icon name="${item.icon}"></sl-icon>`;
-							})}
-                            ${this._renderItem(item)}
-                        </auto-flex>
-                    </sl-option>`;
-				})}
-                ${this.renderAfterActions()}
+                
+                ${when(this.items.loading,()=>{
+                    return html`<auto-loading></auto-loading>`
+                },()=>{
+                    return html`${this.renderBeforeActions()}
+                ${this.items.value.map((item: any) => {
+					    if (item.type === "divider") return html`<sl-divider></sl-divider>`;
+                        return html`<sl-option value="${item[this.valueKey] || item.label}" ?disabled=${!this.options.enable}>
+                            <auto-flex class="item" gap="1em" align="center" grow="sl-icon + *,:first-child:not(sl-icon)" style="text-align:left;">
+                                ${when(item.icon, () => {
+                                    return html`<sl-icon name="${item.icon}"></sl-icon>`;
+                                })}
+                                ${this._renderItem(item)}
+                            </auto-flex>
+                        </sl-option>`;
+                    })}
+                    ${this.renderAfterActions()}`
+                })}
+                
             </sl-select>
         `;
 	}

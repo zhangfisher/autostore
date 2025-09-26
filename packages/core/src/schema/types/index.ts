@@ -215,14 +215,7 @@ export type SchemaWidgetShareOptions<Value, State> = {
     toState?: (value: any) => any;
     toInput?: (value: any) => any;
     toRender?: (value: any) => any;
-    actions?: SchemaWidgetAction<State>[];
-    /**
-     * 声明哪些字段是响应式字段
-     * 默认情况下，所有字段均使用markRaw包裹，
-     * 通过此字段指定哪些字段是响应式字段，即不使用markRaw包裹
-     * 默认值是enable,visible,required
-     */
-    reactiveFields?: string[];
+    actions?: SchemaWidgetAction<State>[]; 
     // 用于扩展widget样式，如{"<选择器>":"样式"}
     styles?: SchemaWidgetStyles;
     // 用于扩展widget类，如{"<选择器>":"类名"}

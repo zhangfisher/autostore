@@ -7,6 +7,7 @@ import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 import type { SchemaTreeSelectWidgetOptions } from 'autostore';
 import { when } from 'lit/directives/when.js';
 import { tag } from '@/utils/tag';
+import { AsyncOptionState } from '@/controllers/asyncState';
 
 export type AutoFieldTreeSelectOptions = Required<SchemaTreeSelectWidgetOptions>;
 
@@ -52,7 +53,21 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
             }
         `,
     ] as any;
-    nodes: TreeNodes = {};
+    nodes = new AsyncOptionState<TreeNodes>(this, 'items', (nodes) => {
+        if(!nodes) return []        
+        this._forEachTree(nodes,(node: any, _path, _level, path) => {
+            if (this.isItemSelected(node)) {
+                node.selected = true;
+                this.selection.push({
+                    id: node[this.options.idKey],
+                    value: node[this.options.valueKey],
+                    path: path.join('/'),
+                });
+            }
+        });
+        return nodes
+    })
+
     selection: TreeSelectedItem[] = [];
     idKey: string = 'id';
     valueKey: string = 'id';
@@ -67,43 +82,19 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
             multiple: false,
             maxItems: 0,
             minItems: 0,
+            defaultExpandLevel:2,
             onlySelectLeaf: false,
             showAsPath: false,
             onSelectionChange: () => {},
         };
     }
-    connectedCallback() {
-        super.connectedCallback();
-        if (this.options) {
-            this.idKey = this.options.idKey;
-            this.valueKey = this.options.valueKey;
-            this.labelKey = this.options.labelKey;
-            const items = this.options.items;
-            if (items) {
-                this.nodes = items;
-                this._forEachTree((item: any, _, level, path) => {
-                    if (level < 1 && item.expanded === undefined) {
-                        item.expanded = true;
-                    }
-                    if (this.isItemSelected(item)) {
-                        item.selected = true;
-                        this.selection.push({
-                            id: item[this.idKey],
-                            value: item[this.valueKey],
-                            path: path.join('/'),
-                        });
-                    }
-                });
-            }
-        }
-    }
 
     isItemSelected(item: any) {
         if (this.value === undefined) return false;
         if (this.options.multiple === false) {
-            return this.value === item[this.valueKey];
+            return this.value === item[this.options.valueKey];
         } else {
-            return this.value.includes(item[this.valueKey]);
+            return this.value.includes(item[this.options.valueKey]);
         }
     }
 
@@ -120,20 +111,22 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
      * 遍历树并对每一个节点进行回调
      * @param callback
      */
-    _forEachTree(callback: (item: TreeNode, parent: TreeNode | undefined, level: number, path: string[]) => void) {
-        const forEachItem = (item: TreeNode, parent: TreeNode | undefined, level: number, path: string[]) => {
-            const curPath = [...path, (item as any)[this.labelKey]];
-            callback(item, parent, level, curPath);
-            if (item.children) {
+    _forEachTree(nodes:TreeNodes,callback: (item: TreeNode, parent: TreeNode | undefined, level: number, path: string[]) => void) {
+        const forEachItem = (node: TreeNode, parent: TreeNode | undefined, level: number, path: string[]) => {
+            const curPath = [...path, (node as any)[this.options.labelKey]];
+            if (this.options.defaultExpandLevel > 0 && level < this.options.defaultExpandLevel-1 && node.expanded === undefined) {
+                node.expanded = true;
+            }
+            callback(node, parent, level, curPath);
+            if (node.children) {
                 const nextLevel = level + 1;
-                item.children.forEach((child) => {
-                    forEachItem(child, item, nextLevel, [...curPath]);
+                node.children.forEach((child) => {
+                    forEachItem(child, node, nextLevel, [...curPath]);
                 });
             }
-        };
-        const nodes = Array.isArray(this.nodes) ? this.nodes : [this.nodes];
-        nodes.forEach((item) => {
-            forEachItem(item, undefined, 0, []);
+        };        
+        (Array.isArray(nodes) ? nodes : [nodes]).forEach((node) => {
+            forEachItem(node, undefined, 0, []);
         });
     }
     onSelectionChange(e: CustomEvent) {
@@ -161,11 +154,11 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
     }
 
     _renderNode(item: TreeNode & Record<string, any>, values: any, parentPath: string[]): any {
-        const isSelected = values.includes((item as any)[this.valueKey]);
-        const curPath = [...parentPath, (item as any)[this.labelKey]];
+        const isSelected = values.includes((item as any)[this.options.valueKey]);
+        const curPath = [...parentPath, (item as any)[this.options.labelKey]];
         return html`<sl-tree-item
-            data-id=${String(item[this.idKey])}
-            data-value=${String(item[this.valueKey])}
+            data-id=${String(item[this.options.idKey])}
+            data-value=${String(item[this.options.valueKey])}
             data-path=${curPath.join('/')}
             ?selected=${isSelected}
             ?expanded=${item.expanded}
@@ -190,14 +183,17 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
     }
     renderTree() {
         return html`
-            <sl-tree
-                name="${this.name}"
-                data-path=${this.path}
-                size=${this.context.size}
-                selection="${this.options.onlySelectLeaf ? 'leaf' : this.options.multiple ? 'multiple' : 'single'}"
-                @sl-selection-change=${this.onSelectionChange.bind(this)}
-                >${this._renderNodes(this.nodes)}</sl-tree
-            >
+            ${this.nodes.render((nodes)=>{
+                return html`<sl-tree
+                    name="${this.name}"
+                    data-path=${this.path}
+                    size=${this.context.size}
+                    selection="${this.options.onlySelectLeaf ? 'leaf' : this.options.multiple ? 'multiple' : 'single'}"
+                    @sl-selection-change=${this.onSelectionChange.bind(this)}
+                    >${this._renderNodes(nodes)}</sl-tree
+                >`
+            })}
+            
         `;
     }
 

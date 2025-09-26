@@ -1,4 +1,5 @@
 import type { SchemaOptions, SchemaWidgetAction, SchemaWidgetSelectItem } from ".";
+import { ComputedBuilder } from "../../computed/types";
 
 export type SchemaWidgetTypes =
 	| "input"
@@ -190,8 +191,9 @@ export type SchemaTreeSelectWidgetOptions = {
 	multiple?: boolean;
 	showAsPath?: boolean;
 	onlySelectLeaf?: boolean;
+    defaultExpandLevel?: number; // 默认展开的层级，默认2
 	onSelectionChange?: (selection: { id: any; value: any; path: any }[]) => void;
-	items: SchemaTreeSelectWidgetNode | SchemaTreeSelectWidgetNode[];
+	items: SchemaTreeSelectWidgetNode | SchemaTreeSelectWidgetNode[] | ComputedBuilder< SchemaTreeSelectWidgetNode | SchemaTreeSelectWidgetNode[],any>
 };
 
 export type SchemaTreeDropdownWidgetOptions = SchemaTreeSelectWidgetOptions;

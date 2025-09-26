@@ -27,11 +27,13 @@
             <sl-button variant="warning">Red</sl-button>
         </div>
         <sl-tab-group>
-            <sl-tab slot="nav" panel="tabs">tabs分组</sl-tab>
+            <!-- <sl-tab slot="nav" panel="tabs">tabs分组</sl-tab>-->
+            <sl-tab slot="nav" panel="select">下拉选择</sl-tab>
             <sl-tab slot="nav" panel="general">默认</sl-tab>
-            <sl-tab slot="nav" panel="transform">状态转换</sl-tab>
-            <sl-tab slot="nav" panel="usepath">绑定路径</sl-tab>
-            <sl-tab-panel name="tabs" style="padding: 2em">
+            <!-- <sl-tab slot="nav" panel="transform">状态转换</sl-tab>
+            <sl-tab slot="nav" panel="usepath">绑定路径</sl-tab> -->
+
+            <!-- <sl-tab-panel name="tabs" style="padding: 2em">
                 <auto-form-example-tabs2></auto-form-example-tabs2>
                 <auto-collapse
                     active="panel1,panel2"
@@ -46,17 +48,7 @@
                     >
                         <p>这是第一个面板的内容</p>
                         <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
+                       
                         <p>这是第一个面板的内容</p>
                     </div>
                     <div
@@ -69,16 +61,7 @@
                         <p>这是第2个面板的内容</p>
                         <p>这是第2个面板的内容</p>
                         <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
-                        <p>这是第2个面板的内容</p>
+                        <p>这是第2个面板的内容</p> 
                     </div>
                     <div
                         data-name="panel3"
@@ -87,17 +70,7 @@
                         data-actions="atom:原子,fullscreen:全屏,scan-eye:扫描"
                     >
                         <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
-                        <p>这是第一个面板的内容</p>
+                        <p>这是第一个面板的内容</p> 
                         <p>这是第一个面板的内容</p>
                         <p>这是第一个面板的内容</p>
                     </div>
@@ -105,15 +78,18 @@
 
                 <auto-form-example-collapse></auto-form-example-collapse>
                 <auto-form-example-tabs></auto-form-example-tabs>
-            </sl-tab-panel>
-            <sl-tab-panel name="general">
+            </sl-tab-panel> -->
+            <!-- <sl-tab-panel name="general">
                 <auto-form-example-general></auto-form-example-general>
-            </sl-tab-panel>
-            <sl-tab-panel name="transform">
+            </sl-tab-panel> -->
+            <!-- <sl-tab-panel name="transform">
                 <auto-form-example-transform></auto-form-example-transform>
             </sl-tab-panel>
             <sl-tab-panel name="usepath">
                 <auto-form-example-path></auto-form-example-path>
+            </sl-tab-panel> -->
+            <sl-tab-panel name="select">
+                <auto-form-lazy-select></auto-form-lazy-select>
             </sl-tab-panel>
         </sl-tab-group>
         <script type="module" src="./examples/index.ts"></script>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex; flex-direction: column; postion: relative; min-height: 500px">
+            <auto-form id="form"></auto-form>
+            <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
+        </div>
+        <script>
+            const { AutoStore, configurable } = AutoStoreSpaces;
+            const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const orgTree = {
+                id: 1,
+                label: '集团公司',
+                children: [
+                    {
+                        id: 1,
+                        label: '研发中心',
+                        children: [
+                            { id: 11, label: '工程部' },
+                            { id: 12, label: '产品部' },
+                            { id: 13, label: '测试部' },
+                            { id: 14, label: '运维部' },
+                            { id: 15, label: '系统部' },
+                        ],
+                    },
+                    {
+                        id: 2,
+                        label: '营销中心',
+                        selected: true,
+                        children: [
+                            { id: 21, label: '销售部' },
+                            { id: 22, label: '市场部' },
+                            { id: 23, label: '客服部' },
+                        ],
+                    },
+                    {
+                        id: 3,
+                        label: '生产中心',
+                        children: [
+                            { id: 31, label: '生产部' },
+                            { id: 32, label: '采购部' },
+                            { id: 33, label: '仓储部' },
+                            { id: 34, label: '质检部' },
+                        ],
+                    },
+                ],
+            };
+
+            const store = new AutoStore({
+                depts: configurable(['产品部'], {
+                    label: '部门',
+                    widget: 'tree-select',
+                    multiple: true,
+                    valueKey: 'label',
+                    help: '多选',
+                    onlySelectLeaf: false,
+                    items: async () => {
+                        await delay(3000);
+                        return orgTree;
+                    },
+                }),
+                deptIds: configurable([], {
+                    label: '部门编码',
+                    widget: 'tree-select',
+                    multiple: true,
+                    valueKey: 'id',
+                    help: '多选',
+                    onlySelectLeaf: false,
+                    items: async () => {
+                        await delay(3000);
+                        return orgTree;
+                    },
+                }),
+                admin: configurable('', {
+                    label: '部门',
+                    widget: 'tree-select',
+                    valueKey: 'label',
+                    help: '单选且只能选择叶子节点',
+                    onlySelectLeaf: true,
+                    items: async () => {
+                        await delay(3000);
+                        return orgTree;
+                    },
+                }),
+            });
+            const form = document.querySelector('#form');
+            form.bind(store);
+            const refreshViewer = () => {
+                const jsonViewer = document.getElementById('viewer');
+                jsonViewer.innerHTML = JSON.stringify(store.state);
+            };
+            store.watch(refreshViewer);
+            refreshViewer();
+        </script>
+    </body>
+</html>

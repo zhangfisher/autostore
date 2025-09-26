@@ -4,5 +4,6 @@ import './transform';
 import './group-tabs';
 import './group-tabs2';
 import './group-collapse';
+import './lazy-select';
 export * from './debuger';
 export * from './store';

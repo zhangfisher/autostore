@@ -486,8 +486,8 @@ export class AutoField<Options = unknown> extends LitElement {
     getStateValue() {
         return this.toInput(getVal(this.context.store.state, this.getPath()));
     }
-    connectedCallback(): void {
-        super.connectedCallback();
+    connectedCallback(): void {        
+        super.connectedCallback();        
         this.updateOptions();
     }
     updateOptions() {

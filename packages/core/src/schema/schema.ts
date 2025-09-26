@@ -42,18 +42,16 @@ type SchemaArgs = {
     validator: SchemaValidator;
 };
 
-// 将options里面的on和render开头的函数标识为raw
+/**
+ * 将options里面的on和render开头的函数标识为raw
+ * @param options 
+ */
 function markRawOptions(options: SchemaOptions) {
-    const reactiveFields = options.reactiveFields || [];
-    if (reactiveFields.length === 0) {
-        reactiveFields.push('enable', 'required', 'visible', 'label', 'tips', 'icon');
-    }
-    if (isPlainObject(options)) {
+    if (isPlainObject(options)) { 
         forEachObject(options, ({ value, key, parent }) => {
             if (
                 (isFunction(value) &&
-                    (key.startsWith('on') || key.startsWith('render') || key.startsWith('to'))) ||
-                !reactiveFields.includes(key)
+                    (key.startsWith('on') || key.startsWith('render') || key.startsWith('to'))) 
             ) {
                 // @ts-ignore
                 parent[key] = markRaw(value);

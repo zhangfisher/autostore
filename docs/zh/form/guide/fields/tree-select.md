@@ -27,3 +27,7 @@ type AutoTreeSelectOptions = {
 ## 示例
 
 <demo html="autoform/widgets/tree-select.html"/>
+
+树也可以异步加载，如下：
+
+<demo html="autoform/widgets/lazy-tree-select.html"/>

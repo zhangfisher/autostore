@@ -102,6 +102,7 @@ class AutoFormDebuger extends LitElement {
 	onChangeSize(e) {
 		const ele = this.getNextAutoForm();
 		if (ele) {
+            // @ts-expect-error
 			ThemePro.size = e.target.value;
 			ele.setAttribute("size", e.target.value);
 		}
@@ -188,7 +189,7 @@ class AutoFormDebuger extends LitElement {
 		return html`
             <div class="auto-card">
                 <div class="auto-card-header">表单配置</div>
-                <div class="auto-card-body">
+                <div class="auto-card-body" style="display:flex;flex-direction:row;gap:10px;padding:0.5em;">
                     <sl-select label="标签位置" style="width:120px;" value="top" @sl-change=${this.onChangelabelPos.bind(this)}>
                         <sl-option value="top">上方</sl-option>
                         <sl-option value="left">左侧</sl-option>

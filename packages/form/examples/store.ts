@@ -59,7 +59,11 @@ const store = new AutoStore(
                             label: '上',
                             widget: 'range',
                             width: '50%',
-                            toInput: (value) => parsePadding(value).top,
+                            toInput: (value) => {
+                                debugger
+                                return 
+                                return parsePadding(value).top
+                            },
                         },
                         {
                             name: 'right',
@@ -85,6 +89,28 @@ const store = new AutoStore(
                     ],
                 }),
             },
+        },
+        select:{            
+            layout: configurable('经典式', {
+                label: '懒加载',
+                widget: 'select',
+                select: async ()=>{
+                    return ([
+                        { label: '简约风', tips: '极简设计，突出内容' },
+                        { label: '经典式', tips: '传统布局，平衡稳重' },
+                        { label: '卡片集', tips: '模块化卡片，灵活组合' },
+                        { label: '瀑布流', enable: false, tips: '动态滚动，视觉延展' },
+                        {
+                            label: '分屏式',
+                            tips: '双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览双栏对比，高效浏览',
+                        },
+                        { label: '导航型', tips: '侧边主导，层级清晰' },
+                        { label: '全屏化', tips: '沉浸体验，无界视觉' },
+                        { label: '网格阵', tips: '整齐排列，规整直观' },
+                        { label: '自由板', tips: '可拖拽定制，随心布局' },
+                    ])
+                },
+            }),
         },
         user: {
             name: configurable('Fish', {
