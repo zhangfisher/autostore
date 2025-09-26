@@ -30,18 +30,18 @@
         "@iconify-json/lucide": "^1.2.35",
         "@lit/context": "^1.1.5",
         "@shoelace-style/shoelace": "^2.20.1",
-        "flex-tools": "^1.5.6",
+        "flex-tools": "^1.5.9",
         "lit": "^3.3.0",
-        "themepro": "^1.0.6"
+        "themepro": "^1.0.7"
     },
     "devDependencies": {
         "autostore": "workspace:*",
         "esbuild-copy-files-plugin": "^1.2.1",
         "tsup": "^8.5.0",
-        "typescript": "~5.7.3",
-        "vite": "^6.1.0",
+        "typescript": "~5.9.2",
+        "vite": "^7.1.7",
         "vite-plugin-cp": "^6.0.3",
-        "vite-plugin-mock-dev-server": "^1.9.1",
+        "vite-plugin-mock-dev-server": "^2.0.1",
         "zlib": "^1.0.5"
     },
     "peerDependencies": {

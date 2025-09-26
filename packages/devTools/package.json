@@ -33,7 +33,7 @@
     "redux": "^5.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.7.4",
+    "@types/node": "^24.5.2",
     "tsup": "^8.5.0"
   }
 }
