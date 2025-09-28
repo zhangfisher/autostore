@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 3.1.15
+
+### Patch Changes
+
+-   63e1fa9: 修复导出错误
+-   Updated dependencies [63e1fa9]
+    -   autostore@3.1.15
+
 ## 3.1.14
 
 ### Patch Changes
