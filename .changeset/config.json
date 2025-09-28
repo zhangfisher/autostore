@@ -1,6 +1,6 @@
 {
     "$schema": "https://unpkg.com/@changesets/config@3.0.3/schema.json",
-    "changelog": ["@changesets/changelog-github", { "repo": "zhangfisher/autostore" }],
+    "changelog":"@changesets/cli/changelog",
     "commit": true,
     "access": "public",
     "fixed": [["autostore", "@autostorejs/react", "@autostorejs/syncer", "@autostorejs/form"]],
