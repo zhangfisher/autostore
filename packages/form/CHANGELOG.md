@@ -1,5 +1,13 @@
 # @autostorejs/form
 
+## 3.1.13
+
+### Patch Changes
+
+-   2123556: form widgets support async load
+-   Updated dependencies [2123556]
+    -   autostore@3.1.13
+
 ## 3.1.12
 
 ### Patch Changes

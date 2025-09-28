@@ -1,5 +1,11 @@
 # autostore
 
+## 3.1.13
+
+### Patch Changes
+
+-   2123556: form widgets support async load
+
 ## 3.1.12
 
 ### Patch Changes
