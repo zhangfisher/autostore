@@ -44,7 +44,7 @@ jobs:
           cache: pnpm # 或 pnpm / yarn
       # 安装依赖
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
       # - name: Setup bun
       #   uses: oven-sh/setup-bun@v2
       #   with:
