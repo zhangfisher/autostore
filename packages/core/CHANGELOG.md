@@ -1,5 +1,11 @@
 # autostore
 
+## 3.1.14
+
+### Patch Changes
+
+-   3257305: fix errors
+
 ## 3.1.13
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 2.0.5
+
+### Patch Changes
+
+-   3257305: fix errors
+
 ## 2.0.4
 
 ### Patch Changes

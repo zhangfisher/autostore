@@ -1,6 +1,6 @@
 {
   "name": "x-react-components",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "some react components for demo",
   "main": "src/index.ts",
   "access": "public",

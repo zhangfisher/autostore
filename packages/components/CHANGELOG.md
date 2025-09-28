@@ -1,5 +1,11 @@
 # x-react-components
 
+## 2.0.4
+
+### Patch Changes
+
+-   3257305: fix errors
+
 ## 2.0.3
 
 ### Patch Changes
