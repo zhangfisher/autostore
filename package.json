@@ -36,5 +36,5 @@
 		"packages/*",
 		"docs"
 	],
-	"packageManager": "bun@1.2.21"
+	"packageManager": "bun@1.2.22"
 }
