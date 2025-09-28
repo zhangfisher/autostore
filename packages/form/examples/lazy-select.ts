@@ -18,12 +18,13 @@ const store = new AutoStore({
         }
         // onSelectionChange: (selection) => {}
     }),
-    country2: configurable('France', {
+    country2: configurable(['France'], {
         label: '国家',
         showResults: true,
         widget: 'list',
+        multiple:true,
         select: async () => {
-            await delay(3000);
+            await delay(1000);
             return [
                 { label: '中国', value: 'China' },
                 { label: '美国', value: 'America' },

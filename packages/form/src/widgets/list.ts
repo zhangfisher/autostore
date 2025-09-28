@@ -14,6 +14,7 @@ import { ScrollbarController } from "@/controllers/scrollbar";
 import { tag } from "@/utils/tag";
 import { classMap } from "lit/directives/class-map.js";
 import { AsyncOptionState } from "@/controllers/asyncState";
+import { scrollbar } from "@/styles/utils";
 
 export type ListItem = {
 	id: any;
@@ -36,8 +37,8 @@ export type AutoFieldListOptions = Required<SchemaListWidgetOptions>;
 export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	static styles = [
 		AutoField.styles,
-		ScrollbarController.styles,
 		css`
+            ${scrollbar}
             sl-menu-item[checked] {
                 background-color: color-mix(in srgb, var(--auto-theme-color) 10%, transparent);
             }
@@ -73,8 +74,9 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
             }
             sl-split-panel {
                 border: var(--auto-border);
+                border-radius: var(--auto-border-radius);
             }
-            .results > .ss-wrapper > .ss-content {
+            .results   {
                 position: relative;
                 display: flex;
                 flex-direction: column;
@@ -115,7 +117,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
         if(!items) return []
         items.forEach((item: any) => {
             if (this.isItemSelected(item)) {
-			    this.selection.push(item[this.valueKey]);
+			    this.selection.push(item[this.options.valueKey]);
             }
         })
         return items
@@ -154,9 +156,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	}
 	connectedCallback() {
 		super.connectedCallback();
-		if (this.options) {
-			this.valueKey = this.options.valueKey;
-			this.labelKey = this.options.labelKey;
+		if (this.options) { 
 			this.setPresetActions();
 		}
 		this.style.height = "auto";
@@ -174,21 +174,21 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	isItemSelected(item: any) {
 		if (this.value === undefined) return false;
 		if (this.options.multiple === false) {
-			return this.value === item[this.valueKey];
+			return this.value === item[this.options.valueKey];
 		} else {
-			return this.value.includes(item[this.valueKey]);
+			return this.value.includes(item[this.options.valueKey]);
 		}
 	}
 	_addSecectItem(newItem: any) {
 		const findIndex = this.selection.findIndex((item) => {
 			//@ts-ignore
-			return item[this.valueKey] === newItem[this.valueKey];
+			return item[this.options.valueKey] === newItem[this.options.valueKey];
 		});
 		if (findIndex === -1) {
 			if (this.options.multiple === false && this.selection.length > 0) {
 				this.selection.splice(0, this.selection.length);
 			}
-			this.selection.push(newItem[this.valueKey]);
+			this.selection.push(newItem[this.options.valueKey]);
 		}
 	}
 	_removeSelectItem(item: any) {
@@ -209,7 +209,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 			if (item.checked) {
 				this._addSecectItem(itemData);
 			} else {
-				this._removeSelectItem(itemData[this.valueKey]);
+				this._removeSelectItem(itemData[this.options.valueKey]);
 			}
 			this.selectedTips = `${this.selection.length}/${this.items.value.length}`;
 			this.onFieldChange();
@@ -217,7 +217,9 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	}
 	_renderWithSplitPanel(list: any) {
 		if (this.options.showResults && this.options.multiple) {
-			return html`<sl-split-panel position="60"> ${list} ${this.renderResults()} </sl-split-panel>`;
+			return html`<sl-split-panel 
+            style="height:${this.options.height || '15em'}"
+            position="60"> ${list} ${this.renderResults()} </sl-split-panel>`;
 		} else {
 			return list;
 		}
@@ -238,13 +240,13 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	}
 	_onClickPresetAction(id: string) {
 		if (id === "all") {
-			this.selection = this.items.value.map((item) => item[this.valueKey]);
+			this.selection = this.items.value.map((item) => item[this.options.valueKey]);
 		} else if (id === "reverse") {
 			this.selection = this.items.value
 				.filter((item) => {
-					return !this.selection.includes(item[this.valueKey]);
+					return !this.selection.includes(item[this.options.valueKey]);
 				})
-				.map((item) => item[this.valueKey]);
+				.map((item) => item[this.options.valueKey]);
 		} else if (id === "clear") {
 			this.selection = [];
 		}
@@ -309,15 +311,17 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	renderResults() {
 		return html`<div
             slot="end"
-            class="results mark-err"
+            class="results mark-err scrollbar"
             no-padding
             style="${styleMap({
 				maxHeight: this.options.height,
 			})}"
         >
-            ${repeat(this.selection, (item: any) => {
-				return html`<div class="item">
-                    <span>${item}</span>
+            ${repeat(this.selection, (value: any) => {
+                const item = this.items.value.filter(item=>item.value===value)[0]
+                const label = item ? item.label : value
+				return html`<div class="item" title="${item.value}">
+                    <span>${label}</span>
                     <sl-icon-button name="x" @click=${() => this._removeSelectItem(item)}></sl-icon-button>
                 </div>`;
 			})}
@@ -327,7 +331,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 		const values = Array.isArray(this.value) ? this.value : [this.value];
 		return html`${this._renderWithSplitPanel(html` <sl-menu
             slot="start"
-            class="mark-err ${classMap({
+            class="scrollbar mark-err ${classMap({
                 "multiple":this.options.multiple
             })}"
             style=${styleMap({ maxHeight: this.options.height })}
@@ -335,8 +339,9 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
         >
 
             ${repeat(this.items.value, (item: any, index: number) => {
-				const isSelected = values.includes((item as any)[this.valueKey]);
-				return html`<sl-menu-item type="checkbox" data-index=${String(index)} .checked=${isSelected}>
+				const isSelected = values.includes((item as any)[this.options.valueKey]);
+				return html`<sl-menu-item type="checkbox" 
+                    data-index=${String(index)} .checked=${isSelected}>
                     ${when(item.icon, () => {
 						return html`<sl-icon slot="prefix" name="${item.icon}"></sl-icon>`;
 					})}

@@ -47,7 +47,7 @@ type SchemaListWidgetOptions = {
 -   如果为`true`，则显示一个已选择结果框
 -   如果为`false`，则不显示已选择结果框
 
-## Action
+### Action
 
 可以通过`actions=[...]`属性添加额外的功能按钮, 例如:
 
@@ -65,3 +65,9 @@ configurable(['电脑'], {
     ],
 }),
 ```
+
+### 延迟加载
+
+`select`属性支持采用异步计算属性，可以延迟加载。
+
+<demo html="autoform/widgets/lazy-list.html"/>

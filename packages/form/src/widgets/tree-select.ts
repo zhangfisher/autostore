@@ -3,6 +3,7 @@ import { css, html } from 'lit';
 import type { SlTreeItem } from '@shoelace-style/shoelace';
 import '@shoelace-style/shoelace/dist/components/tree/tree.js';
 import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
+import { scrollbar } from './../styles/utils';
 
 import type { SchemaTreeSelectWidgetOptions } from 'autostore';
 import { when } from 'lit/directives/when.js';
@@ -46,6 +47,7 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
     static styles = [
         AutoField.styles,
         css`
+            ${scrollbar}
             sl-tree {
                 border: 1px solid var(--sl-input-border-color);
                 border-radius: var(--sl-border-radius-medium);
@@ -185,11 +187,13 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
         return html`
             ${this.nodes.render((nodes)=>{
                 return html`<sl-tree
+                    class="scrollbar"
                     name="${this.name}"
                     data-path=${this.path}
                     size=${this.context.size}
                     selection="${this.options.onlySelectLeaf ? 'leaf' : this.options.multiple ? 'multiple' : 'single'}"
                     @sl-selection-change=${this.onSelectionChange.bind(this)}
+                    style="max-height:${this.options.height || '18em'};overflow:auto;"
                     >${this._renderNodes(nodes)}</sl-tree
                 >`
             })}
