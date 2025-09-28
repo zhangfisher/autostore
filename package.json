@@ -36,5 +36,5 @@
 		"packages/*",
 		"docs"
 	],
-	"packageManager": "bun@1.2.22"
+	"packageManager": "pnpm@10.15.0"
 }
