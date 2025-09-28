@@ -1,5 +1,12 @@
 # @autostorejs/form
 
+## 3.1.16
+
+### Patch Changes
+
+-   66800e8: fix form widget list show error
+    -   autostore@3.1.16
+
 ## 3.1.15
 
 ### Patch Changes
