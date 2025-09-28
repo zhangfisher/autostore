@@ -8,7 +8,7 @@ import "@shoelace-style/shoelace/dist/components/tag/tag.js";
 import { repeat } from "lit/directives/repeat.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { type SchemaListWidgetOptions } from "autostore";
+import type { SchemaListWidgetOptions } from "autostore";
 import { when } from "lit/directives/when.js";
 import { ScrollbarController } from "@/controllers/scrollbar";
 import { tag } from "@/utils/tag";
@@ -109,20 +109,19 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	selection: any[] = [];
 	valueKey: string = "id";
 	labelKey: string = "label";
-	
+
 	scrollbar = new ScrollbarController(this);
 	scrollbars: any[] = [];
 
-    items =  new AsyncOptionState<any[]>(this,'select',(items)=>{
-        if(!items) return []
-        items.forEach((item: any) => {
-            if (this.isItemSelected(item)) {
-			    this.selection.push(item[this.options.valueKey]);
-            }
-        })
-        return items
-    })
- 
+	items = new AsyncOptionState<any[]>(this, "select", (items) => {
+		if (!items) return [];
+		items.forEach((item: any) => {
+			if (this.isItemSelected(item)) {
+				this.selection.push(item[this.options.valueKey]);
+			}
+		});
+		return items;
+	});
 
 	@state()
 	selectedTips: string = "";
@@ -130,7 +129,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	@query("sl-menu")
 	menu?: any;
 
-	getInitialOptions() {        
+	getInitialOptions() {
 		return {
 			valueKey: "value",
 			labelKey: "label",
@@ -156,13 +155,11 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	}
 	connectedCallback() {
 		super.connectedCallback();
-		if (this.options) { 
+		if (this.options) {
 			this.setPresetActions();
 		}
 		this.style.height = "auto";
 	}
-
-
 
 	firstUpdated(): void {
 		this._createScrollbars();
@@ -218,7 +215,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	_renderWithSplitPanel(list: any) {
 		if (this.options.showResults && this.options.multiple) {
 			return html`<sl-split-panel 
-            style="height:${this.options.height || '15em'}"
+            style="height:${this.options.height || "15em"}"
             position="60"> ${list} ${this.renderResults()} </sl-split-panel>`;
 		} else {
 			return list;
@@ -254,14 +251,16 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 		this.requestUpdate();
 	}
 	setPresetActions() {
-		const presetActions:any[]= [];
-        if(this.options.multiple){
-            presetActions.push(...[
-                { id: "all", label: "全选", onClick: () => this._onClickPresetAction("all") },
-                { id: "reverse", label: "反选", onClick: () => this._onClickPresetAction("reverse") },
-                { id: "clear", label: "清空", onClick: () => this._onClickPresetAction("clear") },
-            ])
-        }
+		const presetActions: any[] = [];
+		if (this.options.multiple) {
+			presetActions.push(
+				...[
+					{ id: "all", label: "全选", onClick: () => this._onClickPresetAction("all") },
+					{ id: "reverse", label: "反选", onClick: () => this._onClickPresetAction("reverse") },
+					{ id: "clear", label: "清空", onClick: () => this._onClickPresetAction("clear") },
+				],
+			);
+		}
 		const toggleAction = (action: any) => {
 			for (let i = presetActions.length - 1; i >= 0; i--) {
 				if (presetActions[i].id === action.id) {
@@ -318,8 +317,9 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 			})}"
         >
             ${repeat(this.selection, (value: any) => {
-                const item = this.items.value.filter(item=>item.value===value)[0]
-                const label = item ? item.label : value
+				const item = this.items.value.filter((item) => item[this.options.valueKey] === value)[0];
+				if (!item) return;
+				const label = item ? item.label || value : value;
 				return html`<div class="item" title="${item.value}">
                     <span>${label}</span>
                     <sl-icon-button name="x" @click=${() => this._removeSelectItem(item)}></sl-icon-button>
@@ -332,8 +332,8 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 		return html`${this._renderWithSplitPanel(html` <sl-menu
             slot="start"
             class="scrollbar mark-err ${classMap({
-                "multiple":this.options.multiple
-            })}"
+				multiple: this.options.multiple,
+			})}"
             style=${styleMap({ maxHeight: this.options.height })}
             @sl-select=${this._onSelectItem.bind(this)}
         >
@@ -354,21 +354,25 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 		return html`${when(this.beforeActions.length > 0, () => html`<div class="header">${this.renderBeforeActions()}</div>`)}`;
 	}
 	_renderFooter() {
-        if(!this.options.multiple && this.afterActions.length===0) return 
+		if (!this.options.multiple && this.afterActions.length === 0) return;
 		return html`<div class="footer">
             ${this.renderAfterActions()}
             <span class="detail"> ${this.selection.length}/${this.items.value.length} </span>
         </div>`;
 	}
-	renderInput() { 
-        return html`
-            ${when(this.items.loading,()=>{
-                return html`<auto-loading></auto-loading>`
-            },()=>{
-                return html`${this._renderHeader()} ${this._renderList()} ${this._renderFooter()}`
-            })}
+	renderInput() {
+		return html`
+            ${when(
+				this.items.loading,
+				() => {
+					return html`<auto-loading></auto-loading>`;
+				},
+				() => {
+					return html`${this._renderHeader()} ${this._renderList()} ${this._renderFooter()}`;
+				},
+			)}
             
-        `;        
+        `;
 	}
 }
 
