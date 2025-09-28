@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 2.0.6
+
+### Patch Changes
+
+-   63e1fa9: 修复导出错误
+
 ## 2.0.5
 
 ### Patch Changes
