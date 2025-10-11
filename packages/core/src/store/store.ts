@@ -139,9 +139,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 		forEachObject(this._data as any, this._onFirstEachState.bind(this));
 		if (!this._options.shadow) this.schemas.build();
 		if (this._options.resetable) this.resetable = true;
-		// @ts-ignore
+		// @ts-expect-error
 		if (this._options.debug && typeof globalThis.__AUTOSTORE_DEVTOOLS__ === "object") {
-			// @ts-ignore
+			// @ts-expect-error
 			globalThis.__AUTOSTORE_DEVTOOLS__.add(this);
 		}
 		this.emit("load", this);
@@ -228,7 +228,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 			this.log("resetable option is not enabled", "warn");
 		}
 	}
-	_onFirstEachState({ key, value, path, parent }: { path: string[]; key: string; value: any; parent: any }) {
+	_onFirstEachState({ value, path }: { path: string[]; key: string; value: any; parent: any }) {
 		if (typeof value === "string") {
 			if (value.startsWith("```") && value.endsWith("```")) {
 				this.update(
@@ -252,7 +252,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 	private installExtends() {
 		const exts = globalThis.__AUTOSTORE_EXTENDS__;
 		if (Array.isArray(exts)) {
-			exts.forEach((ext) => typeof ext === "function" && ext(this));
+			exts.forEach((ext) => {
+				typeof ext === "function" && ext(this);
+			});
 		}
 	}
 	private subscribeCallbacks() {
@@ -391,7 +393,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 			paths.forEach((path) => {
 				listeners.push(subscribeMethod.call(this, path, handler as any));
 			});
-			return { off: () => listeners.forEach((subscriber) => subscriber.off()) };
+			return {
+				off: () =>
+					listeners.forEach((subscriber) => {
+						subscriber.off();
+					}),
+			};
 		}
 	}
 

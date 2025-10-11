@@ -10,6 +10,7 @@ import {
 	forEachObject,
 	type StateOperate,
 	type Watcher,
+	isRaw,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
 
@@ -30,6 +31,7 @@ export class AutoStoreSyncer {
 	private _watcher: Watcher | undefined;
 	private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存,
 	private seq: number = 0; // 实例标识
+	private _pathMapCache: Record<string, string> = {};
 	constructor(
 		public store: AutoStore<any>,
 		options?: AutoStoreSyncerOptions,
@@ -286,17 +288,26 @@ export class AutoStoreSyncer {
 			},
 			options,
 		);
-		this._pushStore(initial);
-		if (includeSchemas) this._pushSchemas(initial);
+		const pathMap = this._pushStore(initial);
+		if (includeSchemas) this._pushSchemas(initial, pathMap);
 	}
 	_pushStore(initial: boolean = false) {
-		const localSnap = this._getLocalSnap();
+		// const localSnap = this._getLocalSnap();
+		const localSnap = getVal(this.store.state, this._options.local.join(PATH_DELIMITER));
 		if (typeof this._options.pathMap.toRemote === "function") {
+			const pathMap: Map<string, any> = new Map();
 			forEachObject(localSnap, ({ value, path }) => {
 				if (this._isPass(path, value) === false) return;
-				const toValue = Array.isArray(value) ? [] : typeof value === "object" ? {} : value;
+				const toValue = isRaw(value)
+					? value
+					: Array.isArray(value)
+						? []
+						: typeof value === "object"
+							? {}
+							: value;
 				const toPath = this._mapPath(path, toValue, "toRemote");
 				if (toPath) {
+					pathMap.set(JSON.stringify(path), JSON.stringify(toPath));
 					const operate = {
 						type: "set",
 						path: [...this.options.remote, ...toPath],
@@ -306,6 +317,7 @@ export class AutoStoreSyncer {
 					this._sendOperate(operate);
 				}
 			});
+			return pathMap;
 		} else {
 			this._sendOperate({
 				id: this.id,
@@ -316,8 +328,8 @@ export class AutoStoreSyncer {
 			} as StateRemoteOperate);
 		}
 	}
-	_pushSchemas(initial: boolean = false) {
-		const toSchemas: Record<string, any> = this._getSerializedSchemas(this.options.local);
+	_pushSchemas(initial: boolean = false, pathMap?: Map<string, string>) {
+		const toSchemas: Record<string, any> = this._getSerializedSchemas(this.options.local, pathMap);
 		this._sendOperate({
 			id: this.id,
 			type: "$push-schemas",
@@ -372,20 +384,34 @@ export class AutoStoreSyncer {
 		}
 	}
 
-	_getSerializedSchemas(path: string[]) {
+	/**
+	 * 获取指定路径下的序列化模式数据
+	 * @param {string[]} path - 要查询的模式路径数组，使用"_$_"作为分隔符
+	 * @returns {Object|undefined} 返回序列化后的模式对象，如果store.schemas.store不存在则返回undefined
+	 * @description 根据提供的路径数组，从store.schemas.store.state中筛选匹配的模式，
+	 * 并应用路径映射转换(如果配置了pathMap.toRemote)，最终返回包含远程路径前缀的模式对象
+	 */
+	_getSerializedSchemas(path: string[], pathMap?: Map<string, string>) {
 		if (!this.store.schemas.store) return;
 		const entry = path.join("_$_");
 		return getSnapshot(
 			Object.entries(this.store.schemas.store.state).reduce((result, [key, schema]) => {
 				if (path.length === 0 || key.startsWith(entry)) {
 					let toPath: any;
-					if (isFunction(this._options.pathMap.toRemote)) {
-						toPath = this._mapPath(key.split("_$_"), (schema as any).value, "toRemote");
+					if (pathMap && pathMap.size > 0) {
+						const refPath = pathMap.get(JSON.stringify(key.split("_$_")));
+						toPath = refPath ? JSON.parse(refPath) : key.split("_$_");
 					} else {
 						toPath = key.split("_$_");
 					}
-
-					result[[...this.options.remote, ...toPath].join("_#_")] = schema;
+					// if (isFunction(this._options.pathMap.toRemote)) {
+					// 	toPath = this._mapPath(key.split("_$_"), (schema as any).value, "toRemote");
+					// } else {
+					// 	toPath = key.split("_$_");
+					// }
+					if (toPath) {
+						result[[...this.options.remote, ...toPath].join("_#_")] = schema;
+					}
 				}
 				return result;
 			}, {} as any),
@@ -453,9 +479,11 @@ export class AutoStoreSyncer {
 		this._pullSchemas();
 	}
 	private _mapPath(path: string[], value: any, dir: string): string[] | undefined {
-		return this._options.pathMap && isFunction((this._options.pathMap as any)[dir])
-			? (this._options.pathMap as any)[dir](path, value)
-			: path;
+		if (this._options.pathMap && isFunction((this._options.pathMap as any)[dir])) {
+			return (this._options.pathMap as any)[dir](path, value);
+		} else {
+			return path;
+		}
 	}
 	toString() {
 		return `AutoStoreSyncer(${this.id})`;

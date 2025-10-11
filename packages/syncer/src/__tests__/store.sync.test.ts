@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, test } from "vitest";
-import { computed, AutoStore, configurable, c, ValidateError, pathStartsWith } from "../../../core/src";
+import { computed, AutoStore, configurable, c, ValidateError, pathStartsWith, isRaw } from "../../../core/src";
 import "..";
 import { isFunction } from "../../../core/src/utils/isFunction";
 
@@ -86,6 +86,7 @@ describe("本地Store同步", () => {
 			myorder: {},
 		});
 
+		// biome-ignore lint/correctness/noUnusedVariables: <noUnusedVariables>
 		const syncer = toStore.sync(fromStore, {
 			mode: "pull",
 			local: ["myorder"],
@@ -94,11 +95,11 @@ describe("本地Store同步", () => {
 
 		expect(toStore.state.myorder).toEqual(fromStore.state.order);
 		fromStore.state.order.count = 4;
-		// @ts-ignore
+		// @ts-expect-error
 		expect(toStore.state.myorder.count).toBe(4);
-		// @ts-ignore
+		// @ts-expect-error
 		expect(toStore.state.myorder.total).toBe(8);
-		// @ts-ignore
+		// @ts-expect-error
 		toStore.state.myorder.count = 5;
 		expect(fromStore.state.order.count).toBe(5);
 		expect(fromStore.state.order.total).toBe(10);
@@ -114,15 +115,13 @@ describe("本地Store同步", () => {
 		});
 		const toStore = new AutoStore();
 
+		// biome-ignore lint/correctness/noUnusedVariables: <noUnusedVariables>
 		const syncer = toStore.sync(fromStore, {});
 
 		expect(toStore.state).toEqual({});
 		fromStore.state.order.count = 4;
-		// @ts-ignore
 		expect(toStore.state.order.count).toBe(4);
-		// @ts-ignore
 		expect(toStore.state.order.total).toBe(8);
-		// @ts-ignore
 		toStore.state.order.count = 5;
 		expect(fromStore.state.order.count).toBe(5);
 		expect(fromStore.state.order.total).toBe(10);
@@ -159,7 +158,7 @@ describe("本地Store同步", () => {
 			},
 		});
 		const store2 = new AutoStore<{ myorder: typeof store1.state.order }>({
-			// @ts-ignore
+			// @ts-expect-error
 			myorder: {},
 		});
 		store1.sync(store2, { local: ["order"], remote: ["myorder"] });
@@ -181,7 +180,7 @@ describe("本地Store同步", () => {
 			},
 		});
 		const store2 = new AutoStore<{ myorder: typeof store1.state.order }>({
-			// @ts-ignore
+			// @ts-expect-error
 			myorder: {
 				count: 1,
 			},
@@ -206,7 +205,6 @@ describe("本地Store同步", () => {
 		);
 		const store2 = new AutoStore<{ myorder: typeof store1.state.order }>(
 			{
-				// @ts-ignore
 				myorder: {
 					values: [],
 				},
@@ -233,7 +231,7 @@ describe("本地Store同步", () => {
 		});
 
 		store1.sync(store2, { remote: "x.y" });
-		// @ts-ignore
+		// @ts-expect-error
 		expect(store2.state.x.y).toEqual(store1.state);
 	});
 
@@ -359,11 +357,11 @@ describe("本地Store同步", () => {
 				"order.c": 13,
 			},
 		});
-		// @ts-ignore
+		// @ts-expect-error
 		toStore.state.myorder["order.a"] = 21;
-		// @ts-ignore
+		// @ts-expect-error
 		toStore.state.myorder["order.b"] = 22;
-		// @ts-ignore
+		// @ts-expect-error
 		toStore.state.myorder["order.c"] = 23;
 
 		expect(fromStore.state).toEqual({
@@ -470,11 +468,11 @@ describe("本地Store同步", () => {
 				"user.tags.2": "z",
 			},
 		});
-		// @ts-ignore
+		// @ts-expect-error
 		toStore.state.myorder["order.a"] = 21;
-		// @ts-ignore
+		// @ts-expect-error
 		toStore.state.myorder["order.b"] = 22;
-		// @ts-ignore
+		// @ts-expect-error
 		toStore.state.myorder["order.c"] = 23;
 
 		expect(fromStore.state).toEqual({
@@ -498,7 +496,7 @@ describe("本地Store同步", () => {
 			},
 		});
 		const store2 = new AutoStore<{ myorder: typeof store1.state.order }>({
-			// @ts-ignore
+			// @ts-expect-error
 			myorder: {},
 		});
 		store1.sync(store2, {
@@ -535,7 +533,7 @@ describe("本地Store同步", () => {
 				order: {
 					a: 1,
 					b: configurable(2, {
-						onValidate: (value: any) => value > 2,
+						onValidate: (value: any) => value >= 2,
 					}),
 					c: 3,
 				},
@@ -545,11 +543,12 @@ describe("本地Store同步", () => {
 			},
 			{ id: "local" },
 		);
-		// @ts-ignore
+		// @ts-expect-error
 		const toStore = new AutoStore<typeof fromStore.types.rawState>({}, { id: "to" });
 		fromStore.sync(toStore);
 		expect(Object.keys(toStore.schemas.store.state)).toEqual(["order_$_b", "user_$_tags_$_1"]);
-		// @ts-ignore
+		// @ts-expect-error
+		// biome-ignore lint/complexity/useLiteralKeys: <useLiteralKeys>
 		expect(isFunction(toStore.schemas.store.state["order_$_b"].onValidate)).toBeTruthy();
 	});
 	test("主动接取全量同步schema数据", async () => {
@@ -573,7 +572,8 @@ describe("本地Store同步", () => {
 		const syncer = toStore.sync(fromStore, { immediate: false });
 		syncer.pull();
 		expect(Object.keys(toStore.schemas.store.state)).toEqual(["order_$_b", "user_$_tags_$_1"]);
-		// @ts-ignore
+		// @ts-expect-error
+		// biome-ignore lint/complexity/useLiteralKeys: <useLiteralKeys>
 		expect(isFunction(toStore.schemas.store.state["order_$_b"].onValidate)).toBeTruthy();
 	});
 
@@ -621,13 +621,13 @@ describe("本地Store同步", () => {
 		});
 		expect(Object.keys(toStore.schemas.store.state)).toEqual(["myorder_$_order.b", "myorder_$_user.tags.1"]);
 		expect(() => {
-			// @ts-ignore
+			// @ts-expect-error
 			toStore.state.myorder["order.b"] = 0;
 		}).toThrow(ValidateError);
-		// @ts-ignore
+
 		const fromSchema = fromStore.schemas.get("order.b")!;
 
-		// @ts-ignore
+		// @ts-expect-error
 		const toSchema = toStore.schemas.get(["myorder", "order.b"])!;
 
 		expect(fromSchema.onValidate !== toSchema.onValidate).toBe(true);
@@ -656,6 +656,7 @@ describe("本地Store同步", () => {
 			},
 			{ id: "to" },
 		);
+		// biome-ignore lint/correctness/noUnusedVariables: <noUnusedVariables>
 		const syncer = toStore.sync(fromStore, {
 			mode: "pull",
 			local: "myorder",
@@ -676,17 +677,61 @@ describe("本地Store同步", () => {
 			},
 		});
 		expect(Object.keys(toStore.schemas.store.state)).toEqual(["myorder_$_order.b", "myorder_$_user.tags.1"]);
-		// @ts-ignore
+
 		expect(() => {
-			// @ts-ignore
+			// @ts-expect-error
 			toStore.state.myorder["order.b"] = 0;
 		}).toThrow(ValidateError);
-		// @ts-ignore
+
 		const fromSchema = fromStore.schemas.get("order.b")!;
 
-		// @ts-ignore
+		// @ts-expect-error
 		const toSchema = toStore.schemas.get(["myorder", "order.b"])!;
 
 		expect(fromSchema.onValidate !== toSchema.onValidate).toBe(true);
+	});
+	test("同步状态数据是数组时", async () => {
+		// order.a <-> myorder['order.a']
+		const fromStore = new AutoStore({
+			order: {
+				b: configurable<number[]>([8]),
+			},
+		});
+		const toStore = new AutoStore({
+			myorder: {},
+		});
+		fromStore.sync(toStore, {
+			remote: "myorder",
+			immediate: true,
+			pathMap: {
+				toRemote: (path: string[], value) => {
+					if (typeof value !== "object" || fromStore.schemas.has(path as any)) {
+						return [path.join(".")];
+					}
+				},
+				toLocal: (path: string[]) => {
+					return path.reduce<string[]>((result, cur) => {
+						result.push(...cur.split("."));
+						return result;
+					}, []);
+				},
+			},
+		});
+
+		fromStore.state.order.b = [1, 2, 3];
+
+		expect(toStore.state).toEqual({
+			myorder: {
+				"order.b": [1, 2, 3],
+			},
+		});
+		// @ts-expect-error
+		toStore.state.myorder["order.b"] = 22;
+
+		expect(fromStore.state).toEqual({
+			order: {
+				b: 22,
+			},
+		});
 	});
 });
