@@ -1,48 +1,48 @@
 {
-    "name": "@autostorejs/react",
-    "version": "4.0.0",
-    "description": "Very easy and elegant state management library for react",
-    "type": "module",
-    "main": "src/index.tsx",
-    "access": "public",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/zhangfisher/autostore.git"
-    },
-    "publishConfig": {
-        "exports": {
-            ".": {
-                "types": "dist/index.d.ts",
-                "require": "dist/index.cjs",
-                "import": "dist/index.js"
-            },
-            "./lite": {
-                "types": "dist/lite/index.d.ts",
-                "require": "dist/lite/index.cjs",
-                "import": "dist/lite/index.js"
-            }
-        }
-    },
-    "scripts": {
-        "build": "tsup"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "autostore": "workspace:*",
-        "flexstyled": "^2.1.2"
-    },
-    "devDependencies": {
-        "@types/node": "^24.7.2",
-        "@types/react": "^18.3.26",
-        "react": "^18.3.1",
-        "terser": "^5.36.0",
-        "tsup": "^8.5.0",
-        "type-fest": "^5.0.1",
-        "typescript": "^5.9.3"
-    },
-    "peerDependencies": {
-        "react": "^18.3.1"
-    }
+	"name": "@autostorejs/react",
+	"version": "3.2.0",
+	"description": "Very easy and elegant state management library for react",
+	"type": "module",
+	"main": "src/index.tsx",
+	"access": "public",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/zhangfisher/autostore.git"
+	},
+	"publishConfig": {
+		"exports": {
+			".": {
+				"types": "dist/index.d.ts",
+				"require": "dist/index.cjs",
+				"import": "dist/index.js"
+			},
+			"./lite": {
+				"types": "dist/lite/index.d.ts",
+				"require": "dist/lite/index.cjs",
+				"import": "dist/lite/index.js"
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsup"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"autostore": "workspace:*",
+		"flexstyled": "^2.1.2"
+	},
+	"devDependencies": {
+		"@types/node": "^24.7.2",
+		"@types/react": "^18.3.26",
+		"react": "^18.3.1",
+		"terser": "^5.36.0",
+		"tsup": "^8.5.0",
+		"type-fest": "^5.0.1",
+		"typescript": "^5.9.3"
+	},
+	"peerDependencies": {
+		"react": "^18.3.1"
+	}
 }
