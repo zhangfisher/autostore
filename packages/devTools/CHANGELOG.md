@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 2.0.7
+
+### Patch Changes
+
+-   889fc70: update sync configurable support array and object
+
 ## 2.0.6
 
 ### Patch Changes
