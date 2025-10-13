@@ -735,7 +735,7 @@ describe("本地Store同步", () => {
 			},
 		});
 	});
-	test("同步可配置数据是对象时", async () => {
+	test("同步可配置数据是对象时也可以同步", async () => {
 		// order.a <-> myorder['order.a']
 		const fromStore = new AutoStore({
 			order: {
