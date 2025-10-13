@@ -690,7 +690,7 @@ describe("本地Store同步", () => {
 
 		expect(fromSchema.onValidate !== toSchema.onValidate).toBe(true);
 	});
-	test("同步状态数据是数组时", async () => {
+	test("同步可配置数据是数组时", async () => {
 		// order.a <-> myorder['order.a']
 		const fromStore = new AutoStore({
 			order: {
@@ -705,6 +705,7 @@ describe("本地Store同步", () => {
 			immediate: true,
 			pathMap: {
 				toRemote: (path: string[], value) => {
+					// 重点：如果值是对象但使用configurable包装的，则不进行路径转换，否则会导致无法正确同步数据
 					if (typeof value !== "object" || fromStore.schemas.has(path as any)) {
 						return [path.join(".")];
 					}
@@ -723,6 +724,51 @@ describe("本地Store同步", () => {
 		expect(toStore.state).toEqual({
 			myorder: {
 				"order.b": [1, 2, 3],
+			},
+		});
+		// @ts-expect-error
+		toStore.state.myorder["order.b"] = 22;
+
+		expect(fromStore.state).toEqual({
+			order: {
+				b: 22,
+			},
+		});
+	});
+	test("同步可配置数据是对象时", async () => {
+		// order.a <-> myorder['order.a']
+		const fromStore = new AutoStore({
+			order: {
+				b: configurable<Record<string, any>>({ a: 1 }),
+			},
+		});
+		const toStore = new AutoStore({
+			myorder: {},
+		});
+		fromStore.sync(toStore, {
+			remote: "myorder",
+			immediate: true,
+			pathMap: {
+				toRemote: (path: string[], value) => {
+					// 重点：如果值是对象但使用configurable包装的，则不进行路径转换，否则会导致无法正确同步数据
+					if (typeof value !== "object" || fromStore.schemas.has(path as any)) {
+						return [path.join(".")];
+					}
+				},
+				toLocal: (path: string[]) => {
+					return path.reduce<string[]>((result, cur) => {
+						result.push(...cur.split("."));
+						return result;
+					}, []);
+				},
+			},
+		});
+
+		fromStore.state.order.b = { b: 100 };
+
+		expect(toStore.state).toEqual({
+			myorder: {
+				"order.b": { b: 100 },
 			},
 		});
 		// @ts-expect-error

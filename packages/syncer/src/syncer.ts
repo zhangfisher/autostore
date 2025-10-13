@@ -11,6 +11,7 @@ import {
 	type StateOperate,
 	type Watcher,
 	isRaw,
+	markRaw,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
 
@@ -293,18 +294,14 @@ export class AutoStoreSyncer {
 	}
 	_pushStore(initial: boolean = false) {
 		// const localSnap = this._getLocalSnap();
-		const localSnap = getVal(this.store.state, this._options.local.join(PATH_DELIMITER));
+		const localSnap = this._getLocalSnap(); //getVal(this.store.state, this._options.local.join(PATH_DELIMITER));
 		if (typeof this._options.pathMap.toRemote === "function") {
 			const pathMap: Map<string, any> = new Map();
 			forEachObject(localSnap, ({ value, path }) => {
 				if (this._isPass(path, value) === false) return;
-				const toValue = isRaw(value)
-					? value
-					: Array.isArray(value)
-						? []
-						: typeof value === "object"
-							? {}
-							: value;
+				const hasSchema = this.store.schemas.has(path);
+				if (hasSchema && typeof value === "object") markRaw(value);
+				const toValue = hasSchema ? value : Array.isArray(value) ? [] : typeof value === "object" ? {} : value;
 				const toPath = this._mapPath(path, toValue, "toRemote");
 				if (toPath) {
 					pathMap.set(JSON.stringify(path), JSON.stringify(toPath));
