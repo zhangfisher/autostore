@@ -1,5 +1,16 @@
 # @autostorejs/react
 
+## 4.0.0
+
+### Minor Changes
+
+-   b8ab118: 升级 sync 算法，支持 configure 项可以是数组和对象
+
+### Patch Changes
+
+-   Updated dependencies [b8ab118]
+    -   autostore@4.0.0
+
 ## 3.1.16
 
 ### Patch Changes
