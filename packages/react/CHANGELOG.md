@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 3.2.1
+
+### Patch Changes
+
+-   213b54c: fix type errors
+-   Updated dependencies [213b54c]
+    -   autostore@3.2.1
+
 ## 4.0.0
 
 ### Minor Changes

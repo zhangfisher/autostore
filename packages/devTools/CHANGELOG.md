@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 2.0.8
+
+### Patch Changes
+
+-   213b54c: fix type errors
+
 ## 2.0.7
 
 ### Patch Changes
