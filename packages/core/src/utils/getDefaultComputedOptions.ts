@@ -1,4 +1,4 @@
-import { ComputedOptions } from "../computed/types";
+import type { ComputedOptions } from "../computed/types";
 
 
 export function getDefaultComputedOptions():ComputedOptions{

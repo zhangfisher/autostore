@@ -11,8 +11,8 @@
  * 
  */
 import { PATH_DELIMITER } from '../consts';
-import { EventEmitter, EventHandler } from './emitter';
-import { EventDefines } from './types';
+import type { EventEmitter, EventHandler } from './emitter';
+import type { EventDefines } from './types';
 
 
 

@@ -780,4 +780,64 @@ describe("本地Store同步", () => {
 			},
 		});
 	});
+	test("同步可配置数组数据", async () => {
+		// order.a <-> myorder['order.a']
+		const fromStore = new AutoStore({
+			phoneNumber: "",
+			session: {
+				ringFile: "",
+				mode: configurable("normal", {
+					label: "模式",
+					widget: "radio",
+					group: "sessionManager",
+					select: [
+						{ label: "正常", value: "normal" },
+						{ label: "自动接听", value: "autoAccept" },
+						{ label: "自动拒绝", value: "autoReject" },
+					],
+				}),
+				audioCodec: configurable<number[]>([], {
+					label: "产品",
+					widget: "checkbox-group",
+					select: [
+						{ label: "产品1", value: 1 },
+						{ label: "产品2", value: 2 },
+						{ label: "产品3", value: 3 },
+					],
+				}),
+			},
+		});
+		const toStore = new AutoStore({});
+		fromStore.sync(toStore, {
+			immediate: true,
+			pathMap: {
+				toRemote: (path: string[], value) => {
+					// 重点：如果值是对象但使用configurable包装的，则不进行路径转换，否则会导致无法正确同步数据
+					if (typeof value !== "object" || fromStore.schemas.has(path as any)) {
+						return [path.join(".")];
+					}
+				},
+				toLocal: (path: string[]) => {
+					return path.reduce<string[]>((result, cur) => {
+						result.push(...cur.split("."));
+						return result;
+					}, []);
+				},
+			},
+		});
+
+		expect(toStore.state).toEqual({
+			myorder: {
+				"order.b": { b: 100 },
+			},
+		});
+		// @ts-expect-error
+		toStore.state.myorder["order.b"] = 22;
+
+		expect(fromStore.state).toEqual({
+			order: {
+				b: 22,
+			},
+		});
+	});
 });

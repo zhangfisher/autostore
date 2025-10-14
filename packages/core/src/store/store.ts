@@ -92,6 +92,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 	private _batchOperates: StateOperate[] = []; // 暂存批量操作
 	private _updateFlags: number = 0; // 额外的更新标识
 	private _peeping: boolean = false;
+
+	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: <noUnusedPrivateClassMembers>
 	private _updateValidateBehavior: UpdateOptions["validate"]; // 更新时的校验行为
 	private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
 	private _updatedWatcher: Watcher | undefined; // 脏状态侦听器

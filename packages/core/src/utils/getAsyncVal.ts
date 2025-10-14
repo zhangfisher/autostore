@@ -1,4 +1,4 @@
-import { AsyncComputedValue } from "../computed";
+import type { AsyncComputedValue } from "../computed";
 import { PATH_DELIMITER } from "../consts";
 import { getVal } from "./getVal";
 import { isAsyncComputedValue } from "./isAsyncComputedValue";

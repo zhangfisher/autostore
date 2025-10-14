@@ -18,13 +18,13 @@ export function getAsyncValue<Value = any>(store: AutoStore<any>, keyPath: strin
             if (val.loading) {
                 let tmId: any
                 // 等等loading变成false
-                const subscriber = store.watch(`${path}${store.delimiter}loading`, (operate) => {
+                const subscriber = store.watch(`${path}${store.delimiter}loading`, () => {
                     if (tmId) clearTimeout(tmId)
                     resolve(val.value)
                 }, { once: true })
                 if (timeout > 0) {
                     tmId = setTimeout(() => {
-                        subscriber && subscriber.off()
+                        subscriber?.off()
                         reject(new TimeoutError())
                     }, timeout)
                 }

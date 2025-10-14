@@ -1,4 +1,4 @@
-import { ComputedDepends } from "../computed/types"
+import type { ComputedDepends } from "../computed/types"
 import { PATH_DELIMITER } from "../consts" 
 
 /**

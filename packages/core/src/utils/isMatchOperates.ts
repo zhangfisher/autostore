@@ -2,8 +2,8 @@
  * 判定操作是否符合监听指定的operates参数
  */
 
-import { StateOperate } from "../store/types"
-import { WatchListenerOptions } from "../watch/types"
+import type { StateOperate } from "../store/types"
+import type { WatchListenerOptions } from "../watch/types"
 
 export function isMatchOperates(operate:StateOperate,opts:WatchListenerOptions['operates']){                            
     if(opts==='*'){

@@ -143,7 +143,7 @@ importers:
   packages/core:
     dependencies:
       flex-tools:
-        specifier: ^1.5.6
+        specifier: ^1.5.9
         version: 1.5.9
     devDependencies:
       '@type-challenges/utils':
@@ -159,8 +159,8 @@ importers:
         specifier: ^8.5.0
         version: 8.5.0(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)
       type-fest:
-        specifier: ^5.0.1
-        version: 5.0.1
+        specifier: ^5.1.0
+        version: 5.1.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -2982,6 +2982,10 @@ packages:
 
   type-fest@5.0.1:
     resolution: {integrity: sha512-9MpwAI52m8H6ssA542UxSLnSiSD2dsC3/L85g6hVubLSXd82wdI80eZwTWhdOfN67NlA+D+oipAs1MlcTcu3KA==}
+    engines: {node: '>=20'}
+
+  type-fest@5.1.0:
+    resolution: {integrity: sha512-wQ531tuWvB6oK+pchHIu5lHe5f5wpSCqB8Kf4dWQRbOYc9HTge7JL0G4Qd44bh6QuJCccIzL3bugb8GI0MwHrg==}
     engines: {node: '>=20'}
 
   type-is@1.6.18:
@@ -6309,6 +6313,10 @@ snapshots:
   type-fest@4.41.0: {}
 
   type-fest@5.0.1:
+    dependencies:
+      tagged-tag: 1.0.0
+
+  type-fest@5.1.0:
     dependencies:
       tagged-tag: 1.0.0
 

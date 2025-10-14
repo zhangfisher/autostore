@@ -1,5 +1,5 @@
 import type { SchemaOptions, SchemaWidgetAction, SchemaWidgetSelectItem } from ".";
-import { ComputedBuilder } from "../../computed/types";
+import type { ComputedBuilder } from "../../computed/types";
 
 export type SchemaWidgetTypes =
 	| "input"

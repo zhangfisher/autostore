@@ -1,4 +1,4 @@
-import { AsyncComputedValue } from "../computed";
+import type { AsyncComputedValue } from "../computed";
 import { isAsyncComputedValue } from "./isAsyncComputedValue";
 
 

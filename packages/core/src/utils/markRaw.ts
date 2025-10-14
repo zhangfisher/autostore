@@ -13,7 +13,7 @@ export type RawObject<T> = T & {
 export function markRaw<T = any>(obj: T): RawObject<T> {
     try {
         if (['object', 'function'].includes(typeof obj)) {
-            // @ts-ignore
+            // @ts-expect-error
             obj[SKIP_PROXY_FLAG] = true;
         }
     } catch {}

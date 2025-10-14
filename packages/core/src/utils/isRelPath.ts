@@ -9,7 +9,7 @@
  * 
  */
 
-import { ObserverScope } from "../observer";
+import type { ObserverScope } from "../observer";
 
 export function isRelPath(path: ObserverScope): boolean {
     const p = Array.isArray(path) ? path[0] : path

@@ -1,10 +1,10 @@
 /**
  * 同步计算
  */
-import { ComputedOptions, SyncRuntimeComputedOptions } from './types';
+import type { ComputedOptions, SyncRuntimeComputedOptions } from './types';
 import { getValueScope } from '../scope';
 import { ComputedObject } from "./computedObject";
-import { StateOperate } from "../store/types";
+import type { StateOperate } from "../store/types";
 import { noRepeat } from "../utils/noRepeat";
 import { calcDependPaths } from '../utils/calcDependPaths';
 import { isFunction } from '../utils/isFunction';

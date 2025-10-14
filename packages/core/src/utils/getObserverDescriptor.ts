@@ -1,5 +1,5 @@
-import { ComputedDescriptor } from "../computed/types"
-import { WatchDescriptor } from "../watch/types"
+import type { ComputedDescriptor } from "../computed/types"
+import type { WatchDescriptor } from "../watch/types"
 import { getDefaultComputedOptions } from "./getDefaultComputedOptions"
 import { isAsyncFunction } from "./isAsyncFunction"
 import { isObserverDescriptorBuilder } from "./isObserverDescriptorBuilder"
