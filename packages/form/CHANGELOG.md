@@ -1,5 +1,12 @@
 # @autostorejs/form
 
+## 3.2.2
+
+### Patch Changes
+
+-   7350e2a: update lit dependencies
+    -   autostore@3.2.2
+
 ## 3.2.1
 
 ### Patch Changes

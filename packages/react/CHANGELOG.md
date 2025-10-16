@@ -1,5 +1,11 @@
 # @autostorejs/react
 
+## 3.2.2
+
+### Patch Changes
+
+-   autostore@3.2.2
+
 ## 3.2.1
 
 ### Patch Changes
