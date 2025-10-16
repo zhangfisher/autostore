@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
 import { describe, expect, test } from "vitest";
-import { computed, AutoStore, configurable, c, ValidateError, pathStartsWith, isRaw } from "../../../core/src";
+import { computed, AutoStore, configurable, ValidateError } from "../../../core/src";
 import "..";
 import { isFunction } from "../../../core/src/utils/isFunction";
 
@@ -86,7 +87,6 @@ describe("本地Store同步", () => {
 			myorder: {},
 		});
 
-		// biome-ignore lint/correctness/noUnusedVariables: <noUnusedVariables>
 		const syncer = toStore.sync(fromStore, {
 			mode: "pull",
 			local: ["myorder"],
@@ -115,7 +115,6 @@ describe("本地Store同步", () => {
 		});
 		const toStore = new AutoStore();
 
-		// biome-ignore lint/correctness/noUnusedVariables: <noUnusedVariables>
 		const syncer = toStore.sync(fromStore, {});
 
 		expect(toStore.state).toEqual({});
@@ -656,7 +655,6 @@ describe("本地Store同步", () => {
 			},
 			{ id: "to" },
 		);
-		// biome-ignore lint/correctness/noUnusedVariables: <noUnusedVariables>
 		const syncer = toStore.sync(fromStore, {
 			mode: "pull",
 			local: "myorder",
@@ -781,6 +779,7 @@ describe("本地Store同步", () => {
 		});
 	});
 	test("同步可配置数组数据", async () => {
+		const toStore = new AutoStore({});
 		// order.a <-> myorder['order.a']
 		const fromStore = new AutoStore({
 			phoneNumber: "",
@@ -807,9 +806,12 @@ describe("本地Store同步", () => {
 				}),
 			},
 		});
-		const toStore = new AutoStore({});
-		fromStore.sync(toStore, {
+		const filter = (path: string[]) => {
+			return fromStore.schemas.has(path.join(".") as any);
+		};
+		const syncer = fromStore.sync(toStore, {
 			immediate: true,
+			filter,
 			pathMap: {
 				toRemote: (path: string[], value) => {
 					// 重点：如果值是对象但使用configurable包装的，则不进行路径转换，否则会导致无法正确同步数据
@@ -825,7 +827,6 @@ describe("本地Store同步", () => {
 				},
 			},
 		});
-
 		expect(toStore.state).toEqual({
 			myorder: {
 				"order.b": { b: 100 },

@@ -1,9 +1,10 @@
-import { Equal, Expect } from "@type-challenges/utils";
-import { ComputedState, Dict, GetTypeByPath, StatePath } from "../src/types/";
-import { configurable, s, schema, SchemaState, SchemaKeyPaths } from "../src/schema";
+/** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
+import type { Equal, Expect } from "@type-challenges/utils";
+import type { ComputedState, Dict, GetTypeByPath, StatePath } from "../src/types/";
+import { configurable, s, schema, type SchemaKeyPaths } from "../src/schema";
 import { AutoStore } from "../src/store";
 import { computed } from "../src";
-import { Get } from "type-fest";
+import type { Get } from "type-fest";
 
 const stt = {
 	title: "姓名",
@@ -45,7 +46,6 @@ store.state.price;
 // 示例测试
 type RawState = typeof obj;
 type addressType = RawState["address"];
-type s = SchemaState<RawState>;
 type s2 = StatePath<RawState>;
 type sf = SchemaKeyPaths<RawState>;
 type sdf = GetTypeByPath<RawState, "address">;
@@ -57,7 +57,7 @@ type d = ComputedState<RawState>;
 
 type State = ComputedState<typeof obj>;
 
-let objState = obj as unknown as State;
+const objState = obj as unknown as State;
 
 objState.price;
 objState.tags;
@@ -68,7 +68,6 @@ objState.address.street;
 objState.customer.name;
 objState.customer.age;
 
-// eslint-disable-next-line
 type cases = [
 	Expect<Equal<State["price"], number>>,
 	Expect<Equal<State["tags"], number[]>>,

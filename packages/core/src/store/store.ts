@@ -138,6 +138,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 		this.trace = this.trace.bind(this);
 		this.collectDependencies = this.collectDependencies.bind(this);
 		this.installExtends();
+		this._schemas = new SchemaManager<State>(this);
 		forEachObject(this._data as any, this._onFirstEachState.bind(this));
 		if (!this._options.shadow) this.schemas.build();
 		if (this._options.resetable) this.resetable = true;
@@ -176,10 +177,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 		return this._options.resetable;
 	}
 	get schemas() {
-		if (!this._schemas) {
-			this._schemas = new SchemaManager<State>(this);
-		}
-		return this._schemas;
+		return this._schemas!;
 	}
 	set resetable(value: boolean) {
 		if (value) {

@@ -10,7 +10,6 @@ import {
 	forEachObject,
 	type StateOperate,
 	type Watcher,
-	isRaw,
 	markRaw,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
@@ -32,7 +31,6 @@ export class AutoStoreSyncer {
 	private _watcher: Watcher | undefined;
 	private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存,
 	private seq: number = 0; // 实例标识
-	private _pathMapCache: Record<string, string> = {};
 	constructor(
 		public store: AutoStore<any>,
 		options?: AutoStoreSyncerOptions,
@@ -401,11 +399,6 @@ export class AutoStoreSyncer {
 					} else {
 						toPath = key.split("_$_");
 					}
-					// if (isFunction(this._options.pathMap.toRemote)) {
-					// 	toPath = this._mapPath(key.split("_$_"), (schema as any).value, "toRemote");
-					// } else {
-					// 	toPath = key.split("_$_");
-					// }
 					if (toPath) {
 						result[[...this.options.remote, ...toPath].join("_#_")] = schema;
 					}
