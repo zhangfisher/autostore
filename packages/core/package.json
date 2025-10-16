@@ -1,6 +1,6 @@
 {
 	"name": "autostore",
-	"version": "3.2.1",
+	"version": "3.2.2",
 	"description": "Very easy and elegant state management library.",
 	"type": "module",
 	"main": "src/index.ts",
