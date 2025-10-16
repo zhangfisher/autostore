@@ -3,7 +3,7 @@
 	"changelog": "@changesets/cli/changelog",
 	"commit": true,
 	"access": "public",
-	"fixed": [["autostore", "@autostorejs/react", "@autostorejs/syncer", "@autostorejs/form"]],
+	"fixed": [["autostore", "@autostorejs/react", "@autostorejs/syncer", "@autostorejs/form", "@autostorejs/devtools"]],
 	"linked": [],
 	"baseBranch": "master",
 	"updateInternalDependencies": "patch",

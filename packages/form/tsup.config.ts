@@ -1,17 +1,15 @@
-import { gzip } from 'zlib'
-import { promisify } from 'node:util'
-import { readFileSync } from 'node:fs'
-import { defineConfig } from 'tsup' 
-import path from 'node:path'
-import fs from 'node:fs'
+import { gzip } from "zlib";
+import { promisify } from "node:util";
+import { readFileSync } from "node:fs";
+import { defineConfig } from "tsup";
+import path from "node:path";
+import fs from "node:fs";
 
-
-const gzipPromise = promisify(gzip)
+const gzipPromise = promisify(gzip);
 // import Sonda from 'sonda/esbuild';
 
-
-const themeproPath = path.join(import.meta.dirname,`node_modules/themepro/dist`)
-console.log("themeproPath=",themeproPath)
+const themeproPath = path.join(import.meta.dirname, `node_modules/themepro/dist`);
+console.log("themeproPath=", themeproPath);
 export default defineConfig([
 	{
 		entry: ["src/index.ts"],
@@ -23,7 +21,7 @@ export default defineConfig([
 		clean: true,
 		treeshake: true,
 		minify: true,
-		noExternal: ["flex-tools"],
+		noExternal: ["flex-tools", "lit", "@lit/context"],
 		onSuccess: async () => {
 			const cjsFile = readFileSync("dist/index.cjs");
 			const esmFile = readFileSync("dist/index.js");
