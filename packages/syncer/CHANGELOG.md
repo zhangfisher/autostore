@@ -1,5 +1,11 @@
 # @autostorejs/syncer
 
+## 3.2.3
+
+### Patch Changes
+
+-   autostore@3.2.3
+
 ## 3.2.2
 
 ### Patch Changes
