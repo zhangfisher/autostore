@@ -3,6 +3,7 @@ import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
 import { isSchemaBuilder, markRaw, pathStartsWith, setVal } from "../utils";
 import { getVal } from "../utils/getVal";
+import { isFuncDefine } from "../utils/isFuncDefine";
 import { parseFunc } from "../utils/parseFunc";
 import type {
 	SchemaOptions,
@@ -52,11 +53,24 @@ export class SchemaManager<
 			value: descriptor.value,
 		}) as unknown as SchemaDescriptor["options"];
 
-		if (typeof finalDescriptor.onValidate === "string") {
-			finalDescriptor.onValidate = markRaw(parseFunc(finalDescriptor.onValidate)) as any;
-		}
+		Object.entries(finalDescriptor).forEach(([key, value]) => {
+			if (isFuncDefine(value)) {
+				(finalDescriptor as any)[key] =
+					key === "onValidate" ? markRaw(parseFunc(value)) : (parseFunc(value) as any);
+			}
+		});
 
 		this._descriptors[key] = finalDescriptor;
+		// if (this.store) {
+		// 	this.store.update(
+		// 		(state) => {
+		// 			setVal(state, key.split("_$_"), finalDescriptor);
+		// 		},
+		// 		{
+		// 			silent: true,
+		// 		},
+		// 	);
+		// }
 
 		if (this.shadow && descriptor.value !== undefined) {
 			this.shadow.update(

@@ -13,6 +13,8 @@ import {
 	markRaw,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
+import { parseFunc } from "../../core/src/utils/parseFunc";
+import { markFunc } from "./utils/markFunc";
 
 type NormalizeAutoStoreSyncerOptions = Required<
 	Omit<AutoStoreSyncerOptions, "local" | "remote"> & {
@@ -379,6 +381,19 @@ export class AutoStoreSyncer {
 		}
 	}
 
+	_serializeSchema(schemaKey: string, schema: Record<string, any>) {
+		Object.entries(schema).forEach(([key]) => {
+			const k = `${schemaKey}.${key}`;
+			if (this.store.schemas.store.computedObjects.has(k)) {
+				const computedObj = this.store.schemas.store.computedObjects.get(k);
+				if (computedObj) {
+					schema[key] = markFunc(computedObj?.getter);
+				}
+			}
+		});
+		return schema;
+	}
+
 	/**
 	 * 获取指定路径下的序列化模式数据
 	 * @param {string[]} path - 要查询的模式路径数组，使用"_$_"作为分隔符
@@ -389,24 +404,28 @@ export class AutoStoreSyncer {
 	_getSerializedSchemas(path: string[], pathMap?: Map<string, string>) {
 		if (!this.store.schemas.store) return;
 		const entry = path.join("_$_");
-		return getSnapshot(
-			Object.entries(this.store.schemas.store.state).reduce((result, [key, schema]) => {
-				if (path.length === 0 || key.startsWith(entry)) {
-					let toPath: any;
-					if (pathMap && pathMap.size > 0) {
-						const refPath = pathMap.get(JSON.stringify(key.split("_$_")));
-						toPath = refPath ? JSON.parse(refPath) : key.split("_$_");
-					} else {
-						toPath = key.split("_$_");
-					}
-					if (toPath) {
-						result[[...this.options.remote, ...toPath].join("_#_")] = schema;
-					}
+		const schemaState = Object.entries(this.store.schemas.store.state).reduce((result, [key, schema]) => {
+			if (path.length === 0 || key.startsWith(entry)) {
+				let toPath: any;
+				if (pathMap && pathMap.size > 0) {
+					const refPath = pathMap.get(JSON.stringify(key.split("_$_")));
+					toPath = refPath ? JSON.parse(refPath) : key.split("_$_");
+				} else {
+					toPath = key.split("_$_");
 				}
-				return result;
-			}, {} as any),
-			{ includeFunc: true },
-		);
+				if (toPath) {
+					result[[...this.options.remote, ...toPath].join("_#_")] = this._serializeSchema(
+						key,
+						schema as any,
+					) as any;
+				}
+			}
+			return result;
+		}, {} as any);
+		const schemas = getSnapshot(schemaState, { includeFunc: true });
+		// 将store中的computed对象恢复为getter，以便在远程端可以重建computed对象
+		// Object.entries(this.store.schemas.store.computedObjects).forEach(([key, computedObj]) => {});
+		return schemas;
 	}
 	/**
 	 * 当接收到 @pull-schemas时的响应

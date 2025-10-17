@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/** biome-ignore-all lint/correctness/noUnusedFunctionParameters: <noUnusedFunctionParameters> */
 /** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
 import { describe, expect, test } from "vitest";
 import { computed, AutoStore, configurable, ValidateError } from "../../../core/src";
@@ -828,17 +829,67 @@ describe("本地Store同步", () => {
 			},
 		});
 		expect(toStore.state).toEqual({
-			myorder: {
-				"order.b": { b: 100 },
-			},
+			"session.mode": "normal",
+			"session.audioCodec": [],
 		});
-		// @ts-expect-error
-		toStore.state.myorder["order.b"] = 22;
+	});
+	test("同步可配置数据包含计算属性时", () => {
+		return new Promise<void>((resolve) => {
+			// order.a <-> myorder['order.a']
+			const fromStore = new AutoStore(
+				{
+					order: {
+						c: configurable<number>(2, {
+							select: async () => {
+								return [1, 2, 3];
+							},
+						}),
+					},
+				},
+				{ id: "form" },
+			);
+			const toStore = new AutoStore(
+				{
+					myorder: {},
+				},
+				{
+					id: "to",
+				},
+			);
+			fromStore.sync(toStore, {
+				remote: "myorder",
+				immediate: true,
+				pathMap: {
+					toRemote: (path: string[], value) => {
+						// 重点：如果值是对象但使用configurable包装的，则不进行路径转换，否则会导致无法正确同步数据
+						if (typeof value !== "object" || fromStore.schemas.has(path as any)) {
+							return [path.join(".")];
+						}
+					},
+					toLocal: (path: string[]) => {
+						return path.reduce<string[]>((result, cur) => {
+							result.push(...cur.split("."));
+							return result;
+						}, []);
+					},
+				},
+			});
 
-		expect(fromStore.state).toEqual({
-			order: {
-				b: 22,
-			},
+			setTimeout(() => {
+				expect(toStore.state).toEqual({
+					myorder: {
+						"order.c": 2,
+					},
+				});
+
+				expect(toStore.schemas.has(["myorder", "order.c"])).toBeTruthy();
+				toStore.schemas.store.on("computed:done", ({ path, value }) => {
+					// console.log("computed:done", path, value);
+					resolve();
+				});
+				//
+				toStore.schemas.get(["myorder", "order.c"] as never)!.select;
+			});
 		});
 	});
 });

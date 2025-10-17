@@ -91,6 +91,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 	private _batching = false; // 是否批量更新中
 	private _batchOperates: StateOperate[] = []; // 暂存批量操作
 	private _updateFlags: number = 0; // 额外的更新标识
+	private _safeTraverse: boolean = false; // 安全遍历对象不触发可观察对象的创建
 	private _peeping: boolean = false;
 
 	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: <noUnusedPrivateClassMembers>

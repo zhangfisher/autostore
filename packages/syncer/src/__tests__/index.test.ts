@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, test } from 'vitest';
-import { IAutoStoreSyncTransport, StateRemoteOperate } from '../types';
+import type { IAutoStoreSyncTransport, StateRemoteOperate } from '../types';
 import { computed, AutoStore } from '../../../core/src';
 import { AutoStoreSyncer } from '../syncer';
 
