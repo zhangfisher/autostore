@@ -1,5 +1,11 @@
 # autostore
 
+## 3.2.5
+
+### Patch Changes
+
+-   b7df43a: fix some error
+
 ## 3.2.4
 
 ### Patch Changes
