@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 3.2.4
+
+### Patch Changes
+
+-   2326dad: 同步时支持计算属性同步
+-   Updated dependencies [2326dad]
+    -   autostore@3.2.4
+
 ## 3.2.3
 
 ### Patch Changes
