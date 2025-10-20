@@ -422,4 +422,23 @@ describe("validator", () => {
 			// store.state.order.price = 101
 		});
 	});
+	test("schema数据中包括数组", () => {
+		return new Promise<void>((resolve) => {
+			const store = new AutoStore({
+				order: {
+					users: configurable([], {
+						label: "成员",
+						widget: "checkbox-group",
+						select: [
+							{ label: "产品1", value: 1 },
+							{ label: "产品2", value: 2 },
+							{ label: "产品3", value: 3 },
+						],
+					}),
+				},
+			});
+			expect(store.schemas.has(["order", "users"])).toBeTruthy();
+			resolve();
+		});
+	});
 });
