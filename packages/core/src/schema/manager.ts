@@ -79,6 +79,7 @@ export class SchemaManager<
 				},
 				{
 					validate: "pass",
+					silent: true,
 				},
 			);
 		}

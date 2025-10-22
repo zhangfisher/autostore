@@ -970,4 +970,79 @@ describe("本地Store同步", () => {
 			});
 		});
 	});
+	test("多对一同步配置时的初始化事件", () => {
+		const toStore = new AutoStore(
+			{},
+			{
+				id: "to",
+			},
+		);
+		toStore.watch((operate) => {
+			if (operate.flags! < 0) return;
+			if (operate.type === "set") {
+				console.log("toStore.watch", operate.path, operate.value);
+			}
+		});
+
+		return new Promise<void>((resolve) => {
+			// order.a <-> myorder['order.a']
+			const moduleStores = Array.from({ length: 1 }, (_, i) => {
+				const id = `module${i + 1}`;
+				const moduleStore = new AutoStore(
+					{
+						// count: configurable(100, {
+						// 	label: "数量",
+						// }),
+						// price: configurable(100, {
+						// 	label: "姓名",
+						// }),
+						tags: configurable([], {
+							label: "标签",
+						}),
+					},
+					{ id },
+				);
+
+				moduleStore.sync(toStore, {
+					remote: id,
+					immediate: true,
+					filter: (path: string[]) => {
+						return moduleStore.schemas.has(path.join(".") as any);
+					},
+					pathMap: {
+						toRemote: (path: string[], value) => {
+							// 重点：如果值是对象但使用configurable包装的，则不进行路径转换，否则会导致无法正确同步数据
+							if (typeof value !== "object" || moduleStore.schemas.has(path as any)) {
+								return [path.join(".")];
+							}
+						},
+						toLocal: (path: string[]) => {
+							return path.reduce<string[]>((result, cur) => {
+								result.push(...cur.split("."));
+								return result;
+							}, []);
+						},
+					},
+				});
+				return moduleStore;
+			});
+
+			setTimeout(() => {
+				resolve();
+				// expect(toStore.state).toEqual({
+				// 	myorder: {
+				// 		"order.c": 2,
+				// 	},
+				// });
+
+				// expect(toStore.schemas.has(["myorder", "order.c"])).toBeTruthy();
+				// toStore.schemas.store.on("computed:done", ({ path, value }) => {
+				// 	// console.log("computed:done", path, value);
+				// 	resolve();
+				// });
+				// //
+				// toStore.schemas.get(["myorder", "order.c"] as never)!.select;
+			});
+		});
+	});
 });
