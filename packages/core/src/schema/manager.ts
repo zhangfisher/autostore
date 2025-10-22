@@ -61,28 +61,18 @@ export class SchemaManager<
 		});
 
 		this._descriptors[key] = finalDescriptor;
-		// if (this.store) {
-		// 	this.store.update(
+
+		// if (this.shadow && descriptor.value !== undefined) {
+		// 	this.shadow.update(
 		// 		(state) => {
-		// 			setVal(state, key.split("_$_"), finalDescriptor);
+		// 			setVal(state, pathKey, descriptor.value);
 		// 		},
 		// 		{
+		// 			validate: "pass",
 		// 			silent: true,
 		// 		},
 		// 	);
 		// }
-
-		if (this.shadow && descriptor.value !== undefined) {
-			this.shadow.update(
-				(state) => {
-					setVal(state, pathKey, descriptor.value);
-				},
-				{
-					validate: "pass",
-					silent: true,
-				},
-			);
-		}
 		return descriptor;
 	}
 	/**

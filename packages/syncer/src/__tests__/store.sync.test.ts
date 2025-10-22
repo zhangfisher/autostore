@@ -972,7 +972,7 @@ describe("本地Store同步", () => {
 	});
 	test("多对一同步配置时的初始化事件", () => {
 		const toStore = new AutoStore(
-			{},
+			{ module1: {} },
 			{
 				id: "to",
 			},
@@ -983,16 +983,17 @@ describe("本地Store同步", () => {
 				console.log("toStore.watch", operate.path, operate.value);
 			}
 		});
-
+		// @ts-expect-error
+		toStore.state.module1.count = 200;
 		return new Promise<void>((resolve) => {
 			// order.a <-> myorder['order.a']
 			const moduleStores = Array.from({ length: 1 }, (_, i) => {
 				const id = `module${i + 1}`;
 				const moduleStore = new AutoStore(
 					{
-						// count: configurable(100, {
-						// 	label: "数量",
-						// }),
+						count: configurable(100, {
+							label: "数量",
+						}),
 						// price: configurable(100, {
 						// 	label: "姓名",
 						// }),
@@ -1002,7 +1003,7 @@ describe("本地Store同步", () => {
 					},
 					{ id },
 				);
-
+				moduleStore.state.count = 200;
 				moduleStore.sync(toStore, {
 					remote: id,
 					immediate: true,
