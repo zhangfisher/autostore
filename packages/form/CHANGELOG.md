@@ -1,5 +1,12 @@
 # @autostorejs/form
 
+## 3.2.6
+
+### Patch Changes
+
+-   Updated dependencies [4107a4d]
+    -   autostore@3.2.6
+
 ## 3.2.5
 
 ### Patch Changes

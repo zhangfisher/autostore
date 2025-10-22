@@ -1,5 +1,11 @@
 # autostore
 
+## 3.2.6
+
+### Patch Changes
+
+-   4107a4d: 修复同步时 schmea 同步错误的问题
+
 ## 3.2.5
 
 ### Patch Changes
