@@ -1,5 +1,11 @@
 # autostore
 
+## 3.2.7
+
+### Patch Changes
+
+-   f6734bd: 修复当双向同步时存在的错误
+
 ## 3.2.6
 
 ### Patch Changes
