@@ -91,10 +91,6 @@ function parseSchemaOptions(args: any[]): SchemaArgs {
 }
 
 export const schema = function () {
-	// const [initial, options] =
-	// 	arguments.length === 1 && typeof arguments[0] === "object" && !Array.isArray(arguments[0])
-	// 		? [undefined, arguments[0]]
-	// 		: [...arguments];
 	const initial = arguments[0];
 	const options = arguments[1];
 	const args = parseSchemaOptions([initial, options]);

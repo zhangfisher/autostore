@@ -52,7 +52,7 @@ export class AutoForm extends LitElement {
 	seq: number = ++AutoForm.seq;
 
 	@provide({ context })
-	//@ts-ignore
+	//@ts-expect-error
 	context: AutoFormContext = {};
 	schemas: SchemaOptions[] = [];
 
