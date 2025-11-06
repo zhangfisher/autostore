@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 3.2.9
+
+### Patch Changes
+
+-   4c4804c: 修复双向同步 schema 数据时状态数据被复位的问题
+-   Updated dependencies [4c4804c]
+    -   autostore@3.2.9
+
 ## 3.2.8
 
 ### Patch Changes
