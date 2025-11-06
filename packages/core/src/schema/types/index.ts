@@ -258,6 +258,11 @@ export type SchemaDescriptor<Value = any, Options = Dict> = {
 	datatype: "string" | "number" | "boolean" | "object" | "array" | "any" | string;
 	value: Value;
 	options: SchemaOptions<Value, Options>;
+	/**
+	 * 用于传递额外的标识
+	 * 比如在进行syncer时，传入falgs==SYNC_INIT_FLAG
+	 */
+	flags?: number;
 };
 
 export interface SchemaDescriptorBuilder<Value = any, State = Dict> {

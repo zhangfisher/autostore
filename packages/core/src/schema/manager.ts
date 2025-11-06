@@ -62,7 +62,7 @@ export class SchemaManager<
 
 		this._descriptors[key] = finalDescriptor;
 
-		if (this.shadow && descriptor.value !== undefined) {
+		if (this.shadow && descriptor.value !== undefined && descriptor.flags !== -1) {
 			this.shadow.update(
 				(state) => {
 					setVal(state, pathKey, descriptor.value);

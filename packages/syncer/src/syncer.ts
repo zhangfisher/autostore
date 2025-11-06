@@ -13,7 +13,6 @@ import {
 	markRaw,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
-import { parseFunc } from "../../core/src/utils/parseFunc";
 import { markFunc } from "./utils/markFunc";
 
 type NormalizeAutoStoreSyncerOptions = Required<
@@ -457,6 +456,7 @@ export class AutoStoreSyncer {
 				datatype: schema.datatype,
 				value: schema.value,
 				options: schema,
+				flags: operate.flags,
 			});
 		});
 		this.store.schemas.build();

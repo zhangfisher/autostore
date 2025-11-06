@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 import { computed, AutoStore, configurable, ValidateError } from "../../../core/src";
 import "..";
 import { isFunction } from "../../../core/src/utils/isFunction";
+import { AutoStoreSyncer } from "..";
 
 describe("本地Store同步", () => {
 	test("一对一全同步", async () => {
@@ -1045,5 +1046,110 @@ describe("本地Store同步", () => {
 				// toStore.schemas.get(["myorder", "order.c"] as never)!.select;
 			});
 		});
+	});
+	test("模块配置同步模拟测试", async () => {
+		class SettingManager {
+			_dirtyValues: Record<string, any> = {};
+			store = new AutoStore(
+				{},
+				{
+					id: "settings",
+					resetable: true,
+				},
+			);
+
+			constructor(values: Record<string, any>) {
+				this.load(values);
+				// 侦听配置变化，并且在变化时进行保存
+				this.store.watch(({ path, value, flags }) => {
+					// 当从模块第一次同步更新到store时，flags<0
+					if (flags && flags < 0) return;
+					// 为什么是2? 因为path[0]是模块id，path[1]是配置项路径
+					if (path.length === 2) {
+						if (!this._dirtyValues[path[0]]) this._dirtyValues[path[0]] = {};
+						this._dirtyValues[path[0]][path[1]] = value;
+
+						this.save();
+					}
+				});
+			}
+			load(values: Record<string, any> = {}) {
+				this.store = new AutoStore(values, {
+					id: "settings",
+					resetable: true,
+				});
+			}
+			save() {}
+		}
+		const settingManager = new SettingManager({
+			shop: {
+				"order.price": 1000,
+			},
+		});
+		class ShopModule {
+			store = new AutoStore({
+				order: {
+					price: configurable(100),
+				},
+			});
+			syncer?: AutoStoreSyncer;
+			constructor() {
+				this.loadSettings();
+				this.sync();
+			}
+			sync() {
+				// 如果模块不是observable的，则不需要进行同步，同步是基于AutoStore的sync功能的
+				if (this.store.schemas.size === 0) {
+					return;
+				}
+
+				// 只有使用schema或configurable声明的配置项才会进行同步
+				const filter = (path: string[]) => {
+					return this.store.schemas.has(path.join(".") as any);
+				};
+				const moduleStore = this.store;
+				const syncSettings = {
+					filter,
+					remote: "shop",
+					immediate: true,
+					pathMap: {
+						toLocal: (path: any[], value: any) => {
+							if (typeof value !== "object") {
+								return path.reduce<string[]>((result: any[], cur: string) => {
+									result.push(...cur.split("."));
+									return result;
+								}, []);
+							}
+						},
+						toRemote(path: any[], value: any) {
+							// this.store.schemas.has(path)的作用
+							// 当同步configurable时，如果是数组或对象，也需要同步
+							if (typeof value !== "object" || moduleStore.schemas.has(path)) {
+								return [path.join(".")];
+							}
+						},
+					},
+				};
+				// 将本模块的配置项同步到全局SettingManager中，这样在应用中就可以使用SettingManager管理应用的所有配置了
+				this.syncer = this.store.sync(settingManager.store, syncSettings);
+			}
+			loadSettings() {
+				// @ts-expect-error
+				this.store.state.order.price = settingManager.store.state["shop"]["order.price"];
+			}
+		}
+
+		const order = new ShopModule();
+		expect(order.store.state.order.price).toBe(1000);
+		// @ts-expect-error
+		expect(settingManager.store.state["shop"]["order.price"]).toBe(1000);
+		order.store.state.order.price = 2000;
+		expect(order.store.state.order.price).toBe(2000);
+		// @ts-expect-error
+		expect(settingManager.store.state["shop"]["order.price"]).toBe(2000);
+
+		// @ts-expect-error
+		settingManager.store.state["shop"]["order.price"] = 3000;
+		expect(order.store.state.order.price).toBe(3000);
 	});
 });
