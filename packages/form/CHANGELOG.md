@@ -1,5 +1,13 @@
 # @autostorejs/form
 
+## 3.2.8
+
+### Patch Changes
+
+-   510bbf4: 修复 schema 中包括计算属性时的一个计算错误
+-   Updated dependencies [510bbf4]
+    -   autostore@3.2.8
+
 ## 3.2.7
 
 ### Patch Changes
