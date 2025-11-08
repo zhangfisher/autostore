@@ -13,7 +13,6 @@ import {
 	markRaw,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
-import { markFunc } from "./utils/markFunc";
 
 type NormalizeAutoStoreSyncerOptions = Required<
 	Omit<AutoStoreSyncerOptions, "local" | "remote"> & {
@@ -80,6 +79,12 @@ export class AutoStoreSyncer {
 		return this._options.remote;
 	}
 
+	private _syncSchemas() {
+		if (this.options.syncSchemas) {
+			const schemaStore = this.store.schemas.store;
+		}
+	}
+
 	private createRemoteOperate(operate: StateOperate) {
 		return {
 			id: this.id,
@@ -113,6 +118,7 @@ export class AutoStoreSyncer {
 					operates: "write",
 				},
 			);
+			this._onSchemaUpdate();
 			// 收到远程更新
 			this._options.transport.receive((operate) => {
 				if (this.options.direction === "forward" && !operate.type.startsWith("$")) return;
@@ -174,6 +180,8 @@ export class AutoStoreSyncer {
 			this._sendSchemas(operate);
 		} else if (["$update-schemas", "$push-schemas"].includes(operate.type)) {
 			this._updateSchemas(operate);
+		} else if (operate.type === "$update-schema-option") {
+			this._updateSchemaOption(operate);
 		} else {
 			this._applyOperate(operate);
 		}
@@ -380,16 +388,22 @@ export class AutoStoreSyncer {
 		}
 	}
 
+	/**
+	 * 序列化给定的 schema 对象，处理其中的计算属性
+	 * @param {string} schemaKey - schema 的键名，用于构建完整的计算属性键
+	 * @param {Record<string, any>} schema - 需要序列化的 schema 对象
+	 * @returns {Record<string, any>} 处理后的 schema 对象，其中计算属性被标记为函数
+	 */
 	_serializeSchema(schemaKey: string, schema: Record<string, any>) {
-		Object.entries(schema).forEach(([key]) => {
-			const k = `${schemaKey}.${key}`;
-			if (this.store.schemas.store.computedObjects.has(k)) {
-				const computedObj = this.store.schemas.store.computedObjects.get(k);
-				if (computedObj) {
-					schema[key] = markFunc(computedObj?.getter);
-				}
-			}
-		});
+		// Object.entries(schema).forEach(([key]) => {
+		// 	const k = `${schemaKey}.${key}`;
+		// 	if (this.store.schemas.store.computedObjects.has(k)) {
+		// 		const computedObj = this.store.schemas.store.computedObjects.get(k);
+		// 		if (computedObj) {
+		// 			schema[key] = markFunc(computedObj?.getter);
+		// 		}
+		// 	}
+		// });
 		return schema;
 	}
 
@@ -438,6 +452,38 @@ export class AutoStoreSyncer {
 			path: [],
 			value: schemas,
 			flags: this.seq,
+		});
+	}
+
+	private _updateSchemaOption(operate: StateRemoteOperate) {
+		const { type, value } = operate;
+		debugger;
+	}
+
+	/**
+	 * 因为schemas也是一个AutoStore，其成员也可能是计算属性
+	 * 所以需要监听schema的变化，并发送到远程端
+	 * 这样才可以保证远程端的schema和本地端的schema是一致的
+	 *
+	 */
+	private _onSchemaUpdate() {
+		this.store.schemas.store.watch((operate) => {
+			if (operate.flags! < 0) return;
+
+			let toPath = operate.path;
+
+			if (typeof this.options.pathMap.toRemote === "function") {
+				const d = this.options.pathMap.toRemote(toPath, operate.value);
+				debugger;
+			}
+
+			this._sendOperate({
+				id: this.id,
+				type: "$update-schema-option",
+				path: [],
+				value: operate,
+				flags: this.seq,
+			});
 		});
 	}
 

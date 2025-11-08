@@ -263,6 +263,7 @@ export type SchemaDescriptor<Value = any, Options = Dict> = {
 	 * 比如在进行syncer时，传入falgs==SYNC_INIT_FLAG
 	 */
 	flags?: number;
+	pathMap?: Record<string, string>;
 };
 
 export interface SchemaDescriptorBuilder<Value = any, State = Dict> {

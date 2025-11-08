@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest";
 import { computed, AutoStore, configurable, ValidateError } from "../../../core/src";
 import "..";
 import { isFunction } from "../../../core/src/utils/isFunction";
-import { AutoStoreSyncer } from "..";
+import type { AutoStoreSyncer } from "..";
 
 describe("本地Store同步", () => {
 	test("一对一全同步", async () => {
@@ -27,7 +27,23 @@ describe("本地Store同步", () => {
 		expect(store1.state.order.count).toBe(5);
 		expect(store1.state.order.total).toBe(10);
 	});
-
+	test("一对一全同步包括计算属性", async () => {
+		const store1 = new AutoStore(
+			{
+				order: {
+					name: "fisher",
+					price: 2,
+					count: 3,
+					total: computed((order) => order.price * order.count),
+				},
+			},
+			{ id: "1" },
+		);
+		const store2 = new AutoStore<typeof store1.state>({} as typeof store1.state, { id: "2" });
+		store1.sync(store2, { direction: "both" });
+		store2.state.order.count = 5;
+		expect(store2.state.order.total).toBe(10);
+	});
 	test("主动拉取一对一全同步", async () => {
 		const fromStore = new AutoStore({
 			order: {
@@ -638,7 +654,7 @@ describe("本地Store同步", () => {
 			{
 				order: {
 					a: 1,
-					b: configurable(2, {
+					b: configurable(3, {
 						onValidate: (value: any) => {
 							return value > 2;
 						},
@@ -1048,6 +1064,8 @@ describe("本地Store同步", () => {
 		});
 	});
 	test("模块配置同步模拟测试", async () => {
+		const storage: Record<string, any> = {};
+
 		class SettingManager {
 			_dirtyValues: Record<string, any> = {};
 			store = new AutoStore(
@@ -1068,18 +1086,20 @@ describe("本地Store同步", () => {
 					if (path.length === 2) {
 						if (!this._dirtyValues[path[0]]) this._dirtyValues[path[0]] = {};
 						this._dirtyValues[path[0]][path[1]] = value;
-
 						this.save();
 					}
 				});
 			}
 			load(values: Record<string, any> = {}) {
-				this.store = new AutoStore(values, {
+				this._dirtyValues = Object.assign({}, values, storage);
+				this.store = new AutoStore(Object.assign({}, values, storage), {
 					id: "settings",
 					resetable: true,
 				});
 			}
-			save() {}
+			save() {
+				Object.assign(storage, this._dirtyValues);
+			}
 		}
 		const settingManager = new SettingManager({
 			shop: {
@@ -1089,7 +1109,13 @@ describe("本地Store同步", () => {
 		class ShopModule {
 			store = new AutoStore({
 				order: {
+					count: configurable(100, {
+						label: "数量",
+					}),
 					price: configurable(100),
+					unit: configurable("个", {
+						label: "单位",
+					}),
 				},
 			});
 			syncer?: AutoStoreSyncer;
@@ -1140,16 +1166,111 @@ describe("本地Store同步", () => {
 		}
 
 		const order = new ShopModule();
-		expect(order.store.state.order.price).toBe(1000);
+
+		order.store.state.order.price = 1000;
+		order.store.state.order.count = 10;
+		order.store.state.order.unit = "套";
 		// @ts-expect-error
-		expect(settingManager.store.state["shop"]["order.price"]).toBe(1000);
-		order.store.state.order.price = 2000;
-		expect(order.store.state.order.price).toBe(2000);
+		expect(settingManager.store.state.shop["order.price"]).toBe(1000);
 		// @ts-expect-error
-		expect(settingManager.store.state["shop"]["order.price"]).toBe(2000);
+		expect(settingManager.store.state.shop["order.count"]).toBe(10);
+		// @ts-expect-error
+		expect(settingManager.store.state.shop["order.unit"]).toBe("套");
+
+		expect(storage).toEqual({
+			shop: {
+				"order.price": 1000,
+				"order.count": 10,
+				"order.unit": "套",
+			},
+		});
+	});
+	test("当schema数据中包括函数时的同步", async () => {
+		// order.a <-> myorder['order.a']
+		const fromStore = new AutoStore(
+			{
+				order: {
+					a: 1,
+					b: configurable(2, {
+						onValidate: (value: any) => value > 2,
+						toState: (value: any) => {
+							return value * 1000;
+						},
+						toInput: (value: any) => {
+							return value / 1000;
+						},
+					}),
+					c: 3,
+				},
+				user: {
+					tags: ["x", configurable("y"), "z"],
+				},
+			},
+			{ id: "local" },
+		);
+		const toStore = new AutoStore({}, { id: "to" });
+		const syncer = toStore.sync(fromStore, { immediate: false });
+		syncer.pull();
+		expect(Object.keys(toStore.schemas.store.state)).toEqual(["order_$_b", "user_$_tags_$_1"]);
+		// @ts-expect-error
+		// biome-ignore lint/complexity/useLiteralKeys: <useLiteralKeys>
+		expect(isFunction(toStore.schemas.store.state["order_$_b"].onValidate)).toBeTruthy();
+	});
+	test("当schmea中包括数据时的全量同步schema数据时进行路径转换", async () => {
+		const fromStore = new AutoStore(
+			{
+				order: {
+					a: 1,
+					b: configurable(2, {
+						onValidate: (value: any) => {
+							return value > 2;
+						},
+						toState: () => 2,
+						toInput: () => 2,
+					}),
+					c: 3,
+				},
+				user: {
+					tags: ["x", configurable("y"), "z"],
+				},
+			},
+			{ id: "from" },
+		);
+		const toStore = new AutoStore(
+			{
+				myorder: {},
+			},
+			{ id: "to" },
+		);
+		fromStore.sync(toStore, {
+			remote: "myorder",
+			pathMap: {
+				toRemote: (path: string[], value: any) => {
+					if (typeof value !== "object") {
+						return [path.join(".")];
+					}
+				},
+				toLocal: (path: string[], value: any) => {
+					if (typeof value !== "object") {
+						return path.reduce<string[]>((result, cur) => {
+							result.push(...cur.split("."));
+							return result;
+						}, []);
+					}
+				},
+			},
+		});
+		expect(Object.keys(toStore.schemas.store.state)).toEqual(["myorder_$_order.b", "myorder_$_user.tags.1"]);
+		expect(() => {
+			// @ts-expect-error
+			toStore.state.myorder["order.b"] = 0;
+		}).toThrow(ValidateError);
+
+		const fromSchema = fromStore.schemas.get("order.b")!;
 
 		// @ts-expect-error
-		settingManager.store.state["shop"]["order.price"] = 3000;
-		expect(order.store.state.order.price).toBe(3000);
+		const toSchema = toStore.schemas.get(["myorder", "order.b"])!;
+
+		expect(fromSchema.onValidate !== toSchema.onValidate).toBe(true);
 	});
 });

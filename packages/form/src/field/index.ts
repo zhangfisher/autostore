@@ -130,14 +130,28 @@ export class AutoField<Options = unknown> extends LitElement {
      * 转换为AsyncComputedValue
      */
     getFieldOptions(): FieldOptions<Options> {
-        return Object.entries(this.schema || {}).reduce((result: any, [key, value]) => {
+        const schema = this.schema || {};
+        let result: Record<string, any> = Object.assign(
+            {},
+            getDefaultFieldOptions(),
+            this.getInitialOptions(),
+        );
+        for (const [key, value] of Object.entries(schema)) {
             if (isAsyncComputedValue(value)) {
                 result[key] = value.value;
             } else {
                 result[key] = value;
             }
-            return result;
-        }, Object.assign({}, getDefaultFieldOptions(), this.getInitialOptions()));
+        }
+        return result;
+        // return Object.entries(schema).reduce((result: any, [key, value]) => {
+        //     if (isAsyncComputedValue(value)) {
+        //         result[key] = value.value;
+        //     } else {
+        //         result[key] = value;
+        //     }
+        //     return result;
+        // }, Object.assign({}, getDefaultFieldOptions(), this.getInitialOptions()));
     }
 
     getPrefix() {}
@@ -486,8 +500,8 @@ export class AutoField<Options = unknown> extends LitElement {
     getStateValue() {
         return this.toInput(getVal(this.context.store.state, this.getPath()));
     }
-    connectedCallback(): void {        
-        super.connectedCallback();        
+    connectedCallback(): void {
+        super.connectedCallback();
         this.updateOptions();
     }
     updateOptions() {

@@ -14,6 +14,8 @@ export type AutoStoreSyncerOptions = {
 	onReceive?: (operate: StateRemoteOperate) => boolean | undefined;
 	// 是否进行一次同步
 	immediate?: boolean;
+	// 是否同步schemas
+	syncSchemas?: boolean;
 	// 当启用缓存时，缓存的最大数量,超出部分会自动删除
 	maxCacheSize?: number;
 	// 0:双向同步, 1: from->to,  2: to->from
@@ -46,7 +48,8 @@ export type StateRemoteOperate<Value = any> = {
 		| "$pull-store"
 		| "$update-store"
 		| "$pull-schemas"
-		| "$update-schemas";
+		| "$update-schemas"
+		| "$update-schema-option";
 	path: string[];
 	value: Value;
 	indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素

@@ -1,7 +1,7 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
-import { isSchemaBuilder, markRaw, pathStartsWith, setVal } from "../utils";
+import { isPathEq, isSchemaBuilder, markRaw, pathStartsWith, setVal, watchObjectAccess } from "../utils";
 import { getVal } from "../utils/getVal";
 import { isFuncDefine } from "../utils/isFuncDefine";
 import { parseFunc } from "../utils/parseFunc";
@@ -55,8 +55,15 @@ export class SchemaManager<
 
 		Object.entries(finalDescriptor).forEach(([key, value]) => {
 			if (isFuncDefine(value)) {
-				(finalDescriptor as any)[key] =
-					key === "onValidate" ? markRaw(parseFunc(value)) : (parseFunc(value) as any);
+				const func = parseFunc(value);
+				if (typeof func === "function") {
+					// if (key === 'onValidate') {
+					if (key.startsWith("on") || key.startsWith("to")) {
+						(finalDescriptor as any)[key] = markRaw(func);
+					} else {
+						(finalDescriptor as any)[key] = func;
+					}
+				}
 			}
 		});
 

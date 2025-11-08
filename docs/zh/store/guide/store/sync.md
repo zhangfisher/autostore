@@ -538,3 +538,7 @@ syncer.stop();
 以下是同步时进行路径映射的示例：
 
 <demo react="store/syncStoreWithPathMap.tsx"/>
+
+:::warning 注意
+同步功能无法同步计算属性和监视属性
+:::
