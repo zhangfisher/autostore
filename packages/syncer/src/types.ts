@@ -14,8 +14,6 @@ export type AutoStoreSyncerOptions = {
 	onReceive?: (operate: StateRemoteOperate) => boolean | undefined;
 	// 是否进行一次同步
 	immediate?: boolean;
-	// 是否同步schemas
-	syncSchemas?: boolean;
 	// 当启用缓存时，缓存的最大数量,超出部分会自动删除
 	maxCacheSize?: number;
 	// 0:双向同步, 1: from->to,  2: to->from
@@ -56,6 +54,7 @@ export type StateRemoteOperate<Value = any> = {
 	parentPath?: string[];
 	reply?: boolean;
 	flags: number;
+	__schema__?: boolean;
 };
 
 export interface IAutoStoreSyncTransport {
@@ -78,5 +77,8 @@ declare module "autostore" {
 		clone<Entry extends string, CloneState extends Record<string, any> = GetTypeByPath<State, Entry>>(
 			options?: AutoStoreCloneOptions<State, Entry>,
 		): AutoStore<CloneState>;
+	}
+	interface StateOperate {
+		__schema__?: boolean;
 	}
 }

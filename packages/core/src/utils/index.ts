@@ -39,4 +39,3 @@ export * from "./createAsyncComptuedValue";
 export * from "./isValueSchema";
 export * from "./isRelPath";
 export * from "./isSchemaBuilder";
-export * from "./watchObjectAccess";

@@ -72,12 +72,9 @@ function createSyncerPlugin() {
 }
 
 export function installSyncerPlugin() {
-	// @ts-ignore
 	if (!globalThis.__AUTOSTORE_EXTENDS__) {
-		// @ts-ignore
 		globalThis.__AUTOSTORE_EXTENDS__ = [];
 	}
-	// @ts-ignore
 	globalThis.__AUTOSTORE_EXTENDS__.push(createSyncerPlugin());
 }
 installSyncerPlugin();

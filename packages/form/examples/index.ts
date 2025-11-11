@@ -8,5 +8,6 @@
 // import './addContact';
 import "./ipConfig";
 import "./ipSyncConfig";
+import "./ipSyncConfig-nomap";
 export * from "./debuger";
 // export * from './store';

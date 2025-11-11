@@ -4,8 +4,8 @@ import { LitElement, type PropertyValues, html } from "lit";
 import { AutoStore, configurable } from "autostore";
 import type { AutoStoreSyncer } from "@autostorejs/syncer";
 
-@customElement("ip-sync-config")
-class IPConfigSyncForm extends LitElement {
+@customElement("ip-sync-config2")
+class IPConfigSyncForm2 extends LitElement {
 	settingSyncer?: AutoStoreSyncer;
 	store = new AutoStore({
 		network: {
@@ -65,28 +65,10 @@ class IPConfigSyncForm extends LitElement {
 		const filter = (path: string[]) => {
 			return this.store.schemas.has(path.join(".") as any);
 		};
-		const moduleStore = this.store;
 		const syncSettings = {
 			filter,
-			remote: "system",
+			// remote: "system",
 			immediate: true,
-			pathMap: {
-				toLocal: (path: any[], value: any) => {
-					if (typeof value !== "object") {
-						return path.reduce<string[]>((result: any[], cur: string) => {
-							result.push(...cur.split("."));
-							return result;
-						}, []);
-					}
-				},
-				toRemote(path: any[], value: any) {
-					// this.store.schemas.has(path)的作用
-					// 当同步configurable时，如果是数组或对象，也需要同步
-					if (typeof value !== "object" || moduleStore.schemas.has(path)) {
-						return [path.join(".")];
-					}
-				},
-			},
 		};
 		// 将本模块的配置项同步到全局SettingManager中，这样在应用中就可以使用SettingManager管理应用的所有配置了
 		this.settingSyncer = this.store.sync(this.settingStore, syncSettings);
@@ -119,7 +101,7 @@ class IPConfigSyncForm extends LitElement {
 
 declare global {
 	interface HTMLElementTagNameMap {
-		"ip-sync-config": IPConfigSyncForm;
+		"ip-sync-config2": IPConfigSyncForm2;
 	}
 	var store: AutoStore<any>;
 }

@@ -1,7 +1,7 @@
 import { PATH_DELIMITER } from "../consts";
 import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
-import { isPathEq, isSchemaBuilder, markRaw, pathStartsWith, setVal, watchObjectAccess } from "../utils";
+import { isSchemaBuilder, markRaw, pathStartsWith, setVal } from "../utils";
 import { getVal } from "../utils/getVal";
 import { isFuncDefine } from "../utils/isFuncDefine";
 import { parseFunc } from "../utils/parseFunc";

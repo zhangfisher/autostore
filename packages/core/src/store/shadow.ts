@@ -47,6 +47,7 @@ export function createShadow<T extends Dict>(
 
 	// 将操作转到到shadowStore
 	store.watch((operate) => {
+		operate.shadow = true;
 		shadowStore.operates.emit(operate.path.join(PATH_DELIMITER), operate);
 	});
 	return shadowStore;

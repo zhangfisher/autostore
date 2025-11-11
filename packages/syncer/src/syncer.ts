@@ -29,6 +29,7 @@ export class AutoStoreSyncer {
 	syncing: boolean = false;
 	peer?: AutoStoreSyncer;
 	private _watcher: Watcher | undefined;
+	private _schemaWatcher: Watcher | undefined;
 	private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存,
 	private seq: number = 0; // 实例标识
 	constructor(
@@ -79,12 +80,6 @@ export class AutoStoreSyncer {
 		return this._options.remote;
 	}
 
-	private _syncSchemas() {
-		if (this.options.syncSchemas) {
-			const schemaStore = this.store.schemas.store;
-		}
-	}
-
 	private createRemoteOperate(operate: StateOperate) {
 		return {
 			id: this.id,
@@ -94,6 +89,7 @@ export class AutoStoreSyncer {
 			value: operate.value,
 			indexs: operate.indexs,
 			flags: operate.flags,
+			__schema__: operate.__schema__,
 		} as StateRemoteOperate;
 	}
 
@@ -105,20 +101,8 @@ export class AutoStoreSyncer {
 		try {
 			this.syncing = true;
 			// 发送更新到了远程
-			this._watcher = this.store.watch(
-				(operate) => {
-					if (this._isPass(operate.path, operate.value) === false) return;
-					// 为什么要Math.abs?
-					// 在初始化进行第一次同步时传送seq时使用了负数，这样就可以让接收方区分是否是第一次同步
-					if (Math.abs(operate.flags || 0) === this.seq) return;
-					if (this.options.direction === "backward") return;
-					this._sendToRemote(operate);
-				},
-				{
-					operates: "write",
-				},
-			);
-			this._onSchemaUpdate();
+			this._watcher = this.store.watch(this._onWatchStore.bind(this));
+			this._schemaWatcher = this.store.schemas.store.watch(this._onWatchSchemaStore.bind(this));
 			// 收到远程更新
 			this._options.transport.receive((operate) => {
 				if (this.options.direction === "forward" && !operate.type.startsWith("$")) return;
@@ -130,6 +114,43 @@ export class AutoStoreSyncer {
 		}
 	}
 
+	private _onWatchStore(operate: StateOperate) {
+		if (this._isPass(operate.path, operate.value) === false) return;
+		if (Math.abs(operate.flags || 0) === this.seq)
+			// 为什么要Math.abs?
+			// 在初始化进行第一次同步时传送seq时使用了负数，这样就可以让接收方区分是否是第一次同步
+			return;
+		if (this.options.direction === "backward") return;
+		this._sendToRemote(operate);
+	}
+	private _onWatchSchemaStore(operate: StateOperate) {
+		if (operate.shadow) return;
+		operate.__schema__ = true;
+		if (Math.abs(operate.flags || 0) === this.seq) return;
+		if (this.options.direction === "backward") return;
+		this._sendSchemaToRemote(operate);
+	}
+
+	private _sendSchemaToRemote(operate: StateOperate) {
+		const remoteEntry = this.options.remote;
+		const firstPath = operate.path[0].split("_$_");
+		if (typeof this._options.pathMap.toRemote === "function") {
+			// 路径变换
+			const toPath = this._options.pathMap.toRemote(firstPath, operate.value);
+			if (toPath) {
+				operate.path = [[...remoteEntry, ...toPath].join("_$_"), operate.path[1]];
+			}
+		} else {
+			operate.path = [[...remoteEntry, ...firstPath].join("_$_"), operate.path[1]];
+		}
+		operate.parentPath = [operate.path[0]];
+
+		const remoteOperate = this.createRemoteOperate(operate);
+		if (typeof this._options.onSend === "function") {
+			if (this._options.onSend.call(this, remoteOperate) === false) return;
+		}
+		this._sendOperate(remoteOperate);
+	}
 	private _isPass(path: string[], value: any) {
 		if (isFunction(this._options.filter)) {
 			return this._options.filter(path, value);
@@ -180,8 +201,6 @@ export class AutoStoreSyncer {
 			this._sendSchemas(operate);
 		} else if (["$update-schemas", "$push-schemas"].includes(operate.type)) {
 			this._updateSchemas(operate);
-		} else if (operate.type === "$update-schema-option") {
-			this._updateSchemaOption(operate);
 		} else {
 			this._applyOperate(operate);
 		}
@@ -189,6 +208,8 @@ export class AutoStoreSyncer {
 
 	private _applyOperate(operate: StateRemoteOperate) {
 		const { type, value, indexs } = operate;
+		const store = operate.__schema__ ? this.store.schemas.store : this.store;
+
 		// 路径映射
 		const newPath = this._mapPath(operate.path, operate.value, "toLocal");
 		if (!newPath) return;
@@ -199,7 +220,7 @@ export class AutoStoreSyncer {
 			flags: operate.flags === SYNC_INIT_FLAG ? -this.seq : this.seq,
 		};
 		if (type === "set" || type === "update") {
-			this.store.update((state) => {
+			store.update((state) => {
 				// getVal提供一个默认值，否则当目标路径不存在时会触发invalid state path error
 				if (isAsyncComputedValue(getVal(state, toPath, true))) {
 					setVal(state, toPath.concat("value"), value);
@@ -208,16 +229,16 @@ export class AutoStoreSyncer {
 				}
 			}, updateOpts);
 		} else if (type === "delete") {
-			this.store.update((state) => {
+			store.update((state) => {
 				setVal(state, toPath, undefined);
 			}, updateOpts);
 		} else if (type === "insert") {
-			this.store.update((state) => {
+			store.update((state) => {
 				const arr = getVal(state, toPath);
 				if (indexs) arr.splice(indexs[0], 0, ...value);
 			}, updateOpts);
 		} else if (type === "remove") {
-			this.store.update((state) => {
+			store.update((state) => {
 				const arr = getVal(state, toPath);
 				if (indexs) {
 					arr.splice(indexs[0], indexs.length);
@@ -229,6 +250,7 @@ export class AutoStoreSyncer {
 	stop(disconnect: boolean = true) {
 		if (!this.syncing) return;
 		this._watcher?.off();
+		this._schemaWatcher?.off();
 		this.syncing = false;
 		if (disconnect) this._disconnect();
 	}
@@ -300,7 +322,6 @@ export class AutoStoreSyncer {
 		if (includeSchemas) this._pushSchemas(initial, pathMap);
 	}
 	_pushStore(initial: boolean = false) {
-		// const localSnap = this._getLocalSnap();
 		const localSnap = this._getLocalSnap(); //getVal(this.store.state, this._options.local.join(PATH_DELIMITER));
 		if (typeof this._options.pathMap.toRemote === "function") {
 			const pathMap: Map<string, any> = new Map();
@@ -359,13 +380,14 @@ export class AutoStoreSyncer {
 	 * @param operate
 	 */
 	private _updateStore(operate: StateRemoteOperate) {
+		const store = operate.__schema__ ? this.store.schemas.store : this.store;
 		if (typeof this._options.pathMap.toLocal === "function") {
 			forEachObject(operate.value, ({ value, path }) => {
 				if (this._isPass(path, value) === false) return;
 				const toValue = Array.isArray(value) ? [] : typeof value === "object" ? {} : value;
 				const toPath = this._mapPath(path, toValue, "toLocal");
 				if (toPath) {
-					this.store.update(
+					store.update(
 						(state) => {
 							setVal(state, [...this.localEntry, ...toPath], toValue);
 						},
@@ -377,7 +399,7 @@ export class AutoStoreSyncer {
 			});
 		} else {
 			const toPath = [...this.localEntry, ...operate.path];
-			this.store.update(
+			store.update(
 				(state) => {
 					setVal(state, toPath, operate.value);
 				},
@@ -452,38 +474,6 @@ export class AutoStoreSyncer {
 			path: [],
 			value: schemas,
 			flags: this.seq,
-		});
-	}
-
-	private _updateSchemaOption(operate: StateRemoteOperate) {
-		const { type, value } = operate;
-		debugger;
-	}
-
-	/**
-	 * 因为schemas也是一个AutoStore，其成员也可能是计算属性
-	 * 所以需要监听schema的变化，并发送到远程端
-	 * 这样才可以保证远程端的schema和本地端的schema是一致的
-	 *
-	 */
-	private _onSchemaUpdate() {
-		this.store.schemas.store.watch((operate) => {
-			if (operate.flags! < 0) return;
-
-			let toPath = operate.path;
-
-			if (typeof this.options.pathMap.toRemote === "function") {
-				const d = this.options.pathMap.toRemote(toPath, operate.value);
-				debugger;
-			}
-
-			this._sendOperate({
-				id: this.id,
-				type: "$update-schema-option",
-				path: [],
-				value: operate,
-				flags: this.seq,
-			});
 		});
 	}
 

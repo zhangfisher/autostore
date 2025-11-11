@@ -78,19 +78,19 @@ export function watchObjectAccess(options?: WatchObjectAccessOptions) {
 	return new Proxy(rootTarget, handler);
 }
 // 测试代码
-const proxyState = watchObjectAccess({
-	get: (path) => {
-		// 当访问到 a.b.c 时返回特定值
-		if (path.join(".") === "a.b.c.d") {
-			return "最终的值：" + path.join(" → ");
-		}
-		// 返回 undefined 表示继续代理
-		return undefined;
-	},
-	set: (path, value) => {
-		console.log("SET回调 - 设置路径:", path, "值:", value);
-		return true;
-	},
-});
+// const proxyState = watchObjectAccess({
+// 	get: (path) => {
+// 		// 当访问到 a.b.c 时返回特定值
+// 		if (path.join(".") === "a.b.c.d") {
+// 			return "最终的值：" + path.join(" → ");
+// 		}
+// 		// 返回 undefined 表示继续代理
+// 		return undefined;
+// 	},
+// 	set: (path, value) => {
+// 		console.log("SET回调 - 设置路径:", path, "值:", value);
+// 		return true;
+// 	},
+// });
 
-console.log("proxyState.a.b.c.d", proxyState.a.b.c.d);
+// console.log("proxyState.a.b.c.d", proxyState.a.b.c.d);

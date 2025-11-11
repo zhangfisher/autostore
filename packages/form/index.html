@@ -28,6 +28,8 @@
         </div>
         <sl-tab-group>
             <!-- <sl-tab slot="nav" panel="ip">网络配置</sl-tab> -->
+
+            <sl-tab slot="nav" panel="syncip2">无映射网络配置</sl-tab>
             <sl-tab slot="nav" panel="syncip">同步后网络配置</sl-tab>
             <!--<sl-tab slot="nav" panel="addcontact">增加联系人</sl-tab>-->
             <!-- <sl-tab slot="nav" panel="general">默认</sl-tab> -->
@@ -96,9 +98,13 @@
                 <ip-config></ip-config>
             </sl-tab-panel> -->
 
+            <sl-tab-panel name="syncip2">
+                <ip-sync-config2></ip-sync-config2>
+            </sl-tab-panel>
             <sl-tab-panel name="syncip">
                 <ip-sync-config></ip-sync-config>
             </sl-tab-panel>
+
             <!--<sl-tab-panel name="addcontact">
                 <add-contact></add-contact>
             </sl-tab-panel>-->

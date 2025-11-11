@@ -17,7 +17,7 @@ export type StateOperateType =
 	| "remove" // 用于数组
 	| "batch"; // 批量操作
 
-export type StateOperate<Value = any, Parent = any> = {
+export interface StateOperate<Value = any, Parent = any> {
 	type: StateOperateType;
 	path: string[];
 	value: Value;
@@ -30,7 +30,11 @@ export type StateOperate<Value = any, Parent = any> = {
 	 */
 	reply?: boolean;
 	flags?: number;
-};
+	/**
+	 * 该操作是否来自shadow转发
+	 */
+	shadow?: boolean;
+}
 
 export interface AutoStoreOptions<State extends Dict> {
 	/**
