@@ -48,7 +48,7 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
 	labelKey: string = "label";
 
 	items = new AsyncOptionState<any[]>(this, "select", (items) => {
-		if (!items) return [];
+		if (!items || !Array.isArray(items)) return [];        
 		return items.map((item: any) => {
 			const selectItem: any = {};
 			if (typeof item === "object") {

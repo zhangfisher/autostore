@@ -39,10 +39,69 @@ class IPConfigSyncForm extends LitElement {
 					return value / 1000;
 				},
 			}),
+            audioOut: configurable(3, {
+                size: 'small',
+                label: '扬声器',
+                widget: 'select',
+                group: 'deviceSettings',
+                clearable: false,
+                select: async () => {                   
+                        return [
+                            {id:1,label:'默认', value:1 },
+                            {id:2, label: '扬声器2', value:2},
+                            {id:3, label: '扬声器3', value:3}
+                        ]
+                }
+            })
 		},
 	});
 
-	settingStore = new AutoStore({});
+	settingStore = new AutoStore({
+        // selected: {
+        //     video: configurable(1, {
+        //         size: 'small',
+        //         label: '摄像头',
+        //         widget: 'select',
+        //         group: 'deviceSettings',
+        //         clearable: false,
+        //         select: async () => {
+        //            return [
+        //             {id:1,label:'默认', value:1 },
+        //             {id:2, label: '摄像头2', value:2},
+        //             {id:3, label: '摄像头3', value:3}
+        //            ]
+        //         }
+        //     }),
+        //     audioIn: configurable(2, {
+        //         size: 'small',
+        //         label: '麦克风',
+        //         widget: 'select',
+        //         group: 'deviceSettings',
+        //         clearable: false,
+        //         select: async () => { 
+        //             return [
+        //                 {id:1,label:'默认', value:1 },
+        //                 {id:2, label: '麦克风2', value:2},
+        //                 {id:3, label: '麦克风3', value:3}
+        //             ]
+        //         }
+        //     }),
+        //     audioOut: configurable(3, {
+        //         size: 'small',
+        //         label: '扬声器',
+        //         widget: 'select',
+        //         group: 'deviceSettings',
+        //         clearable: false,
+        //         select: async () => {                   
+        //                 return [
+        //                     {id:1,label:'默认', value:1 },
+        //                     {id:2, label: '扬声器2', value:2},
+        //                     {id:3, label: '扬声器3', value:3}
+        //                 ]
+        //         }
+        //     })
+        //},
+    });
 	constructor() {
 		super();
 		this._syncSettings();

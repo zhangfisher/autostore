@@ -138,10 +138,10 @@ export class AutoStoreSyncer {
 			// 路径变换
 			const toPath = this._options.pathMap.toRemote(firstPath, operate.value);
 			if (toPath) {
-				operate.path = [[...remoteEntry, ...toPath].join("_$_"), operate.path[1]];
+				operate.path = [[...remoteEntry, ...toPath].join("_$_"), ...operate.path.slice(1)];
 			}
 		} else {
-			operate.path = [[...remoteEntry, ...firstPath].join("_$_"), operate.path[1]];
+			operate.path = [[...remoteEntry, ...firstPath].join("_$_"),  ...operate.path.slice(1)];
 		}
 		operate.parentPath = [operate.path[0]];
 
@@ -457,7 +457,7 @@ export class AutoStoreSyncer {
 			}
 			return result;
 		}, {} as any);
-		const schemas = getSnapshot(schemaState, { includeFunc: true });
+		const schemas = getSnapshot(schemaState, { includeFunc: true,reserveAsync:true });
 		// 将store中的computed对象恢复为getter，以便在远程端可以重建computed对象
 		// Object.entries(this.store.schemas.store.computedObjects).forEach(([key, computedObj]) => {});
 		return schemas;
