@@ -1,5 +1,7 @@
 # @autostorejs/devtools
 
+## 3.2.10
+
 ## 3.2.9
 
 ## 3.2.8

@@ -1,5 +1,13 @@
 # @autostorejs/form
 
+## 3.2.10
+
+### Patch Changes
+
+-   60e7588: 同步时 schema 支持计算属性
+-   Updated dependencies [60e7588]
+    -   autostore@3.2.10
+
 ## 3.2.9
 
 ### Patch Changes
