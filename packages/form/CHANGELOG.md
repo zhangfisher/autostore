@@ -1,5 +1,12 @@
 # @autostorejs/form
 
+## 3.2.11
+
+### Patch Changes
+
+-   c347b82: 修改不能同步异步计算属性的问题
+    -   autostore@3.2.11
+
 ## 3.2.10
 
 ### Patch Changes
