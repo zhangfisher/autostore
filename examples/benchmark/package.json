@@ -6,7 +6,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bench": "tsx src/index.ts"
+    "bench": "bun run src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +21,6 @@
     "autostore": "workspace:*",
     "helux": "^4.4.0",
     "mobx": "^6.13.2",
-    "tinybench": "^4.0.1"
+    "tinybench": "^6.0.0"
   }
 }

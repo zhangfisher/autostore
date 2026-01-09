@@ -35,6 +35,7 @@
 	"author": "zhangfisher",
 	"license": "MIT",
 	"devDependencies": {
+		"@swc/core": "^1.15.8",
 		"@type-challenges/utils": "^0.1.1",
 		"@types/node": "^22.18.10",
 		"ts-node": "^10.9.2",
@@ -45,6 +46,7 @@
 		"zlib": "^1.0.5"
 	},
 	"dependencies": {
+		"fastevent": "^2.3.6",
 		"flex-tools": "^1.5.9"
 	}
 }
