@@ -24,7 +24,21 @@ const autoStore = new AutoStore({
 const heluxStore = share({
     value: 0,
 });
-
+const [a0, setA0] = heluxStore;
+const a1 = derive(() => {
+    return a0.value + 1;
+});
+const a2 = derive(() => a1.val + 1);
+const a3 = derive(() => a2.val + 1);
+const a4 = derive(() => a3.val + 1);
+const a5 = derive(() => a4.val + 1);
+const a6 = derive(() => a5.val + 1);
+const a7 = derive(() => a6.val + 1);
+const a8 = derive(() => a7.val + 1);
+const a9 = derive(() => a8.val + 1);
+const a10 = derive(() => {
+    return a9.val + 1;
+});
 bench
     .add('[AutoStore] 多重依赖链计算', () => {
         for (let i = 1; i <= 1000; i++) {
@@ -32,21 +46,6 @@ bench
         }
     })
     .add('[Helux] 多重依赖链计算', () => {
-        const [a0, setA0] = heluxStore;
-        const a1 = derive(() => {
-            return a0.value + 1;
-        });
-        const a2 = derive(() => a1.val + 1);
-        const a3 = derive(() => a2.val + 1);
-        const a4 = derive(() => a3.val + 1);
-        const a5 = derive(() => a4.val + 1);
-        const a6 = derive(() => a5.val + 1);
-        const a7 = derive(() => a6.val + 1);
-        const a8 = derive(() => a7.val + 1);
-        const a9 = derive(() => a8.val + 1);
-        const a10 = derive(() => {
-            return a9.val + 1;
-        });
         for (let i = 1; i <= 1000; i++) {
             setA0((draft) => {
                 draft.value = i;

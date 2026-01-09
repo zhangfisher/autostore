@@ -1,26 +1,26 @@
 {
-  "name": "@autostore-examples/benchmark",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "bench": "bun run src/index.ts"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^22.5.5",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.19.1",
-    "typescript": "^5.6.2"
-  },
-  "dependencies": {
-    "autostore": "workspace:*",
-    "helux": "^4.4.0",
-    "mobx": "^6.13.2",
-    "tinybench": "^6.0.0"
-  }
+	"name": "@autostore-examples/benchmark",
+	"private": true,
+	"version": "1.0.0",
+	"type": "module",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"bench": "bun run src/index.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^22.5.5",
+		"ts-node": "^10.9.2",
+		"tsx": "^4.19.1",
+		"typescript": "^5.6.2"
+	},
+	"dependencies": {
+		"autostore": "workspace:*",
+		"helux": "^4.4.0",
+		"mobx": "^6.13.2",
+		"tinybench": "^6.0.0"
+	}
 }
