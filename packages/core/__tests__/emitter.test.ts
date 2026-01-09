@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
+
 import { EventEmitter } from '../src/events/emitter';
 import { isPathMatched } from "../src/utils";
 
@@ -37,7 +38,7 @@ describe("EventEmitter",()=>{
     
         it('should call listener for exact event', () => {
             const emitter = new EventEmitter();
-            const listener = vi.fn();
+            const listener = mock();
     
             emitter.on('a.b.c', listener);
             emitter.emit('a.b.c', 'test');
@@ -47,7 +48,7 @@ describe("EventEmitter",()=>{
     
         it('should call listener for wildcard event', () => {
             const emitter = new EventEmitter();
-            const listener = vi.fn();
+            const listener = mock();
     
             emitter.on('a.*.c',(payload,type)=>{
                 listener(payload,type)
@@ -59,7 +60,7 @@ describe("EventEmitter",()=>{
     
         it('should not call listener for non-matching event', () => {
             const emitter = new EventEmitter();
-            const listener = vi.fn();
+            const listener = mock();
     
             emitter.on('a.*.d', listener);
             emitter.emit('a.b.c', 'test');
@@ -69,7 +70,7 @@ describe("EventEmitter",()=>{
     
         it('should call listener for double wildcard event', () => {
             const emitter = new EventEmitter();
-            const listener = vi.fn();
+            const listener = mock();
             emitter.on('**', listener);
             emitter.emit('a.b.c', 'test');
             expect(listener).toHaveBeenCalledWith('test','a.b.c');
@@ -92,8 +93,8 @@ describe("EventEmitter",()=>{
     describe('EventEmitter offAll', () => {
         it('should clear all listeners', () => {
             const emitter = new EventEmitter();
-            const listener1 = vi.fn();
-            const listener2 = vi.fn();
+            const listener1 = mock();
+            const listener2 = mock();
     
             emitter.on('a.b.c', listener1);
             emitter.on('a.*.c', listener2);
@@ -111,7 +112,7 @@ describe("EventEmitter",()=>{
     describe('EventEmitter onAny', () => {
         it('should call listener for any event', () => {
             const emitter = new EventEmitter();
-            const handler = vi.fn();
+            const handler = mock();
     
             const listener = emitter.onAny(handler);
             emitter.emit('a.b.c', 'test');

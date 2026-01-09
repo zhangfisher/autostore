@@ -1,5 +1,6 @@
 import type { AsyncComputedGetter, ComputedDescriptorBuilder, ComputedGetter } from "../computed/types";
 import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
+import { Dict } from "../types";
 import type { WatchDescriptorBuilder } from "../watch/types";
 
 export type ObserverType = "watch" | "computed" | "schema";
@@ -45,43 +46,43 @@ export interface ObserverDescriptorBuilder<
 	[OBSERVER_DESCRIPTOR_BUILDER_FLAG]: true;
 }
 
-export type ObserverOptions<Value = any> = {
-	/**
-	 * 计算函数的唯一标识，如果未指定，则自动生成一个唯一标识
-	 */
-	id?: string;
-	/**
-	 * 计算属性的初始化值
-	 */
-	initial?: Value;
-	/**
-	 * 计算属性的作用域
-	 *
-	 * @description
-	 *
-	 * 用来指定计算函数的第一个参数，即计算函数的作用范围
-	 *
-	 * 默认值：current，指向的是计算属性所在对象
-	 *
-	 */
-	scope?: ObserverScope;
+export type ObserverOptions<Value = any, Schema extends Dict = Dict> = {
+    /**
+     * 计算函数的唯一标识，如果未指定，则自动生成一个唯一标识
+     */
+    id?: string;
+    /**
+     * 计算属性的初始化值
+     */
+    initial?: Value;
+    /**
+     * 计算属性的作用域
+     *
+     * @description
+     *
+     * 用来指定计算函数的第一个参数，即计算函数的作用范围
+     *
+     * 默认值：current，指向的是计算属性所在对象
+     *
+     */
+    scope?: ObserverScope;
 
-	/**
-	 * 计算开关
-	 * 当=false时不会执行计算，也就是不会执行计算函数
-	 *
-	 */
-	enable?: boolean;
-	/**
-	 *
-	 * 是否是异步计算函数
-	 *
-	 * 默认情况下，通过typeof(fn)=="async function"来判断是否是异步计算函数
-	 * 但是在返回Promise或者Babel转码等情况下，判断会失效时，需要手动指定async=true
-	 */
-	async?: boolean;
+    /**
+     * 计算开关
+     * 当=false时不会执行计算，也就是不会执行计算函数
+     *
+     */
+    enable?: boolean;
+    /**
+     *
+     * 是否是异步计算函数
+     *
+     * 默认情况下，通过typeof(fn)=="async function"来判断是否是异步计算函数
+     * 但是在返回Promise或者Babel转码等情况下，判断会失效时，需要手动指定async=true
+     */
+    async?: boolean;
 
-	/**
+    /**
      * 指定该计算属性的依赖路径
      * 
      * @description
@@ -110,40 +111,45 @@ export type ObserverOptions<Value = any> = {
      
      * 
     */
-	depends?: ObserverDepends;
-	/**
-	 * 为该计算函数指定一个分组名
-	 *
-	 * @description
-	 *
-	 * 此属性用来将计算函数分组，比如一个store中具有相同group的计算函数
-	 * 然后就可以启用/关闭/运行指定分组的计算函数
-	 * 在表单中通过为所有validate指定统一的分组名称，这样就可以统一控制表单的验证是否计算
-	 *
-	 * store.computedObjects.get(["a","b"]).run() // 重新启动
-	 * 马上重新运行指定组的计算函数
-	 * store.computedObjects.getGroup("a"]).run() // 运行组
-	 * store.computedObjects.enableGroup("b"])
-	 *
-	 */
-	group?: string;
-	/**
-	 *
-	 * 是否保存创建的computedObject对象
-	 *
-	 * @description
-	 * 默认情况下，每一个计算属性均会创建一个computedObject对象实便并且保存到store.computedObjects中
-	 *
-	 * 默认=true,=false则不会保存
-	 *
-	 */
-	objectify?: boolean;
-	/**
-	 * 当执行计算函数时，如果出错时，是否抛出错误，
-	 * 默认为true，即抛出错误
-	 * =false，则不会抛出错误，但是可以通过.error属性获取错误信息
-	 */
-	throwError?: boolean;
+    depends?: ObserverDepends;
+    /**
+     * 为该计算函数指定一个分组名
+     *
+     * @description
+     *
+     * 此属性用来将计算函数分组，比如一个store中具有相同group的计算函数
+     * 然后就可以启用/关闭/运行指定分组的计算函数
+     * 在表单中通过为所有validate指定统一的分组名称，这样就可以统一控制表单的验证是否计算
+     *
+     * store.computedObjects.get(["a","b"]).run() // 重新启动
+     * 马上重新运行指定组的计算函数
+     * store.computedObjects.getGroup("a"]).run() // 运行组
+     * store.computedObjects.enableGroup("b"])
+     *
+     */
+    group?: string;
+    /**
+     *
+     * 是否保存创建的computedObject对象
+     *
+     * @description
+     * 默认情况下，每一个计算属性均会创建一个computedObject对象实便并且保存到store.computedObjects中
+     *
+     * 默认=true,=false则不会保存
+     *
+     */
+    objectify?: boolean;
+    /**
+     * 当执行计算函数时，如果出错时，是否抛出错误，
+     * 默认为true，即抛出错误
+     * =false，则不会抛出错误，但是可以通过.error属性获取错误信息
+     */
+    throwError?: boolean;
+    /**
+     * 提供额外的元数据用于标识该属性
+     * 比如配置元数据等
+     */
+    schema?: Schema;
 };
 
 export type ObserverBuilder<Value = any, Scope = any> =

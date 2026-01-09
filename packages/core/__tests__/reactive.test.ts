@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'vitest';
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
+
 import { AutoStore, isRaw, markRaw } from '../src';
 
 // 测试 isEventMatched 函数

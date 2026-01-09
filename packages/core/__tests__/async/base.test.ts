@@ -1,4 +1,4 @@
-import { test, expect, describe, vi } from "vitest"
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 import { AutoStore, computed, ComputedObject } from "../../src"
 import { delay } from "flex-tools/async/delay"
 import { AsyncComputedObject } from "../../src/computed/async"
@@ -388,7 +388,7 @@ describe("所有异步计算基础功能", () => {
             })
         })
         test("指定超时手动执行满足条件的计算", () => {
-            vi.useFakeTimers()
+            console.log("Fake timers not implemented in Bun yet")
             return new Promise<void>((resolve) => {
                 const store = new AutoStore({
                     price: 2,
@@ -422,10 +422,10 @@ describe("所有异步计算基础功能", () => {
                     return ['a', 'c', 'e'].includes(obj.id)
                 }, {}, { timeout: 200, wait: true }).catch((e) => {
                     expect(e).toBeInstanceOf(Error)
-                    vi.restoreAllMocks()
+                    console.log("Restore mocks not implemented in Bun yet")
                     resolve()
                 })
-                vi.runAllTimers()
+                console.log("Run all timers not implemented in Bun yet")
             })
         })
     })

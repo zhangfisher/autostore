@@ -1,4 +1,4 @@
-import { test,expect, describe,vi } from "vitest"
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 import { watch } from "../../src/watch/watch"
 import { AutoStore } from "../../src"
 import { WatchObject } from "../../src/watch/watchObject"
@@ -71,7 +71,7 @@ describe("watch功能测试",()=>{
         })
 
         test("通过enable控制total是否侦听",async ()=>{
-            const listener = vi.fn() 
+            const listener = mock() 
             const store = new AutoStore({
                 books:{            
                     price:10,
@@ -325,7 +325,7 @@ describe("watch功能测试",()=>{
         })  
 
         test("通过enable控制动态对象total是否侦听",async ()=>{
-            const listener = vi.fn() 
+            const listener = mock() 
             const store = new AutoStore({
                 books:{            
                     price:10,

@@ -1,4 +1,4 @@
-import { test,expect, describe } from "vitest"
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 import { AutoStore,computed, delay, StateOperate  } from "../"  
 
  

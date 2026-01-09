@@ -1,5 +1,6 @@
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 /** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
-import { test, describe, expect } from "vitest";
+
 import { AutoStore, computed } from "../src";
 import { createShadow } from "../src/store/shadow";
 

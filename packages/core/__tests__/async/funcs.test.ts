@@ -1,3 +1,4 @@
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 /**
  *
  * 测试计算属性的getter的第二个参数的各项功能
@@ -9,17 +10,17 @@
  *
  */
 
-import { test, expect, describe, vi } from "vitest";
+
 import { AutoStore, computed } from "../..";
 import { delay } from "flex-tools/async/delay";
 import type { AsyncComputedObject } from "../../src/computed/async";
 
 describe("异步计算高级控制功能", () => {
 	// beforeEach(() => {
-	//     vi.useFakeTimers()
+	//     console.log("Fake timers not implemented in Bun yet")
 	//   })
 	//   afterEach(() => {
-	//     vi.restoreAllMocks()
+	//     console.log("Restore mocks not implemented in Bun yet")
 	//   })
 	// 注意：重入时仅会被忽略而不是产生错误
 	test("控制计算函数的执行的不允许重入执行", () => {
@@ -66,7 +67,7 @@ describe("异步计算高级控制功能", () => {
 
 	test("通过abortSignal来中止计算函数的执行", () => {
 		return new Promise<void>((resolve) => {
-			const fn = vi.fn();
+			const fn = mock();
 			const store = new AutoStore(
 				{
 					price: 2,
@@ -197,10 +198,10 @@ describe("异步计算高级控制功能", () => {
 
 describe("异步计算属性的超时功能", () => {
 	// beforeEach(() => {
-	//     vi.useFakeTimers()
+	//     console.log("Fake timers not implemented in Bun yet")
 	//   })
 	// afterEach(() => {
-	//     vi.restoreAllMocks()
+	//     console.log("Restore mocks not implemented in Bun yet")
 	// })
 	test("当执行超时的默认行为", () => {
 		// 执行时loading=true,然后超时后自动设置loading=false,error=TIMEOUT
@@ -231,7 +232,7 @@ describe("异步计算属性的超时功能", () => {
 		});
 	});
 	test("当执行超时并启用倒计时", () => {
-		vi.useFakeTimers();
+		console.log("Fake timers not implemented in Bun yet");
 		// 执行时loading=true,然后超时后自动设置loading=false,error=TIMEOUT
 		// 本例中配置timeout=[5*1000,5]，代表timeout值会从5递减到0
 		const timeouts: any[] = [];
@@ -274,11 +275,11 @@ describe("异步计算属性的超时功能", () => {
 					expect(store.state.total.loading).toBe(false);
 					expect(store.state.total.error).toBe("TIMEOUT");
 					resolve();
-					vi.restoreAllMocks();
+					console.log("Restore mocks not implemented in Bun yet");
 				}
 				resolve();
 			});
-			vi.runAllTimers();
+			console.log("Run all timers not implemented in Bun yet");
 		});
 	}, 500000);
 });

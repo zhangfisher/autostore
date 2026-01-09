@@ -1,4 +1,5 @@
-import { describe, expect, test } from "vitest";
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
+
 import type { Equal, Expect } from "@type-challenges/utils";
 import { AutoStore, computed, configurable, type ConfigurableState } from "../../src";
 

@@ -1,4 +1,5 @@
-import { describe, expect, test } from "vitest";
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
+
 import { configurable, s, schema } from "../src/schema";
 import { AutoStore, type StateOperate } from "../src/store";
 import { computed, delay, setVal, ValidateError } from "../src";

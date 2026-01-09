@@ -1,3 +1,4 @@
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 /**
  * 
  *  动态参数的创建计算属性
@@ -7,7 +8,6 @@
 
 
 
-import { test,expect, describe } from "vitest"
 import { AsyncComputedObject } from "../../src/computed/async"
 import { AutoStore } from "../../src"
 

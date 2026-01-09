@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
+
 import { parseFunc } from '../../src/utils/parseFunc';
 
 describe('parseFunc', () => {

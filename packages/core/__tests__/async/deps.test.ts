@@ -1,5 +1,5 @@
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 
-import { test,expect, describe } from "vitest"
 import { AutoStore,ObserverScopeRef,computed } from "../.."
 
  
