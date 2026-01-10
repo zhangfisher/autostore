@@ -181,6 +181,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     get resetable() {
         return this._options.resetable;
     }
+    get configManager() {
+        return this.options.configManager;
+    }
     set resetable(value: boolean) {
         if (value) {
             if (this._updatedWatcher) return;

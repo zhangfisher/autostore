@@ -5,6 +5,8 @@ import type { ObserverType } from '../observer/types';
 import type { Dict } from '../types';
 import type { SchemaOptions } from '../schema';
 import type { AutoStore } from './store';
+import type { ConfigManager } from '../config';
+
 export type BatchChangeEvent = '__batch_update__';
 export type StateChangeEvents = Record<string, StateOperate>;
 
@@ -229,6 +231,10 @@ export interface AutoStoreOptions<State extends Dict> {
      * 当写入时状态时执行此校验函数
      */
     onValidate?: (this: AutoStore<State>, path: string[], newValue: any, oldValue: any) => boolean;
+    /**
+     * 提供一个配置管理器对象
+     */
+    configManager?: ConfigManager;
 }
 
 export type UpdateOptions = {

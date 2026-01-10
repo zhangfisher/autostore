@@ -820,6 +820,7 @@ describe('onValidate', () => {
             // null 应该被允许
             // @ts-expect-error
             store.state.value = null;
+            // @ts-expect-error
             expect(store.state.value).toBe(null);
 
             // undefined 应该被拒绝

@@ -533,7 +533,9 @@ describe('watch events', () => {
             state.state.job.title = 'Frontend Engineer3';
             expect(events.length).toBe(9);
 
-            watchers.forEach((watcher) => watcher.off());
+            watchers.forEach((watcher) => {
+                watcher.off();
+            });
         });
     });
     describe('watch all events', () => {
