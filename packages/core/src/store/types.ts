@@ -31,17 +31,6 @@ export interface StateOperate<Value = any, Parent = any> {
     reply?: boolean;
     flags?: number;
 }
-//
-//
-//
-/**当验证失败时的行为
- * pass: 继续写入;
- * ignore: 静默忽略;
- * throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
- * throw-pass: 写入数据但同时抛出ValidateError错误
- */
-export type ValidateResult = 'pass' | 'throw' | 'ignore' | 'throw-pass' | boolean;
-
 export interface AutoStoreOptions<State extends Dict> {
     /**
      * 提供一个id，用于标识当前store
@@ -56,10 +45,6 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     debug?: boolean;
-    /**
-     * 声明是否shadow,默认false
-     */
-    shadow?: boolean;
     /**
      *  是否马上创建动态对象
      *
@@ -235,28 +220,15 @@ export interface AutoStoreOptions<State extends Dict> {
         path: string[],
         value: any,
         parent: any,
-    ) => boolean;
+    ) => boolean | undefined;
     /**
      * 默认的値模式
      */
     defaultSchemaOptions?: Partial<SchemaOptions<any>>;
     /**
-     * 当写入时状态时执行此校验函数 
+     * 当写入时状态时执行此校验函数
      */
-    onValidate?: (
-        this: AutoStore<State>,
-        path: string[],
-        newValue: any,
-        oldValue: any,
-    ) => ValidateResult;
-
-    /**
-     *
-     * 获取影子store
-     * 为所有observer对象提供store对象
-     *
-     */
-    getShadowStore?: () => AutoStore<any>;
+    onValidate?: (this: AutoStore<State>, path: string[], newValue: any, oldValue: any) => boolean;
 }
 
 export type UpdateOptions = {

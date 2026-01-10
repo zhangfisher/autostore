@@ -1,6 +1,6 @@
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
-import type { StateOperateType, ValidateResult } from './types';
+import type { StateOperateType } from './types';
 import { CyleDependError, ValidateError } from '../errors';
 import type { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
@@ -40,32 +40,34 @@ function isValidPass(
     const validate = this.options.onValidate;
     if (typeof validate !== 'function') return true;
 
-    let isValid: ValidateResult = true;
-
     let isPass: boolean | Error = true;
-    let hasError: any;
+    let error: any;
     try {
-        isValid = validate!.call(this, path, newValue, oldValue);
-        if (isValid === false || isValid === 'throw') {
+        const isValid = validate!.call(this, path, newValue, oldValue);
+        if (isValid === false) {
             throw new ValidateError();
-        } else if (isValid === 'throw-pass') {
-            isPass = new ValidateError();
-            throw isPass;
-        } else if (isValid === 'ignore') {
-            isPass = false;
-        } else {
-            isPass = true;
         }
     } catch (e: any) {
-        hasError = new ValidateError(e.message);
+        error = e;
+        const behavior = e.behavior;
+        if (behavior === 'pass') {
+            isPass = true;
+        } else if (behavior === 'ignore') {
+            isPass = false;
+        } else if (behavior === 'throw-pass') {
+            isPass = e;
+        } else {
+            throw e;
+        }
     } finally {
         this.emit('validate', {
             path: [...parentPath, ...path],
             newValue,
             oldValue,
-            error: hasError,
+            error: error,
         });
     }
+
     return isPass;
 }
 

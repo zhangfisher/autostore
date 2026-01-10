@@ -1,14 +1,4 @@
-import {
-    describe,
-    test,
-    it,
-    expect,
-    mock,
-    beforeAll,
-    afterAll,
-    beforeEach,
-    afterEach,
-} from 'bun:test';
+import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 
 import { AutoStore } from '../../src';
 import { deepClone } from 'flex-tools/object/deepClone';
@@ -574,6 +564,7 @@ describe('watch events', () => {
                     operates: '*',
                 },
             );
+            expect(ops).toEqual([]);
             store.state.order.count++;
             expect(ops).toEqual([
                 'get order',

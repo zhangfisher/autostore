@@ -74,14 +74,6 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
         this.onDone(first, computedResult, finalComputedOptions);
     }
 
-    private _onValidateResult(newValue: any, oldValue: any) {
-        const onValidate = this.options.onValidate || this.store.options.onValidate;
-
-        if (isFunction(this.options.onValidate)) {
-            const isValid = this.options.onValidate.call(this, this.path, newValue, oldValue);
-        }
-    }
-
     private onDone(first: boolean, value: any, options: ComputedOptions) {
         let computedResult = value;
         // 如果指定onError，允许在计算出错时，进行一些处理，如指定一个默认值
@@ -130,7 +122,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
      */
     private collectDependencies() {
         const dependencies: string[][] = [];
-        const watcher = this.shadowStore.watch(
+        const watcher = this.store.watch(
             (event) => {
                 dependencies.push(event.path);
             },
