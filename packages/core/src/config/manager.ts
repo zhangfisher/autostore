@@ -1,11 +1,12 @@
-import { ObjectKeyMap } from '../utils/ObjectKeyMap';
-import type { ComputedOptions } from '../computed/types';
-import { computed } from '../computed';
+import { AutoStore } from '../store/store';
+import type { AutoStoreConfigures } from './types';
+import type { AutoStoreOptions } from '../store';
+import type { Dict } from '../types';
 
-export type ConfigManagerOptions = {};
+export type ConfigManagerOptions<State extends Dict> = AutoStoreOptions<State> & {};
 /**
  *
- *  const configManager = new ConfigManager<Type>()
+ *  const configManager = new AutoStoreConfigManager<Type>()
  *  const store = new AutoStore({
  *     age:configurable(1,{
  *          key,            // 配置键名称
@@ -20,7 +21,6 @@ export type ConfigManagerOptions = {};
  *          manager:configManager,
  *          key?:string,  //可选的， 在配置对象中存储配置值的key，如果
  *      }
- *
  *  })
  *
  *  AutoStoreConfigures
@@ -31,26 +31,8 @@ export type ConfigManagerOptions = {};
  *
  *
  */
-export class ConfigManager extends ObjectKeyMap {
-    options: Required<ConfigManagerOptions>;
-    constructor(options?: ConfigManagerOptions) {
-        super();
-        this.options = Object.assign({}, options);
+export class AutoStoreConfigManager extends AutoStore<AutoStoreConfigures> {
+    constructor(options?: ConfigManagerOptions<AutoStoreConfigures>) {
+        super(Object.assign({}, options));
     }
-}
-
-export interface ConfigurableOptions extends ComputedOptions {}
-/**
- * 用于标识AutoStore对象状态中的指定成员中可配置的
- *
- *
- * const store=new AutoStore({
- *    count:configurable(1,)
- *  })
- *
- *
- */
-export function configurable<V = any>(initial: V, options?: ConfigurableOptions) {
-    const opts = Object.assign({}, options) as ConfigurableOptions;
-    return computed((scope) => {}, opts);
 }

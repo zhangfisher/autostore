@@ -270,12 +270,7 @@ export interface SchemaDescriptorBuilder<Value = any, State = Dict> {
 	[VALUE_SCHEMA_BUILDER_FLAG]: true;
 	(): SchemaDescriptor<Value, State>;
 }
-
-// export type SchemaBuilder<Value = any> = <T = Value>(
-//     value: T,
-//     options?: ComputedableSchemaOptions<Value>,
-// ) => SchemaDescriptorBuilder<ToRawType<T>>;
-
+ 
 export interface SchemaBuilder<Value = any> {
 	<T = Value>(value: T, options?: ComputedableSchemaOptions<Value>): SchemaDescriptorBuilder<ToRawType<T>>;
 	(options?: ComputedableSchemaOptions<Value>): SchemaDescriptorBuilder<ToRawType<Value>>;

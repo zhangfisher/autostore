@@ -118,6 +118,12 @@ declare global {
 
 export type Primitive = string | number | boolean | null | undefined | symbol | bigint;
 
+/**
+ * 表示所有非函数类型
+ * 排除函数类型，保留所有其他类型
+ */
+export type NonFunction = Exclude<unknown, (...args: any[]) => any>;
+
 export type Dict<T = any> = T extends (...args: any[]) => any ? never : Record<string, T>;
 
 export type ObjectKeyPaths<T> = Exclude<Paths<T, { maxRecursionDepth: 50 }>, number>;

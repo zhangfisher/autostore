@@ -5,7 +5,7 @@ import type { ObserverType } from '../observer/types';
 import type { Dict } from '../types';
 import type { SchemaOptions } from '../schema';
 import type { AutoStore } from './store';
-import type { ConfigManager } from '../config';
+import type { AutoStoreConfigManager } from '../config';
 
 export type BatchChangeEvent = '__batch_update__';
 export type StateChangeEvents = Record<string, StateOperate>;
@@ -234,7 +234,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 提供一个配置管理器对象
      */
-    configManager?: ConfigManager;
+    configManager?: AutoStoreConfigManager;
 }
 
 export type UpdateOptions = {
