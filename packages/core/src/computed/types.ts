@@ -21,7 +21,7 @@ import type {
     ObserverOptions,
     ObserverScopeRef,
 } from '../observer/types';
-import type { StateOperate } from '../store/types';
+import type { StateOperate, ValidateResult } from '../store/types';
 import type { ComputedObject } from './computedObject';
 import type { Dict } from '../types';
 
@@ -259,6 +259,15 @@ export interface ComputedOptions<Value = any, Scope = any, Schema extends Dict =
         scope: Scope;
         value: any;
     }): void;
+    /**
+     * 当写入时状态时执行此校验函数
+     */
+    onValidate?: (
+        this: ComputedObject<any>,
+        path: string[],
+        newValue: any,
+        oldValue: any,
+    ) => ValidateResult | Promise<ValidateResult>;
 }
 
 export type AsyncComputedValue<Value = any> = {
