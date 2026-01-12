@@ -2,9 +2,21 @@ import { PATH_DELIMITER } from '../consts';
 import { AutoStore } from '../store/store';
 import { isSchemaBuilder, markRaw, setVal } from '../utils';
 import { getVal } from '../utils/getVal';
-import { isFuncDefine } from '../utils/isFuncDefine';
-import { parseFunc } from '../utils/parseFunc';
 import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from './types';
+
+/**
+ *
+ * 配置管理器
+ *
+ *  {
+ *     '<Sotre.options.configKey>.<配置项所在路径>':StateSchema
+ *     'order.price':StateSchema
+ *     'user.name':StateSchema
+ * }
+ *
+ *
+ *
+ */
 
 export class ConfigManager extends AutoStore<AutoStoreConfigures> {
     get fields() {
@@ -21,10 +33,10 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
     ) {
         const descriptor = isSchemaBuilder(schema) ? schema() : schema;
 
-        const pathKey = Array.isArray(path) ? path : path.split(PATH_DELIMITER);
+        const pathKey = Array.isArray(path) ? path : path.split(store.options.delimiter);
         // 创建配置键路径
         const configKey = pathKey;
-        if (store.options.configKeyPrefix) configKey.splice(0, 0, store.options.configKeyPrefix);
+        if (store.options.configKey) configKey.splice(0, 0, store.options.configKey);
 
         if (!descriptor.options.validationBehavior)
             descriptor.options.validationBehavior = 'throw-pass';
@@ -33,20 +45,7 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
             datatype: descriptor.datatype,
             value: descriptor.value,
         });
-
-        Object.entries(finalDescriptor).forEach(([key, value]) => {
-            if (isFuncDefine(value)) {
-                const func = parseFunc(value);
-                if (typeof func === 'function') {
-                    if (key.startsWith('on') || key.startsWith('to')) {
-                        (finalDescriptor as any)[key] = markRaw(func);
-                    } else {
-                        (finalDescriptor as any)[key] = func;
-                    }
-                }
-            }
-        });
-        // 读取原始的Store值
+        // 创建代理用于从原始的Store值读写状态值
         this._createValueProxy(finalDescriptor, store, pathKey);
         // 添加到配置中
         this.update(
@@ -57,6 +56,7 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
                 silent: true, // 初始配置时静默更新
             },
         );
+        return; 
     }
     private _createValueProxy(finalDescriptor: object, store: AutoStore<any>, path: string[]) {
         return Object.defineProperty(finalDescriptor, 'value', {

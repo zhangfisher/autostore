@@ -73,6 +73,7 @@ import {
     getVal,
     isAsyncComputedValue,
     isPathEq,
+    isSchemaBuilder,
     markRaw,
     setVal,
 } from '../utils';
@@ -91,8 +92,7 @@ import type { GetTypeByPath } from '../types';
 import { TimeoutError } from '../errors';
 import type { ObserverDescriptor } from '../observer/types';
 import { parseFunc } from '../utils/parseFunc';
-import { Schema } from 'type-fest';
-import { ConfigManager } from '../schema/manager';
+import type { ConfigManager } from '../schema/manager';
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
@@ -444,18 +444,23 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      */
 
     private createObserverObject(path: string[], value: any, parentPath: string[], parent: any) {
-        const descriptor = getObserverDescriptor(value);
-        const computedCtx = { path, value, parentPath, parent };
-        if (descriptor) {
-            if (descriptor.type === 'computed') {
-                const computedObj = this._createComputed(descriptor, computedCtx);
-                return computedObj?.initial;
-            } else if (descriptor.type === 'watch') {
-                const watchObj = this._createWatch(descriptor, computedCtx);
-                return watchObj?.initial;
-            }
-        } else {
+        if (this._configManager && isSchemaBuilder(value)) {
+            this._configManager.add(this, path, value);
             return value;
+        } else {
+            const descriptor = getObserverDescriptor(value);
+            const computedCtx = { path, value, parentPath, parent };
+            if (descriptor) {
+                if (descriptor.type === 'computed') {
+                    const computedObj = this._createComputed(descriptor, computedCtx);
+                    return computedObj?.initial;
+                } else if (descriptor.type === 'watch') {
+                    const watchObj = this._createWatch(descriptor, computedCtx);
+                    return watchObj?.initial;
+                }
+            } else {
+                return value;
+            }
         }
     }
     /**

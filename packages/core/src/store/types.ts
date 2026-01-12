@@ -281,7 +281,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 为当前Store的所有配置项均指定一个统一的前缀
      */
-    configKeyPrefix?: string;
+    configKey?: string;
 }
 
 export type UpdateOptions = {
