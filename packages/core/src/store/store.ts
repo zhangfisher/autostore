@@ -91,6 +91,8 @@ import type { GetTypeByPath } from '../types';
 import { TimeoutError } from '../errors';
 import type { ObserverDescriptor } from '../observer/types';
 import { parseFunc } from '../utils/parseFunc';
+import { Schema } from 'type-fest';
+import { ConfigManager } from '../schema/manager';
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
@@ -103,12 +105,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _batchOperates: StateOperate[] = []; // 暂存批量操作
     private _updateFlags: number = 0; // 额外的更新标识
     private _peeping: boolean = false;
-
     // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <noUnusedPrivateClassMembers>
     private _updateValidateBehavior: UpdateOptions['validate']; // 更新时的校验行为
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _delimiter: string = '.';
+    private _errors?: Record<string, string | Error>; // 用于保存写入或计算出错时的错误信息
+    private _configManager?: ConfigManager;
     types = {
         rawState: undefined as unknown as State,
         state: undefined as unknown as ComputedState<State>,
@@ -145,6 +148,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
         this.installExtends();
+        // this._configManager = new ConfigManager();
         forEachObject(this._data as any, this._onFirstEachState.bind(this));
         if (this._options.resetable) this.resetable = true;
         // @ts-expect-error
@@ -159,6 +163,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     }
     get state() {
         return this._data;
+    }
+    get errors() {
+        if (!this._errors) {
+            this._errors = {};
+        }
+        return this._errors;
     }
     get operates() {
         return this._operates;

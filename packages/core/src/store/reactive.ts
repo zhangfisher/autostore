@@ -1,11 +1,12 @@
 import { isRaw } from '../utils/isRaw';
 import { hookArrayMethods } from './hookArray';
-import type { StateOperateType } from './types';
+import type { StateOperateType, StateValidator } from './types';
 import { CyleDependError, ValidateError } from '../errors';
 import type { ComputedState, Dict } from '../types';
 import type { AutoStore } from './store';
 import { isNumber } from '../utils/isNumber';
 import { markRaw } from '../utils/markRaw';
+import { isPathMatched } from '../utils/isPathMatched';
 
 const __NOTIFY__ = Symbol('__NOTIFY__');
 
@@ -25,46 +26,92 @@ type CreateReactiveObjectOptions = {
     createObserverObject: (path: string[], value: any, parentPath: string[], parent: any) => any;
 };
 
-function isValidPass(
-    this: AutoStore<any>,
-    _: any,
-    path: string[],
-    newValue: any,
-    oldValue: any,
-    parentPath: string[],
-) {
+/**
+ * 获取指定路径的验证函数
+ *
+ * @param this - AutoStore 实例
+ * @param path - 状态路径
+ * @returns 验证函数，如果没有找到则返回 undefined
+ */
+function getValidate(this: AutoStore<any>, path: string[]): StateValidator<any> | undefined {
+    // 优先在 validators 中查找匹配的验证函数
+    if (this.options.validators) {
+        const pathString = path.join(this.options.delimiter || '.');
+
+        // 查找完全匹配的验证器
+        if (this.options.validators[pathString]) {
+            return this.options.validators[pathString];
+        }
+
+        // 使用通配符匹配查找验证器
+        const validatorKeys = Object.keys(this.options.validators);
+        for (const key of validatorKeys) {
+            if (isPathMatched(path, key)) {
+                return this.options.validators[key];
+            }
+        }
+    }
+
+    // 如果在 validators 中没有找到，则返回 onValidate
+    return this.options.onValidate;
+}
+
+function isValidPass(this: AutoStore<any>, _: any, path: string[], newValue: any, oldValue: any) {
     //@ts-expect-error
     const behavior = this._updateValidateBehavior;
     if (behavior === 'none') return true;
 
-    const validate = this.options.onValidate;
+    const validate = getValidate.call(this, path);
     if (typeof validate !== 'function') return true;
 
     let isPass: boolean | Error = true;
     let error: any;
+    const pathKey = path.join(this.options.delimiter || '.');
+
     try {
-        const isValid = validate!.call(this, path, newValue, oldValue);
+        const isValid = validate!.call(this, newValue, oldValue, path);
         if (isValid === false) {
-            throw new ValidateError();
+            // 返回 false 时，抛出一个错误
+            // 如果 _updateValidateBehavior 有值，使用它；否则让错误使用默认行为
+            const err = new ValidateError();
+            if (behavior) {
+                err.behavior = behavior;
+            } else {
+                // 如果没有 _updateValidateBehavior，则重置 behavior 为 undefined
+                // 这样在 catch 块中就会使用 validationBehavior 选项
+                delete (err as any).behavior;
+            }
+            throw err;
+        }
+
+        // 校验成功，删除该路径的错误记录
+        if (this.errors[pathKey]) {
+            delete this.errors[pathKey];
         }
     } catch (e: any) {
         error = e;
-        const behavior = e.behavior;
-        if (behavior === 'pass') {
+        // 记录错误到 errors 对象
+        this.errors[pathKey] = error;
+
+        // 使用 error 中的 behavior，如果没有则使用 validationBehavior 选项
+        const finalBehavior = e.behavior || this.options.validationBehavior || 'throw';
+
+        if (finalBehavior === 'pass') {
             isPass = true;
-        } else if (behavior === 'ignore') {
+        } else if (finalBehavior === 'ignore') {
             isPass = false;
-        } else if (behavior === 'throw-pass') {
+        } else if (finalBehavior === 'throw-pass') {
             isPass = e;
         } else {
+            // 'throw' 或其他未知行为，默认抛出错误
             throw e;
         }
     } finally {
         this.emit('validate', {
-            path: [...parentPath, ...path],
+            path,
             newValue,
             oldValue,
-            error: error,
+            error,
         });
     }
 
@@ -158,7 +205,7 @@ function createProxy(
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
             const path = [...parentPath, String(key)];
-            const isValid = isValidPass.call(this, proxyObj, path, value, oldValue, parentPath);
+            const isValid = isValidPass.call(this, proxyObj, path, value, oldValue);
             if (isValid) {
                 const success = Reflect.set(obj, key, value, receiver);
                 if (key === __NOTIFY__) return true;

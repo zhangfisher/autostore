@@ -3,12 +3,18 @@ import type { ComputedScope } from '../computed/types';
 import type { ObserverObject } from '../observer/observer';
 import type { ObserverType } from '../observer/types';
 import type { Dict } from '../types';
-import type { SchemaOptions } from '../schema';
 import type { AutoStore } from './store';
 import type { AutoStoreConfigManager } from '../config';
+import type { StateSchema } from '../schema/types';
 
 export type BatchChangeEvent = '__batch_update__';
 export type StateChangeEvents = Record<string, StateOperate>;
+export type StateValidator<State extends Dict> = (
+    this: AutoStore<State>,
+    newValue: any,
+    oldValue: any,
+    path: string[],
+) => boolean;
 
 export type StateOperateType =
     | 'get'
@@ -226,15 +232,56 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 默认的値模式
      */
-    defaultSchemaOptions?: Partial<SchemaOptions<any>>;
+    defaultConfigureSchema?: Partial<StateSchema<any>>;
+    /**
+     *
+     * 校验失败时的默认行为
+     *
+     * - throw: 默认，触发ValidateError错误
+     * - throw-pass： 继续写入,然后再触发ValidateError错误
+     * - pass: 继续写入,不抛出错误
+     * - ignore: 静默忽略，即不触发错误，也不写入
+     *
+     * 错误信息均会写入到errors中
+     *
+     * 当校验函数返回 false 或抛出错误时，使用此选项决定如何处理
+     * 可被校验函数抛出的 ValidateError.behavior 覆盖
+     *
+     */
+    validationBehavior?: 'pass' | 'throw' | 'ignore' | 'throw-pass';
     /**
      * 当写入时状态时执行此校验函数
+     *
+     * 允许throw new ValidateError('错误信息')来提供错误信息
+     *
      */
-    onValidate?: (this: AutoStore<State>, path: string[], newValue: any, oldValue: any) => boolean;
+    onValidate?: (this: AutoStore<State>, newValue: any, oldValue: any, path: string[]) => boolean;
+    /**
+     * 为指定的路径的状态值单独指定一个校验函数
+     * 优先于onValidate
+     *
+     * 如:
+     *
+     * validators:{
+     *     'order.price':(newValue,oldValue)=>{
+     *         return newValue>0
+     *     }
+     *     // 允许使用通配符来匹配多个路径
+     *     'order.*.price':(newValue,oldValue)=>{
+     *         return newValue>0
+     *     }
+     * }
+     *
+     */
+    validators?: Record<string, StateValidator<State>>;
     /**
      * 提供一个配置管理器对象
      */
     configManager?: AutoStoreConfigManager;
+    /**
+     * 为当前Store的所有配置项均指定一个统一的前缀
+     */
+    configKeyPrefix?: string;
 }
 
 export type UpdateOptions = {
@@ -258,9 +305,20 @@ export type UpdateOptions = {
      * - ignore  校验失败时忽略更新操作，不进行更新
      * - throw   校验失败时抛出异常 (默认)
      *
+     * 更新时的校验行为
+     * 用于在调用store.update时强制校验行为
+     * 比如
+     *
+     *  store.update(state=>{
+     *     state.count=1
+     *  },{
+     *     validate:'none'
+     * })
+     *
+     * 以上当写入count时不会执行任意校验行为
      *
      */
-    validate?: 'none' | 'pass' | 'throw' | 'ignore';
+    validate?: 'none' | 'pass' | 'throw' | 'ignore' | 'throw-pass';
     /**
      * 执行读取操作时，不会触发GET事件
      * 即偷听

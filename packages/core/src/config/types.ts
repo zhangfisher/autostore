@@ -1,7 +1,7 @@
 import { CONFIGURABLE_DESCRIPTOR_BUILDER_FLAG, CONFIGURABLE_DESCRIPTOR_FLAG } from '../consts';
 
 // biome-ignore lint/suspicious/noEmptyInterface: <noEmptyInterface>
-export interface AutoStoreConfigures {}
+export interface AutoStoreConfigures1 {}
 export interface AutoStoreWidgets {
     number: {
         max: number;
