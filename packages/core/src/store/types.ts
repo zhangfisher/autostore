@@ -4,8 +4,8 @@ import type { ObserverObject } from '../observer/observer';
 import type { ObserverType } from '../observer/types';
 import type { Dict } from '../types';
 import type { AutoStore } from './store';
-import type { AutoStoreConfigManager } from '../config';
 import type { StateSchema } from '../schema/types';
+import { ConfigManager } from '../schema/manager';
 
 export type BatchChangeEvent = '__batch_update__';
 export type StateChangeEvents = Record<string, StateOperate>;
@@ -277,7 +277,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 提供一个配置管理器对象
      */
-    configManager?: AutoStoreConfigManager;
+    configManager?: ConfigManager;
     /**
      * 为当前Store的所有配置项均指定一个统一的前缀
      */
