@@ -8,25 +8,48 @@ import { VALUE_SCHEMA_BUILDER_FLAG } from '../consts';
  */
 export type AutoStoreConfigures = Record<
     string,
-    StateSchema & {
+    AutoStateSchema & {
         value: any;
     }
 >;
 
+// biome-ignore lint/suspicious/noEmptyInterface: <noEmptyInterface>
 export interface AutoStoreWidgets {
     number: {
         max: number;
         min: number;
+        step?: number;
     };
 }
+export interface AutoStoreAction {
+    id?: string;
+    label?: string;
+    icon?: string;
+    disabled?: boolean;
+    visible?: boolean;
+    default?: boolean;
+    checked?: boolean;
+    tooltip?: string;
+    value?: any;
+    onClick?: (action: AutoStoreAction) => void;
+}
+
 export type AutoStoreWidgetTypes = keyof AutoStoreWidgets;
 
-export type StateSchema<Value = any, Widget extends AutoStoreWidgetTypes = AutoStoreWidgetTypes> = {
+/**
+ * 从 AutoStoreWidgets 中提取指定 widget 的配置类型
+ */
+export type WidgetConfig<W extends keyof AutoStoreWidgets> = AutoStoreWidgets[W];
+
+/**
+ * AutoStateSchema 基础接口（不包含 widget 特定配置）
+ */
+interface AutoStateSchemaBase<Value = any> {
     /**
      * 配置项控件类型
      * 即渲染渲染表单字段控件
      */
-    widget?: Widget;
+    widget?: string;
     /**
      * 配置键名称
      * 即在ConfigManager.state配置对象中存储key路径
@@ -59,8 +82,15 @@ export type StateSchema<Value = any, Widget extends AutoStoreWidgetTypes = AutoS
     default?: boolean;
     /**
      * 当校验出错时的无效提示信息
+     *
+     * 支持插值变量
+     * - 当前所有配置项的值，例如: invalidTips="{label}数据格式错误"
+     * - error: 错误信息，即错误对象的message属性
+     * - stack: 错误堆栈信息,即错误对象的stack属性
+     *
      */
     invalidTips?: string;
+    datatype?: string;
     /**
      * 是否启用
      */
@@ -102,21 +132,27 @@ export type StateSchema<Value = any, Widget extends AutoStoreWidgetTypes = AutoS
 
     /**
      *
-     * 当校验失败时的行为
+     * 校验失败时的默认行为
      *
-     * pass: 继续写入;
-     * ignore: 静默忽略;
-     * throw: 触发ValidateError错误; 验证失败信息会更新到validators.errors中
+     * - throw: 默认，触发ValidateError错误
+     * - throw-pass： 继续写入,然后再触发ValidateError错误
+     * - pass: 继续写入,不抛出错误
+     * - ignore: 静默忽略，即不触发错误，也不写入
+     *
+     * 错误信息均会写入到errors中
+     *
+     * 当校验函数返回 false 或抛出错误时，使用此选项决定如何处理
+     * 可被校验函数抛出的 ValidateError.behavior 覆盖
      *
      */
-    validationBehavior?: 'pass' | 'throw' | 'ignore' | 'throw-pass';
+    onInvalid?: 'pass' | 'throw' | 'ignore' | 'throw-pass';
     /**
      * 校验函数
      * 允许通过throw new Error()来提供错误信息
      * @param value
      * @returns
      */
-    onValidate?: (value: Value) => boolean | Promise<boolean>;
+    onValidate?: (value: Value, oldValue: Value, path: string[]) => boolean;
     /**
      * 在视图模式下的渲染函数
      */
@@ -133,13 +169,25 @@ export type StateSchema<Value = any, Widget extends AutoStoreWidgetTypes = AutoS
      * 用于自定义渲染表单字段
      */
     toRender?: (value: any) => any;
-} & AutoStoreWidgets[Widget];
+    /**
+     * 动作
+     */
+    actions?: AutoStoreAction[];
+}
+
+/**
+ * 完整的 AutoStateSchema 类型，根据 widget 参数自动合并对应 widget 配置
+ */
+export type AutoStateSchema<
+    Value = any,
+    Widget extends AutoStoreWidgetTypes = AutoStoreWidgetTypes,
+> = AutoStateSchemaBase<Value> &
+    (Widget extends keyof AutoStoreWidgets ? Partial<WidgetConfig<Widget>> : {});
 
 export type SchemaDescriptor<Value = any> = {
-    datatype: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any' | string;
-    value: Value;
-    options: StateSchema;
     path?: string[];
+    value: Value;
+    schema: AutoStateSchema<Value>;
 };
 
 export interface SchemaDescriptorBuilder<Value = any> {
@@ -156,9 +204,9 @@ export type Computedable<Obj extends Record<string, any>> = {
               ? never
               : ComputedBuilder<Obj[Key], any>);
 };
-export type ComputedableStateSchemaOptions<Value = any> = Computedable<StateSchema<Value>>;
+export type ComputedableStateSchemaOptions<Value = any> = Computedable<AutoStateSchema<Value>>;
 
 export type SchemaBuilder<Value = any> = <T = Value>(
     value: T,
-    options?: ComputedableStateSchemaOptions<Value>,
+    schema?: ComputedableStateSchemaOptions<Value>,
 ) => SchemaDescriptorBuilder<T>;

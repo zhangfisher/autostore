@@ -67,34 +67,34 @@ function isValidPass(this: AutoStore<any>, _: any, path: string[], newValue: any
     let isPass: boolean | Error = true;
     let error: any;
     const pathKey = path.join(this.options.delimiter || '.');
-
+    const configKey = this.options.configKey ? `${this.options.configKey}.${pathKey}` : pathKey;
     try {
         const isValid = validate!.call(this, newValue, oldValue, path);
         if (isValid === false) {
-            // 返回 false 时，抛出一个错误
-            // 如果 _updateValidateBehavior 有值，使用它；否则让错误使用默认行为
-            const err = new ValidateError();
-            if (behavior) {
-                err.behavior = behavior;
-            } else {
-                // 如果没有 _updateValidateBehavior，则重置 behavior 为 undefined
-                // 这样在 catch 块中就会使用 validationBehavior 选项
-                delete (err as any).behavior;
-            }
-            throw err;
+            // 返回 false 时，代表校验出错，因此应抛出一个错误
+            // 但是无法提供更精确的错误信息
+            throw new ValidateError();
         }
-
         // 校验成功，删除该路径的错误记录
-        if (this.errors[pathKey]) {
-            delete this.errors[pathKey];
+        if (this.options.configManager) {
+            delete this.options.configManager.errors[configKey];
+        }
+        if (this.errors) {
+            delete this.errors[configKey];
         }
     } catch (e: any) {
         error = e;
-        // 记录错误到 errors 对象
-        this.errors[pathKey] = error;
-
-        // 使用 error 中的 behavior，如果没有则使用 validationBehavior 选项
-        const finalBehavior = e.behavior || this.options.validationBehavior || 'throw';
+        const errors = this.options?.configManager?.errors || this.errors;
+        errors[configKey] = validate.getErrorMessage?.(e) || e.message || e.stack;
+        // 存储错误信息到 ConfigManager.errors（转换为字符串）
+        // if (this.options.configManager) {
+        //     this.options.configManager.errors[getConfigKey()] =
+        //         validate.getErrorMessage?.(e) || e.message || String(e);
+        // }
+        // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid
+        // 这样可以确保 configurable 中配置的 onInvalid 优先生效
+        const finalBehavior =
+            behavior || e.behavior || validate.onInvalid || this.options.onInvalid || 'throw';
 
         if (finalBehavior === 'pass') {
             isPass = true;
@@ -103,7 +103,6 @@ function isValidPass(this: AutoStore<any>, _: any, path: string[], newValue: any
         } else if (finalBehavior === 'throw-pass') {
             isPass = e;
         } else {
-            // 'throw' 或其他未知行为，默认抛出错误
             throw e;
         }
     } finally {
@@ -180,7 +179,17 @@ function createProxy(
                                 );
                             }
                             isComputedCreating.set(pathKey, true);
-                            return options.createObserverObject(path, value, parentPath, obj); // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            const result = options.createObserverObject(
+                                path,
+                                value,
+                                parentPath,
+                                obj,
+                            ); // 如果值是一个函数，则创建一个计算属性或Watch对象
+                            // 如果返回的不是函数（比如是 schema builder 返回的 initialValue），则将其设置到对象中
+                            if (typeof result !== 'function') {
+                                Reflect.set(obj, key, result, receiver);
+                            }
+                            return result;
                         } finally {
                             isComputedCreating.delete(pathKey);
                         }

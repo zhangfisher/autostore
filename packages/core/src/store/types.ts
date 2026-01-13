@@ -4,17 +4,20 @@ import type { ObserverObject } from '../observer/observer';
 import type { ObserverType } from '../observer/types';
 import type { Dict } from '../types';
 import type { AutoStore } from './store';
-import type { StateSchema } from '../schema/types';
-import { ConfigManager } from '../schema/manager';
+import type { AutoStateSchema } from '../schema/types';
+import type { ConfigManager } from '../schema/manager';
 
 export type BatchChangeEvent = '__batch_update__';
 export type StateChangeEvents = Record<string, StateOperate>;
-export type StateValidator<State extends Dict> = (
-    this: AutoStore<State>,
-    newValue: any,
-    oldValue: any,
-    path: string[],
-) => boolean;
+export interface StateValidatorFunction<State extends Dict> {
+    (this: AutoStore<State>, newValue: any, oldValue: any, path: string[]): boolean;
+    getErrorMessage?: (error: Error) => string;
+    onInvalid?: ValidationBehavior;
+}
+
+export type StateValidator<State extends Dict> = StateValidatorFunction<State>;
+
+export type ValidationBehavior = 'pass' | 'ignore' | 'throw' | 'throw-pass';
 
 export type StateOperateType =
     | 'get'
@@ -232,7 +235,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 默认的値模式
      */
-    defaultConfigureSchema?: Partial<StateSchema<any>>;
+    defaultSchema?: Partial<AutoStateSchema<any>>;
     /**
      *
      * 校验失败时的默认行为
@@ -248,7 +251,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * 可被校验函数抛出的 ValidateError.behavior 覆盖
      *
      */
-    validationBehavior?: 'pass' | 'throw' | 'ignore' | 'throw-pass';
+    onInvalid?: 'pass' | 'throw' | 'ignore' | 'throw-pass';
     /**
      * 当写入时状态时执行此校验函数
      *

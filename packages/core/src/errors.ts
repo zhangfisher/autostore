@@ -14,6 +14,7 @@ export class ValidateError extends AutoStoreError {
      * - 'ignore' - 校验失败，静默忽略（不写入）
      * - 'throw' - 校验失败，抛出异常
      * - 'throw-pass' - 写入数据但同时抛出异常
+     * - undefined - 使用 validate.onInvalid 的配置
      */
-    behavior: 'pass' | 'ignore' | 'throw' | 'throw-pass' = 'throw';
+    behavior?: 'pass' | 'ignore' | 'throw' | 'throw-pass';
 }

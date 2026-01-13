@@ -92,10 +92,10 @@ import type { GetTypeByPath } from '../types';
 import { TimeoutError } from '../errors';
 import type { ObserverDescriptor } from '../observer/types';
 import { parseFunc } from '../utils/parseFunc';
-import type { ConfigManager } from '../schema/manager';
 
 export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _data: ComputedState<State>;
+    private _errors?: Record<string, string>;
     public computedObjects: ComputedObjects<State>;
     public watchObjects: WatchObjects<State>;
     protected _operates = new EventEmitter<StateChangeEvents>(); // 依赖变更事件触发器
@@ -110,8 +110,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _delimiter: string = '.';
-    private _errors?: Record<string, string | Error>; // 用于保存写入或计算出错时的错误信息
-    private _configManager?: ConfigManager;
     types = {
         rawState: undefined as unknown as State,
         state: undefined as unknown as ComputedState<State>,
@@ -164,14 +162,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     get state() {
         return this._data;
     }
+    get operates() {
+        return this._operates;
+    }
     get errors() {
         if (!this._errors) {
             this._errors = {};
         }
-        return this._errors;
-    }
-    get operates() {
-        return this._operates;
+        return this._errors!;
     }
     get options() {
         return this._options;
@@ -444,8 +442,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      */
 
     private createObserverObject(path: string[], value: any, parentPath: string[], parent: any) {
-        if (this._configManager && isSchemaBuilder(value)) {
-            return this._configManager.add(this, path, value);
+        if (this.options.configManager && isSchemaBuilder(value)) {
+            return this.options.configManager.add(this, path, value);
         } else {
             const descriptor = getObserverDescriptor(value);
             const computedCtx = { path, value, parentPath, parent };
@@ -593,11 +591,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      *   })
      *
      * @param {function(ComputedState<State>): void} fn - 用于更新状态的函数,只能是同步函数
-     * @param {Object} [options] - 可选参数
-     * @param {boolean} [options.batch=true] -  是否批量更新，=false 不批量更新，=true 批量更新，批量更新事件名称为__batch_update__，=<批量更新事件名称> 指定一个字符串
-     * @param {boolean} [options.silent=false] - 是否静默更新不触发事件，默认为 false
-     * @param {boolean} [options.peep=false] - 是否偷看，即读取状态值但不触发事件，默认为 false
-     * @param {boolean} [options.reply=false] - 当更新完成回放所有依赖的变化事件，默认为true，即回放所有依赖的变化事件，=false 不回放依赖的变化事件
+     * @param {Object} [schema] - 可选参数
+     * @param {boolean} [schema.batch=true] -  是否批量更新，=false 不批量更新，=true 批量更新，批量更新事件名称为__batch_update__，=<批量更新事件名称> 指定一个字符串
+     * @param {boolean} [schema.silent=false] - 是否静默更新不触发事件，默认为 false
+     * @param {boolean} [schema.peep=false] - 是否偷看，即读取状态值但不触发事件，默认为 false
+     * @param {boolean} [schema.reply=false] - 当更新完成回放所有依赖的变化事件，默认为true，即回放所有依赖的变化事件，=false 不回放依赖的变化事件
      *  比如update(state=>{
      *
      *  })

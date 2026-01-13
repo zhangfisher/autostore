@@ -3,6 +3,7 @@ import { AutoStore } from '../store/store';
 import { isSchemaBuilder, setVal } from '../utils';
 import { getVal } from '../utils/getVal';
 import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from './types';
+import { isFunction } from '../utils/isFunction';
 
 /**
  *
@@ -41,7 +42,6 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
     get size() {
         return Object.keys(this.fields).length;
     }
-
     /**
      * 加载数据到当前实例
      * @param {Record<string, any>} data - 要加载的数据对象，键值对形式
@@ -68,7 +68,7 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
 
     async save() {
         const values = Object.entries(this.state).reduce((acc, [key, schema]) => {
-            acc[key] = schema.value;
+            acc[key] = (schema as any).value;
             return acc;
         }, {} as Record<string, any>);
         await this.source.save?.(values);
@@ -79,14 +79,45 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
         path: string | string[],
         schema: SchemaDescriptorBuilder | SchemaDescriptor,
     ) {
-        const descriptor = isSchemaBuilder(schema) ? schema() : schema;
+        const descriptor: SchemaDescriptor = isSchemaBuilder(schema) ? schema() : schema;
 
         const pathKey = Array.isArray(path) ? path : path.split(store.options.delimiter);
+        const strPath = pathKey.join(store.options.delimiter);
         // 创建配置键路径
         const configKey = pathKey;
         if (store.options.configKey) configKey.splice(0, 0, store.options.configKey);
 
-        descriptor.value = this.getConfigValue(configKey) ?? descriptor.value;
+        // 保存初始值，用于返回
+        const initialValue = descriptor.value;
+
+        if (isFunction(descriptor.schema.onValidate)) {
+            // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
+            // @ts-expect-error
+            descriptor.schema.onValidate.getErrorMessage = (error: Error) => {
+                const message = descriptor.schema.invalidTips;
+                if (typeof message === 'string') {
+                    return message
+                        .params(descriptor.schema)
+                        .params({ error: error.message, stack: error.stack });
+                }
+                return error.message;
+            };
+            // 获取 validationBehavior，用于指定校验失败时的默认行为
+            const onInvalid = descriptor.schema.onInvalid;
+            // 只有当 onInvalid 显式指定时才设置它
+            if (onInvalid !== undefined) {
+                (descriptor.schema.onValidate as any).onInvalid = onInvalid;
+            }
+            // 注册验证函数，用于写入状态值时调用进行验证
+            if (!store.options.validators) {
+                store.options.validators = {};
+            }
+            store.options.validators[strPath] = descriptor.schema.onValidate;
+        } else {
+            if (store.options.validators) {
+                delete store.options.validators[strPath];
+            }
+        }
 
         // 创建代理用于从原始的Store值读写状态值
         this._createValueProxy(descriptor, store, pathKey);
@@ -99,9 +130,12 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
                 silent: true,
             },
         );
-        return descriptor.value;
+        // 返回初始值，避免读取代理导致循环依赖
+        return initialValue;
     }
     private _createValueProxy(finalDescriptor: object, store: AutoStore<any>, path: string[]) {
+        // 弱引用Store对象
+        // 由于ConfigManager是全局对象，而Store可能是动态
         const storeRef = new WeakRef(store);
         return Object.defineProperty(finalDescriptor, 'value', {
             get() {

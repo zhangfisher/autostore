@@ -29,20 +29,20 @@ import { VALUE_SCHEMA_BUILDER_FLAG } from '../consts';
 import { forEachObject, isFunction, isPlainObject } from '../utils';
 import { markRaw } from '../utils/markRaw';
 
-import type { StateSchema, SchemaDescriptorBuilder, SchemaBuilder } from './types';
+import type { AutoStateSchema, SchemaDescriptorBuilder, SchemaBuilder } from './types';
 
 type SchemaArgs = {
     value: any;
-    options: StateSchema;
+    schema: AutoStateSchema;
 };
 
 /**
  * 将options里面的on和render开头的函数标识为raw
- * @param options
+ * @param schema
  */
-function markRawOptions(options: StateSchema) {
-    if (isPlainObject(options)) {
-        forEachObject(options, ({ value, key, parent }) => {
+function markRawSchema(schema: any) {
+    if (isPlainObject(schema)) {
+        forEachObject(schema, ({ value, key, parent }) => {
             if (
                 isFunction(value) &&
                 (key.startsWith('on') || key.startsWith('render') || key.startsWith('to'))
@@ -65,34 +65,31 @@ function markRawOptions(options: StateSchema) {
 function parseSchemaArgs(args: any[]): SchemaArgs {
     const finalArgs: any = {
         value: args[0],
-        options: Object.assign(
+        schema: Object.assign(
             {
-                validationBehavior: 'throw-pass',
+                onInvalid: 'throw',
             },
             args[1],
         ),
     };
-    markRawOptions(finalArgs.options);
+    markRawSchema(finalArgs.schema);
     return finalArgs as SchemaArgs;
 }
 
-export const schema = function () {
-    const initial = arguments[0];
-    const options = arguments[1];
+export const schema = function <Value>(initial: Value, options?: AutoStateSchema<Value>) {
     const args = parseSchemaArgs([initial, options]);
     const value = initial;
-    const datatype = Array.isArray(value) ? 'array' : typeof value;
     if (typeof value === 'object') {
         markRaw(value);
     }
+    args.schema.datatype = Array.isArray(value) ? 'array' : typeof value;
     const builder = () => ({
         value,
-        datatype,
-        options: args.options,
+        schema: args.schema,
     });
     builder[VALUE_SCHEMA_BUILDER_FLAG] = true;
-    return builder as SchemaDescriptorBuilder;
-} as unknown as SchemaBuilder;
+    return builder as SchemaDescriptorBuilder<Value>;
+};
 
 export const configurable = schema;
 
@@ -100,15 +97,15 @@ export function createTypeSchemaBuilder<Value = any>(
     isValid: (val: any) => boolean,
     defaultTips: string,
 ) {
-    const typeSchema = function () {
-        const opts = Object.assign({}, arguments[1]);
+    const typeSchema = function (initial: Value, options?: any) {
+        const opts = Object.assign({}, options);
         if (typeof opts.onValidate !== 'function') {
             opts.onValidate = isValid;
         }
         if (!opts.invalidTips) {
             opts.invalidTips = defaultTips;
         }
-        return schema(arguments[0], opts);
+        return schema(initial, opts);
     };
     return typeSchema as SchemaBuilder<Value>;
 }
