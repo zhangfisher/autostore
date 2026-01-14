@@ -31,8 +31,8 @@ export interface ConfigSource {
     load: () => Record<string, any> | Promise<Record<string, any>>;
     save?: (values: Record<string, any>) => void | Promise<void>;
 }
-
 export class ConfigManager extends AutoStore<AutoStoreConfigures> {
+    dirtyValues: Record<string, any> = {};
     constructor(public source: ConfigSource) {
         super({});
     }
@@ -65,13 +65,32 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
             );
         });
     }
+    /**
+     * 手工调用保存配置数据到数据源
+     * @param all 保存所有配置数据,false=只保存变更的数据
+     */
+    async save(all?: boolean) {
+        const values = all ? this._getValues() : this.dirtyValues;
+        if (Object.keys(values).length > 0) {
+            await this.source.save?.(values);
+            this.dirtyValues = {};
+        }
+    }
 
-    async save() {
-        const values = Object.entries(this.state).reduce((acc, [key, schema]) => {
+    private _getValues() {
+        return Object.entries(this.state).reduce((acc, [key, schema]) => {
             acc[key] = (schema as any).value;
             return acc;
         }, {} as Record<string, any>);
-        await this.source.save?.(values);
+    }
+    /**
+     * 恢复默认值
+     */
+    reset() {
+        this.dirtyValues = {};
+        return Object.values(this.state).forEach((schema) => {
+            schema;
+        });
     }
 
     add(
@@ -89,6 +108,9 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
 
         // 保存初始值，用于返回
         const initialValue = descriptor.value;
+        if (descriptor.schema.default === undefined) {
+            descriptor.schema.default = initialValue;
+        }
 
         if (isFunction(descriptor.schema.onValidate)) {
             // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
@@ -133,10 +155,20 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
         // 返回初始值，避免读取代理导致循环依赖
         return initialValue;
     }
+    /**
+     * 监听配置项变更
+     * @param store
+     */
+    private _onConfigUpdate(configKey: string, value: any) {
+        this._dirtyValues[configKey] = value;
+    }
     private _createValueProxy(finalDescriptor: object, store: AutoStore<any>, path: string[]) {
-        // 弱引用Store对象
-        // 由于ConfigManager是全局对象，而Store可能是动态
+        // 由于ConfigManager是全局对象，而Store可能是动态 // 弱引用Store对象
         const storeRef = new WeakRef(store);
+        const configKey = store.options.configKey
+            ? `${store.options.configKey}${PATH_DELIMITER}${path.join(PATH_DELIMITER)}`
+            : path.join(PATH_DELIMITER);
+        const self = this;
         return Object.defineProperty(finalDescriptor, 'value', {
             get() {
                 const store = storeRef.deref();
@@ -147,6 +179,7 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
                 store?.update((state: any) => {
                     setVal(state, path, value);
                 });
+                self._onConfigUpdate(configKey, value);
             },
         });
     }
