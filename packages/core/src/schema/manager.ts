@@ -1,6 +1,6 @@
 import { PATH_DELIMITER } from '../consts';
 import { AutoStore } from '../store/store';
-import { isSchemaBuilder, setVal } from '../utils';
+import { isSchemaBuilder, setVal, withSchema } from '../utils';
 import { getVal } from '../utils/getVal';
 import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from './types';
 import { isFunction } from '../utils/isFunction';
@@ -29,6 +29,11 @@ import { isFunction } from '../utils/isFunction';
  */
 export interface ConfigSource {
     load: () => Record<string, any> | Promise<Record<string, any>>;
+    /**
+     * 每一个配置项变更时均会调用
+     * @param values
+     * @returns
+     */
     save?: (values: Record<string, any>) => void | Promise<void>;
 }
 export type ConfigManagerOptions = {};
@@ -50,22 +55,24 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
      */
     async load() {
         const values = await this.source.load();
-        Object.entries(values).forEach(([key, value]) => {
-            const path = key.split('.');
-            this.update(
-                (state) => {
-                    const schema = getVal(state, path);
-                    if (!schema) {
+        this.update(
+            (state) => {
+                Object.entries(values).forEach(([key, value]) => {
+                    // 直接使用扁平键访问 schema
+                    const schema = state[key];
+                    if (schema) {
+                        // schema 存在，通过 setter 更新原始 Store
                         schema.value = value;
                     } else {
-                        setVal(state, path, { value });
+                        // schema 不存在，创建新的 schema 对象
+                        state[key] = { value };
                     }
-                },
-                {
-                    silent: true,
-                },
-            );
-        });
+                });
+            },
+            {
+                silent: true,
+            },
+        );
     }
     /**
      * 手工调用保存配置数据到数据源
@@ -93,11 +100,22 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
             this._reseting = true;
             this.dirtyValues = {};
             // 将状态值恢复为默认值
-            Object.values(this.state).forEach((schema) => {
+            // this.state 中的每个值是一个 SchemaDescriptor，包含 value 和 schema 属性
+            Object.values(this.state).forEach((descriptor: any) => {
                 // 此操作会导致写入时的校验操作，
                 try {
-                    schema.value = schema.default;
-                } catch {}
+                    // 使用 withSchema 包裹默认值，实现静默更新
+                    // 避免触发校验、事件通知、onUpdate 和 save
+                    const defaultValue = descriptor.schema.default;
+                    if (defaultValue !== undefined) {
+                        descriptor.value = withSchema(defaultValue, {
+                            slient: true,
+                            validate: 'none',
+                        });
+                    }
+                } catch (error) {
+                    // 忽略校验错误
+                }
             });
         } finally {
             this._reseting = false;
@@ -111,6 +129,9 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
      */
     onUpdate(store: AutoStore<any>, configKey: string, value: any) {
         this.dirtyValues[configKey] = value;
+        this.source.save?.(this.dirtyValues);
+        // 保存后清空 dirtyValues，避免重复保存
+        this.dirtyValues = {};
     }
     add(
         store: AutoStore<any>,
@@ -121,8 +142,8 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
 
         const pathKey = Array.isArray(path) ? path : path.split(store.options.delimiter);
         const strPath = pathKey.join(store.options.delimiter);
-        // 创建配置键路径
-        const configKey = pathKey;
+        // 创建配置键路径（需要复制数组，避免修改原数组）
+        const configKey = [...pathKey];
         if (store.options.configKey) configKey.splice(0, 0, store.options.configKey);
 
         // 保存初始值，用于返回

@@ -7,6 +7,7 @@ import type { AutoStore } from './store';
 import { isNumber } from '../utils/isNumber';
 import { markRaw } from '../utils/markRaw';
 import { isPathMatched } from '../utils/isPathMatched';
+import { getSchemaValue, ValueSchema } from '../utils/withSchema';
 
 const __NOTIFY__ = Symbol('__NOTIFY__');
 
@@ -56,9 +57,16 @@ function getValidate(this: AutoStore<any>, path: string[]): StateValidator<any> 
     return this.options.onValidate;
 }
 
-function isValidPass(this: AutoStore<any>, _: any, path: string[], newValue: any, oldValue: any) {
+function isValidPass(
+    this: AutoStore<any>,
+    _: any,
+    path: string[],
+    newValue: any,
+    oldValue: any,
+    schema: ValueSchema | undefined,
+) {
     //@ts-expect-error
-    const behavior = this._updateValidateBehavior;
+    const behavior = schema?.validate || this._updateValidateBehavior;
     if (behavior === 'none') return true;
 
     const validate = getValidate.call(this, path);
@@ -108,13 +116,6 @@ function isValidPass(this: AutoStore<any>, _: any, path: string[], newValue: any
             oldValue,
             error,
         });
-        // 当写入数据时需要更新配置的
-        if (this.configManager && isPass !== false && this.configurabled.has(pathKey)) {
-            setTimeout(() => {
-                // 通知配置管理器，配置项已更新
-                this.configManager.onUpdate(this, configKey, newValue);
-            }, 0);
-        }
     }
     return isPass;
 }
@@ -216,16 +217,27 @@ function createProxy(
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
             const path = [...parentPath, String(key)];
-            const isValid = isValidPass.call(this, proxyObj, path, value, oldValue);
+            const [val, schema] = getSchemaValue(value);
+            const isValid = isValidPass.call(this, proxyObj, path, val, oldValue, schema);
             if (isValid) {
-                const success = Reflect.set(obj, key, value, receiver);
+                const success = Reflect.set(obj, key, val, receiver);
                 if (key === __NOTIFY__) return true;
-                if (success && key !== __NOTIFY__ && value !== oldValue) {
+
+                // 写入成功后，检查是否是配置项，如果是则调用 ConfigManager.onUpdate
+                const pathKey = path.join(this.options.delimiter || '.');
+                const configKey = this.options.configKey ? `${this.options.configKey}.${pathKey}` : pathKey;
+                if (success && this.configManager && this.configurabled.has(pathKey)) {
+                    setTimeout(() => {
+                        this.configManager.onUpdate(this, configKey, val);
+                    }, 0);
+                }
+
+                if (success && !schema?.slient && key !== __NOTIFY__ && val !== oldValue) {
                     options.notify({
                         type: Array.isArray(obj) ? 'update' : 'set',
                         path,
                         indexs: [],
-                        value,
+                        value: val,
                         oldValue,
                         parentPath,
                         parent: obj,

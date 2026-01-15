@@ -555,7 +555,8 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     {
                         createdAt: configurable(initialDate, {
                             onValidate: (value: any) => {
-                                return value instanceof Date;
+                                // 检查是否为 Date 实例且日期有效
+                                return value instanceof Date && !isNaN(value.getTime());
                             },
                         }),
                     },
@@ -569,8 +570,6 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 store.state.createdAt = newDate;
                 // 验证 Date 已被正确设置
                 expect(store.state.createdAt instanceof Date).toBe(true);
-                // 使用 toEqual() 而不是 toBe() 来避免类型问题
-                // expect(store.state.createdAt.toJSON()).toEqual(newDate.toJSON());
 
                 // 非 Date
                 expect(() => {

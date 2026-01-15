@@ -449,7 +449,9 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
 
     private createObserverObject(path: string[], value: any, parentPath: string[], parent: any) {
         if (this.options.configManager && isSchemaBuilder(value)) {
-            return this.options.configManager.add(this, path, value);
+            const val = this.options.configManager.add(this, path, value);
+            this.configurabled.add(path.join(this.options.delimiter));
+            return val;
         } else {
             const descriptor = getObserverDescriptor(value);
             const computedCtx = { path, value, parentPath, parent };
