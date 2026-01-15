@@ -86,11 +86,6 @@ function isValidPass(this: AutoStore<any>, _: any, path: string[], newValue: any
         error = e;
         const errors = this.options?.configManager?.errors || this.errors;
         errors[configKey] = validate.getErrorMessage?.(e) || e.message || e.stack;
-        // 存储错误信息到 ConfigManager.errors（转换为字符串）
-        // if (this.options.configManager) {
-        //     this.options.configManager.errors[getConfigKey()] =
-        //         validate.getErrorMessage?.(e) || e.message || String(e);
-        // }
         // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid
         // 这样可以确保 configurable 中配置的 onInvalid 优先生效
         const finalBehavior =
@@ -103,6 +98,7 @@ function isValidPass(this: AutoStore<any>, _: any, path: string[], newValue: any
         } else if (finalBehavior === 'throw-pass') {
             isPass = e;
         } else {
+            isPass = false;
             throw e;
         }
     } finally {
@@ -112,8 +108,14 @@ function isValidPass(this: AutoStore<any>, _: any, path: string[], newValue: any
             oldValue,
             error,
         });
+        // 当写入数据时需要更新配置的
+        if (this.configManager && isPass !== false && this.configurabled.has(pathKey)) {
+            setTimeout(() => {
+                // 通知配置管理器，配置项已更新
+                this.configManager.onUpdate(this, configKey, newValue);
+            }, 0);
+        }
     }
-
     return isPass;
 }
 

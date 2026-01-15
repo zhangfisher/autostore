@@ -110,6 +110,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _delimiter: string = '.';
+    private _configurabled?: Set<string>; // 缓存可配置的路径名称
     types = {
         rawState: undefined as unknown as State,
         state: undefined as unknown as ComputedState<State>,
@@ -146,7 +147,6 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
         this.installExtends();
-        // this._configManager = new ConfigManager();
         forEachObject(this._data as any, this._onFirstEachState.bind(this));
         if (this._options.resetable) this.resetable = true;
         // @ts-expect-error
@@ -164,6 +164,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     }
     get operates() {
         return this._operates;
+    }
+    get configurabled() {
+        if (!this._configurabled) {
+            this._configurabled = new Set<string>();
+        }
+        return this._configurabled!;
     }
     get errors() {
         if (!this._errors) {
@@ -608,7 +614,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             peep = false,
             flags = 0,
             validate,
-        } = Object.assign({}, options);
+        } = options || {};
         if (typeof fn === 'function') {
             this._updateFlags = flags;
             this._updateValidateBehavior = validate;

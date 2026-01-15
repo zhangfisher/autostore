@@ -31,8 +31,10 @@ export interface ConfigSource {
     load: () => Record<string, any> | Promise<Record<string, any>>;
     save?: (values: Record<string, any>) => void | Promise<void>;
 }
+export type ConfigManagerOptions = {};
 export class ConfigManager extends AutoStore<AutoStoreConfigures> {
     dirtyValues: Record<string, any> = {};
+    private _reseting: boolean = false;
     constructor(public source: ConfigSource) {
         super({});
     }
@@ -87,12 +89,29 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
      * 恢复默认值
      */
     reset() {
-        this.dirtyValues = {};
-        return Object.values(this.state).forEach((schema) => {
-            schema;
-        });
+        try {
+            this._reseting = true;
+            this.dirtyValues = {};
+            // 将状态值恢复为默认值
+            Object.values(this.state).forEach((schema) => {
+                // 此操作会导致写入时的校验操作，
+                try {
+                    schema.value = schema.default;
+                } catch {}
+            });
+        } finally {
+            this._reseting = false;
+        }
     }
-
+    /**
+     * 此方法由Store实例在写入状态值时调用
+     * @param store
+     * @param path
+     * @param value
+     */
+    onUpdate(store: AutoStore<any>, configKey: string, value: any) {
+        this.dirtyValues[configKey] = value;
+    }
     add(
         store: AutoStore<any>,
         path: string | string[],
@@ -155,13 +174,6 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
         // 返回初始值，避免读取代理导致循环依赖
         return initialValue;
     }
-    /**
-     * 监听配置项变更
-     * @param store
-     */
-    private _onConfigUpdate(configKey: string, value: any) {
-        this._dirtyValues[configKey] = value;
-    }
     private _createValueProxy(finalDescriptor: object, store: AutoStore<any>, path: string[]) {
         // 由于ConfigManager是全局对象，而Store可能是动态 // 弱引用Store对象
         const storeRef = new WeakRef(store);
@@ -179,7 +191,6 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
                 store?.update((state: any) => {
                     setVal(state, path, value);
                 });
-                self._onConfigUpdate(configKey, value);
             },
         });
     }
