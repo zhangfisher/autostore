@@ -151,7 +151,22 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
         if (descriptor.schema.default === undefined) {
             descriptor.schema.default = initialValue;
         }
+        // defaultSchema 只作为默认值，不会覆盖 descriptor.schema 中已有的属性
+        if (store.options.defaultSchema) {
+            Object.keys(store.options.defaultSchema).forEach((key) => {
+                const defaultValue = (store.options.defaultSchema as any)[key];
+                const currentValue = (descriptor.schema as any)[key];
+                // 只有当当前值未定义时，才使用 defaultSchema 的值
+                if (currentValue === undefined) {
+                    (descriptor.schema as any)[key] = defaultValue;
+                }
+            });
+        }
 
+        // 如果没有设置 onInvalid，则使用默认值 'throw'
+        if ((descriptor.schema as any).onInvalid === undefined) {
+            (descriptor.schema as any).onInvalid = 'throw';
+        }
         if (isFunction(descriptor.schema.onValidate)) {
             // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
             // @ts-expect-error
@@ -198,10 +213,6 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
     private _createValueProxy(finalDescriptor: object, store: AutoStore<any>, path: string[]) {
         // 由于ConfigManager是全局对象，而Store可能是动态 // 弱引用Store对象
         const storeRef = new WeakRef(store);
-        const configKey = store.options.configKey
-            ? `${store.options.configKey}${PATH_DELIMITER}${path.join(PATH_DELIMITER)}`
-            : path.join(PATH_DELIMITER);
-        const self = this;
         return Object.defineProperty(finalDescriptor, 'value', {
             get() {
                 const store = storeRef.deref();

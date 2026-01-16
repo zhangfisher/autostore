@@ -67,7 +67,7 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
         value: args[0],
         schema: Object.assign(
             {
-                onInvalid: 'throw',
+                onInvalid: undefined, // 不在这里设置默认值，而是在 ConfigManager.add 中设置
             },
             args[1],
         ),

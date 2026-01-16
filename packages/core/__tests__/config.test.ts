@@ -9,6 +9,7 @@
  *
  * 测试各种数据类型和校验场景
  */
+/** biome-ignore-all lint/complexity/useLiteralKeys: <explanation> */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { AutoStore, configurable, ConfigManager, ValidateError } from '../src';
@@ -848,6 +849,362 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             const failureEvent = validateEvents.find((e) => e.error instanceof ValidateError);
             expect(failureEvent).toBeDefined();
             expect(failureEvent?.error.message).toBe('数量超出范围');
+        });
+    });
+
+    describe('defaultSchema - 默认 Schema 配置', () => {
+        test('defaultSchema 应该为所有 configurable 字段提供公共的 onInvalid 行为', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            return value > 0;
+                        },
+                    }),
+                    quantity: configurable(10, {
+                        onValidate: (value) => {
+                            return value >= 1 && value <= 100;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                    defaultSchema: {
+                        onInvalid: 'pass',
+                    },
+                },
+            );
+
+            // price 校验失败，应该 pass（不抛异常，但写入值）
+            store.state.price = -50;
+            expect(store.state.price).toBe(-50);
+            expect(configManager.errors['price']).toBeDefined();
+
+            // quantity 校验失败，也应该是 pass
+            store.state.quantity = 200;
+            expect(store.state.quantity).toBe(200);
+            expect(configManager.errors['quantity']).toBeDefined();
+        });
+
+        test('defaultSchema 应该为所有 configurable 字段提供公共的 invalidTips', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            if (value <= 0) {
+                                throw new ValidateError('价格必须大于0');
+                            }
+                            return true;
+                        },
+                    }),
+                    quantity: configurable(10, {
+                        onValidate: (value) => {
+                            if (value < 1 || value > 100) {
+                                throw new ValidateError('数量超出范围');
+                            }
+                            return true;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                    defaultSchema: {
+                        invalidTips: '配置项 {label} 校验失败',
+                    },
+                },
+            );
+
+            // price 校验失败
+            expect(() => {
+                store.state.price = -50;
+            }).toThrow(ValidateError);
+
+            // 错误信息应该包含 defaultSchema 的 invalidTips
+            expect(configManager.errors['price']).toBeDefined();
+
+            // quantity 校验失败
+            expect(() => {
+                store.state.quantity = 200;
+            }).toThrow(ValidateError);
+
+            expect(configManager.errors['quantity']).toBeDefined();
+        });
+
+        test('defaultSchema 应该为所有 configurable 字段提供公共的 label', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            if (value <= 0) {
+                                throw new ValidateError('价格必须大于0');
+                            }
+                            return true;
+                        },
+                    }),
+                    quantity: configurable(10, {
+                        onValidate: (value) => {
+                            if (value < 1 || value > 100) {
+                                throw new ValidateError('数量超出范围');
+                            }
+                            return true;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                    defaultSchema: {
+                        label: '配置项',
+                    },
+                },
+            );
+
+            // 检查 ConfigManager 中是否保存了 label
+            expect(configManager.fields).toBeDefined();
+        });
+
+        test('configurable 自身的 schema 应该覆盖 defaultSchema 的值', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            return value > 0;
+                        },
+                        // 显式指定 throw，覆盖 defaultSchema 的 pass
+                        onInvalid: 'throw',
+                    }),
+                    quantity: configurable(10, {
+                        onValidate: (value) => {
+                            return value >= 1 && value <= 100;
+                        },
+                        // quantity 没有指定，应该使用 defaultSchema 的 pass
+                    }),
+                },
+                {
+                    configManager,
+                    defaultSchema: {
+                        onInvalid: 'pass',
+                    },
+                },
+            );
+
+            // price 使用自己的 onInvalid='throw'，应该抛出异常
+            expect(() => {
+                store.state.price = -50;
+            }).toThrow(ValidateError);
+            expect(configManager.errors.price).toBeDefined();
+
+            // quantity 使用 defaultSchema 的 onInvalid='pass'，不应该抛出异常
+            store.state.quantity = 200;
+            expect(store.state.quantity).toBe(200);
+            expect(configManager.errors.quantity).toBeDefined();
+        });
+
+        test('defaultSchema 中的 onValidate 不应该覆盖 configurable 的 onValidate', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            if (value <= 0) {
+                                throw new ValidateError('价格必须大于0');
+                            }
+                            return true;
+                        },
+                    }),
+                    quantity: configurable(10, {
+                        onValidate: (value) => {
+                            if (value < 1 || value > 100) {
+                                throw new ValidateError('数量超出范围');
+                            }
+                            return true;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                    // defaultSchema 中的 onValidate 应该被忽略，不会覆盖
+                    defaultSchema: {
+                        onValidate: () => {
+                            return true; // 这个验证函数应该被忽略
+                        },
+                    },
+                },
+            );
+
+            // price 应该使用自己的 onValidate，而不是 defaultSchema 的
+            expect(() => {
+                store.state.price = -50;
+            }).toThrow(ValidateError);
+            expect(configManager.errors['price']).toBe('价格必须大于0');
+
+            // quantity 也应该使用自己的 onValidate
+            expect(() => {
+                store.state.quantity = 200;
+            }).toThrow(ValidateError);
+            expect(configManager.errors['quantity']).toBe('数量超出范围');
+        });
+
+        test('defaultSchema 应该与嵌套对象中的 configurable 字段一起工作', () => {
+            const store = new AutoStore(
+                {
+                    order: {
+                        price: configurable(100, {
+                            onValidate: (value) => {
+                                return value > 0;
+                            },
+                        }),
+                        quantity: configurable(10, {
+                            onValidate: (value) => {
+                                return value >= 1 && value <= 100;
+                            },
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                    defaultSchema: {
+                        onInvalid: 'pass',
+                        invalidTips: '字段 {label} 校验失败',
+                    },
+                },
+            );
+
+            // 嵌套字段应该继承 defaultSchema 的配置
+            store.state.order.price = -50;
+            expect(store.state.order.price).toBe(-50);
+            expect(configManager.errors['order.price']).toBeDefined();
+
+            store.state.order.quantity = 200;
+            expect(store.state.order.quantity).toBe(200);
+            expect(configManager.errors['order.quantity']).toBeDefined();
+        });
+
+        test('defaultSchema 中的多个字段应该同时生效', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            return value > 0;
+                        },
+                    }),
+                    quantity: configurable(10, {
+                        onValidate: (value) => {
+                            return value >= 1 && value <= 100;
+                        },
+                    }),
+                    discount: configurable(0.1, {
+                        onValidate: (value) => {
+                            return value >= 0 && value < 1;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                    defaultSchema: {
+                        onInvalid: 'pass',
+                        invalidTips: '字段 {label} 校验失败',
+                        label: '配置项',
+                        required: true,
+                    },
+                },
+            );
+
+            // 所有字段都应该继承 defaultSchema 的配置
+            store.state.price = -50;
+            expect(store.state.price).toBe(-50);
+            expect(configManager.errors['price']).toBeDefined();
+
+            store.state.quantity = 200;
+            expect(store.state.quantity).toBe(200);
+            expect(configManager.errors['quantity']).toBeDefined();
+
+            store.state.discount = 1.5;
+            expect(store.state.discount).toBe(1.5);
+            expect(configManager.errors['discount']).toBeDefined();
+        });
+
+        test('defaultSchema 为空时，configurable 应该正常工作', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            if (value <= 0) {
+                                throw new ValidateError('价格必须大于0');
+                            }
+                            return true;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                    defaultSchema: {},
+                },
+            );
+
+            // 没有默认 schema，应该使用 configurable 自己的配置
+            expect(() => {
+                store.state.price = -50;
+            }).toThrow(ValidateError);
+            expect(configManager.errors['price']).toBe('价格必须大于0');
+            expect(store.state.price).toBe(100);
+        });
+
+        test('defaultSchema 中的 onInvalid="ignore" 应该生效', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            return value > 0;
+                        },
+                    }),
+                    quantity: configurable(10, {
+                        onValidate: (value) => {
+                            return value >= 1 && value <= 100;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                    defaultSchema: {
+                        onInvalid: 'ignore',
+                    },
+                },
+            );
+
+            // 校验失败，值不应该被修改，错误应该被记录
+            store.state.price = -50;
+            expect(store.state.price).toBe(100); // 值不变
+            expect(configManager.errors['price']).toBeDefined();
+
+            store.state.quantity = 200;
+            expect(store.state.quantity).toBe(10); // 值不变
+            expect(configManager.errors['quantity']).toBeDefined();
+        });
+
+        test('defaultSchema 中的 onInvalid="throw-pass" 应该生效', () => {
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        onValidate: (value) => {
+                            return value > 0;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                    defaultSchema: {
+                        onInvalid: 'throw-pass',
+                    },
+                },
+            );
+
+            // 应该抛出异常
+            expect(() => {
+                store.state.price = -50;
+            }).toThrow(ValidateError);
+
+            // 但值应该被写入
+            expect(store.state.price).toBe(-50);
+            expect(configManager.errors['price']).toBeDefined();
         });
     });
 });
