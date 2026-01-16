@@ -1,9 +1,11 @@
-import { PATH_DELIMITER } from '../consts';
+import { PATH_DELIMITER, GLOBAL_CONFIG_MANAGER } from '../consts';
 import { AutoStore } from '../store/store';
 import { isSchemaBuilder, setVal, withSchema } from '../utils';
 import { getVal } from '../utils/getVal';
 import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from './types';
 import { isFunction } from '../utils/isFunction';
+import { AutoStoreOptions } from '../store/types';
+import type { Dict } from '../types';
 
 /**
  *
@@ -36,12 +38,31 @@ export interface ConfigSource {
      */
     save?: (values: Record<string, any>) => void | Promise<void>;
 }
-export type ConfigManagerOptions = {};
+export type ConfigManagerOptions<State extends Dict> = AutoStoreOptions<State> & {
+    global?: string | boolean;
+};
 export class ConfigManager extends AutoStore<AutoStoreConfigures> {
     dirtyValues: Record<string, any> = {};
     private _reseting: boolean = false;
-    constructor(public source: ConfigSource) {
-        super({});
+    constructor(public source: ConfigSource, options?: ConfigManagerOptions<AutoStoreConfigures>) {
+        const finalOptions = Object.assign(
+            {
+                global: false,
+            },
+            options,
+        ) as any;
+        super({}, finalOptions);
+
+        // 处理 global 选项，将实例挂载到 globalThis
+        if (finalOptions.global !== false) {
+            const globalKey =
+                finalOptions.global === true ? GLOBAL_CONFIG_MANAGER : finalOptions.global;
+            // @ts-expect-error - 动态设置 globalThis 属性
+            globalThis[globalKey] = this;
+        }
+    }
+    get options() {
+        return super.options as Required<ConfigManagerOptions<AutoStoreConfigures>>;
     }
     get fields() {
         return this.state;
@@ -96,6 +117,7 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
      * 恢复默认值
      */
     reset() {
+        if (this._reseting) return;
         try {
             this._reseting = true;
             this.dirtyValues = {};

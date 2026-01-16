@@ -52,6 +52,7 @@
 
 import { ComputedObjects } from '../computed/computedObjects';
 import { assignObject } from 'flex-tools/object/assignObject';
+import { GLOBAL_CONFIG_MANAGER } from '../consts';
 import type {
     AutoStoreOptions,
     StateChangeEvents,
@@ -117,7 +118,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     };
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super();
-        this._options = assignObject(
+        this._options = Object.assign(
             {
                 id: getId(),
                 debug: false,
@@ -129,6 +130,11 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             },
             options,
         ) as Required<AutoStoreOptions<State>>;
+        // @ts-expect-error
+        if (this._options.configManager == undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
+            // @ts-expect-error
+            this._options.configManager = globalThis[GLOBAL_CONFIG_MANAGER];
+        }
         this._delimiter = this._options.delimiter;
         this.computedObjects = new ComputedObjects<State>(this);
         this.watchObjects = new WatchObjects<State>(this);

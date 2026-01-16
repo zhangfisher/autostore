@@ -79,7 +79,7 @@ interface AutoStateSchemaBase<Value = any> {
     /**
      * 默认值
      */
-    default?: boolean;
+    default?: Value;
     /**
      * 当校验出错时的无效提示信息
      *
