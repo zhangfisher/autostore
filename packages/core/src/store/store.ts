@@ -51,7 +51,6 @@
  */
 
 import { ComputedObjects } from '../computed/computedObjects';
-import { assignObject } from 'flex-tools/object/assignObject';
 import { GLOBAL_CONFIG_MANAGER } from '../consts';
 import type {
     AutoStoreOptions,
@@ -131,7 +130,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             options,
         ) as Required<AutoStoreOptions<State>>;
         // @ts-expect-error
-        if (this._options.configManager == undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
+        if (this._options.configManager === undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
             // @ts-expect-error
             this._options.configManager = globalThis[GLOBAL_CONFIG_MANAGER];
         }

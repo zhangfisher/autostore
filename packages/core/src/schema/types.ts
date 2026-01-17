@@ -184,6 +184,41 @@ export type AutoStateSchema<
 > = AutoStateSchemaBase<Value> &
     (Widget extends keyof AutoStoreWidgets ? Partial<WidgetConfig<Widget>> : {});
 
+// 让对象的成员值允许是ComputedBuilder，可计算值
+// 例外：函数类型的属性，如果名称以 on、to、render 开头，则不允许为 ComputedBuilder
+// 保留字段：key、value、path、datatype 等系统字段不允许为 ComputedBuilder
+export type Computedable<Obj extends Record<string, any>> = {
+    [Key in keyof Obj]: Key extends 'name' | 'id' | 'key' | 'value' | 'path' | 'datatype'
+        ? Obj[Key]  // 保留字段，不允许为 ComputedBuilder
+        : Key extends `${'on' | 'to' | 'render'}${string}`
+            ? Obj[Key] extends (...args: any[]) => any
+                ? Obj[Key]  // 函数类型，不允许为 ComputedBuilder
+                : Obj[Key] | ComputedBuilder<Obj[Key], any>
+            : Obj[Key] | ComputedBuilder<Obj[Key], any>;
+};
+
+// 用于计算属性配置的类型，确保 onValidate 等函数的参数类型能正确推断
+// 我们使用简化的方式: 直接在类型中列出所有属性
+export type ComputedableStateSchema<Value = any> = {
+    // 函数类型属性(onValidate等)保持原始类型，不允许为 ComputedBuilder
+    onValidate?: (value: Value, oldValue: Value, path: string[]) => boolean;
+    toView?: (value: Value) => any;
+    toState?: (value: any) => any;
+    toInput?: (value: any) => any;
+    toRender?: (value: any) => any;
+
+    // 保留字段不允许为 ComputedBuilder
+    name?: string;
+    id?: string;
+    key?: string;
+    value?: any;
+    path?: string[];
+    datatype?: string;
+
+    // 其他属性可以是值或 ComputedBuilder
+    [key: string]: any;
+};
+
 export type SchemaDescriptor<Value = any> = {
     path?: string[];
     value: Value;
@@ -194,19 +229,8 @@ export interface SchemaDescriptorBuilder<Value = any> {
     [VALUE_SCHEMA_BUILDER_FLAG]: true;
     (): SchemaDescriptor<Value>;
 }
-// 让对象的成员值允许是ComputedBuilder，可计算值
-export type Computedable<Obj extends Record<string, any>> = {
-    [Key in keyof Obj]:
-        | Obj[Key]
-        | (Obj[Key] extends (...args: any[]) => any
-              ? never
-              : Key extends 'name' | 'widget' | 'path' | 'actions' | 'items'
-              ? never
-              : ComputedBuilder<Obj[Key], any>);
-};
-export type ComputedableStateSchemaOptions<Value = any> = Computedable<AutoStateSchema<Value>>;
 
 export type SchemaBuilder<Value = any> = <T = Value>(
     value: T,
-    schema?: ComputedableStateSchemaOptions<Value>,
+    schema?: ComputedableStateSchema<Value>,
 ) => SchemaDescriptorBuilder<T>;

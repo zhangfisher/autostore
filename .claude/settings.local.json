@@ -4,7 +4,9 @@
       "Bash(npx tsx:*)",
       "Bash(bun test:*)",
       "Bash(bun run test:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(bunx tsc --noEmit)",
+      "Bash(bunx tsc:*)"
     ]
   }
 }

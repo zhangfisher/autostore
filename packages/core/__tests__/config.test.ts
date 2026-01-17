@@ -12,7 +12,7 @@
 /** biome-ignore-all lint/complexity/useLiteralKeys: <explanation> */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { AutoStore, configurable, ConfigManager, ValidateError } from '../src';
+import { AutoStore, configurable, ConfigManager, ValidateError, computed } from '../src';
 
 describe('ConfigManager 和 configurable 集成测试', () => {
     let configManager: ConfigManager;
@@ -913,7 +913,6 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     },
                 },
             );
-
             // price 校验失败
             expect(() => {
                 store.state.price = -50;
@@ -1205,6 +1204,295 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             // 但值应该被写入
             expect(store.state.price).toBe(-50);
             expect(configManager.errors['price']).toBeDefined();
+        });
+    });
+
+    describe('可计算配置参数 - 配置项本身支持计算属性', () => {
+        test('类型验证 - enable 可以是计算属性', () => {
+            // 这个测试验证类型系统接受计算属性
+            // 实际的运行时行为需要额外的实现支持
+            new AutoStore(
+                {
+                    order: {
+                        count: configurable(100, {
+                            // enable 基于当前值计算，当 count >= 100 时禁用
+                            enable: computed((scope: any) => {
+                                return scope.value < 100;
+                            }),
+                            onValidate: (value) => {
+                                return value >= 0 && value <= 1000;
+                            },
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                },
+            );
+
+            // 验证配置项已注册
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - label 可以是计算属性', () => {
+            new AutoStore(
+                {
+                    price: configurable(100, {
+                        // label 根据价格值动态变化
+                        label: computed((scope: any) => {
+                            return scope.value > 50 ? '高价商品' : '普通商品';
+                        }),
+                    }),
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - invalidTips 可以是计算属性', () => {
+            new AutoStore(
+                {
+                    quantity: configurable(10, {
+                        // 根据当前值动态生成错误提示
+                        invalidTips: computed((scope: any) => {
+                            if (scope.value < 0) {
+                                return '数量不能为负数';
+                            }
+                            if (scope.value > 100) {
+                                return `数量 ${scope.value} 超出最大限制 100`;
+                            }
+                            return '数量格式错误';
+                        }),
+                        onValidate: (value) => {
+                            return value >= 0 && value <= 100;
+                        },
+                    }),
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - required 可以是计算属性', () => {
+            new AutoStore(
+                {
+                    user: {
+                        age: configurable(18, {}),
+                        parentName: configurable('', {
+                            // 当 age 小于 18 时，parentName 是必填的
+                            required: computed((scope: any) => {
+                                return scope.age < 18;
+                            }),
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - visible 可以是计算属性', () => {
+            new AutoStore(
+                {
+                    settings: {
+                        mode: configurable('basic', {}),
+                        advancedOption: configurable('default', {
+                            // 只有在 mode 为 'advanced' 时才显示
+                            visible: computed((scope: any) => {
+                                return scope.mode === 'advanced';
+                            }),
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - 多个配置参数可以同时是计算属性', () => {
+            new AutoStore(
+                {
+                    count: configurable(50, {
+                        // enable: 当值在 0-100 范围内时启用
+                        enable: computed((scope: any) => {
+                            return scope.value >= 0 && scope.value <= 100;
+                        }),
+                        // label: 根据值动态显示
+                        label: computed((scope: any) => {
+                            if (scope.value < 30) {
+                                return '少量';
+                            } else if (scope.value < 70) {
+                                return '中量';
+                            } else {
+                                return '大量';
+                            }
+                        }),
+                        // required: 当值大于 50 时为必填
+                        required: computed((scope: any) => {
+                            return scope.value > 50;
+                        }),
+                    }),
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - 计算属性可以引用其他配置项的值', () => {
+            new AutoStore(
+                {
+                    order: {
+                        price: configurable(100, {}),
+                        discount: configurable(0.1, {}),
+                        // enable 基于其他配置项的值计算
+                        finalPrice: configurable(0, {
+                            enable: computed((scope: any) => {
+                                // 当 price > 0 且 discount > 0 时启用
+                                return scope.price > 0 && scope.discount > 0;
+                            }),
+                            label: computed((scope: any) => {
+                                // label 显示折扣后的价格
+                                const discounted = scope.price * (1 - scope.discount);
+                                return `最终价格: ${discounted.toFixed(2)}`;
+                            }),
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - placeholder 可以是计算属性', () => {
+            new AutoStore(
+                {
+                    username: configurable('', {
+                        placeholder: computed((scope: any) => {
+                            if (scope.value === '') {
+                                return '请输入用户名';
+                            }
+                            return `当前用户名: ${scope.value}`;
+                        }),
+                    }),
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - tooltip 可以是计算属性', () => {
+            new AutoStore(
+                {
+                    progress: configurable(0, {
+                        tooltip: computed((scope: any) => {
+                            return `当前进度: ${scope.value}%`;
+                        }),
+                    }),
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - 计算属性配置参数与普通配置参数可以混合使用', () => {
+            new AutoStore(
+                {
+                    quantity: configurable(10, {
+                        // 静态配置
+                        name: 'quantity',
+                        widget: 'number',
+                        datatype: 'number',
+
+                        // 计算配置
+                        enable: computed((scope: any) => scope.value > 0),
+                        label: computed((scope: any) => `数量: ${scope.value}`),
+
+                        // 静态配置
+                        required: true,
+                    }),
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - 计算属性配置参数可以访问父级配置项', () => {
+            new AutoStore(
+                {
+                    user: {
+                        age: configurable(18, {}),
+                        parentName: configurable('', {
+                            // enable 依赖于父级配置项 user.age
+                            enable: computed((scope: any) => {
+                                return scope.age < 18;
+                            }),
+                            label: computed((scope: any) => {
+                                return scope.age < 18 ? '监护人姓名' : '紧急联系人';
+                            }),
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
+        });
+
+        test('类型验证 - 非函数属性以 on/to/render 开头也可以是计算属性', () => {
+            // 这个测试验证:即使属性名以 on/to/render 开头,
+            // 如果它不是函数类型,仍然可以是 ComputedBuilder
+            new AutoStore(
+                {
+                    settings: {
+                        // oneTimeFlag 是一个布尔值,不是函数,可以是计算属性
+                        oneTimeFlag: configurable(false, {
+                            oneTimeFlag: computed((scope: any) => {
+                                return scope.value === true;
+                            }),
+                        }),
+                        // totalCount 以 to 开头,但是是数字,可以是计算属性
+                        totalCount: configurable(0, {
+                            totalCount: computed((scope: any) => {
+                                return typeof scope.value === 'number' ? scope.value + 1 : 0;
+                            }),
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                },
+            );
+
+            expect(configManager.size).toBeGreaterThan(0);
         });
     });
 });

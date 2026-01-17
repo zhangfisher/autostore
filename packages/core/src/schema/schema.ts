@@ -29,7 +29,12 @@ import { VALUE_SCHEMA_BUILDER_FLAG } from '../consts';
 import { forEachObject, isFunction, isPlainObject } from '../utils';
 import { markRaw } from '../utils/markRaw';
 
-import type { AutoStateSchema, SchemaDescriptorBuilder, SchemaBuilder } from './types';
+import type {
+    AutoStateSchema,
+    SchemaDescriptorBuilder,
+    SchemaBuilder,
+    ComputedableStateSchema,
+} from './types';
 
 type SchemaArgs = {
     value: any;
@@ -76,8 +81,11 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
     return finalArgs as SchemaArgs;
 }
 
-export const schema = function <Value>(initial: Value, options?: AutoStateSchema<Value>) {
-    const args = parseSchemaArgs([initial, options]);
+// 函数重载:提供更好的类型推断
+export function schema<Value>(initial: Value): SchemaDescriptorBuilder<Value>;
+export function schema<Value>(initial: Value, schema: ComputedableStateSchema<Value>): SchemaDescriptorBuilder<Value>;
+export function schema<Value>(initial: Value, schema?: ComputedableStateSchema<Value>) {
+    const args = parseSchemaArgs([initial, schema]);
     const value = initial;
     if (typeof value === 'object') {
         markRaw(value);
