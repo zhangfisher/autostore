@@ -1,14 +1,16 @@
 import type { ComputedObject } from '../computed/computedObject';
-import type { ComputedScope } from '../computed/types';
+import type { ComputedDescriptor, ComputedScope } from '../computed/types';
 import type { ObserverObject } from '../observer/observer';
 import type { ObserverType } from '../observer/types';
 import type { Dict } from '../types';
 import type { AutoStore } from './store';
 import type { AutoStateSchema } from '../schema/types';
 import type { ConfigManager } from '../schema/manager';
+import type { TransformedEvents } from 'fastevent';
+import type { ObserverDescriptor } from '../observer/types';
 
 export type BatchChangeEvent = '__batch_update__';
-export type StateChangeEvents = Record<string, StateOperate>;
+export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
 export interface StateValidatorFunction<State extends Dict> {
     (this: AutoStore<State>, newValue: any, oldValue: any, path: string[]): boolean;
     getErrorMessage?: (error: Error) => string;
@@ -204,6 +206,10 @@ export interface AutoStoreOptions<State extends Dict> {
             computedObject: ComputedObject<any>;
         },
     ) => void;
+    onObserverBeforeCreate?: (
+        this: AutoStore<State>,
+        descriptor: ObserverDescriptor<any, any, any>,
+    ) => void;
     /**
      *
      * 当创建观察对象实例化时调用
@@ -212,9 +218,8 @@ export interface AutoStoreOptions<State extends Dict> {
      * 比如重新封装run函数等
      *
      */
-    onObserverCreated?: (observerObject: ObserverObject<any, any>) => void;
+    onObserverCreated?: (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void;
 
-    onObserverBeforeCreate?: (observerObject: ObserverObject<any, any>) => void;
     /**
      *
      *

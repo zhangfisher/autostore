@@ -4,7 +4,7 @@ import { isSchemaBuilder, setVal, withSchema } from '../utils';
 import { getVal } from '../utils/getVal';
 import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from './types';
 import { isFunction } from '../utils/isFunction';
-import { AutoStoreOptions } from '../store/types';
+import type { AutoStoreOptions } from '../store/types';
 import type { Dict } from '../types';
 
 /**
@@ -41,7 +41,10 @@ export interface ConfigSource {
 export type ConfigManagerOptions<State extends Dict> = AutoStoreOptions<State> & {
     global?: string | boolean;
 };
-export class ConfigManager extends AutoStore<AutoStoreConfigures> {
+export class ConfigManager extends AutoStore<
+    AutoStoreConfigures,
+    ConfigManagerOptions<AutoStoreConfigures>
+> {
     dirtyValues: Record<string, any> = {};
     private _reseting: boolean = false;
     constructor(public source: ConfigSource, options?: ConfigManagerOptions<AutoStoreConfigures>) {
@@ -60,9 +63,6 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
             // @ts-expect-error - 动态设置 globalThis 属性
             globalThis[globalKey] = this;
         }
-    }
-    get options() {
-        return super.options as Required<ConfigManagerOptions<AutoStoreConfigures>>;
     }
     get fields() {
         return this.state;
@@ -135,7 +135,7 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
                             validate: 'none',
                         });
                     }
-                } catch (error) {
+                } catch {
                     // 忽略校验错误
                 }
             });
@@ -149,7 +149,7 @@ export class ConfigManager extends AutoStore<AutoStoreConfigures> {
      * @param path
      * @param value
      */
-    onUpdate(store: AutoStore<any>, configKey: string, value: any) {
+    onUpdate(_store: AutoStore<any>, configKey: string, value: any) {
         this.dirtyValues[configKey] = value;
         this.source.save?.(this.dirtyValues);
         // 保存后清空 dirtyValues，避免重复保存

@@ -84,7 +84,6 @@ import { WatchObjects } from '../watch/watchObjects';
 import { WatchObject } from '../watch/watchObject';
 import type { ComputedState } from '../types';
 import { noRepeat } from '../utils/noRepeat';
-import { EventEmitter, type EventListener } from '../events';
 import { isPromise } from '../utils/isPromise';
 import { getObserverDescriptor } from '../utils/getObserverDescriptor';
 import { isMatchOperates } from '../utils/isMatchOperates';
@@ -92,14 +91,21 @@ import type { GetTypeByPath } from '../types';
 import { TimeoutError } from '../errors';
 import type { ObserverDescriptor } from '../observer/types';
 import { parseFunc } from '../utils/parseFunc';
+import { FastEvent, type FastEventOptions } from 'fastevent';
 
-export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
+export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<StoreEvents> {
     private _data: ComputedState<State>;
     private _errors?: Record<string, string>;
     public computedObjects: ComputedObjects<State>;
     public watchObjects: WatchObjects<State>;
-    protected _operates = new EventEmitter<StateChangeEvents>(); // 依赖变更事件触发器
-    private _options: Required<AutoStoreOptions<State>>;
+    // protected _operates = new EventEmitter<StateChangeEvents>(); // 依赖变更事件触发器
+    protected _operates = new FastEvent<StateChangeEvents>({
+        delimiter: '.',
+        transform: (message) => {
+            return message.payload;
+        },
+    }); // 依赖变更事件触发器
+    // private _options: Required<AutoStoreOptions<State>>;
     private _silenting = false; // 是否静默更新，不触发事件
     private _batching = false; // 是否批量更新中
     private _batchOperates: StateOperate[] = []; // 暂存批量操作
@@ -109,32 +115,45 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
     private _updateValidateBehavior: UpdateOptions['validate']; // 更新时的校验行为
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
-    private _delimiter: string = '.';
+    // private _delimiter: string = '.';
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
-    types = {
-        rawState: undefined as unknown as State,
-        state: undefined as unknown as ComputedState<State>,
-    };
+    // override types = {
+    //     rawState: undefined as unknown as State,
+    //     state: undefined as unknown as ComputedState<State>,
+    // };
+    // get types(){
+    //     const ptypes = super.types
+    //     return {} as typeof ptypes & {
+    //         rawState: State;
+    //         state: ComputedState<State>;
+    //     };
+    // }
     constructor(state?: State, options?: AutoStoreOptions<State>) {
-        super();
-        this._options = Object.assign(
-            {
-                id: getId(),
-                debug: false,
-                enableComputed: true,
-                reentry: true,
-                resetable: false,
-                delimiter: '.',
-                log,
-            },
-            options,
-        ) as Required<AutoStoreOptions<State>>;
+        super(
+            Object.assign(
+                {
+                    id: getId(),
+                    debug: false,
+                    enableComputed: true,
+                    reentry: true,
+                    resetable: false,
+                    delimiter: '.',
+                    log,
+                },
+                options,
+                {
+                    delimiter: '.',
+                    transform: (message: any) => {
+                        return message.payload;
+                    },
+                },
+            ),
+        );
         // @ts-expect-error
         if (this._options.configManager === undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
             // @ts-expect-error
             this._options.configManager = globalThis[GLOBAL_CONFIG_MANAGER];
         }
-        this._delimiter = this._options.delimiter;
         this.computedObjects = new ComputedObjects<State>(this);
         this.watchObjects = new WatchObjects<State>(this);
         this.subscribeCallbacks();
@@ -153,16 +172,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         this.collectDependencies = this.collectDependencies.bind(this);
         this.installExtends();
         forEachObject(this._data as any, this._onFirstEachState.bind(this));
-        if (this._options.resetable) this.resetable = true;
+        if (this.options.resetable) this.resetable = true;
         // @ts-expect-error
         if (this._options.debug && typeof globalThis.__AUTOSTORE_DEVTOOLS__ === 'object') {
             // @ts-expect-error
             globalThis.__AUTOSTORE_DEVTOOLS__.add(this);
         }
         this.emit('load', this);
-    }
-    get id() {
-        return this._options.id;
     }
     get state() {
         return this._data;
@@ -183,13 +199,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         return this._errors!;
     }
     get options() {
-        return this._options;
+        return super.options as AutoStoreOptions<State> & FastEventOptions & Options;
     }
     get silenting() {
         return this._silenting;
     }
     get delimiter() {
-        return this._delimiter;
+        return this.options.delimiter;
     }
     get batching() {
         return this._batching;
@@ -198,7 +214,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         return this._peeping;
     }
     get resetable() {
-        return this._options.resetable;
+        return this.options.resetable!;
     }
     get configManager() {
         return this.options.configManager;
@@ -210,7 +226,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             this._updatedWatcher = this.watch(
                 ({ path, oldValue }) => {
                     if (path.length === 0) return;
-                    const pathKey = path.join(this._delimiter);
+                    const pathKey = path.join(this.delimiter);
                     if (!pathKey.startsWith('#') && !(pathKey in this._updatedState!)) {
                         this._updatedState![pathKey] = oldValue;
                     }
@@ -224,7 +240,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             }
             this._updatedState = {};
         }
-        this._options.resetable = value;
+        this.options.resetable = value;
     }
     /**
      * 重置store恢复到状态的原始状态
@@ -235,13 +251,13 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      *
      */
     reset(entry?: string) {
-        if (this._options.resetable && this._updatedState) {
+        if (this.options.resetable && this._updatedState) {
             try {
                 this.batchUpdate((state) => {
-                    const prefix = entry ? `${entry}${this._delimiter}` : '';
+                    const prefix = entry ? `${entry}${this.delimiter}` : '';
                     Object.entries(this._updatedState!).forEach(([key, value]) => {
                         if (key.startsWith(prefix)) {
-                            setVal(state, key.split(this._delimiter), value);
+                            setVal(state, key.split(this.delimiter), value);
                         }
                     });
                 });
@@ -277,8 +293,8 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         }
     }
     log(message: LogMessageArgs, level?: LogLevel) {
-        if (this._options.debug) {
-            this.options.log.call(this, message, level);
+        if (this.options.debug) {
+            this.options.log?.call(this, message, level);
         }
     }
     private installExtends() {
@@ -290,16 +306,18 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         }
     }
     private subscribeCallbacks() {
-        if (this._options.onComputedCreated)
-            this.on('computed:created', this._options.onComputedCreated.bind(this));
-        if (this._options.onComputedDone)
-            this.on('computed:done', this._options.onComputedDone.bind(this));
-        if (this._options.onComputedError)
-            this.on('computed:error', this._options.onComputedError.bind(this));
-        if (this._options.onComputedCancel)
-            this.on('computed:cancel', this._options.onComputedCancel.bind(this));
-        if (this._options.onObserverBeforeCreate)
-            this.on('observer:beforeCreate', this._options.onObserverBeforeCreate.bind(this));
+        if (this.options.onComputedCreated)
+            this.on('computed:created', this.options.onComputedCreated.bind(this));
+        if (this.options.onComputedDone)
+            this.on('computed:done', this.options.onComputedDone.bind(this));
+        if (this.options.onComputedError)
+            this.on('computed:error', this.options.onComputedError.bind(this));
+        if (this.options.onComputedCancel)
+            this.on('computed:cancel', this.options.onComputedCancel.bind(this));
+        if (this.options.onObserverBeforeCreate)
+            this.on('observer:beforeCreate', this.options.onObserverBeforeCreate.bind(this));
+        if (this.options.onObserverCreated)
+            this.on('observer:created', this.options.onObserverCreated.bind(this));
     }
     /**
      *
@@ -318,7 +336,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         }
         if (this._silenting) return;
         params.flags = this._updateFlags;
-        this.operates.emit(params.path.join(this._delimiter), params);
+        this.operates.emit(params.path.join(this.delimiter), params);
     }
     // ************* Watch **************/
     /**
@@ -412,12 +430,12 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                 options,
             ) as Required<WatchListenerOptions>;
             const handler = createEventHandler(operates, filter);
-            return this.operates.onAny(handler);
+            return this.operates.onAny(handler as any);
         } else {
             // 只侦听指定路径
             const keyPaths = arguments[0] as string | (string | string[])[];
             const paths: string[] = Array.isArray(keyPaths)
-                ? keyPaths.map((v) => (typeof v === 'string' ? v : v.join(this._delimiter)))
+                ? keyPaths.map((v) => (typeof v === 'string' ? v : v.join(this.delimiter)))
                 : [keyPaths];
             const { once, operates, filter } = Object.assign(
                 { once: false, operates: 'write' },
@@ -426,10 +444,10 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
             const subscribeMethod = once
                 ? this.operates.once.bind(this.operates)
                 : this.operates.on.bind(this.operates);
-            const listeners: EventListener[] = [];
+            const listeners: any[] = [];
             const handler = createEventHandler(operates, filter);
             paths.forEach((path) => {
-                listeners.push(subscribeMethod.call(this, path, handler as any));
+                listeners.push(subscribeMethod.call(this, path as never, handler as any));
             });
             return {
                 off: () =>
@@ -479,7 +497,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      */
     _createComputed(descriptor: ComputedDescriptor, computedContext?: ComputedContext) {
         let computedObj: ComputedObject | undefined;
-        this.emit('observer:beforeCreate', descriptor as ObserverDescriptor<any, any, any>);
+        this.emit('observer:beforeCreate', descriptor as ComputedDescriptor);
         if (descriptor.options.async) {
             // 异步计算
             computedObj = new AsyncComputedObject(
@@ -502,7 +520,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                 this.computedObjects.set(computedObj.id, computedObj);
             }
             this.emit('computed:created', computedObj);
-            this.emit('observer:afterCreate', descriptor as ObserverDescriptor<any, any, any>);
+            this.emit('observer:created', computedObj);
         }
         return computedObj;
     }
@@ -512,11 +530,14 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
      * @param descriptor
      */
     _createWatch(descriptor: WatchDescriptor, computedContext?: ComputedContext) {
-        this.emit('observer:beforeCreate', descriptor as WatchDescriptor);
+        this.emit(
+            'observer:beforeCreate',
+            descriptor as ObserverDescriptor<any, any, any, any, any>,
+        );
         const watchObj = new WatchObject(this, descriptor, computedContext);
         this.watchObjects.set(watchObj.id, watchObj);
         this.emit('watch:created', watchObj);
-        this.emit('observer:afterCreate', descriptor as WatchDescriptor);
+        this.emit('observer:created', watchObj);
         return watchObj;
     }
     // **************** 普通方法 ***********
@@ -700,7 +721,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
                           this.state,
                           Array.isArray(arguments[0])
                               ? arguments[0]
-                              : arguments[0].split(this._delimiter),
+                              : arguments[0].split(this.delimiter),
                       );
         this._peeping = true;
         try {
@@ -903,7 +924,7 @@ export class AutoStore<State extends Dict> extends EventEmitter<StoreEvents> {
         if (isAsyncComputedValue(val)) {
             if (val.loading && waitAsyncDone) {
                 return new Promise((resolve, reject) => {
-                    let tmId: any, subscriber: EventListener;
+                    let tmId: any, subscriber: any;
                     if (timeout > 0) {
                         tmId = setTimeout(() => {
                             subscriber?.off();
