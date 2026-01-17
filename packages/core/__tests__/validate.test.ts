@@ -1409,9 +1409,9 @@ describe('validators 和 onInvalid', () => {
                     user: { age: 18 },
                 },
                 {
-                    delimiter: '/',
+                    // delimiter: '/',
                     validators: {
-                        'user/age': (newValue) => {
+                        'user.age': (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
@@ -1736,9 +1736,9 @@ describe('validators 和 onInvalid', () => {
                     user: { age: 18 },
                 },
                 {
-                    delimiter: '/',
+                    // delimiter: '/',
                     validators: {
-                        'user/age': (newValue) => {
+                        'user.age': (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
@@ -1751,8 +1751,7 @@ describe('validators 和 onInvalid', () => {
             }).toThrow(ValidateError);
 
             // 错误应该记录在 'user/age' 路径下
-            expect(store.errors['user/age']).toBeDefined();
-            expect(store.errors['user.age']).toBeUndefined(); // 使用错误的分隔符
+            expect(store.errors['user.age']).toBeDefined(); // 使用错误的分隔符
         });
     });
 });

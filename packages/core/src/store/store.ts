@@ -66,7 +66,7 @@ import type { ComputedObject } from '../computed/computedObject';
 import { SyncComputedObject } from '../computed/sync';
 import type { ComputedContext, ComputedDescriptor } from '../computed/types';
 import type { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from '../watch/types';
-import type { StoreEvents } from '../events/types';
+import type { StoreEvents } from './types';
 import {
     forEachObject,
     getSnapshot,
@@ -98,7 +98,6 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     private _errors?: Record<string, string>;
     public computedObjects: ComputedObjects<State>;
     public watchObjects: WatchObjects<State>;
-    // protected _operates = new EventEmitter<StateChangeEvents>(); // 依赖变更事件触发器
     protected _operates = new FastEvent<StateChangeEvents>({
         delimiter: '.',
         transform: (message) => {
@@ -149,6 +148,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                 },
             ),
         );
+        this.operates.options.delimiter = this.options.delimiter;
         // @ts-expect-error
         if (this._options.configManager === undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
             // @ts-expect-error

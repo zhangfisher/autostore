@@ -6,16 +6,14 @@
  *
  *
  */
-import { PATH_DELIMITER } from '../consts';
 import type { AutoStore } from '../store/store';
 import { getVal } from '../utils/getVal';
 import { joinValuePath } from '../utils/joinValuePath';
 import { setVal } from '../utils/setVal';
 import { getId } from '../utils/getId';
-import type { StoreEvents } from '../events';
 import type { ObserverDescriptor, ObserverOptions } from './types';
 import type { ComputedContext } from '../computed/types';
-import type { StateOperate, UpdateOptions } from '../store/types';
+import type { StateOperate, StoreEvents, UpdateOptions } from '../store/types';
 import type { Watcher, WatchListenerOptions } from '../watch/types';
 import { calcDependPaths } from '../utils/calcDependPaths';
 
@@ -123,7 +121,7 @@ export class ObserverObject<
     }
     get strPath() {
         if (!this._strPath) {
-            this._strPath = this._path.join(PATH_DELIMITER);
+            this._strPath = this._path.join(this.store.options.delimiter);
         }
         return this._strPath!;
     }
@@ -159,7 +157,7 @@ export class ObserverObject<
 
     private _onObserverCreated() {
         if (typeof this.store.options.onObserverCreated === 'function') {
-            this.store.options.onObserverCreated(this);
+            this.store.options.onObserverCreated.call(this.store, this);
         }
     }
     private _onInitial() {
@@ -255,7 +253,7 @@ export class ObserverObject<
      * @returns
      */
     protected getValueWatchPath(): string | (string | string[])[] {
-        return this.path!.join(PATH_DELIMITER);
+        return this.path!.join(this.store.options.delimiter);
     }
 
     protected emitStoreEvent(event: keyof StoreEvents, args: any) {
@@ -289,7 +287,7 @@ export class ObserverObject<
             this.store.log(
                 () =>
                     `${this.toString()} subscribed to ${this.depends!.map((depends) =>
-                        depends.join(PATH_DELIMITER),
+                        depends.join(this.store.options.delimiter),
                     ).join(',')}`,
             );
             this._attached = true;

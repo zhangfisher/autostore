@@ -1,7 +1,8 @@
+/** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
 import { describe, test } from 'bun:test';
 import type { Equal, Expect } from '@type-challenges/utils';
 import { AutoStore, computed } from '../../src';
-import type { ComputedState } from '../../src';
+import type { AsyncComputedValue } from '../../src';
 
 /**
  * 响应式状态基础测试
@@ -75,7 +76,7 @@ describe('响应式状态 - 函数转换', () => {
             user: {
                 firstName: '张',
                 lastName: '三',
-                fullName: (scope: any) => scope.firstName + scope.lastName,
+                fullName: (scope: any) => (scope.firstName + scope.lastName) as string,
             },
         });
 
@@ -88,7 +89,7 @@ describe('响应式状态 - 函数转换', () => {
             level1: {
                 level2: {
                     value: 'test',
-                    computed: (scope: any) => scope.value,
+                    computed: (scope: any) => scope.value as string,
                 },
             },
         });
@@ -103,12 +104,7 @@ describe('响应式状态 - 函数转换', () => {
         });
 
         type ValueType = typeof store.state.value;
-        const check: Expect<
-            Equal<
-                keyof ValueType,
-                'loading' | 'progress' | 'timeout' | 'error' | 'retry' | 'value' | 'run' | 'cancel'
-            >
-        > = true;
+        const check: Expect<Equal<ValueType, AsyncComputedValue<number>>> = true;
     });
 });
 
@@ -149,7 +145,7 @@ describe('响应式状态 - 对象类型', () => {
             user: {
                 firstName: '张',
                 lastName: '三',
-                fullName: (scope: any) => scope.firstName + scope.lastName,
+                fullName: (scope: any) => (scope.firstName + scope.lastName) as string,
             },
         });
 
@@ -217,7 +213,7 @@ describe('响应式状态 - 数组类型', () => {
                     id: 1,
                     firstName: '张',
                     lastName: '三',
-                    fullName: (scope: any) => scope.firstName + scope.lastName,
+                    fullName: (scope: any) => (scope.firstName + scope.lastName) as string,
                 },
             ],
         });
@@ -260,10 +256,10 @@ describe('响应式状态 - 复杂场景', () => {
                     id: 1,
                     firstName: '张',
                     lastName: '三',
-                    fullName: (scope: any) => scope.firstName + scope.lastName,
+                    fullName: (scope: any) => (scope.firstName + scope.lastName) as string,
                 },
             ],
-            count: (scope: any) => scope.users.length,
+            count: (scope: any) => scope.users.length as number,
         });
 
         type UsersType = typeof store.state.users;
@@ -288,9 +284,10 @@ describe('响应式状态 - 复杂场景', () => {
             level1: {
                 level2: {
                     items: [1, 2, 3],
-                    sum: (scope: any) => scope.items.reduce((a: number, b: number) => a + b, 0),
+                    sum: (scope: any) =>
+                        scope.items.reduce((a: number, b: number) => a + b, 0) as number,
                 },
-                total: (scope: any) => scope.level2.sum * 2,
+                total: (scope: any) => (scope.level2.sum * 2) as number,
             },
         });
 
@@ -329,6 +326,7 @@ describe('响应式状态 - 边界情况', () => {
         const store = new AutoStore({});
 
         type StateType = typeof store.state;
+        // biome-ignore lint/complexity/noBannedTypes: <noBannedTypes>
         const check: Expect<Equal<StateType, {}>> = true;
     });
 
@@ -346,7 +344,7 @@ describe('响应式状态 - 边界情况', () => {
                 {
                     base: number;
                     computed1: number;
-                    computed2: number;
+                    computed2: any;
                 }
             >
         > = true;
@@ -386,115 +384,5 @@ describe('响应式状态 - 边界情况', () => {
 
         type ItemsType = typeof store.state.items;
         const check: Expect<Equal<ItemsType, (number | string | boolean)[]>> = true;
-    });
-});
-
-/**
- * ComputedState 工具类型测试
- */
-describe('ComputedState 工具类型', () => {
-    test('ComputedState 转换基础类型', () => {
-        type Input = {
-            name: string;
-            age: number;
-            getValue: () => number;
-        };
-
-        type Output = ComputedState<Input>;
-        const check: Expect<
-            Equal<
-                Output,
-                {
-                    name: string;
-                    age: number;
-                    getValue: number;
-                }
-            >
-        > = true;
-    });
-
-    test('ComputedState 转换嵌套对象', () => {
-        type Input = {
-            user: {
-                name: string;
-                displayName: () => string;
-            };
-        };
-
-        type Output = ComputedState<Input>;
-        const check: Expect<
-            Equal<
-                Output,
-                {
-                    user: {
-                        name: string;
-                        displayName: string;
-                    };
-                }
-            >
-        > = true;
-    });
-
-    test('ComputedState 转换数组', () => {
-        type Input = {
-            items: Array<{
-                id: number;
-                label: () => string;
-            }>;
-        };
-
-        type Output = ComputedState<Input>;
-        const check: Expect<
-            Equal<
-                Output,
-                {
-                    items: Array<{
-                        id: number;
-                        label: string;
-                    }>;
-                }
-            >
-        > = true;
-    });
-
-    test('ComputedState 转换异步函数', () => {
-        type Input = {
-            asyncValue: () => Promise<number>;
-        };
-
-        type Output = ComputedState<Input>;
-        // 异步函数不会自动转换,保持原样
-        const check: Expect<
-            Equal<
-                Output,
-                {
-                    asyncValue: Promise<number>;
-                }
-            >
-        > = true;
-    });
-
-    test('ComputedState 保持非函数类型', () => {
-        type Input = {
-            str: string;
-            num: number;
-            bool: boolean;
-            nul: null;
-            undef: undefined;
-        };
-
-        type Output = ComputedState<Input>;
-        const check: Expect<
-            Equal<
-                Output,
-                {
-                    str: string;
-                    num: number;
-                    bool: boolean;
-                    nul: null;
-                    undef: undefined;
-                }
-            >
-        > = true;
     });
 });

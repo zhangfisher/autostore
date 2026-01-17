@@ -94,7 +94,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
                     error: this.error,
                     computedObject: this as unknown as ComputedObject,
                 });
-            if (this.options.throwError) throw this.error;
+            // if (this.options.throwError) throw this.error!;
         } else {
             !first &&
                 this.emitStoreEvent('computed:done', {

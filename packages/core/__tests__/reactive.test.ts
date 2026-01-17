@@ -1,4 +1,4 @@
-import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
+import { describe, test, expect } from 'bun:test';
 
 import { AutoStore, isRaw, markRaw } from '../src';
 
@@ -29,7 +29,6 @@ describe('reactive', () => {
         );
         expect(isRaw(store.state.a)).toBe(false);
         expect(isRaw(store.state.x)).toBe(true);
-        let xxx = store.state.x.x1;
         store.state.x.x2;
         store.state.x.x3.x31;
         store.state.x.x3.x32;

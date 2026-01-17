@@ -1,7 +1,6 @@
 import 'flex-tools/string/params';
 export * from './store';
 export * from './utils';
-export * from './events';
 export * from './watch';
 export * from './computed';
 export * from './types';

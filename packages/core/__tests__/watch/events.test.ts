@@ -403,7 +403,6 @@ describe('watch events', () => {
             state = new AutoStore(deepClone(data));
         });
         afterEach(() => {
-            // @ts-expect-error
             watcher?.off();
         });
 

@@ -160,6 +160,8 @@ export class ConfigManager extends AutoStore<
         path: string | string[],
         schema: SchemaDescriptorBuilder | SchemaDescriptor,
     ) {
+        this.operates.options.delimiter = store.options.delimiter;
+
         const descriptor: SchemaDescriptor = isSchemaBuilder(schema) ? schema() : schema;
 
         const pathKey = Array.isArray(path) ? path : path.split(store.options.delimiter);
