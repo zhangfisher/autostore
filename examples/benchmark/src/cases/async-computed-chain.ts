@@ -99,6 +99,9 @@ const heluxStore = share(
     {
         mutate: {
             a1: {
+                fn: (draft) => {
+                    draft.a1 = draft.a0 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -107,6 +110,9 @@ const heluxStore = share(
                 },
             },
             a2: {
+                fn: (draft) => {
+                    draft.a2 = draft.a1 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -115,6 +121,9 @@ const heluxStore = share(
                 },
             },
             a3: {
+                fn: (draft) => {
+                    draft.a3 = draft.a2 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -123,6 +132,9 @@ const heluxStore = share(
                 },
             },
             a4: {
+                fn: (draft) => {
+                    draft.a4 = draft.a3 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -131,6 +143,9 @@ const heluxStore = share(
                 },
             },
             a5: {
+                fn: (draft) => {
+                    draft.a5 = draft.a4 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -139,6 +154,9 @@ const heluxStore = share(
                 },
             },
             a6: {
+                fn: (draft) => {
+                    draft.a6 = draft.a5 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -147,6 +165,9 @@ const heluxStore = share(
                 },
             },
             a7: {
+                fn: (draft) => {
+                    draft.a7 = draft.a6 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -155,6 +176,9 @@ const heluxStore = share(
                 },
             },
             a8: {
+                fn: (draft) => {
+                    draft.a8 = draft.a7 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -163,6 +187,9 @@ const heluxStore = share(
                 },
             },
             a9: {
+                fn: (draft) => {
+                    draft.a9 = draft.a8 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -183,7 +210,7 @@ bench
                     resolve();
                 }
             });
-            autoStore.state.a0 = 100;
+            autoStore.state.a0++;
         });
     })
     .add('[Helux] 多重依赖链异步计算', async () => {
@@ -197,7 +224,7 @@ bench
                 () => [state.a9],
             );
             setState((draft: any) => {
-                draft.a0 = 100;
+                draft.a0++;
             });
         });
     });
