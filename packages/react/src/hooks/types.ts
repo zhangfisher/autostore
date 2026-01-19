@@ -1,4 +1,4 @@
-import { ObjectKeyPaths,AsyncComputedGetter, 
+import type { ObjectKeyPaths,AsyncComputedGetter, 
     AsyncComputedObject, AsyncComputedValue, ComputedDescriptorBuilder, ComputedGetter, 
     ComputedOptions, ComputedState, Dict, ExtendAsyncOptions, SyncComputedObject,  
     WatchListenerOptions, GetTypeByPath, 
