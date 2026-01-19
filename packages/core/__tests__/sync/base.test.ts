@@ -15,68 +15,56 @@ describe('同步计算属性的基本特性', () => {
         expect(store.state.total).toBe(8);
     });
     test('简单的同步计算,默认scope指向current', () => {
-        const store = new AutoStore(
-            {
-                user: {
-                    firstName: 'zhang',
-                    lastName: 'fisher',
-                    fullName: (scope: any) => `${scope.firstName} ${scope.lastName}`,
-                },
+        const store = new AutoStore({
+            user: {
+                firstName: 'zhang',
+                lastName: 'fisher',
+                fullName: (scope: any) => `${scope.firstName} ${scope.lastName}`,
             },
-            { lazy: false },
-        );
+        });
         expect(store.state.user.fullName).toBe('zhang fisher');
         store.state.user.firstName = 'li';
         expect(store.state.user.fullName).toBe('li fisher');
     });
 
     test('不使用computed函数的同步计算', async () => {
-        const store = new AutoStore(
-            {
-                price: 2,
-                count: 3,
-                total: (scope: any) => {
-                    return scope.price * scope.count;
-                },
+        const store = new AutoStore({
+            price: 2,
+            count: 3,
+            total: (scope: any) => {
+                return scope.price * scope.count;
             },
-            { lazy: false },
-        );
+        });
         store.state.count = 4;
         expect(store.state.total).toBe(8);
     });
     test('默认this指向计算对象', () => {
         return new Promise<void>((resolve) => {
-            const store = new AutoStore(
-                {
-                    order: {
-                        price: 2,
-                        count: 3,
-                        total: computed(function (this: ComputedObject) {
-                            expect(this.store.state.order.price).toBe(2);
-                            expect(this.store.state.order.count).toBe(3);
-                            resolve();
-                        }),
-                    },
+            const store = new AutoStore({
+                order: {
+                    price: 2,
+                    count: 3,
+                    total: computed(function (this: ComputedObject) {
+                        expect(this.store.state.order.price).toBe(2);
+                        expect(this.store.state.order.count).toBe(3);
+                        resolve();
+                    }),
                 },
-                { lazy: false },
-            );
+            });
             store.state.order.total; // 读取操作时创建计算属性
         });
     });
     test('通过计算对象实例读取同步计算值', async () => {
-        const store = new AutoStore(
-            {
-                price: 2,
-                count: 3,
-                total: computed<number>(
-                    (scope) => {
-                        return scope.price * scope.count;
-                    },
-                    { id: 'a' },
-                ),
-            },
-            { lazy: false },
-        );
+        const store = new AutoStore({
+            price: 2,
+            count: 3,
+            total: computed<number>(
+                (scope) => {
+                    return scope.price * scope.count;
+                },
+                { id: 'a' },
+            ),
+        });
         store.state.count = 4;
         expect(store.state.total).toBe(8);
         // @ts-expect-error
@@ -146,16 +134,13 @@ describe('同步计算属性的基本特性', () => {
         });
     });
     test('侦听同步计算属性的变更事件', async () => {
-        const store = new AutoStore(
-            {
-                user: {
-                    firstName: 'zhang',
-                    lastName: 'fisher',
-                    fullName: (scope: any) => `${scope.firstName} ${scope.lastName}`,
-                },
+        const store = new AutoStore({
+            user: {
+                firstName: 'zhang',
+                lastName: 'fisher',
+                fullName: (scope: any) => `${scope.firstName} ${scope.lastName}`,
             },
-            { lazy: false },
-        );
+        });
         const oldvalues: any[] = [];
         const values: any[] = [];
         return new Promise<void>((resolve) => {
@@ -178,20 +163,17 @@ describe('同步计算属性的基本特性', () => {
 
     test('提供额外的同步计算属性依赖', async () => {
         let count: number = 0;
-        const store = new AutoStore(
-            {
-                user: {
-                    firstName: 'zhang',
-                    lastName: 'fisher',
-                    fullName: computed(
-                        (scope: any) => `${scope.firstName} ${scope.lastName} ${count}`,
-                        { depends: ['alias'] },
-                    ),
-                },
-                alias: 'x',
+        const store = new AutoStore({
+            user: {
+                firstName: 'zhang',
+                lastName: 'fisher',
+                fullName: computed(
+                    (scope: any) => `${scope.firstName} ${scope.lastName} ${count}`,
+                    { depends: ['alias'] },
+                ),
             },
-            { lazy: false },
-        );
+            alias: 'x',
+        });
         return new Promise<void>((resolve) => {
             store.watch(
                 'user.fullName',
@@ -208,20 +190,17 @@ describe('同步计算属性的基本特性', () => {
         });
     });
     test('计算属性依赖于另外一个计算属性', () => {
-        const store = new AutoStore(
-            {
-                user: {
-                    firstName: 'zhang',
-                    lastName: 'fisher',
-                    fullName1: computed((scope: any) => `${scope.firstName} ${scope.lastName}`),
-                    fullName2: computed((scope: any) => `${scope.fullName1}*`),
-                    fullName3: computed((scope: any) => `${scope.fullName2}*`),
-                    fullName4: computed((scope: any) => `${scope.fullName3}*`),
-                    fullName5: computed((scope: any) => `${scope.fullName4}*`),
-                },
+        const store = new AutoStore({
+            user: {
+                firstName: 'zhang',
+                lastName: 'fisher',
+                fullName1: computed((scope: any) => `${scope.firstName} ${scope.lastName}`),
+                fullName2: computed((scope: any) => `${scope.fullName1}*`),
+                fullName3: computed((scope: any) => `${scope.fullName2}*`),
+                fullName4: computed((scope: any) => `${scope.fullName3}*`),
+                fullName5: computed((scope: any) => `${scope.fullName4}*`),
             },
-            { lazy: false },
-        );
+        });
         expect(store.state.user.fullName1).toBe('zhang fisher');
         expect(store.state.user.fullName2).toBe('zhang fisher*');
         expect(store.state.user.fullName3).toBe('zhang fisher**');
@@ -232,24 +211,21 @@ describe('同步计算属性的基本特性', () => {
 
 describe('同步计算函数的启用和禁用', () => {
     test('启用和禁用同步计算函数', () => {
-        const store = new AutoStore(
-            {
-                user: {
-                    firstName: 'zhang',
-                    lastName: 'fisher',
-                    fullName: computed(
-                        (scope: any) => {
-                            return `${scope.firstName} ${scope.lastName}`;
-                        },
-                        {
-                            id: 'x',
-                            enable: false,
-                        },
-                    ),
-                },
+        const store = new AutoStore({
+            user: {
+                firstName: 'zhang',
+                lastName: 'fisher',
+                fullName: computed(
+                    (scope: any) => {
+                        return `${scope.firstName} ${scope.lastName}`;
+                    },
+                    {
+                        id: 'x',
+                        enable: false,
+                    },
+                ),
             },
-            { lazy: false },
-        );
+        });
         expect(store.state.user.fullName).toBe('zhang fisher');
         store.state.user.firstName = 'li';
         expect(store.state.user.fullName).toBe('zhang fisher'); // no computed
@@ -297,16 +273,13 @@ describe('同步计算函数的启用和禁用', () => {
     describe('同步计算函数中的循环依赖', () => {
         test('同步计算依赖了自己', async () => {
             try {
-                const store = new AutoStore(
-                    {
-                        price: 2,
-                        count: 3,
-                        total: computed((scope) => {
-                            return scope.price * scope.total;
-                        }),
-                    },
-                    { lazy: false },
-                );
+                const store = new AutoStore({
+                    price: 2,
+                    count: 3,
+                    total: computed((scope) => {
+                        return scope.price * scope.total;
+                    }),
+                });
                 store.state.total;
             } catch (e: any) {
                 expect(e).toBeInstanceOf(CyleDependError);
@@ -316,20 +289,17 @@ describe('同步计算函数的启用和禁用', () => {
             //  ┌───────────────↴
             //  1<──2<──3<──4<──5
             try {
-                const store = new AutoStore(
-                    {
-                        user: {
-                            firstName: 'zhang',
-                            lastName: 'fisher',
-                            fullName1: computed((scope: any) => `${scope.fullName5}`),
-                            fullName2: computed((scope: any) => `${scope.fullName1}*`),
-                            fullName3: computed((scope: any) => `${scope.fullName2}*`),
-                            fullName4: computed((scope: any) => `${scope.fullName3}*`),
-                            fullName5: computed((scope: any) => `${scope.fullName4}*`),
-                        },
+                const store = new AutoStore({
+                    user: {
+                        firstName: 'zhang',
+                        lastName: 'fisher',
+                        fullName1: computed((scope: any) => `${scope.fullName5}`),
+                        fullName2: computed((scope: any) => `${scope.fullName1}*`),
+                        fullName3: computed((scope: any) => `${scope.fullName2}*`),
+                        fullName4: computed((scope: any) => `${scope.fullName3}*`),
+                        fullName5: computed((scope: any) => `${scope.fullName4}*`),
                     },
-                    { lazy: false },
-                );
+                });
                 store.state.user.fullName1;
             } catch (e: any) {
                 expect(e).toBeInstanceOf(CyleDependError);
@@ -340,20 +310,17 @@ describe('同步计算函数的启用和禁用', () => {
             //      ↓───────────┐
             //  1──>2──>3──>4──>5
             try {
-                const store = new AutoStore(
-                    {
-                        user: {
-                            firstName: 'zhang',
-                            lastName: 'fisher',
-                            fullName1: computed((scope: any) => `${scope.fullName2}`),
-                            fullName2: computed((scope: any) => `${scope.fullName3}*`),
-                            fullName3: computed((scope: any) => `${scope.fullName4}*`),
-                            fullName4: computed((scope: any) => `${scope.fullName5}*`),
-                            fullName5: computed((scope: any) => `${scope.fullName2}*`),
-                        },
+                const store = new AutoStore({
+                    user: {
+                        firstName: 'zhang',
+                        lastName: 'fisher',
+                        fullName1: computed((scope: any) => `${scope.fullName2}`),
+                        fullName2: computed((scope: any) => `${scope.fullName3}*`),
+                        fullName3: computed((scope: any) => `${scope.fullName4}*`),
+                        fullName4: computed((scope: any) => `${scope.fullName5}*`),
+                        fullName5: computed((scope: any) => `${scope.fullName2}*`),
                     },
-                    { lazy: false },
-                );
+                });
                 store.state.user.fullName1;
             } catch (e: any) {
                 expect(e).toBeInstanceOf(CyleDependError);
@@ -361,38 +328,35 @@ describe('同步计算函数的启用和禁用', () => {
         });
         test('数组中存在交叉循环依赖路径', () => {
             try {
-                const store = new AutoStore(
-                    {
-                        user: {
-                            firstName: 'zhang',
-                            lastName: 'fisher',
-                            orders: [
-                                {
-                                    name: 'order1',
-                                    price: computed(
-                                        (orders: any[]) => {
-                                            return orders[1].price + 1;
-                                        },
-                                        { scope: 'PARENT' },
-                                    ),
-                                },
-                                {
-                                    name: 'order2',
-                                    price: computed(
-                                        (orders: any[]) => {
-                                            return orders[0].price + 1;
-                                        },
-                                        { scope: 'PARENT' },
-                                    ),
-                                },
-                                { name: 'order3' },
-                                { name: 'order4' },
-                                { name: 'order5' },
-                            ],
-                        },
+                const store = new AutoStore({
+                    user: {
+                        firstName: 'zhang',
+                        lastName: 'fisher',
+                        orders: [
+                            {
+                                name: 'order1',
+                                price: computed(
+                                    (orders: any[]) => {
+                                        return orders[1].price + 1;
+                                    },
+                                    { scope: 'PARENT' },
+                                ),
+                            },
+                            {
+                                name: 'order2',
+                                price: computed(
+                                    (orders: any[]) => {
+                                        return orders[0].price + 1;
+                                    },
+                                    { scope: 'PARENT' },
+                                ),
+                            },
+                            { name: 'order3' },
+                            { name: 'order4' },
+                            { name: 'order5' },
+                        ],
                     },
-                    { lazy: false },
-                );
+                });
                 store.state.user.orders[1].price;
             } catch (e: any) {
                 expect(e).toBeInstanceOf(CyleDependError);

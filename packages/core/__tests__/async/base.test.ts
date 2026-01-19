@@ -48,7 +48,7 @@ describe('所有异步计算基础功能', () => {
                     },
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
-                        lazy: false,
+
                         onComputedDone: () => {
                             // 计算完成时触发
                             results.push(store.state.total.value);
@@ -79,7 +79,6 @@ describe('所有异步计算基础功能', () => {
                         ),
                     },
                     {
-                        lazy: false,
                         onComputedDone: () => {
                             const cobj = store.computedObjects.get('x')!;
                             expect(cobj.value.value).toBe(6);
@@ -92,24 +91,21 @@ describe('所有异步计算基础功能', () => {
         test('当提供异步计算属性的默认值时不会触发初始计算', () => {
             let count: number = 0;
             return new Promise<void>((resolve) => {
-                const store = new AutoStore(
-                    {
-                        price: 2,
-                        count: 3,
-                        total: computed(
-                            async (scope) => {
-                                count++;
-                                return scope.price * scope.count;
-                            },
-                            ['price', 'count'],
-                            {
-                                id: 'x',
-                                initial: 6,
-                            },
-                        ),
-                    },
-                    { lazy: false },
-                );
+                const store = new AutoStore({
+                    price: 2,
+                    count: 3,
+                    total: computed(
+                        async (scope) => {
+                            count++;
+                            return scope.price * scope.count;
+                        },
+                        ['price', 'count'],
+                        {
+                            id: 'x',
+                            initial: 6,
+                        },
+                    ),
+                });
                 setTimeout(() => {
                     const cobj = store.computedObjects.get('x')!;
                     expect(cobj.value.value).toBe(6);
@@ -139,7 +135,6 @@ describe('所有异步计算基础功能', () => {
                         ),
                     },
                     {
-                        lazy: false,
                         onComputedDone: () => {
                             const cobj = store.computedObjects.get('x')!;
                             expect(cobj.value.value).toBe(6);
@@ -237,7 +232,7 @@ describe('所有异步计算基础功能', () => {
                     },
                     {
                         enableComputed: false,
-                        lazy: false,
+
                         onComputedDone: () => {
                             expect(count).toBe(1);
                             resolve();
@@ -274,7 +269,6 @@ describe('所有异步计算基础功能', () => {
                         ),
                     },
                     {
-                        lazy: false,
                         onComputedDone: ({ path }) => {
                             expect(path).toStrictEqual(['total2']);
                             expect(store.state.total1.value).toBe(100);
@@ -303,7 +297,6 @@ describe('所有异步计算基础功能', () => {
                         ),
                     },
                     {
-                        lazy: false,
                         onComputedDone: () => {
                             count++;
                             if (count === 2) {
@@ -331,7 +324,6 @@ describe('所有异步计算基础功能', () => {
                         ),
                     },
                     {
-                        lazy: false,
                         onComputedDone: () => {
                             resolve();
                         },
@@ -343,20 +335,17 @@ describe('所有异步计算基础功能', () => {
 
         test('手动执行异步计算属性的计算函数', () => {
             return new Promise<void>((resolve) => {
-                const store = new AutoStore(
-                    {
-                        price: 2,
-                        count: 3,
-                        total: computed(
-                            async (scope) => {
-                                return scope.price * scope.count;
-                            },
-                            ['price', 'count'],
-                            { id: 'x', immediate: false },
-                        ),
-                    },
-                    { lazy: false },
-                );
+                const store = new AutoStore({
+                    price: 2,
+                    count: 3,
+                    total: computed(
+                        async (scope) => {
+                            return scope.price * scope.count;
+                        },
+                        ['price', 'count'],
+                        { id: 'x', immediate: false },
+                    ),
+                });
                 const asyncObj = store.computedObjects.get('x')! as AsyncComputedObject;
                 asyncObj.run().then(() => {
                     expect(store.state.total.value).toBe(6);
@@ -366,21 +355,18 @@ describe('所有异步计算基础功能', () => {
         });
         test('手动传参覆盖默认的异步计算属性参数，然后运行', () => {
             return new Promise<void>((resolve) => {
-                const store = new AutoStore(
-                    {
-                        price: 2,
-                        count: 3,
-                        total: computed(
-                            async (price) => {
-                                expect(price).toBe(2);
-                                return price * 100;
-                            },
-                            ['price', 'count'],
-                            { id: 'x', immediate: false },
-                        ),
-                    },
-                    { lazy: false },
-                );
+                const store = new AutoStore({
+                    price: 2,
+                    count: 3,
+                    total: computed(
+                        async (price) => {
+                            expect(price).toBe(2);
+                            return price * 100;
+                        },
+                        ['price', 'count'],
+                        { id: 'x', immediate: false },
+                    ),
+                });
                 const asyncObj = store.computedObjects.get('x')! as AsyncComputedObject;
                 asyncObj.run({ scope: 'price' }).then(() => {
                     //// 运行时修改的scope仅在本次运行中有效，不会影响到下次运行
@@ -447,7 +433,7 @@ describe('所有异步计算基础功能', () => {
                     },
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
-                        lazy: false,
+
                         onComputedDone: ({ computedObject }) => {
                             results.push(computedObject.path!.join(','));
                             if (results.length === 12) {
@@ -528,7 +514,7 @@ describe('所有异步计算基础功能', () => {
                     },
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
-                        lazy: false,
+
                         onComputedDone: ({ computedObject }) => {
                             results.push(computedObject.path!.join(','));
                             if (results.length === 3) {
@@ -546,61 +532,58 @@ describe('所有异步计算基础功能', () => {
         test('指定超时手动执行满足条件的计算', () => {
             console.log('Fake timers not implemented in Bun yet');
             return new Promise<void>((resolve) => {
-                const store = new AutoStore(
-                    {
-                        price: 2,
-                        count: 3,
-                        total1: computed(
-                            async (scope) => {
-                                await delay(5000);
-                                return scope.price * scope.count;
-                            },
-                            ['price', 'count'],
-                            { id: 'a', group: 'a', initial: 0 },
-                        ),
-                        total2: computed(
-                            async (scope) => {
-                                await delay(5000);
-                                return scope.price * scope.count;
-                            },
-                            ['price', 'count'],
-                            { id: 'b', group: 'a', initial: 0 },
-                        ),
-                        total3: computed(
-                            async (scope) => {
-                                await delay(5000);
-                                return scope.price * scope.count;
-                            },
-                            ['price', 'count'],
-                            { id: 'c', group: 'b', initial: 0 },
-                        ),
-                        total4: computed(
-                            async (scope) => {
-                                await delay(5000);
-                                return scope.price * scope.count;
-                            },
-                            ['price', 'count'],
-                            { id: 'd', group: 'b', initial: 0 },
-                        ),
-                        total5: computed(
-                            async (scope) => {
-                                await delay(5000);
-                                return scope.price * scope.count;
-                            },
-                            ['price', 'count'],
-                            { id: 'e', group: 'c', initial: 0 },
-                        ),
-                        total6: computed(
-                            async (scope) => {
-                                await delay(5000);
-                                return scope.price * scope.count;
-                            },
-                            ['price', 'count'],
-                            { id: 'f', group: 'c', initial: 0 },
-                        ),
-                    },
-                    { lazy: false },
-                );
+                const store = new AutoStore({
+                    price: 2,
+                    count: 3,
+                    total1: computed(
+                        async (scope) => {
+                            await delay(5000);
+                            return scope.price * scope.count;
+                        },
+                        ['price', 'count'],
+                        { id: 'a', group: 'a', initial: 0 },
+                    ),
+                    total2: computed(
+                        async (scope) => {
+                            await delay(5000);
+                            return scope.price * scope.count;
+                        },
+                        ['price', 'count'],
+                        { id: 'b', group: 'a', initial: 0 },
+                    ),
+                    total3: computed(
+                        async (scope) => {
+                            await delay(5000);
+                            return scope.price * scope.count;
+                        },
+                        ['price', 'count'],
+                        { id: 'c', group: 'b', initial: 0 },
+                    ),
+                    total4: computed(
+                        async (scope) => {
+                            await delay(5000);
+                            return scope.price * scope.count;
+                        },
+                        ['price', 'count'],
+                        { id: 'd', group: 'b', initial: 0 },
+                    ),
+                    total5: computed(
+                        async (scope) => {
+                            await delay(5000);
+                            return scope.price * scope.count;
+                        },
+                        ['price', 'count'],
+                        { id: 'e', group: 'c', initial: 0 },
+                    ),
+                    total6: computed(
+                        async (scope) => {
+                            await delay(5000);
+                            return scope.price * scope.count;
+                        },
+                        ['price', 'count'],
+                        { id: 'f', group: 'c', initial: 0 },
+                    ),
+                });
                 store.computedObjects
                     .run(
                         (obj) => {

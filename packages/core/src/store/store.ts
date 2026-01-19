@@ -104,7 +104,6 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
             return message.payload;
         },
     }); // 依赖变更事件触发器
-    // private _options: Required<AutoStoreOptions<State>>;
     private _silenting = false; // 是否静默更新，不触发事件
     private _batching = false; // 是否批量更新中
     private _batchOperates: StateOperate[] = []; // 暂存批量操作
@@ -114,7 +113,6 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     private _updateValidateBehavior: UpdateOptions['validate']; // 更新时的校验行为
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
-    // private _delimiter: string = '.';
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     // override types = {
     //     rawState: undefined as unknown as State,

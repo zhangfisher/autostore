@@ -395,6 +395,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             this.emitStoreEvent('computed:cancel', {
                 path: this.path,
                 id: this.id,
+                reason: 'abort',
                 computedObject: this,
             });
         } else if (ctx.hasError || ctx.hasTimeout) {

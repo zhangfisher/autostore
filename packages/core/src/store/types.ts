@@ -68,13 +68,16 @@ export interface AutoStoreOptions<State extends Dict> {
      * 默认情况下，计算函数仅在第一次读取时执行,
      * 如果lazy=true时，则延迟创建计算对象
      *
-     * @default true
+     * - false: 在创建时马上进行第一次计算，马上就可以收集到依赖
+     * - true:  计算函数仅在第一次读取时执行
+     * - auto:  默认值，同步计算会马上读取以收集依赖
+     *          异步计算如果指定了initial初始化值，则在初始化时不会执行
+     *          仅在后续进行计算
      *
-     * @deprecated
-     *
+     * @default 'auto'
      *
      */
-    lazy?: boolean;
+    // lazy?: boolean;
     /**
      * 是否启用计算
      *

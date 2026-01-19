@@ -4,7 +4,7 @@ import { share, watch } from 'helux';
 import { delay } from '../utils';
 
 const bench = new Bench({
-    time: 10,
+    time: 1000,
     iterations: 10,
 });
 
@@ -27,6 +27,9 @@ const heluxStore = share(
     {
         mutate: {
             a1: {
+                fn: (draft) => {
+                    draft.a1 = draft.a0 + 1;
+                },
                 task: async ({ setState }) => {
                     await delay(1);
                     setState((draft) => {
@@ -38,30 +41,31 @@ const heluxStore = share(
     },
 );
 
-bench.add('[AutoStore] 多重依赖链异步计算', () => {
-    return new Promise<void>((resolve) => {
-        const subscriber = autoStore.on('computed:done', () => {
-            subscriber.off();
-            resolve();
+bench
+    .add('[AutoStore] 异步计算', () => {
+        return new Promise<void>((resolve) => {
+            const subscriber = autoStore.on('computed:done', () => {
+                subscriber.off();
+                resolve();
+            });
+            autoStore.state.a0++;
         });
-        autoStore.state.a0 = 100;
+    })
+    .add('[Helux] 异步计算', () => {
+        return new Promise<void>((resolve) => {
+            const [state, setState] = heluxStore;
+            const { unwatch } = watch(
+                () => {
+                    unwatch();
+                    resolve();
+                },
+                () => [state.a1],
+            );
+            setState((draft: any) => {
+                draft.a0 = draft.a0 + 1;
+            });
+        });
     });
-});
-// .add('[Helux] 多重依赖链异步计算', () => {
-//     return new Promise<void>((resolve) => {
-//         const [state, setState] = heluxStore;
-//         const { unwatch } = watch(
-//             () => {
-//                 unwatch();
-//                 resolve();
-//             },
-//             () => [state.a1],
-//         );
-//         setState((draft: any) => {
-//             draft.a0 = 100;
-//         });
-//     });
-// });
 
 await bench.run();
 console.table(bench.table());
