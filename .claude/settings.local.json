@@ -6,7 +6,8 @@
       "Bash(bun run test:*)",
       "Bash(node:*)",
       "Bash(bunx tsc --noEmit)",
-      "Bash(bunx tsc:*)"
+      "Bash(bunx tsc:*)",
+      "Bash(git stash:*)"
     ]
   }
 }

@@ -27,8 +27,7 @@ export class AutoStoreSyncer {
     syncing: boolean = false;
     peer?: AutoStoreSyncer;
     private _watcher: Watcher | undefined;
-    private _schemaWatcher: Watcher | undefined;
-    private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存,
+    private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
     private seq: number = 0; // 实例标识
     constructor(public store: AutoStore<any>, options?: AutoStoreSyncerOptions) {
         this._options = Object.assign(
@@ -213,7 +212,6 @@ export class AutoStoreSyncer {
     stop(disconnect: boolean = true) {
         if (!this.syncing) return;
         this._watcher?.off();
-        this._schemaWatcher?.off();
         this.syncing = false;
         if (disconnect) this._disconnect();
     }
