@@ -161,7 +161,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             this.context,
             finalComputedOptions,
         );
-
         // 4. 检查是否有重入
         const { reentry } = finalComputedOptions;
         if (this._isRunning && !reentry) {
@@ -323,105 +322,113 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             hasAbort: false,
             timeoutCallback,
         };
+
         // 侦听中止信号，以便在中止时能停止
-        abortController.signal.addEventListener('abort', () => {
+        const abortHandler = () => {
             ctx.hasAbort = true;
-        });
+        };
+        abortController.signal.addEventListener('abort', abortHandler);
 
         let timeout = { clear: () => {}, enable: false };
         let computedResult: any;
-        const updateCtx = (values: Partial<GetterRunContext>) => Object.assign(ctx, values);
-        for (let i = 0; i < retryCount + 1; i++) {
-            const afterUpdated: Partial<AsyncComputedValue> = {}; // 保存执行完成后需要更新的内容，以便在最后一次执行后更新状态
-            try {
-                // 1. 初始化数据
-                const initValue: Partial<AsyncComputedValue> = {
-                    loading: true,
-                };
-                if (ctx.hasError) initValue.error = null;
 
-                if (retryCount > 0) initValue.retry = i > 0 ? retryCount - i + 1 : 0;
+        try {
+            const updateCtx = (values: Partial<GetterRunContext>) => Object.assign(ctx, values);
+            for (let i = 0; i < retryCount + 1; i++) {
+                const afterUpdated: Partial<AsyncComputedValue> = {}; // 保存执行完成后需要更新的内容，以便在最后一次执行后更新状态
+                try {
+                    // 1. 初始化数据
+                    const initValue: Partial<AsyncComputedValue> = {
+                        loading: true,
+                    };
+                    if (ctx.hasError) initValue.error = null;
 
-                if (i > 0) {
-                    updateCtx({
-                        error: null,
-                        hasError: false,
-                        hasTimeout: false,
-                    });
+                    if (retryCount > 0) initValue.retry = i > 0 ? retryCount - i + 1 : 0;
+
+                    if (i > 0) {
+                        updateCtx({
+                            error: null,
+                            hasError: false,
+                            hasTimeout: false,
+                        });
+                    }
+
+                    timeout = this.setTimeoutControl(ctx, initValue, options);
+
+                    this.updateComputedValue(initValue);
+
+                    // 如果有中止信号，则取消计算
+                    if (ctx.hasAbort) throw new AbortError();
+
+                    // 执行计算函数
+                    computedResult = await this.getter.call(this, scope, getterArgs);
+
+                    if (ctx.hasAbort) throw new AbortError();
+                    if (!ctx.hasTimeout) {
+                        afterUpdated.value = computedResult;
+                        if (timeout.enable) afterUpdated.timeout = 0;
+                    }
+                } catch (e: any) {
+                    ctx.hasError = true;
+                    ctx.error = e;
+                    if (!ctx.hasTimeout) afterUpdated.error = getError(e).message;
+                    if (isFunction(options.onError)) {
+                        const errValue = options.onError(e);
+                        if (errValue !== undefined) afterUpdated.value = errValue;
+                    }
+                } finally {
+                    timeout.clear();
+                    if (i === retryCount) {
+                        // 最后一次执行时
+                        if (ctx.hasTimeout) afterUpdated.error = ctx.error;
+                        if (retryCount > 0) afterUpdated.retry = 0;
+                    }
+                    afterUpdated.loading = false;
+                    this.updateComputedValue(afterUpdated);
                 }
-
-                timeout = this.setTimeoutControl(ctx, initValue, options);
-
-                this.updateComputedValue(initValue);
-
-                // 如果有中止信号，则取消计算
-                if (ctx.hasAbort) throw new AbortError();
-
-                // 执行计算函数
-                computedResult = await this.getter.call(this, scope, getterArgs);
-
-                if (ctx.hasAbort) throw new AbortError();
-                if (!ctx.hasTimeout) {
-                    afterUpdated.value = computedResult;
-                    if (timeout.enable) afterUpdated.timeout = 0;
+                // 出错时重试延迟, 最后一次不延迟
+                if (ctx.hasError) {
+                    if (retryCount > 0 && retryInterval > 0 && i < retryCount) {
+                        await delay(retryInterval);
+                    }
                 }
-            } catch (e: any) {
-                ctx.hasError = true;
-                ctx.error = e;
-                if (!ctx.hasTimeout) afterUpdated.error = getError(e).message;
-                if (isFunction(options.onError)) {
-                    const errValue = options.onError(e);
-                    if (errValue !== undefined) afterUpdated.value = errValue;
-                }
-            } finally {
-                timeout.clear();
-                if (i === retryCount) {
-                    // 最后一次执行时
-                    if (ctx.hasTimeout) afterUpdated.error = ctx.error;
-                    if (retryCount > 0) afterUpdated.retry = 0;
-                }
-                afterUpdated.loading = false;
-                this.updateComputedValue(afterUpdated);
             }
-            // 出错时重试延迟, 最后一次不延迟
-            if (ctx.hasError) {
-                if (retryCount > 0 && retryInterval > 0 && i < retryCount) {
-                    await delay(retryInterval);
-                }
+            // 计算完成后触发事件
+            if (ctx.hasAbort) {
+                this.emitStoreEvent('computed:cancel', {
+                    path: this.path,
+                    id: this.id,
+                    reason: 'abort',
+                    computedObject: this,
+                });
+            } else if (ctx.hasError || ctx.hasTimeout) {
+                this.error = ctx.error;
+                this.emitStoreEvent('computed:error', {
+                    path: this.path,
+                    id: this.id,
+                    error: ctx.error,
+                    computedObject: this,
+                });
+            } else {
+                this.emitStoreEvent('computed:done', {
+                    path: this.path,
+                    id: this.id,
+                    value: computedResult,
+                    computedObject: this,
+                });
             }
+            this.onDoneCallback(
+                options,
+                ctx.error,
+                ctx.hasAbort,
+                ctx.hasTimeout,
+                scope,
+                computedResult,
+            );
+        } finally {
+            // 清理 abort 事件监听器，防止内存泄漏
+            abortController.signal.removeEventListener('abort', abortHandler);
         }
-        // 计算完成后触发事件
-        if (ctx.hasAbort) {
-            this.emitStoreEvent('computed:cancel', {
-                path: this.path,
-                id: this.id,
-                reason: 'abort',
-                computedObject: this,
-            });
-        } else if (ctx.hasError || ctx.hasTimeout) {
-            this.error = ctx.error;
-            this.emitStoreEvent('computed:error', {
-                path: this.path,
-                id: this.id,
-                error: ctx.error,
-                computedObject: this,
-            });
-        } else {
-            this.emitStoreEvent('computed:done', {
-                path: this.path,
-                id: this.id,
-                value: computedResult,
-                computedObject: this,
-            });
-        }
-        this.onDoneCallback(
-            options,
-            ctx.error,
-            ctx.hasAbort,
-            ctx.hasTimeout,
-            scope,
-            computedResult,
-        );
     }
 
     /**
