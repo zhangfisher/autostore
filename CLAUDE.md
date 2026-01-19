@@ -213,3 +213,4 @@ devtools -> core (workspace:*)
 5. **文档构建**:
     - 修改核心包代码后需重新构建以更新文档站点的 autostore.js
     - 文档使用 VitePress，配置位于 `docs/.vitepress/config/`
+6. 禁用 spec-workflow 功能

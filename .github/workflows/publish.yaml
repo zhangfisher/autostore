@@ -19,32 +19,22 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      # - name: Setup bun
-      #   uses: oven-sh/setup-bun@v2
-      #   with:
-      #     bun-version: latest
-      # # 安装依赖
-      # - name: Install dependencies
-      #   run: bun install --frozen-lockfile
-      - uses: pnpm/action-setup@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: pnpm # 或 pnpm / yarn
-      # 安装依赖
+          bun-version: latest
+
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: bun install --frozen-lockfile
+
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
           # This expects you to have a script called release which does a build for your packages and calls changeset publish
-          publish: pnpm publish:all
+          publish: bun run publish:all
         env:
-          # this doesn't work but semantic-release works
-          # see https://github.com/sonofmagic/npm-lib-rollup-template/blob/main/.github/workflows/release.yml#L46
-          # NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # 使用 OIDC token，无需 NPM_TOKEN
           npm_config_registry: https://registry.npmjs.org

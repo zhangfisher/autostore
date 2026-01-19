@@ -34,10 +34,11 @@
 		"flexstyled": "^2.1.2"
 	},
 	"devDependencies": {
-		"@types/node": "^24.7.2",
+		"@swc/core": "^1.15.8",
+		"@types/node": "^24.10.9",
 		"@types/react": "^18.3.26",
 		"react": "^18.3.1",
-		"terser": "^5.36.0",
+		"terser": "^5.46.0",
 		"tsup": "^8.5.0",
 		"type-fest": "^5.0.1",
 		"typescript": "^5.9.3"
