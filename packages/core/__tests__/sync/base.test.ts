@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { AutoStore, computed, type ComputedObject } from '../..';
 import { CyleDependError } from '../../src/errors';
+import { delay } from 'flex-tools/async/delay';
 
 describe('同步计算属性的基本特性', () => {
     test('默认同步计算', async () => {
@@ -508,5 +509,25 @@ describe('使用update方法对同步计算属性进行更新', () => {
 
             resolve();
         });
+    });
+    test('同步和异步计算属性可以混合使用', async () => {
+        const store = new AutoStore({
+            base: 10,
+            rate: 1.5,
+            amount: computed((scope) => scope.base * scope.rate),
+            total: computed(
+                async (scope) => {
+                    await new Promise((r) => setTimeout(r, 10));
+                    return scope.amount * 2;
+                },
+                ['amount'],
+            ),
+        });
+
+        // 同步计算应该立即可用
+        expect(store.state.amount).toBe(15);
+        // 等待异步计算完成
+        await delay(50);
+        expect(await store.state.total.value).toBe(30);
     });
 });

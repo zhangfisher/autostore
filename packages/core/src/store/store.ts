@@ -243,6 +243,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                 : createSandbox;
             this._safeEval = sandbox(
                 {
+                    ...(this.options.sandboxContext || {}),
                     computed,
                     watch,
                     configurable,

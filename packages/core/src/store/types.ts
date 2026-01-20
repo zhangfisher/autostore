@@ -320,6 +320,10 @@ export interface AutoStoreOptions<State extends Dict> {
         context: Record<string, any>,
         options?: CreateSandboxOptions,
     ) => (code: string) => any;
+    /**
+     * 为代码执行沙箱中的代码提供额外的上下文
+     */
+    sandboxContext?: Record<string, any>;
 }
 
 export type UpdateOptions = {
