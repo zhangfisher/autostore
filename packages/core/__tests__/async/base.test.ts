@@ -380,6 +380,285 @@ describe('所有异步计算基础功能', () => {
         });
     });
 
+    describe('immediate 选项测试', () => {
+        describe('immediate: true', () => {
+            test('immediate为true时，创建异步计算后马上执行一次', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore(
+                        {
+                            price: 2,
+                            count: 3,
+                            total: computed(
+                                async (scope) => {
+                                    count++;
+                                    return scope.price * scope.count;
+                                },
+                                ['price', 'count'],
+                                {
+                                    id: 'x',
+                                    immediate: true,
+                                },
+                            ),
+                        },
+                        {
+                            onComputedDone: () => {
+                                expect(count).toBe(1);
+                                expect(store.state.total.value).toBe(6);
+                                resolve();
+                            },
+                        },
+                    );
+                });
+            });
+
+            test('immediate为true时，即使有initial值也会马上执行一次', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore(
+                        {
+                            price: 2,
+                            count: 3,
+                            total: computed(
+                                async (scope) => {
+                                    count++;
+                                    return scope.price * scope.count;
+                                },
+                                ['price', 'count'],
+                                {
+                                    id: 'x',
+                                    immediate: true,
+                                    initial: 100,
+                                },
+                            ),
+                        },
+                        {
+                            onComputedDone: () => {
+                                expect(count).toBe(1);
+                                expect(store.state.total.value).toBe(6);
+                                resolve();
+                            },
+                        },
+                    );
+                });
+            });
+        });
+
+        describe('immediate: false', () => {
+            test('immediate为false时，创建异步计算后不马上执行', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore({
+                        price: 2,
+                        count: 3,
+                        total: computed(
+                            async (scope) => {
+                                count++;
+                                return scope.price * scope.count;
+                            },
+                            ['price', 'count'],
+                            {
+                                id: 'x',
+                                immediate: false,
+                            },
+                        ),
+                    });
+
+                    setTimeout(() => {
+                        expect(count).toBe(0);
+                        expect(store.state.total.value).toBeUndefined();
+                        resolve();
+                    }, 10);
+                });
+            });
+
+            test('immediate为false时，依赖变化后会执行计算', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore(
+                        {
+                            price: 2,
+                            count: 3,
+                            total: computed(
+                                async (scope) => {
+                                    count++;
+                                    return scope.price * scope.count;
+                                },
+                                ['price', 'count'],
+                                {
+                                    id: 'x',
+                                    immediate: false,
+                                },
+                            ),
+                        },
+                        {
+                            onComputedDone: () => {
+                                expect(count).toBe(1);
+                                expect(store.state.total.value).toBe(8);
+                                resolve();
+                            },
+                        },
+                    );
+
+                    // 触发依赖变化
+                    store.state.count = 4;
+                });
+            });
+        });
+
+        describe('immediate: auto', () => {
+            test('immediate为auto且没有initial值时，创建后马上执行一次', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore(
+                        {
+                            price: 2,
+                            count: 3,
+                            total: computed(
+                                async (scope) => {
+                                    count++;
+                                    return scope.price * scope.count;
+                                },
+                                ['price', 'count'],
+                                {
+                                    id: 'x',
+                                    immediate: 'auto',
+                                },
+                            ),
+                        },
+                        {
+                            onComputedDone: () => {
+                                expect(count).toBe(1);
+                                expect(store.state.total.value).toBe(6);
+                                resolve();
+                            },
+                        },
+                    );
+                });
+            });
+
+            test('immediate为auto且有initial值时，创建后不马上执行', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore({
+                        price: 2,
+                        count: 3,
+                        total: computed(
+                            async (scope) => {
+                                count++;
+                                return scope.price * scope.count;
+                            },
+                            ['price', 'count'],
+                            {
+                                id: 'x',
+                                immediate: 'auto',
+                                initial: 100,
+                            },
+                        ),
+                    });
+
+                    setTimeout(() => {
+                        expect(count).toBe(0);
+                        expect(store.state.total.value).toBe(100);
+                        resolve();
+                    }, 10);
+                });
+            });
+
+            test('immediate为auto且有initial值时，依赖变化后会执行计算', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore(
+                        {
+                            price: 2,
+                            count: 3,
+                            total: computed(
+                                async (scope) => {
+                                    count++;
+                                    return scope.price * scope.count;
+                                },
+                                ['price', 'count'],
+                                {
+                                    id: 'x',
+                                    immediate: 'auto',
+                                    initial: 100,
+                                },
+                            ),
+                        },
+                        {
+                            onComputedDone: () => {
+                                expect(count).toBe(1);
+                                expect(store.state.total.value).toBe(8);
+                                resolve();
+                            },
+                        },
+                    );
+
+                    // 触发依赖变化
+                    store.state.count = 4;
+                });
+            });
+        });
+
+        describe('immediate 默认行为', () => {
+            test('未指定immediate且没有initial值时，默认行为类似于auto（马上执行）', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore(
+                        {
+                            price: 2,
+                            count: 3,
+                            total: computed(
+                                async (scope) => {
+                                    count++;
+                                    return scope.price * scope.count;
+                                },
+                                ['price', 'count'],
+                                {
+                                    id: 'x',
+                                },
+                            ),
+                        },
+                        {
+                            onComputedDone: () => {
+                                expect(count).toBe(1);
+                                expect(store.state.total.value).toBe(6);
+                                resolve();
+                            },
+                        },
+                    );
+                });
+            });
+
+            test('未指定immediate且有initial值时，默认不马上执行', () => {
+                let count = 0;
+                return new Promise<void>((resolve) => {
+                    const store = new AutoStore({
+                        price: 2,
+                        count: 3,
+                        total: computed(
+                            async (scope) => {
+                                count++;
+                                return scope.price * scope.count;
+                            },
+                            ['price', 'count'],
+                            {
+                                id: 'x',
+                                initial: 100,
+                            },
+                        ),
+                    });
+
+                    setTimeout(() => {
+                        expect(count).toBe(0);
+                        expect(store.state.total.value).toBe(100);
+                        resolve();
+                    }, 10);
+                });
+            });
+        });
+    });
+
     describe('执行分组或满足条件的计算函数', () => {
         test('异步计算分组', () => {
             const results: string[] = [];

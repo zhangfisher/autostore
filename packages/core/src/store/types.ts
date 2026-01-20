@@ -9,6 +9,7 @@ import type { ConfigManager } from '../schema/manager';
 import type { TransformedEvents } from 'fastevent';
 import type { ObserverDescriptor } from '../observer/types';
 import type { WatchObject } from '../watch/watchObject';
+import type { CreateSandboxOptions } from '../utils/createSandbox';
 
 export type BatchChangeEvent = '__batch_update__';
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
@@ -70,14 +71,14 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      * - false: 在创建时马上进行第一次计算，马上就可以收集到依赖
      * - true:  计算函数仅在第一次读取时执行
-     * - auto:  默认值，同步计算会马上读取以收集依赖
-     *          异步计算如果指定了initial初始化值，则在初始化时不会执行
-     *          仅在后续进行计算
+     * - auto:  默认值，计算对象会马上创建
+     *          同步计算会马上读取以收集依赖
+     *          主要差别在于异步计算如果指定了initial初始化值，则在初始化时不会执行
      *
      * @default 'auto'
      *
      */
-    // lazy?: boolean;
+    lazy?: boolean;
     /**
      * 是否启用计算
      *
@@ -294,6 +295,31 @@ export interface AutoStoreOptions<State extends Dict> {
      * 为当前Store的所有配置项均指定一个统一的前缀
      */
     configKey?: string;
+    /**
+     *
+     * 当启用时，如果值是一个字符串，并且以```xxx```形式，代表这是一个表达式
+     * 则会创建一个代码执行沙箱运行并返回值
+     *
+     * 注意：
+     *    仅在lazy=false时在实例化时才会对字符串表达式进行解释执行
+     * 后续读取时不会执行此操作
+     *
+     * @example
+     *
+     *
+     */
+    enableValueExpr?: boolean;
+    /**
+     * 用于创建一个代码执行沙箱
+     *
+     * 可选的，如果没有提供时，会提供一个简单的基于new Function的沙箱
+     *
+     * @returns
+     */
+    createSandbox?: (
+        context: Record<string, any>,
+        options?: CreateSandboxOptions,
+    ) => (code: string) => any;
 }
 
 export type UpdateOptions = {

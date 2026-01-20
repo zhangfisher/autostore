@@ -225,10 +225,12 @@ function createProxy(
 
                 // 写入成功后，检查是否是配置项，如果是则调用 ConfigManager.onUpdate
                 const pathKey = path.join(this.options.delimiter || '.');
-                const configKey = this.options.configKey ? `${this.options.configKey}.${pathKey}` : pathKey;
+                const configKey = this.options.configKey
+                    ? `${this.options.configKey}.${pathKey}`
+                    : pathKey;
                 if (success && this.configManager && this.configurabled.has(pathKey)) {
                     setTimeout(() => {
-                        this.configManager.onUpdate(this, configKey, val);
+                        this.configManager?.onUpdate(this, configKey, val);
                     }, 0);
                 }
 

@@ -52,13 +52,6 @@
 
 import { ComputedObjects } from '../computed/computedObjects';
 import { GLOBAL_CONFIG_MANAGER } from '../consts';
-import type {
-    AutoStoreOptions,
-    StateChangeEvents,
-    StateOperate,
-    StateTracker,
-    UpdateOptions,
-} from './types';
 import type { Dict, ObjectKeyPaths, StatePath } from '../types';
 import { log, type LogLevel, type LogMessageArgs } from '../utils/log';
 import { getId } from '../utils/getId';
@@ -67,16 +60,6 @@ import { SyncComputedObject } from '../computed/sync';
 import type { ComputedContext, ComputedDescriptor } from '../computed/types';
 import type { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from '../watch/types';
 import type { StoreEvents } from './types';
-import {
-    forEachObject,
-    getSnapshot,
-    getVal,
-    isAsyncComputedValue,
-    isPathEq,
-    isSchemaBuilder,
-    markRaw,
-    setVal,
-} from '../utils';
 import { BATCH_UPDATE_EVENT } from '../consts';
 import { createReactiveObject } from './reactive';
 import { AsyncComputedObject } from '../computed/async';
@@ -90,8 +73,28 @@ import { isMatchOperates } from '../utils/isMatchOperates';
 import type { GetTypeByPath } from '../types';
 import { TimeoutError } from '../errors';
 import type { ObserverDescriptor } from '../observer/types';
-import { parseFunc } from '../utils/parseFunc';
 import { FastEvent, type FastEventOptions } from 'fastevent';
+import { createSandbox } from '../utils/createSandbox';
+import { computed } from '../computed/computed';
+import { watch } from '../watch/watch';
+import { configurable, schema } from '../schema/schema';
+import {
+    forEachObject,
+    getSnapshot,
+    getVal,
+    isAsyncComputedValue,
+    isFunction,
+    isPathEq,
+    isSchemaBuilder,
+    setVal,
+} from '../utils';
+import type {
+    AutoStoreOptions,
+    StateChangeEvents,
+    StateOperate,
+    StateTracker,
+    UpdateOptions,
+} from './types';
 
 export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<StoreEvents> {
     private _data: ComputedState<State>;
@@ -109,22 +112,12 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     private _batchOperates: StateOperate[] = []; // 暂存批量操作
     private _updateFlags: number = 0; // 额外的更新标识
     private _peeping: boolean = false;
+    private _safeEval?: (code: string) => any;
     // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <noUnusedPrivateClassMembers>
     private _updateValidateBehavior: UpdateOptions['validate']; // 更新时的校验行为
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
-    // override types = {
-    //     rawState: undefined as unknown as State,
-    //     state: undefined as unknown as ComputedState<State>,
-    // };
-    // get types(){
-    //     const ptypes = super.types
-    //     return {} as typeof ptypes & {
-    //         rawState: State;
-    //         state: ComputedState<State>;
-    //     };
-    // }
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
             Object.assign(
@@ -135,6 +128,8 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                     reentry: true,
                     resetable: false,
                     delimiter: '.',
+                    lazy: false,
+                    enableValueExpr: true,
                     log,
                 },
                 options,
@@ -146,6 +141,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                 },
             ),
         );
+        this._createSandbox();
         this.operates.options.delimiter = this.options.delimiter;
         // @ts-expect-error
         if (this._options.configManager === undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
@@ -169,7 +165,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
         this.installExtends();
-        forEachObject(this._data as any, this._onFirstEachState.bind(this));
+        if (!this.options.lazy) forEachObject(this._data as any, this._onFirstEachState.bind(this));
         if (this.options.resetable) this.resetable = true;
         // @ts-expect-error
         if (this._options.debug && typeof globalThis.__AUTOSTORE_DEVTOOLS__ === 'object') {
@@ -240,6 +236,27 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         }
         this.options.resetable = value;
     }
+    private _createSandbox() {
+        if (this.options.enableValueExpr) {
+            const sandbox = isFunction(this.options.createSandbox)
+                ? this.options.createSandbox
+                : createSandbox;
+            this._safeEval = sandbox(
+                {
+                    computed,
+                    watch,
+                    configurable,
+                    schema,
+                },
+                {
+                    onError: (e: Error, code: string) => {
+                        this.log(e);
+                        return code;
+                    },
+                },
+            );
+        }
+    }
     /**
      * 重置store恢复到状态的原始状态
      *
@@ -276,17 +293,22 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         parent: any;
     }) {
         if (typeof value === 'string') {
-            if (value.startsWith('```') && value.endsWith('```')) {
-                this.update(
-                    (state) => {
-                        const func = parseFunc(value.slice(3, value.length - 3));
-                        markRaw(func);
-                        setVal(state, path, func);
-                    },
-                    {
-                        silent: true,
-                    },
-                );
+            if (this.options.enableValueExpr === false || !isFunction(this._safeEval)) return;
+            const val = value.trim();
+            if (val.startsWith('```') && val.endsWith('```')) {
+                // 检查是否是不完整的表达式（只有 ``` 或 ```x``` 其中 x 太短）
+                if (val.length <= 6) return; // ``` 至少 3 个字符，最少需要 ```x``` (7个字符)
+
+                this.update((state) => {
+                    const code = val.slice(3, val.length - 3).trim();
+                    // 跳过空代码
+                    if (!code) return;
+
+                    const result = this._safeEval?.(code);
+                    // 设置结果，即使结果是 undefined 也要设置
+                    // 因为 undefined 可能是 watch 等函数的合法返回值
+                    setVal(state, path, result);
+                });
             }
         }
     }
