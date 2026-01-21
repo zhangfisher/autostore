@@ -74,7 +74,7 @@ import { isMatchOperates } from '../utils/isMatchOperates';
 import type { GetTypeByPath } from '../types';
 import { TimeoutError } from '../errors';
 import type { ObserverDescriptor } from '../observer/types';
-import { FastEvent, type FastEventOptions } from 'fastevent';
+import { FastEvent, type FastEventSubscriber, type FastEventOptions } from 'fastevent';
 import { createSandbox } from '../utils/createSandbox';
 import { computed } from '../computed/computed';
 import { watch } from '../watch/watch';
@@ -501,7 +501,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                     listeners.forEach((subscriber) => {
                         subscriber.off();
                     }),
-            };
+            } as FastEventSubscriber;
         }
     }
 
