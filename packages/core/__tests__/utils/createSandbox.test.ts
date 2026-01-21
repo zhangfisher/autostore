@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noApproximativeNumericConstant: <explanation> */
 import { describe, test, expect } from 'bun:test';
 import { createSandbox } from '../../src/utils/createSandbox';
 

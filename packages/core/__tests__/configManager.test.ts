@@ -8,6 +8,7 @@
  * - reset 恢复默认值
  * - 多个 AutoStore 实例共享 ConfigManager
  */
+/** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
 
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { AutoStore, ConfigManager, configurable } from '../src';
@@ -958,6 +959,324 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             await configManager.load();
 
             expect(configManager.size).toBe(3);
+        });
+    });
+
+    describe('AutoStoreOptions.configManager - ConfigSource 类型', () => {
+        test('应该接受 ConfigSource 对象并创建 ConfigManager', async () => {
+            const mockData: Record<string, any> = {
+                'app.order.price': 199.9,
+            };
+
+            // 使用 ConfigSource 对象
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: {
+                        load: async () => ({ ...mockData }),
+                        save: async (values: any) => {
+                            Object.assign(mockData, values);
+                        },
+                    },
+                    configKey: 'app',
+                },
+            );
+
+            // 验证 ConfigManager 被创建
+            expect(orderStore.configManager).toBeDefined();
+            expect(orderStore.configManager?.size).toBe(1);
+
+            // 加载配置
+            await orderStore.configManager!.load();
+            expect(orderStore.state.order.price).toBe(199.9);
+
+            // 修改配置
+            orderStore.state.order.price = 299.9;
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            expect(mockData['app.order.price']).toBe(299.9);
+        });
+
+        test('ConfigSource 只有 load 方法时应该正常工作', async () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: {
+                        load: async () => ({ 'app.order.price': 199.9 }),
+                        // 没有 save 方法
+                    },
+                    configKey: 'app',
+                },
+            );
+
+            // 应该能正常加载
+            await orderStore.configManager!.load();
+            expect(orderStore.state.order.price).toBe(199.9);
+
+            // 修改配置不应该报错
+            orderStore.state.order.price = 299.9;
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            expect(orderStore.state.order.price).toBe(299.9);
+        });
+
+        test('多个 Store 共享同一个 ConfigSource', async () => {
+            const mockData: Record<string, any> = {};
+
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: {
+                        load: async () => ({ ...mockData }),
+                        save: async (values: any) => {
+                            Object.assign(mockData, values);
+                        },
+                    },
+                    configKey: 'app1',
+                },
+            );
+
+            const userStore = new AutoStore(
+                {
+                    user: {
+                        name: configurable('Bob', {}),
+                    },
+                },
+                {
+                    configManager: {
+                        load: async () => ({ ...mockData }),
+                        save: async (values: any) => {
+                            Object.assign(mockData, values);
+                        },
+                    },
+                    configKey: 'app2',
+                },
+            );
+
+            // 每个 Store 应该有自己的 ConfigManager 实例
+            expect(orderStore.configManager).not.toBe(userStore.configManager);
+
+            // 修改配置
+            orderStore.state.order.price = 199.9;
+            userStore.state.user.name = 'Alice';
+
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 每个 ConfigManager 应该独立保存
+            expect(orderStore.state.order.price).toBe(199.9);
+            expect(userStore.state.user.name).toBe('Alice');
+        });
+
+        test('ConfigSource.load 支持同步返回', async () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: {
+                        load: () => ({ 'app.order.price': 199.9 }),
+                        save: async () => {},
+                    },
+                    configKey: 'app',
+                },
+            );
+
+            // 同步 load 也应该正常工作
+            await orderStore.configManager!.load();
+            expect(orderStore.state.order.price).toBe(199.9);
+        });
+
+        test('ConfigSource.save 支持同步调用', async () => {
+            const savedData: Record<string, any> = {};
+
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: {
+                        load: async () => ({}),
+                        save: (values: any) => {
+                            Object.assign(savedData, values);
+                        },
+                    },
+                    configKey: 'app',
+                },
+            );
+
+            // 修改配置
+            orderStore.state.order.price = 199.9;
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 验证同步保存被调用
+            expect(savedData['app.order.price']).toBe(199.9);
+        });
+    });
+
+    describe('AutoStoreOptions.configManager - boolean 类型', () => {
+        test('configManager=true 应该创建默认的 ConfigManager', () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: true,
+                    configKey: 'app',
+                },
+            );
+
+            // 应该创建 ConfigManager
+            expect(orderStore.configManager).toBeDefined();
+            expect(orderStore.configManager?.size).toBe(1);
+
+            // 配置项应该可以正常工作
+            expect(orderStore.state.order.price).toBe(99.9);
+
+            // 修改配置
+            orderStore.state.order.price = 199.9;
+            expect(orderStore.state.order.price).toBe(199.9);
+
+            // ConfigManager 应该有 load 方法
+            expect(typeof orderStore.configManager?.load).toBe('function');
+        });
+
+        test('configManager=true 时调用 load 不应该报错', async () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: true,
+                    configKey: 'app',
+                },
+            );
+
+            // 默认 load 返回空对象
+            await orderStore.configManager!.load();
+
+            // 值应该保持为默认值
+            expect(orderStore.state.order.price).toBe(99.9);
+        });
+
+        test('configManager=true 时 reset 应该正常工作', () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: true,
+                    configKey: 'app',
+                },
+            );
+
+            // 修改配置
+            orderStore.state.order.price = 199.9;
+
+            // 调用 reset
+            orderStore.configManager!.reset();
+
+            // 值应该恢复为默认值
+            expect(orderStore.state.order.price).toBe(99.9);
+        });
+
+        test('configManager=true 多个 Store 应该各自创建独立的 ConfigManager', () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: true,
+                    configKey: 'app1',
+                },
+            );
+
+            const userStore = new AutoStore(
+                {
+                    user: {
+                        name: configurable('Bob', {}),
+                    },
+                },
+                {
+                    configManager: true,
+                    configKey: 'app2',
+                },
+            );
+
+            // 应该有两个独立的 ConfigManager 实例
+            expect(orderStore.configManager).toBeDefined();
+            expect(userStore.configManager).toBeDefined();
+            expect(orderStore.configManager).not.toBe(userStore.configManager);
+
+            // 各自的 ConfigManager 应该只有一个配置项
+            expect(orderStore.configManager?.size).toBe(1);
+            expect(userStore.configManager?.size).toBe(1);
+
+            // reset 一个不应该影响另一个
+            orderStore.state.order.price = 199.9;
+            userStore.state.user.name = 'Alice';
+
+            orderStore.configManager!.reset();
+
+            expect(orderStore.state.order.price).toBe(99.9);
+            expect(userStore.state.user.name).toBe('Alice');
+        });
+
+        test('configManager=false 应该不创建 ConfigManager', () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: false,
+                },
+            );
+
+            // 不应该创建 ConfigManager
+            expect(orderStore.configManager).toBeUndefined();
+
+            // 配置项应该仍然可以正常工作
+            expect(orderStore.state.order.price).toBe(99.9);
+            orderStore.state.order.price = 199.9;
+            expect(orderStore.state.order.price).toBe(199.9);
+        });
+
+        test('configManager 未指定且不存在全局 ConfigManager 时应该不创建', () => {
+            // 确保没有全局 ConfigManager
+            // @ts-expect-error - 测试目的
+            delete globalThis.AutoStoreConfigManager;
+
+            const orderStore = new AutoStore({
+                order: {
+                    price: configurable(99.9, {}),
+                },
+            });
+
+            // 不应该创建 ConfigManager
+            expect(orderStore.configManager).toBeUndefined();
         });
     });
 });

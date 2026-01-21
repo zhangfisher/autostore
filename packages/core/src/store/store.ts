@@ -62,6 +62,7 @@ import type { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } fr
 import type { StoreEvents } from './types';
 import { BATCH_UPDATE_EVENT } from '../consts';
 import { createReactiveObject } from './reactive';
+import type { SchemaDescriptor } from '../schema/types';
 import { AsyncComputedObject } from '../computed/async';
 import { WatchObjects } from '../watch/watchObjects';
 import { WatchObject } from '../watch/watchObject';
@@ -95,6 +96,8 @@ import type {
     StateTracker,
     UpdateOptions,
 } from './types';
+import type { ConfigManager } from '../schema/manager';
+import { isConfigSource } from '../utils/isConfigSource';
 
 export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<StoreEvents> {
     private _data: ComputedState<State>;
@@ -115,6 +118,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     private _safeEval?: (code: string) => any;
     // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <noUnusedPrivateClassMembers>
     private _updateValidateBehavior: UpdateOptions['validate']; // 更新时的校验行为
+    private _configManager?: ConfigManager; // 保存 ConfigManager 实例
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
@@ -143,11 +147,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         );
         this._createSandbox();
         this.operates.options.delimiter = this.options.delimiter;
-        // @ts-expect-error
-        if (this._options.configManager === undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
-            // @ts-expect-error
-            this._options.configManager = globalThis[GLOBAL_CONFIG_MANAGER];
-        }
+        this._createConfigManager();
         this.computedObjects = new ComputedObjects<State>(this);
         this.watchObjects = new WatchObjects<State>(this);
         this.subscribeCallbacks();
@@ -211,7 +211,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         return this.options.resetable!;
     }
     get configManager() {
-        return this.options.configManager;
+        return this._configManager;
     }
     set resetable(value: boolean) {
         if (value) {
@@ -238,12 +238,12 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     }
     private _createSandbox() {
         if (this.options.enableValueExpr) {
-            const sandbox = isFunction(this.options.createSandbox)
-                ? this.options.createSandbox
+            const sandbox = isFunction(this.options.sandbox?.create)
+                ? this.options.sandbox.create
                 : createSandbox;
             this._safeEval = sandbox(
                 {
-                    ...(this.options.sandboxContext || {}),
+                    ...(this.options.sandbox?.context || {}),
                     computed,
                     watch,
                     configurable,
@@ -282,6 +282,32 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
             }
         } else {
             this.log('resetable option is not enabled', 'warn');
+        }
+    }
+    private _createConfigManager() {
+        // 处理 configManager 选项
+        if (
+            this.options.configManager &&
+            typeof this.options.configManager === 'object' &&
+            'add' in this.options.configManager
+        ) {
+            // 已经是 ConfigManager 实例（有 add 方法）
+            this._configManager = this.options.configManager as ConfigManager;
+        } else if (isConfigSource(this.options.configManager)) {
+            // ConfigSource 对象，创建新的 ConfigManager
+            const { ConfigManager } = require('../schema/manager');
+            this._configManager = new ConfigManager(this.options.configManager);
+        } else if (this.options.configManager === true) {
+            // configManager 为 true，创建默认的 ConfigManager
+            const { ConfigManager } = require('../schema/manager');
+            this._configManager = new ConfigManager({
+                load: () => ({}),
+            });
+            // @ts-expect-error
+        } else if (this._options.configManager === undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
+            // 使用全局 ConfigManager
+            // @ts-expect-error
+            this._configManager = globalThis[GLOBAL_CONFIG_MANAGER];
         }
     }
     private _onFirstEachState({
@@ -492,10 +518,14 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
      */
 
     private createObserverObject(path: string[], value: any, parentPath: string[], parent: any) {
-        if (this.options.configManager && isSchemaBuilder(value)) {
-            const val = this.options.configManager.add(this, path, value);
+        if (this._configManager && isSchemaBuilder(value)) {
+            const val = this._configManager.add(this, path, value);
             this.configurabled.add(path.join(this.options.delimiter));
             return val;
+        } else if (isSchemaBuilder(value)) {
+            // 当 configManager 为 false 时，直接返回 schema 的值
+            const descriptor: SchemaDescriptor = value();
+            return descriptor.value;
         } else {
             const descriptor = getObserverDescriptor(value);
             const computedCtx = { path, value, parentPath, parent };

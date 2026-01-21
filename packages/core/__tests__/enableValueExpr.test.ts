@@ -172,13 +172,15 @@ describe('createSandbox 自定义选项', () => {
                 sum: '```computed((scope)=>scope.a+scope.b)```',
             },
             {
-                createSandbox: (context, options) => {
-                    sandboxCalled = true;
-                    // 返回默认的沙箱函数
-                    const {
-                        createSandbox: defaultCreateSandbox,
-                    } = require('../src/utils/createSandbox');
-                    return defaultCreateSandbox(context, options);
+                sandbox: {
+                    create: (context, options) => {
+                        sandboxCalled = true;
+                        // 返回默认的沙箱函数
+                        const {
+                            createSandbox: defaultCreateSandbox,
+                        } = require('../src/utils/createSandbox');
+                        return defaultCreateSandbox(context, options);
+                    },
                 },
             },
         );
@@ -196,13 +198,15 @@ describe('createSandbox 自定义选项', () => {
                 value: '```42```',
             },
             {
-                createSandbox: () => {
-                    // 创建一个更严格的沙箱
-                    return (code: string) => {
-                        // 简单的安全沙箱
-                        const fn = new Function(`return ${code}`);
-                        return fn();
-                    };
+                sandbox: {
+                    create: () => {
+                        // 创建一个更严格的沙箱
+                        return (code: string) => {
+                            // 简单的安全沙箱
+                            const fn = new Function(`return ${code}`);
+                            return fn();
+                        };
+                    },
                 },
             },
         );
@@ -221,16 +225,18 @@ describe('createSandbox 自定义选项', () => {
                 value: '```undefinedVar```',
             },
             {
-                createSandbox: (context) => {
-                    return (code: string) => {
-                        try {
-                            const fn = new Function(...Object.keys(context), `return ${code}`);
-                            return fn(...Object.values(context));
-                        } catch (error) {
-                            errorCaught = true;
-                            return null; // 返回默认值
-                        }
-                    };
+                sandbox: {
+                    create: (context) => {
+                        return (code: string) => {
+                            try {
+                                const fn = new Function(...Object.keys(context), `return ${code}`);
+                                return fn(...Object.values(context));
+                            } catch (error) {
+                                errorCaught = true;
+                                return null; // 返回默认值
+                            }
+                        };
+                    },
                 },
             },
         );
@@ -252,15 +258,17 @@ describe('createSandbox 自定义选项', () => {
             },
             {
                 debug: true,
-                createSandbox: (context) => {
-                    return (code: string) => {
-                        logs.push(`Executing: ${code}`);
-                        const {
-                            createSandbox: defaultCreateSandbox,
-                        } = require('../src/utils/createSandbox');
-                        const sandbox = defaultCreateSandbox(context);
-                        return sandbox(code);
-                    };
+                sandbox: {
+                    create: (context) => {
+                        return (code: string) => {
+                            logs.push(`Executing: ${code}`);
+                            const {
+                                createSandbox: defaultCreateSandbox,
+                            } = require('../src/utils/createSandbox');
+                            const sandbox = defaultCreateSandbox(context);
+                            return sandbox(code);
+                        };
+                    },
                 },
             },
         );
@@ -276,13 +284,15 @@ describe('createSandbox 自定义选项', () => {
                 value: '```MY_CONST```',
             },
             {
-                createSandbox: () => {
-                    // 添加额外的常量
-                    return (code: string) => {
-                        const MY_CONST = 42;
-                        const fn = new Function('MY_CONST', `return ${code}`);
-                        return fn(MY_CONST);
-                    };
+                sandbox: {
+                    create: () => {
+                        // 添加额外的常量
+                        return (code: string) => {
+                            const MY_CONST = 42;
+                            const fn = new Function('MY_CONST', `return ${code}`);
+                            return fn(MY_CONST);
+                        };
+                    },
                 },
             },
         );
@@ -304,9 +314,11 @@ describe('enableValueExpr 和 createSandbox 组合测试', () => {
             },
             {
                 enableValueExpr: false,
-                createSandbox: () => {
-                    sandboxCalled = true;
-                    return (code: string) => code;
+                sandbox: {
+                    create: () => {
+                        sandboxCalled = true;
+                        return (code: string) => code;
+                    },
                 },
             },
         );
@@ -461,15 +473,17 @@ describe('边界情况和错误处理', () => {
                 sum: '```computed((scope)=>scope.a+1)```',
             },
             {
-                createSandbox: (context) => {
-                    return (code: string) => {
-                        parseCount++;
-                        const {
-                            createSandbox: defaultCreateSandbox,
-                        } = require('../src/utils/createSandbox');
-                        const sandbox = defaultCreateSandbox(context);
-                        return sandbox(code);
-                    };
+                sandbox: {
+                    create: (context) => {
+                        return (code: string) => {
+                            parseCount++;
+                            const {
+                                createSandbox: defaultCreateSandbox,
+                            } = require('../src/utils/createSandbox');
+                            const sandbox = defaultCreateSandbox(context);
+                            return sandbox(code);
+                        };
+                    },
                 },
             },
         );
@@ -668,6 +682,7 @@ describe('异步计算属性测试', () => {
         await delay(100);
 
         // 应该超时
+        //@ts-expect-error
         expect(store.state.value.error).toBeDefined();
     });
 
@@ -679,7 +694,7 @@ describe('异步计算属性测试', () => {
                 shouldFail: true,
                 result: '```computed(async (scope)=>{data.attemptCount++;if(scope.shouldFail&&data.attemptCount<=2){throw new Error("fail")}await new Promise(r=>setTimeout(r,10));return "success"},[],{retry:3})```',
             },
-            { sandboxContext: sandbox },
+            { sandbox: { context: sandbox } },
         );
         store.state.result; // 触发计算属性创建
 
@@ -702,7 +717,7 @@ describe('异步计算属性测试', () => {
                     return "done"
                 },[])\`\`\``,
             },
-            { sandboxContext: sandbox },
+            { sandbox: { context: sandbox } },
         );
         store.state.value; // 触发计算属性创建
 
@@ -721,7 +736,7 @@ describe('异步计算属性测试', () => {
             {
                 value: '```computed(async (scope,{cancel})=>{data.cancelFn=cancel;await new Promise(r=>setTimeout(r,100));return "done"})```',
             },
-            { sandboxContext: sandbox },
+            { sandbox: { context: sandbox } },
         );
 
         // 立即取消
@@ -731,6 +746,7 @@ describe('异步计算属性测试', () => {
         await delay(20);
 
         // 应该被取消
+        // @ts-expect-error
         expect(store.state.value.error).toBeDefined();
     });
 
@@ -787,7 +803,9 @@ describe('异步计算属性测试', () => {
         expect(store.computedObjects.size).toBe(0);
 
         // 在 lazy 模式下，表达式字符串不会被解析
-        expect(store.state.sum).toBe('```computed(async (scope)=>{await new Promise(r=>setTimeout(r,10));return scope.a+scope.b},["a","b"])```');
+        expect(store.state.sum).toBe(
+            '```computed(async (scope)=>{await new Promise(r=>setTimeout(r,10));return scope.a+scope.b},["a","b"])```',
+        );
         expect(store.computedObjects.size).toBe(0);
     });
 
@@ -1025,7 +1043,7 @@ describe('异步计算属性测试', () => {
                 shouldFail: true,
                 value: '```computed(async (scope,{getProgressbar})=>{data.attemptCount++;const pbar = getProgressbar({max:100,min:0});pbar.value(data.attemptCount*25);if(data.attemptCount<=2){throw new Error("fail")}await new Promise(r=>setTimeout(r,10));pbar.end();return "success"},[],{retry:3})```',
             },
-            { sandboxContext: sandbox },
+            { sandbox: { context: sandbox } },
         );
 
         store.state.value; // 触发计算属性创建

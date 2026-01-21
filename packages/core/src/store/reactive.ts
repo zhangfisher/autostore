@@ -84,15 +84,15 @@ function isValidPass(
             throw new ValidateError();
         }
         // 校验成功，删除该路径的错误记录
-        if (this.options.configManager) {
-            delete this.options.configManager.errors[configKey];
+        if (this.configManager) {
+            delete this.configManager.errors[configKey];
         }
         if (this.errors) {
             delete this.errors[configKey];
         }
     } catch (e: any) {
         error = e;
-        const errors = this.options?.configManager?.errors || this.errors;
+        const errors = this.configManager?.errors || this.errors;
         errors[configKey] = validate.getErrorMessage?.(e) || e.message || e.stack;
         // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid
         // 这样可以确保 configurable 中配置的 onInvalid 优先生效

@@ -5,7 +5,7 @@ import type { ObserverType } from '../observer/types';
 import type { Dict } from '../types';
 import type { AutoStore } from './store';
 import type { AutoStateSchema } from '../schema/types';
-import type { ConfigManager } from '../schema/manager';
+import type { ConfigManager, ConfigSource } from '../schema/manager';
 import type { TransformedEvents } from 'fastevent';
 import type { ObserverDescriptor } from '../observer/types';
 import type { WatchObject } from '../watch/watchObject';
@@ -290,7 +290,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 提供一个配置管理器对象
      */
-    configManager?: ConfigManager;
+    configManager?: ConfigManager | ConfigSource | boolean;
     /**
      * 为当前Store的所有配置项均指定一个统一的前缀
      */
@@ -310,20 +310,29 @@ export interface AutoStoreOptions<State extends Dict> {
      */
     enableValueExpr?: boolean;
     /**
-     * 用于创建一个代码执行沙箱
+     * 沙箱配置选项
      *
-     * 可选的，如果没有提供时，会提供一个简单的基于new Function的沙箱
+     * @description
      *
-     * @returns
+     * 当 enableValueExpr=true 时，用于配置代码执行沙箱的行为
      */
-    createSandbox?: (
-        context: Record<string, any>,
-        options?: CreateSandboxOptions,
-    ) => (code: string) => any;
-    /**
-     * 为代码执行沙箱中的代码提供额外的上下文
-     */
-    sandboxContext?: Record<string, any>;
+    sandbox?: {
+        /**
+         * 用于创建一个代码执行沙箱
+         *
+         * 可选的，如果没有提供时，会提供一个简单的基于new Function的沙箱
+         *
+         * @returns
+         */
+        create?: (
+            context: Record<string, any>,
+            options?: CreateSandboxOptions,
+        ) => (code: string) => any;
+        /**
+         * 为代码执行沙箱中的代码提供额外的上下文
+         */
+        context?: Record<string, any>;
+    };
 }
 
 export type UpdateOptions = {

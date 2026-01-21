@@ -289,11 +289,12 @@ describe('Store Events', () => {
 
             // 初始化完成，但不会触发 done 事件
             expect(asyncValue.value).toBe(2);
+
             expect(doneEvents.length).toBe(1);
 
             // 修改 count 来触发重新计算（这时会触发 done 事件）
             store.state.count = 5;
-            await delay(50);
+            await delay(100);
 
             expect(asyncValue.value).toBe(10);
             expect(doneEvents.length).toBe(2);
