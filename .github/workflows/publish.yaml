@@ -3,7 +3,7 @@ name: Publish Package
 on:
   push:
     branches:
-      - master
+      - "4.0"
 
 permissions:
   pull-requests: write
