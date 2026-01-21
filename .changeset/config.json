@@ -3,9 +3,16 @@
 	"changelog": "@changesets/cli/changelog",
 	"commit": true,
 	"access": "public",
-	"fixed": [["autostore", "@autostorejs/react", "@autostorejs/syncer", "@autostorejs/form", "@autostorejs/devtools"]],
+	"fixed": [["autostore", "@autostorejs/react", "@autostorejs/syncer", "@autostorejs/devtools"]],
 	"linked": [],
 	"baseBranch": "master",
 	"updateInternalDependencies": "patch",
-	"ignore": ["autostore-docs"]
+	"ignore": [
+		"autostore-docs",
+		"@autostorejs/form",
+		"@autostore-examples/benchmark",
+		"x-react-components",
+		"@autostore-examples/react",
+		"@autostore-examples/*"
+	]
 }
