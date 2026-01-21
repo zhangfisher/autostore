@@ -80,12 +80,10 @@ export class AutoStoreDevTools {
 
 export function install() {
     if (!globalThis.__AUTOSTORE_DEVTOOLS__)
-        // @ts-expect-error
         globalThis.__AUTOSTORE_DEVTOOLS__ = new AutoStoreDevTools();
 }
 
 declare global {
-    // @ts-expect-error
     var __AUTOSTORE_DEVTOOLS__: AutoStoreDevTools;
 }
 
