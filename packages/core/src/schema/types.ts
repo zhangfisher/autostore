@@ -1,5 +1,6 @@
 import type { ComputedBuilder } from '../computed/types';
 import { VALUE_SCHEMA_BUILDER_FLAG } from '../consts';
+import { ComputedState, GetTypeByPath, StatePath } from '../types';
 
 /**
  * 用于保存所有配置项的类型
@@ -189,12 +190,12 @@ export type AutoStateSchema<
 // 保留字段：key、value、path、datatype 等系统字段不允许为 ComputedBuilder
 export type Computedable<Obj extends Record<string, any>> = {
     [Key in keyof Obj]: Key extends 'name' | 'id' | 'key' | 'value' | 'path' | 'datatype'
-        ? Obj[Key]  // 保留字段，不允许为 ComputedBuilder
+        ? Obj[Key] // 保留字段，不允许为 ComputedBuilder
         : Key extends `${'on' | 'to' | 'render'}${string}`
-            ? Obj[Key] extends (...args: any[]) => any
-                ? Obj[Key]  // 函数类型，不允许为 ComputedBuilder
-                : Obj[Key] | ComputedBuilder<Obj[Key], any>
-            : Obj[Key] | ComputedBuilder<Obj[Key], any>;
+        ? Obj[Key] extends (...args: any[]) => any
+            ? Obj[Key] // 函数类型，不允许为 ComputedBuilder
+            : Obj[Key] | ComputedBuilder<Obj[Key], any>
+        : Obj[Key] | ComputedBuilder<Obj[Key], any>;
 };
 
 // 用于计算属性配置的类型，确保 onValidate 等函数的参数类型能正确推断
@@ -202,9 +203,21 @@ export type Computedable<Obj extends Record<string, any>> = {
 export type ComputedableStateSchema<Value = any> = {
     // 函数类型属性(onValidate等)保持原始类型，不允许为 ComputedBuilder
     onValidate?: (value: Value, oldValue: Value, path: string[]) => boolean;
-    toView?: (value: Value) => any;
-    toState?: (value: any) => any;
-    toInput?: (value: any) => any;
+    /**
+     * 当配置被渲染到只读视图时调用
+     */
+    toView?: (value: any) => any;
+    /**
+     * 从表单转换到状态时调用
+     */
+    toState?: (value: any) => Value;
+    /**
+     * 将状态值转换为表单输入字段时调用
+     */
+    toInput?: (value: Value) => any;
+    /**
+     * 当渲染该配置表单字段时调用
+     */
     toRender?: (value: any) => any;
 
     // 保留字段不允许为 ComputedBuilder
@@ -234,3 +247,21 @@ export type SchemaBuilder<Value = any> = <T = Value>(
     value: T,
     schema?: ComputedableStateSchema<Value>,
 ) => SchemaDescriptorBuilder<T>;
+
+export type SchemaKeyPaths<State> = Exclude<
+    keyof {
+        [K in StatePath<State> as GetTypeByPath<State, K> extends {
+            [VALUE_SCHEMA_BUILDER_FLAG]: true;
+        }
+            ? K
+            : GetTypeByPath<State, K> extends Array<infer Item>
+            ? Item extends { [VALUE_SCHEMA_BUILDER_FLAG]: true }
+                ? `${K}.${number}`
+                : never
+            : never]: any;
+    },
+    number | symbol
+>;
+export type ConfigurableState<State extends Record<string,any>> = {
+    [Key in SchemaKeyPaths<State>]: GetTypeByPath<ComputedState<State>, Key>;
+};

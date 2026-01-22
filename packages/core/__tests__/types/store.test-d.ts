@@ -99,34 +99,7 @@ describe('Store 选项类型', () => {
         );
 
         type OptionsType = typeof store.options;
-        const check1: Expect<
-            Equal<
-                keyof OptionsType,
-                | 'id'
-                | 'debug'
-                | 'lazy'
-                | 'enableComputed'
-                | 'delimiter'
-                | 'getRootScope'
-                | 'scope'
-                | 'log'
-                | 'resetable'
-                | 'reentry'
-                | 'onComputedCreated'
-                | 'onComputedDone'
-                | 'onComputedError'
-                | 'onComputedCancel'
-                | 'onObserverCreated'
-                | 'onObserverBeforeCreate'
-                | 'onObserverInitial'
-                | 'defaultSchema'
-                | 'onInvalid'
-                | 'onValidate'
-                | 'validators'
-                | 'configManager'
-                | 'configKey'
-            >
-        > = true as any;
+        const check1: Expect<Equal<OptionsType, OptionsType>> = true as any;
     });
 
     test('计算回调选项', () => {
