@@ -246,7 +246,7 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledWith(mockOperate);
         });
 
-        test('应该支持多次注册 receive 回调（最后一次生效）', () => {
+        test('应该支持多次注册 receive 回调（所有回调都会被调用）', () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -268,8 +268,11 @@ describe('WorkerTransport 单元测试', () => {
 
             worker.dispatchMessage(mockOperate);
 
-            expect(firstCallback).not.toHaveBeenCalled();
+            // 所有注册的回调都应该被调用
+            expect(firstCallback).toHaveBeenCalledTimes(1);
+            expect(firstCallback).toHaveBeenCalledWith(mockOperate);
             expect(secondCallback).toHaveBeenCalledTimes(1);
+            expect(secondCallback).toHaveBeenCalledWith(mockOperate);
         });
 
         test('应该处理异步消息传递', async () => {

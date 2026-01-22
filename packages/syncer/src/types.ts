@@ -66,6 +66,23 @@ export type AutoStoreCloneOptions<
     sync?: 'none' | AutoStoreSyncerOptions['direction'];
 };
 
+/**
+ * AutoStoreSyncManager 配置选项
+ */
+export type AutoStoreSyncManagerOptions = {
+    /**
+     * 是否自动广播
+     * 当主 store 发生变化时，是否自动广播到所有连接的客户端
+     * @default true
+     */
+    autoBroadcast?: boolean;
+    /**
+     * 同步器选项
+     * 创建每个客户端的 syncer 时使用的默认选项
+     */
+    syncerOptions?: Omit<AutoStoreSyncerOptions, 'transport'>;
+};
+
 declare module 'autostore' {
     interface AutoStore<State extends Dict> {
         sync(toStore: AutoStore<any>, options?: AutoStoreSyncerOptions): AutoStoreSyncer;

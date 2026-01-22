@@ -110,7 +110,7 @@ export class WorkerTransport implements IAutoStoreSyncTransport {
     id: string;
     ready: boolean;
     private worker: IWorker;
-    private receiveCallback?: (operate: StateRemoteOperate) => void;
+    private receiveCallbacks: ((operate: StateRemoteOperate) => void)[] = [];
     private messageListener: (event: MessageEvent) => void;
 
     constructor(options: WorkerTransportOptions) {
@@ -138,9 +138,10 @@ export class WorkerTransport implements IAutoStoreSyncTransport {
 
     /**
      * 注册接收回调
+     * 支持多个回调，每次调用都会添加新的回调
      */
     receive(callback: (operate: StateRemoteOperate) => void): void {
-        this.receiveCallback = callback;
+        this.receiveCallbacks.push(callback);
     }
 
     /**
@@ -155,9 +156,15 @@ export class WorkerTransport implements IAutoStoreSyncTransport {
      * 内部方法：处理接收到的消息
      */
     private handleMessage(event: MessageEvent): void {
-        if (this.receiveCallback) {
-            this.receiveCallback(event.data as StateRemoteOperate);
-        }
+        const operate = event.data as StateRemoteOperate;
+        // 调用所有注册的回调
+        this.receiveCallbacks.forEach((callback) => {
+            try {
+                callback(operate);
+            } catch (error) {
+                console.error('[WorkerTransport] 回调执行出错:', error);
+            }
+        });
     }
 
     /**
@@ -166,7 +173,7 @@ export class WorkerTransport implements IAutoStoreSyncTransport {
     destroy(): void {
         this.onStop();
         this.ready = false;
-        this.receiveCallback = undefined;
+        this.receiveCallbacks = [];
 
         // 可选：终止 Worker（如果需要完全关闭）
         // 注意：这会终止整个 Worker，请谨慎使用
