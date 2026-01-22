@@ -14,38 +14,20 @@ const store = new AutoStore({
     count: 0,
     messages: [] as string[],
     // 计算属性：消息总数
-    messageCount: (scope:any) => scope.messages.length,
+    messageCount: (scope:any ) => scope.messages.length,
 });
-
-// 将 store 挂载到全局，方便调试
-(globalThis as any).store = store;
 
 // 创建同步管理器
 const syncManager = new AutoStoreSyncManager(store, {
     autoBroadcast: true,
     syncerOptions: {
-        immediate: false, // manager 端不需要立即同步，避免循环推送
+        immediate: true, // 首次连接时推送当前状态
     },
 });
-
-// 将 syncManager 挂载到全局，方便调试
-(globalThis as any).syncManager = syncManager;
-
-// 监听 count 变化，用于调试
-store.watch('count', ({ value }) => {
-    console.log('[SharedWorker] count 变化:', value);
-});
-
-console.log('[SharedWorker] AutoStore Sync Manager 已启动');
 
 // 监听来自页签的连接
 (self as any).addEventListener('connect', (event: any) => {
     const port = event.ports[0];
-
-    console.log('[SharedWorker] 收到新连接，正在初始化...');
-
-    // 启动端口（SharedWorker 中的 MessagePort 需要显式启动）
-    port.start();
 
     // 创建 transport 并连接
     const transport = new WorkerTransport({
@@ -55,6 +37,15 @@ console.log('[SharedWorker] AutoStore Sync Manager 已启动');
 
     syncManager.connect(transport);
 
-    console.log('[SharedWorker] 客户端已连接，当前连接数:', syncManager.clientCount);
-    console.log('[SharedWorker] transport ready:', transport.ready);
+    console.log('[SharedWorker] 新客户端已连接，当前连接数:', syncManager.clientCount);
 });
+
+// 模拟服务器端定时更新（可选）
+setInterval(() => {
+    // 每隔 5 秒增加计数（模拟服务器推送）
+    store.update((state) => {
+        state.count++;
+    });
+}, 2000);
+
+console.log('[SharedWorker] AutoStore Sync Manager 已启动');
