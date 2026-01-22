@@ -15,6 +15,19 @@ const store = new AutoStore({
     messages: [] as string[],
     // 计算属性：消息总数
     messageCount: (scope:any) => scope.messages.length,
+    // 数组示例：待办事项列表
+    todos: [] as Array<{ id: number; text: string; completed: boolean }>,
+    // 对象示例：用户信息
+    user: {
+        name: '张三',
+        age: 30,
+        email: 'zhangsan@example.com',
+        address: {
+            city: '北京',
+            district: '朝阳区',
+            detail: '某某街道123号',
+        },
+    },
 });
 
 // 将 store 挂载到全局，方便调试
@@ -51,6 +64,15 @@ console.log('[SharedWorker] AutoStore Sync Manager 已启动');
     const transport = new WorkerTransport({
         worker: port,
         id: `client-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    });
+
+    // 手动绑定消息监听，避免事件监听器冲突
+    port.addEventListener('message', (event: MessageEvent) => {
+        if (transport.handleRemoteOperate(event)) {
+            return; // 是状态操作消息，已被处理
+        }
+        // 处理其他类型的消息
+        console.log('[SharedWorker] 收到其他消息:', event.data);
     });
 
     syncManager.connect(transport);

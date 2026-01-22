@@ -1,0 +1,1 @@
+export { isStateRemoteOperate } from './isStateRemoteOperate';

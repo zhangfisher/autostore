@@ -35,6 +35,15 @@ const syncManager = new AutoStoreSyncManager(store, {
         id: `client-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     });
 
+    // 手动绑定消息监听，避免事件监听器冲突
+    port.addEventListener('message', (event: MessageEvent) => {
+        if (transport.handleRemoteOperate(event)) {
+            return; // 是状态操作消息，已被处理
+        }
+        // 处理其他类型的消息
+        console.log('[SharedWorker] 收到其他消息:', event.data);
+    });
+
     syncManager.connect(transport);
 
     console.log('[SharedWorker] 新客户端已连接，当前连接数:', syncManager.clientCount);

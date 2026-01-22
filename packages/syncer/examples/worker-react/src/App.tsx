@@ -17,6 +17,19 @@ function App() {
             messages: [] as string[],
             // 客户端本地计算属性
             messageCount: (scope: any) => scope.messages.length,
+            // 数组示例：待办事项列表
+            todos: [] as Array<{ id: number; text: string; completed: boolean }>,
+            // 对象示例：用户信息
+            user: {
+                name: '张三',
+                age: 30,
+                email: 'zhangsan@example.com',
+                address: {
+                    city: '北京',
+                    district: '朝阳区',
+                    detail: '某某街道123号',
+                },
+            },
         });
     });
 
@@ -44,6 +57,15 @@ function App() {
         const transport = new WorkerTransport({
             worker: worker.port,
             id,
+        });
+
+        // 手动绑定消息监听，避免事件监听器冲突
+        worker.port.addEventListener('message', (event: MessageEvent) => {
+            if (transport.handleRemoteOperate(event)) {
+                return; // 是状态操作消息，已被处理
+            }
+            // 处理其他类型的消息
+            console.log('[App] 收到其他消息:', event.data);
         });
 
         // 创建 syncer
@@ -79,6 +101,8 @@ function App() {
     const [count, setCount] = useState(store.state.count);
     const [messages, setMessages] = useState<string[]>(store.state.messages);
     const [messageCount, setMessageCount] = useState(store.state.messageCount);
+    const [todos, setTodos] = useState(store.state.todos);
+    const [user, setUser] = useState(store.state.user);
 
     useEffect(() => {
         const unwatch = store.watch(({ path, value, type }) => {
@@ -89,6 +113,12 @@ function App() {
                 setMessages([...store.state.messages]);
                 setMessageCount(store.state.messageCount);
                 addLogMessage(`[更新] messages (总数: ${store.state.messageCount})`);
+            } else if (path[0] === 'todos') {
+                setTodos([...store.state.todos]);
+                addLogMessage(`[更新] todos (总数: ${store.state.todos.length})`);
+            } else if (path[0] === 'user') {
+                setUser({ ...store.state.user });
+                addLogMessage(`[更新] user`);
             }
         });
         return () => unwatch.off();
@@ -118,6 +148,56 @@ function App() {
         }, { flags: 0 }); // 确保 flags 为 0，这样 syncer 才会发送
         console.log('[App] 已减少计数，新值:', store.state.count);
         addLogMessage(`[本地] 手动减少 count`);
+    };
+
+    // Todo 操作
+    const addTodo = () => {
+        const newTodo = {
+            id: Date.now(),
+            text: `待办事项 ${store.state.todos.length + 1}`,
+            completed: false,
+        };
+        store.state.todos.push(newTodo);
+        addLogMessage(`[本地] 添加待办: ${newTodo.text}`);
+    };
+
+    const toggleTodo = (id: number) => {
+        const todo = store.state.todos.find((t) => t.id === id);
+        if (todo) {
+            todo.completed = !todo.completed;
+            addLogMessage(`[本地] 切换待办: ${todo.text}`);
+        }
+    };
+
+    const deleteTodo = (id: number) => {
+        const index = store.state.todos.findIndex((t) => t.id === id);
+        if (index !== -1) {
+            const todoText = store.state.todos[index].text;
+            store.state.todos.splice(index, 1);
+            addLogMessage(`[本地] 删除待办: ${todoText}`);
+        }
+    };
+
+    // User 操作
+    const updateUserName = () => {
+        const names = ['李四', '王五', '赵六', '钱七'];
+        const currentIndex = names.indexOf(store.state.user.name);
+        const nextIndex = (currentIndex + 1) % names.length;
+        store.state.user.name = names[nextIndex];
+        addLogMessage(`[本地] 更新用户名: ${names[nextIndex]}`);
+    };
+
+    const updateUserAge = () => {
+        store.state.user.age = store.state.user.age + 1;
+        addLogMessage(`[本地] 增加年龄: ${store.state.user.age}`);
+    };
+
+    const updateUserCity = () => {
+        const cities = ['上海', '广州', '深圳', '杭州'];
+        const currentIndex = cities.indexOf(store.state.user.address.city);
+        const nextIndex = (currentIndex + 1) % cities.length;
+        store.state.user.address.city = cities[nextIndex];
+        addLogMessage(`[本地] 更新城市: ${cities[nextIndex]}`);
     };
 
     return (
@@ -153,6 +233,96 @@ function App() {
                     <p style={styles.hint}>
                         点击按钮修改计数，变更会同步到 SharedWorker 并广播到所有页签。
                         同时，服务端每 5 秒自动递增一次计数。
+                    </p>
+                </section>
+
+                {/* 待办事项区域 */}
+                <section style={styles.card}>
+                    <h2>待办事项列表（数组同步）</h2>
+                    <div style={styles.todoList}>
+                        {todos.length === 0 ? (
+                            <p style={styles.empty}>暂无待办事项</p>
+                        ) : (
+                            todos.map((todo) => (
+                                <div key={todo.id} style={styles.todoItem}>
+                                    <input
+                                        type="checkbox"
+                                        checked={todo.completed}
+                                        onChange={() => toggleTodo(todo.id)}
+                                        style={{ marginRight: '10px' }}
+                                    />
+                                    <span
+                                        style={{
+                                            textDecoration: todo.completed
+                                                ? 'line-through'
+                                                : 'none',
+                                            flex: 1,
+                                        }}
+                                    >
+                                        {todo.text}
+                                    </span>
+                                    <button
+                                        onClick={() => deleteTodo(todo.id)}
+                                        style={{
+                                            ...styles.button,
+                                            padding: '5px 10px',
+                                            fontSize: '14px',
+                                            backgroundColor: '#f44336',
+                                        }}
+                                    >
+                                        删除
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    <div style={styles.buttonContainer}>
+                        <button onClick={addTodo} style={styles.button}>
+                            + 添加待办
+                        </button>
+                    </div>
+                    <p style={styles.hint}>
+                        数组的增删改操作会实时同步到所有页签。尝试添加、切换或删除待办事项。
+                    </p>
+                </section>
+
+                {/* 用户信息区域 */}
+                <section style={styles.card}>
+                    <h2>用户信息（对象同步）</h2>
+                    <div style={styles.userInfo}>
+                        <div style={styles.userField}>
+                            <label>姓名：</label>
+                            <span style={styles.userValue}>{user.name}</span>
+                        </div>
+                        <div style={styles.userField}>
+                            <label>年龄：</label>
+                            <span style={styles.userValue}>{user.age} 岁</span>
+                        </div>
+                        <div style={styles.userField}>
+                            <label>邮箱：</label>
+                            <span style={styles.userValue}>{user.email}</span>
+                        </div>
+                        <div style={styles.userField}>
+                            <label>地址：</label>
+                            <span style={styles.userValue}>
+                                {user.address.city} {user.address.district}
+                                {user.address.detail}
+                            </span>
+                        </div>
+                    </div>
+                    <div style={styles.buttonContainer}>
+                        <button onClick={updateUserName} style={styles.button}>
+                            切换姓名
+                        </button>
+                        <button onClick={updateUserAge} style={styles.button}>
+                            增加年龄
+                        </button>
+                        <button onClick={updateUserCity} style={styles.button}>
+                            切换城市
+                        </button>
+                    </div>
+                    <p style={styles.hint}>
+                        嵌套对象的修改会实时同步。尝试修改用户信息，所有页签都会同步更新。
                     </p>
                 </section>
 
@@ -266,6 +436,40 @@ const styles = {
         color: '#666',
         fontSize: '14px',
         textAlign: 'center' as const,
+    },
+    todoList: {
+        maxHeight: '300px',
+        overflowY: 'auto' as const,
+        border: '1px solid #e0e0e0',
+        borderRadius: '4px',
+        padding: '10px',
+        marginBottom: '15px',
+        backgroundColor: '#fafafa',
+    },
+    todoItem: {
+        display: 'flex',
+        alignItems: 'center',
+        padding: '10px',
+        backgroundColor: 'white',
+        borderRadius: '4px',
+        marginBottom: '8px',
+        border: '1px solid #e0e0e0',
+    },
+    userInfo: {
+        backgroundColor: '#f8f8f8',
+        border: '1px solid #e0e0e0',
+        borderRadius: '4px',
+        padding: '15px',
+        marginBottom: '15px',
+    },
+    userField: {
+        display: 'flex',
+        marginBottom: '10px',
+        fontSize: '16px',
+    },
+    userValue: {
+        fontWeight: '500',
+        color: '#333',
     },
     messageList: {
         maxHeight: '200px',
