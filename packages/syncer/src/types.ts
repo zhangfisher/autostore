@@ -54,8 +54,7 @@ export type StateRemoteOperate<Value = any> = {
     indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
     parentPath?: string[];
     reply?: boolean;
-    flags: number;
-    __schema__?: boolean;
+    flags: number; 
 };
 
 export type AutoStoreCloneOptions<

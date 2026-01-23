@@ -41,42 +41,7 @@ export function isStateRemoteOperate(val: unknown): val is StateRemoteOperate {
         return false;
     }
 
-    // type 字段必须是有效的操作类型
-    const validTypes = [
-        'set',
-        'delete',
-        'insert',
-        '$stop',
-        '$push',
-        '$update',
-        '$push-schemas',
-        '$pull-store',
-        '$update-store',
-        '$pull-schemas',
-        '$update-schemas',
-        '$update-schema-option',
-    ];
-
-    if (!validTypes.includes(obj.type)) {
-        return false;
-    }
-
-    // 可选字段检查
-    if (obj.parentPath !== undefined && !Array.isArray(obj.parentPath)) {
-        return false;
-    }
-
-    if (obj.indexs !== undefined && !Array.isArray(obj.indexs)) {
-        return false;
-    }
-
-    if (obj.reply !== undefined && typeof obj.reply !== 'boolean') {
-        return false;
-    }
-
-    if (obj.__schema__ !== undefined && typeof obj.__schema__ !== 'boolean') {
-        return false;
-    }
-
-    return true;
+    return 'type' in obj 
+        && 'value' in obj
+        && ('path' in obj && Array.isArray(obj.path))
 }
