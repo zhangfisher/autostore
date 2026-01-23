@@ -459,7 +459,6 @@ describe('EventEmitterTransport 单元测试', () => {
                     },
                 },
                 flags: 0,
-                __schema__: true,
             };
 
             emitter.emit('autostore-sync', complexMessage);

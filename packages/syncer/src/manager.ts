@@ -55,16 +55,15 @@ import type {
     AutoStoreSyncManagerOptions,
     AutoStoreSyncerOptions,
     StateRemoteOperate,
-} from './types';
-import type { IAutoStoreSyncTransport } from './transports/base';
-
+} from './types'; 
+import { AutoStoreSyncTransportBase } from './transports/base';
 export class AutoStoreSyncManager {
     private _store: AutoStore<any>;
     private _options: Required<AutoStoreSyncManagerOptions>;
     // 客户端 ID 到 Syncer 的映射
     private _syncers: Map<string, AutoStoreSyncer> = new Map();
     // Transport 到客户端 ID 的映射
-    private _transportToId: WeakMap<IAutoStoreSyncTransport, string> = new WeakMap();
+    private _transportToId: WeakMap<AutoStoreSyncTransportBase, string> = new WeakMap();
     // 存储 watch 监听器
     private _watcher?: Watcher;
     // 客户端 ID 计数器
@@ -107,7 +106,7 @@ export class AutoStoreSyncManager {
      * @returns 创建的 syncer 实例
      */
     connect(
-        transport: IAutoStoreSyncTransport,
+        transport: AutoStoreSyncTransportBase,
         options?: Partial<AutoStoreSyncerOptions>,
     ): AutoStoreSyncer {
         // 生成客户端 ID（优先使用 transport 的 id，否则生成新的）
@@ -168,7 +167,7 @@ export class AutoStoreSyncManager {
      *
      * @param transport 传输层对象
      */
-    disconnectByTransport(transport: IAutoStoreSyncTransport): void {
+    disconnectByTransport(transport: AutoStoreSyncTransportBase): void {
         const clientId = this._transportToId.get(transport);
         if (clientId) {
             this.disconnect(clientId);
@@ -191,7 +190,7 @@ export class AutoStoreSyncManager {
      * @param transport 传输层对象
      * @returns syncer 实例，如果不存在则返回 undefined
      */
-    getSyncerByTransport(transport: IAutoStoreSyncTransport): AutoStoreSyncer | undefined {
+    getSyncerByTransport(transport: AutoStoreSyncTransportBase): AutoStoreSyncer | undefined {
         const clientId = this._transportToId.get(transport);
         return clientId ? this._syncers.get(clientId) : undefined;
     }
@@ -218,7 +217,7 @@ export class AutoStoreSyncManager {
     broadcast(operate: StateRemoteOperate): void {
         this._syncers.forEach((syncer) => {
             // 通过 syncer 的 transport 直接发送操作
-            if (syncer.transport?.ready) {
+            if (syncer.transport.connected) {
                 syncer.transport.send(operate);
             }
         });
@@ -232,7 +231,7 @@ export class AutoStoreSyncManager {
      */
     sendTo(clientId: string, operate: StateRemoteOperate): void {
         const syncer = this._syncers.get(clientId);
-        if (syncer && syncer.transport?.ready) {
+        if (syncer && syncer.transport.connected) {
             syncer.transport.send(operate);
         }
     }

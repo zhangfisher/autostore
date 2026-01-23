@@ -1,13 +1,13 @@
 import type { AutoStoreOptions, Dict, GetTypeByPath, StateOperateType } from 'autostore';
 import type { AutoStoreSyncer } from './syncer';
-import { IAutoStoreSyncTransport } from './transports/base';
+import { AutoStoreSyncTransportBase  } from './transports/base';
 
 export type AutoStoreSyncerOptions = {
     mode?: 'push' | 'pull';
     id?: string;
     local?: string[] | string;
     remote?: string[] | string;
-    transport?: IAutoStoreSyncTransport;
+    transport?: AutoStoreSyncTransportBase;
     autostart?: boolean;
     // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
     onSend?: (operate: StateRemoteOperate) => boolean | undefined;

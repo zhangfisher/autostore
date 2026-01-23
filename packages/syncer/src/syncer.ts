@@ -26,6 +26,7 @@ export class AutoStoreSyncer {
     private _options: NormalizeAutoStoreSyncerOptions;
     syncing: boolean = false;
     peer?: AutoStoreSyncer;
+    private _offReceiver?:()=>void 
     private _watcher: Watcher | undefined;
     private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
     private seq: number = 0; // 实例标识
@@ -86,25 +87,35 @@ export class AutoStoreSyncer {
         } as StateRemoteOperate;
     }
 
-    start() {
-        if (!this.transport?.ready) {
-            throw new Error('AutoStore sync transport not ready');
-        }
+
+
+    async start() {
         if (this.syncing) return;
         try {
+            await this.transport.connect()
             this.syncing = true;
             // 发送更新到了远程
             this._watcher = this.store.watch(this._onWatchStore.bind(this));
-
             // 收到远程更新
-            this._options.transport.receive((operate) => {
+            this._offReceiver = this.transport.addReceiver(this.id,(operate) => {
                 if (this.options.direction === 'forward' && !operate.type.startsWith('$')) return;
                 this._onReceiveFromRemote(operate);
             });
+            // 连接完成后，发送缓存的操作
+            if (this._operateCache.length > 0) {
+                this.flush();
+            }
         } catch (e) {
             this.syncing = false;
             throw e;
         }
+    }
+    stop(disconnect: boolean = true) {
+        if (!this.syncing) return;
+        this._watcher?.off();
+        this._offReceiver?.() 
+        this.syncing = false;
+        if (disconnect) this._disconnect();
     }
 
     private _onWatchStore(operate: StateOperate) {
@@ -156,7 +167,7 @@ export class AutoStoreSyncer {
         }
         if (operate.type === '$stop') {
             this.stop(false);
-            this.transport.onStop?.();
+            this.transport.disconnect();
         } else if (operate.type === '$push') {
             this._updateStore(operate);
         } else if (operate.type === '$pull-store') {
@@ -209,12 +220,6 @@ export class AutoStoreSyncer {
         }
     }
 
-    stop(disconnect: boolean = true) {
-        if (!this.syncing) return;
-        this._watcher?.off();
-        this.syncing = false;
-        if (disconnect) this._disconnect();
-    }
 
     private _disconnect() {
         // 向对方发送一个停止同步的信号
@@ -225,7 +230,7 @@ export class AutoStoreSyncer {
             value: undefined,
             flags: 0,
         });
-        this.transport.onStop?.();
+        this.transport.disconnect();
     }
     /**
      *
@@ -236,7 +241,7 @@ export class AutoStoreSyncer {
      *
      */
     async flush() {
-        this._asertTransportReady();
+        this._asertTransportConnected();
         await Promise.all(
             this._operateCache.map((operate) => {
                 return this._options.transport.send(operate);
@@ -245,14 +250,14 @@ export class AutoStoreSyncer {
             this._operateCache = [];
         });
     }
-    private _asertTransportReady() {
-        if (!this.transport.ready) {
-            throw new Error('transport not ready');
+    private _asertTransportConnected() {
+        if (!this.transport.connected) {
+            throw new Error('transport is not connected');
         }
     }
     private _sendOperate(operate: StateRemoteOperate) {
         // 传输未准备好
-        if (!this.transport || !this.transport.ready) {
+        if (!this.transport || !this.transport.connected) {
             this._operateCache.push(operate);
             if (this._operateCache.length > this._options.maxCacheSize) {
                 this._operateCache.shift();

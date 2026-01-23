@@ -11,7 +11,8 @@
       "Bash(bun:*)",
       "Bash(rg:*)",
       "Bash(npx tsc:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(find:*)"
     ]
   }
 }

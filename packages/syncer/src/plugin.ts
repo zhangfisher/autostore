@@ -11,13 +11,13 @@
 import { getVal, type AutoStore } from 'autostore';
 import { AutoStoreSyncer } from './syncer';
 import type { AutoStoreSyncerOptions, AutoStoreCloneOptions } from './types';
-import { LocalTansport } from './transports/local';
+import { LocalTransport } from './transports/local';
 
 function createSyncerPlugin() {
     return (store: any) => {
         store.sync = function (toStore: AutoStore<any>, options?: AutoStoreSyncerOptions) {
-            const localTransport: LocalTansport = new LocalTansport(() => remoteTransport);
-            const remoteTransport: LocalTansport = new LocalTansport(() => localTransport);
+            const localTransport: LocalTransport = new LocalTransport(() => remoteTransport);
+            const remoteTransport: LocalTransport = new LocalTransport(() => localTransport);
             const remoteSyncer = new AutoStoreSyncer(toStore, {
                 transport: remoteTransport,
             });

@@ -4,51 +4,44 @@ import { describe, expect, test } from 'vitest';
 import type { StateRemoteOperate } from '../types';
 import { computed, AutoStore } from '../../../core/src';
 import { AutoStoreSyncer } from '../syncer';
+import { LocalTransport } from '../transports/local';
 
 describe('远程同步', () => {
-    class WebSocketTansport implements IAutoStoreSyncTransport {
-        ready = true;
-        receiveCallback: any;
-        isStop: boolean = false;
-        constructor(public getPeer: () => WebSocketTansport) {}
-        send(operate: StateRemoteOperate) {
-            this.getPeer().receiveCallback(operate);
-        }
-        receive(callback: any) {
-            this.receiveCallback = callback;
-        }
-        onStop() {
-            this.isStop = true;
-        }
-    }
+    // 等待下一个异步循环的辅助函数
+    const waitForNextTick = () => new Promise(resolve => setTimeout(resolve, 0));
 
-    const localTransport: WebSocketTansport = new WebSocketTansport(() => remoteTransport);
-    const remoteTransport: WebSocketTansport = new WebSocketTansport(() => localTransport);
+    const localTransport: LocalTransport = new LocalTransport({getPeer:() => remoteTransport});
+    const remoteTransport: LocalTransport = new LocalTransport({getPeer:() => localTransport});
 
-    test('一对一完整对象同步', () => {
+    test('一对一完整对象同步', async () => {
         const localStore = new AutoStore({
             order: {
                 price: 100,
                 count: 2,
                 total: computed((order) => order.price * order.count),
             },
-        });
+        }, { id: 'localStore' });
         const remoteStore = new AutoStore({
             order: {
                 price: 100,
                 count: 2,
                 total: computed((order) => order.price * order.count),
             },
-        });
+        }, { id: 'remoteStore' });
 
         new AutoStoreSyncer(localStore, { transport: localTransport });
         new AutoStoreSyncer(remoteStore, { transport: remoteTransport });
 
+        // 等待下一个异步循环，确保同步建立
+        await waitForNextTick();
+
         localStore.state.order.count = 3;
+        // 再次等待，确保远程同步完成
+        await waitForNextTick();
         expect(remoteStore.state).toEqual(localStore.state);
     });
 
-    test('初始化时执行一次完整对象同步', () => {
+    test('初始化时执行一次完整对象同步', async () => {
         const localStore = new AutoStore(
             {
                 order: {
@@ -66,10 +59,13 @@ describe('远程同步', () => {
 
         new AutoStoreSyncer(remoteStore, { transport: remoteTransport });
         new AutoStoreSyncer(localStore, { transport: localTransport, immediate: true });
+        // 等待同步完成，需要更多时间因为 immediate 触发的 push 也需要时间传播
+        await waitForNextTick();
+        await waitForNextTick();
         expect(remoteStore.state).toEqual(localStore.state);
     });
 
-    test('同步对象成员到远程对象', () => {
+    test('同步对象成员到远程对象', async () => {
         const localStore = new AutoStore({
             order: {
                 price: 100,
@@ -85,12 +81,15 @@ describe('远程同步', () => {
         });
         new AutoStoreSyncer(remoteStore, { transport: remoteTransport });
 
+        await waitForNextTick();
         localStore.state.order.count = 3;
+        await waitForNextTick();
         expect(remoteStore.state.count).toBe(3);
         remoteStore.state.count = 4;
+        await waitForNextTick();
         expect(localStore.state.order.count).toBe(4);
     });
-    test('同步对象成员到远程对象的指定路径', () => {
+    test('同步对象成员到远程对象的指定路径', async () => {
         const localStore = new AutoStore({
             order: {
                 price: 100,
@@ -111,9 +110,12 @@ describe('远程同步', () => {
         });
         new AutoStoreSyncer(remoteStore, { transport: remoteTransport });
 
+        await waitForNextTick();
         localStore.state.order.count = 3;
+        await waitForNextTick();
         expect(remoteStore.state.remoteOrder.count).toBe(3);
         remoteStore.state.remoteOrder.count = 4;
+        await waitForNextTick();
         expect(localStore.state.order.count).toBe(4);
     });
 
@@ -145,8 +147,8 @@ describe('远程同步', () => {
         localStore.state.order.count = 3;
         expect(remoteStore.state).toEqual(localStore.state);
         localSyncer.stop();
-        expect(localTransport.isStop).toBeTruthy();
-        expect(remoteTransport.isStop).toBeTruthy();
+        expect(localTransport.connected).toBeTruthy();
+        expect(remoteTransport.connected).toBeTruthy();
         localStore.state.order.count = 4;
         expect(remoteStore.state).not.toEqual(localStore.state);
     });
@@ -268,8 +270,8 @@ describe('远程同步', () => {
             { id: 'three' },
         );
         // one <----> two
-        const localTransport: WebSocketTansport = new WebSocketTansport(() => remoteTransport);
-        const remoteTransport: WebSocketTansport = new WebSocketTansport(() => localTransport);
+        const localTransport: LocalTransport = new LocalTransport({getPeer:() => remoteTransport});
+        const remoteTransport: LocalTransport = new LocalTransport({getPeer:() => localTransport});
         new AutoStoreSyncer(oneStore, {
             id: 'one-two',
             transport: localTransport,
@@ -282,8 +284,8 @@ describe('远程同步', () => {
         });
 
         // two <----> three
-        const localTransport2: WebSocketTansport = new WebSocketTansport(() => remoteTransport2);
-        const remoteTransport2: WebSocketTansport = new WebSocketTansport(() => localTransport2);
+        const localTransport2: LocalTransport = new LocalTransport({getPeer:() => remoteTransport2});
+        const remoteTransport2: LocalTransport = new LocalTransport({getPeer:() => localTransport2});
 
         new AutoStoreSyncer(twoStore, {
             id: 'two-three',

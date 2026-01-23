@@ -1,5 +1,5 @@
 import type { StateRemoteOperate } from '../types';
-import type { IAutoStoreSyncTransport } from './base';
+import { AutoStoreSyncTransportBase } from './base';
 
 /**
  * EventEmitter 接口定义
@@ -69,69 +69,32 @@ export type EventEmitterTransportOptions = {
  *     sendEventName: 'store2-channel'  // 发送到 store2-channel
  * });
  * ```
- */
-export class EventEmitterTransport implements IAutoStoreSyncTransport {
-    id: string;
-    ready: boolean;
-    private emitter: IEventEmitter;
-    private receiveEventName: string;
-    private sendEventName: string;
-    private receiveCallback?: (operate: StateRemoteOperate) => void;
-    private eventListener: (...args: any[]) => void;
-
-    constructor(options: EventEmitterTransportOptions) {
-        this.id = options.id || `event-transport-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-        this.emitter = options.emitter;
-        this.receiveEventName = options.eventName || 'autostore-sync';
-        this.sendEventName = options.sendEventName || this.receiveEventName;
-        this.ready = options.ready ?? true;
-
-        // 绑定事件监听器，需要保存引用以便后续移除
-        this.eventListener = this.handleEvent.bind(this);
-        this.emitter.on(this.receiveEventName, this.eventListener);
-    }
-
+ */ 
+export type EventEmitterTransport2Options = {
+    emitter: IEventEmitter
     /**
-     * 发送操作到远程
+     * 用于接收的本地订阅事件名称
      */
-    send(operate: StateRemoteOperate): void {
-        if (!this.ready) {
-            return;
-        }
-
-        this.emitter.emit(this.sendEventName, operate);
-    }
-
+    localEventName?:string
     /**
-     * 注册接收回调
+     * 远程发送事件名称
      */
-    receive(callback: (operate: StateRemoteOperate) => void): void {
-        this.receiveCallback = callback;
-    }
-
+    remoteEventName?:string    
+}
+export class EventEmitterTransport2 extends AutoStoreSyncTransportBase<EventEmitterTransport2Options>{
     /**
-     * 停止同步
+     * 当调用connect时会调用onConnect，此时应创建连接
+     * 连接成功应返回true
      */
-    onStop(): void {
-        // 移除事件监听
-        this.emitter.off(this.receiveEventName, this.eventListener);
+    onCreateConnect() {
+        this.options.emitter.on(this.options.localEventName || 'local-transport',this.onReceiveOperate)
+        return true
     }
-
-    /**
-     * 内部方法：处理接收到的事件
-     */
-    private handleEvent(operate: StateRemoteOperate): void {
-        if (this.receiveCallback) {
-            this.receiveCallback(operate);
-        }
+    onDestoryConnect(){
+        this.options.emitter.off(this.options.localEventName || 'local-transport',this.onReceiveOperate)
     }
-
-    /**
-     * 销毁传输器，清理资源
-     */
-    destroy(): void {
-        this.onStop();
-        this.ready = false;
-        this.receiveCallback = undefined;
+    onSendOperate(operate:StateRemoteOperate){
+        this.options.emitter.emit(this.options.remoteEventName || 'remote-transport',operate)
     }
+    
 }
