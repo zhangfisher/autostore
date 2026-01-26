@@ -23,7 +23,7 @@ type NormalizeAutoStoreSyncerOptions = Required<
 export const SYNC_INIT_FLAG = -1;
 
 export class AutoStoreSyncer {
-    static seq = 0;
+    static seq = 9;
     private seq: number; // 实例唯一标识
     private _options: NormalizeAutoStoreSyncerOptions;
     syncing: boolean = false;
@@ -107,8 +107,10 @@ export class AutoStoreSyncer {
         try {
             await this.transport.connect()
             this.syncing = true;
-            // 发送更新到了远程
-            this._watcher = this.store.watch(this._onWatchStore.bind(this));
+            // 发送更新到了远程，只监听写操作
+            this._watcher = this.store.watch(this._onWatchStore.bind(this),{
+                operates:"write"
+            });
             // 收到远程更新
             this._offReceiver = this.transport.addReceiver(this.id,(operate) => {
                 // 过滤掉自己发送的事件，防止循环
@@ -138,17 +140,7 @@ export class AutoStoreSyncer {
         if (this._isPass(operate.path, operate.value) === false) return;
         // 如果 flags 的绝对值等于当前 syncer 的 seq，说明是来自自己写入的操作，不应该再转发
         if (Math.abs(operate.flags || 0) === this.seq) return;
-        if (this.options.direction === 'backward') return;
-
-        console.log(`[syncer:${this.id}] _onWatchStore:`, {
-            type: operate.type,
-            path: operate.path,
-            value: operate.value,
-            indexs: operate.indexs,
-            flags: operate.flags,
-            currentItems: this.store.state.items,
-        });
-
+        if (this.options.direction === 'backward') return; 
         this._sendToRemote(operate);
     }
 
@@ -185,24 +177,15 @@ export class AutoStoreSyncer {
         this._sendOperate(remoteOperate);
     }
 
-    private _onReceiveFromRemote(operate: StateRemoteOperate) {
-        console.log(`[syncer:${this.id}] 收到事件:`, {
-            type: operate.type,
-            path: operate.path,
-            value: operate.value,
-            indexs: operate.indexs,
-            flags: operate.flags,
-        });
+    private _onReceiveFromRemote(operate: StateRemoteOperate) { 
         if (typeof this._options.onReceive === 'function') {
             if (this._options.onReceive.call(this, operate) === false) return;
         }
         if (operate.type === '$stop') {
             this.stop(false);
             this.transport.disconnect();
-        } else if (operate.type === '$push') {
-            console.log(`[syncer:${this.id}] 处理 $push，当前 items =`, this.store.state.items);
-            this._updateStore(operate);
-            console.log(`[syncer:${this.id}] 处理 $push 后，当前 items =`, this.store.state.items);
+        } else if (operate.type === '$push') { 
+            this._updateStore(operate); 
         } else if (operate.type === '$pull-store') {
             this._sendStore(operate);
         } else if (operate.type === '$update-store') {
@@ -214,46 +197,22 @@ export class AutoStoreSyncer {
 
     private _applyOperate(operate: StateRemoteOperate) {
         const { type, value, indexs } = operate;
-        const store = this.store;
-
-        console.log(`[syncer:${this.id}] _applyOperate 开始:`, {
-            type,
-            path: operate.path,
-            value,
-            indexs,
-            localEntry: this.localEntry,
-            remoteEntry: this.options.remote,
-            currentItems: store.state.items,
-        });
+        const store = this.store; 
 
         // 路径映射
         const newPath = this._mapPath(operate.path, operate.value, 'toLocal');
         if (!newPath) return;
         operate.path = newPath;
 
-        const toPath = [...this.localEntry, ...operate.path.slice(this.options.remote.length)];
-
-        console.log(`[syncer:${this.id}] 路径计算:`, {
-            originalPath: operate.path,
-            remoteLength: this.options.remote.length,
-            slicedPath: operate.path.slice(this.options.remote.length),
-            localEntry: this.localEntry,
-            toPath,
-        });
+        const toPath = [...this.localEntry, ...operate.path.slice(this.options.remote.length)]; 
 
         // 使用负数标记来自远程的操作，防止循环
         // 如果是初始化同步（flags=-1），保持原值；否则取反
         const updateOpts = {
-            flags: operate.flags === SYNC_INIT_FLAG ? SYNC_INIT_FLAG : -this.seq,
+             flags: operate.flags === SYNC_INIT_FLAG ? -this.seq : this.seq,
         };
 
-        if (type === 'set' || type === 'update') {
-            console.log(`[syncer:${this.id}] 处理 set 事件:`, {
-                toPath,
-                value,
-                updateOpts,
-                currentItems: store.state.items,
-            });
+        if (type === 'set' || type === 'update') { 
             store.update((state) => {
                 // getVal提供一个默认值，否则当目标路径不存在时会触发invalid state path error
                 if (isAsyncComputedValue(getVal(state, toPath, true))) {
@@ -261,31 +220,15 @@ export class AutoStoreSyncer {
                 } else {
                     setVal(state, toPath, value);
                 }
-            }, updateOpts);
-            console.log(`[syncer:${this.id}] 处理 set 事件后:`, {
-                items: store.state.items,
-            });
+            }, updateOpts); 
         } else if (type === 'delete') {
             store.update((state) => {
                 setVal(state, toPath, undefined);
             }, updateOpts);
-        } else if (type === 'insert') {
-            console.log(`[syncer:${this.id}] 收到 insert 事件:`, {
-                indexs,
-                value,
-                toPath,
-                currentArray: store.state.items,
-            });
+        } else if (type === 'insert') { 
             store.update((state) => {
                 const arr = getVal(state, toPath);
-                console.log(`[syncer:${this.id}] insert 前 arr =`, arr);
-                if (indexs) {
-                    // 使用数组展开而不是 splice，避免触发额外的 insert 事件
-                    const insertIndex = indexs[0];
-                    const newArr = [...arr.slice(0, insertIndex), ...value, ...arr.slice(insertIndex)];
-                    console.log(`[syncer:${this.id}] insert 后 newArr =`, newArr);
-                    setVal(state, toPath, newArr);
-                }
+                if (indexs) arr.splice(indexs[0], 0, ...value);
             }, updateOpts);
         } else if (type === 'remove') {
             store.update((state) => {
@@ -362,7 +305,7 @@ export class AutoStoreSyncer {
         );
         this._pushStore(initial);
     }
-    _pushStore(initial: boolean = false) {
+    private _pushStore(initial: boolean = false) {
         const localSnap = this._getLocalSnap(); //getVal(this.store.state, this._options.local.join(PATH_DELIMITER));
         if (typeof this._options.pathMap.toRemote === 'function') {
             const pathMap: Map<string, any> = new Map();
@@ -411,23 +354,13 @@ export class AutoStoreSyncer {
     private _updateStore(operate: StateRemoteOperate) {
         const store = this.store;
         // 初始化同步使用 SYNC_INIT_FLAG，否则使用负数标记
-        const flags = operate.flags === SYNC_INIT_FLAG ? SYNC_INIT_FLAG : -this.seq;
-
-        console.log(`[syncer:${this.id}] _updateStore:`, {
-            operateType: operate.type,
-            path: operate.path,
-            value: operate.value,
-            flags,
-            hasPathMap: typeof this._options.pathMap.toLocal === 'function',
-        });
-
+        const flags = -this.seq // operate.flags === SYNC_INIT_FLAG ? SYNC_INIT_FLAG : -this.seq; 
         if (typeof this._options.pathMap.toLocal === 'function') {
             forEachObject(operate.value, ({ value, path }) => {
                 if (this._isPass(path, value) === false) return;
                 const toValue = Array.isArray(value) ? [] : typeof value === 'object' ? {} : value;
                 const toPath = this._mapPath(path, toValue, 'toLocal');
                 if (toPath) {
-                    console.log(`[syncer:${this.id}] forEachObject 设置:`, { path, toPath, toValue, flags });
                     store.update(
                         (state) => {
                             setVal(state, [...this.localEntry, ...toPath], toValue);
@@ -440,7 +373,6 @@ export class AutoStoreSyncer {
             });
         } else {
             const toPath = [...this.localEntry, ...operate.path];
-            console.log(`[syncer:${this.id}] 直接设置:`, { toPath, value: operate.value, flags });
             store.update(
                 (state) => {
                     setVal(state, toPath, operate.value);

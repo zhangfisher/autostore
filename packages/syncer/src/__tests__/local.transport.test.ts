@@ -502,7 +502,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 items: [1, 2, 3, 4, 5],
             },{id: 'store1'});
 
-            const store2 = new AutoStore<typeof store1.state>();
+            const store2 = new AutoStore<typeof store1.state>({},{id:"store2"});
             // @ts-ignore
             globalThis.store1=store1
             // @ts-ignore
@@ -519,8 +519,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             await delay(); // 等待初始同步完成
 
             // 初始值应该相同
-            expect(store2.state.items).toEqual([1, 2, 3, 4, 5]);
-
+            expect(store2.state.items).toEqual([1, 2, 3, 4, 5]); 
             // store1 添加元素
             store1.state.items.push(6);
             await delay(); // 等待同步完成
