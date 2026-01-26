@@ -34,6 +34,13 @@ export type AutoStoreSyncerOptions = {
         toLocal?: (path: string[], value: any) => string[] | undefined;
         toRemote?: (path: string[], value: any) => string[] | undefined;
     };
+    /**
+     * 要与之同步的远程 store 的 id 列表
+     * 当从 transport 接收到 operate 时，会检查 operate.id 是否在 peers 中
+     * '*' 表示接受所有来源的 operate
+     * @default ['*']
+     */
+    peers?: string[];
 };
 
 export type StateRemoteOperate<Value = any> = {
@@ -66,20 +73,15 @@ export type AutoStoreCloneOptions<
 };
 
 /**
- * AutoStoreSyncManager 配置选项
+ * AutoStoreBroadcaster 配置选项
  */
-export type AutoStoreSyncManagerOptions = {
+export type AutoStoreBroadcasterOptions = {
     /**
      * 是否自动广播
      * 当主 store 发生变化时，是否自动广播到所有连接的客户端
      * @default true
      */
     autoBroadcast?: boolean;
-    /**
-     * 同步器选项
-     * 创建每个客户端的 syncer 时使用的默认选项
-     */
-    syncerOptions?: Omit<AutoStoreSyncerOptions, 'transport'>;
 };
 
 declare module 'autostore' {

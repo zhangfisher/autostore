@@ -10,35 +10,7 @@ export interface IEventEmitter {
     off(event: string, listener: (...args: any[]) => void): this;
     emit(event: string, ...args: any[]): boolean;
 }
-
-/**
- * EventEmitterTransport 配置选项
- */
-export type EventEmitterTransportOptions = {
-    /**
-     * 传输器唯一标识
-     */
-    id?: string;
-    /**
-     * 事件发射器，所有 transport 共享同一个 emitter
-     */
-    emitter: IEventEmitter;
-    /**
-     * 接收事件名称，用于监听远程消息
-     * @default 'autostore-sync'
-     */
-    eventName?: string;
-    /**
-     * 发送事件名称，用于向远程发送消息
-     * 如果不指定，则使用 eventName（与接收使用相同的事件名称）
-     */
-    sendEventName?: string;
-    /**
-     * 是否就绪
-     * @default true
-     */
-    ready?: boolean;
-};
+ 
 
 /**
  * 基于 EventEmitter 的同步传输器
@@ -70,7 +42,7 @@ export type EventEmitterTransportOptions = {
  * });
  * ```
  */ 
-export type EventEmitterTransport2Options = {
+export type EventEmitterTransportOptions = {
     emitter: IEventEmitter
     /**
      * 用于接收的本地订阅事件名称
@@ -81,20 +53,30 @@ export type EventEmitterTransport2Options = {
      */
     remoteEventName?:string    
 }
-export class EventEmitterTransport2 extends AutoStoreSyncTransportBase<EventEmitterTransport2Options>{
+export class EventEmitterTransport extends AutoStoreSyncTransportBase<EventEmitterTransportOptions>{
+    private handleReceive: (operate: StateRemoteOperate) => void;
+
+    constructor(options?: EventEmitterTransportOptions & { id?: string; debug?: boolean }) {
+        super(options);
+        // 绑定 this 上下文
+        this.handleReceive = (operate: StateRemoteOperate) => {
+            this.onReceiveOperate(operate);
+        };
+    }
+
     /**
      * 当调用connect时会调用onConnect，此时应创建连接
      * 连接成功应返回true
      */
     onCreateConnect() {
-        this.options.emitter.on(this.options.localEventName || 'local-transport',this.onReceiveOperate)
+        this.options.emitter.on(this.options.localEventName || 'local-transport', this.handleReceive)
         return true
     }
     onDestoryConnect(){
-        this.options.emitter.off(this.options.localEventName || 'local-transport',this.onReceiveOperate)
+        this.options.emitter.off(this.options.localEventName || 'local-transport', this.handleReceive)
     }
     onSendOperate(operate:StateRemoteOperate){
         this.options.emitter.emit(this.options.remoteEventName || 'remote-transport',operate)
     }
-    
+
 }

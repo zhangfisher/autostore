@@ -6,7 +6,7 @@
  */
 
 import { AutoStore } from 'autostore';
-import { AutoStoreSyncManager } from '@autostorejs/syncer';
+import { AutoStoreBroadcaster } from '@autostorejs/syncer';
 import { WorkerTransport } from '@autostorejs/syncer/transports/worker';
 
 // 创建主 store
@@ -17,12 +17,9 @@ const store = new AutoStore({
     messageCount: (scope:any ) => scope.messages.length,
 });
 
-// 创建同步管理器
-const syncManager = new AutoStoreSyncManager(store, {
-    autoBroadcast: true,
-    syncerOptions: {
-        immediate: true, // 首次连接时推送当前状态
-    },
+// 创建同步广播器
+const broadcaster = new AutoStoreBroadcaster(store, {
+    autoBroadcast: true
 });
 
 // 监听来自页签的连接
@@ -44,17 +41,9 @@ const syncManager = new AutoStoreSyncManager(store, {
         console.log('[SharedWorker] 收到其他消息:', event.data);
     });
 
-    syncManager.connect(transport);
+    broadcaster.connect(transport);
 
-    console.log('[SharedWorker] 新客户端已连接，当前连接数:', syncManager.clientCount);
+    console.log('[SharedWorker] 新客户端已连接，当前连接数:', broadcaster.clientCount);
 });
 
-// 模拟服务器端定时更新（可选）
-setInterval(() => {
-    // 每隔 5 秒增加计数（模拟服务器推送）
-    store.update((state) => {
-        state.count++;
-    });
-}, 2000);
-
-console.log('[SharedWorker] AutoStore Sync Manager 已启动');
+console.log('[SharedWorker] AutoStore Broadcaster 已启动');

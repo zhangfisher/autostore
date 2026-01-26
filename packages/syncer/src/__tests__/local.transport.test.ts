@@ -1,7 +1,10 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi, beforeEach } from 'vitest';
 import { computed, AutoStore } from '../../../core/src';
 import { AutoStoreSyncer } from '../syncer';
 import { LocalTransport } from '../transports/local';
+
+// 等待下一个异步循环的辅助函数
+const delay = (n: number = 0) => new Promise(resolve => setTimeout(resolve, n));
 
 describe('LocalTransport 单元测试', () => {
     describe('基础功能', () => {
@@ -306,19 +309,21 @@ describe('LocalTransport 单元测试', () => {
                 flags: 0,
             };
 
-            // 发送操作，id 为 'test-id'，应该匹配 receiver-2
+            // 发送操作，所有注册的 receivers 都会被调用
             transport1.send({ ...mockOperate, id: 'receiver-2' });
 
-            expect(receiver1).not.toHaveBeenCalled();
+            expect(receiver1).toHaveBeenCalledTimes(1);
             expect(receiver2).toHaveBeenCalledTimes(1);
-            expect(receiver3).not.toHaveBeenCalled();
+            expect(receiver3).toHaveBeenCalledTimes(1);
 
             // 移除 receiver
             transport2.removeReceiver('receiver-2');
 
             transport1.send({ ...mockOperate, id: 'receiver-2' });
 
+            expect(receiver1).toHaveBeenCalledTimes(2); // 再次调用
             expect(receiver2).toHaveBeenCalledTimes(1); // 没有再次调用
+            expect(receiver3).toHaveBeenCalledTimes(2); // 再次调用
         });
     });
 
@@ -457,6 +462,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
             const syncer1 = new AutoStoreSyncer(store1, { transport: transport1, immediate: false });
             const syncer2 = new AutoStoreSyncer(store2, { transport: transport2, immediate: false });
 
+            // 等待同步建立
+            await delay();
+
             // 手动触发初始同步
             syncer1.push({ initial: true });
             syncer2.push({ initial: true });
@@ -475,7 +483,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store1.state.order.total).toBe(15);
         });
 
-        test('应该支持数组的双向同步', () => {
+        test('应该支持数组的双向同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -487,44 +495,49 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 items: [1, 2, 3, 4, 5],
-            });
+            },{id: 'store1'});
 
             const store2 = new AutoStore<typeof store1.state>();
+            // @ts-ignore
+            globalThis.store1=store1
+            // @ts-ignore
+            globalThis.store2=store2
 
-            new AutoStoreSyncer(store1, { transport: transport1, immediate: false });
-            new AutoStoreSyncer(store2, { transport: transport2, immediate: false });
+            const syncer1 = new AutoStoreSyncer(store1, { transport: transport1, immediate: false });
+            const syncer2 = new AutoStoreSyncer(store2, { transport: transport2, immediate: false });
+
+            // 等待同步建立
+            await delay();
 
             // 手动触发初始同步
-            transport1.send({
-                id: store1.id,
-                type: '$push',
-                path: [],
-                value: store1.state,
-                flags: 0,
-            });
+            syncer1.push({ initial: true });
+            await delay(); // 等待初始同步完成
 
             // 初始值应该相同
             expect(store2.state.items).toEqual([1, 2, 3, 4, 5]);
 
             // store1 添加元素
             store1.state.items.push(6);
+            await delay(); // 等待同步完成
             expect(store2.state.items).toEqual([1, 2, 3, 4, 5, 6]);
 
             // store2 删除元素
             store2.state.items.splice(1, 2);
+            await delay(); // 等待同步完成
             expect(store1.state.items).toEqual([1, 4, 5, 6]);
 
             // store1 修改元素值
             store1.state.items[0] = 10;
+            await delay(); // 等待同步完成
             expect(store2.state.items[0]).toBe(10);
         });
 
-        test('应该支持嵌套对象的同步', () => {
+        test('应该支持嵌套对象的同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -536,8 +549,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 user: {
@@ -556,6 +569,10 @@ describe('LocalTransport AutoStore 集成测试', () => {
 
             const syncer1 = new AutoStoreSyncer(store1, { transport: transport1, immediate: false });
             const syncer2 = new AutoStoreSyncer(store2, { transport: transport2, immediate: false });
+
+            // 等待同步建立
+            await delay();
+
             syncer1.push({ initial: true });
             syncer2.push({ initial: true });
 
@@ -568,7 +585,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store1.state.user.address.city).toBe('上海');
         });
 
-        test('应该支持计算属性的同步', () => {
+        test('应该支持计算属性的同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -580,8 +597,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 order: {
@@ -601,8 +618,11 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 },
             });
 
-            new AutoStoreSyncer(store1, { transport: transport1, immediate: false });
-            new AutoStoreSyncer(store2, { transport: transport2, immediate: false });
+            const syncer1 = new AutoStoreSyncer(store1, { transport: transport1, immediate: false });
+            const syncer2 = new AutoStoreSyncer(store2, { transport: transport2, immediate: false });
+
+            // 等待同步建立
+            await delay();
 
             // 初始状态，两个 store 的 total 应该都是 6
             expect(store1.state.order.total).toBe(6);
@@ -619,7 +639,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store1.state.order.total).toBe(15);
         });
 
-        test('停止同步后应该不再接收更新', () => {
+        test('停止同步后应该不再接收更新', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -631,8 +651,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 count: 0,
@@ -642,6 +662,10 @@ describe('LocalTransport AutoStore 集成测试', () => {
 
             const syncer1 = new AutoStoreSyncer(store1, { transport: transport1, immediate: false });
             const syncer2 = new AutoStoreSyncer(store2, { transport: transport2, immediate: false });
+
+            // 等待同步建立
+            await delay();
+
             syncer1.push({ initial: true });
 
             expect(store2.state.count).toBe(0);
@@ -656,7 +680,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store2.state.count).toBe(10); // 应该保持原值
         });
 
-        test('断开 transport 连接后应该停止同步', () => {
+        test('断开 transport 连接后应该停止同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -668,8 +692,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 value: 'test',
@@ -679,6 +703,10 @@ describe('LocalTransport AutoStore 集成测试', () => {
 
             const syncer1 = new AutoStoreSyncer(store1, { transport: transport1, immediate: false });
             const syncer2 = new AutoStoreSyncer(store2, { transport: transport2, immediate: false });
+
+            // 等待同步建立
+            await delay();
+
             syncer1.push({ initial: true });
             syncer2.push({ initial: true });
 
@@ -693,8 +721,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
         });
     });
 
-    describe('完整同步场景测试（参考 index.test.ts）', () => {
-        test('一对一完整对象同步', () => {
+    describe('完整同步场景测试', () => {
+        test('一对一完整对象同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -706,8 +734,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 order: {
@@ -728,11 +756,14 @@ describe('LocalTransport AutoStore 集成测试', () => {
             new AutoStoreSyncer(store1, { transport: transport1 });
             new AutoStoreSyncer(store2, { transport: transport2 });
 
+            // 等待同步建立
+            await delay();
+
             store1.state.order.count = 3;
             expect(store2.state).toEqual(store1.state);
         });
 
-        test('初始化时执行一次完整对象同步', () => {
+        test('初始化时执行一次完整对象同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -744,8 +775,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore(
                 {
@@ -760,13 +791,20 @@ describe('LocalTransport AutoStore 集成测试', () => {
 
             const store2 = new AutoStore({}, { id: 'store2' });
 
+            // 先创建并启动 syncer，等待同步建立
             new AutoStoreSyncer(store2, { transport: transport2 });
+            await delay();
+
+            // 再创建 syncer1 并使用 immediate 选项
             new AutoStoreSyncer(store1, { transport: transport1, immediate: true });
+
+            // 等待 immediate 触发的 push 传播
+            await delay();
 
             expect(store2.state).toEqual(store1.state);
         });
 
-        test('同步对象成员到远程对象', () => {
+        test('同步对象成员到远程对象', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -778,8 +816,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 order: {
@@ -798,6 +836,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
 
             new AutoStoreSyncer(store2, { transport: transport2 });
 
+            // 等待同步建立
+            await delay();
+
             store1.state.order.count = 3;
             expect(store2.state.count).toBe(3);
 
@@ -805,7 +846,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store1.state.order.count).toBe(4);
         });
 
-        test('同步对象成员到远程对象的指定路径', () => {
+        test('同步对象成员到远程对象的指定路径', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -817,8 +858,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 order: {
@@ -842,6 +883,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
 
             new AutoStoreSyncer(store2, { transport: transport2 });
 
+            // 等待同步建立
+            await delay();
+
             store1.state.order.count = 3;
             expect(store2.state.remoteOrder.count).toBe(3);
 
@@ -849,7 +893,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store1.state.order.count).toBe(4);
         });
 
-        test('停止同步时通知对方断开连接', () => {
+        test('停止同步时通知对方断开连接', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -861,8 +905,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 order: {
@@ -883,6 +927,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
             const syncer1 = new AutoStoreSyncer(store1, { transport: transport1 });
             const syncer2 = new AutoStoreSyncer(store2, { transport: transport2 });
 
+            // 等待同步建立
+            await delay();
+
             store1.state.order.count = 3;
             expect(store2.state).toEqual(store1.state);
 
@@ -895,7 +942,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store2.state).not.toEqual(store1.state);
         });
 
-        test('向对方请求一次全同步', () => {
+        test('向对方请求一次全同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -907,8 +954,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 order: {
@@ -923,6 +970,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
             const syncer1 = new AutoStoreSyncer(store1, { transport: transport1 });
             const syncer2 = new AutoStoreSyncer(store2, { transport: transport2 });
 
+            // 等待同步建立
+            await delay();
+
             expect(store2.state).toEqual({});
 
             syncer2.pull();
@@ -930,7 +980,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store2.state).toEqual(store1.state);
         });
 
-        test('部分路径同步时请求完整同步', () => {
+        test('部分路径同步时请求完整同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -942,8 +992,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 order: {
@@ -962,6 +1012,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 transport: transport2,
                 local: ['x'],
             });
+
+            // 等待同步建立
+            await delay();
 
             expect(store2.state.x).toEqual({});
 
@@ -970,7 +1023,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store2.state.x).toEqual(store1.state);
         });
 
-        test('部分路径同步时成员间数据同步', () => {
+        test('部分路径同步时成员间数据同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -982,8 +1035,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 order: {
@@ -1002,6 +1055,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 transport: transport2,
                 local: ['x'],
             });
+
+            // 等待同步建立
+            await delay();
 
             expect(store2.state.x).toEqual({});
 
@@ -1014,7 +1070,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store2.state.x.order.count).toBe(3);
         });
 
-        test('部分路径同步到本地时请求完整同步', () => {
+        test('部分路径同步到本地时请求完整同步', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -1026,8 +1082,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 x: {
@@ -1050,6 +1106,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 remote: ['x'],
             });
 
+            // 等待同步建立
+            await delay();
+
             expect(store2.state.y).toEqual({});
 
             syncer2.pull();
@@ -1057,7 +1116,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store2.state.y).toEqual(store1.state.x);
         });
 
-        test('三个Store之间的数据联动同步', () => {
+        test('三个Store之间的数据联动同步', async () => {
             // Store 1 <--> Store 2
             let transport12a: LocalTransport;
             let transport12b: LocalTransport;
@@ -1083,10 +1142,10 @@ describe('LocalTransport AutoStore 集成测试', () => {
             });
 
             // 连接所有 transport
-            transport12a.connect();
-            transport12b.connect();
-            transport23a.connect();
-            transport23b.connect();
+            await transport12a.connect();
+            await transport12b.connect();
+            await transport23a.connect();
+            await transport23b.connect();
 
             const store1 = new AutoStore(
                 {
@@ -1143,6 +1202,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 transport: transport23b,
             });
 
+            // 等待同步建立
+            await delay();
+
             store1.state.order.count = 3;
             expect(store1.state.order.count).toBe(3);
             expect(store2.state.twoOrder.count).toBe(3);
@@ -1159,7 +1221,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             expect(store3.state.threeOrder.count).toBe(5);
         });
 
-        test('单向同步模式下本地推送完整数据', () => {
+        test('单向同步模式下本地推送完整数据', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -1171,8 +1233,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 x: {
@@ -1202,6 +1264,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 },
             });
 
+            // 等待同步建立
+            await delay();
+
             syncer1.push();
 
             expect(store2.state).toEqual({
@@ -1210,7 +1275,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             });
         });
 
-        test('单向同步模式下使用toRemote路径映射', () => {
+        test('单向同步模式下使用toRemote路径映射', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -1222,8 +1287,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 x: {
@@ -1253,6 +1318,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 direction: 'backward',
             });
 
+            // 等待同步建立
+            await delay();
+
             store1.state.x.order.count = 3;
 
             expect(store1.state.x.order.count).toEqual(3);
@@ -1261,7 +1329,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             });
         });
 
-        test('完全单向同步指定进行from同步路径映射', () => {
+        test('完全单向同步指定进行from同步路径映射', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -1273,8 +1341,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore();
 
@@ -1302,6 +1370,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 direction: 'forward',
             });
 
+            // 等待同步建立
+            await delay();
+
             store2.state.x.order.count = 3;
 
             expect(store2.state.x.order.count).toEqual(3);
@@ -1310,7 +1381,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             });
         });
 
-        test('完全单向同且指定from同步路径映射时进行pull操作', () => {
+        test('完全单向同且指定from同步路径映射时进行pull操作', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -1322,8 +1393,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore();
 
@@ -1353,6 +1424,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 direction: 'forward',
             });
 
+            // 等待同步建立
+            await delay();
+
             syncer1.pull();
 
             expect(store1.state).toEqual({
@@ -1361,7 +1435,7 @@ describe('LocalTransport AutoStore 集成测试', () => {
             });
         });
 
-        test('局部单向同步指定进行to同步路径映射', () => {
+        test('局部单向同步指定进行to同步路径映射', async () => {
             let transport1: LocalTransport;
             let transport2: LocalTransport;
 
@@ -1373,8 +1447,8 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 getPeer: () => transport1,
             });
 
-            transport1.connect();
-            transport2.connect();
+            await transport1.connect();
+            await transport2.connect();
 
             const store1 = new AutoStore({
                 x: {
@@ -1405,6 +1479,9 @@ describe('LocalTransport AutoStore 集成测试', () => {
                 transport: transport2,
                 direction: 'backward',
             });
+
+            // 等待同步建立
+            await delay();
 
             store1.state.x.order.count = 3;
 

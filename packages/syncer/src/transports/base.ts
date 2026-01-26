@@ -1,5 +1,4 @@
 import type { StateRemoteOperate } from '../types';
-import { getId } from '../utils/getId';
 import { EventEmitter } from '../utils/emitter';
  
 /**
@@ -20,7 +19,6 @@ export type AutoStoreSyncTransportReceiver  = (operate: StateRemoteOperate) => v
 
 
 export type AutoStoreSyncTransportOptions = {
-    id?:string
     debug?:boolean // 启用时会在接收到每一条消息时触发operate事件
 }
 
@@ -33,16 +31,14 @@ export class AutoStoreSyncTransportBase<Options extends Record<string,any>=Recor
     protected receivers = new Map<string,AutoStoreSyncTransportReceiver>();
     protected stopCallbacks = new Map<string, () => void>();
     connected: boolean = false;
-    options={} as AutoStoreSyncTransportOptions & Options     ;
+    options={} as AutoStoreSyncTransportOptions & Options;
+    static seq: number = 0;
+    readonly id: string;
 
     constructor(options?:AutoStoreSyncTransportOptions & Options ) {
         super();
-        Object.assign(this.options,{
-            id: getId()
-        },options)
-    }
-    get id(){
-        return this.options.id!
+        Object.assign(this.options,options)
+        this.id = `transport-${++AutoStoreSyncTransportBase.seq}`;
     }
 
     /**
@@ -101,7 +97,6 @@ export class AutoStoreSyncTransportBase<Options extends Record<string,any>=Recor
      * 本方法用于监听消息事件
      */
     protected onSendOperate(operate: StateRemoteOperate): void {
-        
     }
     /**
      * 本方法用于监听消息事件

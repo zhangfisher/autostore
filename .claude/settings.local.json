@@ -12,7 +12,9 @@
       "Bash(rg:*)",
       "Bash(npx tsc:*)",
       "Bash(echo:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(DEBUG_SYNC=1 bun test:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

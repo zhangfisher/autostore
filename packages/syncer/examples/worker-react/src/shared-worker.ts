@@ -6,7 +6,7 @@
  */
 
 import { AutoStore } from 'autostore';
-import { AutoStoreSyncManager } from '@autostorejs/syncer';
+import { AutoStoreBroadcaster } from '@autostorejs/syncer';
 import { WorkerTransport } from '@autostorejs/syncer/transports/worker';
 
 // 创建主 store
@@ -28,28 +28,27 @@ const store = new AutoStore({
             detail: '某某街道123号',
         },
     },
+}, {
+    id: 'shared-worker-store', // 指定固定的 store ID
 });
 
 // 将 store 挂载到全局，方便调试
 (globalThis as any).store = store;
 
-// 创建同步管理器
-const syncManager = new AutoStoreSyncManager(store, {
+// 创建同步广播器
+const broadcaster = new AutoStoreBroadcaster(store, {
     autoBroadcast: true,
-    syncerOptions: {
-        immediate: false, // manager 端不需要立即同步，避免循环推送
-    },
 });
 
-// 将 syncManager 挂载到全局，方便调试
-(globalThis as any).syncManager = syncManager;
+// 将 broadcaster 挂载到全局，方便调试
+(globalThis as any).broadcaster = broadcaster;
 
 // 监听 count 变化，用于调试
 store.watch('count', ({ value }) => {
     console.log('[SharedWorker] count 变化:', value);
 });
 
-console.log('[SharedWorker] AutoStore Sync Manager 已启动');
+console.log('[SharedWorker] AutoStore Broadcaster 已启动');
 
 // 监听来自页签的连接
 (self as any).addEventListener('connect', (event: any) => {
@@ -60,23 +59,19 @@ console.log('[SharedWorker] AutoStore Sync Manager 已启动');
     // 启动端口（SharedWorker 中的 MessagePort 需要显式启动）
     port.start();
 
-    // 创建 transport 并连接
+    // 创建 transport
     const transport = new WorkerTransport({
         worker: port,
         id: `client-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     });
 
-    // 手动绑定消息监听，避免事件监听器冲突
-    port.addEventListener('message', (event: MessageEvent) => {
-        if (transport.handleRemoteOperate(event)) {
-            return; // 是状态操作消息，已被处理
-        }
-        // 处理其他类型的消息
-        console.log('[SharedWorker] 收到其他消息:', event.data);
+    // 先连接 transport，然后再连接到 syncManager
+    transport.connect().then(() => {
+        console.log('[SharedWorker] transport 已连接');
+
+        // 连接到 broadcaster
+        broadcaster.connect(transport);
+
+        console.log('[SharedWorker] 客户端已连接，当前连接数:', broadcaster.clientCount);
     });
-
-    syncManager.connect(transport);
-
-    console.log('[SharedWorker] 客户端已连接，当前连接数:', syncManager.clientCount);
-    console.log('[SharedWorker] transport ready:', transport.ready);
 });

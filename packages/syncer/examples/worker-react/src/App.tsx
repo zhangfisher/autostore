@@ -1,7 +1,7 @@
 /**
  * Worker React 示例 - 主组件
  *
- * 演示如何使用 AutoStoreSyncer 与 SharedWorker 中的 AutoStoreSyncManager 进行同步
+ * 演示如何使用 AutoStoreSyncer 与 SharedWorker 中的 AutoStoreBroadcaster 进行同步
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -74,6 +74,7 @@ function App() {
             mode: 'pull', // 使用 pull 模式，从服务端拉取初始状态
             immediate: true, // 首次连接时从服务端拉取数据
             direction: 'both', // 允许双向通信
+            peers: ['shared-worker-store'], // 只接受来自 SharedWorker 的消息
         });
 
         syncerRef.current = syncer;
@@ -84,7 +85,7 @@ function App() {
         setConnected(true);
 
         // 监听接收消息（用于日志显示）
-        transport.receive((operate: StateRemoteOperate) => {
+        const unsubscribe = transport.on('operate', (operate: StateRemoteOperate) => {
             addLogMessage(`[接收] ${operate.type} - ${operate.path.join('.')}`);
         });
 
@@ -92,6 +93,7 @@ function App() {
 
         // 清理函数
         return () => {
+            unsubscribe.off();
             syncer.stop();
             worker.port.close();
         };
@@ -99,8 +101,6 @@ function App() {
 
     // 监听 store 变化，更新 UI
     const [count, setCount] = useState(store.state.count);
-    const [messages, setMessages] = useState<string[]>(store.state.messages);
-    const [messageCount, setMessageCount] = useState(store.state.messageCount);
     const [todos, setTodos] = useState(store.state.todos);
     const [user, setUser] = useState(store.state.user);
 
@@ -109,10 +109,6 @@ function App() {
             if (path[0] === 'count') {
                 setCount(value);
                 addLogMessage(`[更新] count = ${value}`);
-            } else if (path[0] === 'messages') {
-                setMessages([...store.state.messages]);
-                setMessageCount(store.state.messageCount);
-                addLogMessage(`[更新] messages (总数: ${store.state.messageCount})`);
             } else if (path[0] === 'todos') {
                 setTodos([...store.state.todos]);
                 addLogMessage(`[更新] todos (总数: ${store.state.todos.length})`);
@@ -133,9 +129,12 @@ function App() {
     // 增加计数
     const increment = () => {
         console.log('[App] 准备增加计数，当前值:', store.state.count);
-        store.update((state) => {
-            state.count++;
-        }, { flags: 0 }); // 确保 flags 为 0，这样 syncer 才会发送
+        store.update(
+            (state) => {
+                state.count++;
+            },
+            { flags: 0 },
+        ); // 确保 flags 为 0，这样 syncer 才会发送
         console.log('[App] 已增加计数，新值:', store.state.count);
         addLogMessage(`[本地] 手动增加 count`);
     };
@@ -143,9 +142,12 @@ function App() {
     // 减少计数
     const decrement = () => {
         console.log('[App] 准备减少计数，当前值:', store.state.count);
-        store.update((state) => {
-            state.count--;
-        }, { flags: 0 }); // 确保 flags 为 0，这样 syncer 才会发送
+        store.update(
+            (state) => {
+                state.count--;
+            },
+            { flags: 0 },
+        ); // 确保 flags 为 0，这样 syncer 才会发送
         console.log('[App] 已减少计数，新值:', store.state.count);
         addLogMessage(`[本地] 手动减少 count`);
     };
@@ -178,6 +180,16 @@ function App() {
         }
     };
 
+    const clearTodos = () => {
+        if (store.state.todos.length === 0) {
+            addLogMessage(`[本地] 待办列表已为空`);
+            return;
+        }
+        const count = store.state.todos.length;
+        store.state.todos.splice(0, store.state.todos.length);
+        addLogMessage(`[本地] 清空所有待办事项 (${count}条)`);
+    };
+
     // User 操作
     const updateUserName = () => {
         const names = ['李四', '王五', '赵六', '钱七'];
@@ -203,7 +215,7 @@ function App() {
     return (
         <div style={styles.container}>
             <header style={styles.header}>
-                <h1>🔄 AutoStore SharedWorker 同步示例</h1>
+                <h1>🔄 AutoStore 同步示例</h1>
                 <div style={styles.statusBar}>
                     <span
                         style={{
@@ -221,14 +233,33 @@ function App() {
                 {/* 计数器区域 */}
                 <section style={styles.card}>
                     <h2>计数器（支持双向同步）</h2>
-                    <div style={styles.counter}>{count}</div>
-                    <div style={styles.buttonContainer}>
-                        <button onClick={decrement} style={styles.button}>
-                            - 减少
-                        </button>
-                        <button onClick={increment} style={styles.button}>
-                            + 增加
-                        </button>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '20px',
+                            margin: '10px 0',
+                            minHeight: '80px',
+                        }}>
+                        <div
+                            style={{
+                                ...styles.counter,
+                                margin: 0,
+                                lineHeight: '1',
+                                flexGrow: 1,
+                                textAlign: 'center' as const,
+                            }}>
+                            {count}
+                        </div>
+                        <div style={styles.buttonContainer}>
+                            <button onClick={decrement} style={styles.button}>
+                                - 减少
+                            </button>
+                            <button onClick={increment} style={styles.button}>
+                                + 增加
+                            </button>
+                        </div>
                     </div>
                     <p style={styles.hint}>
                         点击按钮修改计数，变更会同步到 SharedWorker 并广播到所有页签。
@@ -257,8 +288,7 @@ function App() {
                                                 ? 'line-through'
                                                 : 'none',
                                             flex: 1,
-                                        }}
-                                    >
+                                        }}>
                                         {todo.text}
                                     </span>
                                     <button
@@ -268,8 +298,7 @@ function App() {
                                             padding: '5px 10px',
                                             fontSize: '14px',
                                             backgroundColor: '#f44336',
-                                        }}
-                                    >
+                                        }}>
                                         删除
                                     </button>
                                 </div>
@@ -279,6 +308,14 @@ function App() {
                     <div style={styles.buttonContainer}>
                         <button onClick={addTodo} style={styles.button}>
                             + 添加待办
+                        </button>
+                        <button
+                            onClick={clearTodos}
+                            style={{
+                                ...styles.button,
+                                backgroundColor: '#ff9800',
+                            }}>
+                            🗑️ 清空列表
                         </button>
                     </div>
                     <p style={styles.hint}>
@@ -324,25 +361,6 @@ function App() {
                     <p style={styles.hint}>
                         嵌套对象的修改会实时同步。尝试修改用户信息，所有页签都会同步更新。
                     </p>
-                </section>
-
-                {/* 消息列表区域 */}
-                <section style={styles.card}>
-                    <h2>消息列表</h2>
-                    <div style={styles.messageList}>
-                        {messages.length === 0 ? (
-                            <p style={styles.empty}>暂无消息</p>
-                        ) : (
-                            messages.map((msg, idx) => (
-                                <div key={idx} style={styles.messageItem}>
-                                    {msg}
-                                </div>
-                            ))
-                        )}
-                    </div>
-                    <div style={styles.messageFooter}>
-                        <span>总数: {messageCount}</span>
-                    </div>
                 </section>
 
                 {/* 日志区域 */}
@@ -419,7 +437,6 @@ const styles = {
         display: 'flex',
         gap: '10px',
         justifyContent: 'center',
-        marginBottom: '15px',
     },
     button: {
         padding: '10px 20px',

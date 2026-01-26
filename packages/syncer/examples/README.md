@@ -1,6 +1,6 @@
 # AutoStore SharedWorker 同步示例
 
-这个示例演示了如何使用 `AutoStoreSyncManager` 和 `AutoStoreSyncer` 实现 SharedWorker 与多个浏览器页签之间的状态同步。
+这个示例演示了如何使用 `AutoStoreBroadcaster` 和 `AutoStoreSyncer` 实现 SharedWorker 与多个浏览器页签之间的状态同步。
 
 ## 架构说明
 
@@ -8,7 +8,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                     SharedWorker                             │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │          AutoStore (服务端)                           │    │
+│  │          AutoStoreBroadcaster (服务端)                │    │
 │  │  ┌──────────────────────────────────────────────┐   │    │
 │  │  │  count: 0                                     │   │    │
 │  │  │  messages: []                                 │   │    │
@@ -18,9 +18,8 @@
 │                          ▲                                   │
 │                          │                                   │
 │  ┌───────────────────────┼───────────────────────────────┐  │
-│  │          AutoStoreSyncManager                         │  │
-│  │  • 管理多个客户端连接                                  │  │
-│  │  • 自动广播状态变化                                    │  │
+│  │          AutoStoreBroadcaster                        │  │
+│  │  • 广播状态变化到多个客户端                            │  │
 │  │  • 处理客户端连接/断开                                 │  │
 │  └───────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
@@ -87,7 +86,7 @@ bun run dev
 ### SharedWorker 服务端 ([`shared-worker/worker.ts`](shared-worker/worker.ts))
 
 - 创建一个中心化的 `AutoStore` 实例
-- 使用 `AutoStoreSyncManager` 管理多个客户端连接
+- 使用 `AutoStoreBroadcaster` 管理多个客户端连接
 - 监听 `connect` 事件处理新的页签连接
 - 每隔 5 秒自动递增计数器，模拟服务端推送
 
@@ -100,19 +99,19 @@ bun run dev
 
 ## 核心概念
 
-### AutoStoreSyncManager
+### AutoStoreBroadcaster
 
 用于在 SharedWorker 中管理一个 AutoStore 与多个浏览器页签之间的同步：
 
 ```typescript
 const store = new AutoStore({ count: 0, messages: [] });
-const syncManager = new AutoStoreSyncManager(store);
+const broadcaster = new AutoStoreBroadcaster(store);
 
 // 监听连接
 self.addEventListener('connect', (event) => {
     const port = event.ports[0];
     const transport = new WorkerTransport({ worker: port });
-    syncManager.connect(transport);
+    broadcaster.connect(transport);
 });
 ```
 
@@ -138,7 +137,7 @@ const syncer = new AutoStoreSyncer(store, {
 
 ## 配置选项
 
-### AutoStoreSyncManagerOptions
+### AutoStoreBroadcasterOptions
 
 - `autoBroadcast`: 是否自动广播状态变化（默认：true）
 - `syncerOptions`: 创建每个客户端 syncer 时的默认选项

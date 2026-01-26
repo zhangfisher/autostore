@@ -1,54 +1,48 @@
-import { AutoStore, computed } from './core/src/index';
-import { AutoStoreSyncer } from './syncer/src/syncer';
-import { LocalTransport } from './syncer/src/transports/local';
+import { AutoStore } from 'autostore';
+import { LocalTransport } from './src/transports/local';
+import { AutoStoreSyncer } from './src/syncer';
 
-const waitForNextTick = () => new Promise(resolve => setTimeout(resolve, 0));
+const store1 = new AutoStore({
+    user: {
+        name: 'fisher',
+    },
+});
 
-async function main() {
-    let localTransport: LocalTransport;
-    let remoteTransport: LocalTransport;
-    localTransport = new LocalTransport({getPeer:() => remoteTransport});
-    remoteTransport = new LocalTransport({getPeer:() => localTransport});
-    
-    const localStore = new AutoStore({
-        order: {
-            price: 100,
-            count: 2,
-            total: computed((order) => order.price * order.count),
-        },
-    }, { id: 'localStore' });
-    
-    const remoteStore = new AutoStore({
-        order: {
-            price: 100,
-            count: 2,
-            total: computed((order) => order.price * order.count),
-        },
-    }, { id: 'remoteStore' });
+const store2 = new AutoStore({
+    user: {
+        name: 'fisher',
+    },
+});
 
-    console.log('localStore.id:', localStore.id);
-    console.log('remoteStore.id:', remoteStore.id);
+let transport1: LocalTransport;
+let transport2: LocalTransport;
 
-    const localSyncer = new AutoStoreSyncer(localStore, { transport: localTransport });
-    const remoteSyncer = new AutoStoreSyncer(remoteStore, { transport: remoteTransport });
+transport1 = new LocalTransport({ getPeer: () => transport2 });
+transport2 = new LocalTransport({ getPeer: () => transport1 });
 
-    console.log('localSyncer.id:', localSyncer.id);
-    console.log('remoteSyncer.id:', remoteSyncer.id);
-    console.log('localTransport connected:', localTransport.connected);
-    console.log('remoteTransport connected:', remoteTransport.connected);
-    console.log('localTransport receivers:', Array.from(localTransport.receivers.keys()));
-    console.log('remoteTransport receivers:', Array.from(remoteTransport.receivers.keys()));
+// forward 模式：store1 -> store2
+const syncer1 = new AutoStoreSyncer(store1, {
+    transport: transport1,
+    direction: 'forward',
+    immediate: false,
+});
 
-    await waitForNextTick();
-    
-    console.log('\n修改 localStore.state.order.count = 3');
-    localStore.state.order.count = 3;
-    
-    await waitForNextTick();
-    
-    console.log('\n修改后:');
-    console.log('localStore.state:', localStore.state);
-    console.log('remoteStore.state:', remoteStore.state);
-}
+const syncer2 = new AutoStoreSyncer(store2, {
+    transport: transport2,
+    direction: 'backward',
+    immediate: false,
+});
 
-main().catch(console.error);
+console.log('Before change:');
+console.log('store1.state.user.name:', store1.state.user.name);
+console.log('store2.state.user.name:', store2.state.user.name);
+console.log('syncer1.seq:', syncer1['seq']);
+console.log('syncer2.seq:', syncer2['seq']);
+
+store1.state.user.name = 'alice';
+
+console.log('\nAfter change:');
+console.log('store1.state.user.name:', store1.state.user.name);
+console.log('store2.state.user.name:', store2.state.user.name);
+
+console.log('\nExpected: store2 should be "alice"');

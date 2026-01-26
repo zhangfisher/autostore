@@ -16,17 +16,33 @@ import { LocalTransport } from './transports/local';
 function createSyncerPlugin() {
     return (store: any) => {
         store.sync = function (toStore: AutoStore<any>, options?: AutoStoreSyncerOptions) {
-            const localTransport: LocalTransport = new LocalTransport(() => remoteTransport);
-            const remoteTransport: LocalTransport = new LocalTransport(() => localTransport);
+            let localTransport: LocalTransport;
+            let remoteTransport: LocalTransport;
+
+            // 创建循环引用的 transport
+            // 使用类型断言处理循环依赖的类型推断问题
+            localTransport = new LocalTransport({ getPeer: () => remoteTransport } as any);
+            remoteTransport = new LocalTransport({ getPeer: () => localTransport } as any);
+
+            // 确定方向
+            const direction = options?.direction || 'both';
+            // 如果是 forward，local 发送，remote 接收但不回传
+            // 如果是 backward，remote 发送，local 接收但不回传
+            // 如果是 both，双向都发送和接收
+            const localDirection = direction === 'backward' ? 'backward' : 'forward';
+            const remoteDirection = direction === 'forward' ? 'backward' : 'both';
+
             const remoteSyncer = new AutoStoreSyncer(toStore, {
                 transport: remoteTransport,
+                direction: remoteDirection,
+                immediate: false,
             });
-            const localSyncer = new AutoStoreSyncer(
-                store,
-                Object.assign({ immediate: true }, options, {
-                    transport: localTransport,
-                }),
-            );
+            const localSyncerOptions = Object.assign({ immediate: true }, options, {
+                transport: localTransport,
+            });
+            // direction 必须覆盖 options 中的值
+            localSyncerOptions.direction = localDirection;
+            const localSyncer = new AutoStoreSyncer(store, localSyncerOptions);
             localSyncer.peer = remoteSyncer;
             return localSyncer;
         };
