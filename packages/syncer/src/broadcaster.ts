@@ -1,97 +1,107 @@
 /**
  * AutoStoreBroadcaster - 用于管理一个 AutoStore 与多个客户端 Store 之间的同步
  *
- * 主要职责：
- * - 作为中心化的状态广播器，运行在 Worker/SharedWorker 等独立线程中
- * - 接受多个客户端连接，每个客户端对应一个 AutoStoreSyncer 实例
- * - 自动广播本地状态变化到所有已连接的客户端
- * - 支持向特定客户端发送操作
- * - 监听 transport 断开事件，自动清理对应的 syncer
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 工作原理
+ * ═══════════════════════════════════════════════════════════════════════════════
  *
- * @example SharedWorker 代码
- * ```typescript
- * import { AutoStore } from 'autostore';
- * import { AutoStoreBroadcaster } from '@autostorejs/syncer';
- * import { WorkerTransport } from '@autostorejs/syncer/transports/worker';
+ * 【架构图】
  *
- * const store = new AutoStore({
- *     count: 0,
- *     user: { name: 'Alice' }
- * });
+ *     Store1 ──→ Transport1 ═════ Transport11 ─┐
+ *     Store2 ──→ Transport2 ═════ Transport22 ─┼─→ AutoStoreBroadcaster ─→ MainStore
+ *     Store3 ──→ Transport3 ═════ Transport33 ─┘
  *
- * const broadcaster = new AutoStoreBroadcaster(store, {
- *     autoBroadcast: true  // 自动广播状态变化
- * });
+ * 【核心机制：flags 标记防止循环更新】
  *
- * // 处理来自页签的连接
- * self.addEventListener('connect', (event: any) => {
- *     const port = event.ports[0];
- *     // 创建 transport 并连接
- *     const transport = new WorkerTransport({ worker: port });
- *     broadcaster.connect(transport);
- * });
- * ```
+ * 系统使用 operate.flags 字段（负数 transport.id）标记操作来源，在广播时排除源端，
+ * 从而避免"Store变化 → 更新MainStore → 触发广播 → 回到Store"的循环。
  *
- * @example 浏览器页签代码
- * ```typescript
- * import { AutoStore } from 'autostore';
- * import { AutoStoreSyncer } from '@autostorejs/syncer';
- * import { WorkerTransport } from '@autostorejs/syncer/transports/worker';
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * 【场景1】客户端 Store 触发更新（避免循环）
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *
- * const store = new AutoStore({
- *     count: 0,
- *     user: { name: 'Bob' }
- * });
+ * ① Store1 变化 → 通过 Transport1 发送到 Transport11
+ * ② Transport11 更新 MainStore 时设置 operate.flags = -Transport11.id
+ * ③ MainStore 触发 StateOperate 事件（包含 flags = -Transport11.id）
+ * ④ AutoStoreBroadcaster 识别 flags，排除 Transport11，将操作转发给：
+ *    - Transport22 → Store2
+ *    - Transport33 → Store3
  *
- * const sharedWorker = new SharedWorker('./shared-worker.js');
- * const transport = new WorkerTransport({
- *     worker: sharedWorker.port,
- *     id: 'tab-' + Math.random()
- * });
+ * ✓ 结果：Store1 的变化同步到其他 Store，但不会回传给自己
  *
- * // 启动端口
- * sharedWorker.port.start();
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * 【场景2】MainStore 本地变化（广播到所有客户端）
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *
- * const syncer = new AutoStoreSyncer(store, {
- *     transport,
- *     immediate: true  // 首次同步时从服务端拉取数据
- * });
- * ```
+ * ① MainStore 直接修改（不经过任何 Transport）
+ * ② 触发的 StateOperate 中 operate.flags 不等于任何 -transport.id
+ * ③ AutoStoreBroadcaster 将变化广播给所有 Transport：
+ *    - Transport11 → Store1
+ *    - Transport22 → Store2
+ *    - Transport33 → Store3
+ *
+ * ✓ 结果：MainStore 的本地变化同步到所有客户端 Store
+ *
  */
 
-import type { AutoStore, Watcher, StateOperate } from 'autostore';
-import { getVal, setVal } from 'autostore';
-import type {
-    AutoStoreBroadcasterOptions,
-    StateRemoteOperate,
-} from './types';
-import { AutoStoreSyncTransportBase } from './transports/base';
+import type { AutoStore, Watcher, StateOperate } from "autostore";
+import { getVal, setVal } from "autostore";
+import type { AutoStoreBroadcasterOptions, StateRemoteOperate } from "./types";
+import type { AutoStoreSyncTransportBase } from "./transports/base";
 
+/**
+ * AutoStore 广播器 - 管理主站与多个客户端之间的状态同步
+ *
+ * 【架构角色】
+ * - MainStore：主站状态存储（_store）
+ * - Transport：主站侧的传输端点（对应原理图中的 Transport11/22/33）
+ * - 每个客户端都有一个对应的 Transport 连接到此广播器
+ *
+ * 【核心机制】
+ * 使用 operate.flags（负数 transport.id）标记操作来源，广播时排除源端以防止循环更新。
+ */
 export class AutoStoreBroadcaster {
+    /**
+     * 主站 Store（对应原理图中的 MainStore）
+     * 所有客户端的状态最终同步到此 Store
+     */
     private _store: AutoStore<any>;
+
+    /** 广播器配置选项 */
     private _options: Required<AutoStoreBroadcasterOptions>;
-    // 客户端 ID 到 Transport 的映射
-    private _transports: Map<string, AutoStoreSyncTransportBase> = new Map();
-    // Transport 到客户端 ID 的映射
-    private _transportToId: WeakMap<AutoStoreSyncTransportBase, string> = new WeakMap();
-    // Transport 到事件监听器清理函数的映射
+
+    /**
+     * Transport 注册表
+     * Key: transport.id（唯一标识符）
+     * Value: Transport 实例（对应原理图中的 Transport11/22/33）
+     *
+     * 每个 Transport 代表一个客户端到主站的连接点
+     */
+    transports: Map<number, AutoStoreSyncTransportBase> = new Map();
+
+    /**
+     * Transport 事件监听器清理函数映射
+     * 用于在 Transport 断开连接时清理其事件监听器
+     */
     private _transportCleanup: WeakMap<AutoStoreSyncTransportBase, () => void> = new WeakMap();
-    // 记录当前正在处理的 operate 来源 transport
-    private _currentSourceTransport: WeakMap<StateRemoteOperate, AutoStoreSyncTransportBase> = new WeakMap();
-    // 存储 watch 监听器
+
+    /**
+     * MainStore 的 watch 监听器
+     * 用于监听主站状态变化并广播到所有客户端（对应原理场景2）
+     */
     private _watcher?: Watcher;
 
     constructor(store: AutoStore<any>, options?: AutoStoreBroadcasterOptions) {
         this._store = store;
         this._options = Object.assign(
             {
-                autoBroadcast: true,
+                autostart: true,
             },
             options,
         ) as Required<AutoStoreBroadcasterOptions>;
 
         // 启动自动广播
-        if (this._options.autoBroadcast) {
+        if (this._options.autostart) {
             this._startBroadcast();
         }
     }
@@ -104,10 +114,6 @@ export class AutoStoreBroadcaster {
         return this._options;
     }
 
-    get transports(): Map<string, AutoStoreSyncTransportBase> {
-        return this._transports;
-    }
-
     /**
      * 连接一个新的客户端
      * 直接监听 transport 的消息，不创建 AutoStoreSyncer
@@ -115,44 +121,35 @@ export class AutoStoreBroadcaster {
      * @param transport 传输层对象
      * @returns 客户端 ID
      */
-    connect(transport: AutoStoreSyncTransportBase): string {
-        // 生成客户端 ID（优先使用 transport 的 id，否则生成新的）
-        const clientId =
-            transport.id ||
-            `client-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
-        // 如果该客户端已存在，先断开旧连接
-        if (this._transports.has(clientId)) {
-            this.disconnect(clientId);
+    addTransport(transport: AutoStoreSyncTransportBase) {
+        const transportId = transport.id;
+        // 如果该客户端已存在则返回
+        if (this.transports.has(transportId)) {
+            return;
         }
 
         // 保存映射关系
-        this._transports.set(clientId, transport);
-        this._transportToId.set(transport, clientId);
+        this.transports.set(transportId, transport);
 
         // 直接监听 transport 的消息
         transport.addReceiver(this._store.id, (operate: StateRemoteOperate) => {
-            // 记录消息来源 transport
-            this._currentSourceTransport.set(operate, transport);
-            this._onReceiveFromTransport(operate);
+            this._onReceiveFromTransport(operate, transport);
         });
 
         // 监听 transport 的 disconnect 事件，自动清理
-        const cleanup = transport.on('disconnect', () => {
-            this.disconnect(clientId);
+        const cleanup = transport.on("disconnect", () => {
+            this.removeTransport(transportId);
         });
         this._transportCleanup.set(transport, cleanup.off);
-
-        return clientId;
     }
 
     /**
      * 断开指定客户端的连接
      *
-     * @param clientId 客户端 ID
+     * @param id 客户端 ID
      */
-    disconnect(clientId: string): void {
-        const transport = this._transports.get(clientId);
+    removeTransport(id: number): void {
+        const transport = this.transports.get(id);
         if (transport) {
             // 清理 transport 事件监听器
             const cleanup = this._transportCleanup.get(transport);
@@ -161,76 +158,46 @@ export class AutoStoreBroadcaster {
                 this._transportCleanup.delete(transport);
             }
 
-            // 清理映射关系
-            this._transportToId.delete(transport);
-            this._transports.delete(clientId);
+            this.transports.delete(id);
         }
     }
 
     /**
-     * 根据 transport 断开连接
+     * 广播操作到所有客户端（排除源端以防止循环更新）
      *
-     * @param transport 传输层对象
-     */
-    disconnectByTransport(transport: AutoStoreSyncTransportBase): void {
-        const clientId = this._transportToId.get(transport);
-        if (clientId) {
-            this.disconnect(clientId);
-        }
-    }
-
-    /**
-     * 获取指定客户端的 transport
+     * 【对应原理场景】
+     * - 场景1：客户端触发更新时，flags = -transport.id，此时排除源端
+     * - 场景2：MainStore 本地变化时，flags = 0，此时广播到所有客户端
      *
-     * @param clientId 客户端 ID
-     * @returns transport 实例，如果不存在则返回 undefined
-     */
-    getTransport(clientId: string): AutoStoreSyncTransportBase | undefined {
-        return this._transports.get(clientId);
-    }
-
-    /**
-     * 根据 transport 获取对应的客户端 ID
+     * 【核心逻辑】
+     * 1. 从 operate.flags 提取源 transport ID（值为负数时表示来自某个 Transport）
+     * 2. 遍历所有 Transport，排除源端后发送操作
+     * 3. 这样可以避免：Store → Transport → MainStore → broadcast → 回到 Store 的循环
      *
-     * @param transport 传输层对象
-     * @returns 客户端 ID，如果不存在则返回 undefined
+     * @param operate 要广播的操作（包含 flags 字段用于识别来源）
      */
-    getClientIdByTransport(transport: AutoStoreSyncTransportBase): string | undefined {
-        return this._transportToId.get(transport);
-    }
+    broadcast(operate: StateOperate): void {
+        // 从 flags 中提取源 transport ID
+        // flags < 0 表示操作来自某个 Transport（值为 -transport.id）
+        // flags = 0 表示操作来自 MainStore 本地
+        const flags = operate?.flags || 0;
+        const sourceTransportId = flags < 0 ? -flags : 0;
 
-    /**
-     * 获取所有已连接的客户端 ID
-     */
-    getClientIds(): string[] {
-        return Array.from(this._transports.keys());
-    }
+        // 创建远程操作对象（flags 重置为 0，因为客户端不需要知道原始来源）
+        const remoteOperate: StateRemoteOperate = {
+            id: this._store.id,
+            type: operate.type,
+            path: operate.path,
+            parentPath: operate.parentPath,
+            value: operate.value,
+            indexs: operate.indexs,
+            flags: 0,
+        };
 
-    /**
-     * 获取已连接的客户端数量
-     */
-    get clientCount(): number {
-        return this._transports.size;
-    }
-
-    /**
-     * 向所有客户端广播操作（排除发送方）
-     *
-     * @param operate 要广播的操作
-     */
-    broadcast(operate: StateRemoteOperate): void {
-        this._transports.forEach((transport) => {
-            if (!transport.connected) return;
-
-            // 检查 flags，如果匹配该 transport 的 hash，跳过
-            if (operate.flags && operate.flags < 0) {
-                const transportHash = this._hashTransportId(transport.id);
-                if (-operate.flags === transportHash) {
-                    return; // 跳过发送方
-                }
-            }
-
-            transport.send(operate);
+        // 广播到所有 Transport，排除源端
+        this.transports.forEach((transport) => {
+            if (transport.id === sourceTransportId) return; // 排除源端，防止循环更新
+            transport.send(remoteOperate);
         });
     }
 
@@ -240,9 +207,9 @@ export class AutoStoreBroadcaster {
      * @param clientId 客户端 ID
      * @param operate 要发送的操作
      */
-    sendTo(clientId: string, operate: StateRemoteOperate): void {
-        const transport = this._transports.get(clientId);
-        if (transport && transport.connected) {
+    sendTo(clientId: number, operate: StateRemoteOperate): void {
+        const transport = this.transports.get(clientId);
+        if (transport?.connected) {
             transport.send(operate);
         }
     }
@@ -253,58 +220,67 @@ export class AutoStoreBroadcaster {
      *
      * @param operate 远程操作
      */
-    private _onReceiveFromTransport(operate: StateRemoteOperate): void {
+    private _onReceiveFromTransport(
+        operate: StateRemoteOperate,
+        transport: AutoStoreSyncTransportBase,
+    ): void {
         // 根据操作类型应用更新
-        if (operate.type === '$stop') {
+        if (operate.type === "$stop") {
             // 客户端请求断开连接
             return;
-        } else if (operate.type === '$pull-store') {
+        } else if (operate.type === "$pull-store") {
             // 客户端请求拉取完整状态
-            this._sendStoreToTransport(operate);
-        } else if (operate.type === '$update-store') {
+            this._sendStoreToTransport(operate, transport);
+        } else if (operate.type === "$update-store") {
             // 客户端发送完整状态更新
-            this._applyStoreUpdate(operate);
+            this._applyStoreUpdate(operate, transport);
         } else {
             // 普通操作，直接应用到 store
-            this._applyOperate(operate);
+            this._applyOperate(operate, transport);
         }
     }
 
     /**
-     * 应用远程操作到 store
+     * 应用远程操作到 MainStore（设置 flags 标记来源）
+     *
+     * 【核心机制：flags 标记】
+     * 使用负数 transport.id 作为 flags，标记此操作来自哪个 Transport。
+     * 这样在 MainStore 触发 StateOperate 事件时，broadcast() 方法可以：
+     * 1. 识别操作来源（flags < 0）
+     * 2. 排除源 Transport，避免循环更新
+     *
+     * 【对应原理场景1】
+     * Store1 → Transport1 → Transport11 → MainStore（设置 flags = -Transport11.id）
+     * → MainStore 触发事件 → broadcast() 识别并排除 Transport11
      *
      * @param operate 远程操作
+     * @param transport 发送此操作的 Transport
      */
-    private _applyOperate(operate: StateRemoteOperate): void {
+    private _applyOperate(
+        operate: StateRemoteOperate,
+        transport: AutoStoreSyncTransportBase,
+    ): void {
         const { type, value, indexs, path } = operate;
 
-        // 从 WeakMap 中获取源 transport
-        const sourceTransport = this._currentSourceTransport.get(operate);
-        if (!sourceTransport) {
-            console.warn('[AutoStoreBroadcaster] 无法找到源 transport');
-            return;
-        }
-
-        // 应用操作到 store（使用负数 transport.id 作为 flags，标记来源）
+        // 应用操作到 MainStore，并设置 flags 标记来源
         this._store.update(
             (state) => {
                 const targetPath = path;
-                if (type === 'set' || type === 'update') {
+                if (type === "set" || type === "update") {
                     setVal(state, targetPath, value);
-                } else if (type === 'delete') {
+                } else if (type === "delete") {
                     setVal(state, targetPath, undefined);
-                } else if (type === 'insert') {
+                } else if (type === "insert") {
                     const arr = getVal(state, targetPath);
                     if (Array.isArray(arr) && indexs) {
                         arr.splice(indexs[0], 0, ...value);
                     }
                 }
             },
-            { flags: -this._hashTransportId(sourceTransport.id) }, // 使用负数 hash 标记来源
+            // ⚠️ 关键：使用负数 transport.id 作为 flags
+            // 这样 broadcast() 方法就能识别并排除此 Transport，防止循环更新
+            { flags: -transport.id },
         );
-
-        // 清理 WeakMap 中的引用
-        this._currentSourceTransport.delete(operate);
     }
 
     /**
@@ -312,22 +288,16 @@ export class AutoStoreBroadcaster {
      *
      * @param operate 远程操作
      */
-    private _applyStoreUpdate(operate: StateRemoteOperate): void {
-        const sourceTransport = this._currentSourceTransport.get(operate);
-        if (!sourceTransport) {
-            console.warn('[AutoStoreBroadcaster] 无法找到源 transport');
-            return;
-        }
-
+    private _applyStoreUpdate(
+        operate: StateRemoteOperate,
+        transport: AutoStoreSyncTransportBase,
+    ): void {
         this._store.update(
             (state) => {
                 Object.assign(state, operate.value);
             },
-            { flags: -this._hashTransportId(sourceTransport.id) },
+            { flags: -transport.id },
         );
-
-        // 清理 WeakMap 中的引用
-        this._currentSourceTransport.delete(operate);
     }
 
     /**
@@ -335,61 +305,45 @@ export class AutoStoreBroadcaster {
      *
      * @param operate 远程操作
      */
-    private _sendStoreToTransport(operate: StateRemoteOperate): void {
-        // 从 WeakMap 中获取源 transport
-        const sourceTransport = this._currentSourceTransport.get(operate);
-        if (!sourceTransport) {
-            console.warn('[AutoStoreBroadcaster] 无法找到源 transport');
-            return;
-        }
-
+    private _sendStoreToTransport(
+        operate: StateRemoteOperate,
+        transport: AutoStoreSyncTransportBase,
+    ): void {
         // 发送完整状态快照（使用 getSnap() 获取可序列化的状态）
         const response: StateRemoteOperate = {
             id: this._store.id,
-            type: '$update-store',
+            type: "$update-store",
             path: [],
             value: this._store.getSnap(), // 使用 getSnap() 获取可序列化的状态快照
             flags: 0,
         };
-        sourceTransport.send(response);
-
-        // 清理 WeakMap 中的引用
-        this._currentSourceTransport.delete(operate);
+        transport.send(response);
     }
 
     /**
-     * 将 transport.id 转换为数字 hash（用于 flags）
-     */
-    private _hashTransportId(id: string): number {
-        // 简单的 hash 函数：将字符串转换为数字
-        let hash = 0;
-        for (let i = 0; i < id.length; i++) {
-            const char = id.charCodeAt(i);
-            hash = (hash << 5) - hash + char;
-            hash = hash & hash; // 转换为 32 位整数
-        }
-        return Math.abs(hash) || 1; // 确保返回正数，至少为 1
-    }
-
-    /**
-     * 启动自动广播
-     * 监听主 store 的变化，自动广播到所有客户端
+     * 启动自动广播监听（对应原理场景2）
+     *
+     * 【监听目标】
+     * 监听 MainStore 的状态变化，自动广播到所有客户端 Transport。
+     *
+     * 【对应原理场景2：MainStore 本地变化】
+     * 1. MainStore 直接修改（不经过任何 Transport）
+     * 2. 触发 StateOperate 事件，flags = 0（无来源标记）
+     * 3. broadcast() 识别 flags = 0，广播到所有 Transport
+     *
+     * 【为什么监听 "write" 操作】
+     * - 只监听写操作（set/update/delete/insert）
+     * - 不监听读操作（get），避免不必要的广播
      */
     private _startBroadcast(): void {
-        this._watcher = this._store.watch((operate: StateOperate) => {
-            // 创建远程操作并广播
-            const remoteOperate: StateRemoteOperate = {
-                id: this._store.id, // 使用 store.id 而不是固定的 'manager'
-                type: operate.type,
-                path: operate.path,
-                parentPath: operate.parentPath,
-                value: operate.value,
-                indexs: operate.indexs,
-                flags: operate.flags || 0,
-            };
-
-            this.broadcast(remoteOperate);
-        });
+        this._watcher = this._store.watch(
+            (operate: StateOperate) => {
+                this.broadcast(operate);
+            },
+            {
+                operates: "write", // 只广播写操作，忽略读操作
+            },
+        );
     }
 
     /**
@@ -410,21 +364,18 @@ export class AutoStoreBroadcaster {
         this._stopBroadcast();
 
         // 断开所有 transport 并清理事件监听器
-        this._transports.forEach((transport) => {
+        this.transports.forEach((transport) => {
             // 清理 transport 事件监听器
             const cleanup = this._transportCleanup.get(transport);
             if (cleanup) {
                 cleanup();
             }
-            // 断开 transport
-            if (transport.connected) {
-                transport.disconnect();
-            }
+            transport.disconnect();
         });
-        this._transports.clear();
+        this.transports.clear();
     }
 
     toString(): string {
-        return `AutoStoreBroadcaster(${this._store.id}, clients: ${this._transports.size})`;
+        return `AutoStoreBroadcaster(${this._store.id}, clients: ${this.transports.size})`;
     }
 }

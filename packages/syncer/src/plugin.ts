@@ -8,57 +8,44 @@
  * @returns
  */
 
-import { getVal, type AutoStore } from 'autostore';
-import { AutoStoreSyncer } from './syncer';
-import type { AutoStoreSyncerOptions, AutoStoreCloneOptions } from './types';
-import { LocalTransport } from './transports/local';
+import { getVal, type AutoStore } from "autostore";
+import { AutoStoreSyncer } from "./syncer";
+import type { AutoStoreSyncerOptions, AutoStoreCloneOptions } from "./types";
+import { LocalTransport } from "./transports/local";
 
 function createSyncerPlugin() {
     return (store: any) => {
         store.sync = function (toStore: AutoStore<any>, options?: AutoStoreSyncerOptions) {
-            let localTransport: LocalTransport;
-            let remoteTransport: LocalTransport;
-
-            // 创建循环引用的 transport
-            // 使用类型断言处理循环依赖的类型推断问题
-            localTransport = new LocalTransport({ getPeer: () => remoteTransport } as any);
-            remoteTransport = new LocalTransport({ getPeer: () => localTransport } as any);
-
-            // 确定方向
-            const direction = options?.direction || 'both';
-            // 如果是 forward，local 发送，remote 接收但不回传
-            // 如果是 backward，remote 发送，local 接收但不回传
-            // 如果是 both，双向都发送和接收
-            const localDirection = direction === 'backward' ? 'backward' : 'forward';
-            const remoteDirection = direction === 'forward' ? 'backward' : 'both';
-
+            const localTransport: LocalTransport = new LocalTransport(() => remoteTransport);
+            const remoteTransport: LocalTransport = new LocalTransport(() => localTransport);
             const remoteSyncer = new AutoStoreSyncer(toStore, {
                 transport: remoteTransport,
-                direction: remoteDirection,
-                immediate: false,
             });
-            const localSyncerOptions = Object.assign({ immediate: true }, options, {
-                transport: localTransport,
-            });
-            // direction 必须覆盖 options 中的值
-            localSyncerOptions.direction = localDirection;
-            const localSyncer = new AutoStoreSyncer(store, localSyncerOptions);
+            const localSyncer = new AutoStoreSyncer(
+                store,
+                Object.assign({ immediate: true }, options, {
+                    transport: localTransport,
+                }),
+            );
             localSyncer.peer = remoteSyncer;
             return localSyncer;
         };
 
-        store.clone = function (options?: AutoStoreCloneOptions<any, any>) {
-            const { sync, entry = [] } = Object.assign({ sync: 'both' }, this._options, options);
+        store.clone = async function (options?: AutoStoreCloneOptions<any, any>) {
+            const { sync, entry = [] } = Object.assign({ sync: "both" }, this._options, options);
             const state = getVal(this.getSnap(), entry);
-            if (typeof state !== 'object') {
+            if (typeof state !== "object") {
                 throw new Error(`The clone path must be an object, but got ${typeof state}`);
             }
             const clonedOptions = Object.assign({}, this._options, options);
             const clonedStore = new store.constructor(state, clonedOptions);
-            if (sync !== 'none') {
-                this.sync(clonedStore, {
+            if (sync !== "none") {
+                // local: entry 表示从原 store 的 entry 路径同步
+                // remote: [] 表示同步到 cloned store 的根路径
+                await this.sync(clonedStore, {
                     local: entry,
-                    immediate: false,
+                    remote: [],
+                    immediate: true,
                     direction: sync,
                 });
             }

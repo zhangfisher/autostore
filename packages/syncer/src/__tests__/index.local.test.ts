@@ -16,8 +16,8 @@ describe('远程同步', () => {
     beforeEach(() => {
         // 使用对象包装来避免闭包循环引用问题
         const refs = { local: null as LocalTransport | null, remote: null as LocalTransport | null };
-        localTransport = new LocalTransport({ getPeer: () => refs.remote! });
-        remoteTransport = new LocalTransport({ getPeer: () => refs.local! });
+        localTransport = new LocalTransport(() => refs.remote!);
+        remoteTransport = new LocalTransport(() => refs.local!);
         refs.local = localTransport;
         refs.remote = remoteTransport;
     });
@@ -291,8 +291,8 @@ describe('远程同步', () => {
             { id: 'three' },
         );
         // one <----> two
-        const localTransport: LocalTransport = new LocalTransport({getPeer:() => remoteTransport});
-        const remoteTransport: LocalTransport = new LocalTransport({getPeer:() => localTransport});
+        const localTransport: LocalTransport = new LocalTransport(() => remoteTransport);
+        const remoteTransport: LocalTransport = new LocalTransport(() => localTransport);
         new AutoStoreSyncer(oneStore, {
             id: 'one-two',
             transport: localTransport,
@@ -305,8 +305,8 @@ describe('远程同步', () => {
         });
 
         // two <----> three
-        const localTransport2: LocalTransport = new LocalTransport({getPeer:() => remoteTransport2});
-        const remoteTransport2: LocalTransport = new LocalTransport({getPeer:() => localTransport2});
+        const localTransport2: LocalTransport = new LocalTransport(() => remoteTransport2);
+        const remoteTransport2: LocalTransport = new LocalTransport(() => localTransport2);
 
         new AutoStoreSyncer(twoStore, {
             id: 'two-three',

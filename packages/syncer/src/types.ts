@@ -1,9 +1,9 @@
-import type { AutoStoreOptions, Dict, GetTypeByPath, StateOperateType } from 'autostore';
-import type { AutoStoreSyncer } from './syncer';
-import { AutoStoreSyncTransportBase  } from './transports/base';
+import type { AutoStoreOptions, Dict, GetTypeByPath, StateOperateType } from "autostore";
+import type { AutoStoreSyncer } from "./syncer";
+import { AutoStoreSyncTransportBase } from "./transports/base";
 
 export type AutoStoreSyncerOptions = {
-    mode?: 'push' | 'pull';
+    mode?: "push" | "pull";
     id?: string;
     local?: string[] | string;
     remote?: string[] | string;
@@ -18,7 +18,7 @@ export type AutoStoreSyncerOptions = {
     // 当启用缓存时，缓存的最大数量,超出部分会自动删除
     maxCacheSize?: number;
     // 0:双向同步, 1: from->to,  2: to->from
-    direction?: 'both' | 'forward' | 'backward';
+    direction?: "both" | "forward" | "backward";
     // 是否进行一次同步
     filter?: (path: string[], value: any) => boolean;
     /**
@@ -47,21 +47,21 @@ export type StateRemoteOperate<Value = any> = {
     id: string; // 同步器id，在一对多/多对一时，用于区分不同的同步器
     type:
         | StateOperateType
-        | '$stop'
-        | '$push'
-        | '$update'
-        | '$push-schemas'
-        | '$pull-store'
-        | '$update-store'
-        | '$pull-schemas'
-        | '$update-schemas'
-        | '$update-schema-option';
+        | "$stop"
+        | "$push"
+        | "$update"
+        | "$push-schemas"
+        | "$pull-store"
+        | "$update-store"
+        | "$pull-schemas"
+        | "$update-schemas"
+        | "$update-schema-option";
     path: string[];
     value: Value;
     indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
     parentPath?: string[];
     reply?: boolean;
-    flags: number; 
+    flags: number;
 };
 
 export type AutoStoreCloneOptions<
@@ -69,7 +69,7 @@ export type AutoStoreCloneOptions<
     Entry extends string,
 > = AutoStoreOptions<State> & {
     entry?: Entry;
-    sync?: 'none' | AutoStoreSyncerOptions['direction'];
+    sync?: "none" | AutoStoreSyncerOptions["direction"];
 };
 
 /**
@@ -81,10 +81,10 @@ export type AutoStoreBroadcasterOptions = {
      * 当主 store 发生变化时，是否自动广播到所有连接的客户端
      * @default true
      */
-    autoBroadcast?: boolean;
+    autostart?: boolean;
 };
 
-declare module 'autostore' {
+declare module "autostore" {
     interface AutoStore<State extends Dict> {
         sync(toStore: AutoStore<any>, options?: AutoStoreSyncerOptions): AutoStoreSyncer;
         clone<
@@ -93,8 +93,5 @@ declare module 'autostore' {
         >(
             options?: AutoStoreCloneOptions<State, Entry>,
         ): AutoStore<CloneState>;
-    }
-    interface StateOperate {
-        __schema__?: boolean;
     }
 }

@@ -1,6 +1,6 @@
-import type { StateRemoteOperate } from '../types';
-import { AutoStoreSyncTransportBase } from './base';
-import { isStateRemoteOperate } from '../utils';
+import type { StateRemoteOperate } from "../types";
+import { AutoStoreSyncTransportBase } from "./base";
+import { isStateRemoteOperate } from "../utils";
 
 /**
  * Worker 接口定义
@@ -154,11 +154,9 @@ export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportO
      * 创建连接
      * 绑定 Worker 的 message 事件监听器
      */
-    protected onCreateConnect(): boolean {
+    protected onConnect(): boolean {
         if (!this.options.worker) {
-            console.warn(
-                '[WorkerTransport] 没有配置 worker 实例，无法建立连接',
-            );
+            console.warn("[WorkerTransport] 没有配置 worker 实例，无法建立连接");
             return false;
         }
 
@@ -169,7 +167,7 @@ export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportO
                 this.onReceiveOperate(event.data);
             }
         };
-        this.worker.addEventListener('message', this.messageHandler);
+        this.worker.addEventListener("message", this.messageHandler);
 
         return true;
     }
@@ -178,9 +176,9 @@ export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportO
      * 销毁连接
      * 移除 Worker 的 message 事件监听器
      */
-    protected onDestoryConnect(): void {
+    protected onDisconnect(): void {
         if (this.worker && this.messageHandler) {
-            this.worker.removeEventListener('message', this.messageHandler);
+            this.worker.removeEventListener("message", this.messageHandler);
             this.messageHandler = undefined;
         }
     }
@@ -191,7 +189,7 @@ export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportO
     protected onSendOperate(operate: StateRemoteOperate): void {
         if (!this.worker) {
             console.warn(
-                '[WorkerTransport] 没有配置 worker 实例，无法发送消息。请在外部直接调用 worker.postMessage(operate)',
+                "[WorkerTransport] 没有配置 worker 实例，无法发送消息。请在外部直接调用 worker.postMessage(operate)",
             );
             return;
         }

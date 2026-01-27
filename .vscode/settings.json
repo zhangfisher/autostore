@@ -2,7 +2,6 @@
     "editor.tabSize": 4,
     "editor.insertSpaces": true,
     "editor.detectIndentation": false,
-    "editor.formatOnSave": true,
     "prettier.tabWidth": 4,
     "editor.gotoLocation.alternativeDeclarationCommand": "editor.action.revealDefinition",
     "editor.gotoLocation.alternativeDefinitionCommand": "editor.action.revealDefinition",
@@ -14,5 +13,15 @@
         "other": "on",
         "comments": "off",
         "strings": "on"
+    },
+    "editor.codeActionsOnSave": {
+        "source.fixAll.oxc": "always"
+    },
+    "oxc.typeAware": true,
+    "oxc.fmt.configPath": ".oxfmtrc.json",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.formatOnSave": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
     }
 }

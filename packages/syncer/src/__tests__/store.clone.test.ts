@@ -15,7 +15,7 @@ describe("本地Store克隆同步", () => {
                     count: 3
                 }
             })
-            const toStore = store.clone()
+            const toStore = await store.clone()
             expect(toStore.getSnap()).toEqual(store.getSnap())
         })
         test("克隆部份", async () => {
@@ -26,7 +26,7 @@ describe("本地Store克隆同步", () => {
                     count: 3
                 }
             })
-            const toStore = store.clone({ entry: "order" })
+            const toStore = await store.clone({ entry: "order" })
             expect(toStore.getSnap()).toEqual(store.getSnap({ entry: "order" }))
         })
     })
@@ -41,7 +41,7 @@ describe("本地Store克隆同步", () => {
                     total: computed((order) => order.price * order.count)
                 }
             })
-            const toStore = store.clone()
+            const toStore = await store.clone()
             expect(toStore.getSnap()).toEqual(store.getSnap())
             store.state.order.price = 10
             expect(toStore.state.order.price).toBe(10)
@@ -56,7 +56,7 @@ describe("本地Store克隆同步", () => {
                     count: 3
                 }
             })
-            const toStore = store.clone({ entry: "order" })
+            const toStore = await store.clone({ entry: "order" })
             expect(toStore.getSnap()).toEqual(store.getSnap({ entry: "order" }))
             store.state.order.price = 10
             expect(toStore.state.price).toBe(10)
@@ -72,7 +72,7 @@ describe("本地Store克隆同步", () => {
                     total: computed((order) => order.price * order.count)
                 }
             })
-            const toStore = store.clone()
+            const toStore = await store.clone()
             expect(toStore.getSnap()).toEqual(store.getSnap())
             store.state.order.price = 10
             expect(toStore.state.order.price).toBe(10)
@@ -87,7 +87,7 @@ describe("本地Store克隆同步", () => {
                     tags: ["a", "b", "c"]
                 }
             })
-            const toStore = store.clone()
+            const toStore = await store.clone()
             expect(toStore.getSnap()).toEqual(store.getSnap())
             store.state.order.tags[1] = "*"
             expect(toStore.state.order.tags[1]).toBe("*")
@@ -100,7 +100,7 @@ describe("本地Store克隆同步", () => {
                     tags: ["a", "b", "c", "d"]
                 }
             })
-            const toStore = store.clone()
+            const toStore = await store.clone()
             expect(toStore.getSnap()).toEqual(store.getSnap())
             store.state.order.tags.splice(1, 1)
             expect(toStore.state.order.tags).toEqual(["a", "c", "d"])
@@ -114,7 +114,7 @@ describe("本地Store克隆同步", () => {
                     tags: Array.from({ length: 10 }).map((_, i) => i + 1),
                 }
             })
-            const toStore = store.clone()
+            const toStore = await store.clone()
             expect(toStore.getSnap()).toEqual(store.getSnap())
             store.state.order.tags.splice(5, 3)
             expect(toStore.state.order.tags).toEqual([1, 2, 3, 4, 5, 9, 10])
@@ -127,7 +127,7 @@ describe("本地Store克隆同步", () => {
                     tags: ["a", "b", "c", "d"]
                 }
             })
-            const toStore = store.clone({ entry: "order" })
+            const toStore = await store.clone({ entry: "order" })
             expect(toStore.getSnap()).toEqual(store.getSnap({ entry: "order" }))
             store.state.order.tags.splice(1, 1)
             expect(toStore.state.tags).toEqual(["a", "c", "d"])
@@ -141,7 +141,7 @@ describe("本地Store克隆同步", () => {
                     tags: Array.from({ length: 10 }).map((_, i) => i + 1),
                 }
             })
-            const toStore = store.clone({ entry: "order" })
+            const toStore = await store.clone({ entry: "order" })
             expect(toStore.getSnap()).toEqual(store.getSnap({ entry: "order" }))
             store.state.order.tags.splice(5, 3)
             expect(toStore.state.tags).toEqual([1, 2, 3, 4, 5, 9, 10])
@@ -167,7 +167,7 @@ describe("本地Store克隆同步", () => {
                     e: 5
                 }
             })
-            const toStore = store.clone()
+            const toStore = await store.clone()
             expect(toStore.getSnap()).toEqual(store.getSnap())
             delete store.state.order.a
             expect(toStore.state.order).toEqual({ b: 2, c: 3, d: 4, e: 5 })
