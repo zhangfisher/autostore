@@ -57,7 +57,9 @@ export class AutoStoreSyncer {
             this._options.remote = (this._options.remote as string).split(PATH_DELIMITER);
         this.seq = ++AutoStoreSyncer.seq;
 
-        this._options.autostart && this.start();
+        if (this._options.autostart) {
+            this.start();
+        }
 
         if (this._options.autostart && this.options.immediate) {
             if (this._options.mode === "push") {
@@ -123,18 +125,15 @@ export class AutoStoreSyncer {
                 this.transport.addReceiver(this.id, (operate) => {
                     // 过滤掉自己发送的事件，防止循环
                     if (operate.id === this.id) return;
+                    if (this.options.direction === "forward" && !operate.type.startsWith("$"))
+                        return;
                     if (!this.isPeer(operate)) return;
                     this._onReceiveFromRemote(operate);
                 }),
             );
             // 当连接时自动发送缓存
             this._subscribers.push(this.transport.on("connect", this.flush.bind(this)));
-            this.transport
-                .connect()
-                .then(() => {})
-                .catch((e) => {
-                    this.stop();
-                });
+            this.transport.connect();
         } catch (e) {
             this.stop();
             throw e;
@@ -340,13 +339,10 @@ export class AutoStoreSyncer {
             });
             return pathMap;
         } else {
-            // 当 localEntry 不为空时，operate.path 应该去掉 local 前缀
-            // 这样 remoteSyncer 知道数据应该放置在相对于 localEntry 的路径
-            const operatePath = this.localEntry.length > 0 ? [] : this.options.remote;
             this._sendOperate({
                 id: this.id,
                 type: "$push",
-                path: operatePath,
+                path: this.options.remote,
                 value: localSnap,
                 flags: initial ? SYNC_INIT_FLAG : 0,
             } as StateRemoteOperate);
@@ -392,18 +388,7 @@ export class AutoStoreSyncer {
             const toPath = [...this.localEntry, ...(operate.path || [])];
             store.update(
                 (state) => {
-                    // 当 toPath 为空时，使用深度合并而不是 Object.assign
-                    if (toPath.length === 0 && typeof operate.value === "object") {
-                        for (const key in operate.value) {
-                            if (key in state) {
-                                setVal(state, [key], operate.value[key]);
-                            } else {
-                                state[key] = operate.value[key];
-                            }
-                        }
-                    } else {
-                        setVal(state, toPath, operate.value);
-                    }
+                    setVal(state, toPath, operate.value);
                 },
                 {
                     flags,

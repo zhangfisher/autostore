@@ -30,21 +30,23 @@ function createSyncerPlugin() {
             localSyncer.peer = remoteSyncer;
             return localSyncer;
         };
-
-        store.clone = async function (options?: AutoStoreCloneOptions<any, any>) {
+        // 克隆与Sync的区别？
+        store.clone = function (options?: AutoStoreCloneOptions<any, any>) {
             const { sync, entry = [] } = Object.assign({ sync: "both" }, this._options, options);
             const state = getVal(this.getSnap(), entry);
             if (typeof state !== "object") {
                 throw new Error(`The clone path must be an object, but got ${typeof state}`);
             }
             const clonedOptions = Object.assign({}, this._options, options);
+            if (clonedOptions.id === this.id) {
+                clonedOptions.id = `${this.id}_clone`;
+            }
             const clonedStore = new store.constructor(state, clonedOptions);
             if (sync !== "none") {
                 // local: entry 表示从原 store 的 entry 路径同步
                 // remote: [] 表示同步到 cloned store 的根路径
-                await this.sync(clonedStore, {
+                clonedStore.peer = this.sync(clonedStore, {
                     local: entry,
-                    remote: [],
                     immediate: true,
                     direction: sync,
                 });

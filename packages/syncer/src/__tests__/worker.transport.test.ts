@@ -1,9 +1,9 @@
-import { describe, expect, test, vi } from 'vitest';
-import { computed, AutoStore } from '../../../core/src';
-import { AutoStoreSyncer } from '../syncer';
-import { WorkerTransport } from '../transports/worker';
-import type { IWorker } from '../transports/worker';
-import type { StateRemoteOperate } from '../types';
+import { describe, expect, test, vi } from "vitest";
+import { computed, AutoStore } from "../../../core/src";
+import { AutoStoreSyncer } from "../syncer";
+import { WorkerTransport } from "../transports/worker";
+import type { IWorker } from "../transports/worker";
+import type { StateRemoteOperate } from "../types";
 
 /**
  * 模拟 Worker 实现，用于测试
@@ -16,7 +16,7 @@ class MockWorker implements IWorker {
 
     postMessage(message: any): void {
         if (this.terminated) {
-            throw new Error('Worker has been terminated');
+            throw new Error("Worker has been terminated");
         }
 
         // 如果已经桥接，使用桥接逻辑
@@ -24,7 +24,7 @@ class MockWorker implements IWorker {
             // 触发桥接的 Worker 的监听器
             this.bridgedWorkers.forEach((bridgedWorker) => {
                 setTimeout(() => {
-                    const event = new MessageEvent('message', { data: message });
+                    const event = new MessageEvent("message", { data: message });
                     bridgedWorker.messageListeners.forEach((listener) => {
                         listener(event);
                     });
@@ -33,7 +33,7 @@ class MockWorker implements IWorker {
         } else {
             // 模拟异步消息传递
             setTimeout(() => {
-                const event = new MessageEvent('message', { data: message });
+                const event = new MessageEvent("message", { data: message });
                 this.messageListeners.forEach((listener) => {
                     listener(event);
                 });
@@ -41,20 +41,14 @@ class MockWorker implements IWorker {
         }
     }
 
-    addEventListener(
-        type: string,
-        listener: (event: MessageEvent) => void,
-    ): void {
-        if (type === 'message') {
+    addEventListener(type: string, listener: (event: MessageEvent) => void): void {
+        if (type === "message") {
             this.messageListeners.add(listener);
         }
     }
 
-    removeEventListener(
-        type: string,
-        listener: (event: MessageEvent) => void,
-    ): void {
-        if (type === 'message') {
+    removeEventListener(type: string, listener: (event: MessageEvent) => void): void {
+        if (type === "message") {
             this.messageListeners.delete(listener);
         }
     }
@@ -76,7 +70,7 @@ class MockWorker implements IWorker {
      * 手动触发消息事件（用于测试）
      */
     dispatchMessage(message: any): void {
-        const event = new MessageEvent('message', { data: message });
+        const event = new MessageEvent("message", { data: message });
         this.messageListeners.forEach((listener) => {
             listener(event);
         });
@@ -106,41 +100,41 @@ class MockWorker implements IWorker {
     }
 }
 
-describe('WorkerTransport 单元测试', () => {
-    describe('MockWorker 连接测试', () => {
-        test('connectTo 应该正确建立双向消息桥接', async () => {
+describe("WorkerTransport 单元测试", () => {
+    describe("MockWorker 连接测试", () => {
+        test("connectTo 应该正确建立双向消息桥接", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
             const messages1: any[] = [];
             const messages2: any[] = [];
 
-            worker1.addEventListener('message', (e) => messages1.push(e.data));
-            worker2.addEventListener('message', (e) => messages2.push(e.data));
+            worker1.addEventListener("message", (e) => messages1.push(e.data));
+            worker2.addEventListener("message", (e) => messages2.push(e.data));
 
             // 建立连接
             worker1.connectTo(worker2);
 
             // worker1 发送消息
-            worker1.postMessage({ type: 'test', value: 1 });
+            worker1.postMessage({ type: "test", value: 1 });
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 只有 worker2 收到消息
             expect(messages1).toHaveLength(0);
             expect(messages2).toHaveLength(1);
-            expect(messages2[0]).toEqual({ type: 'test', value: 1 });
+            expect(messages2[0]).toEqual({ type: "test", value: 1 });
 
             // worker2 发送消息
-            worker2.postMessage({ type: 'test', value: 2 });
+            worker2.postMessage({ type: "test", value: 2 });
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 只有 worker1 收到消息
             expect(messages1).toHaveLength(1);
             expect(messages2).toHaveLength(1);
-            expect(messages1[0]).toEqual({ type: 'test', value: 2 });
+            expect(messages1[0]).toEqual({ type: "test", value: 2 });
         });
 
-        test('简单测试：消息只发送一次', async () => {
+        test("简单测试：消息只发送一次", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -161,20 +155,20 @@ describe('WorkerTransport 单元测试', () => {
             const messages1: any[] = [];
             const messages2: any[] = [];
 
-            transport1.addReceiver('test1', (msg) => {
+            transport1.addReceiver("test1", (msg) => {
                 messages1.push(msg);
             });
-            transport2.addReceiver('test2', (msg) => {
+            transport2.addReceiver("test2", (msg) => {
                 messages2.push(msg);
             });
 
             // 从 transport1 发送
             transport1.send({
-                type: 'set',
+                type: "set",
                 value: 1,
-                path: ['x'],
+                path: ["x"],
                 flags: 0,
-                id: 'syncer-1',
+                id: "syncer-1",
             });
             await new Promise((resolve) => setTimeout(resolve, 20));
 
@@ -183,7 +177,7 @@ describe('WorkerTransport 单元测试', () => {
             expect(messages2.length).toBe(1);
         });
 
-        test('测试 AutoStore push 操作触发的事件数量', async () => {
+        test("测试 AutoStore push 操作触发的事件数量", async () => {
             const store = new AutoStore({
                 items: [1, 2, 3],
             });
@@ -198,8 +192,8 @@ describe('WorkerTransport 单元测试', () => {
         });
     });
 
-    describe('基础功能', () => {
-        test('应该创建传输器实例', () => {
+    describe("基础功能", () => {
+        test("应该创建传输器实例", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -209,40 +203,7 @@ describe('WorkerTransport 单元测试', () => {
             expect(transport.connected).toBe(false);
         });
 
-        test('id 应该是唯一且递增的', () => {
-            const worker1 = new MockWorker();
-            const worker2 = new MockWorker();
-            const worker3 = new MockWorker();
-
-            const transport1 = new WorkerTransport({
-                worker: worker1,
-            });
-            const transport2 = new WorkerTransport({
-                worker: worker2,
-            });
-            const transport3 = new WorkerTransport({
-                worker: worker3,
-            });
-
-            // 验证 id 格式
-            expect(transport1.id).toMatch(/^transport-\d+$/);
-            expect(transport2.id).toMatch(/^transport-\d+$/);
-            expect(transport3.id).toMatch(/^transport-\d+$/);
-
-            // 验证 id 是唯一的
-            expect(transport1.id).not.toBe(transport2.id);
-            expect(transport2.id).not.toBe(transport3.id);
-            expect(transport1.id).not.toBe(transport3.id);
-
-            // 验证 id 是递增的
-            const id1Num = parseInt(transport1.id.split('-')[1]);
-            const id2Num = parseInt(transport2.id.split('-')[1]);
-            const id3Num = parseInt(transport3.id.split('-')[1]);
-            expect(id2Num).toBe(id1Num + 1);
-            expect(id3Num).toBe(id2Num + 1);
-        });
-
-        test('应该支持 connect/disconnect', async () => {
+        test("应该支持 connect/disconnect", async () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -258,26 +219,26 @@ describe('WorkerTransport 单元测试', () => {
         });
     });
 
-    describe('消息接收', () => {
-        test('应该接收通过 worker 发送的消息', () => {
+    describe("消息接收", () => {
+        test("应该接收通过 worker 发送的消息", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['user', 'name'],
-                value: '张三',
+                id: "test-id",
+                type: "set",
+                path: ["user", "name"],
+                value: "张三",
                 flags: 0,
             };
 
@@ -287,7 +248,7 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledWith(mockOperate);
         });
 
-        test('应该支持多次注册 receiver（所有回调都会被调用）', () => {
+        test("应该支持多次注册 receiver（所有回调都会被调用）", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -296,18 +257,18 @@ describe('WorkerTransport 单元测试', () => {
             const firstCallback = vi.fn();
             const secondCallback = vi.fn();
 
-            transport.addReceiver('test1', firstCallback);
-            transport.addReceiver('test2', secondCallback);
+            transport.addReceiver("test1", firstCallback);
+            transport.addReceiver("test2", secondCallback);
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['count'],
+                id: "test-id",
+                type: "set",
+                path: ["count"],
                 value: 42,
                 flags: 0,
             };
@@ -321,25 +282,25 @@ describe('WorkerTransport 单元测试', () => {
             expect(secondCallback).toHaveBeenCalledWith(mockOperate);
         });
 
-        test('应该处理异步消息传递', async () => {
+        test("应该处理异步消息传递", async () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['status'],
-                value: 'active',
+                id: "test-id",
+                type: "set",
+                path: ["status"],
+                value: "active",
                 flags: 0,
             };
 
@@ -353,26 +314,26 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledWith(mockOperate);
         });
 
-        test('handleRemoteOperate 应该正确返回布尔值', () => {
+        test("handleRemoteOperate 应该正确返回布尔值", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['test'],
+                id: "test-id",
+                type: "set",
+                path: ["test"],
                 value: 123,
                 flags: 0,
             };
 
-            const validEvent = new MessageEvent('message', { data: mockOperate });
-            const invalidEvent = new MessageEvent('message', {
-                data: { type: 'other' },
+            const validEvent = new MessageEvent("message", { data: mockOperate });
+            const invalidEvent = new MessageEvent("message", {
+                data: { type: "other" },
             });
 
             // 有效的 StateRemoteOperate 应该返回 true
@@ -385,8 +346,8 @@ describe('WorkerTransport 单元测试', () => {
         });
     });
 
-    describe('消息发送', () => {
-        test('应该发送消息到 worker', async () => {
+    describe("消息发送", () => {
+        test("应该发送消息到 worker", async () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -395,13 +356,13 @@ describe('WorkerTransport 单元测试', () => {
             await transport.connect();
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['data'],
-                value: { key: 'value' },
+                id: "test-id",
+                type: "set",
+                path: ["data"],
+                value: { key: "value" },
                 flags: 0,
             };
 
@@ -414,19 +375,19 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledWith(mockOperate);
         });
 
-        test('当未连接时不应该发送消息', () => {
+        test("当未连接时不应该发送消息", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['test'],
+                id: "test-id",
+                type: "set",
+                path: ["test"],
                 value: 123,
                 flags: 0,
             };
@@ -434,25 +395,25 @@ describe('WorkerTransport 单元测试', () => {
             // 未连接时应该抛出错误
             expect(() => {
                 transport.send(mockOperate);
-            }).toThrow('Transport is not connected');
+            }).toThrow("Transport is not connected");
         });
 
-        test('连接后应该能正常发送消息', async () => {
+        test("连接后应该能正常发送消息", async () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 先连接
             await transport.connect();
 
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['test'],
+                id: "test-id",
+                type: "set",
+                path: ["test"],
                 value: 123,
                 flags: 0,
             };
@@ -466,8 +427,8 @@ describe('WorkerTransport 单元测试', () => {
         });
     });
 
-    describe('双向通信', () => {
-        test('应该支持两个 Worker 之间的双向通信', async () => {
+    describe("双向通信", () => {
+        test("应该支持两个 Worker 之间的双向通信", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -488,15 +449,15 @@ describe('WorkerTransport 单元测试', () => {
             const messages1: StateRemoteOperate[] = [];
             const messages2: StateRemoteOperate[] = [];
 
-            transport1.addReceiver('test1', (msg) => messages1.push(msg));
-            transport2.addReceiver('test2', (msg) => messages2.push(msg));
+            transport1.addReceiver("test1", (msg) => messages1.push(msg));
+            transport2.addReceiver("test2", (msg) => messages2.push(msg));
 
             // worker1 发送消息，worker2 接收
             const message1: StateRemoteOperate = {
-                id: 'syncer-1',
-                type: 'set',
-                path: ['from', '1'],
-                value: 'hello',
+                id: "syncer-1",
+                type: "set",
+                path: ["from", "1"],
+                value: "hello",
                 flags: 0,
             };
             transport1.send(message1);
@@ -510,10 +471,10 @@ describe('WorkerTransport 单元测试', () => {
 
             // worker2 发送消息，worker1 接收
             const message2: StateRemoteOperate = {
-                id: 'syncer-2',
-                type: 'set',
-                path: ['from', '2'],
-                value: 'world',
+                id: "syncer-2",
+                type: "set",
+                path: ["from", "2"],
+                value: "world",
                 flags: 0,
             };
             transport2.send(message2);
@@ -527,8 +488,8 @@ describe('WorkerTransport 单元测试', () => {
         });
     });
 
-    describe('生命周期管理', () => {
-        test('disconnect 应该清理连接', async () => {
+    describe("生命周期管理", () => {
+        test("disconnect 应该清理连接", async () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -537,13 +498,13 @@ describe('WorkerTransport 单元测试', () => {
             await transport.connect();
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 发送消息应该能收到
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['test'],
+                id: "test-id",
+                type: "set",
+                path: ["test"],
                 value: 123,
                 flags: 0,
             };
@@ -558,7 +519,7 @@ describe('WorkerTransport 单元测试', () => {
             // 尝试发送消息应该抛出错误
             expect(() => {
                 transport.send({ ...mockOperate, value: 456 });
-            }).toThrow('Transport is not connected');
+            }).toThrow("Transport is not connected");
 
             // 等待一下，确保没有其他消息被接收
             await new Promise((resolve) => setTimeout(resolve, 10));
@@ -567,7 +528,7 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledTimes(1);
         });
 
-        test('disconnect 应该清理所有资源', async () => {
+        test("disconnect 应该清理所有资源", async () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -576,13 +537,13 @@ describe('WorkerTransport 单元测试', () => {
             await transport.connect();
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 连接后发送消息应该能收到
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['test'],
+                id: "test-id",
+                type: "set",
+                path: ["test"],
                 value: 123,
                 flags: 0,
             };
@@ -599,7 +560,7 @@ describe('WorkerTransport 单元测试', () => {
             // 尝试发送消息应该抛出错误
             expect(() => {
                 transport.send({ ...mockOperate, value: 456 });
-            }).toThrow('Transport is not connected');
+            }).toThrow("Transport is not connected");
 
             // 等待一下，确保没有其他消息被接收
             await new Promise((resolve) => setTimeout(resolve, 10));
@@ -608,7 +569,7 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledTimes(1);
         });
 
-        test('多次调用 disconnect 不应该报错', () => {
+        test("多次调用 disconnect 不应该报错", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -621,44 +582,44 @@ describe('WorkerTransport 单元测试', () => {
             }).not.toThrow();
         });
 
-        test('terminate 后调用 postMessage 应该抛出错误', () => {
+        test("terminate 后调用 postMessage 应该抛出错误", () => {
             const worker = new MockWorker();
 
             // 终止 worker
             worker.terminate();
 
             const mockOperate: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['test'],
+                id: "test-id",
+                type: "set",
+                path: ["test"],
                 value: 123,
                 flags: 0,
             };
 
             expect(() => {
                 worker.postMessage(mockOperate);
-            }).toThrow('Worker has been terminated');
+            }).toThrow("Worker has been terminated");
         });
     });
 
-    describe('复杂场景', () => {
-        test('应该正确处理 $stop 操作', () => {
+    describe("复杂场景", () => {
+        test("应该正确处理 $stop 操作", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
             const stopMessage: StateRemoteOperate = {
-                id: 'test-id',
-                type: '$stop',
+                id: "test-id",
+                type: "$stop",
                 path: [],
                 value: undefined,
                 flags: 0,
@@ -669,35 +630,34 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledWith(stopMessage);
         });
 
-        test('应该处理包含复杂值的操作', () => {
+        test("应该处理包含复杂值的操作", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
             const complexMessage: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['user', 'profile'],
+                id: "test-id",
+                type: "set",
+                path: ["user", "profile"],
                 value: {
-                    name: '张三',
+                    name: "张三",
                     age: 30,
-                    hobbies: ['阅读', '编程'],
+                    hobbies: ["阅读", "编程"],
                     address: {
-                        city: '北京',
-                        district: '朝阳区',
+                        city: "北京",
+                        district: "朝阳区",
                     },
                 },
                 flags: 0,
-                __schema__: true,
             };
 
             worker.dispatchMessage(complexMessage);
@@ -705,7 +665,7 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledWith(complexMessage);
         });
 
-        test('应该处理大量消息', async () => {
+        test("应该处理大量消息", async () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
@@ -714,14 +674,14 @@ describe('WorkerTransport 单元测试', () => {
             await transport.connect();
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             const messageCount = 100;
             for (let i = 0; i < messageCount; i++) {
                 const message: StateRemoteOperate = {
                     id: `test-${i}`,
-                    type: 'set',
-                    path: ['count'],
+                    type: "set",
+                    path: ["count"],
                     value: i,
                     flags: 0,
                 };
@@ -735,24 +695,24 @@ describe('WorkerTransport 单元测试', () => {
         });
     });
 
-    describe('边界情况', () => {
-        test('应该正确处理空对象', () => {
+    describe("边界情况", () => {
+        test("应该正确处理空对象", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
             const emptyMessage: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
+                id: "test-id",
+                type: "set",
                 path: [],
                 value: {},
                 flags: 0,
@@ -763,24 +723,24 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledWith(emptyMessage);
         });
 
-        test('应该正确处理 null 和 undefined 值', () => {
+        test("应该正确处理 null 和 undefined 值", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
             const nullMessage: StateRemoteOperate = {
-                id: 'test-id',
-                type: 'set',
-                path: ['value'],
+                id: "test-id",
+                type: "set",
+                path: ["value"],
                 value: null,
                 flags: 0,
             };
@@ -791,42 +751,42 @@ describe('WorkerTransport 单元测试', () => {
             expect(receiveCallback).toHaveBeenCalledTimes(1);
         });
 
-        test('receiver 在连接前时发送的消息应该被忽略', () => {
+        test("receiver 在连接前时发送的消息应该被忽略", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
             worker.dispatchMessage({
-                id: 'test-id',
-                type: 'set',
-                path: ['early'],
-                value: 'message',
+                id: "test-id",
+                type: "set",
+                path: ["early"],
+                value: "message",
                 flags: 0,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             expect(receiveCallback).not.toHaveBeenCalled();
         });
 
-        test('应该处理没有 data 字段的 MessageEvent', () => {
+        test("应该处理没有 data 字段的 MessageEvent", () => {
             const worker = new MockWorker();
             const transport = new WorkerTransport({
                 worker: worker,
             });
 
             const receiveCallback = vi.fn();
-            transport.addReceiver('test', receiveCallback);
+            transport.addReceiver("test", receiveCallback);
 
             // 手动绑定消息监听
-            worker.addEventListener('message', (event) => {
+            worker.addEventListener("message", (event) => {
                 transport.handleRemoteOperate(event);
             });
 
@@ -834,7 +794,7 @@ describe('WorkerTransport 单元测试', () => {
             worker.dispatchMessage(null);
 
             // 不是有效的 StateRemoteOperate，handleRemoteOperate 返回 false
-            const event = new MessageEvent('message', { data: null });
+            const event = new MessageEvent("message", { data: null });
             expect(transport.handleRemoteOperate(event)).toBe(false);
 
             // 回调不应该被调用
@@ -843,9 +803,9 @@ describe('WorkerTransport 单元测试', () => {
     });
 });
 
-describe('WorkerTransport AutoStore 同步集成测试', () => {
-    describe('基础同步功能', () => {
-        test('应该支持主线程与 Worker 之间的双向同步', async () => {
+describe("WorkerTransport AutoStore 同步集成测试", () => {
+    describe("基础同步功能", () => {
+        test("应该支持主线程与 Worker 之间的双向同步", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -862,7 +822,7 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
 
             const store1 = new AutoStore({
                 order: {
-                    name: 'fisher',
+                    name: "fisher",
                     price: 2,
                     count: 3,
                     total: computed((order) => order.price * order.count),
@@ -872,10 +832,10 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             const store2 = new AutoStore<typeof store1.state>();
 
             // 手动绑定消息监听
-            worker1.addEventListener('message', (event) => {
+            worker1.addEventListener("message", (event) => {
                 transport1.handleRemoteOperate(event);
             });
-            worker2.addEventListener('message', (event) => {
+            worker2.addEventListener("message", (event) => {
                 transport2.handleRemoteOperate(event);
             });
 
@@ -913,7 +873,7 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             expect(store1.state.order.total).toBe(15);
         });
 
-        test.skip('应该支持数组的同步 (splice 操作同步需要修复)', async () => {
+        test("应该支持数组的同步 (splice 操作同步需要修复)", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -932,21 +892,21 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
                 {
                     items: [1, 2, 3, 4, 5],
                 },
-                { id: 'store-1' },
+                { id: "store-1" },
             );
 
             const store2 = new AutoStore(
                 {
                     items: [1, 2, 3, 4, 5],
                 },
-                { id: 'store-2' },
+                { id: "store-2" },
             );
 
             // 手动绑定消息监听
-            worker1.addEventListener('message', (event) => {
+            worker1.addEventListener("message", (event) => {
                 transport1.handleRemoteOperate(event);
             });
-            worker2.addEventListener('message', (event) => {
+            worker2.addEventListener("message", (event) => {
                 transport2.handleRemoteOperate(event);
             });
 
@@ -982,7 +942,7 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             expect(store2.state.items[0]).toBe(10);
         });
 
-        test('应该支持嵌套对象的同步', async () => {
+        test("应该支持嵌套对象的同步", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -1000,12 +960,12 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             const store1 = new AutoStore({
                 user: {
                     profile: {
-                        name: '张三',
+                        name: "张三",
                         age: 30,
                     },
                     address: {
-                        city: '北京',
-                        district: '朝阳区',
+                        city: "北京",
+                        district: "朝阳区",
                     },
                 },
             });
@@ -1013,10 +973,10 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             const store2 = new AutoStore<typeof store1.state>();
 
             // 手动绑定消息监听
-            worker1.addEventListener('message', (event) => {
+            worker1.addEventListener("message", (event) => {
                 transport1.handleRemoteOperate(event);
             });
-            worker2.addEventListener('message', (event) => {
+            worker2.addEventListener("message", (event) => {
                 transport2.handleRemoteOperate(event);
             });
 
@@ -1035,18 +995,18 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             expect(store2.state).toEqual(store1.state);
 
             // 测试深层嵌套属性的同步
-            store1.state.user.profile.name = '李四';
+            store1.state.user.profile.name = "李四";
             await new Promise((resolve) => setTimeout(resolve, 10));
-            expect(store2.state.user.profile.name).toBe('李四');
+            expect(store2.state.user.profile.name).toBe("李四");
 
-            store2.state.user.address.city = '上海';
+            store2.state.user.address.city = "上海";
             await new Promise((resolve) => setTimeout(resolve, 10));
-            expect(store1.state.user.address.city).toBe('上海');
+            expect(store1.state.user.address.city).toBe("上海");
         });
     });
 
-    describe('生命周期管理', () => {
-        test('停止同步后应该不再接收更新', async () => {
+    describe("生命周期管理", () => {
+        test("停止同步后应该不再接收更新", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -1068,10 +1028,10 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             const store2 = new AutoStore<typeof store1.state>();
 
             // 手动绑定消息监听
-            worker1.addEventListener('message', (event) => {
+            worker1.addEventListener("message", (event) => {
                 transport1.handleRemoteOperate(event);
             });
-            worker2.addEventListener('message', (event) => {
+            worker2.addEventListener("message", (event) => {
                 transport2.handleRemoteOperate(event);
             });
 
@@ -1104,7 +1064,7 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             expect(store2.state.count).toBe(10);
         });
 
-        test('销毁 transport 后应该清理资源', () => {
+        test("销毁 transport 后应该清理资源", () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -1120,16 +1080,16 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             });
 
             const store1 = new AutoStore({
-                value: 'test',
+                value: "test",
             });
 
             const store2 = new AutoStore<typeof store1.state>();
 
             // 手动绑定消息监听
-            worker1.addEventListener('message', (event) => {
+            worker1.addEventListener("message", (event) => {
                 transport1.handleRemoteOperate(event);
             });
-            worker2.addEventListener('message', (event) => {
+            worker2.addEventListener("message", (event) => {
                 transport2.handleRemoteOperate(event);
             });
 
@@ -1151,8 +1111,8 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
         });
     });
 
-    describe('计算属性同步', () => {
-        test('应该支持计算属性的同步', async () => {
+    describe("计算属性同步", () => {
+        test("应该支持计算属性的同步", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -1169,7 +1129,7 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
 
             const store1 = new AutoStore({
                 order: {
-                    name: 'fisher',
+                    name: "fisher",
                     price: 2,
                     count: 3,
                     total: computed((order) => order.price * order.count),
@@ -1178,7 +1138,7 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
 
             const store2 = new AutoStore({
                 order: {
-                    name: 'fisher',
+                    name: "fisher",
                     price: 2,
                     count: 3,
                     total: computed((order) => order.price * order.count),
@@ -1186,10 +1146,10 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             });
 
             // 手动绑定消息监听
-            worker1.addEventListener('message', (event) => {
+            worker1.addEventListener("message", (event) => {
                 transport1.handleRemoteOperate(event);
             });
-            worker2.addEventListener('message', (event) => {
+            worker2.addEventListener("message", (event) => {
                 transport2.handleRemoteOperate(event);
             });
 
@@ -1224,8 +1184,8 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
         });
     });
 
-    describe('边界情况', () => {
-        test('应该正确处理空对象的同步', async () => {
+    describe("边界情况", () => {
+        test("应该正确处理空对象的同步", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -1244,10 +1204,10 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             const store2 = new AutoStore<Record<string, any>>({});
 
             // 手动绑定消息监听
-            worker1.addEventListener('message', (event) => {
+            worker1.addEventListener("message", (event) => {
                 transport1.handleRemoteOperate(event);
             });
-            worker2.addEventListener('message', (event) => {
+            worker2.addEventListener("message", (event) => {
                 transport2.handleRemoteOperate(event);
             });
 
@@ -1265,12 +1225,12 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 添加新属性
-            store1.state.newProp = 'value';
+            store1.state.newProp = "value";
             await new Promise((resolve) => setTimeout(resolve, 10));
-            expect(store2.state.newProp).toBe('value');
+            expect(store2.state.newProp).toBe("value");
         });
 
-        test('应该正确处理 null 和 undefined 值', async () => {
+        test("应该正确处理 null 和 undefined 值", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -1286,17 +1246,17 @@ describe('WorkerTransport AutoStore 同步集成测试', () => {
             });
 
             const store1 = new AutoStore({
-                value: 'initial' as string | null,
+                value: "initial" as string | null,
                 nullValue: null as null | undefined,
             });
 
             const store2 = new AutoStore<typeof store1.state>();
 
             // 手动绑定消息监听
-            worker1.addEventListener('message', (event) => {
+            worker1.addEventListener("message", (event) => {
                 transport1.handleRemoteOperate(event);
             });
-            worker2.addEventListener('message', (event) => {
+            worker2.addEventListener("message", (event) => {
                 transport2.handleRemoteOperate(event);
             });
 

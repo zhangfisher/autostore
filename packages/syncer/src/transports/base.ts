@@ -1,5 +1,6 @@
 import type { StateRemoteOperate } from "../types";
 import { EventEmitter, EventSubscriber } from "../utils/emitter";
+import { isPromiseLike } from "../utils/isPromiseLike";
 
 /**
  * 传输层事件类型
@@ -72,11 +73,14 @@ export class AutoStoreSyncTransportBase<
      * 建立连接
      * 触发 connect 事件
      */
-    async connect() {
+    connect() {
         if (this.connected) {
             return;
         }
-        if (await this.onConnect()) {
+        const isConnect = this.onConnect();
+        if (isPromiseLike(isConnect)) {
+            return isConnect;
+        } else {
             this.connected = true;
             this.emit("connect", undefined);
         }
