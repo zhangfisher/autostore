@@ -53,8 +53,6 @@ describe("本地Store同步", () => {
         );
         store1.sync(store2, { direction: "both" });
         // 初始同步后,store2的total应该是6
-        console.log("DEBUG: store2.state.order =", store2.state.order);
-        console.log("DEBUG: store2.state.order.total =", store2.state.order.total);
         await delay();
         expect(store2.state.order.total).toBe(6);
         // 修改store1的count,触发total重新计算

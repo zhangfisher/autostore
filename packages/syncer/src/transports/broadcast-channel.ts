@@ -1,5 +1,5 @@
 import type { StateRemoteOperate } from "../types";
-import { AutoStoreSyncTransportBase, type AutoStoreSyncTransportOptions } from "./base";
+import { AutoStoreSyncTransportBase } from "./base";
 import { isStateRemoteOperate } from "../utils";
 
 /**
@@ -14,10 +14,6 @@ export type BroadcastChannelTransportOptions = {
      * 是否自动建立连接，默认为 false 以保持向后兼容
      */
     autoConnect?: boolean;
-    /**
-     * 启用调试模式
-     */
-    debug?: boolean;
 };
 
 /**
@@ -101,22 +97,15 @@ export class BroadcastChannelTransport extends AutoStoreSyncTransportBase<Broadc
 
             // 绑定消息监听器
             this.messageHandler = (event: MessageEvent) => {
-                console.log('[BroadcastChannelTransport] 收到消息:', event.data);
                 if (isStateRemoteOperate(event.data)) {
-                    console.log('[BroadcastChannelTransport] 消息验证通过，调用 onReceiveOperate');
                     this.onReceiveOperate(event.data);
-                } else {
-                    console.log('[BroadcastChannelTransport] 消息验证失败');
                 }
             };
-            this.channel.addEventListener("message", this.messageHandler);
+            this.channel.addEventListener("message", this.messageHandler as any);
 
             return true;
         } catch (error) {
-            console.error(
-                `[BroadcastChannelTransport] 创建 BroadcastChannel 失败:`,
-                error,
-            );
+            console.error(`[BroadcastChannelTransport] 创建 BroadcastChannel 失败:`, error);
             return false;
         }
     }
@@ -128,7 +117,7 @@ export class BroadcastChannelTransport extends AutoStoreSyncTransportBase<Broadc
     protected onDisconnect(): void {
         if (this.channel) {
             if (this.messageHandler) {
-                this.channel.removeEventListener("message", this.messageHandler);
+                this.channel.removeEventListener("message", this.messageHandler as any);
                 this.messageHandler = undefined;
             }
             this.channel.close();
@@ -141,15 +130,13 @@ export class BroadcastChannelTransport extends AutoStoreSyncTransportBase<Broadc
      * 所有同频道的页面都会收到消息
      */
     protected onSendOperate(operate: StateRemoteOperate): void {
-        console.log('[BroadcastChannelTransport] 准备发送消息:', operate);
+        console.log("[BroadcastChannelTransport] 准备发送消息:", operate);
         if (!this.channel) {
-            console.warn(
-                "[BroadcastChannelTransport] BroadcastChannel 未连接，无法发送消息",
-            );
+            console.warn("[BroadcastChannelTransport] BroadcastChannel 未连接，无法发送消息");
             return;
         }
-        console.log('[BroadcastChannelTransport] 发送消息到频道:', this.options.channelName);
+        console.log("[BroadcastChannelTransport] 发送消息到频道:", this.options.channelName);
         this.channel.postMessage(operate);
-        console.log('[BroadcastChannelTransport] 消息已发送');
+        console.log("[BroadcastChannelTransport] 消息已发送");
     }
 }

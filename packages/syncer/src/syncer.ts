@@ -10,7 +10,7 @@ import {
     type StateOperate,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
-import { EventSubscriber } from "./utils/emitter";
+import { EventSubscriber, EventEmitter } from "./utils/emitter";
 
 type NormalizeAutoStoreSyncerOptions = Required<
     Omit<AutoStoreSyncerOptions, "local" | "remote"> & {
@@ -21,7 +21,20 @@ type NormalizeAutoStoreSyncerOptions = Required<
 
 export const SYNC_INIT_FLAG = -1;
 
-export class AutoStoreSyncer {
+export type AutoStoreSyncerEvents = {
+    /**
+     * 当同步器启动时
+     */
+    start: void;
+    /**
+     * 当同步器停止时
+     */
+    stop: void;
+    /** 发生错误时触发 */
+    error: Error;
+};
+
+export class AutoStoreSyncer extends EventEmitter<AutoStoreSyncerEvents> {
     static seq = 99;
     private seq: number; // 实例唯一标识
     private _options: NormalizeAutoStoreSyncerOptions;
@@ -33,6 +46,7 @@ export class AutoStoreSyncer {
         public store: AutoStore<any>,
         options?: AutoStoreSyncerOptions,
     ) {
+        super();
         this._options = Object.assign(
             {
                 id: store.id,
@@ -109,6 +123,7 @@ export class AutoStoreSyncer {
 
     start() {
         if (this.syncing) return;
+        let hasError: any;
         try {
             this.syncing = true;
             // 发送更新到了远程，只监听写操作
@@ -120,53 +135,68 @@ export class AutoStoreSyncer {
             // 收到远程更新
             this._subscribers.push(
                 this.transport.addReceiver(this.id, (operate) => {
-                    console.log("[AutoStoreSyncer] 收到远程消息:", operate);
-                    console.log("[AutoStoreSyncer] 本地 id:", this.id, "消息 id:", operate.id);
                     // 过滤掉自己发送的事件，防止循环
                     if (operate.id === this.id) {
-                        console.log("[AutoStoreSyncer] 跳过: 来自自己的消息");
                         return;
                     }
                     if (this.options.direction === "forward" && !operate.type.startsWith("$")) {
-                        console.log("[AutoStoreSyncer] 跳过: direction = forward 且非系统消息");
                         return;
                     }
                     if (!this.isPeer(operate)) {
-                        console.log("[AutoStoreSyncer] 跳过: 不是 peer");
                         return;
                     }
-                    console.log("[AutoStoreSyncer] 准备应用远程消息");
                     this._onReceiveFromRemote(operate);
                 }),
             );
             // 当连接时自动发送缓存
             this._subscribers.push(this.transport.on("connect", this.flush.bind(this)));
+            // 当连接断开时，停止同步
+            this._subscribers.push(this.transport.on("disconnect", this.stop.bind(this)));
             this.transport.connect();
         } catch (e) {
+            hasError = e;
             this.stop();
+            this.emit("error", e as Error, true);
             throw e;
+        } finally {
+            if (!hasError) {
+                this.emit("start", undefined, true);
+            }
         }
     }
-    stop(disconnect: boolean = true) {
+    /**
+     * 停止同步
+     * @returns
+     */
+    stop() {
         if (!this.syncing) return;
-        this._subscribers.forEach((subscriber) => subscriber.off());
-        this.syncing = false;
-        if (disconnect) this._disconnect();
+        try {
+            this._subscribers.forEach((subscriber) => subscriber.off());
+            this.syncing = false;
+            if (this._options.transport.connected) {
+                // 向对方发送一个停止同步的信号
+                this._options.transport.send({
+                    id: this.id,
+                    type: "$stop",
+                    path: [],
+                    value: undefined,
+                    flags: 0,
+                });
+            }
+        } finally {
+            this.emit("stop", undefined, true);
+        }
     }
 
     private _onWatchStore(operate: StateOperate) {
-        console.log("[AutoStoreSyncer] _onWatchStore 触发:", operate);
         if (this._isPass(operate.path, operate.value) === false) return;
         // 如果 flags 的绝对值等于当前 syncer 的 seq，说明是来自自己写入的操作，不应该再转发
         if (Math.abs(operate.flags || 0) === this.seq) {
-            console.log("[AutoStoreSyncer] 跳过: 来自自己的操作");
             return;
         }
         if (this.options.direction === "backward") {
-            console.log("[AutoStoreSyncer] 跳过: direction = backward");
             return;
         }
-        console.log("[AutoStoreSyncer] 准备发送到远程");
         this._sendToRemote(operate);
     }
 
@@ -181,10 +211,7 @@ export class AutoStoreSyncer {
         const localEntry = this.options.local;
         const remoteEntry = this.options.remote;
 
-        console.log("[AutoStoreSyncer] _sendToRemote:", { operate, localEntry, remoteEntry });
-
         if (!pathStartsWith(this._options.local, operate.path)) {
-            console.log("[AutoStoreSyncer] 路径不匹配，跳过发送");
             return;
         }
 
@@ -210,29 +237,27 @@ export class AutoStoreSyncer {
     }
 
     private _onReceiveFromRemote(operate: StateRemoteOperate) {
-        console.log("[AutoStoreSyncer] _onReceiveFromRemote:", operate);
         if (typeof this._options.onReceive === "function") {
             if (this._options.onReceive.call(this, operate) === false) return;
         }
-        if (operate.type === "$stop") {
-            console.log("[AutoStoreSyncer] 处理 $stop");
-            // 对于持久连接（如 BroadcastChannel），不应该断开 transport
-            // 只停止同步即可
-            this.stop(false);
-            // this.transport.disconnect(); // 注释掉，避免断开 BroadcastChannel
-        } else if (operate.type === "$push") {
-            console.log("[AutoStoreSyncer] 处理 $push");
+        const type = operate.type;
+        if (type === "$stop") {
+            // 停止同步
+            this.stop();
+        } else if (type === "$push") {
+            // 对方的推送命令
             this._updateStore(operate);
-        } else if (operate.type === "$pull") {
-            console.log("[AutoStoreSyncer] 处理 $pull，准备发送 store");
-            // 要求拉取store
+        } else if (type === "$pull") {
+            // 对方的拉取命令
             this._sendStore(operate);
-        } else if (operate.type === "$update") {
-            console.log("[AutoStoreSyncer] 处理 $update");
+        } else if (type === "$update") {
             // 对pull的响应
             this._updateStore(operate);
+        } else if (type === "$error") {
+            // 对应的错误报告
+            this.emit("error", new Error(operate.value));
         } else {
-            console.log("[AutoStoreSyncer] 处理普通操作:", operate.type);
+            // 常规的更新操作
             this._applyOperate(operate);
         }
     }
@@ -241,19 +266,14 @@ export class AutoStoreSyncer {
         const { type, value, indexs } = operate;
         const store = this.store;
 
-        console.log("[AutoStoreSyncer] _applyOperate:", { type, value, path: operate.path });
-
         // 路径映射
         const newPath = this._mapPath(operate.path, operate.value, "toLocal");
         if (!newPath) {
-            console.log("[AutoStoreSyncer] _applyOperate: 路径映射返回空，跳过");
             return;
         }
         operate.path = newPath;
 
         const toPath = [...this.localEntry, ...operate.path.slice(this.options.remote.length)];
-
-        console.log("[AutoStoreSyncer] _applyOperate: 更新路径", toPath, "值为", value);
 
         // 使用负数标记来自远程的操作，防止循环
         // 始终使用负数 flags，确保 _onWatchStore 不会再次转发此操作
@@ -262,7 +282,6 @@ export class AutoStoreSyncer {
         };
 
         if (type === "set" || type === "update") {
-            console.log("[AutoStoreSyncer] _applyOperate: 执行 set/update");
             store.update((state) => {
                 // getVal提供一个默认值，否则当目标路径不存在时会触发invalid state path error
                 if (isAsyncComputedValue(getVal(state, toPath, true))) {
@@ -272,7 +291,6 @@ export class AutoStoreSyncer {
                 }
             }, updateOpts);
         } else if (type === "delete") {
-            console.log("[AutoStoreSyncer] _applyOperate: 执行 delete");
             store.update((state) => {
                 setVal(state, toPath, undefined);
             }, updateOpts);
@@ -292,14 +310,6 @@ export class AutoStoreSyncer {
     }
 
     private _disconnect() {
-        // 向对方发送一个停止同步的信号
-        this._options.transport.send({
-            id: this.id,
-            type: "$stop",
-            path: [],
-            value: undefined,
-            flags: 0,
-        });
         this.transport.disconnect();
     }
     /**

@@ -7,8 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { AutoStore } from 'autostore';
-import { AutoStoreSyncer, AutoStoreWorkerSyncer } from '@autostorejs/syncer';
-import { WorkerTransport } from '@autostorejs/syncer';
+import {  AutoStoreWorkerSyncer } from '@autostorejs/syncer'; 
 
 export function FullSyncExample() {
     const [store] = useState(() => {

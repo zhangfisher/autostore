@@ -8,28 +8,28 @@
 import { useState, useEffect } from 'react';
 import { AutoStore } from 'autostore';
 import { AutoStoreBroadcastChannelSyncer } from '@autostorejs/syncer';
+const store = new AutoStore({
+    count: 0,
+    messages: [] as string[],
+    messageCount: (scope: any) => scope.messages.length,
+    todos: [] as Array<{ id: number; text: string; completed: boolean }>,
+    user: {
+        name: '张三',
+        age: 30,
+        email: 'zhangsan@example.com',
+        address: {
+            city: '北京',
+            district: '朝阳区',
+            detail: '某某街道123号',
+        },
+    },
+});
 
+const syncer = new AutoStoreBroadcastChannelSyncer(store, 'broadcast-channel-demo');
+
+// @ts-ignore
+globalThis.BStore = store;
 export function BroadcastChannelExample() {
-    const [store] = useState(() => {
-        return new AutoStore({
-            count: 0,
-            messages: [] as string[],
-            messageCount: (scope: any) => scope.messages.length,
-            todos: [] as Array<{ id: number; text: string; completed: boolean }>,
-            user: {
-                name: '张三',
-                age: 30,
-                email: 'zhangsan@example.com',
-                address: {
-                    city: '北京',
-                    district: '朝阳区',
-                    detail: '某某街道123号',
-                },
-            },
-        });
-    });
-    // @ts-ignore
-    globalThis.BStore = store;
     const [connected, setConnected] = useState(false);
     const [pageId] = useState(() => Math.random().toString(36).substr(2, 9));
     const [logMessages, setLogMessages] = useState<string[]>([]);
@@ -37,12 +37,11 @@ export function BroadcastChannelExample() {
     useEffect(() => {
         // 使用 AutoStoreBroadcastChannelSyncer 简化 BroadcastChannel 的使用
         // 默认使用 pull 模式，新页面从已有页面拉取最新状态
-        const syncer = new AutoStoreBroadcastChannelSyncer(store, 'broadcast-channel-demo');
         setConnected(true);
         addLogMessage(`[系统] 页面 ${pageId} 已连接到 BroadcastChannel`);
 
         return () => {
-            syncer.stop();
+            // syncer.stop();
         };
     }, []);
 

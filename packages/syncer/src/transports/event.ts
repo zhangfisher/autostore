@@ -55,10 +55,6 @@ export type EventEmitterTransportOptions = {
      * 是否自动建立连接
      */
     autoConnect?: boolean;
-    /**
-     * 启用调试模式
-     */
-    debug?: boolean;
 };
 export class EventEmitterTransport extends AutoStoreSyncTransportBase<EventEmitterTransportOptions> {
     private handleReceive: (operate: StateRemoteOperate) => void;

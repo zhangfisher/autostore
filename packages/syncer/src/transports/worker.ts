@@ -155,7 +155,6 @@ export type WorkerTransportOptions = {
  * ```
  */
 export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportOptions> {
-    private worker?: IWorker;
     private messageHandler?: (event: MessageEvent) => void;
 
     /**
