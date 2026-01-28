@@ -5,4 +5,6 @@ export * from "./broadcaster";
 export * from "./utils";
 export * from "./transports/base";
 export * from "./transports/worker";
+export * from "./transports/broadcast-channel";
 export * from "./syncers/workerSyncer";
+export * from "./syncers/broadcastChannelSyncer";

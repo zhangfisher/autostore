@@ -7,9 +7,16 @@
 import { useState } from 'react';
 import { FullSyncExample } from './examples/full-sync';
 import { PathSyncExample } from './examples/path-sync';
+import { BroadcastChannelExample } from './examples/broadcast-channel';
 
 // 示例配置
 const examples = [
+    {
+        id: 'broadcast-channel',
+        title: '广播频道',
+        description: '使用 BroadcastChannel API 在多个页签之间同步状态，无需 Worker',
+        icon: '📡',
+    },
     {
         id: 'full-sync',
         title: '完整同步',
@@ -25,17 +32,19 @@ const examples = [
 ];
 
 function App() {
-    const [activeExample, setActiveExample] = useState('full-sync');
+    const [activeExample, setActiveExample] = useState('broadcast-channel');
 
     // 渲染当前激活的示例
     const renderExample = () => {
         switch (activeExample) {
+            case 'broadcast-channel':
+                return <BroadcastChannelExample />;
             case 'full-sync':
                 return <FullSyncExample />;
             case 'path-sync':
                 return <PathSyncExample />;
             default:
-                return <FullSyncExample />;
+                return <BroadcastChannelExample />;
         }
     };
 
