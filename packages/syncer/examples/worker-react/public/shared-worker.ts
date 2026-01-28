@@ -6,7 +6,7 @@
  */
 
 import { AutoStore } from "autostore";
-import { AutoStoreBroadcaster } from "@autostorejs/syncer";
+import { AutoStoreBroadcastSyncer } from "@autostorejs/syncer";
 import { WorkerTransport } from "@autostorejs/syncer";
 
 // 创建主 store
@@ -18,7 +18,7 @@ const store = new AutoStore({
 });
 
 // 创建同步广播器
-const broadcaster = new AutoStoreBroadcaster(store, {
+const broadcaster = new AutoStoreBroadcastSyncer(store, {
     autostart: true,
     syncerOptions: {
         immediate: true, // 首次连接时推送当前状态

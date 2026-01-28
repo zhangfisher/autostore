@@ -225,7 +225,7 @@ describe("本地Store同步", () => {
                 count: 1,
             },
         });
-        await store1.sync(store2, { local: ["order", "count"], remote: ["myorder", "count"] });
+        store1.sync(store2, { local: ["order", "count"], remote: ["myorder", "count"] });
         expect(store2.state.myorder.count).toEqual(store1.state.order.count);
         store1.state.order.count = 4;
         expect(store2.state.myorder.count).toBe(4);
@@ -251,7 +251,7 @@ describe("本地Store同步", () => {
             },
             { id: "b" },
         );
-        await store1.sync(store2, { local: "order.values", remote: "myorder.values" });
+        store1.sync(store2, { local: "order.values", remote: "myorder.values" });
         expect(store2.state.myorder.values).toEqual(store1.state.order.values);
         store1.state.order.values.push(0);
         expect(store2.state.myorder.values).toEqual(store1.state.order.values);
@@ -270,7 +270,7 @@ describe("本地Store同步", () => {
             order: { a: 1, b: 2, c: 3 },
         });
 
-        await store1.sync(store2, { remote: "x.y" });
+        store1.sync(store2, { remote: "x.y" });
         // @ts-expect-error
         expect(store2.state.x.y).toEqual(store1.state);
     });
@@ -286,19 +286,19 @@ describe("本地Store同步", () => {
             b1: 2,
             c1: 3,
         });
-        await store1.sync(store, { remote: "x" });
+        store1.sync(store, { remote: "x" });
         const store2 = new AutoStore({
             a2: 1,
             b2: 2,
             c2: 3,
         });
-        await store2.sync(store, { remote: "y" });
+        store2.sync(store, { remote: "y" });
         const store3 = new AutoStore({
             a3: 1,
             b3: 2,
             c3: 3,
         });
-        await store3.sync(store, { remote: "z" });
+        store3.sync(store, { remote: "z" });
 
         store1.state.a1 = 10;
         expect(store.state.x.a1).toBe(10);
@@ -326,21 +326,21 @@ describe("本地Store同步", () => {
             b1: 2,
             c1: 3,
         });
-        await store.sync(store1, { local: "x" });
+        store.sync(store1, { local: "x" });
 
         const store2 = new AutoStore({
             a2: 1,
             b2: 2,
             c2: 3,
         });
-        await store.sync(store2, { local: "y" });
+        store.sync(store2, { local: "y" });
 
         const store3 = new AutoStore({
             a3: 1,
             b3: 2,
             c3: 3,
         });
-        await store.sync(store3, { local: "z" });
+        store.sync(store3, { local: "z" });
 
         store1.state.a1 = 10;
         expect(store.state.x.a1).toBe(10);
@@ -369,7 +369,7 @@ describe("本地Store同步", () => {
         const toStore = new AutoStore({
             myorder: {},
         });
-        await fromStore.sync(toStore, {
+        fromStore.sync(toStore, {
             remote: "myorder",
             immediate: false, // 不马上同步
             pathMap: {
@@ -424,7 +424,7 @@ describe("本地Store同步", () => {
         const toStore = new AutoStore({
             myorder: {},
         });
-        await fromStore.sync(toStore, {
+        fromStore.sync(toStore, {
             remote: "myorder",
             // immediate: true, 默认会马上同步
             pathMap: {
@@ -465,7 +465,7 @@ describe("本地Store同步", () => {
         const toStore = new AutoStore({
             myorder: {},
         });
-        await fromStore.sync(toStore, {
+        fromStore.sync(toStore, {
             remote: "myorder",
             pathMap: {
                 toRemote: (path: string[], value: any) => {
@@ -539,7 +539,7 @@ describe("本地Store同步", () => {
             // @ts-expect-error
             myorder: {},
         });
-        await store1.sync(store2, {
+        store1.sync(store2, {
             local: ["order"],
             remote: ["myorder"],
             immediate: false,
@@ -565,5 +565,37 @@ describe("本地Store同步", () => {
         store2.state.myorder.count = 5;
         expect(store1.state.order.count).toBe(5);
         expect(store1.state.order.total).toBe(10);
+    });
+    test("应该支持数组的splice操作多个成员", async () => {
+        const store1 = new AutoStore({
+            books: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        });
+        const store2 = new AutoStore<typeof store1.state>();
+        store1.sync(store2);
+        // 等待连接和同步完成
+        await delay();
+        expect(store2.state.books).toEqual(store1.state.books);
+        // 删除两个数
+        store1.state.books.splice(1, 2);
+        expect(store1.state.books).toEqual([1, 4, 5, 6, 7, 8, 9]);
+        expect(store2.state.books).toEqual([1, 4, 5, 6, 7, 8, 9]);
+        // 删除两个数
+        store1.state.books.splice(1, 0, 8, 8, 8);
+        expect(store1.state.books).toEqual([1, 8, 8, 8, 4, 5, 6, 7, 8, 9]);
+        expect(store2.state.books).toEqual([1, 8, 8, 8, 4, 5, 6, 7, 8, 9]);
+    });
+    test("应该支持数组的push操作", async () => {
+        const store1 = new AutoStore({
+            books: [1, 2, 3, 4, 5],
+        });
+        const store2 = new AutoStore<typeof store1.state>();
+        store1.sync(store2);
+        // 等待连接和同步完成
+        await delay();
+        expect(store2.state.books).toEqual(store1.state.books);
+
+        store1.state.books.push(6);
+        expect(store1.state.books).toEqual([1, 2, 3, 4, 5, 6]);
+        expect(store2.state.books).toEqual([1, 2, 3, 4, 5, 6]);
     });
 });

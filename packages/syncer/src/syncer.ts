@@ -8,7 +8,6 @@ import {
     isFunction,
     forEachObject,
     type StateOperate,
-    type Watcher,
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
 import { EventSubscriber } from "./utils/emitter";
@@ -23,13 +22,11 @@ type NormalizeAutoStoreSyncerOptions = Required<
 export const SYNC_INIT_FLAG = -1;
 
 export class AutoStoreSyncer {
-    static seq = 9;
+    static seq = 99;
     private seq: number; // 实例唯一标识
     private _options: NormalizeAutoStoreSyncerOptions;
     syncing: boolean = false;
     peer?: AutoStoreSyncer;
-    private _offReceiver?: () => void;
-    private _watcher: Watcher | undefined;
     private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
     private _subscribers: EventSubscriber[] = [];
     constructor(
@@ -199,9 +196,11 @@ export class AutoStoreSyncer {
             this.transport.disconnect();
         } else if (operate.type === "$push") {
             this._updateStore(operate);
-        } else if (operate.type === "$pull-store") {
+        } else if (operate.type === "$pull") {
+            // 要求拉取store
             this._sendStore(operate);
-        } else if (operate.type === "$update-store") {
+        } else if (operate.type === "$update") {
+            // 对pull的响应
             this._updateStore(operate);
         } else {
             this._applyOperate(operate);
@@ -220,9 +219,9 @@ export class AutoStoreSyncer {
         const toPath = [...this.localEntry, ...operate.path.slice(this.options.remote.length)];
 
         // 使用负数标记来自远程的操作，防止循环
-        // 如果是初始化同步（flags=-1），保持原值；否则取反
+        // 始终使用负数 flags，确保 _onWatchStore 不会再次转发此操作
         const updateOpts = {
-            flags: operate.flags === SYNC_INIT_FLAG ? -this.seq : this.seq,
+            flags: -this.seq,
         };
 
         if (type === "set" || type === "update") {
@@ -354,7 +353,7 @@ export class AutoStoreSyncer {
     private _sendStore(operate: StateRemoteOperate) {
         this._sendOperate({
             id: this.id,
-            type: "$update-store",
+            type: "$update",
             path: [],
             value: this.store.getSnap({ entry: operate.path.join(PATH_DELIMITER) }),
             flags: this.seq,
@@ -366,8 +365,8 @@ export class AutoStoreSyncer {
      */
     private _updateStore(operate: StateRemoteOperate) {
         const store = this.store;
-        // 初始化同步使用 SYNC_INIT_FLAG，否则使用负数标记
-        const flags = -this.seq; // operate.flags === SYNC_INIT_FLAG ? SYNC_INIT_FLAG : -this.seq;
+        // 始终使用负数 flags，确保 _onWatchStore 不会再次转发此操作
+        const flags = -this.seq;
         if (typeof this._options.pathMap.toLocal === "function") {
             forEachObject(operate.value, ({ value, path }) => {
                 if (this._isPass(path, value) === false) return;
@@ -399,7 +398,7 @@ export class AutoStoreSyncer {
     private _pullStore() {
         this._sendOperate({
             id: this.id,
-            type: "$pull-store",
+            type: "$pull",
             path: this.options.remote,
             value: undefined,
             flags: 0,

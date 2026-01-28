@@ -231,7 +231,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             const mockOperate: StateRemoteOperate = {
@@ -262,7 +262,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             const mockOperate: StateRemoteOperate = {
@@ -293,7 +293,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             const mockOperate: StateRemoteOperate = {
@@ -337,11 +337,11 @@ describe("WorkerTransport 单元测试", () => {
             });
 
             // 有效的 StateRemoteOperate 应该返回 true
-            expect(transport.handleRemoteOperate(validEvent)).toBe(true);
+            expect(transport.receiveRemoteOperate(validEvent)).toBe(true);
             expect(receiveCallback).toHaveBeenCalledTimes(1);
 
             // 无效的消息应该返回 false
-            expect(transport.handleRemoteOperate(invalidEvent)).toBe(false);
+            expect(transport.receiveRemoteOperate(invalidEvent)).toBe(false);
             expect(receiveCallback).toHaveBeenCalledTimes(1); // 没有增加
         });
     });
@@ -614,7 +614,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             const stopMessage: StateRemoteOperate = {
@@ -641,7 +641,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             const complexMessage: StateRemoteOperate = {
@@ -707,7 +707,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             const emptyMessage: StateRemoteOperate = {
@@ -734,7 +734,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             const nullMessage: StateRemoteOperate = {
@@ -759,7 +759,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             worker.dispatchMessage({
@@ -787,7 +787,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 手动绑定消息监听
             worker.addEventListener("message", (event) => {
-                transport.handleRemoteOperate(event);
+                transport.receiveRemoteOperate(event);
             });
 
             // 发送 data 为 null 的消息（直接传递 data）
@@ -795,7 +795,7 @@ describe("WorkerTransport 单元测试", () => {
 
             // 不是有效的 StateRemoteOperate，handleRemoteOperate 返回 false
             const event = new MessageEvent("message", { data: null });
-            expect(transport.handleRemoteOperate(event)).toBe(false);
+            expect(transport.receiveRemoteOperate(event)).toBe(false);
 
             // 回调不应该被调用
             expect(receiveCallback).not.toHaveBeenCalled();
@@ -833,10 +833,10 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
 
             // 手动绑定消息监听
             worker1.addEventListener("message", (event) => {
-                transport1.handleRemoteOperate(event);
+                transport1.receiveRemoteOperate(event);
             });
             worker2.addEventListener("message", (event) => {
-                transport2.handleRemoteOperate(event);
+                transport2.receiveRemoteOperate(event);
             });
 
             // 创建同步器但不立即同步
@@ -873,7 +873,7 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
             expect(store1.state.order.total).toBe(15);
         });
 
-        test("应该支持数组的同步 (splice 操作同步需要修复)", async () => {
+        test("应该支持数组的同步", async () => {
             const worker1 = new MockWorker();
             const worker2 = new MockWorker();
 
@@ -902,21 +902,13 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
                 { id: "store-2" },
             );
 
-            // 手动绑定消息监听
-            worker1.addEventListener("message", (event) => {
-                transport1.handleRemoteOperate(event);
-            });
-            worker2.addEventListener("message", (event) => {
-                transport2.handleRemoteOperate(event);
-            });
-
             const syncer1 = new AutoStoreSyncer(store1, {
                 transport: transport1,
-                immediate: false,
+                immediate: true, // 改为 true，让 syncer 自动调用 transport.connect()
             });
             const syncer2 = new AutoStoreSyncer(store2, {
                 transport: transport2,
-                immediate: false,
+                immediate: true,
             });
 
             // 初始同步
@@ -974,10 +966,10 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
 
             // 手动绑定消息监听
             worker1.addEventListener("message", (event) => {
-                transport1.handleRemoteOperate(event);
+                transport1.receiveRemoteOperate(event);
             });
             worker2.addEventListener("message", (event) => {
-                transport2.handleRemoteOperate(event);
+                transport2.receiveRemoteOperate(event);
             });
 
             const syncer1 = new AutoStoreSyncer(store1, {
@@ -1029,10 +1021,10 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
 
             // 手动绑定消息监听
             worker1.addEventListener("message", (event) => {
-                transport1.handleRemoteOperate(event);
+                transport1.receiveRemoteOperate(event);
             });
             worker2.addEventListener("message", (event) => {
-                transport2.handleRemoteOperate(event);
+                transport2.receiveRemoteOperate(event);
             });
 
             const syncer1 = new AutoStoreSyncer(store1, {
@@ -1087,10 +1079,10 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
 
             // 手动绑定消息监听
             worker1.addEventListener("message", (event) => {
-                transport1.handleRemoteOperate(event);
+                transport1.receiveRemoteOperate(event);
             });
             worker2.addEventListener("message", (event) => {
-                transport2.handleRemoteOperate(event);
+                transport2.receiveRemoteOperate(event);
             });
 
             new AutoStoreSyncer(store1, {
@@ -1147,10 +1139,10 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
 
             // 手动绑定消息监听
             worker1.addEventListener("message", (event) => {
-                transport1.handleRemoteOperate(event);
+                transport1.receiveRemoteOperate(event);
             });
             worker2.addEventListener("message", (event) => {
-                transport2.handleRemoteOperate(event);
+                transport2.receiveRemoteOperate(event);
             });
 
             const syncer1 = new AutoStoreSyncer(store1, {
@@ -1205,10 +1197,10 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
 
             // 手动绑定消息监听
             worker1.addEventListener("message", (event) => {
-                transport1.handleRemoteOperate(event);
+                transport1.receiveRemoteOperate(event);
             });
             worker2.addEventListener("message", (event) => {
-                transport2.handleRemoteOperate(event);
+                transport2.receiveRemoteOperate(event);
             });
 
             const syncer1 = new AutoStoreSyncer(store1, {
@@ -1254,10 +1246,10 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
 
             // 手动绑定消息监听
             worker1.addEventListener("message", (event) => {
-                transport1.handleRemoteOperate(event);
+                transport1.receiveRemoteOperate(event);
             });
             worker2.addEventListener("message", (event) => {
-                transport2.handleRemoteOperate(event);
+                transport2.receiveRemoteOperate(event);
             });
 
             const syncer1 = new AutoStoreSyncer(store1, {

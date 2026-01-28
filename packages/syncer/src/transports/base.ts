@@ -20,6 +20,7 @@ export type AutoStoreSyncTransportReceiver = (operate: StateRemoteOperate) => vo
 
 export type AutoStoreSyncTransportOptions = {
     debug?: boolean; // 启用时会在接收到每一条消息时触发operate事件
+    autoConnect?: boolean; // 是否自动建立连接，默认为 false 以保持向后兼容
 };
 
 /**
@@ -41,6 +42,11 @@ export class AutoStoreSyncTransportBase<
         super();
         Object.assign(this.options, options);
         this.id = ++AutoStoreSyncTransportBase.seq;
+
+        // 只有明确设置 autoConnect: true 时才自动建立连接
+        if (this.options.autoConnect === true) {
+            this.connect();
+        }
     }
 
     /**
@@ -71,7 +77,7 @@ export class AutoStoreSyncTransportBase<
 
     /**
      * 建立连接
-     * 触发 connect 事件
+     * 触发 connect 事件（使用 retain 保留消息，确保晚注册的监听器也能收到）
      */
     connect() {
         if (this.connected) {
@@ -79,10 +85,23 @@ export class AutoStoreSyncTransportBase<
         }
         const isConnect = this.onConnect();
         if (isPromiseLike(isConnect)) {
-            return isConnect;
+            return isConnect.then(
+                () => {
+                    this.connected = true;
+                    // 清除之前的 disconnect 保留消息（不触发监听器），然后发送 connect 事件并保留
+                    this.clearRetained("disconnect");
+                    this.emit("connect", undefined, true); // retain=true 保留消息
+                },
+                (error) => {
+                    this.emit("error", error);
+                    throw error;
+                },
+            );
         } else {
             this.connected = true;
-            this.emit("connect", undefined);
+            // 清除之前的 disconnect 保留消息（不触发监听器），然后发送 connect 事件并保留
+            this.clearRetained("disconnect");
+            this.emit("connect", undefined, true); // retain=true 保留消息
         }
     }
     /**
@@ -119,7 +138,7 @@ export class AutoStoreSyncTransportBase<
     }
     /**
      * 断开连接
-     * 触发 disconnect 事件
+     * 触发 disconnect 事件（使用 retain 保留消息，并清除 connect 的保留消息）
      */
     disconnect(): void {
         if (!this.connected) {
@@ -129,7 +148,9 @@ export class AutoStoreSyncTransportBase<
             this.onDisconnect();
         } finally {
             this.connected = false;
-            this.emit("disconnect", undefined);
+            // 清除 connect 保留消息（不触发监听器），然后发送 disconnect 事件并保留
+            this.clearRetained("connect");
+            this.emit("disconnect", undefined, true); // retain=true 保留消息
         }
     }
 }

@@ -7,9 +7,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AutoStore } from 'autostore';
 import { AutoStoreSyncer } from '@autostorejs/syncer';
-import { WorkerTransport } from '@autostorejs/syncer/transports/worker';
-import type { StateRemoteOperate } from '@autostorejs/syncer';
-
+import { WorkerTransport } from '@autostorejs/syncer/transports/worker'; 
 function App() {
     const [store] = useState(() => {
         return new AutoStore({
@@ -42,7 +40,7 @@ function App() {
 
     // 初始化连接
     useEffect(() => {
-        // 创建 SharedWorker
+        // 创建 SharedWorker，使用 shared-worker.ts 作为入口
         const worker = new SharedWorker(new URL('./shared-worker.ts', import.meta.url), {
             type: 'module',
         });
@@ -53,25 +51,16 @@ function App() {
         const id = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
         setClientId(id);
 
-        // 创建 transport
+        // 创建 transport（会自动监听消息）
         const transport = new WorkerTransport({
             worker: worker.port,
             id,
         });
 
-        // 手动绑定消息监听，避免事件监听器冲突
-        worker.port.addEventListener('message', (event: MessageEvent) => {
-            if (transport.handleRemoteOperate(event)) {
-                return; // 是状态操作消息，已被处理
-            }
-            // 处理其他类型的消息
-            console.log('[App] 收到其他消息:', event.data);
-        });
-
         // 创建 syncer
         const syncer = new AutoStoreSyncer(store, {
             transport,
-            mode: 'pull', // 使用 pull 模式，从服务端拉取初始状态
+            mode: 'pull', // 使用 pull 模式，从worker拉取初始状态
             immediate: true, // 首次连接时从服务端拉取数据
             direction: 'both', // 允许双向通信
             peers: ['shared-worker-store'], // 只接受来自 SharedWorker 的消息
@@ -84,16 +73,10 @@ function App() {
 
         setConnected(true);
 
-        // 监听接收消息（用于日志显示）
-        const unsubscribe = transport.on('operate', (operate: StateRemoteOperate) => {
-            addLogMessage(`[接收] ${operate.type} - ${operate.path.join('.')}`);
-        });
-
         addLogMessage('[系统] 已连接到 SharedWorker');
 
         // 清理函数
         return () => {
-            unsubscribe.off();
             syncer.stop();
             worker.port.close();
         };
@@ -186,7 +169,10 @@ function App() {
             return;
         }
         const count = store.state.todos.length;
-        store.state.todos.splice(0, store.state.todos.length);
+        // 使用 store.update 确保只触发一次操作，避免多次同步事件
+        store.update((state) => {
+            state.todos = [];
+        });
         addLogMessage(`[本地] 清空所有待办事项 (${count}条)`);
     };
 
@@ -232,7 +218,7 @@ function App() {
             <main style={styles.main}>
                 {/* 计数器区域 */}
                 <section style={styles.card}>
-                    <h2>计数器（支持双向同步）</h2>
+                    <h2>计数器（支持多方同步）</h2>
                     <div
                         style={{
                             display: 'flex',
@@ -263,7 +249,7 @@ function App() {
                     </div>
                     <p style={styles.hint}>
                         点击按钮修改计数，变更会同步到 SharedWorker 并广播到所有页签。
-                        同时，服务端每 5 秒自动递增一次计数。
+                        打开多个页签可以看到状态同步效果。
                     </p>
                 </section>
 
@@ -460,16 +446,16 @@ const styles = {
         border: '1px solid #e0e0e0',
         borderRadius: '4px',
         padding: '10px',
-        marginBottom: '15px',
+        marginBottom: '5px',
         backgroundColor: '#fafafa',
     },
     todoItem: {
         display: 'flex',
         alignItems: 'center',
-        padding: '10px',
+        padding: '4px',
         backgroundColor: 'white',
         borderRadius: '4px',
-        marginBottom: '8px',
+        marginBottom: '4px',
         border: '1px solid #e0e0e0',
     },
     userInfo: {

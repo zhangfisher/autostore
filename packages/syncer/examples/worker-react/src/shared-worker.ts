@@ -6,7 +6,7 @@
  */
 
 import { AutoStore } from "autostore";
-import { AutoStoreBroadcaster } from "@autostorejs/syncer";
+import { AutoStoreBroadcastSyncer } from "@autostorejs/syncer";
 import { WorkerTransport } from "@autostorejs/syncer/transports/worker";
 
 // 创建主 store
@@ -39,7 +39,7 @@ const store = new AutoStore(
 (globalThis as any).store = store;
 
 // 创建同步广播器
-const broadcaster = new AutoStoreBroadcaster(store, {
+const broadcaster = new AutoStoreBroadcastSyncer(store, {
     autostart: true,
 });
 
@@ -47,8 +47,15 @@ const broadcaster = new AutoStoreBroadcaster(store, {
 (globalThis as any).broadcaster = broadcaster;
 
 // 监听 count 变化，用于调试
-store.watch("count", ({ value }) => {
-    console.log("[SharedWorker] count 变化:", value);
+store.watch(({ path, value, indexs }) => {
+    console.log(
+        "path=",
+        path.join("."),
+        "value=",
+        JSON.stringify(value),
+        "indexs=",
+        (indexs || []).join("."),
+    );
 });
 
 console.log("[SharedWorker] AutoStore Broadcaster 已启动");
@@ -62,13 +69,15 @@ console.log("[SharedWorker] AutoStore Broadcaster 已启动");
     // 启动端口（SharedWorker 中的 MessagePort 需要显式启动）
     port.start();
 
-    // 创建 transport
+    // 创建 transport，设置 autoConnect: true 自动连接
     const transport = new WorkerTransport({
         worker: port,
+        autoConnect: true,
     });
 
-    // 先连接 transport，然后再连接到 syncManager
-    transport.connect().then(() => {
+    // 使用 once 监听连接事件，避免重复添加
+    // 即使 connect 事件在监听器注册前触发，once 的保留消息机制也能确保监听器收到
+    transport.once("connect", () => {
         console.log("[SharedWorker] transport 已连接");
 
         // 连接到 broadcaster

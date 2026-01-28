@@ -1,5 +1,5 @@
 import type { StateRemoteOperate } from "../types";
-import { AutoStoreSyncTransportBase } from "./base";
+import { AutoStoreSyncTransportBase, type AutoStoreSyncTransportOptions } from "./base";
 
 /**
  * EventEmitter 接口定义
@@ -51,6 +51,14 @@ export type EventEmitterTransportOptions = {
      * 远程发送事件名称
      */
     remoteEventName?: string;
+    /**
+     * 是否自动建立连接
+     */
+    autoConnect?: boolean;
+    /**
+     * 启用调试模式
+     */
+    debug?: boolean;
 };
 export class EventEmitterTransport extends AutoStoreSyncTransportBase<EventEmitterTransportOptions> {
     private handleReceive: (operate: StateRemoteOperate) => void;

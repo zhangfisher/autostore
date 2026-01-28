@@ -1,6 +1,4 @@
 import mitt, { Emitter } from "mitt";
-import { EventEmitterTransport } from "../transports/event";
-
 /**
  * 小型事件发射器
  * 基于 mitt 实现，提供类型安全的事件系统
@@ -51,9 +49,9 @@ export class EventEmitter<Events extends Record<string, any> = Record<string, an
      */
     on<K extends keyof Events>(type: K, listener: EventListener<Events[K]>): EventSubscriber {
         // 如果有保留的消息，立即触发监听器
-        const retainedMessage = this.#retainedMessages.get(type);
-        if (retainedMessage !== undefined) {
-            listener(retainedMessage);
+        // 使用 has() 检查而不是 get() !== undefined，以支持 undefined 作为保留值
+        if (this.#retainedMessages.has(type)) {
+            listener(this.#retainedMessages.get(type)!);
         }
 
         this.#mitt.on(type, listener);
@@ -70,9 +68,9 @@ export class EventEmitter<Events extends Record<string, any> = Record<string, an
      */
     once<K extends keyof Events>(type: K, listener: EventListener<Events[K]>): EventSubscriber {
         // 如果有保留的消息，立即触发监听器（不订阅后续事件）
-        const retainedMessage = this.#retainedMessages.get(type);
-        if (retainedMessage !== undefined) {
-            listener(retainedMessage);
+        // 使用 has() 检查而不是 get() !== undefined，以支持 undefined 作为保留值
+        if (this.#retainedMessages.has(type)) {
+            listener(this.#retainedMessages.get(type)!);
             // 返回空的 off 函数，因为已经触发过了
             return { off: () => {} };
         }

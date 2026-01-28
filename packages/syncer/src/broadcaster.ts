@@ -60,7 +60,7 @@ import type { AutoStoreSyncTransportBase } from "./transports/base";
  * 【核心机制】
  * 使用 operate.flags（负数 transport.id）标记操作来源，广播时排除源端以防止循环更新。
  */
-export class AutoStoreBroadcaster {
+export class AutoStoreBroadcastSyncer {
     /**
      * 主站 Store（对应原理图中的 MainStore）
      * 所有客户端的状态最终同步到此 Store
@@ -127,7 +127,6 @@ export class AutoStoreBroadcaster {
         if (this.transports.has(transportId)) {
             return;
         }
-
         // 保存映射关系
         this.transports.set(transportId, transport);
 
@@ -228,10 +227,10 @@ export class AutoStoreBroadcaster {
         if (operate.type === "$stop") {
             // 客户端请求断开连接
             return;
-        } else if (operate.type === "$pull-store") {
+        } else if (operate.type === "$pull") {
             // 客户端请求拉取完整状态
             this._sendStoreToTransport(operate, transport);
-        } else if (operate.type === "$update-store") {
+        } else if (operate.type === "$update") {
             // 客户端发送完整状态更新
             this._applyStoreUpdate(operate, transport);
         } else {
@@ -275,6 +274,11 @@ export class AutoStoreBroadcaster {
                     if (Array.isArray(arr) && indexs) {
                         arr.splice(indexs[0], 0, ...value);
                     }
+                } else if (type === "remove") {
+                    const arr = getVal(state, targetPath);
+                    if (indexs) {
+                        arr.splice(indexs[0], indexs.length);
+                    }
                 }
             },
             // ⚠️ 关键：使用负数 transport.id 作为 flags
@@ -312,7 +316,7 @@ export class AutoStoreBroadcaster {
         // 发送完整状态快照（使用 getSnap() 获取可序列化的状态）
         const response: StateRemoteOperate = {
             id: this._store.id,
-            type: "$update-store",
+            type: "$update",
             path: [],
             value: this._store.getSnap(), // 使用 getSnap() 获取可序列化的状态快照
             flags: 0,

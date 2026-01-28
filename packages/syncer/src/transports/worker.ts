@@ -47,6 +47,14 @@ export type WorkerTransportOptions = {
      * 调用 connect() 后会自动监听 worker 的 message 事件
      */
     worker?: IWorker;
+    /**
+     * 是否自动建立连接，默认为 false 以保持向后兼容
+     */
+    autoConnect?: boolean;
+    /**
+     * 启用调试模式
+     */
+    debug?: boolean;
 };
 
 /**
@@ -155,19 +163,19 @@ export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportO
      * 绑定 Worker 的 message 事件监听器
      */
     protected onConnect(): boolean {
-        if (!this.options.worker) {
+        const worker = this.options.worker;
+        if (!worker) {
             console.warn("[WorkerTransport] 没有配置 worker 实例，无法建立连接");
             return false;
         }
 
-        this.worker = this.options.worker;
         // 绑定消息监听器，保存引用以便后续移除
         this.messageHandler = (event: MessageEvent) => {
             if (isStateRemoteOperate(event.data)) {
                 this.onReceiveOperate(event.data);
             }
         };
-        this.worker.addEventListener("message", this.messageHandler);
+        worker.addEventListener("message", this.messageHandler);
 
         return true;
     }
@@ -177,23 +185,26 @@ export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportO
      * 移除 Worker 的 message 事件监听器
      */
     protected onDisconnect(): void {
-        if (this.worker && this.messageHandler) {
-            this.worker.removeEventListener("message", this.messageHandler);
+        const worker = this.options.worker;
+        if (worker && this.messageHandler) {
+            worker.removeEventListener("message", this.messageHandler);
             this.messageHandler = undefined;
         }
     }
 
     /**
      * 发送操作到 Worker
+     * 直接从 options.worker 读取，避免字段初始化顺序问题
      */
     protected onSendOperate(operate: StateRemoteOperate): void {
-        if (!this.worker) {
+        const worker = this.options.worker;
+        if (!worker) {
             console.warn(
                 "[WorkerTransport] 没有配置 worker 实例，无法发送消息。请在外部直接调用 worker.postMessage(operate)",
             );
             return;
         }
-        this.worker.postMessage(operate);
+        worker.postMessage(operate);
     }
 
     /**
@@ -222,7 +233,7 @@ export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportO
      * });
      * ```
      */
-    handleRemoteOperate(event: MessageEvent): boolean {
+    receiveRemoteOperate(event: MessageEvent): boolean {
         if (!isStateRemoteOperate(event.data)) {
             return false;
         }
