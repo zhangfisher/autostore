@@ -14,7 +14,11 @@
       "Bash(echo:*)",
       "Bash(find:*)",
       "Bash(DEBUG_SYNC=1 bun test:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)"
     ]
   }
 }
