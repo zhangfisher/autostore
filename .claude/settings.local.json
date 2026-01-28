@@ -18,7 +18,11 @@
       "Bash(git merge:*)",
       "Bash(git check-ignore:*)",
       "Bash(git add:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(git branch:*)"
+    ],
+    "additionalDirectories": [
+      "e:\\Work\\Code\\sources\\autostore\\packages\\syncer\\examples\\worker-react\\src\\examples"
     ]
   }
 }

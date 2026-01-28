@@ -45,7 +45,7 @@
  */
 
 import type { AutoStore, Watcher, StateOperate } from "autostore";
-import { getVal, setVal } from "autostore";
+import { getSnapshot, getVal, setVal } from "autostore";
 import type { AutoStoreBroadcasterOptions, StateRemoteOperate } from "./types";
 import type { AutoStoreSyncTransportBase } from "./transports/base";
 
@@ -313,12 +313,17 @@ export class AutoStoreBroadcastSyncer {
         operate: StateRemoteOperate,
         transport: AutoStoreSyncTransportBase,
     ): void {
+        // 获取可序列化的状态快照;
+        const values =
+            operate.path.length === 0
+                ? this._store.getSnap()
+                : getSnapshot(getVal(this._store.state, operate.path));
         // 发送完整状态快照（使用 getSnap() 获取可序列化的状态）
         const response: StateRemoteOperate = {
             id: this._store.id,
             type: "$update",
             path: [],
-            value: this._store.getSnap(), // 使用 getSnap() 获取可序列化的状态快照
+            value: values,
             flags: 0,
         };
         transport.send(response);
