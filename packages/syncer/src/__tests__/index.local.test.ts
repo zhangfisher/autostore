@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
 import { describe, expect, test, beforeEach } from "vitest";
-import type { StateRemoteOperate } from "../types";
 import { computed, AutoStore } from "../../../core/src";
 import { AutoStoreSyncer } from "../syncer";
 import { LocalTransport } from "../transports/local";
