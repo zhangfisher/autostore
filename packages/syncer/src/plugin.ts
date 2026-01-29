@@ -9,7 +9,7 @@
  */
 
 import { getVal, type AutoStore } from "autostore";
-import { AutoStoreSyncer } from "./syncer";
+import { AutoStoreSyncer } from "./syncers/syncer";
 import type { AutoStoreSyncerOptions, AutoStoreCloneOptions } from "./types";
 import { LocalTransport } from "./transports/local";
 

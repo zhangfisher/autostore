@@ -1,7 +1,7 @@
 // oxlint-disable no-unused-vars
 import { describe, expect, test } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
-import { AutoStoreSyncer } from "../syncer";
+import { AutoStoreSyncer } from "../syncers/syncer";
 import { WorkerTransport } from "../transports/worker";
 import type { IWorker } from "../transports/worker";
 

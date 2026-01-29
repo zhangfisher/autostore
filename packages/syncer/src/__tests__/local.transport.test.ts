@@ -1,7 +1,7 @@
 // oxlint-disable no-unused-vars
 import { describe, expect, test, vi } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
-import { AutoStoreSyncer } from "../syncer";
+import { AutoStoreSyncer } from "../syncers/syncer";
 import { LocalTransport } from "../transports/local";
 
 // 等待下一个异步循环的辅助函数

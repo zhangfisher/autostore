@@ -1,5 +1,5 @@
 import type { AutoStore } from "autostore";
-import { AutoStoreSyncer } from "../syncer";
+import { AutoStoreSyncer } from "./syncer";
 import { WorkerTransport } from "../transports/worker";
 import type { IWorker, WorkerTransportOptions } from "../transports/worker";
 import type { AutoStoreSyncerOptions } from "../types";
@@ -146,9 +146,8 @@ export class AutoStoreWorkerSyncer extends AutoStoreSyncer {
      */
     pull(): void {
         // 如果有 peers，使用第一个 peer 作为目标 store 的 id
-        const targetId = (this.options.peers && this.options.peers.length > 0)
-            ? this.options.peers[0]
-            : this.id;
+        const targetId =
+            this.options.peers && this.options.peers.length > 0 ? this.options.peers[0] : this.id;
 
         // 手动发送 $pull 消息，使用正确的 id
         this.transport.send({

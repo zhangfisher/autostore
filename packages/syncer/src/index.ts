@@ -1,4 +1,4 @@
-export * from "./syncer";
+export * from "./syncers/syncer";
 export * from "./types";
 export * from "./plugin";
 export * from "./utils";

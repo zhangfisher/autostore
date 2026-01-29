@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
-import { AutoStoreSyncer } from "../syncer";
+import { AutoStoreSyncer } from "../syncers/syncer";
 import { EventEmitterTransport } from "../transports/event";
 import type { IEventEmitter } from "../transports/event";
 import type { StateRemoteOperate } from "../types";

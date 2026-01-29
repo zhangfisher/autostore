@@ -111,7 +111,8 @@ import type { AutoStore, Watcher, StateOperate } from "autostore";
 import { setVal, getVal } from "autostore";
 import type { AutoStoreSyncTransportBase } from "../transports/base";
 import type { StateRemoteOperate } from "../types";
-import { EventEmitter } from "../utils/emitter";
+import { AutoStoreSyncerBase } from "./base";
+import type { AutoStoreSyncerEvents } from "./syncer";
 
 /**
  * AutoStoreSwitchSyncer 配置选项
@@ -133,7 +134,7 @@ export type AutoStoreSwitchSyncerOptions = {
  * 3. 监听 transport 的消息，根据 operate.id 路由到对应的 store
  * 4. 使用 flags 机制防止循环更新
  */
-export class AutoStoreSwitchSyncer extends EventEmitter {
+export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
     /**
      * Store 集合（用于快速访问）
      * Key: store.id
@@ -186,8 +187,13 @@ export class AutoStoreSwitchSyncer extends EventEmitter {
             options,
         ) as Required<AutoStoreSwitchSyncerOptions>;
 
-        // 初始化所有 stores
+        // 初始化所有 stores（但不自动启动 watch）
         stores.forEach((store) => this.add(store));
+
+        // 如果 autostart，则启动所有 watch
+        if (this._options.autostart && stores.length > 0) {
+            this.start();
+        }
     }
 
     /**
@@ -212,8 +218,8 @@ export class AutoStoreSwitchSyncer extends EventEmitter {
         // 初始化 store 的 transports 集合
         this._storeTransports.set(storeId, new Set());
 
-        // 启动 watch
-        if (this._options.autostart) {
+        // 如果正在同步中，则自动启动该 store 的 watch
+        if (this.syncing) {
             this._startWatch(store);
         }
     }
@@ -504,6 +510,56 @@ export class AutoStoreSwitchSyncer extends EventEmitter {
      */
     getStoreIds(): string[] {
         return Array.from(this._stores.keys());
+    }
+
+    /**
+     * 启动同步器
+     *
+     * 为所有已添加的 stores 启动 watch 监听
+     */
+    start(): void {
+        if (this.syncing) return;
+
+        let hasError: any;
+        try {
+            this.syncing = true;
+            // 为所有 stores 启动 watch
+            this._stores.forEach((store) => {
+                // 如果该 store 还没有 watcher，则启动
+                if (!this._watchers.has(store.id)) {
+                    this._startWatch(store);
+                }
+            });
+        } catch (e: any) {
+            hasError = e;
+            this._emitError(e);
+        } finally {
+            if (!hasError) {
+                this.emit("start", undefined, true);
+            } else {
+                this.syncing = false;
+            }
+        }
+    }
+
+    /**
+     * 停止同步器
+     *
+     * 停止所有 stores 的 watch 监听，但保留 stores 和 transports
+     */
+    stop(): void {
+        if (!this.syncing) return;
+
+        try {
+            // 停止所有 watchers
+            this._watchers.forEach((watcher) => {
+                watcher.off();
+            });
+            this._watchers.clear();
+        } finally {
+            this.emit("stop", undefined, true);
+            this.syncing = false;
+        }
     }
 
     /**

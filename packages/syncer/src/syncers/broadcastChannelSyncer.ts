@@ -1,5 +1,5 @@
 import type { AutoStore } from "autostore";
-import { AutoStoreSyncer } from "../syncer";
+import { AutoStoreSyncer } from "./syncer";
 import { BroadcastChannelTransport } from "../transports/broadcast-channel";
 import type { AutoStoreSyncerOptions } from "../types";
 
@@ -9,10 +9,7 @@ import type { AutoStoreSyncerOptions } from "../types";
  * 继承 AutoStoreSyncerOptions，但不需要指定 transport
  * 因为 transport 会自动从 channelName 创建
  */
-export type AutoStoreBroadcastChannelSyncerOptions = Omit<
-    AutoStoreSyncerOptions,
-    "transport"
->;
+export type AutoStoreBroadcastChannelSyncerOptions = Omit<AutoStoreSyncerOptions, "transport">;
 
 /**
  * 基于 BroadcastChannel 的 AutoStore 同步器

@@ -2,7 +2,7 @@
 /** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
 import { describe, expect, test, vi, beforeEach } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
-import { AutoStoreSyncer } from "../syncer";
+import { AutoStoreSyncer } from "../syncers/syncer";
 import { AutoStoreSyncTransportBase } from "../transports/base";
 import type { StateRemoteOperate } from "../types";
 

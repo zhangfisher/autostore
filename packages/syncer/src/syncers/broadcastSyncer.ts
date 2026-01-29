@@ -45,11 +45,10 @@
  */
 
 import type { AutoStore, Watcher, StateOperate } from "autostore";
-import { getVal, setVal } from "autostore";
+import { getSnapshot, getVal, setVal } from "autostore";
 import type { AutoStoreBroadcasterOptions, StateRemoteOperate } from "../types";
 import type { AutoStoreSyncTransportBase } from "../transports/base";
-import { EventEmitter } from "../utils/emitter";
-import type { AutoStoreSyncerEvents } from "../syncer";
+import { AutoStoreSyncerBase } from "./base";
 
 /**
  * AutoStore 广播器 - 管理主站与多个客户端之间的状态同步
@@ -62,7 +61,7 @@ import type { AutoStoreSyncerEvents } from "../syncer";
  * 【核心机制】
  * 使用 operate.flags（负数 transport.id）标记操作来源，广播时排除源端以防止循环更新。
  */
-export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents> {
+export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
     /**
      * 主站 Store（对应原理图中的 MainStore）
      * 所有客户端的状态最终同步到此 Store
@@ -105,7 +104,7 @@ export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents
 
         // 启动自动广播
         if (this._options.autostart) {
-            this._start();
+            this.start();
         }
     }
 
@@ -316,12 +315,17 @@ export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents
         operate: StateRemoteOperate,
         transport: AutoStoreSyncTransportBase,
     ): void {
+        // 获取可序列化的状态快照;
+        const values =
+            operate.path.length === 0
+                ? this._store.getSnap()
+                : getSnapshot(getVal(this._store.state, operate.path));
         // 发送完整状态快照（使用 getSnap() 获取可序列化的状态）
         const response: StateRemoteOperate = {
             id: this._store.id,
             type: "$update",
             path: [],
-            value: this._store.getSnap(), // 使用 getSnap() 获取可序列化的状态快照
+            value: values,
             flags: 0,
         };
         transport.send(response);
@@ -342,9 +346,12 @@ export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents
      * - 只监听写操作（set/update/delete/insert）
      * - 不监听读操作（get），避免不必要的广播
      */
-    private _start(): void {
+    start(): void {
+        if (this.syncing) return;
+
         let hasError: any;
         try {
+            this.syncing = true;
             this._watcher = this._store.watch(
                 (operate: StateOperate) => {
                     this.broadcast(operate);
@@ -355,10 +362,12 @@ export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents
             );
         } catch (e: any) {
             hasError = e;
-            this.emit("error", e);
+            this._emitError(e);
         } finally {
             if (!hasError) {
                 this.emit("start", undefined, true);
+            } else {
+                this.syncing = false;
             }
         }
     }
@@ -366,7 +375,9 @@ export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents
     /**
      * 停止自动广播
      */
-    private _stop(): void {
+    stop(): void {
+        if (!this.syncing) return;
+
         try {
             if (this._watcher) {
                 this._watcher.off();
@@ -374,6 +385,7 @@ export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents
             }
         } finally {
             this.emit("stop", undefined, true);
+            this.syncing = false;
         }
     }
 
@@ -382,7 +394,7 @@ export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents
      */
     destroy(): void {
         // 停止广播
-        this._stop();
+        this.stop();
 
         // 断开所有 transport 并清理事件监听器
         this.transports.forEach((transport) => {

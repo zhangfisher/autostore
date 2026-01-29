@@ -1,5 +1,5 @@
 import type { AutoStoreOptions, Dict, GetTypeByPath, StateOperateType } from "autostore";
-import type { AutoStoreSyncer } from "./syncer";
+import type { AutoStoreSyncer } from "./syncers/syncer";
 import { AutoStoreSyncTransportBase } from "./transports/base";
 
 export type AutoStoreSyncerOptions = {

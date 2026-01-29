@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, expect, test, beforeEach } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
-import { AutoStoreSyncer } from "../syncer";
+import { AutoStoreSyncer } from "../syncers/syncer";
 import { LocalTransport } from "../transports/local";
 
 describe("远程同步", () => {
