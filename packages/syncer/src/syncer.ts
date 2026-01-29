@@ -465,6 +465,7 @@ export class AutoStoreSyncer extends EventEmitter<AutoStoreSyncerEvents> {
             });
         } else {
             const toPath = [...this.localEntry, ...(operate.path || [])];
+
             store.update(
                 (state) => {
                     setVal(state, toPath, operate.value);

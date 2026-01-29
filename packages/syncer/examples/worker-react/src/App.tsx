@@ -8,9 +8,16 @@ import { useState } from 'react';
 import { FullSyncExample } from './examples/full-sync';
 import { PathSyncExample } from './examples/path-sync';
 import { BroadcastChannelExample } from './examples/broadcast-channel';
+import { MultiStoreExample } from './examples/multi-store';
 
 // 示例配置
 const examples = [
+    {
+        id: 'multi-store',
+        title: '多 Store 同步',
+        description: '使用 AutoStoreSwitchSyncer 管理多个独立的 store，实现 N-N 状态同步',
+        icon: '🔀',
+    },
     {
         id: 'broadcast-channel',
         title: '广播频道',
@@ -32,7 +39,7 @@ const examples = [
 ];
 
 function App() {
-    const [activeExample, setActiveExample] = useState('broadcast-channel');
+    const [activeExample, setActiveExample] = useState(examples[0].id);
 
     // 渲染当前激活的示例
     const renderExample = () => {
@@ -43,6 +50,8 @@ function App() {
                 return <FullSyncExample />;
             case 'path-sync':
                 return <PathSyncExample />;
+            case 'multi-store':
+                return <MultiStoreExample />;
             default:
                 return <BroadcastChannelExample />;
         }

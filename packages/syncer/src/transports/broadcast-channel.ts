@@ -130,13 +130,10 @@ export class BroadcastChannelTransport extends AutoStoreSyncTransportBase<Broadc
      * 所有同频道的页面都会收到消息
      */
     protected onSendOperate(operate: StateRemoteOperate): void {
-        console.log("[BroadcastChannelTransport] 准备发送消息:", operate);
         if (!this.channel) {
             console.warn("[BroadcastChannelTransport] BroadcastChannel 未连接，无法发送消息");
             return;
         }
-        console.log("[BroadcastChannelTransport] 发送消息到频道:", this.options.channelName);
         this.channel.postMessage(operate);
-        console.log("[BroadcastChannelTransport] 消息已发送");
     }
 }
