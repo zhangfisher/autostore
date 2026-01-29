@@ -11,6 +11,7 @@ import {
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "./types";
 import { EventSubscriber, EventEmitter } from "./utils/emitter";
+import { AutoStoreSyncError } from "./errors";
 
 type NormalizeAutoStoreSyncerOptions = Required<
     Omit<AutoStoreSyncerOptions, "local" | "remote"> & {
@@ -32,7 +33,22 @@ export type AutoStoreSyncerEvents = {
     stop: void;
     /** 发生错误时触发 */
     error: Error;
+    /**
+     * 当从远程接收到操作时触发，用于调试
+     * 仅debug=true时生效
+     */
+    remoteOperate: StateRemoteOperate;
+    /**
+     * 当从本地store接收到操作时触发，用于调试
+     * 仅debug=true时生效
+     */
+    localOperate: StateOperate;
 };
+
+export class AutoStoreSyncerBase extends EventEmitter<AutoStoreSyncerEvents> {
+    static seq = 99;
+    syncing: boolean = false;
+}
 
 export class AutoStoreSyncer extends EventEmitter<AutoStoreSyncerEvents> {
     static seq = 99;
@@ -59,6 +75,7 @@ export class AutoStoreSyncer extends EventEmitter<AutoStoreSyncerEvents> {
                 direction: "both",
                 pathMap: {},
                 peers: ["*"],
+                debug: false,
             },
             options,
         ) as any;
@@ -172,7 +189,6 @@ export class AutoStoreSyncer extends EventEmitter<AutoStoreSyncerEvents> {
         if (!this.syncing) return;
         try {
             this._subscribers.forEach((subscriber) => subscriber.off());
-            this.syncing = false;
             if (this._options.transport.connected) {
                 // 向对方发送一个停止同步的信号
                 this._options.transport.send({
@@ -185,19 +201,26 @@ export class AutoStoreSyncer extends EventEmitter<AutoStoreSyncerEvents> {
             }
         } finally {
             this.emit("stop", undefined, true);
+            this.syncing = false;
         }
     }
 
     private _onWatchStore(operate: StateOperate) {
-        if (this._isPass(operate.path, operate.value) === false) return;
-        // 如果 flags 的绝对值等于当前 syncer 的 seq，说明是来自自己写入的操作，不应该再转发
-        if (Math.abs(operate.flags || 0) === this.seq) {
-            return;
+        try {
+            if (this._isPass(operate.path, operate.value) === false) return;
+            // 如果 flags 的绝对值等于当前 syncer 的 seq，说明是来自自己写入的操作，不应该再转发
+            if (Math.abs(operate.flags || 0) === this.seq) {
+                return;
+            }
+            if (this.options.direction === "backward") {
+                return;
+            }
+            this._sendToRemote(operate);
+        } finally {
+            if (this.options.debug === true) {
+                this.emit("localOperate", operate);
+            }
         }
-        if (this.options.direction === "backward") {
-            return;
-        }
-        this._sendToRemote(operate);
     }
 
     private _isPass(path: string[], value: any) {
@@ -237,28 +260,36 @@ export class AutoStoreSyncer extends EventEmitter<AutoStoreSyncerEvents> {
     }
 
     private _onReceiveFromRemote(operate: StateRemoteOperate) {
-        if (typeof this._options.onReceive === "function") {
-            if (this._options.onReceive.call(this, operate) === false) return;
-        }
-        const type = operate.type;
-        if (type === "$stop") {
-            // 停止同步
-            this.stop();
-        } else if (type === "$push") {
-            // 对方的推送命令
-            this._updateStore(operate);
-        } else if (type === "$pull") {
-            // 对方的拉取命令
-            this._sendStore(operate);
-        } else if (type === "$update") {
-            // 对pull的响应
-            this._updateStore(operate);
-        } else if (type === "$error") {
-            // 对应的错误报告
-            this.emit("error", new Error(operate.value));
-        } else {
-            // 常规的更新操作
-            this._applyOperate(operate);
+        try {
+            if (typeof this._options.onReceive === "function") {
+                if (this._options.onReceive.call(this, operate) === false) return;
+            }
+            const type = operate.type;
+            if (type === "$stop") {
+                // 停止同步
+                this.stop();
+            } else if (type === "$push") {
+                // 对方的推送命令
+                this._updateStore(operate);
+            } else if (type === "$pull") {
+                // 对方的拉取命令
+                this._sendStore(operate);
+            } else if (type === "$update") {
+                // 对pull的响应
+                this._updateStore(operate);
+            } else if (type === "$error") {
+                const e = new AutoStoreSyncError();
+                e.operate = operate;
+                // 对应的错误报告
+                this.emit("error", e);
+            } else {
+                // 常规的更新操作
+                this._applyOperate(operate);
+            }
+        } finally {
+            if (this.options.debug === true) {
+                this.emit("remoteOperate", operate);
+            }
         }
     }
 

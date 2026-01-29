@@ -41,6 +41,7 @@ export type AutoStoreSyncerOptions = {
      * @default ['*']
      */
     peers?: string[];
+    debug?: boolean;
 };
 
 export type StateRemoteOperate<Value = any> = {

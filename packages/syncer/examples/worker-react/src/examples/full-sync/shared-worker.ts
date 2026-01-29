@@ -6,7 +6,7 @@
  */
 
 import { AutoStoreBroadcastSyncer } from "@autostorejs/syncer";
-import { WorkerTransport } from "@autostorejs/syncer/transports/worker";
+import { WorkerTransport } from "@autostorejs/syncer";
 import { store } from "./store";
 
 // 将 store 挂载到全局，方便调试
@@ -40,6 +40,9 @@ console.log("[FullSync SharedWorker] AutoStore Broadcaster 已启动");
     transport.once("connect", () => {
         console.log("[FullSync SharedWorker] transport 已连接");
         broadcaster.addTransport(transport);
-        console.log("[FullSync SharedWorker] 客户端已连接，当前连接数:", broadcaster.transports.size);
+        console.log(
+            "[FullSync SharedWorker] 客户端已连接，当前连接数:",
+            broadcaster.transports.size,
+        );
     });
 });

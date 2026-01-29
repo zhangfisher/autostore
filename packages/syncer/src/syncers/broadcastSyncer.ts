@@ -48,6 +48,8 @@ import type { AutoStore, Watcher, StateOperate } from "autostore";
 import { getVal, setVal } from "autostore";
 import type { AutoStoreBroadcasterOptions, StateRemoteOperate } from "../types";
 import type { AutoStoreSyncTransportBase } from "../transports/base";
+import { EventEmitter } from "../utils/emitter";
+import type { AutoStoreSyncerEvents } from "../syncer";
 
 /**
  * AutoStore 广播器 - 管理主站与多个客户端之间的状态同步
@@ -60,7 +62,7 @@ import type { AutoStoreSyncTransportBase } from "../transports/base";
  * 【核心机制】
  * 使用 operate.flags（负数 transport.id）标记操作来源，广播时排除源端以防止循环更新。
  */
-export class AutoStoreBroadcastSyncer {
+export class AutoStoreBroadcastSyncer extends EventEmitter<AutoStoreSyncerEvents> {
     /**
      * 主站 Store（对应原理图中的 MainStore）
      * 所有客户端的状态最终同步到此 Store
@@ -92,6 +94,7 @@ export class AutoStoreBroadcastSyncer {
     private _watcher?: Watcher;
 
     constructor(store: AutoStore<any>, options?: AutoStoreBroadcasterOptions) {
+        super();
         this._store = store;
         this._options = Object.assign(
             {
@@ -102,7 +105,7 @@ export class AutoStoreBroadcastSyncer {
 
         // 启动自动广播
         if (this._options.autostart) {
-            this._startBroadcast();
+            this._start();
         }
     }
 
@@ -339,24 +342,38 @@ export class AutoStoreBroadcastSyncer {
      * - 只监听写操作（set/update/delete/insert）
      * - 不监听读操作（get），避免不必要的广播
      */
-    private _startBroadcast(): void {
-        this._watcher = this._store.watch(
-            (operate: StateOperate) => {
-                this.broadcast(operate);
-            },
-            {
-                operates: "write", // 只广播写操作，忽略读操作
-            },
-        );
+    private _start(): void {
+        let hasError: any;
+        try {
+            this._watcher = this._store.watch(
+                (operate: StateOperate) => {
+                    this.broadcast(operate);
+                },
+                {
+                    operates: "write", // 只广播写操作，忽略读操作
+                },
+            );
+        } catch (e: any) {
+            hasError = e;
+            this.emit("error", e);
+        } finally {
+            if (!hasError) {
+                this.emit("start", undefined, true);
+            }
+        }
     }
 
     /**
      * 停止自动广播
      */
-    private _stopBroadcast(): void {
-        if (this._watcher) {
-            this._watcher.off();
-            this._watcher = undefined;
+    private _stop(): void {
+        try {
+            if (this._watcher) {
+                this._watcher.off();
+                this._watcher = undefined;
+            }
+        } finally {
+            this.emit("stop", undefined, true);
         }
     }
 
@@ -365,7 +382,7 @@ export class AutoStoreBroadcastSyncer {
      */
     destroy(): void {
         // 停止广播
-        this._stopBroadcast();
+        this._stop();
 
         // 断开所有 transport 并清理事件监听器
         this.transports.forEach((transport) => {
