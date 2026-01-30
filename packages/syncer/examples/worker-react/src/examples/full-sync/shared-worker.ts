@@ -15,6 +15,7 @@ import { store } from "./store";
 // 创建同步广播器
 const broadcaster = new AutoStoreBroadcastSyncer(store, {
     autostart: true,
+    heartbeat: 1000,
 });
 
 // 将 broadcaster 挂载到全局，方便调试

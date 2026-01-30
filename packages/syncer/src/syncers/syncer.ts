@@ -11,6 +11,7 @@ import {
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "../types";
 import { EventSubscriber } from "../utils/emitter";
+import { Heartbeat } from "../utils/heartbeat";
 import { AutoStoreSyncError } from "../errors";
 import { AutoStoreSyncerBase } from "./base";
 
@@ -42,12 +43,9 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
     private _subscribers: EventSubscriber[] = [];
 
-    // 心跳检测相关
-    private _heartbeatTimer?: ReturnType<typeof setInterval>; // 心跳定时器
-    private _pingCounter: number = 0; // ping 计数器（递增）
-    private _pongMissCount: number = 0; // pong 丢失计数
-    private _pongMissMax: number = 3; // 最大 pong 丢失次数（超过则断开连接）
-    private _pendingPingValue?: number; // 待确认的 ping 值（已发送但未收到 pong）
+    // 心跳检测器
+    private _heartbeat?: Heartbeat;
+
     constructor(
         public store: AutoStore<any>,
         options?: AutoStoreSyncerOptions,
@@ -186,9 +184,25 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             throw e;
         } finally {
             if (!hasError) {
+                // 只有在 heartbeat > 0 时才创建心跳检测器
+                if (this._options.heartbeat > 0) {
+                    this._heartbeat = new Heartbeat(this._options.transport!, {
+                        interval: this._options.heartbeat,
+                    });
+
+                    // 监听心跳超时事件
+                    this._subscribers.push(
+                        this._heartbeat.on("timeout", () => {
+                            this.transport.disconnect();
+                            this.emit(
+                                "error",
+                                new Error("Heartbeat timeout: connection lost"),
+                                true,
+                            );
+                        }),
+                    );
+                }
                 this.emit("start", undefined, true);
-                // 启动心跳检测
-                this._startHeartbeat();
             }
         }
     }
@@ -199,8 +213,11 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     stop() {
         if (!this.syncing) return;
         try {
-            // 停止心跳检测
-            this._stopHeartbeat();
+            // 销毁心跳检测器，清理事件监听
+            if (this._heartbeat) {
+                this._heartbeat.destroy();
+                this._heartbeat = undefined;
+            }
 
             this._subscribers.forEach((subscriber) => subscriber.off());
             if (this._options.transport.connected) {
@@ -291,15 +308,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                 const e = new AutoStoreSyncError();
                 e.operate = operate;
                 this.emit("error", e);
-            } else if (type === "$ping") {
-                // 回应心跳 ping
-                this._sendOperate({
-                    type: "$pong",
-                    value: operate.value,
-                } as any);
-            } else if (type === "$pong") {
-                // 处理心跳 pong 响应
-                this._handlePong(operate.value as number);
             } else {
                 // 常规的更新操作
                 this._applyOperate(operate);
@@ -522,85 +530,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             return (this._options.pathMap as any)[dir](path, value);
         } else {
             return path;
-        }
-    }
-
-    /**
-     * 启动心跳检测
-     */
-    private _startHeartbeat() {
-        const heartbeat = this._options.heartbeat;
-        if (heartbeat <= 0) return; // 0 或负数表示禁用心跳检测
-
-        // 清除之前的定时器（如果有）
-        this._stopHeartbeat();
-
-        // 重置心跳状态
-        this._pingCounter = 0;
-        this._pongMissCount = 0;
-
-        // 立即发送第一次 ping
-        this._sendPing();
-
-        // 启动定时心跳
-        this._heartbeatTimer = setInterval(() => {
-            this._sendPing();
-        }, heartbeat);
-    }
-
-    /**
-     * 停止心跳检测
-     */
-    private _stopHeartbeat() {
-        if (this._heartbeatTimer) {
-            clearInterval(this._heartbeatTimer);
-            this._heartbeatTimer = undefined;
-        }
-        this._pingCounter = 0;
-        this._pongMissCount = 0;
-        this._pendingPingValue = undefined;
-    }
-
-    /**
-     * 发送心跳 ping
-     */
-    private _sendPing() {
-        // 检查上一个 ping 是否还未收到 pong 响应
-        if (this._pendingPingValue !== undefined) {
-            // 上一个 ping 还没收到 pong，增加丢失计数
-            this._pongMissCount++;
-            if (this._pongMissCount >= this._pongMissMax) {
-                // 连续 3 次未收到 pong，认为连接已断开
-                this._stopHeartbeat();
-                this.transport.disconnect();
-                this.emit("error", new Error("Heartbeat timeout: connection lost"), true);
-                return;
-            }
-        }
-
-        // 发送新的 ping
-        this._pingCounter++;
-        this._pendingPingValue = this._pingCounter;
-
-        // 发送 ping 消息
-        this._sendOperate({
-            id: this.id,
-            type: "$ping",
-            path: [],
-            value: this._pingCounter,
-            flags: 0,
-        } as any);
-    }
-
-    /**
-     * 处理收到的心跳 pong
-     */
-    private _handlePong(value: number) {
-        // 验证 pong 值是否匹配待确认的 ping
-        if (this._pendingPingValue !== undefined && value === this._pendingPingValue) {
-            // 收到正确的 pong 响应，重置丢失计数并清除待确认标记
-            this._pongMissCount = 0;
-            this._pendingPingValue = undefined;
         }
     }
 

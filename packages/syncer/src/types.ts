@@ -87,6 +87,7 @@ export type AutoStoreBroadcasterOptions = {
      * @default true
      */
     autostart?: boolean;
+    heartbeat?: number;
 };
 
 declare module "autostore" {

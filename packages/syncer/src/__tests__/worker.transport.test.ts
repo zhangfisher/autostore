@@ -1,3 +1,4 @@
+// oxlint-disable no-unused-vars
 import { describe, expect, test, vi } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
 import { AutoStoreSyncer } from "../syncers/syncer";
@@ -850,11 +851,11 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
             });
 
             // 手动触发初始同步（模拟双向消息传递）
-            syncer1.push({ initial: true });
+            syncer1.push();
             // 将 store1 的消息传递给 store2
             await new Promise((resolve) => setTimeout(resolve, 10));
 
-            syncer2.push({ initial: true });
+            syncer2.push();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 验证初始同步
@@ -912,7 +913,7 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
             });
 
             // 初始同步
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 20));
 
             // 初始值相同
@@ -981,7 +982,7 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
                 immediate: false,
             });
 
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             expect(store2.state).toEqual(store1.state);
@@ -1036,7 +1037,7 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
                 immediate: false,
             });
 
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             expect(store2.state.count).toBe(0);
@@ -1155,7 +1156,7 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
             });
 
             // 初始同步
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 初始状态
@@ -1212,8 +1213,8 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
                 immediate: false,
             });
 
-            syncer1.push({ initial: true });
-            syncer2.push({ initial: true });
+            syncer1.push();
+            syncer2.push();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 添加新属性
@@ -1261,7 +1262,7 @@ describe("WorkerTransport AutoStore 同步集成测试", () => {
                 immediate: false,
             });
 
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 设置为 null
