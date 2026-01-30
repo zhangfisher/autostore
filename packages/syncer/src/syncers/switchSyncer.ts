@@ -112,7 +112,6 @@ import { setVal, getVal } from "autostore";
 import type { AutoStoreSyncTransportBase } from "../transports/base";
 import type { StateRemoteOperate } from "../types";
 import { AutoStoreSyncerBase } from "./base";
-import type { AutoStoreSyncerEvents } from "./syncer";
 
 /**
  * AutoStoreSwitchSyncer 配置选项

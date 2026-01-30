@@ -58,8 +58,9 @@
  * ```
  */
 
+import type { StateOperate } from "autostore";
+import type { StateRemoteOperate } from "../types";
 import { EventEmitter } from "../utils/emitter";
-import type { AutoStoreSyncerEvents } from "./syncer";
 
 /**
  * AutoStoreSyncerBase - 所有 Syncer 的基类
@@ -194,7 +195,7 @@ export abstract class AutoStoreSyncerBase extends EventEmitter<AutoStoreSyncerEv
     push(_options?: { initial?: boolean }): void {
         throw new Error(
             `${this.constructor.name} does not support push() operation. ` +
-            `Please use a syncer that implements this method, or override it in a subclass.`
+                `Please use a syncer that implements this method, or override it in a subclass.`,
         );
     }
 
@@ -226,7 +227,7 @@ export abstract class AutoStoreSyncerBase extends EventEmitter<AutoStoreSyncerEv
     pull(): void {
         throw new Error(
             `${this.constructor.name} does not support pull() operation. ` +
-            `Please use a syncer that implements this method, or override it in a subclass.`
+                `Please use a syncer that implements this method, or override it in a subclass.`,
         );
     }
 
@@ -239,3 +240,33 @@ export abstract class AutoStoreSyncerBase extends EventEmitter<AutoStoreSyncerEv
      */
     abstract toString(): string;
 }
+
+export type AutoStoreSyncerEvents = {
+    /**
+     * 当同步器启动时
+     */
+    start: void;
+    /**
+     * 当同步器停止时
+     */
+    stop: void;
+    /** 发生错误时触发 */
+    error: Error;
+    /**
+     * 当从远程接收到操作时触发，用于调试
+     * 仅debug=true时生效
+     */
+    remoteOperate: StateRemoteOperate;
+    /**
+     * 当从本地store接收到操作时触发，用于调试
+     * 仅debug=true时生效
+     */
+    localOperate: StateOperate;
+    /**
+     * 当接收到对方的
+     *  - $update
+     *  - $push
+     * 时触发此操作，代表两方已完成首次同步
+     */
+    synced: string;
+};

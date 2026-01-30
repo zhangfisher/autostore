@@ -662,8 +662,8 @@ describe("LocalTransport AutoStore 集成测试", () => {
             // 等待同步建立
             await delay();
 
-            syncer1.push({ initial: true });
-            syncer2.push({ initial: true });
+            syncer1.push();
+            syncer2.push();
 
             expect(store1.state.value).toBe("test");
             expect(store2.state.value).toBe("test");

@@ -9,9 +9,16 @@ import { FullSyncExample } from './examples/full-sync';
 import { PathSyncExample } from './examples/path-sync';
 import { BroadcastChannelExample } from './examples/broadcast-channel';
 import { MultiStoreExample } from './examples/multi-store';
+import { LocalSyncExample } from './examples/local-sync';
 
 // 示例配置
 const examples = [
+    {
+        id: 'local-sync',
+        title: '本地同步方式',
+        description: '展示 4 种不同的本地同步方式：LocalTransport、EventEmitterTransport、store.sync、store.clone',
+        icon: '🔗',
+    },
     {
         id: 'multi-store',
         title: '多 Store 同步',
@@ -44,6 +51,8 @@ function App() {
     // 渲染当前激活的示例
     const renderExample = () => {
         switch (activeExample) {
+            case 'local-sync':
+                return <LocalSyncExample />;
             case 'broadcast-channel':
                 return <BroadcastChannelExample />;
             case 'full-sync':
@@ -53,7 +62,7 @@ function App() {
             case 'multi-store':
                 return <MultiStoreExample />;
             default:
-                return <BroadcastChannelExample />;
+                return <LocalSyncExample />;
         }
     };
 

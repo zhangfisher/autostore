@@ -3,7 +3,13 @@ import type { AutoStoreSyncer } from "./syncers/syncer";
 import { AutoStoreSyncTransportBase } from "./transports/base";
 
 export type AutoStoreSyncerOptions = {
-    mode?: "push" | "pull";
+    /**
+     * 决定了当初始化时执行何种操作
+     *
+     * - psuh: 双向均向对方执行push操作,这样如果两个store初始状态均不一样会导致状态合并
+     * - none: 不执行任意操作
+     */
+    mode?: "push" | "pull" | "none";
     id?: string;
     local?: string[] | string;
     remote?: string[] | string;

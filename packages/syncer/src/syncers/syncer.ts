@@ -23,34 +23,20 @@ type NormalizeAutoStoreSyncerOptions = Required<
 
 export const SYNC_INIT_FLAG = -1;
 
-export type AutoStoreSyncerEvents = {
-    /**
-     * 当同步器启动时
-     */
-    start: void;
-    /**
-     * 当同步器停止时
-     */
-    stop: void;
-    /** 发生错误时触发 */
-    error: Error;
-    /**
-     * 当从远程接收到操作时触发，用于调试
-     * 仅debug=true时生效
-     */
-    remoteOperate: StateRemoteOperate;
-    /**
-     * 当从本地store接收到操作时触发，用于调试
-     * 仅debug=true时生效
-     */
-    localOperate: StateOperate;
-};
-
 // 重新导出基类
 export { AutoStoreSyncerBase } from "./base";
 
 export class AutoStoreSyncer extends AutoStoreSyncerBase {
     private seq: number; // 实例唯一标识
+    /**
+     * 是否与对方进行首次同步，
+     *
+     * 默认情况下，根据mode值
+     * - mode=pull  则在连接时向对方发送$pull，从对方拉取数据
+     * - mode=push  则在连接时向对方发送$push，向对方推送数据
+     *
+     */
+    private _synced: boolean = false;
     private _options: NormalizeAutoStoreSyncerOptions;
     peer?: AutoStoreSyncer;
     private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
@@ -68,7 +54,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                 remote: [],
                 autostart: true,
                 maxCacheSize: 100,
-                immediate: false,
                 direction: "both",
                 pathMap: {},
                 peers: ["*"],
@@ -84,14 +69,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
 
         if (this._options.autostart) {
             this.start();
-        }
-
-        if (this._options.autostart && this.options.immediate) {
-            if (this._options.mode === "push") {
-                this.push({ initial: true });
-            } else {
-                this.pull();
-            }
         }
     }
     get id() {
@@ -109,7 +86,24 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     get remoteEntry() {
         return this._options.remote;
     }
-
+    get synced() {
+        return this._synced;
+    }
+    /**
+     * 连接成功后
+     */
+    private _onConnect() {
+        try {
+            const mode = this.options.mode;
+            if (mode === "push") {
+                this._pushStore(true);
+            } else if (mode === "pull") {
+                this._pullStore(true);
+            }
+        } finally {
+            this.flush();
+        }
+    }
     private createRemoteOperate(operate: StateOperate) {
         return {
             id: this.id,
@@ -163,7 +157,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                 }),
             );
             // 当连接时自动发送缓存
-            this._subscribers.push(this.transport.on("connect", this.flush.bind(this)));
+            this._subscribers.push(this.transport.on("connect", this._onConnect.bind(this)));
             // 当连接断开时，停止同步
             this._subscribers.push(this.transport.on("disconnect", this.stop.bind(this)));
             this.transport.connect();
@@ -277,7 +271,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             } else if (type === "$error") {
                 const e = new AutoStoreSyncError();
                 e.operate = operate;
-                // 对应的错误报告
                 this.emit("error", e);
             } else {
                 // 常规的更新操作
@@ -337,9 +330,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
         }
     }
 
-    private _disconnect() {
-        this.transport.disconnect();
-    }
     /**
      *
      * 将本地操作缓存发送到远程
@@ -385,14 +375,8 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
      * @param initial 是否是第一次同步
      *
      */
-    push(options?: { initial?: boolean; includeSchemas?: boolean }) {
-        const { initial } = Object.assign(
-            {
-                initial: false,
-            },
-            options,
-        );
-        this._pushStore(initial);
+    push() {
+        this._pushStore();
     }
     private _pushStore(initial: boolean = false) {
         const localSnap = this._getLocalSnap();
@@ -441,45 +425,59 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
      * @param operate
      */
     private _updateStore(operate: StateRemoteOperate) {
-        const store = this.store;
-        // 始终使用负数 flags，确保 _onWatchStore 不会再次转发此操作
-        const flags = -this.seq;
-        if (typeof this._options.pathMap.toLocal === "function") {
-            forEachObject(operate.value, ({ value, path }) => {
-                if (this._isPass(path, value) === false) return;
-                const toValue = Array.isArray(value) ? [] : typeof value === "object" ? {} : value;
-                const toPath = this._mapPath(path, toValue, "toLocal");
-                if (toPath) {
-                    store.update(
-                        (state) => {
-                            setVal(state, [...this.localEntry, ...toPath], toValue);
-                        },
-                        {
-                            flags,
-                        },
-                    );
-                }
-            });
-        } else {
-            const toPath = [...this.localEntry, ...(operate.path || [])];
-
-            store.update(
-                (state) => {
-                    setVal(state, toPath, operate.value);
-                },
-                {
-                    flags,
-                },
-            );
+        let hasError: any;
+        try {
+            const store = this.store;
+            // 始终使用负数 flags，确保 _onWatchStore 不会再次转发此操作
+            const flags = -this.seq;
+            if (typeof this._options.pathMap.toLocal === "function") {
+                forEachObject(operate.value, ({ value, path }) => {
+                    if (this._isPass(path, value) === false) return;
+                    const toValue = Array.isArray(value)
+                        ? []
+                        : typeof value === "object"
+                          ? {}
+                          : value;
+                    const toPath = this._mapPath(path, toValue, "toLocal");
+                    if (toPath) {
+                        store.update(
+                            (state) => {
+                                setVal(state, [...this.localEntry, ...toPath], toValue);
+                            },
+                            {
+                                flags,
+                            },
+                        );
+                    }
+                });
+            } else {
+                const toPath = [...this.localEntry, ...(operate.path || [])];
+                store.update(
+                    (state) => {
+                        setVal(state, toPath, operate.value);
+                    },
+                    {
+                        flags,
+                    },
+                );
+            }
+        } catch (e: any) {
+            hasError = e;
+            this.emit("error", e);
+        } finally {
+            if (this._synced === false) {
+                this._synced = true; // 标识已完成一次初始化全量同步
+                this.emit("synced", operate.id, true);
+            }
         }
     }
-    private _pullStore() {
+    private _pullStore(initial: boolean = false) {
         this._sendOperate({
             id: this.id,
             type: "$pull",
             path: this.options.remote,
             value: undefined,
-            flags: 0,
+            flags: initial ? SYNC_INIT_FLAG : 0,
         } as StateRemoteOperate);
     }
     /**

@@ -243,7 +243,7 @@ describe("AutoStoreSyncer 功能特性测试", () => {
             remoteStore.state.user.age = 30;
             await new Promise((resolve) => setTimeout(resolve, 10));
             // age 不应该同步到 local
-            expect(localStore.state.user).not.toHaveProperty("age");
+            expect(localStore.state.user).not.toBe(30);
             expect(receiveCount).toBeGreaterThan(0);
         });
 

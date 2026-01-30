@@ -19,11 +19,12 @@ function createSyncerPlugin() {
             const localTransport: LocalTransport = new LocalTransport(() => remoteTransport);
             const remoteTransport: LocalTransport = new LocalTransport(() => localTransport);
             const remoteSyncer = new AutoStoreSyncer(toStore, {
+                mode: "none",
                 transport: remoteTransport,
             });
             const localSyncer = new AutoStoreSyncer(
                 store,
-                Object.assign({ immediate: true }, options, {
+                Object.assign({ mode: "push" }, options, {
                     transport: localTransport,
                 }),
             );

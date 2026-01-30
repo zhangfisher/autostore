@@ -18,8 +18,6 @@ describe("本地Store同步", () => {
         });
         const store2 = new AutoStore<typeof store1.state>();
         store1.sync(store2);
-        // 等待连接和同步完成
-        await new Promise((resolve) => setTimeout(resolve, 10));
         expect(store2.state).toEqual(store1.state);
         store1.state.order.count = 4;
         expect(store2.state.order.count).toBe(4);
@@ -27,6 +25,25 @@ describe("本地Store同步", () => {
         store2.state.order.count = 5;
         expect(store1.state.order.count).toBe(5);
         expect(store1.state.order.total).toBe(10);
+    });
+
+    test("一对一全同步时合并状态", async () => {
+        const store1 = new AutoStore({
+            order: {
+                name: "fisher",
+                price: 2,
+                count: 3,
+                total: computed((order) => order.price * order.count),
+            },
+        });
+        const store2 = new AutoStore({
+            user: {
+                name: "tom",
+                age: 18,
+            },
+        });
+        store1.sync(store2);
+        expect(store2.state).toEqual(store1.state);
     });
     test("一对一全同步包括计算属性", async () => {
         const store1 = new AutoStore(
@@ -72,7 +89,7 @@ describe("本地Store同步", () => {
             },
         });
         const toStore = new AutoStore<typeof fromStore.state>();
-        const syncer = toStore.sync(fromStore, { immediate: false });
+        const syncer = toStore.sync(fromStore);
         expect(toStore.state).toEqual({});
 
         syncer.pull();
@@ -87,21 +104,22 @@ describe("本地Store同步", () => {
     });
 
     test("将本地指定路径同步到其他store的指定路径", async () => {
-        const fromStore = new AutoStore({
-            order: {
-                name: "fisher",
-                price: 2,
-                count: 3,
-                total: computed((order) => order.price * order.count),
+        const fromStore = new AutoStore(
+            {
+                order: {
+                    name: "fisher",
+                    price: 2,
+                    count: 3,
+                    total: computed((order) => order.price * order.count),
+                },
             },
-        });
-        const toStore = new AutoStore<typeof fromStore.state.order>();
+            { id: "from" },
+        );
+        const toStore = new AutoStore<typeof fromStore.state.order>({} as any, { id: "to" });
 
-        const syncer = toStore.sync(fromStore, { remote: ["order"], immediate: false });
+        const syncer = toStore.sync(fromStore, { remote: ["order"], mode: "pull" });
         await delay();
 
-        expect(toStore.state).toEqual({});
-        syncer.pull();
         expect(toStore.state).toEqual(fromStore.state.order);
         fromStore.state.order.count = 4;
         await delay();
