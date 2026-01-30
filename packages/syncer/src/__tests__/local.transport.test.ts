@@ -408,8 +408,8 @@ describe("LocalTransport AutoStore 集成测试", () => {
             await delay();
 
             // 手动触发初始同步
-            syncer1.push({ initial: true });
-            syncer2.push({ initial: true });
+            syncer1.push();
+            syncer2.push();
 
             // 验证初始状态
             expect(store2.state).toEqual(store1.state);
@@ -463,7 +463,7 @@ describe("LocalTransport AutoStore 集成测试", () => {
             await delay();
 
             // 手动触发初始同步
-            syncer1.push({ initial: true });
+            syncer1.push();
             await delay(); // 等待初始同步完成
 
             // 初始值应该相同
@@ -522,8 +522,8 @@ describe("LocalTransport AutoStore 集成测试", () => {
             // 等待同步建立
             await delay();
 
-            syncer1.push({ initial: true });
-            syncer2.push({ initial: true });
+            syncer1.push();
+            syncer2.push();
 
             expect(store2.state).toEqual(store1.state);
 
@@ -619,7 +619,7 @@ describe("LocalTransport AutoStore 集成测试", () => {
             // 等待同步建立
             await delay();
 
-            syncer1.push({ initial: true });
+            syncer1.push();
 
             expect(store2.state.count).toBe(0);
 
@@ -1093,11 +1093,13 @@ describe("LocalTransport AutoStore 集成测试", () => {
                 transport: transport12a,
                 local: ["order"],
                 remote: ["twoOrder"],
+                mode: "pull",
             });
 
             new AutoStoreSyncer(store2, {
                 id: "store2-store1",
                 transport: transport12b,
+                mode: "pull",
             });
 
             // store2 <--> store3
@@ -1106,11 +1108,13 @@ describe("LocalTransport AutoStore 集成测试", () => {
                 transport: transport23a,
                 local: ["twoOrder"],
                 remote: ["threeOrder"],
+                mode: "pull",
             });
 
             new AutoStoreSyncer(store3, {
                 id: "store3-store2",
                 transport: transport23b,
+                mode: "pull",
             });
 
             // 等待同步建立
@@ -1267,6 +1271,7 @@ describe("LocalTransport AutoStore 集成测试", () => {
             const syncer2 = new AutoStoreSyncer(store2, {
                 transport: transport2,
                 direction: "forward",
+                mode: "none",
             });
 
             // 等待同步建立
@@ -1369,6 +1374,7 @@ describe("LocalTransport AutoStore 集成测试", () => {
             const syncer2 = new AutoStoreSyncer(store2, {
                 transport: transport2,
                 direction: "backward",
+                mode: "none",
             });
 
             // 等待同步建立

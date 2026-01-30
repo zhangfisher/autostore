@@ -139,7 +139,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
      * Key: store.id
      * Value: AutoStore 实例
      */
-    private _stores: Map<string, AutoStore<any>> = new Map();
+    stores: Map<string, AutoStore<any>> = new Map();
 
     /**
      * Transport 到 Store IDs 的映射
@@ -172,6 +172,12 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
     private _options: Required<AutoStoreSwitchSyncerOptions>;
 
     /**
+     * Transport 事件监听器清理函数映射
+     * 用于在 Transport 断开连接或销毁时清理其事件监听器
+     */
+    private _transportCleanup: WeakMap<AutoStoreSyncTransportBase, () => void> = new WeakMap();
+
+    /**
      * 创建 SwitchSyncer
      *
      * @param stores 要管理的 store 列表
@@ -194,7 +200,6 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
             this.start();
         }
     }
-
     /**
      * 添加一个新的 store
      *
@@ -204,7 +209,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         const storeId = store.id;
 
         // 如果该 store 已存在则返回
-        if (this._stores.has(storeId)) {
+        if (this.stores.has(storeId)) {
             console.warn(
                 `[AutoStoreSwitchSyncer] Store with id "${storeId}" already exists, skipping.`,
             );
@@ -212,7 +217,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         }
 
         // 保存 store
-        this._stores.set(storeId, store);
+        this.stores.set(storeId, store);
 
         // 初始化 store 的 transports 集合
         this._storeTransports.set(storeId, new Set());
@@ -229,7 +234,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
      * @param storeId store 的唯一标识符
      */
     remove(storeId: string): void {
-        const store = this._stores.get(storeId);
+        const store = this.stores.get(storeId);
         if (store) {
             // 停止 watch
             const watcher = this._watchers.get(storeId);
@@ -249,7 +254,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
                 });
             }
 
-            this._stores.delete(storeId);
+            this.stores.delete(storeId);
             this._storeTransports.delete(storeId);
         }
     }
@@ -324,7 +329,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         // 等待 transport 连接
         const onConnect = () => {
             // 订阅所有 stores
-            this._stores.forEach((store, storeId) => {
+            this.stores.forEach((store, storeId) => {
                 // 添加到 transport 的订阅列表
                 storeIds.add(storeId);
 
@@ -347,7 +352,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         // 注册消息接收器，根据 operate.id 路由到对应的 store
         transport.addReceiver("switch-router", (operate: StateRemoteOperate) => {
             const targetStoreId = operate.id;
-            const store = this._stores.get(targetStoreId);
+            const store = this.stores.get(targetStoreId);
 
             if (!store) {
                 console.warn(
@@ -370,7 +375,14 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         });
 
         // 监听 transport 的 disconnect 事件，清理资源
-        transport.on("disconnect", () => {
+        const disconnectCleanup = transport.on("disconnect", () => {
+            // 清理事件监听器
+            const cleanup = this._transportCleanup.get(transport);
+            if (cleanup) {
+                cleanup();
+                this._transportCleanup.delete(transport);
+            }
+
             // 从所有 stores 的 transports 列表中移除
             storeIds.forEach((storeId) => {
                 const transports = this._storeTransports.get(storeId);
@@ -381,6 +393,34 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
 
             // 清理 transport 的映射
             this._transportStoreIds.delete(transport);
+        });
+
+        // 监听 transport 的 error 事件，出错时清理资源
+        const errorCleanup = transport.on("error", (error: Error) => {
+            this._emitError(error);
+            // 清理事件监听器
+            const cleanup = this._transportCleanup.get(transport);
+            if (cleanup) {
+                cleanup();
+                this._transportCleanup.delete(transport);
+            }
+
+            // 从所有 stores 的 transports 列表中移除
+            storeIds.forEach((storeId) => {
+                const transports = this._storeTransports.get(storeId);
+                if (transports) {
+                    transports.delete(transport);
+                }
+            });
+
+            // 清理 transport 的映射
+            this._transportStoreIds.delete(transport);
+        });
+
+        // 保存清理函数，以便在销毁时调用
+        this._transportCleanup.set(transport, () => {
+            disconnectCleanup.off();
+            errorCleanup.off();
         });
     }
 
@@ -404,7 +444,6 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
             value: store.getSnap(),
             flags: 0,
         };
-
         transport.send(response);
     }
 
@@ -479,6 +518,13 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         for (const [store, transports] of this._storeTransports) {
             transports.forEach((transport) => {
                 if (transport.id === transportId) {
+                    // 清理 transport 的事件监听器
+                    const cleanup = this._transportCleanup.get(transport);
+                    if (cleanup) {
+                        cleanup();
+                        this._transportCleanup.delete(transport);
+                    }
+
                     // 从该 store 的 transports 列表中移除
                     transports.delete(transport);
 
@@ -499,7 +545,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
      * @returns AutoStore 实例，如果不存在则返回 undefined
      */
     getStore(storeId: string): AutoStore<any> | undefined {
-        return this._stores.get(storeId);
+        return this.stores.get(storeId);
     }
 
     /**
@@ -508,7 +554,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
      * @returns store id 列表
      */
     getStoreIds(): string[] {
-        return Array.from(this._stores.keys());
+        return Array.from(this.stores.keys());
     }
 
     /**
@@ -523,7 +569,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         try {
             this.syncing = true;
             // 为所有 stores 启动 watch
-            this._stores.forEach((store) => {
+            this.stores.forEach((store) => {
                 // 如果该 store 还没有 watcher，则启动
                 if (!this._watchers.has(store.id)) {
                     this._startWatch(store);
@@ -571,14 +617,25 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         });
         this._watchers.clear();
 
+        // 清理所有 transport 的事件监听器
+        this._storeTransports.forEach((transports) => {
+            transports.forEach((transport) => {
+                const cleanup = this._transportCleanup.get(transport);
+                if (cleanup) {
+                    cleanup();
+                }
+            });
+        });
+
         // 清理所有映射
-        this._stores.clear();
+        this.stores.clear();
         this._storeTransports.clear();
         this._transportStoreIds = new WeakMap();
+        this._transportCleanup = new WeakMap();
     }
 
     toString(): string {
-        const storeIds = Array.from(this._stores.keys()).join(", ");
-        return `AutoStoreSwitchSyncer(stores: [${storeIds}], total: ${this._stores.size})`;
+        const storeIds = Array.from(this.stores.keys()).join(", ");
+        return `AutoStoreSwitchSyncer(stores: [${storeIds}], total: ${this.stores.size})`;
     }
 }

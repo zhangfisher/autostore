@@ -41,6 +41,13 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     peer?: AutoStoreSyncer;
     private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
     private _subscribers: EventSubscriber[] = [];
+
+    // 心跳检测相关
+    private _heartbeatTimer?: ReturnType<typeof setInterval>; // 心跳定时器
+    private _pingCounter: number = 0; // ping 计数器（递增）
+    private _pongMissCount: number = 0; // pong 丢失计数
+    private _pongMissMax: number = 3; // 最大 pong 丢失次数（超过则断开连接）
+    private _pendingPingValue?: number; // 待确认的 ping 值（已发送但未收到 pong）
     constructor(
         public store: AutoStore<any>,
         options?: AutoStoreSyncerOptions,
@@ -58,6 +65,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                 pathMap: {},
                 peers: ["*"],
                 debug: false,
+                heartbeat: 0, // 默认禁用心跳检测
             },
             options,
         ) as any;
@@ -94,11 +102,18 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
      */
     private _onConnect() {
         try {
+            const direction = this.options.direction;
             const mode = this.options.mode;
-            if (mode === "push") {
+            if (mode === "push" || mode == "both") {
                 this._pushStore(true);
-            } else if (mode === "pull") {
+            }
+            if (mode === "pull" || mode == "both") {
                 this._pullStore(true);
+            }
+            // 如果是单向同步，则不会接收到对方的操作，所以直接就置为同步状态
+            // 否则需要等待
+            if (direction === "forward") {
+                this._synced = true;
             }
         } finally {
             this.flush();
@@ -147,6 +162,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                     if (operate.id === this.id) {
                         return;
                     }
+                    // 以$开头的是同步指令
                     if (this.options.direction === "forward" && !operate.type.startsWith("$")) {
                         return;
                     }
@@ -160,6 +176,8 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             this._subscribers.push(this.transport.on("connect", this._onConnect.bind(this)));
             // 当连接断开时，停止同步
             this._subscribers.push(this.transport.on("disconnect", this.stop.bind(this)));
+            // 当连接出错时
+            this._subscribers.push(this.transport.on("error", this.stop.bind(this)));
             this.transport.connect();
         } catch (e) {
             hasError = e;
@@ -169,6 +187,8 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
         } finally {
             if (!hasError) {
                 this.emit("start", undefined, true);
+                // 启动心跳检测
+                this._startHeartbeat();
             }
         }
     }
@@ -179,6 +199,9 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     stop() {
         if (!this.syncing) return;
         try {
+            // 停止心跳检测
+            this._stopHeartbeat();
+
             this._subscribers.forEach((subscriber) => subscriber.off());
             if (this._options.transport.connected) {
                 // 向对方发送一个停止同步的信号
@@ -243,10 +266,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
         }
 
         const remoteOperate = this.createRemoteOperate(operate);
-
-        if (typeof this._options.onSend === "function") {
-            if (this._options.onSend.call(this, remoteOperate) === false) return;
-        }
         this._sendOperate(remoteOperate);
     }
 
@@ -272,6 +291,15 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                 const e = new AutoStoreSyncError();
                 e.operate = operate;
                 this.emit("error", e);
+            } else if (type === "$ping") {
+                // 回应心跳 ping
+                this._sendOperate({
+                    type: "$pong",
+                    value: operate.value,
+                } as any);
+            } else if (type === "$pong") {
+                // 处理心跳 pong 响应
+                this._handlePong(operate.value as number);
             } else {
                 // 常规的更新操作
                 this._applyOperate(operate);
@@ -329,7 +357,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             }, updateOpts);
         }
     }
-
     /**
      *
      * 将本地操作缓存发送到远程
@@ -362,6 +389,10 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     }
     private _sendOperate(operate: StateRemoteOperate) {
         if (this._assertConnected(operate)) {
+            // 在发送前调用 onSend 钩子，允许子类修改 operate（如修改 id）
+            if (typeof this._options.onSend === "function") {
+                if (this._options.onSend.call(this, operate) === false) return;
+            }
             this._options.transport.send(operate);
         }
     }
@@ -493,6 +524,86 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             return path;
         }
     }
+
+    /**
+     * 启动心跳检测
+     */
+    private _startHeartbeat() {
+        const heartbeat = this._options.heartbeat;
+        if (heartbeat <= 0) return; // 0 或负数表示禁用心跳检测
+
+        // 清除之前的定时器（如果有）
+        this._stopHeartbeat();
+
+        // 重置心跳状态
+        this._pingCounter = 0;
+        this._pongMissCount = 0;
+
+        // 立即发送第一次 ping
+        this._sendPing();
+
+        // 启动定时心跳
+        this._heartbeatTimer = setInterval(() => {
+            this._sendPing();
+        }, heartbeat);
+    }
+
+    /**
+     * 停止心跳检测
+     */
+    private _stopHeartbeat() {
+        if (this._heartbeatTimer) {
+            clearInterval(this._heartbeatTimer);
+            this._heartbeatTimer = undefined;
+        }
+        this._pingCounter = 0;
+        this._pongMissCount = 0;
+        this._pendingPingValue = undefined;
+    }
+
+    /**
+     * 发送心跳 ping
+     */
+    private _sendPing() {
+        // 检查上一个 ping 是否还未收到 pong 响应
+        if (this._pendingPingValue !== undefined) {
+            // 上一个 ping 还没收到 pong，增加丢失计数
+            this._pongMissCount++;
+            if (this._pongMissCount >= this._pongMissMax) {
+                // 连续 3 次未收到 pong，认为连接已断开
+                this._stopHeartbeat();
+                this.transport.disconnect();
+                this.emit("error", new Error("Heartbeat timeout: connection lost"), true);
+                return;
+            }
+        }
+
+        // 发送新的 ping
+        this._pingCounter++;
+        this._pendingPingValue = this._pingCounter;
+
+        // 发送 ping 消息
+        this._sendOperate({
+            id: this.id,
+            type: "$ping",
+            path: [],
+            value: this._pingCounter,
+            flags: 0,
+        } as any);
+    }
+
+    /**
+     * 处理收到的心跳 pong
+     */
+    private _handlePong(value: number) {
+        // 验证 pong 值是否匹配待确认的 ping
+        if (this._pendingPingValue !== undefined && value === this._pendingPingValue) {
+            // 收到正确的 pong 响应，重置丢失计数并清除待确认标记
+            this._pongMissCount = 0;
+            this._pendingPingValue = undefined;
+        }
+    }
+
     toString() {
         return `AutoStoreSyncer(${this.id})`;
     }

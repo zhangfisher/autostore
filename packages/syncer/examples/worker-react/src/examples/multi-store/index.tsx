@@ -16,87 +16,85 @@
  * - 多标签页协同工作：每个标签页可以同步不同的状态
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AutoStore } from 'autostore';
 import { AutoStoreWorkerSyncer } from '@autostorejs/syncer';
 
-// 在组件外部创建 store 实例，避免每次渲染都创建新实例
-// 创建计数器 store
-const counterStore = new AutoStore(
-    {
-        count: 0,
-        doubleCount: (scope: any) => scope.count * 2,
-    },
-    { id: 'local-counter-store' },
-);
+// 将 store 创建移到函数内部，避免模块加载时初始化
+// 使用函数延迟初始化，只在组件首次渲染时创建
+function createStores() {
+    // 创建计数器 store
+    const counterStore = new AutoStore(
+        {
+            count: 0,
+            doubleCount: (scope: any) => scope.count * 2,
+        },
+        { id: 'local-counter-store' },
+    );
 
-// 创建待办事项 store
-const todoStore = new AutoStore(
-    {
-        todos: [] as Array<{
-            id: number;
-            text: string;
-            completed: boolean;
-            priority: 'low' | 'medium' | 'high';
-            createdAt: number;
-        }>,
-        totalCount: (scope: any) => scope.todos.length,
-        completedCount: (scope: any) => scope.todos.filter((t: any) => t.completed).length,
-    },
-    { id: 'local-todo-store' },
-);
+    // 创建待办事项 store
+    const todoStore = new AutoStore(
+        {
+            todos: [] as Array<{
+                id: number;
+                text: string;
+                completed: boolean;
+                priority: 'low' | 'medium' | 'high';
+                createdAt: number;
+            }>,
+            totalCount: (scope: any) => scope.todos.length,
+            completedCount: (scope: any) => scope.todos.filter((t: any) => t.completed).length,
+        },
+        { id: 'local-todo-store' },
+    );
 
-// 创建用户信息 store
-const userStore = new AutoStore(
-    {
-        user: {
-            name: '张三',
-            age: 30,
-            email: 'zhangsan@example.com',
-            avatar: '👤',
-            address: {
-                city: '北京',
-                district: '朝阳区',
-                detail: '某某街道123号',
-            },
-            preferences: {
-                theme: 'light' as 'light' | 'dark',
-                language: 'zh-CN',
-                notifications: true,
+    // 创建用户信息 store
+    const userStore = new AutoStore(
+        {
+            user: {
+                name: '张三',
+                age: 30,
+                email: 'zhangsan@example.com',
+                avatar: '👤',
+                address: {
+                    city: '北京',
+                    district: '朝阳区',
+                    detail: '某某街道123号',
+                },
+                preferences: {
+                    theme: 'light' as 'light' | 'dark',
+                    language: 'zh-CN',
+                    notifications: true,
+                },
             },
         },
-    },
-    { id: 'local-user-store' },
-);
-//@ts-ignore
-globalThis.counterStore = counterStore;
-//@ts-ignore
-globalThis.userStore = userStore;
-//@ts-ignore
-globalThis.todoStore = todoStore;
+        { id: 'local-user-store' },
+    );
 
-// 在组件外部创建 SharedWorker 和 syncer，避免每次渲染都创建新实例
-const worker = new SharedWorker(new URL('./shared-worker.ts', import.meta.url), {
-    type: 'module',
-    name: 'multi-store',
-});
+    // 挂载到全局以便调试
+    //@ts-ignore
+    globalThis.counterStore = counterStore;
+    //@ts-ignore
+    globalThis.userStore = userStore;
+    //@ts-ignore
+    globalThis.todoStore = todoStore;
 
-// 创建三个 syncer，分别与 SharedWorker 中的不同 store 同步
-const counterSyncer = new AutoStoreWorkerSyncer(counterStore, worker, {
-    peers: ['counter-store'], // 指定要与 SharedWorker 中的 counter-store 同步
-});
-
-const todoSyncer = new AutoStoreWorkerSyncer(todoStore, worker, {
-    peers: ['todo-store'], // 指定要与 SharedWorker 中的 todo-store 同步
-});
-
-const userSyncer = new AutoStoreWorkerSyncer(userStore, worker, {
-    peers: ['user-store'], // 指定要与 SharedWorker 中的 user-store 同步
-});
+    return { counterStore, todoStore, userStore };
+}
 
 export function MultiStoreExample() {
-    const [connected, setConnected] = useState(true);
-    const [logMessages, setLogMessages] = useState<string[]>([]);
+    // 使用 useRef 缓存 stores 和 worker，避免每次渲染都重新创建
+    const storesRef = useRef<{ counterStore: any; todoStore: any; userStore: any } | null>(null);
+    const workerRef = useRef<SharedWorker | null>(null);
+    const syncersRef = useRef<any[] | null>(null);
+
+    // 懒初始化：只在首次渲染时创建 stores 和 worker
+    if (!storesRef.current) {
+        storesRef.current = createStores();
+    }
+
+    // 获取 stores
+    const { counterStore, todoStore, userStore } = storesRef.current;
 
     // 本地状态
     const [count, setCount] = useState(counterStore.state.count);
@@ -106,15 +104,64 @@ export function MultiStoreExample() {
     const [completedCount, setCompletedCount] = useState(todoStore.state.completedCount);
     const [user, setUser] = useState(userStore.state.user);
 
+    // 使用 useRef 存储日志，减少 React 状态更新频率
+    const logMessagesRef = useRef<string[]>([]);
+    const [, forceUpdate] = useState({});
+    const logUpdateTimerRef = useRef<NodeJS.Timeout>();
+
     const addLogMessage = (msg: string) => {
         const timestamp = new Date().toLocaleTimeString();
-        setLogMessages((prev) => [`[${timestamp}] ${msg}`, ...prev].slice(0, 50));
+        logMessagesRef.current = [`[${timestamp}] ${msg}`, ...logMessagesRef.current].slice(0, 50);
+
+        // 使用防抖机制，减少日志更新的频率
+        if (logUpdateTimerRef.current) {
+            clearTimeout(logUpdateTimerRef.current);
+        }
+        logUpdateTimerRef.current = setTimeout(() => {
+            forceUpdate({});
+        }, 100); // 100ms 防抖
     };
 
-    // 初始化日志
+    // 初始化日志和 SharedWorker 连接
     useEffect(() => {
-        addLogMessage('[系统] 已连接到 SharedWorker (3个 stores 已同步)');
-    }, []);
+        // 懒初始化：只在组件首次挂载时创建 worker 和 syncers
+        if (!workerRef.current) {
+            workerRef.current = new SharedWorker(new URL('./shared-worker.ts', import.meta.url), {
+                type: 'module',
+                name: 'multi-store',
+            });
+        }
+
+        if (!syncersRef.current) {
+            // 创建三个 syncer，分别与 SharedWorker 中的不同 store 同步
+            const counterSyncer = new AutoStoreWorkerSyncer(counterStore, workerRef.current, {
+                peers: ['counter-store'],
+                mode: 'pull',
+            });
+
+            const todoSyncer = new AutoStoreWorkerSyncer(todoStore, workerRef.current, {
+                peers: ['todo-store'],
+                mode: 'pull',
+            });
+
+            const userSyncer = new AutoStoreWorkerSyncer(userStore, workerRef.current, {
+                peers: ['user-store'],
+                mode: 'pull',
+            });
+
+            syncersRef.current = [counterSyncer, todoSyncer, userSyncer];
+
+            addLogMessage('[系统] 已连接到 SharedWorker (3个 stores 已同步)');
+        }
+
+        // 清理定时器
+        return () => {
+            if (logUpdateTimerRef.current) {
+                clearTimeout(logUpdateTimerRef.current);
+            }
+        };
+        // 注意：不清理 worker 和 syncers，因为它们应该在组件生命周期内保持活跃
+    }, []); // 空依赖数组，只在首次挂载时执行
 
     // 监听 counterStore 变化
     useEffect(() => {
@@ -122,9 +169,10 @@ export function MultiStoreExample() {
             if (path[0] === 'count') {
                 setCount(value);
                 setDoubleCount(counterStore.state.doubleCount);
-                addLogMessage(
-                    `[计数器] count = ${value}, double = ${counterStore.state.doubleCount}`,
-                );
+                // 减少日志频率，只在重要操作时记录
+                // addLogMessage(
+                //     `[计数器] count = ${value}, double = ${counterStore.state.doubleCount}`,
+                // );
             }
         });
 
@@ -143,9 +191,10 @@ export function MultiStoreExample() {
                 setTodos([...todoStore.state.todos]);
                 setTotalCount(todoStore.state.totalCount);
                 setCompletedCount(todoStore.state.completedCount);
-                addLogMessage(
-                    `[待办事项] 总数: ${todoStore.state.totalCount}, 已完成: ${todoStore.state.completedCount}`,
-                );
+                // 减少日志频率
+                // addLogMessage(
+                //     `[待办事项] 总数: ${todoStore.state.totalCount}, 已完成: ${todoStore.state.completedCount}`,
+                // );
             }
         });
 
@@ -162,7 +211,8 @@ export function MultiStoreExample() {
         const unwatch = userStore.watch(({ path }) => {
             if (path[0] === 'user') {
                 setUser({ ...userStore.state.user });
-                addLogMessage(`[用户信息] 用户数据已更新`);
+                // 减少日志频率
+                // addLogMessage(`[用户信息] 用户数据已更新`);
             }
         });
 
@@ -304,10 +354,10 @@ export function MultiStoreExample() {
                 <span
                     style={{
                         ...styles.statusIndicator,
-                        backgroundColor: connected ? '#4caf50' : '#f44336',
+                        backgroundColor: '#4caf50',
                     }}
                 />
-                <span>{connected ? '已连接到 SharedWorker' : '未连接'}</span>
+                <span>已连接到 SharedWorker</span>
                 <span style={{ marginLeft: 'auto', color: '#666', fontSize: '14px' }}>
                     已同步 3 个独立 Store
                 </span>
@@ -485,10 +535,10 @@ export function MultiStoreExample() {
                         同步日志
                     </h2>
                     <div style={styles.logContainer}>
-                        {logMessages.length === 0 ? (
+                        {logMessagesRef.current.length === 0 ? (
                             <p style={styles.empty}>暂无日志</p>
                         ) : (
-                            logMessages.map((msg, idx) => (
+                            logMessagesRef.current.map((msg, idx) => (
                                 <div key={idx} style={styles.logItem}>
                                     {msg}
                                 </div>

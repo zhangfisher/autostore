@@ -9,7 +9,7 @@ export type AutoStoreSyncerOptions = {
      * - psuh: 双向均向对方执行push操作,这样如果两个store初始状态均不一样会导致状态合并
      * - none: 不执行任意操作
      */
-    mode?: "push" | "pull" | "none";
+    mode?: "push" | "pull" | "none" | "both";
     id?: string;
     local?: string[] | string;
     remote?: string[] | string;
@@ -48,11 +48,19 @@ export type AutoStoreSyncerOptions = {
      */
     peers?: string[];
     debug?: boolean;
+    /**
+     * 心跳检测间隔（毫秒）
+     * 0 表示禁用心跳检测（默认）
+     * n > 0 表示每隔 n 毫秒发送一次心跳 ping
+     * 如果连续 3 次未收到 pong 响应，则认为连接已断开，主动断开连接
+     * @default 0
+     */
+    heartbeat?: number;
 };
 
 export type StateRemoteOperate<Value = any> = {
     id: string;
-    type: StateOperateType | "$stop" | "$push" | "$pull" | "$update" | "$error";
+    type: StateOperateType | "$stop" | "$push" | "$pull" | "$update" | "$error" | "$ping" | "$pong";
     path: string[];
     value: Value;
     indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素

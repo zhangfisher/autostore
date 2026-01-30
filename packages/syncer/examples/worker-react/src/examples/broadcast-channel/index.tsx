@@ -5,34 +5,48 @@
  * 不需要 SharedWorker 或 Worker，纯前端实现
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AutoStore } from 'autostore';
 import { AutoStoreBroadcastChannelSyncer } from '@autostorejs/syncer';
-const store = new AutoStore({
-    count: 0,
-    messages: [] as string[],
-    messageCount: (scope: any) => scope.messages.length,
-    todos: [] as Array<{ id: number; text: string; completed: boolean }>,
-    user: {
-        name: '张三',
-        age: 30,
-        email: 'zhangsan@example.com',
-        address: {
-            city: '北京',
-            district: '朝阳区',
-            detail: '某某街道123号',
-        },
-    },
-});
 
-const syncer = new AutoStoreBroadcastChannelSyncer(store, 'broadcast-channel-demo');
-
-// @ts-ignore
-globalThis.BStore = store;
 export function BroadcastChannelExample() {
     const [connected, setConnected] = useState(false);
     const [pageId] = useState(() => Math.random().toString(36).substr(2, 9));
     const [logMessages, setLogMessages] = useState<string[]>([]);
+
+    // 使用 refs 缓存 store 和 syncer，避免模块加载时初始化
+    const storeRef = useRef<any | null>(null);
+    const syncerRef = useRef<any | null>(null);
+
+    // 懒初始化：只在首次渲染时创建
+    if (!storeRef.current) {
+        const store = new AutoStore({
+            count: 0,
+            messages: [] as string[],
+            messageCount: (scope: any) => scope.messages.length,
+            todos: [] as Array<{ id: number; text: string; completed: boolean }>,
+            user: {
+                name: '张三',
+                age: 30,
+                email: 'zhangsan@example.com',
+                address: {
+                    city: '北京',
+                    district: '朝阳区',
+                    detail: '某某街道123号',
+                },
+            },
+        });
+
+        // @ts-ignore
+        globalThis.BStore = store;
+
+        const syncer = new AutoStoreBroadcastChannelSyncer(store, 'broadcast-channel-demo');
+
+        storeRef.current = store;
+        syncerRef.current = syncer;
+    }
+
+    const store = storeRef.current;
 
     useEffect(() => {
         // 使用 AutoStoreBroadcastChannelSyncer 简化 BroadcastChannel 的使用

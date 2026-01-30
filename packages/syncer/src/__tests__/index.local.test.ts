@@ -325,6 +325,7 @@ describe("远程同步", () => {
         new AutoStoreSyncer(threeStore, {
             id: "three-two",
             transport: remoteTransport2,
+            mode: "pull",
         });
 
         // 等待同步建立
@@ -439,6 +440,7 @@ describe("远程同步", () => {
         const remoteSyncer = new AutoStoreSyncer(remoteStore, {
             transport: remoteTransport,
             direction: "forward",
+            mode: "pull",
         });
 
         // 等待同步建立
@@ -512,6 +514,7 @@ describe("远程同步", () => {
         const remoteSyncer = new AutoStoreSyncer(remoteStore, {
             transport: remoteTransport,
             direction: "backward",
+            mode: "none",
         });
 
         // 等待同步建立

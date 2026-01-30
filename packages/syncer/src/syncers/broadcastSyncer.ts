@@ -138,10 +138,21 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
         });
 
         // 监听 transport 的 disconnect 事件，自动清理
-        const cleanup = transport.on("disconnect", () => {
+        const disconnectCleanup = transport.on("disconnect", () => {
             this.removeTransport(transportId);
         });
-        this._transportCleanup.set(transport, cleanup.off);
+
+        // 监听 transport 的 error 事件，出错时自动移除
+        const errorCleanup = transport.on("error", (error: Error) => {
+            this._emitError(error);
+            this.removeTransport(transportId);
+        });
+
+        // 保存清理函数到 _transportCleanup，以便后续移除
+        this._transportCleanup.set(transport, () => {
+            disconnectCleanup.off();
+            errorCleanup.off();
+        });
     }
 
     /**

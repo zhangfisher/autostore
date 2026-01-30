@@ -293,13 +293,13 @@ describe("plugin 边界情况测试", () => {
             expect(fromStore.state.value).toBe(300);
         });
 
-        test("sync 时 immediate: false 不立即同步", () => {
+        test("sync 时不立即同步，需要手工调用pull", () => {
             const fromStore = new AutoStore({
                 value: 100,
             });
             const toStore = new AutoStore({});
 
-            const syncer = toStore.sync(fromStore, { immediate: false });
+            const syncer = toStore.sync(fromStore, { mode: "none" });
 
             // toStore 应该还是初始的空对象
             expect(toStore.getSnap()).toEqual({});

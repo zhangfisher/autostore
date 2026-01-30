@@ -16,7 +16,8 @@ const examples = [
     {
         id: 'local-sync',
         title: '本地同步方式',
-        description: '展示 4 种不同的本地同步方式：LocalTransport、EventEmitterTransport、store.sync、store.clone',
+        description:
+            '展示 4 种不同的本地同步方式：LocalTransport、EventEmitterTransport、store.sync、store.clone',
         icon: '🔗',
     },
     {
@@ -46,7 +47,7 @@ const examples = [
 ];
 
 function App() {
-    const [activeExample, setActiveExample] = useState(examples[0].id);
+    const [activeExample, setActiveExample] = useState(examples.length > 0 ? examples[0].id : '');
 
     // 渲染当前激活的示例
     const renderExample = () => {

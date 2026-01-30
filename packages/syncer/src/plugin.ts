@@ -24,7 +24,7 @@ function createSyncerPlugin() {
             });
             const localSyncer = new AutoStoreSyncer(
                 store,
-                Object.assign({ mode: "push" }, options, {
+                Object.assign({ mode: "both" }, options, {
                     transport: localTransport,
                 }),
             );

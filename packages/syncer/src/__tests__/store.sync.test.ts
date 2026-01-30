@@ -90,8 +90,6 @@ describe("本地Store同步", () => {
         });
         const toStore = new AutoStore<typeof fromStore.state>();
         const syncer = toStore.sync(fromStore);
-        expect(toStore.state).toEqual({});
-
         syncer.pull();
 
         expect(toStore.state).toEqual(fromStore.state);
@@ -158,27 +156,6 @@ describe("本地Store同步", () => {
         expect(toStore.state.myorder.total).toBe(8);
         // @ts-expect-error
         toStore.state.myorder.count = 5;
-        expect(fromStore.state.order.count).toBe(5);
-        expect(fromStore.state.order.total).toBe(10);
-    });
-    test("只同步变化部分同步", async () => {
-        const fromStore = new AutoStore({
-            order: {
-                name: "fisher",
-                price: 2,
-                count: 3,
-                total: computed((order) => order.price * order.count),
-            },
-        });
-        const toStore = new AutoStore();
-
-        const syncer = toStore.sync(fromStore, {});
-
-        expect(toStore.state).toEqual({});
-        fromStore.state.order.count = 4;
-        expect(toStore.state.order.count).toBe(4);
-        expect(toStore.state.order.total).toBe(8);
-        toStore.state.order.count = 5;
         expect(fromStore.state.order.count).toBe(5);
         expect(fromStore.state.order.total).toBe(10);
     });
