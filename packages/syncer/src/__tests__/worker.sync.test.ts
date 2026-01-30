@@ -149,7 +149,7 @@ describe("AutoStore Worker 同步集成测试", () => {
             });
 
             // 手动触发初始同步
-            mainSyncer.push({ initial: true });
+            mainSyncer.push();
             await new Promise((resolve) => setTimeout(resolve, 30));
 
             // 验证初始同步
@@ -258,7 +258,7 @@ describe("AutoStore Worker 同步集成测试", () => {
                 immediate: false,
             });
 
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 20));
 
             expect(store2.state).toEqual(store1.state);
@@ -307,7 +307,7 @@ describe("AutoStore Worker 同步集成测试", () => {
                 immediate: false,
             });
 
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 20));
 
             expect(store2.state.count).toBe(0);
@@ -419,7 +419,7 @@ describe("AutoStore Worker 同步集成测试", () => {
             });
 
             // 初始同步
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 20));
 
             // 初始状态
@@ -470,8 +470,8 @@ describe("AutoStore Worker 同步集成测试", () => {
                 immediate: false,
             });
 
-            syncer1.push({ initial: true });
-            syncer2.push({ initial: true });
+            syncer1.push();
+            syncer2.push();
             await new Promise((resolve) => setTimeout(resolve, 20));
 
             // 添加新属性
@@ -513,7 +513,7 @@ describe("AutoStore Worker 同步集成测试", () => {
                 immediate: false,
             });
 
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 20));
 
             // 设置为 null
@@ -560,7 +560,7 @@ describe("AutoStore Worker 同步集成测试", () => {
             });
 
             // 初始同步
-            syncer1.push({ initial: true });
+            syncer1.push();
             await new Promise((resolve) => setTimeout(resolve, 30));
 
             // 快速添加多个元素
@@ -637,7 +637,7 @@ describe("AutoStore Worker 同步集成测试", () => {
             });
 
             // 初始同步
-            mainSyncer.push({ initial: true });
+            mainSyncer.push();
             await new Promise((resolve) => setTimeout(resolve, 30));
 
             expect(worker1Store.state).toEqual(mainStore.state);

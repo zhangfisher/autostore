@@ -49,6 +49,7 @@ import { getSnapshot, getVal, setVal } from "autostore";
 import type { AutoStoreBroadcasterOptions, StateRemoteOperate } from "../types";
 import type { AutoStoreSyncTransportBase } from "../transports/base";
 import { AutoStoreSyncerBase } from "./base";
+import { Heartbeat } from "../utils/heartbeat";
 
 /**
  * AutoStore 广播器 - 管理主站与多个客户端之间的状态同步
@@ -87,6 +88,13 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
     private _transportCleanup: WeakMap<AutoStoreSyncTransportBase, () => void> = new WeakMap();
 
     /**
+     * Transport 心跳检测器映射
+     * Key: transport.id
+     * Value: Heartbeat 实例
+     */
+    private _heartbeats: Map<number, Heartbeat> = new Map();
+
+    /**
      * MainStore 的 watch 监听器
      * 用于监听主站状态变化并广播到所有客户端（对应原理场景2）
      */
@@ -98,6 +106,7 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
         this._options = Object.assign(
             {
                 autostart: true,
+                heartbeat: 0, // 默认禁用心跳检测
             },
             options,
         ) as Required<AutoStoreBroadcasterOptions>;
@@ -153,6 +162,24 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
             disconnectCleanup.off();
             errorCleanup.off();
         });
+
+        // 如果配置了心跳检测，创建 Heartbeat
+        if (this._options.heartbeat && this._options.heartbeat > 0) {
+            const heartbeat = new Heartbeat(transport, {
+                interval: this._options.heartbeat,
+            });
+
+            // 监听心跳超时事件，超时时移除 transport
+            heartbeat.on("timeout", () => {
+                console.warn(
+                    `[AutoStoreBroadcaster] Client ${transportId} heartbeat timeout, removing transport`,
+                );
+                this.removeTransport(transportId);
+            });
+
+            // 保存 heartbeat 映射
+            this._heartbeats.set(transportId, heartbeat);
+        }
     }
 
     /**
@@ -163,11 +190,23 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
     removeTransport(id: number): void {
         const transport = this.transports.get(id);
         if (transport) {
+            // 销毁心跳检测器
+            const heartbeat = this._heartbeats.get(id);
+            if (heartbeat) {
+                heartbeat.destroy();
+                this._heartbeats.delete(id);
+            }
+
             // 清理 transport 事件监听器
             const cleanup = this._transportCleanup.get(transport);
             if (cleanup) {
                 cleanup();
                 this._transportCleanup.delete(transport);
+            }
+
+            // 断开 transport 连接
+            if (transport.connected) {
+                transport.disconnect();
             }
 
             this.transports.delete(id);
@@ -407,6 +446,12 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
         // 停止广播
         this.stop();
 
+        // 销毁所有心跳检测器
+        this._heartbeats.forEach((heartbeat) => {
+            heartbeat.destroy();
+        });
+        this._heartbeats.clear();
+
         // 断开所有 transport 并清理事件监听器
         this.transports.forEach((transport) => {
             // 清理 transport 事件监听器
@@ -414,7 +459,9 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
             if (cleanup) {
                 cleanup();
             }
-            transport.disconnect();
+            if (transport.connected) {
+                transport.disconnect();
+            }
         });
         this.transports.clear();
     }

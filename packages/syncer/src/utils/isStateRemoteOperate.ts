@@ -1,4 +1,4 @@
-import type { StateRemoteOperate } from '../types';
+import type { StateRemoteOperate } from "../types";
 
 /**
  * 判断值是否是一个 StateRemoteOperate
@@ -25,23 +25,20 @@ import type { StateRemoteOperate } from '../types';
  */
 export function isStateRemoteOperate(val: unknown): val is StateRemoteOperate {
     // 检查是否是对象且不为 null
-    if (typeof val !== 'object' || val === null) {
+    if (typeof val !== "object" || val === null) {
         return false;
     }
 
     const obj = val as Record<string, unknown>;
+    return "type" in obj;
+    // // 检查必需字段是否存在
+    // if (
+    //     typeof obj.type !== "string"
+    //     // !Array.isArray(obj.path) ||
+    //     // typeof obj.flags !== 'number'
+    // ) {
+    //     return false;
+    // }
 
-    // 检查必需字段是否存在
-    if (
-        typeof obj.id !== 'string' ||
-        typeof obj.type !== 'string' ||
-        !Array.isArray(obj.path) ||
-        typeof obj.flags !== 'number'
-    ) {
-        return false;
-    }
-
-    return 'type' in obj 
-        && 'value' in obj
-        && ('path' in obj && Array.isArray(obj.path))
+    // return "type" in obj && "value" in obj; //&& "path" in obj && Array.isArray(obj.path);
 }

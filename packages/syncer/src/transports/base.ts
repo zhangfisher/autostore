@@ -124,7 +124,9 @@ export class AutoStoreSyncTransportBase<
     protected onReceiveOperate(operate: StateRemoteOperate): void {
         // 通知所有注册的 receivers，让它们自己决定是否处理该消息
         for (const callback of this.receivers.values()) {
-            callback(operate);
+            try {
+                callback(operate);
+            } catch {}
         }
     }
     send(operate: StateRemoteOperate) {

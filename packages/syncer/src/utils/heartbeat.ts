@@ -124,9 +124,6 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
         this._pingCounter = 0;
         this._pongMissCount = 0;
 
-        // 立即发送第一次 ping
-        this._sendPing();
-
         // 启动定时心跳
         this._timer = setInterval(() => {
             this._sendPing();
@@ -182,7 +179,7 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
             if (this._pongMissCount >= this._maxMissCount) {
                 // 连续多次未收到 pong，认为连接已断开
                 this._stop();
-                // 触发超时事件
+                //触发超时事件
                 this.emit("timeout", undefined);
                 return;
             }
@@ -191,7 +188,6 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
         // 发送新的 ping
         this._pingCounter++;
         this._pendingPingValue = this._pingCounter;
-
         // 发送 ping 消息
         this.transport.send({
             type: "$ping",

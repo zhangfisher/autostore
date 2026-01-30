@@ -161,11 +161,13 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                         return;
                     }
                     // 以$开头的是同步指令
-                    if (this.options.direction === "forward" && !operate.type.startsWith("$")) {
-                        return;
-                    }
-                    if (!this.isPeer(operate)) {
-                        return;
+                    if (!operate.type.startsWith("$")) {
+                        if (this.options.direction === "forward") {
+                            return;
+                        }
+                        if (!this.isPeer(operate)) {
+                            return;
+                        }
                     }
                     this._onReceiveFromRemote(operate);
                 }),
@@ -304,6 +306,11 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             } else if (type === "$update") {
                 // 对pull的响应
                 this._updateStore(operate);
+            } else if (type === "$ping") {
+                this._sendOperate({
+                    type: "$pong",
+                    value: operate.value,
+                } as any);
             } else if (type === "$error") {
                 const e = new AutoStoreSyncError();
                 e.operate = operate;

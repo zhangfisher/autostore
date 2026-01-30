@@ -7,48 +7,39 @@
 
 import { useState, useEffect } from 'react';
 import { AutoStore } from 'autostore';
-import {  AutoStoreWorkerSyncer } from '@autostorejs/syncer'; 
-
+import { AutoStoreWorkerSyncer } from '@autostorejs/syncer';
+const store = new AutoStore({
+    count: 0,
+    messages: [] as string[],
+    messageCount: (scope: any) => scope.messages.length,
+    todos: [] as Array<{ id: number; text: string; completed: boolean }>,
+    user: {
+        name: '张三',
+        age: 30,
+        email: 'zhangsan@example.com',
+        address: {
+            city: '北京',
+            district: '朝阳区',
+            detail: '某某街道123号',
+        },
+    },
+});
+const worker = new SharedWorker(new URL('./shared-worker.ts', import.meta.url), {
+    type: 'module',
+    name: 'full-sync',
+});
+// 使用 AutoStoreWorkerSyncer 简化 WorkerTransport + AutoStoreSyncer 的使用
+const syncer = new AutoStoreWorkerSyncer(store, worker, {
+    // 指定SharedWorker中的的store的id
+    peers: ['shared-worker-store'],
+});
 export function FullSyncExample() {
-    const [store] = useState(() => {
-        return new AutoStore({
-            count: 0,
-            messages: [] as string[],
-            messageCount: (scope: any) => scope.messages.length,
-            todos: [] as Array<{ id: number; text: string; completed: boolean }>,
-            user: {
-                name: '张三',
-                age: 30,
-                email: 'zhangsan@example.com',
-                address: {
-                    city: '北京',
-                    district: '朝阳区',
-                    detail: '某某街道123号',
-                },
-            },
-        });
-    });
-
     const [connected, setConnected] = useState(false);
     const [logMessages, setLogMessages] = useState<string[]>([]);
 
     useEffect(() => {
-        const worker = new SharedWorker(new URL('./shared-worker.ts', import.meta.url), {
-            type: 'module',
-            name: 'full-sync',
-        });
-        // 使用 AutoStoreWorkerSyncer 简化 WorkerTransport + AutoStoreSyncer 的使用
-        const syncer = new AutoStoreWorkerSyncer(store, worker, {
-            // 指定SharedWorker中的的store的id
-            peers: ['shared-worker-store'],
-        });
         setConnected(true);
         addLogMessage('[系统] 已连接到 SharedWorker');
-
-        return () => {
-            syncer.stop();
-            worker.port.close();
-        };
     }, []);
 
     const [count, setCount] = useState(store.state.count);
