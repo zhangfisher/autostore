@@ -59,18 +59,6 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
      * 设置事件监听器
      */
     private _setupEventListeners() {
-        // // 添加 pong 响应接收器
-        // this._subscribers.push(
-        //     this.transport.addReceiver("__heartbeat__", (operate) => {
-        //         if (this._destroyed) return;
-        //         if (operate.type === "$pong") {
-        //             this.onPong(operate);
-        //         } else if (operate.type === "$ping") {
-        //             this.onPing(operate);
-        //         }
-        //     }),
-        // );
-
         // 监听连接建立事件，启动心跳
         this._subscribers.push(
             this.transport.on("connect", () => {
@@ -129,7 +117,8 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
         this._pingCounter = 0;
         this._pongMissCount = 0;
 
-        // 启动定时心跳
+        // 立即发送第一次 ping，然后启动定时心跳
+        this._sendPing();
         this._timer = setInterval(() => {
             this._sendPing();
         }, this.options.interval);

@@ -29,15 +29,6 @@ export { AutoStoreSyncerBase } from "./base";
 
 export class AutoStoreSyncer extends AutoStoreSyncerBase {
     private seq: number; // 实例唯一标识
-    /**
-     * 是否与对方进行首次同步，
-     *
-     * 默认情况下，根据mode值
-     * - mode=pull  则在连接时向对方发送$pull，从对方拉取数据
-     * - mode=push  则在连接时向对方发送$push，向对方推送数据
-     *
-     */
-    private _synced: boolean = false;
     private _options: NormalizeAutoStoreSyncerOptions;
     peer?: AutoStoreSyncer;
     private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
@@ -88,9 +79,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     get remoteEntry() {
         return this._options.remote;
     }
-    get synced() {
-        return this._synced;
-    }
     /**
      * 连接成功后
      */
@@ -107,7 +95,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             // 如果是单向同步，则不会接收到对方的操作，所以直接就置为同步状态
             // 否则需要等待
             if (direction === "forward") {
-                this._synced = true;
+                this._syncing = true;
             }
         } finally {
             this.flush();
@@ -142,7 +130,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
         if (this.syncing) return;
         let hasError: any;
         try {
-            this.syncing = true;
+            this._syncing = true;
             // 发送更新到了远程，只监听写操作
             this._subscribers.push(
                 this.store.watch(this._onWatchStore.bind(this), {
@@ -208,7 +196,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             }
         } finally {
             this.emit("stop", undefined, true);
-            this.syncing = false;
+            this._syncing = false;
         }
     }
 
@@ -489,9 +477,9 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             hasError = e;
             this.emit("error", e);
         } finally {
-            if (this._synced === false) {
-                this._synced = true; // 标识已完成一次初始化全量同步
-                this.emit("synced", operate.id, true);
+            if (this._syncing === false) {
+                this._syncing = true; // 标识已完成一次初始化全量同步
+                this.emit("syncing", operate.id, true);
             }
         }
     }

@@ -32,10 +32,9 @@ describe("AutoStoreBroadcastSyncer 心跳测试", () => {
 		broadcaster.addTransport(transport1);
 		broadcaster.addTransport(transport2);
 
-		// 检查心跳是否创建
-		expect(broadcaster["_heartbeats"].size).toBe(2);
-		expect(broadcaster["_heartbeats"].has(transport1.id)).toBe(true);
-		expect(broadcaster["_heartbeats"].has(transport2.id)).toBe(true);
+		// 检查心跳是否创建（新架构中 heartbeat 在 transport 上）
+		expect(transport1.heartbeat).toBeDefined();
+		expect(transport2.heartbeat).toBeDefined();
 	});
 
 	test("移除 transport 时应该销毁对应的心跳", async () => {
@@ -45,10 +44,9 @@ describe("AutoStoreBroadcastSyncer 心跳测试", () => {
 		// 移除 transport1
 		broadcaster.removeTransport(transport1.id);
 
-		// 检查心跳是否被销毁
-		expect(broadcaster["_heartbeats"].size).toBe(1);
-		expect(broadcaster["_heartbeats"].has(transport1.id)).toBe(false);
-		expect(broadcaster["_heartbeats"].has(transport2.id)).toBe(true);
+		// 检查心跳是否被销毁（新架构中 heartbeat 在 transport 上）
+		expect(transport1.heartbeat).toBeUndefined();
+		expect(transport2.heartbeat).toBeDefined();
 	});
 
 	test("heartbeat = 0 时不应该创建心跳检测器", async () => {
@@ -59,8 +57,8 @@ describe("AutoStoreBroadcastSyncer 心跳测试", () => {
 
 		noHeartbeatBroadcaster.addTransport(transport1);
 
-		// 不应该创建心跳
-		expect(noHeartbeatBroadcaster["_heartbeats"].size).toBe(0);
+		// 不应该创建心跳（新架构中 heartbeat 在 transport 上）
+		expect(transport1.heartbeat).toBeUndefined();
 
 		noHeartbeatBroadcaster.destroy();
 	});
@@ -71,8 +69,9 @@ describe("AutoStoreBroadcastSyncer 心跳测试", () => {
 
 		broadcaster.destroy();
 
-		// 所有心跳应该被清理
-		expect(broadcaster["_heartbeats"].size).toBe(0);
+		// 所有心跳应该被清理（新架构中 heartbeat 在 transport 上）
+		expect(transport1.heartbeat).toBeUndefined();
+		expect(transport2.heartbeat).toBeUndefined();
 	});
 
 	test("心跳超时时应该移除 transport", async () => {
@@ -94,7 +93,7 @@ describe("AutoStoreBroadcastSyncer 心跳测试", () => {
 				this.emit("disconnect");
 			}
 
-			send(message: any) {
+			send(_message: any) {
 				// 不发送任何消息，模拟超时（pong 不会回来）
 			}
 		}
@@ -107,6 +106,6 @@ describe("AutoStoreBroadcastSyncer 心跳测试", () => {
 
 		// transport 应该被移除
 		expect(broadcaster.transports.has(mockTransport.id)).toBe(false);
-		expect(broadcaster["_heartbeats"].has(mockTransport.id)).toBe(false);
+		expect(mockTransport.heartbeat).toBeUndefined();
 	});
 });

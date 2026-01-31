@@ -122,6 +122,7 @@ export type AutoStoreSwitchSyncerOptions = {
      * @default true
      */
     autostart?: boolean;
+    debug?: boolean;
 };
 
 /**
@@ -270,39 +271,44 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
         // 为该 store 设置 watch，监听变化并广播
         const watcher = store.watch(
             (operate: StateOperate) => {
-                // 从 flags 中提取源 transport ID
-                // flags < 0 表示操作来自某个 Transport（值为 -transport.id）
-                // flags = 0 表示操作来自 store 本地
-                const flags = operate?.flags || 0;
-                const sourceTransportId = flags < 0 ? -flags : 0;
+                try {
+                    // 从 flags 中提取源 transport ID
+                    // flags < 0 表示操作来自某个 Transport（值为 -transport.id）
+                    // flags = 0 表示操作来自 store 本地
+                    const flags = operate?.flags || 0;
+                    const sourceTransportId = flags < 0 ? -flags : 0;
 
-                // 获取订阅了该 store 的所有 transports
-                const transports = this._storeTransports.get(storeId);
-                if (!transports || transports.size === 0) {
-                    return;
-                }
-
-                // 创建远程操作对象（flags 重置为 0，因为客户端不需要知道原始来源）
-                const remoteOperate: StateRemoteOperate = {
-                    id: storeId,
-                    type: operate.type,
-                    path: operate.path,
-                    parentPath: operate.parentPath,
-                    value: operate.value,
-                    indexs: operate.indexs,
-                    flags: 0,
-                };
-
-                // 广播到所有订阅了该 store 的 transports，排除源端
-                transports.forEach((transport) => {
-                    // 排除源端，防止循环更新
-                    if (transport.id === sourceTransportId) {
+                    // 获取订阅了该 store 的所有 transports
+                    const transports = this._storeTransports.get(storeId);
+                    if (!transports || transports.size === 0) {
                         return;
                     }
 
-                    // 发送操作
-                    transport.send(remoteOperate);
-                });
+                    // 创建远程操作对象（flags 重置为 0，因为客户端不需要知道原始来源）
+                    const remoteOperate: StateRemoteOperate = {
+                        id: storeId,
+                        type: operate.type,
+                        path: operate.path,
+                        parentPath: operate.parentPath,
+                        value: operate.value,
+                        indexs: operate.indexs,
+                        flags: 0,
+                    };
+
+                    // 广播到所有订阅了该 store 的 transports，排除源端
+                    transports.forEach((transport) => {
+                        // 排除源端，防止循环更新
+                        if (transport.id === sourceTransportId) {
+                            return;
+                        }
+                        // 发送操作
+                        transport.send(remoteOperate);
+                    });
+                } finally {
+                    if (this._options.debug) {
+                        this.emit("localOperate", operate);
+                    }
+                }
             },
             {
                 operates: "write", // 只广播写操作
@@ -351,26 +357,32 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
 
         // 注册消息接收器，根据 operate.id 路由到对应的 store
         transport.addReceiver("switch-router", (operate: StateRemoteOperate) => {
-            const targetStoreId = operate.id;
-            const store = this.stores.get(targetStoreId);
+            try {
+                const targetStoreId = operate.id;
+                const store = this.stores.get(targetStoreId);
 
-            if (!store) {
-                console.warn(
-                    `[AutoStoreSwitchSyncer] No store found for id "${targetStoreId}", dropping message.`,
-                );
-                return;
-            }
+                if (!store) {
+                    console.warn(
+                        `[AutoStoreSwitchSyncer] No store found for id "${targetStoreId}", dropping message.`,
+                    );
+                    return;
+                }
 
-            // 根据消息类型处理
-            if (operate.type === "$pull") {
-                // 客户端请求拉取完整状态
-                this._handlePull(operate, transport, store);
-            } else if (operate.type === "$update") {
-                // 客户端发送完整状态更新
-                this._handleUpdate(operate, transport, store);
-            } else {
-                // 常规操作（set/update/delete/insert/remove）
-                this._handleOperate(operate, transport, store);
+                // 根据消息类型处理
+                if (operate.type === "$pull") {
+                    // 客户端请求拉取完整状态
+                    this._handlePull(operate, transport, store);
+                } else if (operate.type === "$update") {
+                    // 客户端发送完整状态更新
+                    this._handleUpdate(operate, transport, store);
+                } else {
+                    // 常规操作（set/update/delete/insert/remove）
+                    this._handleOperate(operate, transport, store);
+                }
+            } finally {
+                if (this._options.debug) {
+                    this.emit("remoteOperate", operate);
+                }
             }
         });
 
@@ -571,7 +583,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
 
         let hasError: any;
         try {
-            this.syncing = true;
+            this._syncing = true;
             // 为所有 stores 启动 watch
             this.stores.forEach((store) => {
                 // 如果该 store 还没有 watcher，则启动
@@ -586,7 +598,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
             if (!hasError) {
                 this.emit("start", undefined, true);
             } else {
-                this.syncing = false;
+                this._syncing = false;
             }
         }
     }
@@ -607,7 +619,7 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
             this._watchers.clear();
         } finally {
             this.emit("stop", undefined, true);
-            this.syncing = false;
+            this._syncing = false;
         }
     }
 

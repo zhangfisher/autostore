@@ -43,6 +43,10 @@ export function LocalSyncExample() {
         syncer: any;
     }>({ store1: null, store2: null, syncer: null });
 
+    // 用于强制更新组件，当 syncer 状态变化时
+    const [, setUpdateCounter] = useState(0);
+    const forceUpdate = () => setUpdateCounter((c) => c + 1);
+
     // 显示状态
     const [display1, setDisplay1] = useState<any>({});
     const [display2, setDisplay2] = useState<any>({});
@@ -50,6 +54,19 @@ export function LocalSyncExample() {
     const addLog = (msg: string) => {
         const time = new Date().toLocaleTimeString();
         setLogs((p) => [`[${time}] ${msg}`, ...p].slice(0, 30));
+    };
+
+    // 切换同步状态
+    const toggleSync = () => {
+        if (!stores.syncer) return;
+
+        if (stores.syncer.syncing) {
+            stores.syncer.stop();
+            addLog('同步已停止');
+        } else {
+            stores.syncer.start();
+            addLog('同步已启动');
+        }
     };
 
     // 初始化同步
@@ -85,21 +102,43 @@ export function LocalSyncExample() {
 
         let syncer: any = null;
 
+        // 监听 syncer 的 start/stop 事件，强制更新组件
+        const handleStateChange = () => {
+            forceUpdate();
+        };
+
+        const addSyncerListeners = (s: any) => {
+            s.on('start', handleStateChange);
+            s.on('stop', handleStateChange);
+        };
+
         if (syncType === 'local') {
             let t1: LocalTransport, t2: LocalTransport;
             t1 = new LocalTransport(() => t2);
             t2 = new LocalTransport(() => t1);
-            t1.connect();
-            t2.connect();
-            // Store1: 默认 mode (push)
-            new AutoStoreSyncer(s1, { transport: t1 });
-            // Store2: pull 模式
-            new AutoStoreSyncer(s2, { transport: t2, mode: 'pull' });
+            // Store1: 默认 mode (push), 自动启动
+            const syncer1 = new AutoStoreSyncer(s1, { transport: t1, autostart: true });
+            // Store2: pull 模式, 自动启动
+            const syncer2 = new AutoStoreSyncer(s2, { transport: t2, mode: 'pull', autostart: true });
+            addSyncerListeners(syncer1);
+            addSyncerListeners(syncer2);
             syncer = {
+                get syncing() {
+                    return syncer1.syncing || syncer2.syncing;
+                },
+                start: () => {
+                    t1.connect();
+                    t2.connect();
+                    syncer1.start();
+                    syncer2.start();
+                },
                 stop: () => {
+                    syncer1.stop();
+                    syncer2.stop();
                     t1.disconnect();
                     t2.disconnect();
                 },
+                _syncers: [syncer1, syncer2], // 保存引用用于清理
             };
         } else if (syncType === 'event') {
             const emitter = new SimpleEventEmitter();
@@ -113,30 +152,58 @@ export function LocalSyncExample() {
                 localEventName: 'ch1',
                 remoteEventName: 'ch2',
             });
-            t1.connect();
-            t2.connect();
-            // Store1: 默认 mode (push)
-            new AutoStoreSyncer(s1, { transport: t1 });
-            // Store2: pull 模式
-            new AutoStoreSyncer(s2, { transport: t2, mode: 'pull' });
+            // Store1: 默认 mode (push), 自动启动
+            const syncer1 = new AutoStoreSyncer(s1, { transport: t1, autostart: true });
+            // Store2: pull 模式, 自动启动
+            const syncer2 = new AutoStoreSyncer(s2, { transport: t2, mode: 'pull', autostart: true });
+            addSyncerListeners(syncer1);
+            addSyncerListeners(syncer2);
             syncer = {
+                get syncing() {
+                    return syncer1.syncing || syncer2.syncing;
+                },
+                start: () => {
+                    t1.connect();
+                    t2.connect();
+                    syncer1.start();
+                    syncer2.start();
+                },
                 stop: () => {
+                    syncer1.stop();
+                    syncer2.stop();
                     t1.disconnect();
                     t2.disconnect();
                 },
+                _syncers: [syncer1, syncer2], // 保存引用用于清理
             };
         } else if (syncType === 'sync') {
-            syncer = s1.sync(s2);
+            syncer = (s1 as any).sync(s2);
+            addSyncerListeners(syncer);
         } else if (syncType === 'clone') {
-            const cloned = s1.clone();
-            setStores({ store1: s1, store2: cloned, syncer: { stop: () => {} } });
+            const cloned = (s1 as any).clone();
+            setStores({ store1: s1, store2: cloned, syncer: { syncing: false, start: () => {}, stop: () => {} } });
             return;
         }
 
         setStores({ store1: s1, store2: s2, syncer });
         addLog(`[${syncType.toUpperCase()}] 已初始化单向同步 Store1→Store2 (计数器+数组+对象)`);
 
-        return () => syncer?.stop();
+        return () => {
+            // 清理事件监听
+            if (syncer._syncers) {
+                syncer._syncers.forEach((s: any) => {
+                    s.off('start', handleStateChange);
+                    s.off('stop', handleStateChange);
+                });
+            } else if (syncer.syncing !== undefined) {
+                syncer.off('start', handleStateChange);
+                syncer.off('stop', handleStateChange);
+            }
+            // 停止同步
+            if (syncer?.syncing) {
+                syncer.stop();
+            }
+        };
     }, [syncType]);
 
     // 操作函数
@@ -290,6 +357,15 @@ export function LocalSyncExample() {
                 </div>
 
                 <div style={styles.arrow}>
+                    <button
+                        onClick={toggleSync}
+                        disabled={!stores.syncer || syncType === 'clone'}
+                        style={{
+                            ...styles.toggleBtn,
+                            ...(stores.syncer?.syncing ? styles.toggleBtnActive : styles.toggleBtnInactive),
+                        }}>
+                        {stores.syncer?.syncing ? '⏹ 停止' : '▶ 开始'}
+                    </button>
                     <span style={styles.arrowIcon}>⇄</span>
                     <span style={styles.arrowText}>
                         {syncType === 'local' && 'LocalTransport'}
@@ -447,6 +523,24 @@ const styles = {
         justifyContent: 'center',
         gap: '4px',
         padding: '0 4px',
+    },
+    toggleBtn: {
+        padding: '6px 12px',
+        fontSize: '12px',
+        fontWeight: 600,
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        marginBottom: '4px',
+    },
+    toggleBtnActive: {
+        backgroundColor: '#f44336',
+        color: 'white',
+    },
+    toggleBtnInactive: {
+        backgroundColor: '#4caf50',
+        color: 'white',
     },
     arrowIcon: { fontSize: '20px', color: '#2196f3' },
     arrowText: { fontSize: '10px', color: '#666', fontWeight: 500, textAlign: 'center' as const },

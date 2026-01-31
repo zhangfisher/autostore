@@ -10,7 +10,6 @@ import { PathSyncExample } from './examples/path-sync';
 import { BroadcastChannelExample } from './examples/broadcast-channel';
 import { MultiStoreExample } from './examples/multi-store';
 import { LocalSyncExample } from './examples/local-sync';
-
 // 示例配置
 const examples = [
     {
@@ -54,6 +53,8 @@ function App() {
         switch (activeExample) {
             case 'local-sync':
                 return <LocalSyncExample />;
+            case 'comlink':
+                return <ComlinkExample />;
             case 'broadcast-channel':
                 return <BroadcastChannelExample />;
             case 'full-sync':

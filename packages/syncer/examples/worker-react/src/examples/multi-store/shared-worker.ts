@@ -31,32 +31,31 @@ import { WorkerTransport } from "@autostorejs/syncer";
 import { counterStore, todoStore, userStore } from "./stores";
 
 // 创建 AutoStoreSwitchSyncer，管理多个 store
-const switchSyncer = new AutoStoreSwitchSyncer(
-    [counterStore, todoStore, userStore],
-    {
-        autostart: true,
-    }
-);
+const switchSyncer = new AutoStoreSwitchSyncer([counterStore, todoStore, userStore], {
+    autostart: true,
+    debug: true,
+});
 
+switchSyncer.on("remoteOperate", (operate: any) => {
+    console.log("Receive remote operate:", JSON.stringify(operate));
+});
+switchSyncer.on("localOperate", (operate: any) => {
+    console.log("Receive local operate:", JSON.stringify(operate));
+});
 // 将 switchSyncer 挂载到全局，方便调试
 (globalThis as any).switchSyncer = switchSyncer;
 (globalThis as any).counterStore = counterStore;
 (globalThis as any).todoStore = todoStore;
 (globalThis as any).userStore = userStore;
 
-console.log(
-    "[MultiStore SharedWorker] AutoStoreSwitchSyncer 已启动",
-    switchSyncer.toString()
-);
+console.log("[MultiStore SharedWorker] AutoStoreSwitchSyncer 已启动", switchSyncer.toString());
 console.log("[MultiStore SharedWorker] 管理的 stores:", switchSyncer.getStoreIds());
 
 // 监听来自页签的连接
 (self as any).addEventListener("connect", (event: any) => {
     const port = event.ports[0] as MessagePort;
 
-    console.log(
-        "[MultiStore SharedWorker] 收到新连接，正在初始化 transport..."
-    );
+    console.log("[MultiStore SharedWorker] 收到新连接，正在初始化 transport...");
 
     // 启动端口
     port.start();
@@ -69,9 +68,7 @@ console.log("[MultiStore SharedWorker] 管理的 stores:", switchSyncer.getStore
 
     // 监听 transport 连接事件
     transport.once("connect", () => {
-        console.log(
-            "[MultiStore SharedWorker] Transport 已连接，添加到 switchSyncer"
-        );
+        console.log("[MultiStore SharedWorker] Transport 已连接，添加到 switchSyncer");
 
         // 将 transport 添加到 switchSyncer
         // switchSyncer 会自动根据消息的 id 字段路由到对应的 store
@@ -79,7 +76,7 @@ console.log("[MultiStore SharedWorker] 管理的 stores:", switchSyncer.getStore
 
         console.log(
             "[MultiStore SharedWorker] Transport 已添加，当前可同步的 stores:",
-            switchSyncer.getStoreIds().join(", ")
+            switchSyncer.getStoreIds().join(", "),
         );
     });
 
@@ -95,6 +92,4 @@ console.log("[MultiStore SharedWorker] 管理的 stores:", switchSyncer.getStore
     });
 });
 
-console.log(
-    "[MultiStore SharedWorker] 等待浏览器页签连接... (可以打开多个页签测试同步)"
-);
+console.log("[MultiStore SharedWorker] 等待浏览器页签连接... (可以打开多个页签测试同步)");

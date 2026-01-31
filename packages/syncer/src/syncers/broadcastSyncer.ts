@@ -49,7 +49,6 @@ import { getSnapshot, getVal, setVal } from "autostore";
 import type { AutoStoreBroadcasterOptions, StateRemoteOperate } from "../types";
 import type { AutoStoreSyncTransportBase } from "../transports/base";
 import { AutoStoreSyncerBase } from "./base";
-import { Heartbeat } from "../utils/heartbeat";
 
 /**
  * AutoStore 广播器 - 管理主站与多个客户端之间的状态同步
@@ -86,13 +85,6 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
      * 用于在 Transport 断开连接时清理其事件监听器
      */
     private _transportCleanup: WeakMap<AutoStoreSyncTransportBase, () => void> = new WeakMap();
-
-    /**
-     * Transport 心跳检测器映射
-     * Key: transport.id
-     * Value: Heartbeat 实例
-     */
-    private _heartbeats: Map<number, Heartbeat> = new Map();
 
     /**
      * MainStore 的 watch 监听器
@@ -138,17 +130,24 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
         if (this.transports.has(transportId)) {
             return;
         }
-        // 默认启用心跳
-        if (this.options.heartbeat > 0) {
-            transport.options.heartbeat = this.options.heartbeat;
-            transport.startHeartbeat();
-        }
 
         // 保存映射关系
         this.transports.set(transportId, transport);
 
+        // 监听 transport 的 timeout 事件，心跳超时时移除 transport
+        const timeoutCleanup = transport.on("timeout", () => {
+            console.warn(
+                `[AutoStoreBroadcaster] Client ${transportId} heartbeat timeout, removing transport`,
+            );
+            this.removeTransport(transportId);
+        });
+
         // 直接监听 transport 的消息
         transport.addReceiver(this._store.id, (operate: StateRemoteOperate) => {
+            // 先让 heartbeat 处理 $ping/$pong 消息
+            if (transport.heartbeat && transport.heartbeat.onOperate(operate)) {
+                return; // heartbeat 已处理，不再传递
+            }
             this._onReceiveFromTransport(operate, transport);
         });
 
@@ -165,9 +164,16 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
 
         // 保存清理函数到 _transportCleanup，以便后续移除
         this._transportCleanup.set(transport, () => {
+            timeoutCleanup.off();
             disconnectCleanup.off();
             errorCleanup.off();
         });
+
+        // 如果配置了心跳检测，启动 transport 的心跳
+        if (this.options.heartbeat && this.options.heartbeat > 0) {
+            transport.options.heartbeat = this.options.heartbeat;
+            transport.startHeartbeat();
+        }
     }
 
     /**
@@ -178,24 +184,20 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
     removeTransport(id: number): void {
         const transport = this.transports.get(id);
         if (transport) {
-            // 销毁心跳检测器
-            const heartbeat = this._heartbeats.get(id);
-            if (heartbeat) {
-                heartbeat.destroy();
-                this._heartbeats.delete(id);
-            }
-
-            // 清理 transport 事件监听器
+            // 清理 transport 的事件监听器
             const cleanup = this._transportCleanup.get(transport);
             if (cleanup) {
                 cleanup();
                 this._transportCleanup.delete(transport);
             }
 
-            // 断开 transport 连接
+            // 断开 transport 连接（这会自动停止 transport 的 heartbeat）
             if (transport.connected) {
                 transport.disconnect();
             }
+
+            // 显式停止 heartbeat（即使 transport 未连接也要清理）
+            transport.stopHeartbeat();
 
             this.transports.delete(id);
         }
@@ -393,7 +395,7 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
 
         let hasError: any;
         try {
-            this.syncing = true;
+            this._syncing = true;
             this._watcher = this._store.watch(
                 (operate: StateOperate) => {
                     this.broadcast(operate);
@@ -409,7 +411,7 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
             if (!hasError) {
                 this.emit("start", undefined, true);
             } else {
-                this.syncing = false;
+                this._syncing = false;
             }
         }
     }
@@ -427,7 +429,7 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
             }
         } finally {
             this.emit("stop", undefined, true);
-            this.syncing = false;
+            this._syncing = false;
         }
     }
 
@@ -437,12 +439,6 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
     destroy(): void {
         // 停止广播
         this.stop();
-
-        // 销毁所有心跳检测器
-        this._heartbeats.forEach((heartbeat) => {
-            heartbeat.destroy();
-        });
-        this._heartbeats.clear();
 
         // 断开所有 transport 并清理事件监听器
         this.transports.forEach((transport) => {
@@ -454,6 +450,8 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
             if (transport.connected) {
                 transport.disconnect();
             }
+            // 显式停止 heartbeat（即使 transport 未连接也要清理）
+            transport.stopHeartbeat();
         });
         this.transports.clear();
     }

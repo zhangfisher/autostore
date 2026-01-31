@@ -78,13 +78,16 @@ export abstract class AutoStoreSyncerBase extends EventEmitter<AutoStoreSyncerEv
      * 用于为每个 syncer 实例生成唯一标识
      */
     static seq = 99;
+    protected _syncing: boolean = false;
 
     /**
      * 同步状态
      * - true: 正在同步
      * - false: 已停止
      */
-    syncing: boolean = false;
+    get syncing() {
+        return this._syncing;
+    }
 
     /**
      * 启动同步器
@@ -151,15 +154,6 @@ export abstract class AutoStoreSyncerBase extends EventEmitter<AutoStoreSyncerEv
      */
     protected _emitError(error: Error): void {
         this.emit("error", error, true);
-    }
-
-    /**
-     * 检查是否正在同步
-     *
-     * @returns true 表示正在同步，false 表示已停止
-     */
-    isSyncing(): boolean {
-        return this.syncing;
     }
 
     /**
@@ -268,5 +262,5 @@ export type AutoStoreSyncerEvents = {
      *  - $push
      * 时触发此操作，代表两方已完成首次同步
      */
-    synced: string;
+    syncing: string;
 };
