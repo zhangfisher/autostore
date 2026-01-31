@@ -7,7 +7,10 @@
 		"url": "https://github.com/zhangfisher/autostore.git"
 	},
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+        "./plugin":"./src/plugin.ts",
+        "./syncers/*":"./src/syncers/*.ts",
+        "./transports/*":"./src/transports/*.ts"
 	},
 	"publishConfig": {
 		"access": "public",
@@ -29,7 +32,6 @@
 		"autostore": "workspace:*"
 	},
 	"dependencies": {
-		"comlink": "^4.4.2",
 		"flex-tools": "^1.5.9",
 		"mitt": "^3.0.1"
 	},
