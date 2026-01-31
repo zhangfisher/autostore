@@ -225,7 +225,7 @@ export function MultiStoreExample() {
     // 计数器操作
     const increment = () => {
         counterStore.update(
-            (state) => {
+            (state: any) => {
                 state.count++;
             },
             { flags: 0 },
@@ -235,7 +235,7 @@ export function MultiStoreExample() {
 
     const decrement = () => {
         counterStore.update(
-            (state) => {
+            (state: any) => {
                 state.count--;
             },
             { flags: 0 },
@@ -245,7 +245,7 @@ export function MultiStoreExample() {
 
     const reset = () => {
         counterStore.update(
-            (state) => {
+            (state: any) => {
                 state.count = 0;
             },
             { flags: 0 },
@@ -269,7 +269,7 @@ export function MultiStoreExample() {
     };
 
     const toggleTodo = (id: number) => {
-        const todo = todoStore.state.todos.find((t) => t.id === id);
+        const todo = todoStore.state.todos.find((t: any) => t.id === id);
         if (todo) {
             todo.completed = !todo.completed;
             addLogMessage(`[待办事项] ${todo.completed ? '完成' : '未完成'}: ${todo.text}`);
@@ -277,7 +277,7 @@ export function MultiStoreExample() {
     };
 
     const deleteTodo = (id: number) => {
-        const index = todoStore.state.todos.findIndex((t) => t.id === id);
+        const index = todoStore.state.todos.findIndex((t: any) => t.id === id);
         if (index !== -1) {
             const todoText = todoStore.state.todos[index].text;
             todoStore.state.todos.splice(index, 1);
@@ -287,8 +287,8 @@ export function MultiStoreExample() {
 
     const clearCompleted = () => {
         const completedCount = todoStore.state.completedCount;
-        todoStore.update((state) => {
-            state.todos = state.todos.filter((t) => !t.completed);
+        todoStore.update((state: any) => {
+            state.todos = state.todos.filter((t: any) => !t.completed);
         });
         addLogMessage(`[待办事项] 清空已完成 (${completedCount}条)`);
     };
@@ -416,7 +416,7 @@ export function MultiStoreExample() {
                         {todos.length === 0 ? (
                             <p style={styles.empty}>暂无待办事项</p>
                         ) : (
-                            todos.map((todo) => (
+                            todos.map((todo: any) => (
                                 <div key={todo.id} style={styles.todoItem}>
                                     <input
                                         type="checkbox"

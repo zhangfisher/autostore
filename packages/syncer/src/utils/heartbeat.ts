@@ -59,23 +59,17 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
      * 设置事件监听器
      */
     private _setupEventListeners() {
-        // 添加 pong 响应接收器
-        this._subscribers.push(
-            this.transport.addReceiver("__heartbeat__", (operate) => {
-                if (this._destroyed) return;
-                if (operate.type === "$pong") {
-                    this._handlePong(operate.value as number);
-                } else if (operate.type === "$ping") {
-                    // 只有在连接状态下才自动回复 pong
-                    if (this.transport.connected) {
-                        this.transport.send({
-                            type: "$pong",
-                            value: operate.value,
-                        } as any);
-                    }
-                }
-            }),
-        );
+        // // 添加 pong 响应接收器
+        // this._subscribers.push(
+        //     this.transport.addReceiver("__heartbeat__", (operate) => {
+        //         if (this._destroyed) return;
+        //         if (operate.type === "$pong") {
+        //             this.onPong(operate);
+        //         } else if (operate.type === "$ping") {
+        //             this.onPing(operate);
+        //         }
+        //     }),
+        // );
 
         // 监听连接建立事件，启动心跳
         this._subscribers.push(
@@ -110,6 +104,17 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
         }
     }
 
+    onOperate(operate: StateRemoteOperate): boolean {
+        if (this._destroyed) return false;
+        if (operate.type === "$pong") {
+            this.onPong(operate);
+            return true;
+        } else if (operate.type === "$ping") {
+            this.onPing(operate);
+            return true;
+        }
+        return false;
+    }
     /**
      * 启动心跳检测（内部方法）
      */
@@ -159,12 +164,23 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
      * 处理收到的 pong 响应
      * @param value pong 值（应该与之前发送的 ping 值匹配）
      */
-    private _handlePong(value: number) {
-        // 验证 pong 值是否匹配待确认的 ping
-        if (this._pendingPingValue !== undefined && value === this._pendingPingValue) {
-            // 收到正确的 pong 响应，重置丢失计数并清除待确认标记
-            this._pongMissCount = 0;
-            this._pendingPingValue = undefined;
+    onPong(operate: StateRemoteOperate) {
+        if (operate.type === "$pong") {
+            // 验证 pong 值是否匹配待确认的 ping
+            if (this._pendingPingValue !== undefined && operate.value === this._pendingPingValue) {
+                // 收到正确的 pong 响应，重置丢失计数并清除待确认标记
+                this._pongMissCount = 0;
+                this._pendingPingValue = undefined;
+            }
+        }
+    }
+    onPing(operate: StateRemoteOperate) {
+        if (this.transport.connected && operate.type === "$ping") {
+            // 只有在连接状态下才自动回复 pong
+            this.transport.send({
+                type: "$pong",
+                value: operate.value,
+            } as any);
         }
     }
 
@@ -172,6 +188,9 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
      * 发送心跳 ping
      */
     private _sendPing() {
+        // 检查心跳是否已销毁
+        if (this._destroyed) return;
+
         // 检查上一个 ping 是否还未收到 pong 响应
         if (this._pendingPingValue !== undefined) {
             // 上一个 ping 还没收到 pong，增加丢失计数
@@ -188,10 +207,14 @@ export class Heartbeat extends EventEmitter<HeartbeatEvents> {
         // 发送新的 ping
         this._pingCounter++;
         this._pendingPingValue = this._pingCounter;
-        // 发送 ping 消息
-        this.transport.send({
-            type: "$ping",
-            value: this._pingCounter,
-        } as any);
+        // 发送 ping 消息，如果 transport 未连接则忽略错误
+        try {
+            this.transport.send({
+                type: "$ping",
+                value: this._pingCounter,
+            } as any);
+        } catch {
+            // transport 可能已断开连接，忽略错误
+        }
     }
 }

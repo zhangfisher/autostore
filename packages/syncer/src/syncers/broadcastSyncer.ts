@@ -106,7 +106,7 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
         this._options = Object.assign(
             {
                 autostart: true,
-                heartbeat: 0, // 默认禁用心跳检测
+                heartbeat: 3000, // 默认3秒心跳检测
             },
             options,
         ) as Required<AutoStoreBroadcasterOptions>;
@@ -138,6 +138,12 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
         if (this.transports.has(transportId)) {
             return;
         }
+        // 默认启用心跳
+        if (this.options.heartbeat > 0) {
+            transport.options.heartbeat = this.options.heartbeat;
+            transport.startHeartbeat();
+        }
+
         // 保存映射关系
         this.transports.set(transportId, transport);
 
@@ -162,24 +168,6 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
             disconnectCleanup.off();
             errorCleanup.off();
         });
-
-        // 如果配置了心跳检测，创建 Heartbeat
-        if (this._options.heartbeat && this._options.heartbeat > 0) {
-            const heartbeat = new Heartbeat(transport, {
-                interval: this._options.heartbeat,
-            });
-
-            // 监听心跳超时事件，超时时移除 transport
-            heartbeat.on("timeout", () => {
-                console.warn(
-                    `[AutoStoreBroadcaster] Client ${transportId} heartbeat timeout, removing transport`,
-                );
-                this.removeTransport(transportId);
-            });
-
-            // 保存 heartbeat 映射
-            this._heartbeats.set(transportId, heartbeat);
-        }
     }
 
     /**
@@ -328,8 +316,12 @@ export class AutoStoreBroadcastSyncer extends AutoStoreSyncerBase {
                     }
                 } else if (type === "remove") {
                     const arr = getVal(state, targetPath);
-                    if (indexs) {
-                        arr.splice(indexs[0], indexs.length);
+                    if (Array.isArray(indexs)) {
+                        if (indexs.length === 0) {
+                            arr.splice(0);
+                        } else {
+                            arr.splice(indexs[0], indexs.length);
+                        }
                     }
                 }
             },

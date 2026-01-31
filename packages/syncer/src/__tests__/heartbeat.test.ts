@@ -7,417 +7,423 @@ import { LocalTransport } from "../transports/local";
 const delay = (n: number = 0) => new Promise((resolve) => setTimeout(resolve, n));
 
 describe("Heartbeat 单元测试", () => {
-	let transport1: LocalTransport;
-	let transport2: LocalTransport;
-
-	beforeEach(() => {
-		transport1 = new LocalTransport(() => transport2);
-		transport2 = new LocalTransport(() => transport1);
-	});
+    let transport1: LocalTransport;
+    let transport2: LocalTransport;
+
+    beforeEach(() => {
+        transport1 = new LocalTransport(() => transport2);
+        transport2 = new LocalTransport(() => transport1);
+    });
+
+    describe("基础功能", () => {
+        test("应该创建心跳检测器实例", () => {
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 1000,
+            });
+
+            expect(heartbeat).toBeDefined();
+        });
+
+        test("interval <= 0 时不应该启动心跳", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 0,
+            });
+
+            await transport1.connect();
+            await delay(100);
+
+            expect(sendSpy).not.toHaveBeenCalled();
+
+            heartbeat.destroy();
+        });
+
+        test("应该发送 ping 消息", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 100,
+            });
+
+            await transport1.connect();
+            await delay(150);
+
+            expect(sendSpy).toHaveBeenCalled();
+            const pingMessage = sendSpy.mock.calls.find((call) => call[0].type === "$ping");
+            expect(pingMessage).toBeDefined();
+            expect(pingMessage![0].type).toBe("$ping");
+            expect(pingMessage![0].value).toBeDefined();
+
+            heartbeat.destroy();
+        });
+    });
+
+    describe("pong 响应处理", () => {
+        test("收到 pong 应该重置丢失计数", async () => {
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 100,
+                maxMissCount: 3,
+            });
 
-	describe("基础功能", () => {
-		test("应该创建心跳检测器实例", () => {
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 1000,
-			});
-
-			expect(heartbeat).toBeDefined();
-		});
-
-		test("interval <= 0 时不应该启动心跳", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 0,
-			});
+            const timeoutSpy = vi.fn();
+            heartbeat.on("timeout", timeoutSpy);
 
-			await transport1.connect();
-			await delay(100);
+            await transport1.connect();
+            await transport2.connect();
 
-			expect(sendSpy).not.toHaveBeenCalled();
+            // 等待第一次 ping
+            await delay(50);
+
+            // 模拟 pong 响应 - 需要等待 ping 发送后获取 value
+            const pingValue = (transport1 as any).send;
+            // 手动发送 pong，value 需要匹配
+            transport2.send({
+                type: "$pong",
+                value: 1,
+            } as any);
+
+            await delay(150);
+
+            // 不应该触发超时
+            expect(timeoutSpy).not.toHaveBeenCalled();
+
+            heartbeat.destroy();
+        });
+
+        test("pong 值不匹配时不应该重置计数", async () => {
+            // 给 transport1 创建 Heartbeat，不给 transport2 创建
+            // 这样 transport2 不会自动回复 pong（因为没有 Heartbeat receiver）
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+                maxMissCount: 2,
+            });
 
-			heartbeat.destroy();
-		});
+            const timeoutSpy = vi.fn();
+            heartbeat.on("timeout", timeoutSpy);
 
-		test("应该发送 ping 消息", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 100,
-			});
+            await transport1.connect();
+            // 不连接 transport2，这样它不会回复 pong
 
-			await transport1.connect();
-			await delay(50);
+            // 等待多次 ping 后超时
+            await delay(200);
+
+            // 应该触发超时
+            expect(timeoutSpy).toHaveBeenCalled();
 
-			expect(sendSpy).toHaveBeenCalled();
-			const pingMessage = sendSpy.mock.calls[0][0];
-			expect(pingMessage.type).toBe("$ping");
-			expect(pingMessage.value).toBeDefined();
+            heartbeat.destroy();
+        });
+    });
 
-			heartbeat.destroy();
-		});
-	});
+    describe("超时检测", () => {
+        test("连续多次未收到 pong 应该触发 timeout 事件", async () => {
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+                maxMissCount: 3,
+            });
 
-	describe("pong 响应处理", () => {
-		test("收到 pong 应该重置丢失计数", async () => {
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 100,
-				maxMissCount: 3,
-			});
+            let timeoutCalled = false;
+            heartbeat.on("timeout", () => {
+                timeoutCalled = true;
+            });
 
-			const timeoutSpy = vi.fn();
-			heartbeat.on("timeout", timeoutSpy);
+            transport2.disconnect();
+            // 先连接 transport1，然后断开 transport2，这样 transport2 不会自动回复 pong
+            await transport1.connect();
 
-			await transport1.connect();
-			await transport2.connect();
+            // 等待超时（50ms * 3 = 150ms + 余量）
+            await delay(200);
 
-			// 等待第一次 ping
-			await delay(50);
+            expect(timeoutCalled).toBe(true);
 
-			// 模拟 pong 响应
-			transport2.send({
-				type: "$pong",
-				value: 1,
-			} as any);
+            heartbeat.destroy();
+        });
+
+        test("超时后应该停止心跳", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+                maxMissCount: 2,
+            });
 
-			await delay(150);
+            let timeoutCalled = false;
+            heartbeat.on("timeout", () => {
+                timeoutCalled = true;
+            });
+
+            await transport1.connect();
+            transport2.disconnect();
 
-			// 不应该触发超时
-			expect(timeoutSpy).not.toHaveBeenCalled();
+            // 等待超时
+            await delay(150);
 
-			heartbeat.destroy();
-		});
+            expect(timeoutCalled).toBe(true);
+
+            // 记录当前调用次数
+            const callCountBefore = sendSpy.mock.calls.length;
 
-		test("pong 值不匹配时不应该重置计数", async () => {
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-				maxMissCount: 2,
-			});
+            // 再等待一段时间，不应该继续发送
+            await delay(100);
 
-			const timeoutSpy = vi.fn();
-			heartbeat.on("timeout", timeoutSpy);
+            // 调用次数不应该增加
+            expect(sendSpy.mock.calls.length).toBe(callCountBefore);
 
-			await transport1.connect();
-			await transport2.connect();
+            heartbeat.destroy();
+        });
 
-			// 等待第一次 ping
-			await delay(30);
+        test("自定义 maxMissCount 应该生效", async () => {
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+                maxMissCount: 5,
+            });
 
-			// 发送错误值的 pong
-			transport2.send({
-				type: "$pong",
-				value: 999,
-			} as any);
+            let timeoutCalled = false;
+            heartbeat.on("timeout", () => {
+                timeoutCalled = true;
+            });
 
-			// 等待超时
-			await delay(200);
+            await transport1.connect();
+            transport2.disconnect();
 
-			// 应该触发超时
-			expect(timeoutSpy).toHaveBeenCalled();
+            // 等待 3 次心跳间隔（未达到 maxMissCount）
+            await delay(180);
 
-			heartbeat.destroy();
-		});
-	});
+            // 不应该触发超时
+            expect(timeoutCalled).toBe(false);
 
-	describe("超时检测", () => {
-		test("连续多次未收到 pong 应该触发 timeout 事件", async () => {
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-				maxMissCount: 3,
-			});
+            // 等待达到 maxMissCount
+            await delay(150);
 
-			const timeoutSpy = vi.fn();
-			heartbeat.on("timeout", timeoutSpy);
+            // 应该触发超时
+            expect(timeoutCalled).toBe(true);
 
-			await transport1.connect();
+            heartbeat.destroy();
+        });
+    });
 
-			// 等待超时（50ms * 3 = 150ms + 余量）
-			await delay(200);
+    describe("自动回复 pong", () => {
+        test("收到 ping 应该自动回复 pong", async () => {
+            const heartbeat1 = new Heartbeat(transport1, {
+                interval: 1000,
+            });
+            const heartbeat2 = new Heartbeat(transport2, {
+                interval: 1000,
+            });
 
-			expect(timeoutSpy).toHaveBeenCalledTimes(1);
+            const sendSpy2 = vi.spyOn(transport2, "send");
 
-			heartbeat.destroy();
-		});
+            await transport1.connect();
+            await transport2.connect();
 
-		test("超时后应该停止心跳", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-				maxMissCount: 2,
-			});
+            // 手动发送 ping
+            transport1.send({
+                type: "$ping",
+                value: 123,
+            } as any);
 
-			const timeoutSpy = vi.fn();
-			heartbeat.on("timeout", timeoutSpy);
+            await delay(50);
 
-			await transport1.connect();
+            // transport2 应该自动回复 pong
+            expect(sendSpy2).toHaveBeenCalled();
+            const pongMessage = sendSpy2.mock.calls.find((call) => call[0].type === "$pong");
+            expect(pongMessage).toBeDefined();
+            expect(pongMessage![0].value).toBe(123);
 
-			// 等待超时
-			await delay(150);
+            heartbeat1.destroy();
+            heartbeat2.destroy();
+        });
+    });
 
-			expect(timeoutSpy).toHaveBeenCalledTimes(1);
+    describe("transport 生命周期管理", () => {
+        test("transport connect 时应该自动启动心跳", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 100,
+            });
 
-			// 记录当前调用次数
-			const callCountBefore = sendSpy.mock.calls.length;
+            // 创建时未连接，不应该发送
+            await delay(50);
+            expect(sendSpy).not.toHaveBeenCalled();
 
-			// 再等待一段时间，不应该继续发送
-			await delay(100);
+            // 连接后应该开始发送
+            await transport1.connect();
+            await delay(150);
 
-			// 调用次数不应该增加
-			expect(sendSpy.mock.calls.length).toBe(callCountBefore);
+            expect(sendSpy).toHaveBeenCalled();
+            const pingMessage = sendSpy.mock.calls.find((call) => call[0].type === "$ping");
+            expect(pingMessage).toBeDefined();
 
-			heartbeat.destroy();
-		});
+            heartbeat.destroy();
+        });
 
-		test("自定义 maxMissCount 应该生效", async () => {
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-				maxMissCount: 5,
-			});
+        test("transport 已连接时创建应该立即启动心跳", async () => {
+            await transport1.connect();
 
-			const timeoutSpy = vi.fn();
-			heartbeat.on("timeout", timeoutSpy);
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 100,
+            });
 
-			await transport1.connect();
+            await delay(150);
 
-			// 等待 3 次心跳间隔（未达到 maxMissCount）
-			await delay(180);
+            expect(sendSpy).toHaveBeenCalled();
+            const pingMessage = sendSpy.mock.calls.find((call) => call[0].type === "$ping");
+            expect(pingMessage).toBeDefined();
 
-			// 不应该触发超时
-			expect(timeoutSpy).not.toHaveBeenCalled();
+            heartbeat.destroy();
+        });
 
-			// 等待达到 maxMissCount
-			await delay(150);
+        test("transport disconnect 时应该自动停止心跳", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+            });
 
-			// 应该触发超时
-			expect(timeoutSpy).toHaveBeenCalledTimes(1);
+            await transport1.connect();
+            await delay(70);
 
-			heartbeat.destroy();
-		});
-	});
+            const callCountBefore = sendSpy.mock.calls.length;
+            expect(callCountBefore).toBeGreaterThan(0);
 
-	describe("自动回复 pong", () => {
-		test("收到 ping 应该自动回复 pong", async () => {
-			const heartbeat1 = new Heartbeat(transport1, {
-				interval: 1000,
-			});
-			const heartbeat2 = new Heartbeat(transport2, {
-				interval: 1000,
-			});
+            // 断开连接
+            transport1.disconnect();
 
-			const sendSpy2 = vi.spyOn(transport2, "send");
+            // 再等待一段时间
+            await delay(100);
 
-			await transport1.connect();
-			await transport2.connect();
+            // 调用次数不应该增加太多（允许最后一次 ping 完成）
+            expect(sendSpy.mock.calls.length).toBeLessThan(callCountBefore + 3);
 
-			// 手动发送 ping
-			transport1.send({
-				type: "$ping",
-				value: 123,
-			} as any);
+            heartbeat.destroy();
+        });
 
-			await delay(50);
+        test("transport error 时应该自动停止心跳", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+            });
 
-			// transport2 应该自动回复 pong
-			expect(sendSpy2).toHaveBeenCalled();
-			const pongMessage = sendSpy2.mock.calls.find(
-				(call) => call[0].type === "$pong",
-			);
-			expect(pongMessage).toBeDefined();
-			expect(pongMessage![0].value).toBe(123);
+            await transport1.connect();
+            await delay(70);
 
-			heartbeat1.destroy();
-			heartbeat2.destroy();
-		});
-	});
+            const callCountBefore = sendSpy.mock.calls.length;
 
-	describe("transport 生命周期管理", () => {
-		test("transport connect 时应该自动启动心跳", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 100,
-			});
+            // 触发 error 事件
+            transport1.emit("error", new Error("Test error"));
 
-			// 创建时未连接，不应该发送
-			await delay(50);
-			expect(sendSpy).not.toHaveBeenCalled();
+            // 再等待一段时间
+            await delay(100);
 
-			// 连接后应该开始发送
-			await transport1.connect();
-			await delay(50);
+            // 调用次数不应该增加
+            expect(sendSpy.mock.calls.length).toBe(callCountBefore);
 
-			expect(sendSpy).toHaveBeenCalled();
+            heartbeat.destroy();
+        });
 
-			heartbeat.destroy();
-		});
+        test("重新连接后应该重新启动心跳", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+            });
 
-		test("transport 已连接时创建应该立即启动心跳", async () => {
-			await transport1.connect();
+            await transport1.connect();
+            await delay(70);
 
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 100,
-			});
+            let callCount = sendSpy.mock.calls.length;
+            expect(callCount).toBeGreaterThan(0);
 
-			await delay(50);
+            // 断开连接
+            transport1.disconnect();
+            await delay(100);
 
-			expect(sendSpy).toHaveBeenCalled();
+            callCount = sendSpy.mock.calls.length;
 
-			heartbeat.destroy();
-		});
+            // 重新连接
+            await transport1.connect();
+            await delay(70);
 
-		test("transport disconnect 时应该自动停止心跳", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-			});
+            // 应该继续发送
+            expect(sendSpy.mock.calls.length).toBeGreaterThan(callCount);
 
-			await transport1.connect();
-			await delay(30);
+            heartbeat.destroy();
+        });
+    });
 
-			const callCountBefore = sendSpy.mock.calls.length;
-			expect(callCountBefore).toBeGreaterThan(0);
+    describe("销毁管理", () => {
+        test("destroy 应该停止心跳并清理事件监听", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+            });
 
-			// 断开连接
-			transport1.disconnect();
+            await transport1.connect();
+            await delay(70);
 
-			// 再等待一段时间
-			await delay(100);
+            const callCountBefore = sendSpy.mock.calls.length;
 
-			// 调用次数不应该增加太多（允许最后一次 ping 完成）
-			expect(sendSpy.mock.calls.length).toBeLessThan(callCountBefore + 3);
+            // 销毁心跳
+            heartbeat.destroy();
 
-			heartbeat.destroy();
-		});
+            // 再等待一段时间
+            await delay(100);
 
-		test("transport error 时应该自动停止心跳", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-			});
+            // 调用次数不应该增加
+            expect(sendSpy.mock.calls.length).toBe(callCountBefore);
+        });
 
-			await transport1.connect();
-			await delay(30);
+        test("destroy 后不应该响应 transport 事件", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+            });
 
-			const callCountBefore = sendSpy.mock.calls.length;
+            await transport1.connect();
+            await delay(70);
 
-			// 触发 error 事件
-			transport1.emit("error", new Error("Test error"));
+            // 记录当前的 ping 次数
+            const pingCountBeforeDestroy = sendSpy.mock.calls.filter(
+                (call) => call[0].type === "$ping",
+            ).length;
 
-			// 再等待一段时间
-			await delay(100);
+            // 销毁心跳
+            heartbeat.destroy();
 
-			// 调用次数不应该增加
-			expect(sendSpy.mock.calls.length).toBe(callCountBefore);
+            // 断开并重新连接
+            transport1.disconnect();
+            await delay(50);
+            await transport1.connect();
+            await delay(100);
 
-			heartbeat.destroy();
-		});
+            // ping 次数不应该增加（destroy 后不应该发送新的 ping）
+            const pingCountAfterReconnect = sendSpy.mock.calls.filter(
+                (call) => call[0].type === "$ping",
+            ).length;
+            expect(pingCountAfterReconnect).toBe(pingCountBeforeDestroy);
+        });
+    });
 
-		test("重新连接后应该重新启动心跳", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-			});
+    describe("心跳计数器", () => {
+        test("ping 计数器应该递增", async () => {
+            const sendSpy = vi.spyOn(transport1, "send");
+            const heartbeat = new Heartbeat(transport1, {
+                interval: 50,
+            });
 
-			await transport1.connect();
-			await delay(30);
+            await transport1.connect();
 
-			let callCount = sendSpy.mock.calls.length;
-			expect(callCount).toBeGreaterThan(0);
+            // 等待多个 ping
+            await delay(200);
 
-			// 断开连接
-			transport1.disconnect();
-			await delay(100);
+            const pings = sendSpy.mock.calls.filter((call) => call[0].type === "$ping");
 
-			callCount = sendSpy.mock.calls.length;
+            // 应该发送了多个 ping
+            expect(pings.length).toBeGreaterThan(1);
 
-			// 重新连接
-			await transport1.connect();
-			await delay(60);
+            // ping 值应该递增
+            const values = pings.map((call) => call[0].value);
+            for (let i = 1; i < values.length; i++) {
+                expect(values[i]).toBe(values[i - 1] + 1);
+            }
 
-			// 应该继续发送
-			expect(sendSpy.mock.calls.length).toBeGreaterThan(callCount);
-
-			heartbeat.destroy();
-		});
-	});
-
-	describe("销毁管理", () => {
-		test("destroy 应该停止心跳并清理事件监听", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-			});
-
-			await transport1.connect();
-			await delay(30);
-
-			const callCountBefore = sendSpy.mock.calls.length;
-
-			// 销毁心跳
-			heartbeat.destroy();
-
-			// 再等待一段时间
-			await delay(100);
-
-			// 调用次数不应该增加
-			expect(sendSpy.mock.calls.length).toBe(callCountBefore);
-		});
-
-		test("destroy 后不应该响应 transport 事件", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-			});
-
-			await transport1.connect();
-			await delay(30);
-
-			// 记录当前的 ping 次数
-			const pingCountBeforeDestroy = sendSpy.mock.calls.filter(
-				(call) => call[0].type === "$ping",
-			).length;
-
-			// 销毁心跳
-			heartbeat.destroy();
-
-			// 断开并重新连接
-			transport1.disconnect();
-			await delay(50);
-			await transport1.connect();
-			await delay(100);
-
-			// ping 次数不应该增加（destroy 后不应该发送新的 ping）
-			const pingCountAfterReconnect = sendSpy.mock.calls.filter(
-				(call) => call[0].type === "$ping",
-			).length;
-			expect(pingCountAfterReconnect).toBe(pingCountBeforeDestroy);
-		});
-	});
-
-	describe("心跳计数器", () => {
-		test("ping 计数器应该递增", async () => {
-			const sendSpy = vi.spyOn(transport1, "send");
-			const heartbeat = new Heartbeat(transport1, {
-				interval: 50,
-			});
-
-			await transport1.connect();
-
-			// 等待多个 ping
-			await delay(170);
-
-			const pings = sendSpy.mock.calls.filter(
-				(call) => call[0].type === "$ping",
-			);
-
-			// 应该发送了多个 ping
-			expect(pings.length).toBeGreaterThan(1);
-
-			// ping 值应该递增
-			const values = pings.map((call) => call[0].value);
-			for (let i = 1; i < values.length; i++) {
-				expect(values[i]).toBe(values[i - 1] + 1);
-			}
-
-			heartbeat.destroy();
-		});
-	});
+            heartbeat.destroy();
+        });
+    });
 });

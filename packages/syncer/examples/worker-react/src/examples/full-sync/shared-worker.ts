@@ -15,7 +15,7 @@ import { store } from "./store";
 // 创建同步广播器
 const broadcaster = new AutoStoreBroadcastSyncer(store, {
     autostart: true,
-    heartbeat: 2000,
+    heartbeat: 1000,
 });
 
 // 将 broadcaster 挂载到全局，方便调试
@@ -41,6 +41,14 @@ console.log("[FullSync SharedWorker] AutoStore Broadcaster 已启动");
     transport.once("connect", () => {
         console.log("[FullSync SharedWorker] transport 已连接");
         broadcaster.addTransport(transport);
+        console.log(
+            "[FullSync SharedWorker] 客户端已连接，当前连接数:",
+            broadcaster.transports.size,
+        );
+    });
+    transport.once("disconnect", () => {
+        console.log("[FullSync SharedWorker] transport 已断开连接");
+        broadcaster.removeTransport(transport.id);
         console.log(
             "[FullSync SharedWorker] 客户端已连接，当前连接数:",
             broadcaster.transports.size,

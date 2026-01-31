@@ -170,9 +170,7 @@ export class WorkerTransport extends AutoStoreSyncTransportBase<WorkerTransportO
 
         // 绑定消息监听器，保存引用以便后续移除
         this.messageHandler = (event: MessageEvent) => {
-            if (isStateRemoteOperate(event.data)) {
-                this.onReceiveOperate(event.data);
-            }
+            this.onReceiveOperate(event.data);
         };
         worker.addEventListener("message", this.messageHandler);
 

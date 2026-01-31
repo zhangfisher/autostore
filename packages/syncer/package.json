@@ -29,6 +29,7 @@
 		"autostore": "workspace:*"
 	},
 	"dependencies": {
+		"comlink": "^4.4.2",
 		"flex-tools": "^1.5.9",
 		"mitt": "^3.0.1"
 	},

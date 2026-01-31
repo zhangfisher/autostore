@@ -11,9 +11,9 @@ import {
 } from "autostore";
 import type { AutoStoreSyncerOptions, StateRemoteOperate } from "../types";
 import { EventSubscriber } from "../utils/emitter";
-import { Heartbeat } from "../utils/heartbeat";
 import { AutoStoreSyncError } from "../errors";
 import { AutoStoreSyncerBase } from "./base";
+import { getSnap } from "../../../core/src/utils/getSnap";
 
 type NormalizeAutoStoreSyncerOptions = Required<
     Omit<AutoStoreSyncerOptions, "local" | "remote"> & {
@@ -43,9 +43,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
     private _subscribers: EventSubscriber[] = [];
 
-    // 心跳检测器
-    private _heartbeat?: Heartbeat;
-
     constructor(
         public store: AutoStore<any>,
         options?: AutoStoreSyncerOptions,
@@ -63,7 +60,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                 pathMap: {},
                 peers: ["*"],
                 debug: false,
-                heartbeat: 0, // 默认禁用心跳检测
             },
             options,
         ) as any;
@@ -123,7 +119,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             type: operate.type,
             path: operate.path,
             parentPath: operate.parentPath,
-            value: operate.value,
+            value: getSnap(operate.value),
             indexs: operate.indexs,
             flags: operate.flags ?? 0,
         } as StateRemoteOperate;
@@ -178,6 +174,8 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             this._subscribers.push(this.transport.on("disconnect", this.stop.bind(this)));
             // 当连接出错时
             this._subscribers.push(this.transport.on("error", this.stop.bind(this)));
+            // 当连接心跳超时
+            this._subscribers.push(this.transport.on("timeout", this.stop.bind(this)));
             this.transport.connect();
         } catch (e) {
             hasError = e;
@@ -186,24 +184,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             throw e;
         } finally {
             if (!hasError) {
-                // 只有在 heartbeat > 0 时才创建心跳检测器
-                if (this._options.heartbeat > 0) {
-                    this._heartbeat = new Heartbeat(this._options.transport!, {
-                        interval: this._options.heartbeat,
-                    });
-
-                    // 监听心跳超时事件
-                    this._subscribers.push(
-                        this._heartbeat.on("timeout", () => {
-                            this.transport.disconnect();
-                            this.emit(
-                                "error",
-                                new Error("Heartbeat timeout: connection lost"),
-                                true,
-                            );
-                        }),
-                    );
-                }
                 this.emit("start", undefined, true);
             }
         }
@@ -215,12 +195,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     stop() {
         if (!this.syncing) return;
         try {
-            // 销毁心跳检测器，清理事件监听
-            if (this._heartbeat) {
-                this._heartbeat.destroy();
-                this._heartbeat = undefined;
-            }
-
             this._subscribers.forEach((subscriber) => subscriber.off());
             if (this._options.transport.connected) {
                 // 向对方发送一个停止同步的信号
@@ -361,13 +335,17 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
         } else if (type === "insert") {
             store.update((state) => {
                 const arr = getVal(state, toPath);
-                if (indexs) arr.splice(indexs[0], 0, ...value);
+                if (Array.isArray(indexs)) arr.splice(indexs[0], 0, ...value);
             }, updateOpts);
         } else if (type === "remove") {
             store.update((state) => {
                 const arr = getVal(state, toPath);
-                if (indexs) {
-                    arr.splice(indexs[0], indexs.length);
+                if (Array.isArray(indexs)) {
+                    if (indexs.length === 0) {
+                        arr.splice(0); // 代表清空
+                    } else {
+                        arr.splice(indexs[0], indexs.length);
+                    }
                 }
             }, updateOpts);
         }

@@ -48,14 +48,6 @@ export type AutoStoreSyncerOptions = {
      */
     peers?: string[];
     debug?: boolean;
-    /**
-     * 心跳检测间隔（毫秒）
-     * 0 表示禁用心跳检测（默认）
-     * n > 0 表示每隔 n 毫秒发送一次心跳 ping
-     * 如果连续 3 次未收到 pong 响应，则认为连接已断开，主动断开连接
-     * @default 0
-     */
-    heartbeat?: number;
 };
 
 export type StateRemoteOperate<Value = any> = {

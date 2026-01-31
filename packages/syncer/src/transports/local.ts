@@ -71,6 +71,10 @@ export class LocalTransport extends AutoStoreSyncTransportBase {
         if (!this.peer) {
             throw new Error("无法获取对端 transport");
         }
+        // 只有当 peer 也连接时才传递消息
+        if (!this.peer.connected) {
+            return; // peer 未连接，不传递消息
+        }
         this.peer.onReceiveOperate(operate);
     }
 }

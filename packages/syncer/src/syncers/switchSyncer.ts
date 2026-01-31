@@ -499,8 +499,12 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
                     }
                 } else if (type === "remove") {
                     const arr = getVal(state, targetPath);
-                    if (Array.isArray(arr) && indexs) {
-                        arr.splice(indexs[0], indexs.length);
+                    if (Array.isArray(indexs)) {
+                        if (indexs.length === 0) {
+                            arr.splice(0);
+                        } else {
+                            arr.splice(indexs[0], indexs.length);
+                        }
                     }
                 }
             },

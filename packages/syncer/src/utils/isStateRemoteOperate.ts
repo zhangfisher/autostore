@@ -28,17 +28,11 @@ export function isStateRemoteOperate(val: unknown): val is StateRemoteOperate {
     if (typeof val !== "object" || val === null) {
         return false;
     }
-
     const obj = val as Record<string, unknown>;
-    return "type" in obj;
-    // // 检查必需字段是否存在
-    // if (
-    //     typeof obj.type !== "string"
-    //     // !Array.isArray(obj.path) ||
-    //     // typeof obj.flags !== 'number'
-    // ) {
+    return "type" in obj && "value" in obj && "path" in obj && Array.isArray(obj.path);
+    // if (typeof obj.type !== "string" || !Array.isArray(obj.path)) {
     //     return false;
     // }
 
-    // return "type" in obj && "value" in obj; //&& "path" in obj && Array.isArray(obj.path);
+    // return "type" in obj && "value" in obj && "path" in obj && Array.isArray(obj.path);
 }

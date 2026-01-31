@@ -97,9 +97,7 @@ export class BroadcastChannelTransport extends AutoStoreSyncTransportBase<Broadc
 
             // 绑定消息监听器
             this.messageHandler = (event: MessageEvent) => {
-                if (isStateRemoteOperate(event.data)) {
-                    this.onReceiveOperate(event.data);
-                }
+                this.onReceiveOperate(event.data);
             };
             this.channel.addEventListener("message", this.messageHandler as any);
 

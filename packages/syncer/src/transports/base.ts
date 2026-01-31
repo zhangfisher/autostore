@@ -1,6 +1,8 @@
 import type { StateRemoteOperate } from "../types";
 import { EventEmitter, EventSubscriber } from "../utils/emitter";
 import { isPromiseLike } from "../utils/isPromiseLike";
+import { Heartbeat } from "../utils/heartbeat";
+import { isStateRemoteOperate } from "../utils";
 
 /**
  * 传输层事件类型
@@ -14,6 +16,8 @@ export type TransportEvents = {
     operate: StateRemoteOperate;
     /** 发生错误时触发 */
     error: Error;
+    /** 心跳检测超时，连接可能已断开 */
+    timeout: void;
 };
 
 export type AutoStoreSyncTransportReceiver = (operate: StateRemoteOperate) => void;
@@ -21,6 +25,7 @@ export type AutoStoreSyncTransportReceiver = (operate: StateRemoteOperate) => vo
 export type AutoStoreSyncTransportOptions = {
     debug?: boolean; // 启用时会在接收到每一条消息时触发operate事件
     autoConnect?: boolean; // 是否自动建立连接，默认为 false 以保持向后兼容
+    heartbeat?: number; //是否启用心跳
 };
 
 /**
@@ -37,6 +42,8 @@ export class AutoStoreSyncTransportBase<
     options = {} as AutoStoreSyncTransportOptions & Options;
     static seq: number = 0;
     readonly id: number;
+    // 心跳检测器
+    heartbeat?: Heartbeat;
 
     constructor(options?: AutoStoreSyncTransportOptions & Options) {
         super();
@@ -91,6 +98,8 @@ export class AutoStoreSyncTransportBase<
                     // 清除之前的 disconnect 保留消息（不触发监听器），然后发送 connect 事件并保留
                     this.clearRetained("disconnect");
                     this.emit("connect", undefined, true); // retain=true 保留消息
+                    // 连接成功后，启动心跳检测
+                    this.startHeartbeat();
                 },
                 (error) => {
                     this.emit("error", error);
@@ -102,6 +111,8 @@ export class AutoStoreSyncTransportBase<
             // 清除之前的 disconnect 保留消息（不触发监听器），然后发送 connect 事件并保留
             this.clearRetained("disconnect");
             this.emit("connect", undefined, true); // retain=true 保留消息
+            // 连接成功后，启动心跳检测
+            this.startHeartbeat();
         }
     }
     /**
@@ -114,6 +125,50 @@ export class AutoStoreSyncTransportBase<
      * 本方法供子类重载用于销毁连接
      */
     protected onDisconnect(): void {}
+
+    /**
+     * 启动心跳检测器
+     * 当 heartbeat > 0 时创建 Heartbeat 实例并监听超时事件
+     *
+     */
+    startHeartbeat() {
+        if (this.options.heartbeat && this.options.heartbeat > 0) {
+            // 如果心跳已经存在，则销毁重新创建
+            if (this.heartbeat) this.stopHeartbeat();
+            this.heartbeat = new Heartbeat(this, {
+                interval: this.options.heartbeat,
+            });
+            // 监听心跳超时事件
+            this.heartbeat.on("timeout", () => {
+                this.disconnect();
+                this.emit("timeout", undefined);
+            });
+        }
+    }
+
+    /**
+     * 停止心跳检测器
+     * 销毁 Heartbeat 实例并清理资源
+     */
+    stopHeartbeat() {
+        if (this.heartbeat) {
+            this.heartbeat.destroy();
+            this.heartbeat = undefined;
+        }
+    }
+    private _handlePing(operate: StateRemoteOperate) {
+        if (typeof operate === "object" && operate.type === "$ping") {
+            // 只有在连接状态下才自动回复 pong
+            if (this.connected) {
+                this.send({
+                    type: "$pong",
+                    value: operate.value,
+                } as any);
+            }
+            return true;
+        }
+        return false;
+    }
     /**
      * 本方法用于监听消息事件
      */
@@ -121,13 +176,20 @@ export class AutoStoreSyncTransportBase<
     /**
      * 本方法用于监听消息事件
      */
-    protected onReceiveOperate(operate: StateRemoteOperate): void {
+    protected onReceiveOperate(operate: StateRemoteOperate): boolean {
+        // 当前如果没有开启主动心跳则需要回应PONG
+        if (this._handlePing(operate)) return true;
+        if (this.heartbeat) {
+            if (this.heartbeat.onOperate(operate)) return false;
+        }
+        if (!isStateRemoteOperate(operate)) return false;
         // 通知所有注册的 receivers，让它们自己决定是否处理该消息
         for (const callback of this.receivers.values()) {
             try {
                 callback(operate);
             } catch {}
         }
+        return true;
     }
     send(operate: StateRemoteOperate) {
         if (!this.connected) {
@@ -150,6 +212,8 @@ export class AutoStoreSyncTransportBase<
             this.onDisconnect();
         } finally {
             this.connected = false;
+            // 停止心跳检测器
+            this.stopHeartbeat();
             // 清除 connect 保留消息（不触发监听器），然后发送 disconnect 事件并保留
             this.clearRetained("connect");
             this.emit("disconnect", undefined, true); // retain=true 保留消息
