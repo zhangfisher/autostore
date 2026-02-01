@@ -1,13 +1,13 @@
 /**
  * 同步计算
  */
-import type { ComputedOptions, SyncRuntimeComputedOptions } from './types';
-import { getValueScope } from '../scope';
-import { ComputedObject } from './computedObject';
-import type { StateOperate } from '../store/types';
-import { noRepeat } from '../utils/noRepeat';
-import { calcDependPaths } from '../utils/calcDependPaths';
-import { isFunction } from '../utils/isFunction';
+import type { ComputedOptions, SyncRuntimeComputedOptions } from "./types";
+import { getValueScope } from "../scope";
+import { ComputedObject } from "./computedObject";
+import type { StateOperate } from "../store/types";
+import { noRepeat } from "../utils/noRepeat";
+import { calcDependPaths } from "../utils/calcDependPaths";
+import { isFunction } from "../utils/isFunction";
 
 /**
  *
@@ -45,7 +45,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
 
         // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
         if (!first && this.isDisable(options?.enable)) {
-            this.store.log(`Sync computed <${this.toString()}> is disabled`, 'warn');
+            this.store.log(`Sync computed <${this.toString()}> is disabled`, "warn");
             return;
         }
 
@@ -59,7 +59,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
         // 3. 根据配置参数获取计算函数的上下文对象
         const scope = getValueScope<Value, Scope>(
             this as any,
-            'computed',
+            "computed",
             this.context,
             finalComputedOptions,
         );
@@ -87,22 +87,25 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
             this.value = computedResult;
         });
         if (this.error) {
-            !first &&
-                this.emitStoreEvent('computed:error', {
+            if (!first) {
+                this.emitStoreEvent("computed:error", {
                     id: this.id,
                     path: this.path,
                     error: this.error,
                     computedObject: this as unknown as ComputedObject,
                 });
+            }
+
             // if (this.options.throwError) throw this.error!;
         } else {
-            !first &&
-                this.emitStoreEvent('computed:done', {
+            if (!first) {
+                this.emitStoreEvent("computed:done", {
                     id: this.id,
                     path: this.path,
                     value: computedResult,
                     computedObject: this as unknown as ComputedObject,
                 });
+            }
         }
     }
     /**
@@ -122,11 +125,11 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
      */
     private collectDependencies() {
         const dependencies: string[][] = [];
-        const watcher = this.store.watch(
+        const watcher = this.shadowStore.watch(
             (event) => {
                 dependencies.push(event.path);
             },
-            { operates: ['get'] },
+            { operates: ["get"] },
         );
         // 第一次运行getter函数，如果函数内部有get操作，会触发上面的watcher事件，从而收集依赖
         this.run({ first: true });

@@ -79,6 +79,9 @@ import { createSandbox } from "../utils/createSandbox";
 import { computed } from "../computed/computed";
 import { watch } from "../watch/watch";
 import { configurable, schema } from "../schema/schema";
+import type { ConfigManager } from "../schema/manager";
+import { isConfigSource } from "../utils/isConfigSource";
+import { createShadow } from "./shadow";
 import {
     forEachObject,
     getSnapshot,
@@ -96,8 +99,6 @@ import type {
     StateTracker,
     UpdateOptions,
 } from "./types";
-import type { ConfigManager } from "../schema/manager";
-import { isConfigSource } from "../utils/isConfigSource";
 
 export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<StoreEvents> {
     private _data: ComputedState<State>;
@@ -135,6 +136,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                     lazy: false,
                     enableValueExpr: true,
                     log,
+                    shadow: false,
                 },
                 options,
                 {
@@ -173,42 +175,6 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
             globalThis.__AUTOSTORE_DEVTOOLS__.add(this);
         }
         this.emit("load", this);
-    }
-    /**
-     * 覆盖父类的 types 属性,提供更精确的类型信息
-     *
-     * @description
-     *
-     * 扩展父类 FastEvent 的 types 属性,添加了 state 和 rawState 类型,
-     * 并将 events 类型指定为 StoreEvents
-     *
-     * @example
-     *
-     * ```ts
-     * const store = new AutoStore({...})
-     * type Events = typeof store.types.events  // StoreEvents
-     * type State = typeof store.types.state   // ComputedState<YourState>
-     * type RawState = typeof store.types.rawState // YourState
-     * ```
-     */
-    override get types(): {
-        events: StoreEvents;
-        meta: any;
-        context: any;
-        message: any;
-        listeners: any;
-        anyListener: any;
-        state: State;
-        rawState: ComputedState<State>;
-        schemas: ConfigurableState<State>;
-    } {
-        return {
-            ...super.types,
-            state: undefined as unknown as State,
-            rawState: undefined as unknown as ComputedState<State>,
-            events: undefined as unknown as StoreEvents,
-            schemas: undefined as unknown as ConfigurableState<State>,
-        };
     }
     get state() {
         return this._data;
@@ -387,11 +353,20 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
             this.options.log?.call(this, message, level);
         }
     }
+    shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>) {
+        return createShadow(this, state, options);
+    }
     private installExtends() {
         const exts = globalThis.__AUTOSTORE_EXTENDS__;
         if (Array.isArray(exts)) {
             exts.forEach((ext) => {
-                typeof ext === "function" && ext(this);
+                if (typeof ext === "function") {
+                    try {
+                        ext(this);
+                    } catch (e: any) {
+                        this.log(e.message, "warn");
+                    }
+                }
             });
         }
     }

@@ -1,17 +1,17 @@
-import type { ComputedObject } from '../computed/computedObject';
-import type { ComputedDescriptor, ComputedScope } from '../computed/types';
-import type { ObserverObject } from '../observer/observer';
-import type { ObserverType } from '../observer/types';
-import type { Dict } from '../types';
-import type { AutoStore } from './store';
-import type { AutoStateSchema } from '../schema/types';
-import type { ConfigManager, ConfigSource } from '../schema/manager';
-import type { TransformedEvents } from 'fastevent';
-import type { ObserverDescriptor } from '../observer/types';
-import type { WatchObject } from '../watch/watchObject';
-import type { CreateSandboxOptions } from '../utils/createSandbox';
+import type { ComputedObject } from "../computed/computedObject";
+import type { ComputedDescriptor, ComputedScope } from "../computed/types";
+import type { ObserverObject } from "../observer/observer";
+import type { ObserverType } from "../observer/types";
+import type { Dict } from "../types";
+import type { AutoStore } from "./store";
+import type { AutoStateSchema } from "../schema/types";
+import type { ConfigManager, ConfigSource } from "../schema/manager";
+import type { TransformedEvents } from "fastevent";
+import type { ObserverDescriptor } from "../observer/types";
+import type { WatchObject } from "../watch/watchObject";
+import type { CreateSandboxOptions } from "../utils/createSandbox";
 
-export type BatchChangeEvent = '__batch_update__';
+export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
 export interface StateValidatorFunction<State extends Dict> {
     (this: AutoStore<State>, newValue: any, oldValue: any, path: string[]): boolean;
@@ -21,16 +21,16 @@ export interface StateValidatorFunction<State extends Dict> {
 
 export type StateValidator<State extends Dict> = StateValidatorFunction<State>;
 
-export type ValidationBehavior = 'pass' | 'ignore' | 'throw' | 'throw-pass';
+export type ValidationBehavior = "pass" | "ignore" | "throw" | "throw-pass";
 
 export type StateOperateType =
-    | 'get'
-    | 'set'
-    | 'delete' // 用于对象
-    | 'insert'
-    | 'update'
-    | 'remove' // 用于数组
-    | 'batch'; // 批量操作
+    | "get"
+    | "set"
+    | "delete" // 用于对象
+    | "insert"
+    | "update"
+    | "remove" // 用于数组
+    | "batch"; // 批量操作
 
 export interface StateOperate<Value = any, Parent = any> {
     type: StateOperateType;
@@ -45,6 +45,10 @@ export interface StateOperate<Value = any, Parent = any> {
      */
     reply?: boolean;
     flags?: number;
+    /**
+     * 该操作是否来自shadow转发
+     */
+    shadow?: boolean;
 }
 export interface AutoStoreOptions<State extends Dict> {
     /**
@@ -60,6 +64,10 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     debug?: boolean;
+    /**
+     * 声明是否shadow,默认false
+     */
+    shadow?: boolean;
     /**
      *  是否马上创建动态对象
      *
@@ -134,7 +142,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param level
      * @returns
      */
-    log?: (message: any, level?: 'info' | 'error' | 'warn') => void;
+    log?: (message: any, level?: "info" | "error" | "warn") => void;
     /**
      * 启用重置功能
      *
@@ -207,7 +215,7 @@ export interface AutoStoreOptions<State extends Dict> {
         args: {
             id: string;
             path: string[];
-            reason: 'timeout' | 'abort' | 'reentry' | 'error';
+            reason: "timeout" | "abort" | "reentry" | "error";
             computedObject: ComputedObject<any>;
         },
     ) => void;
@@ -243,6 +251,13 @@ export interface AutoStoreOptions<State extends Dict> {
         parent: any,
     ) => boolean | undefined;
     /**
+     *
+     * 获取影子store
+     * 为所有observer对象提供store对象
+     *
+     */
+    getShadowStore?: () => AutoStore<any>;
+    /**
      * 默认的値模式
      */
     defaultSchema?: Partial<AutoStateSchema<any>>;
@@ -261,7 +276,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * 可被校验函数抛出的 ValidateError.behavior 覆盖
      *
      */
-    onInvalid?: 'pass' | 'throw' | 'ignore' | 'throw-pass';
+    onInvalid?: "pass" | "throw" | "ignore" | "throw-pass";
     /**
      * 当写入时状态时执行此校验函数
      *
@@ -369,7 +384,7 @@ export type UpdateOptions = {
      * 以上当写入count时不会执行任意校验行为
      *
      */
-    validate?: 'none' | 'pass' | 'throw' | 'ignore' | 'throw-pass';
+    validate?: "none" | "pass" | "throw" | "ignore" | "throw-pass";
     /**
      * 执行读取操作时，不会触发GET事件
      * 即偷听
@@ -409,7 +424,7 @@ export type StoreSyncOptions = {
     to?: string;
     filter?: (this: AutoStore<any>, operate: StateOperate) => boolean;
     immediate?: boolean; // 初始化时立刻同步一次
-    direction?: 'both' | 'forward' | 'backward'; // 0:双向同步, 1: from->to,  2: to->from
+    direction?: "both" | "forward" | "backward"; // 0:双向同步, 1: from->to,  2: to->from
     // 同步时，是否路径进行映射处理，比如将['order','price']映射成['order.price']等
     pathMap?: {
         from: (path: string[], value: any) => string[] | undefined;
@@ -421,22 +436,22 @@ export type StoreEvents = TransformedEvents<{
     load: AutoStore<any>; // 响应对象创建后
     unload: AutoStore<any>; // 响应对象销毁后
     reset: string | undefined; // 对象重置时触发，入参为重置的路径字符串
-    'computed:created': ComputedObject; // 当计算对象创建时
-    'computed:done': { id: string; path: string[]; value: any; computedObject: ComputedObject }; // 当计算函数执行成功后
-    'computed:error': { id: string; path: string[]; error: any; computedObject: ComputedObject }; // 当计算函数执行出错时
-    'computed:cancel': {
+    "computed:created": ComputedObject; // 当计算对象创建时
+    "computed:done": { id: string; path: string[]; value: any; computedObject: ComputedObject }; // 当计算函数执行成功后
+    "computed:error": { id: string; path: string[]; error: any; computedObject: ComputedObject }; // 当计算函数执行出错时
+    "computed:cancel": {
         id: string;
         path: string[];
-        reason: 'timeout' | 'abort' | 'reentry' | 'error';
+        reason: "timeout" | "abort" | "reentry" | "error";
         computedObject: ComputedObject;
     }; // 当计算函数被取消时
-    'watch:created': WatchObject;
-    'watch:done': { value: any; watchObject: WatchObject };
-    'watch:error': { error: any; watchObject: WatchObject };
+    "watch:created": WatchObject;
+    "watch:done": { value: any; watchObject: WatchObject };
+    "watch:error": { error: any; watchObject: WatchObject };
     //
-    'observer:beforeCreate': ComputedDescriptor;
-    'observer:created': ObserverObject<any, any>;
-    'observer:done': ObserverDescriptor<any, any, any>;
+    "observer:beforeCreate": ComputedDescriptor;
+    "observer:created": ObserverObject<any, any>;
+    "observer:done": ObserverDescriptor<any, any, any>;
     // 当验证器验证失败时触发
     validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
     // 当schema被修改时触发

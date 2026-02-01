@@ -6,23 +6,24 @@
  *
  *
  */
-import type { AutoStore } from '../store/store';
-import { getVal } from '../utils/getVal';
-import { joinValuePath } from '../utils/joinValuePath';
-import { setVal } from '../utils/setVal';
-import { getId } from '../utils/getId';
-import type { ObserverDescriptor, ObserverOptions } from './types';
-import type { ComputedContext } from '../computed/types';
-import type { StateOperate, StoreEvents, UpdateOptions } from '../store/types';
-import type { Watcher, WatchListenerOptions } from '../watch/types';
-import { calcDependPaths } from '../utils/calcDependPaths';
+import type { AutoStore } from "../store/store";
+import { getVal } from "../utils/getVal";
+import { joinValuePath } from "../utils/joinValuePath";
+import { setVal } from "../utils/setVal";
+import { getId } from "../utils/getId";
+import type { ObserverDescriptor, ObserverOptions } from "./types";
+import type { ComputedContext } from "../computed/types";
+import type { StateOperate, StoreEvents, UpdateOptions } from "../store/types";
+import type { Watcher, WatchListenerOptions } from "../watch/types";
+import { calcDependPaths } from "../utils/calcDependPaths";
+import { isFunction } from "flex-tools";
 
 export class ObserverObject<
     Value = any,
     Options extends ObserverOptions<Value> = ObserverOptions<Value>,
 > {
     private _path: string[];
-    private _id: string = '';
+    private _id: string = "";
     private _initial: Value | undefined;
     private _value: Value | undefined;
     private _associated: boolean = false; // 是否已经关联到状态对象
@@ -53,7 +54,7 @@ export class ObserverObject<
         this._options = Object.assign(
             {
                 enable: true,
-                group: '',
+                group: "",
                 depends: [],
                 throwError: true,
             },
@@ -139,7 +140,7 @@ export class ObserverObject<
         if (this._associated) {
             return getVal(this.store.state, this._path);
         } else {
-            this.store._notify({ type: 'get', path: this.path, value: this._value });
+            this.store._notify({ type: "get", path: this.path, value: this._value });
             return this._value as unknown as Value;
         }
     }
@@ -150,13 +151,13 @@ export class ObserverObject<
             const oldValue = this._value;
             if (value !== oldValue) {
                 this._value = value;
-                this.store._notify({ type: 'set', path: this.path, value, oldValue });
+                this.store._notify({ type: "set", path: this.path, value, oldValue });
             }
         }
     }
 
     private _onObserverCreated() {
-        if (typeof this.store.options.onObserverCreated === 'function') {
+        if (typeof this.store.options.onObserverCreated === "function") {
             this.store.options.onObserverCreated.call(this.store, this);
         }
     }
@@ -281,14 +282,14 @@ export class ObserverObject<
         if (!this._attached && this.depends && this.depends.length > 0) {
             this._subscribers.push(
                 this.store.watch(this.getDepends(), this.onDependsChange.bind(this), {
-                    operates: 'write',
+                    operates: "write",
                 }),
             );
             this.store.log(
                 () =>
                     `${this.toString()} subscribed to ${this.depends!.map((depends) =>
                         depends.join(this.store.options.delimiter),
-                    ).join(',')}`,
+                    ).join(",")}`,
             );
             this._attached = true;
         }
@@ -301,6 +302,14 @@ export class ObserverObject<
         this._attached = false;
         this._subscribers = [];
         this.store.watchObjects.delete(this.id);
+    }
+    get shadowStore() {
+        if (!this._shadowStore) {
+            this._shadowStore = isFunction(this.store.options.getShadowStore)
+                ? this.store.options.getShadowStore() || this.store
+                : this.store;
+        }
+        return this._shadowStore;
     }
     /**
      * 供子类重写
