@@ -327,7 +327,20 @@ export type SyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDe
     Scope,
     SyncComputedDescriptor<Value, Scope>
 >;
+// 简单异步计算
+export type AsyncLiteComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
+    "computed",
+    Value,
+    Scope,
+    AsyncComputedGetter<Value, Scope>,
+    ComputedOptions<Value, Scope>
+>;
 
+export type AsyncLiteComputedDescriptorBuilder<
+    Value = any,
+    Scope = any,
+> = ObserverDescriptorBuilder<"computed", Value, Scope, AsyncComputedDescriptor<Value, Scope>>;
+// 异步计算
 export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
     "computed",
     Value,

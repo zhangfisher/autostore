@@ -148,6 +148,11 @@ export class ObserverObject<
         if (this._associated) {
             setVal(this.store.state, this._path, value);
         } else {
+            /**
+             * 为什么赋值没有写到state?
+             *
+             * 当独立创建的Observer时，即通过this.computedObjects.create()创建时，没有指定绑定到相关的状态上时
+             */
             const oldValue = this._value;
             if (value !== oldValue) {
                 this._value = value;
