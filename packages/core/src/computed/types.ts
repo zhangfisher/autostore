@@ -51,7 +51,7 @@ export interface ComputedProgressbar {
     value: (num: number) => void;
     end: () => void;
 }
-
+// 异步计算
 export interface AsyncComputedGetterArgs {
     /**
      *  获取一个进度条，用来显示异步计算的进度
