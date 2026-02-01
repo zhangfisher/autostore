@@ -3,6 +3,7 @@
 /** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
 import { describe, expect, test } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
+import "../plugin";
 import "..";
 
 const delay = (n: number = 0) => new Promise((resolve) => setTimeout(resolve, n));

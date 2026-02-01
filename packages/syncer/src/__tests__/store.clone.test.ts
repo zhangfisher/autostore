@@ -2,7 +2,7 @@
 import { describe, expect, test } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
 import "..";
-
+import "../plugin";
 describe("本地Store克隆同步", () => {
     describe("克隆Store", () => {
         test("整体克隆", async () => {

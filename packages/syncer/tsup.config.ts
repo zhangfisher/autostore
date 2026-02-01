@@ -14,8 +14,8 @@ export default defineConfig([
         noExternal: ["flex-tools"],
     },
     {
-        entry: ["src/index.all.ts"],
-        outDir: "dist/all",
+        entry: ["src/index.lite.ts"],
+        outDir: "dist/lite",
         format: ["esm", "cjs", "iife"],
         dts: { resolve: true },
         splitting: true,
