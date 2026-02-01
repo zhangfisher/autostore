@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-redundant-type-constituents
 /**
  *
  * 在signal的基础上提供计算属性功能
@@ -20,10 +21,10 @@ import type {
     ObserverDescriptorBuilder,
     ObserverOptions,
     ObserverScopeRef,
-} from '../observer/types';
-import type { StateOperate } from '../store/types';
-import type { ComputedObject } from './computedObject';
-import type { Dict } from '../types';
+} from "../observer/types";
+import type { StateOperate } from "../store/types";
+import type { ComputedObject } from "./computedObject";
+import type { Dict } from "../types";
 
 /**
  * 同步计算属性配置参数
@@ -163,9 +164,9 @@ export type ComputedScope =
  *
  */
 export type ComputedDepend =
-    | 'CURRENT'
-    | 'ROOT'
-    | 'PARENT'
+    | "CURRENT"
+    | "ROOT"
+    | "PARENT"
     | `/${string}`
     | `./${string}`
     | `../${string}`
@@ -173,8 +174,11 @@ export type ComputedDepend =
     | string[];
 export type ComputedDepends = ComputedDepend[];
 
-export interface ComputedOptions<Value = any, Scope = any, Schema extends Dict = Dict>
-    extends ObserverOptions<Value, Schema> {
+export interface ComputedOptions<
+    Value = any,
+    Scope = any,
+    Schema extends Dict = Dict,
+> extends ObserverOptions<Value, Schema> {
     /**
      *
      * 计算函数的执行超时时间
@@ -202,7 +206,7 @@ export interface ComputedOptions<Value = any, Scope = any, Schema extends Dict =
      *
      *
      */
-    immediate?: 'auto' | boolean;
+    immediate?: "auto" | boolean;
     /**
      * 计算函数是否允许重入执行
      *
@@ -274,16 +278,16 @@ export type AsyncComputedValue<Value = any> = {
 
 export type SyncComputedOptions<Value = any, Scope = any> = Pick<
     ComputedOptions<Value, Scope>,
-    | 'id'
-    | 'enable'
-    | 'onError'
-    | 'onDone'
-    | 'depends'
-    | 'initial'
-    | 'objectify'
-    | 'group'
-    | 'scope'
-    | 'extras'
+    | "id"
+    | "enable"
+    | "onError"
+    | "onDone"
+    | "depends"
+    | "initial"
+    | "objectify"
+    | "group"
+    | "scope"
+    | "extras"
 >;
 
 /**
@@ -307,25 +311,25 @@ export type AsyncReturnType<T extends (...args: any) => any> = T extends (
 ) => Promise<infer R>
     ? R
     : T extends (...args: any) => infer R
-    ? R
-    : any;
+      ? R
+      : any;
 
 export type SyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
-    'computed',
+    "computed",
     Value,
     Scope,
     ComputedGetter<Value, Scope>,
     ComputedOptions<Value, Scope>
 >;
 export type SyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDescriptorBuilder<
-    'computed',
+    "computed",
     Value,
     Scope,
     SyncComputedDescriptor<Value, Scope>
 >;
 
 export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
-    'computed',
+    "computed",
     Value,
     Scope,
     AsyncComputedGetter<Value, Scope>,
@@ -333,7 +337,7 @@ export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescript
 >;
 
 export type AsyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDescriptorBuilder<
-    'computed',
+    "computed",
     Value,
     Scope,
     AsyncComputedDescriptor<Value, Scope>

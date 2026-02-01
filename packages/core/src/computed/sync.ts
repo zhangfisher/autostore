@@ -49,7 +49,9 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
             return;
         }
 
-        !first && this.store.log(() => `Run sync computed for : ${this.toString()}`);
+        if (!first) {
+            this.store.log(() => `Run sync computed for : ${this.toString()}`);
+        }
 
         // 2. 合成最终的配置参数
         const finalComputedOptions = (
