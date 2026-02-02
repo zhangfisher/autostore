@@ -283,6 +283,16 @@ export interface ComputedOptions<
     };
 }
 
+export type LiteComputedOptions<
+    Value = any,
+    Scope = any,
+    Schema extends Dict = Dict,
+> = ObserverOptions<Value, Schema> &
+    Pick<
+        ComputedOptions<Value, Scope, Schema>,
+        "reports" | "onDone" | "onError" | "extras" | "immediate" | "reentry"
+    >;
+
 export type AsyncComputedValue<Value = any> = {
     loading: boolean;
     progress: number; // 进度值
@@ -379,7 +389,9 @@ export type AsyncLiteComputedDescriptor<Value = any, Scope = any> = ObserverDesc
     Scope,
     AsyncLiteComputedGetter<Value, Scope>,
     ComputedOptions<Value, Scope>
->;
+> & {
+    liteAsync: boolean; // 标识这是一个轻量异步计算
+};
 
 export type AsyncLiteComputedDescriptorBuilder<
     Value = any,

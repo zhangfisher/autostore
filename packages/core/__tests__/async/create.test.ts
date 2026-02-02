@@ -1,9 +1,10 @@
-import { describe, test, expect } from 'bun:test';
-import type { AsyncComputedObject } from '../../src/computed/async';
-import { AutoStore } from '../../src';
+import { describe, test, expect } from "bun:test";
+import type { AsyncComputedObject } from "../../src/computed/async";
+import { asyncComputed, AutoStore, computed } from "../../src";
+import { AsyncLiteComputedObject } from "../../src/computed/liteAsync";
 
-describe('动态创建异步计算属性', () => {
-    test('创建异步计算属性提供默认值', () => {
+describe("动态创建异步计算属性", () => {
+    test("创建异步计算属性提供默认值", () => {
         return new Promise<void>((resolve) => {
             const store = new AutoStore({
                 price: 2,
@@ -13,15 +14,15 @@ describe('动态创建异步计算属性', () => {
                 async (order: any) => {
                     return order.price * order.count;
                 },
-                ['price', 'count'],
+                ["price", "count"],
             );
-            store.on('computed:done', () => {
-                expect(obj.value.value).toBe(6);
+            store.on("computed:done", () => {
+                expect(obj.value).toBe(6);
                 resolve();
             });
         });
     });
-    test('动态创建的异步计算对象-默认保存计算对象引用', () => {
+    test("动态创建的异步计算对象-默认保存计算对象引用", () => {
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
@@ -31,7 +32,7 @@ describe('动态创建异步计算属性', () => {
                 {
                     onComputedCreated: () => {
                         expect(store.computedObjects.size).toBe(1);
-                        expect(store.computedObjects.has('x')).toBe(true);
+                        expect(store.computedObjects.has("x")).toBe(true);
                         resolve();
                     },
                 },
@@ -40,12 +41,12 @@ describe('动态创建异步计算属性', () => {
                 async (scope: any) => {
                     return scope.price * scope.count;
                 },
-                ['price', 'count'],
-                { id: 'x' },
+                ["price", "count"],
+                { id: "x" },
             );
         });
     });
-    test('动态创建的异步计算对象，不保存计算对象实例', () => {
+    test("动态创建的异步计算对象，不保存计算对象实例", () => {
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
@@ -55,7 +56,7 @@ describe('动态创建异步计算属性', () => {
                 {
                     onComputedCreated: () => {
                         expect(store.computedObjects.size).toBe(0);
-                        expect(store.computedObjects.has('x')).toBe(false);
+                        expect(store.computedObjects.has("x")).toBe(false);
                         resolve();
                     },
                 },
@@ -64,14 +65,14 @@ describe('动态创建异步计算属性', () => {
                 async (scope: any) => {
                     return scope.price * scope.count;
                 },
-                ['price', 'count'],
-                { id: 'x', objectify: false },
+                ["price", "count"],
+                { id: "x", objectify: false },
             );
         });
     });
-    test('动态异步计算属性初始化时自动执行一次', () => {
+    test("动态异步计算属性初始化时自动执行一次", () => {
         return new Promise<void>((resolve) => {
-            let obj: AsyncComputedObject;
+            let obj: AsyncLiteComputedObject;
             const store = new AutoStore(
                 {
                     price: 2,
@@ -80,7 +81,7 @@ describe('动态创建异步计算属性', () => {
                 {
                     onComputedDone: ({ value }) => {
                         expect(value).toBe(6);
-                        expect(obj.value.value).toBe(6);
+                        expect(obj.value).toBe(6);
                         resolve();
                     },
                 },
@@ -89,12 +90,14 @@ describe('动态创建异步计算属性', () => {
                 async (scope: any) => {
                     return scope.price * scope.count;
                 },
-                ['price', 'count'],
+                ["price", "count"],
             );
+            // const obj2 = store.computedObjects.create(computed(() => true));
+            // const obj3 = store.computedObjects.create(asyncComputed(async () => true, []));
         });
     });
 
-    test('动态异步计算属性所依赖的数据发生变化时会重新计算', () => {
+    test("动态异步计算属性所依赖的数据发生变化时会重新计算", () => {
         const results: number[] = [];
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
@@ -116,7 +119,7 @@ describe('动态创建异步计算属性', () => {
                 async (scope: any) => {
                     return scope.price * scope.count;
                 },
-                ['price', 'count'],
+                ["price", "count"],
             );
             setTimeout(() => {
                 store.state.count = 4;

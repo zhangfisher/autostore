@@ -10,13 +10,13 @@
  * - validate 事件
  */
 
-import { describe, test, expect } from 'bun:test';
-import { AutoStore, computed, watch } from '../src';
-import { delay } from 'flex-tools/async/delay';
+import { describe, test, expect } from "bun:test";
+import { asyncComputed, AutoStore, computed, watch } from "../src";
+import { delay } from "flex-tools/async/delay";
 
-describe('Store Events', () => {
-    describe('生命周期事件', () => {
-        test('load 事件在 store 创建时触发', () => {
+describe("Store Events", () => {
+    describe("生命周期事件", () => {
+        test("load 事件在 store 创建时触发", () => {
             // load 事件在构造函数中同步触发
             // 验证 store 是否正常初始化
             const store = new AutoStore({
@@ -27,7 +27,7 @@ describe('Store Events', () => {
             expect(store.state.count).toBe(1);
         });
 
-        test('unload 事件在 store 销毁时触发', () => {
+        test("unload 事件在 store 销毁时触发", () => {
             let unloadEventFired = false;
 
             const store = new AutoStore({
@@ -36,7 +36,7 @@ describe('Store Events', () => {
 
             // 注意：由于 destroy() 会先调用 offAll()，所以需要在销毁前监听
             // 但这是当前实现的限制，测试反映了实际行为
-            store.on('unload', () => {
+            store.on("unload", () => {
                 unloadEventFired = true;
             });
 
@@ -48,14 +48,14 @@ describe('Store Events', () => {
             expect(unloadEventFired).toBe(false);
         });
 
-        test('reset 事件在重置状态时触发', () => {
+        test("reset 事件在重置状态时触发", () => {
             let resetEventFired = false;
             let resetPath: string | undefined;
 
             const store = new AutoStore(
                 {
                     user: {
-                        name: 'John',
+                        name: "John",
                         age: 30,
                     },
                     count: 1,
@@ -65,13 +65,13 @@ describe('Store Events', () => {
                 },
             );
 
-            store.on('reset', (path) => {
+            store.on("reset", (path) => {
                 resetEventFired = true;
                 resetPath = path;
             });
 
             // 修改状态
-            store.state.user.name = 'Jane';
+            store.state.user.name = "Jane";
             store.state.count = 10;
 
             // 重置整个状态
@@ -79,26 +79,26 @@ describe('Store Events', () => {
 
             expect(resetEventFired).toBe(true);
             expect(resetPath).toBeUndefined();
-            expect(store.state.user.name).toBe('John');
+            expect(store.state.user.name).toBe("John");
             expect(store.state.count).toBe(1); // count 重置为初始值
 
             // 修改状态
-            store.state.user.name = 'Bob';
+            store.state.user.name = "Bob";
             store.state.count = 20;
             resetEventFired = false;
 
             // 重置特定路径
-            store.reset('user');
+            store.reset("user");
 
             expect(resetEventFired).toBe(true);
-            expect(resetPath).toBe('user');
-            expect(store.state.user.name).toBe('John');
+            expect(resetPath).toBe("user");
+            expect(store.state.user.name).toBe("John");
             expect(store.state.count).toBe(20); // count 未被重置
         });
     });
 
-    describe('computed 生命周期事件', () => {
-        test('computed:created 事件在计算对象创建时触发', () => {
+    describe("computed 生命周期事件", () => {
+        test("computed:created 事件在计算对象创建时触发", () => {
             const createdEvents: any[] = [];
 
             const store = new AutoStore(
@@ -121,11 +121,11 @@ describe('Store Events', () => {
             store.state.dynamicComputed;
 
             expect(createdEvents.length).toBe(1);
-            expect(createdEvents[0].path).toEqual(['dynamicComputed']);
+            expect(createdEvents[0].path).toEqual(["dynamicComputed"]);
             expect(createdEvents[0].async).toBe(false);
         });
 
-        test('computed:created 事件使用 store.on 监听（仅动态创建生效）', async () => {
+        test("computed:created 事件使用 store.on 监听（仅动态创建生效）", async () => {
             const createdEvents: any[] = [];
 
             const store = new AutoStore({
@@ -135,7 +135,7 @@ describe('Store Events', () => {
             });
 
             // 使用 store.on 监听（但只对动态创建的计算属性生效）
-            store.on('computed:created', (computedObject) => {
+            store.on("computed:created", (computedObject) => {
                 createdEvents.push({
                     path: computedObject.path,
                     id: computedObject.id,
@@ -162,11 +162,11 @@ describe('Store Events', () => {
             await delay(0);
 
             expect(createdEvents.length).toBe(1);
-            expect(createdEvents[0].path).toEqual(['dynamicComputed']);
+            expect(createdEvents[0].path).toEqual(["dynamicComputed"]);
             expect(createdEvents[0].async).toBe(false);
         });
 
-        test('computed:done 事件在同步计算函数执行成功后触发', async () => {
+        test("computed:done 事件在同步计算函数执行成功后触发", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore(
@@ -199,7 +199,7 @@ describe('Store Events', () => {
             await delay(0);
             expect(doneEvents.length).toBe(1);
             expect(doneEvents[0].value).toBe(10);
-            expect(doneEvents[0].path).toEqual(['double']);
+            expect(doneEvents[0].path).toEqual(["double"]);
 
             // 再次修改 count，验证可以多次触发 done 事件
             store.state.count = 10;
@@ -209,7 +209,7 @@ describe('Store Events', () => {
             await delay(0);
             expect(doneEvents.length).toBe(2);
             expect(doneEvents[1].value).toBe(20);
-            expect(doneEvents[1].path).toEqual(['double']);
+            expect(doneEvents[1].path).toEqual(["double"]);
 
             // 第三次修改
             store.state.count = 20;
@@ -219,10 +219,10 @@ describe('Store Events', () => {
             await delay(0);
             expect(doneEvents.length).toBe(3);
             expect(doneEvents[2].value).toBe(40);
-            expect(doneEvents[2].path).toEqual(['double']);
+            expect(doneEvents[2].path).toEqual(["double"]);
         });
 
-        test('computed:done 事件使用 store.on 监听', async () => {
+        test("computed:done 事件使用 store.on 监听", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore({
@@ -231,7 +231,7 @@ describe('Store Events', () => {
             });
 
             // 使用 store.on 监听事件
-            store.on('computed:done', (args) => {
+            store.on("computed:done", (args) => {
                 doneEvents.push({
                     id: args.id,
                     path: args.path,
@@ -253,21 +253,21 @@ describe('Store Events', () => {
             await delay(0);
             expect(doneEvents.length).toBe(1);
             expect(doneEvents[0].value).toBe(10);
-            expect(doneEvents[0].path).toEqual(['total']);
+            expect(doneEvents[0].path).toEqual(["total"]);
         });
 
-        test('computed:done 事件在异步计算函数执行成功后触发', async () => {
+        test("computed:done 事件在异步计算函数执行成功后触发", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore(
                 {
                     count: 1,
-                    asyncDouble: computed(
+                    asyncDouble: asyncComputed(
                         async (scope: any) => {
                             await delay(1);
                             return scope.count * 2;
                         },
-                        ['count'],
+                        ["count"],
                     ),
                 },
                 {
@@ -299,19 +299,19 @@ describe('Store Events', () => {
             expect(asyncValue.value).toBe(10);
             expect(doneEvents.length).toBe(2);
             expect(doneEvents[0].value).toBe(2);
-            expect(doneEvents[0].path).toEqual(['asyncDouble']);
+            expect(doneEvents[0].path).toEqual(["asyncDouble"]);
             expect(doneEvents[1].value).toBe(10);
-            expect(doneEvents[1].path).toEqual(['asyncDouble']);
+            expect(doneEvents[1].path).toEqual(["asyncDouble"]);
         });
 
-        test('computed:error 事件在计算函数抛出错误时触发', () => {
+        test("computed:error 事件在计算函数抛出错误时触发", () => {
             const errorEvents: any[] = [];
 
             const store = new AutoStore(
                 {
                     count: 1,
                     errorComputed: () => {
-                        throw new Error('计算错误');
+                        throw new Error("计算错误");
                     },
                 },
                 {
@@ -338,18 +338,18 @@ describe('Store Events', () => {
             expect(errorEvents.length).toBe(0);
         });
 
-        test('computed:error 事件在异步计算函数抛出错误时触发', async () => {
+        test("computed:error 事件在异步计算函数抛出错误时触发", async () => {
             const errorEvents: any[] = [];
 
             const store = new AutoStore(
                 {
                     count: 1,
-                    asyncError: computed(
+                    asyncError: asyncComputed(
                         async (scope: any) => {
                             await delay(1);
                             throw new Error(`异步计算错误: ${scope.count}`);
                         },
-                        ['count'],
+                        ["count"],
                     ),
                 },
                 {
@@ -378,28 +378,28 @@ describe('Store Events', () => {
 
             expect(asyncValue.error).toBeTruthy();
             expect(errorEvents.length).toBe(2);
-            expect(errorEvents[0].path).toEqual(['asyncError']);
-            expect(errorEvents[1].error.message).toBe('异步计算错误: 2');
+            expect(errorEvents[0].path).toEqual(["asyncError"]);
+            expect(errorEvents[1].error.message).toBe("异步计算错误: 2");
         });
 
-        test('computed:cancel 事件在异步计算被取消时触发', async () => {
+        test("computed:cancel 事件在异步计算被取消时触发", async () => {
             const cancelEvents: any[] = [];
 
             const store = new AutoStore(
                 {
                     count: 1,
-                    slowComputed: computed(
+                    slowComputed: asyncComputed(
                         async (scope: any, { abortSignal }) => {
                             // 模拟一个长时间运行的操作，期间会检查 abortSignal
                             for (let i = 0; i < 10; i++) {
                                 if (abortSignal.aborted) {
-                                    throw new Error('Aborted by user');
+                                    throw new Error("Aborted by user");
                                 }
                                 await delay(10);
                             }
                             return scope.count * 2;
                         },
-                        ['count'],
+                        ["count"],
                     ),
                 },
                 {
@@ -413,7 +413,7 @@ describe('Store Events', () => {
                 },
             );
 
-            store.on('computed:cancel', (args) => {
+            store.on("computed:cancel", (args) => {
                 cancelEvents.push({
                     fromEvent: true,
                     id: args.id,
@@ -435,21 +435,21 @@ describe('Store Events', () => {
 
             // 钩子和事件都应该被触发
             expect(cancelEvents.length).toBe(2);
-            expect(cancelEvents[0].path).toEqual(['slowComputed']);
-            expect(cancelEvents[0].reason).toBe('abort');
+            expect(cancelEvents[0].path).toEqual(["slowComputed"]);
+            expect(cancelEvents[0].reason).toBe("abort");
             expect(cancelEvents[1].fromEvent).toBe(true);
         });
     });
 
-    describe('watch 生命周期事件', () => {
-        test('watch:created 事件在 WatchObject 创建时触发', () => {
+    describe("watch 生命周期事件", () => {
+        test("watch:created 事件在 WatchObject 创建时触发", () => {
             const createdEvents: any[] = [];
 
             const store = new AutoStore({
                 count: 1,
             });
 
-            store.on('watch:created', (watchObject) => {
+            store.on("watch:created", (watchObject) => {
                 createdEvents.push({
                     id: watchObject.id,
                     path: watchObject.path,
@@ -463,7 +463,7 @@ describe('Store Events', () => {
                     ({ value }: any) => {
                         return value * 2;
                     },
-                    (path: string[]) => path[path.length - 1] === 'count',
+                    (path: string[]) => path[path.length - 1] === "count",
                 );
             });
 
@@ -472,18 +472,18 @@ describe('Store Events', () => {
             store.state.watchCount;
 
             expect(createdEvents.length).toBe(1);
-            expect(createdEvents[0].id).toBe('watchCount');
-            expect(createdEvents[0].path).toEqual(['watchCount']);
+            expect(createdEvents[0].id).toBe("watchCount");
+            expect(createdEvents[0].path).toEqual(["watchCount"]);
         });
 
-        test('watch:done 事件在 WatchObject 执行成功后触发', async () => {
+        test("watch:done 事件在 WatchObject 执行成功后触发", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore({
                 count: 1,
             });
 
-            store.on('watch:done', (args) => {
+            store.on("watch:done", (args) => {
                 doneEvents.push({
                     value: args.value,
                 });
@@ -496,7 +496,7 @@ describe('Store Events', () => {
                     ({ value }: any) => {
                         return value * 2;
                     },
-                    (path: string[]) => path[path.length - 1] === 'count',
+                    (path: string[]) => path[path.length - 1] === "count",
                 );
             });
 
@@ -512,14 +512,14 @@ describe('Store Events', () => {
             expect(doneEvents[0].value).toBe(10);
         });
 
-        test('watch:error 事件在 WatchObject 执行出错时触发', async () => {
+        test("watch:error 事件在 WatchObject 执行出错时触发", async () => {
             const errorEvents: any[] = [];
 
             const store = new AutoStore({
                 count: 1,
             });
 
-            store.on('watch:error', (args) => {
+            store.on("watch:error", (args) => {
                 errorEvents.push({
                     error: args.error instanceof Error ? args.error.message : args.error,
                 });
@@ -530,9 +530,9 @@ describe('Store Events', () => {
                 // @ts-expect-error
                 state.watchCount = watch(
                     () => {
-                        throw new Error('侦听器错误');
+                        throw new Error("侦听器错误");
                     },
-                    (path: string[]) => path[path.length - 1] === 'count',
+                    (path: string[]) => path[path.length - 1] === "count",
                 );
             });
 
@@ -545,19 +545,19 @@ describe('Store Events', () => {
             await delay(0);
 
             expect(errorEvents.length).toBe(1);
-            expect(errorEvents[0].error).toBe('侦听器错误');
+            expect(errorEvents[0].error).toBe("侦听器错误");
         });
     });
 
-    describe('observer 生命周期事件', () => {
-        test('observer:beforeCreate 事件在观察者创建前触发', () => {
+    describe("observer 生命周期事件", () => {
+        test("observer:beforeCreate 事件在观察者创建前触发", () => {
             const beforeCreateEvents: any[] = [];
 
             const store = new AutoStore({
                 count: 1,
             });
 
-            store.on('observer:beforeCreate', (descriptor) => {
+            store.on("observer:beforeCreate", (descriptor) => {
                 beforeCreateEvents.push({
                     type: descriptor.type,
                     async: descriptor.options.async,
@@ -574,18 +574,18 @@ describe('Store Events', () => {
             store.state.double;
 
             expect(beforeCreateEvents.length).toBe(1);
-            expect(beforeCreateEvents[0].type).toBe('computed');
+            expect(beforeCreateEvents[0].type).toBe("computed");
             expect(beforeCreateEvents[0].async).toBe(false);
         });
 
-        test('observer:created 事件在观察者创建后触发', () => {
+        test("observer:created 事件在观察者创建后触发", () => {
             const createdEvents: any[] = [];
 
             const store = new AutoStore({
                 count: 1,
             });
 
-            store.on('observer:created', (observerObject) => {
+            store.on("observer:created", (observerObject) => {
                 createdEvents.push({
                     path: observerObject.path,
                     id: observerObject.id,
@@ -602,23 +602,23 @@ describe('Store Events', () => {
             store.state.double;
 
             expect(createdEvents.length).toBe(1);
-            expect(createdEvents[0].path).toEqual(['double']);
+            expect(createdEvents[0].path).toEqual(["double"]);
             expect(createdEvents[0].id).toBeTruthy();
         });
 
-        test('observer:beforeCreate -> observer:created 的触发顺序', () => {
+        test("observer:beforeCreate -> observer:created 的触发顺序", () => {
             const events: string[] = [];
 
             const store = new AutoStore({
                 count: 1,
             });
 
-            store.on('observer:beforeCreate', () => {
-                events.push('beforeCreate');
+            store.on("observer:beforeCreate", () => {
+                events.push("beforeCreate");
             });
 
-            store.on('observer:created', () => {
-                events.push('created');
+            store.on("observer:created", () => {
+                events.push("created");
             });
 
             // 动态添加计算属性
@@ -628,12 +628,12 @@ describe('Store Events', () => {
             // @ts-expect-error
             store.state.double;
 
-            expect(events).toEqual(['beforeCreate', 'created']);
+            expect(events).toEqual(["beforeCreate", "created"]);
         });
     });
 
-    describe('validate 事件', () => {
-        test('validate 事件在验证时触发(无论成功或失败)', () => {
+    describe("validate 事件", () => {
+        test("validate 事件在验证时触发(无论成功或失败)", () => {
             const validateEvents: any[] = [];
 
             const store = new AutoStore(
@@ -642,7 +642,7 @@ describe('Store Events', () => {
                 },
                 {
                     onValidate(_newValue, _oldValue, _path) {
-                        if (_path[0] === 'age' && _newValue < 0) {
+                        if (_path[0] === "age" && _newValue < 0) {
                             return false;
                         }
                         return true;
@@ -650,7 +650,7 @@ describe('Store Events', () => {
                 },
             );
 
-            store.on('validate', (args) => {
+            store.on("validate", (args) => {
                 validateEvents.push({
                     path: args.path,
                     newValue: args.newValue,
@@ -671,25 +671,25 @@ describe('Store Events', () => {
             }).toThrow();
 
             expect(validateEvents.length).toBe(2);
-            expect(validateEvents[1].path).toEqual(['age']);
+            expect(validateEvents[1].path).toEqual(["age"]);
             expect(validateEvents[1].newValue).toBe(-5);
             expect(validateEvents[1].oldValue).toBe(30);
             expect(validateEvents[1].error).toBeDefined();
         });
 
-        test('validate 事件配合 validators 选项', () => {
+        test("validate 事件配合 validators 选项", () => {
             const validateEvents: any[] = [];
 
             const store = new AutoStore(
                 {
                     user: {
-                        name: 'John',
+                        name: "John",
                         age: 25,
                     },
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             if (newValue < 0 || newValue > 150) {
                                 return false;
                             }
@@ -699,7 +699,7 @@ describe('Store Events', () => {
                 },
             );
 
-            store.on('validate', (args) => {
+            store.on("validate", (args) => {
                 validateEvents.push({
                     path: args.path,
                     newValue: args.newValue,
@@ -716,11 +716,11 @@ describe('Store Events', () => {
             }).toThrow();
 
             expect(validateEvents.length).toBe(2);
-            expect(validateEvents[1].path).toEqual(['user', 'age']);
+            expect(validateEvents[1].path).toEqual(["user", "age"]);
             expect(validateEvents[1].newValue).toBe(200);
         });
 
-        test('validate 事件配合 onInvalid: pass 选项', () => {
+        test("validate 事件配合 onInvalid: pass 选项", () => {
             const validateEvents: any[] = [];
 
             const store = new AutoStore(
@@ -731,11 +731,11 @@ describe('Store Events', () => {
                     onValidate(_newValue, _oldValue, _path) {
                         return _newValue >= 0;
                     },
-                    onInvalid: 'pass', // 验证失败时继续写入，但仍然触发错误
+                    onInvalid: "pass", // 验证失败时继续写入，但仍然触发错误
                 },
             );
 
-            store.on('validate', (args) => {
+            store.on("validate", (args) => {
                 validateEvents.push({
                     path: args.path,
                     newValue: args.newValue,
@@ -747,7 +747,7 @@ describe('Store Events', () => {
 
             // 应该触发了验证错误事件
             expect(validateEvents.length).toBe(1);
-            expect(validateEvents[0].path).toEqual(['age']);
+            expect(validateEvents[0].path).toEqual(["age"]);
             expect(validateEvents[0].newValue).toBe(-5);
 
             // 但是值仍然被写入
@@ -755,8 +755,8 @@ describe('Store Events', () => {
         });
     });
 
-    describe('事件钩子函数选项', () => {
-        test('onComputedCreated 钩子在计算对象创建时调用', () => {
+    describe("事件钩子函数选项", () => {
+        test("onComputedCreated 钩子在计算对象创建时调用", () => {
             const createdComputeds: any[] = [];
 
             const store = new AutoStore(
@@ -777,10 +777,10 @@ describe('Store Events', () => {
             store.state.double;
 
             expect(createdComputeds.length).toBe(1);
-            expect(createdComputeds[0].path).toEqual(['double']);
+            expect(createdComputeds[0].path).toEqual(["double"]);
         });
 
-        test('onComputedDone 钩子在计算完成时调用', async () => {
+        test("onComputedDone 钩子在计算完成时调用", async () => {
             const doneArgs: any[] = [];
 
             const store = new AutoStore(
@@ -807,17 +807,17 @@ describe('Store Events', () => {
             // 非初始化时会触发 onComputedDone
             expect(doneArgs.length).toBe(1);
             expect(doneArgs[0].value).toBe(10);
-            expect(doneArgs[0].path).toEqual(['double']);
+            expect(doneArgs[0].path).toEqual(["double"]);
         });
 
-        test('onComputedError 钩子在计算出错时调用', () => {
+        test("onComputedError 钩子在计算出错时调用", () => {
             const errorArgs: any[] = [];
 
             const store = new AutoStore(
                 {
                     count: 1,
                     errorComputed: () => {
-                        throw new Error('测试错误');
+                        throw new Error("测试错误");
                     },
                 },
                 {
@@ -836,24 +836,24 @@ describe('Store Events', () => {
             expect(errorArgs.length).toBe(0);
         });
 
-        test('onComputedCancel 钩子在异步计算被取消时调用', async () => {
+        test("onComputedCancel 钩子在异步计算被取消时调用", async () => {
             const cancelArgs: any[] = [];
 
             const store = new AutoStore(
                 {
                     count: 1,
-                    slowComputed: computed(
+                    slowComputed: asyncComputed(
                         async (scope: any, { abortSignal }) => {
                             // 模拟一个长时间运行的操作，期间会检查 abortSignal
                             for (let i = 0; i < 10; i++) {
                                 if (abortSignal.aborted) {
-                                    throw new Error('Aborted by user');
+                                    throw new Error("Aborted by user");
                                 }
                                 await delay(10);
                             }
                             return scope.count * 2;
                         },
-                        ['count'],
+                        ["count"],
                     ),
                 },
                 {
@@ -866,7 +866,7 @@ describe('Store Events', () => {
                 },
             );
 
-            store.on('computed:cancel', (args) => {
+            store.on("computed:cancel", (args) => {
                 cancelArgs.push({
                     fromEvent: true,
                     reason: args.reason,
@@ -883,13 +883,13 @@ describe('Store Events', () => {
             await delay(20);
 
             expect(cancelArgs.length).toBe(2);
-            expect(cancelArgs[0].reason).toBe('abort');
-            expect(cancelArgs[1].reason).toBe('abort');
+            expect(cancelArgs[0].reason).toBe("abort");
+            expect(cancelArgs[1].reason).toBe("abort");
         });
     });
 
-    describe('复杂场景测试', () => {
-        test('计算依赖变化时的事件触发', async () => {
+    describe("复杂场景测试", () => {
+        test("计算依赖变化时的事件触发", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore({
@@ -897,7 +897,7 @@ describe('Store Events', () => {
                 double: (scope: any) => scope.count * 2,
             });
 
-            store.on('computed:done', (args) => {
+            store.on("computed:done", (args) => {
                 doneEvents.push({
                     path: args.path,
                     value: args.value,
@@ -921,7 +921,7 @@ describe('Store Events', () => {
             expect(value2).toBe(10);
         });
 
-        test('当更新状态值时，依赖计算属性重新计算触发 computed:done 事件', async () => {
+        test("当更新状态值时，依赖计算属性重新计算触发 computed:done 事件", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore({
@@ -930,7 +930,7 @@ describe('Store Events', () => {
                 total: (scope: any) => scope.price * scope.count,
             });
 
-            store.on('computed:done', (args) => {
+            store.on("computed:done", (args) => {
                 doneEvents.push({
                     id: args.id,
                     path: args.path,
@@ -952,7 +952,7 @@ describe('Store Events', () => {
             // 等待异步事件触发
             await delay(0);
             expect(doneEvents.length).toBe(1);
-            expect(doneEvents[0].path).toEqual(['total']);
+            expect(doneEvents[0].path).toEqual(["total"]);
             expect(doneEvents[0].value).toBe(30);
 
             // 再次修改 count
@@ -965,7 +965,7 @@ describe('Store Events', () => {
             expect(doneEvents[1].value).toBe(45);
         });
 
-        test('当更新状态值时，多个依赖计算属性重新计算触发 done 事件', async () => {
+        test("当更新状态值时，多个依赖计算属性重新计算触发 done 事件", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore({
@@ -975,7 +975,7 @@ describe('Store Events', () => {
                 quadruple: (scope: any) => scope.base * 4,
             });
 
-            store.on('computed:done', (args) => {
+            store.on("computed:done", (args) => {
                 doneEvents.push({
                     path: args.path,
                     value: args.value,
@@ -1003,9 +1003,9 @@ describe('Store Events', () => {
             expect(doneEvents.length).toBe(3);
 
             // 验证每个事件
-            const doubleEvents = doneEvents.filter((e) => e.path[0] === 'double');
-            const tripleEvents = doneEvents.filter((e) => e.path[0] === 'triple');
-            const quadrupleEvents = doneEvents.filter((e) => e.path[0] === 'quadruple');
+            const doubleEvents = doneEvents.filter((e) => e.path[0] === "double");
+            const tripleEvents = doneEvents.filter((e) => e.path[0] === "triple");
+            const quadrupleEvents = doneEvents.filter((e) => e.path[0] === "quadruple");
 
             expect(doubleEvents.length).toBe(1);
             expect(doubleEvents[0].value).toBe(40);

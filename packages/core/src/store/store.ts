@@ -99,6 +99,8 @@ import type {
     StateTracker,
     UpdateOptions,
 } from "./types";
+import { AsyncLiteComputedObject } from "../computed/liteAsync";
+import { asyncComputed } from "../computed";
 
 export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<StoreEvents> {
     private _data: ComputedState<State>;
@@ -248,6 +250,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                 {
                     ...this.options.sandbox?.context,
                     computed,
+                    asyncComputed,
                     watch,
                     configurable,
                     schema,
@@ -568,12 +571,22 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         let computedObj: ComputedObject | undefined;
         this.emit("observer:beforeCreate", descriptor as ComputedDescriptor);
         if (descriptor.options.async) {
-            // 异步计算
-            computedObj = new AsyncComputedObject(
-                this,
-                descriptor as ComputedDescriptor,
-                computedContext,
-            ) as unknown as ComputedObject;
+            //@ts-ignore 异步计算
+            if (descriptor.liteAsync) {
+                // 简单异步计算
+                computedObj = new AsyncLiteComputedObject(
+                    this,
+                    descriptor as ComputedDescriptor,
+                    computedContext,
+                ) as unknown as ComputedObject;
+            } else {
+                // 全功能异步计算
+                computedObj = new AsyncComputedObject(
+                    this,
+                    descriptor as ComputedDescriptor,
+                    computedContext,
+                ) as unknown as ComputedObject;
+            }
         } else {
             // 同步计算
             computedObj = new SyncComputedObject(

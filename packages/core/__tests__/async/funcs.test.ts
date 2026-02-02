@@ -8,7 +8,7 @@ import {
     afterAll,
     beforeEach,
     afterEach,
-} from 'bun:test';
+} from "bun:test";
 /**
  *
  * 测试计算属性的getter的第二个参数的各项功能
@@ -20,19 +20,13 @@ import {
  *
  */
 
-import { AutoStore, computed } from '../..';
-import { delay } from 'flex-tools/async/delay';
-import type { AsyncComputedObject } from '../../src/computed/async';
+import { AutoStore, asyncComputed } from "../..";
+import { delay } from "flex-tools/async/delay";
+import type { AsyncComputedObject } from "../../src/computed/async";
 
-describe('异步计算高级控制功能', () => {
-    // beforeEach(() => {
-    //     console.log("Fake timers not implemented in Bun yet")
-    //   })
-    //   afterEach(() => {
-    //     console.log("Restore mocks not implemented in Bun yet")
-    //   })
+describe("异步计算高级控制功能", () => {
     // 注意：重入时仅会被忽略而不是产生错误
-    test('控制计算函数的执行的不允许重入执行', () => {
+    test("控制计算函数的执行的不允许重入执行", () => {
         let cancelCount: number = 0;
         let calcCount: number = 0;
         return new Promise<void>((resolve) => {
@@ -40,13 +34,13 @@ describe('异步计算高级控制功能', () => {
                 {
                     price: 2,
                     count: 3,
-                    total: computed(
+                    total: asyncComputed(
                         async (scope) => {
                             calcCount++;
                             await delay(1000);
                             return scope.price * scope.count;
                         },
-                        ['price', 'count'],
+                        ["price", "count"],
                         {
                             reentry: false,
                         },
@@ -74,18 +68,18 @@ describe('异步计算高级控制功能', () => {
         });
     }, 100000);
 
-    test('通过abortSignal来中止计算函数的执行', () => {
+    test("通过abortSignal来中止计算函数的执行", () => {
         return new Promise<void>((resolve) => {
             const fn = mock();
             const store = new AutoStore(
                 {
                     price: 2,
                     count: 3,
-                    total: computed(
+                    total: asyncComputed(
                         async (scope, { abortSignal }) => {
                             return new Promise<number>((resolve) => {
                                 // 当接收到中止信号时，必须主动reject或者resolve，否则会被视为正常执行
-                                abortSignal.addEventListener('abort', () => {
+                                abortSignal.addEventListener("abort", () => {
                                     fn();
                                     resolve(0); // 重点: 当接收到中止信号 ，需要退出本应用
                                 });
@@ -95,8 +89,8 @@ describe('异步计算高级控制功能', () => {
                                 }, 100 * 1000);
                             });
                         },
-                        ['price', 'count'],
-                        { id: 'x' },
+                        ["price", "count"],
+                        { id: "x" },
                     ),
                 },
                 {
@@ -106,7 +100,7 @@ describe('异步计算高级控制功能', () => {
                     },
                     onComputedCreated: () => {
                         setTimeout(() => {
-                            (store.computedObjects.get('x') as AsyncComputedObject)!.value.cancel();
+                            (store.computedObjects.get("x") as AsyncComputedObject)!.value.cancel();
                         }, 10);
                     },
                 },
@@ -115,38 +109,38 @@ describe('异步计算高级控制功能', () => {
         });
     });
 
-    test('当执行计算函数出错时,自动重试5次', () => {
+    test("当执行计算函数出错时,自动重试5次", () => {
         let count = 0;
         return new Promise<void>((resolve) => {
             const store = new AutoStore({
                 price: 2,
                 count: 3,
-                total: computed(
+                total: asyncComputed(
                     async (scope) => {
                         count++;
                         if (count === 6) {
                             // 第一次执行失败，然后重试5次，共执行6次
                             resolve();
                         } else {
-                            throw new Error('error');
+                            throw new Error("error");
                         }
                         return scope.price * scope.count;
                     },
-                    ['price', 'count'],
-                    { id: 'x', retry: 5 },
+                    ["price", "count"],
+                    { id: "x", retry: 5 },
                 ),
             });
             store.state.total;
         });
     });
-    test('当执行计算函数出错时自动重试5次并且指定重试间隔', () => {
+    test("当执行计算函数出错时自动重试5次并且指定重试间隔", () => {
         let count = 0;
         let times: number[] = [];
         return new Promise<void>((resolve) => {
             const store = new AutoStore({
                 price: 2,
                 count: 3,
-                total: computed(
+                total: asyncComputed(
                     async (scope) => {
                         times.push(Date.now());
                         count++;
@@ -158,18 +152,18 @@ describe('异步计算高级控制功能', () => {
                             });
                             resolve();
                         } else {
-                            throw new Error('error');
+                            throw new Error("error");
                         }
                         return scope.price * scope.count;
                     },
-                    ['price', 'count'],
-                    { id: 'x', retry: [5, 100] },
+                    ["price", "count"],
+                    { id: "x", retry: [5, 100] },
                 ),
             });
             store.state.total;
         });
     });
-    test('当执行计算函数重试5次过程中读取retry值', () => {
+    test("当执行计算函数重试5次过程中读取retry值", () => {
         let count = 0;
         let retryValues: (number | undefined)[] = [];
         return new Promise<void>((resolve) => {
@@ -177,13 +171,13 @@ describe('异步计算高级控制功能', () => {
                 {
                     price: 2,
                     count: 3,
-                    total: computed(
+                    total: asyncComputed(
                         async () => {
                             count++;
-                            throw new Error('error');
+                            throw new Error("error");
                         },
-                        ['price', 'count'],
-                        { id: 'x', retry: [5, 100] },
+                        ["price", "count"],
+                        { id: "x", retry: [5, 100] },
                     ),
                 },
                 {
@@ -193,7 +187,7 @@ describe('异步计算高级控制功能', () => {
                     },
                 },
             );
-            store.watch(['total.retry'], () => {
+            store.watch(["total.retry"], () => {
                 retryValues.push(store.state.total.retry);
                 // 第一次运行出错，再重试5次，因此retry值为5,4,3,2,1,0
                 if (retryValues.length === 7) {
@@ -205,35 +199,29 @@ describe('异步计算高级控制功能', () => {
     });
 });
 
-describe('异步计算属性的超时功能', () => {
-    // beforeEach(() => {
-    //     console.log("Fake timers not implemented in Bun yet")
-    //   })
-    // afterEach(() => {
-    //     console.log("Restore mocks not implemented in Bun yet")
-    // })
-    test('当执行超时的默认行为', () => {
+describe("异步计算属性的超时功能", () => {
+    test("当执行超时的默认行为", () => {
         // 执行时loading=true,然后超时后自动设置loading=false,error=TIMEOUT
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
                     price: 2,
                     count: 3,
-                    total: computed(
+                    total: asyncComputed(
                         async (scope) => {
                             await delay(500);
                             return scope.price * scope.count;
                         },
-                        ['price', 'count'],
-                        { id: 'x', timeout: 100 },
+                        ["price", "count"],
+                        { id: "x", timeout: 100 },
                     ),
                 },
                 {
                     onComputedError: ({ error }) => {
-                        //@ts-expect-error
-                        expect(error).toBe('TIMEOUT');
+                        //@ts-ignore
+                        expect(error).toBe("TIMEOUT");
                         expect(store.state.total.loading).toBe(false);
-                        expect(store.state.total.error).toBe('TIMEOUT');
+                        expect(store.state.total.error).toBe("TIMEOUT");
                         resolve();
                     },
                 },
@@ -241,8 +229,7 @@ describe('异步计算属性的超时功能', () => {
             store.state.total;
         });
     });
-    test('当执行超时并启用倒计时', () => {
-        console.log('Fake timers not implemented in Bun yet');
+    test("当执行超时并启用倒计时", () => {
         // 执行时loading=true,然后超时后自动设置loading=false,error=TIMEOUT
         // 本例中配置timeout=[5*1000,5]，代表timeout值会从5递减到0
         const timeouts: any[] = [];
@@ -251,30 +238,30 @@ describe('异步计算属性的超时功能', () => {
                 {
                     price: 2,
                     count: 3,
-                    total: computed(
+                    total: asyncComputed(
                         async (scope) => {
                             await delay(10000);
                             return scope.price * scope.count;
                         },
-                        ['price', 'count'],
-                        { id: 'x', timeout: [5 * 1000, 5] },
+                        ["price", "count"],
+                        { id: "x", timeout: [5 * 1000, 5] },
                     ),
                 },
                 {
                     lazy: false,
                     onComputedError: ({ error }) => {
-                        //@ts-expect-error
-                        expect(error).toBe('TIMEOUT');
+                        //@ts-ignore
+                        expect(error).toBe("TIMEOUT");
                         expect(store.state.total.loading).toBe(false);
                         expect(store.state.total.timeout).toBe(0);
-                        expect(store.state.total.error).toBe('TIMEOUT');
+                        expect(store.state.total.error).toBe("TIMEOUT");
                         resolve();
                     },
                 },
             );
             // timeouts
-            store.watch(['total.timeout'], ({ path }) => {
-                if (path.some((p) => p[0] === 'total' && p[1] === 'timeout')) {
+            store.watch(["total.timeout"], ({ path }) => {
+                if (path.some((p) => p[0] === "total" && p[1] === "timeout")) {
                     timeouts.push(store.state.total.timeout);
                     // console.log("countdown=",timeouts)
                 }
@@ -284,34 +271,34 @@ describe('异步计算属性的超时功能', () => {
                     // 此时会执行一次将timeout赋值为5,这时候watch还没有开始，所以不会记录到timeouts中
                     expect(timeouts).toEqual([4, 3, 2, 1, 0]);
                     expect(store.state.total.loading).toBe(false);
-                    expect(store.state.total.error).toBe('TIMEOUT');
+                    expect(store.state.total.error).toBe("TIMEOUT");
                     resolve();
-                    console.log('Restore mocks not implemented in Bun yet');
+                    console.log("Restore mocks not implemented in Bun yet");
                 }
                 resolve();
             });
-            console.log('Run all timers not implemented in Bun yet');
+            console.log("Run all timers not implemented in Bun yet");
         });
     }, 500000);
 });
 
-describe('异步计算进度条功能', () => {
-    test('通过getProgressbar更新进度值', () => {
+describe("异步计算进度条功能", () => {
+    test("通过getProgressbar更新进度值", () => {
         const progresses: number[] = [];
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
-                    data: computed(
+                    data: asyncComputed(
                         async (_scope, { getProgressbar }) => {
                             const pbar = getProgressbar!({ max: 100, min: 0, value: 0 });
                             for (let i = 0; i <= 100; i += 10) {
                                 pbar.value(i);
                                 await delay(50);
                             }
-                            return 'done';
+                            return "done";
                         },
                         [],
-                        { id: 'data' },
+                        { id: "data" },
                     ),
                 },
                 {
@@ -326,7 +313,7 @@ describe('异步计算进度条功能', () => {
             );
 
             // 监听进度值的变化 - 使用字符串路径而不是数组
-            store.watch('data.*', () => {
+            store.watch("data.*", () => {
                 progresses.push(store.state.data.progress);
             });
 
@@ -335,11 +322,11 @@ describe('异步计算进度条功能', () => {
         });
     });
 
-    test('进度条值被限制在min和max范围内', () => {
+    test("进度条值被限制在min和max范围内", () => {
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
-                    data: computed(
+                    data: asyncComputed(
                         async (_scope, { getProgressbar }) => {
                             const pbar = getProgressbar!({ max: 50, min: 10 });
                             // 测试超出范围的值
@@ -352,10 +339,10 @@ describe('异步计算进度条功能', () => {
                             pbar.value(30); // 正常范围内的值
                             await delay(10);
                             expect(store.state.data.progress).toBe(30);
-                            return 'done';
+                            return "done";
                         },
                         [],
-                        { id: 'data' },
+                        { id: "data" },
                     ),
                 },
                 {
@@ -370,22 +357,22 @@ describe('异步计算进度条功能', () => {
         });
     });
 
-    test('使用progress.end()完成进度条', () => {
+    test("使用progress.end()完成进度条", () => {
         const progresses: number[] = [];
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
-                    data: computed(
+                    data: asyncComputed(
                         async (_scope, { getProgressbar }) => {
                             const pbar = getProgressbar!({ max: 100, min: 0, value: 0 });
                             pbar.value(50);
                             await delay(50);
                             pbar.end(); // 应该将进度设置为max=100
                             await delay(50);
-                            return 'done';
+                            return "done";
                         },
                         [],
-                        { id: 'data' },
+                        { id: "data" },
                     ),
                 },
                 {
@@ -398,7 +385,7 @@ describe('异步计算进度条功能', () => {
             );
 
             // 监听进度值的变化
-            store.watch('data.*', () => {
+            store.watch("data.*", () => {
                 progresses.push(store.state.data.progress);
             });
 
@@ -407,19 +394,19 @@ describe('异步计算进度条功能', () => {
         });
     });
 
-    test('进度条初始值设置为指定值', () => {
+    test("进度条初始值设置为指定值", () => {
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
-                    data: computed(
+                    data: asyncComputed(
                         async (_scope, { getProgressbar }) => {
                             const pbar = getProgressbar!({ max: 100, min: 0, value: 30 });
                             // 初始值应该是30
                             await delay(50);
-                            return 'done';
+                            return "done";
                         },
                         [],
-                        { id: 'data' },
+                        { id: "data" },
                     ),
                 },
                 {
@@ -436,22 +423,22 @@ describe('异步计算进度条功能', () => {
         });
     });
 
-    test('默认进度条范围为0-100', () => {
+    test("默认进度条范围为0-100", () => {
         const progresses: number[] = [];
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
-                    data: computed(
+                    data: asyncComputed(
                         async (_scope, { getProgressbar }) => {
                             const pbar = getProgressbar!(); // 使用默认参数
                             pbar.value(50);
                             await delay(50);
                             pbar.end();
                             await delay(50);
-                            return 'done';
+                            return "done";
                         },
                         [],
-                        { id: 'data' },
+                        { id: "data" },
                     ),
                 },
                 {
@@ -466,7 +453,7 @@ describe('异步计算进度条功能', () => {
             );
 
             // 监听进度值的变化
-            store.watch('data.*', () => {
+            store.watch("data.*", () => {
                 progresses.push(store.state.data.progress);
             });
 
@@ -475,22 +462,22 @@ describe('异步计算进度条功能', () => {
         });
     });
 
-    test('在长时间计算中实时更新进度', () => {
+    test("在长时间计算中实时更新进度", () => {
         let lastProgress = -1;
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
-                    task: computed(
+                    task: asyncComputed(
                         async (_scope, { getProgressbar }) => {
                             const pbar = getProgressbar!({ max: 5, min: 0 });
                             for (let i = 1; i <= 5; i++) {
                                 await delay(30);
                                 pbar.value(i);
                             }
-                            return 'completed';
+                            return "completed";
                         },
                         [],
-                        { id: 'task' },
+                        { id: "task" },
                     ),
                 },
                 {
@@ -498,14 +485,14 @@ describe('异步计算进度条功能', () => {
                         // 验证最终状态
                         expect(store.state.task.progress).toBe(5);
                         expect(store.state.task.loading).toBe(false);
-                        expect(store.state.task.value).toBe('completed');
+                        expect(store.state.task.value).toBe("completed");
                         resolve();
                     },
                 },
             );
 
             // 监听进度值，验证进度递增
-            store.watch(['task.progress'], () => {
+            store.watch(["task.progress"], () => {
                 const current = store.state.task.progress;
                 expect(current).toBeGreaterThanOrEqual(lastProgress);
                 lastProgress = current;
@@ -516,22 +503,22 @@ describe('异步计算进度条功能', () => {
         });
     });
 
-    test('进度值在计算错误时也会更新', () => {
+    test("进度值在计算错误时也会更新", () => {
         const progresses: number[] = [];
         return new Promise<void>((resolve) => {
             const store = new AutoStore(
                 {
-                    data: computed(
+                    data: asyncComputed(
                         async (_scope, { getProgressbar }) => {
                             const pbar = getProgressbar!({ max: 100, min: 0 });
                             pbar.value(30);
                             await delay(50);
                             pbar.value(60);
                             await delay(50);
-                            throw new Error('Calculation failed');
+                            throw new Error("Calculation failed");
                         },
                         [],
-                        { id: 'data' },
+                        { id: "data" },
                     ),
                 },
                 {
@@ -546,7 +533,7 @@ describe('异步计算进度条功能', () => {
             );
 
             // 监听进度值的变化
-            store.watch('data.*', () => {
+            store.watch("data.*", () => {
                 progresses.push(store.state.data.progress);
             });
 
@@ -555,7 +542,7 @@ describe('异步计算进度条功能', () => {
         });
     });
 
-    test('多次执行计算时进度值重新开始', () => {
+    test("多次执行计算时进度值重新开始", () => {
         const firstRunProgresses: number[] = [];
         const secondRunProgresses: number[] = [];
         let runCount = 0;
@@ -564,7 +551,7 @@ describe('异步计算进度条功能', () => {
             const store = new AutoStore(
                 {
                     trigger: 0,
-                    data: computed(
+                    data: asyncComputed(
                         async (scope, { getProgressbar }) => {
                             const pbar = getProgressbar!({ max: 50, min: 0 });
                             for (let i = 0; i <= 50; i += 10) {
@@ -573,8 +560,8 @@ describe('异步计算进度条功能', () => {
                             }
                             return `done-${scope.trigger}`;
                         },
-                        ['trigger'],
-                        { id: 'data' },
+                        ["trigger"],
+                        { id: "data" },
                     ),
                 },
                 {
@@ -599,7 +586,7 @@ describe('异步计算进度条功能', () => {
             );
 
             // 监听进度值的变化
-            store.watch('data.*', () => {
+            store.watch("data.*", () => {
                 if (runCount === 0) {
                     firstRunProgresses.push(store.state.data.progress);
                 } else {

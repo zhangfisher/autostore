@@ -2,19 +2,19 @@ import type {
     AsyncComputedGetter,
     ComputedDescriptorBuilder,
     ComputedGetter,
-} from '../computed/types';
-import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from '../consts';
-import type { Dict } from '../types';
-import type { WatchDescriptorBuilder } from '../watch/types';
+} from "../computed/types";
+import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
+import type { Dict } from "../types";
+import type { WatchDescriptorBuilder } from "../watch/types";
 
-export type ObserverType = 'watch' | 'computed' | 'schema';
+export type ObserverType = "watch" | "computed" | "schema";
 
 export enum ObserverScopeRef {
-    Root = 'ROOT',
-    Current = 'CURRENT',
-    Parent = 'PARENT',
-    Depends = 'DEPENDS', // 指向依赖数组
-    Self = 'SELF', // 指向自身，默认值
+    Root = "ROOT",
+    Current = "CURRENT",
+    Parent = "PARENT",
+    Depends = "DEPENDS", // 指向依赖数组
+    Self = "SELF", // 指向自身，默认值
 }
 
 // 动态依赖匹配
@@ -22,16 +22,16 @@ export type ObserverDependMatcher<Value = any> = (path: string[], value: Value) 
 
 export type ObserverDepends = (string | string[])[];
 
-export type ObserverScope = string | string[] | 'SELF' | 'CURRENT' | 'ROOT' | 'PARENT';
+export type ObserverScope = string | string[] | "SELF" | "CURRENT" | "ROOT" | "PARENT";
 
 export type ObserverDescriptorGetter<Value, Scope> =
     | ((scope: Scope, args: any) => Value)
     | ((scope: Scope, args: any) => Promise<Value>);
 
 export interface ObserverDescriptor<
-    T extends string, //, = string,
-    Value, // = any,
-    Scope, //= any,
+    T extends string,
+    Value,
+    Scope,
     Getter = ObserverDescriptorGetter<Value, Scope>,
     Options extends ObserverOptions<Value> = ObserverOptions<Value>,
 > {

@@ -1,22 +1,23 @@
-import { describe, test, it, expect } from 'bun:test';
-import type { Equal, Expect } from '@type-challenges/utils';
-import { AutoStore, computed, RuntimeComputedOptions } from '../../src';
+import { describe, test, it, expect } from "bun:test";
+import type { Equal, Expect } from "@type-challenges/utils";
+import { AutoStore, computed, RuntimeComputedOptions } from "../../src";
+import { asyncComputed } from "../../src/computed/asyncComputed";
 
 /**
  * Computed 基础类型测试
  * 测试计算属性的类型推断和类型转换
  */
-describe('Computed 基础类型', () => {
-    test('同步计算返回类型推断', () => {
+describe("Computed 基础类型", () => {
+    test("同步计算返回类型推断", () => {
         const store = new AutoStore({
             // 基础类型计算
             count: 0,
             double: (scope: any) => scope.count * 2,
 
             // 字符串计算
-            firstName: 'zhang',
-            lastName: 'san',
-            fullName: (scope: any) => scope.firstName + ' ' + scope.lastName,
+            firstName: "zhang",
+            lastName: "san",
+            fullName: (scope: any) => scope.firstName + " " + scope.lastName,
 
             // 布尔值计算
             admin: true,
@@ -40,7 +41,7 @@ describe('Computed 基础类型', () => {
         >;
     });
 
-    test('异步计算返回类型推断', () => {
+    test("异步计算返回类型推断", () => {
         const store = new AutoStore({
             // 异步计算返回 AsyncComputedValue
             value: computed(async () => {
@@ -49,23 +50,43 @@ describe('Computed 基础类型', () => {
 
             // 异步计算字符串
             name: computed(async () => {
-                return 'test';
+                return "test";
             }, []),
 
             // 异步计算对象
             user: computed(async () => {
                 return {
                     id: 1,
-                    name: '张三',
+                    name: "张三",
                 };
+            }, []),
+            age: asyncComputed(async () => {
+                return 18;
             }, []),
         });
 
         type StateType = typeof store.state;
-        type ValueType = StateType['value'];
-        type Case1 = Expect<
+        type ValueType = StateType["value"];
+        type NameType = StateType["name"];
+        type UserType = StateType["user"];
+        type AgeType = StateType["age"];
+
+        type Case1 = Expect<Equal<ValueType, number>>;
+
+        type Case2 = Expect<Equal<StateType["name"], string>>;
+
+        type Case3 = Expect<
             Equal<
-                ValueType,
+                StateType["user"],
+                {
+                    id: number;
+                    name: string;
+                }
+            >
+        >;
+        type Case4 = Expect<
+            Equal<
+                AgeType,
                 {
                     loading: boolean;
                     progress: number;
@@ -78,50 +99,15 @@ describe('Computed 基础类型', () => {
                 }
             >
         >;
-
-        type Case2 = Expect<
-            Equal<
-                StateType['name'],
-                {
-                    loading: boolean;
-                    progress: number;
-                    timeout: number;
-                    error: any;
-                    retry: number;
-                    value: string;
-                    run: (options?: RuntimeComputedOptions) => void;
-                    cancel: () => void;
-                }
-            >
-        >;
-
-        type Case3 = Expect<
-            Equal<
-                StateType['user'],
-                {
-                    loading: boolean;
-                    progress: number;
-                    timeout: number;
-                    error: any;
-                    retry: number;
-                    value: {
-                        id: number;
-                        name: string;
-                    };
-                    run: (options?: RuntimeComputedOptions) => void;
-                    cancel: () => void;
-                }
-            >
-        >;
     });
 
-    test('嵌套计算属性类型', () => {
+    test("嵌套计算属性类型", () => {
         const store = new AutoStore({
             user: {
-                firstName: 'zhang',
-                lastName: 'san',
+                firstName: "zhang",
+                lastName: "san",
                 fullName: (scope: any) => scope.firstName + scope.lastName,
-                displayName: (scope: any) => 'Mr. ' + scope.fullName,
+                displayName: (scope: any) => "Mr. " + scope.fullName,
             },
         });
 
@@ -145,13 +131,13 @@ describe('Computed 基础类型', () => {
 /**
  * AsyncComputedValue 类型测试
  */
-describe('AsyncComputedValue 类型', () => {
-    test('基础 AsyncComputedValue 类型', () => {
+describe("AsyncComputedValue 类型", () => {
+    test("基础 AsyncComputedValue 类型", () => {
         const store = new AutoStore({
-            data: computed(async () => {
+            data: asyncComputed(async () => {
                 return {
                     id: 1,
-                    name: '张三',
+                    name: "张三",
                 };
             }, []),
         });
@@ -163,24 +149,24 @@ describe('AsyncComputedValue 类型', () => {
         type Case = Expect<
             Equal<
                 keyof AsyncValue,
-                'loading' | 'progress' | 'timeout' | 'error' | 'retry' | 'value' | 'run' | 'cancel'
+                "loading" | "progress" | "timeout" | "error" | "retry" | "value" | "run" | "cancel"
             >
         >;
 
         // value 属性应该是原始类型
-        type ValueType = AsyncValue['value'];
+        type ValueType = AsyncValue["value"];
         type Case2 = Expect<Equal<ValueType, { id: number; name: string }>>;
 
         // loading 应该是 boolean
-        type LoadingType = AsyncValue['loading'];
+        type LoadingType = AsyncValue["loading"];
         type Case3 = Expect<Equal<LoadingType, boolean>>;
 
         // run 方法签名
-        type RunType = AsyncValue['run'];
+        type RunType = AsyncValue["run"];
         type Case4 = Expect<Equal<RunType, (options?: RuntimeComputedOptions) => void>>;
 
         // cancel 方法签名
-        type CancelType = AsyncValue['cancel'];
+        type CancelType = AsyncValue["cancel"];
         type Case5 = Expect<Equal<CancelType, () => void>>;
     });
 });

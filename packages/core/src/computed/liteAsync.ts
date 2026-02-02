@@ -231,16 +231,16 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
      *        });
      *
      */
-    protected getDepends() {
-        const depends = super.getDepends();
-        return depends.map((dep) => {
-            if (dep.length === 0) return dep;
-            for (const obj of this.store.computedObjects.values()) {
-                if (isPathEq(obj.path, dep) && obj.async) {
-                    return [`${dep.join(this.store.options.delimiter)}.value`];
-                }
-            }
-            return dep;
-        }) as unknown as string[][];
-    }
+    // protected getDepends() {
+    //     const depends = super.getDepends();
+    //     return depends.map((dep) => {
+    //         if (dep.length === 0) return dep;
+    //         for (const obj of this.store.computedObjects.values()) {
+    //             if (isPathEq(obj.path, dep) && obj.async) {
+    //                 return dep; //[`${dep.join(this.store.options.delimiter)}.value`];
+    //             }
+    //         }
+    //         return dep;
+    //     }) as unknown as string[][];
+    // }
 }

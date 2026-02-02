@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { AutoStore, computed, createShadow } from "../src";
+import { asyncComputed, AutoStore, computed, createShadow } from "../src";
 
 const delay = (ms: number = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -137,8 +137,12 @@ describe("Shadow Store同步计算属性", () => {
         // 不能像原store那样访问其他shadow store的计算属性
         const shadowStore = store.shadow({
             fullName: computed((scope: any) => `${scope.user.firstName} ${scope.user.lastName}`),
-            greet: computed((scope: any) => `Hello, ${scope.user.firstName} ${scope.user.lastName}`),
-            shout: computed((scope: any) => `Hello, ${scope.user.firstName} ${scope.user.lastName}!!!`),
+            greet: computed(
+                (scope: any) => `Hello, ${scope.user.firstName} ${scope.user.lastName}`,
+            ),
+            shout: computed(
+                (scope: any) => `Hello, ${scope.user.firstName} ${scope.user.lastName}!!!`,
+            ),
         });
         expect(shadowStore.state.fullName).toBe("zhang fisher");
         expect(shadowStore.state.greet).toBe("Hello, zhang fisher");
@@ -155,10 +159,10 @@ describe("Shadow Store同步计算属性", () => {
             count: 3,
         });
         const shadowStore = store.shadow({
-            total: computed(
-                (scope: any) => scope.price * scope.count,
-                { id: "total", enable: false },
-            ),
+            total: computed((scope: any) => scope.price * scope.count, {
+                id: "total",
+                enable: false,
+            }),
         });
         expect(shadowStore.state.total).toBe(30);
         store.state.count = 4;
@@ -184,7 +188,10 @@ describe("Shadow Store同步计算属性", () => {
         const shadowStore = store.shadow({
             userCount: computed((scope: any) => scope.data.users.length),
             avgAge: computed((scope: any) => {
-                const total = scope.data.users.reduce((sum: number, user: any) => sum + user.age, 0);
+                const total = scope.data.users.reduce(
+                    (sum: number, user: any) => sum + user.age,
+                    0,
+                );
                 return total / scope.data.users.length;
             }),
         });
@@ -203,7 +210,7 @@ describe("Shadow Store异步计算属性", () => {
             count: 3,
         });
         const shadowStore = store.shadow({
-            total: computed(
+            total: asyncComputed(
                 async (scope: any) => {
                     await delay(50);
                     return scope.price * scope.count;
@@ -224,7 +231,7 @@ describe("Shadow Store异步计算属性", () => {
             userId: 1,
         });
         const shadowStore = store.shadow({
-            userInfo: computed(
+            userInfo: asyncComputed(
                 async (scope: any) => {
                     computeCount++;
                     await delay(50);
@@ -250,7 +257,7 @@ describe("Shadow Store异步计算属性", () => {
             price: 10,
         });
         const shadowStore = store.shadow({
-            total: computed(
+            total: asyncComputed(
                 async (scope: any) => {
                     count++;
                     await delay(50);
@@ -276,7 +283,7 @@ describe("Shadow Store异步计算属性", () => {
             price: 10,
         });
         const shadowStore = store.shadow({
-            total: computed(
+            total: asyncComputed(
                 async (scope: any) => {
                     count++;
                     await delay(50);
@@ -326,7 +333,9 @@ describe("Shadow Store的watch功能", () => {
         });
         const shadowStore = store.shadow({
             itemCount: computed((scope: any) => scope.items.length),
-            itemSum: computed((scope: any) => scope.items.reduce((a: number, b: number) => a + b, 0)),
+            itemSum: computed((scope: any) =>
+                scope.items.reduce((a: number, b: number) => a + b, 0),
+            ),
         });
         const countChanges: number[] = [];
         const sumChanges: number[] = [];
@@ -401,7 +410,7 @@ describe("Shadow Store的复杂场景", () => {
         });
         const shadowStore = store.shadow({
             syncValue: computed((scope: any) => scope.base * scope.rate),
-            asyncValue: computed(
+            asyncValue: asyncComputed(
                 async (scope: any) => {
                     await delay(50);
                     return scope.base * scope.rate * 2;

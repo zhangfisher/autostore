@@ -3,7 +3,8 @@
     "plugins": null,
     "categories": {},
     "rules": {
-        "typescript/no-floating-promises": "off"
+        "typescript/no-floating-promises": "off",
+        "typescript/no-redundant-type-constituents": "off"
     },
     "settings": {
         "jsx-a11y": {

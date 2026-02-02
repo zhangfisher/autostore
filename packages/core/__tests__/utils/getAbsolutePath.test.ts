@@ -45,9 +45,9 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["x", "y", "a", "b", "c"]);
+            // './' 表示父级，所以从 ['x', 'y'] 的父级 ['x'] 开始
+            expect(result).toEqual(["x", "a", "b", "c"]);
         });
-
         it("数组第一个元素是 '../' 相对路径时应该解析", () => {
             // Arrange
             const path = ["../a", "b", "c"];
@@ -57,7 +57,8 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["x", "a", "b", "c"]);
+            // '../' 移除最后两个元素，从 ['x', 'y'] 变成 []
+            expect(result).toEqual(["a", "b", "c"]);
         });
 
         it("数组第一个元素是特殊关键字时应该解析", () => {
@@ -69,7 +70,8 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["x", "y", "a", "b"]);
+            // CURRENT 表示父级，所以从 ['x', 'y'] 的父级 ['x'] 开始
+            expect(result).toEqual(["x", "a", "b"]);
         });
 
         it("数组第一个元素是相对路径但没有 basePath 时应该返回原数组", () => {
@@ -84,7 +86,7 @@ describe("getAbsolutePath", () => {
         });
     });
 
-    describe("相对路径 './' (当前目录)", () => {
+    describe("相对路径 './' (同级/父级目录)", () => {
         it("应该正确解析 './x' 相对路径", () => {
             // Arrange
             const path = "./x";
@@ -94,7 +96,8 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["a", "b", "c", "x"]);
+            // './' 表示父级，从 ['a', 'b', 'c'] 的父级 ['a', 'b'] 开始
+            expect(result).toEqual(["a", "b", "x"]);
         });
 
         it("应该正确解析 './' (空相对部分)", () => {
@@ -106,7 +109,8 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["a", "b", "c"]);
+            // './' 表示父级，返回 ['a', 'b']
+            expect(result).toEqual(["a", "b"]);
         });
 
         it("应该正确解析 './x/y' 多级相对路径", () => {
@@ -118,8 +122,9 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
+            // './' 表示父级，从 ['a', 'b'] 开始，然后添加 'x/y'
             // PATH_DELIMITER 是 '.'，所以 'x/y' 不会按 '/' 分割
-            expect(result).toEqual(["a", "b", "c", "x/y"]);
+            expect(result).toEqual(["a", "b", "x/y"]);
         });
 
         it("单层 basePath 解析 './x'", () => {
@@ -131,7 +136,34 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["root", "x"]);
+            // './' 表示父级，从 ['root'] 的父级 [] 开始，添加 'x'
+            expect(result).toEqual(["x"]);
+        });
+
+        it("空 basePath 解析 './x' (根目录)", () => {
+            // Arrange
+            const path = "./x";
+            const basePath: string[] = [];
+
+            // Act
+            const result = getAbsolutePath(path, basePath);
+
+            // Assert
+            // './' 表示父级，根的父级是根本身，所以返回 ['x']
+            expect(result).toEqual(["x"]);
+        });
+
+        it("空 basePath 解析 './' (根目录)", () => {
+            // Arrange
+            const path = "./";
+            const basePath: string[] = [];
+
+            // Act
+            const result = getAbsolutePath(path, basePath);
+
+            // Assert
+            // './' 表示父级，根的父级是根本身
+            expect(result).toEqual([]);
         });
     });
 
@@ -145,8 +177,8 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            // ../x 表示在父级路径下添加 x，父级是 ['a', 'b']
-            expect(result).toEqual(["a", "b", "x"]);
+            // '../' 移除最后两个元素，从 ['a', 'b', 'c'] 变成 ['a']，然后添加 'x'
+            expect(result).toEqual(["a", "x"]);
         });
 
         it("应该正确解析 '../' (空相对部分)", () => {
@@ -158,7 +190,8 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["a", "b"]);
+            // '../' 移除最后两个元素，从 ['a', 'b', 'c'] 变成 ['a']
+            expect(result).toEqual(["a"]);
         });
 
         it("应该正确解析 '../../x' 多级父路径", () => {
@@ -170,8 +203,9 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            // ../../x 表示在上上级路径下添加 x，上上级是 ['a']
-            expect(result).toEqual(["a", "x"]);
+            // 第一级 '../'：['a', 'b', 'c'] -> ['a']
+            // 第二级 '../'：['a'] -> undefined (超出根目录)
+            expect(result).toBeUndefined();
         });
 
         it("应该正确解析 '../../../x' 超出根目录", () => {
@@ -183,8 +217,8 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            // 三级 '../' 从 ['a', 'b', 'c'] 回溯到 []，然后添加 'x'
-            expect(result).toEqual(["x"]);
+            // 超出根目录，返回 undefined
+            expect(result).toBeUndefined();
         });
 
         it("应该正确解析 '../../../../x' 严重超出根目录返回 undefined", () => {
@@ -196,7 +230,7 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            // 四级 '../' 超出根目录，返回 undefined
+            // 超出根目录，返回 undefined
             expect(result).toBeUndefined();
         });
 
@@ -209,14 +243,53 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            // ../x/y 表示在父级路径下添加 x/y，父级是 ['a', 'b']
+            // '../' 移除最后两个元素，从 ['a', 'b', 'c'] 变成 ['a']，然后添加 'x/y'
             // PATH_DELIMITER 是 '.'，所以 'x/y' 不会按 '/' 分割
-            expect(result).toEqual(["a", "b", "x/y"]);
+            expect(result).toEqual(["a", "x/y"]);
+        });
+
+        it("应该正确解析两层 basePath 的 '../x'", () => {
+            // Arrange
+            const path = "../x";
+            const basePath = ["data", "title"];
+
+            // Act
+            const result = getAbsolutePath(path, basePath);
+
+            // Assert
+            // '../' 移除最后两个元素，从 ['data', 'title'] 变成 []
+            expect(result).toEqual(["x"]);
+        });
+
+        it("应该正确解析两层 basePath 的 '../'", () => {
+            // Arrange
+            const path = "../";
+            const basePath = ["data", "title"];
+
+            // Act
+            const result = getAbsolutePath(path, basePath);
+
+            // Assert
+            // '../' 移除最后两个元素，从 ['data', 'title'] 变成 []
+            expect(result).toEqual([]);
+        });
+
+        it("应该正确解析单层 basePath 的 '../x' 返回 undefined", () => {
+            // Arrange
+            const path = "../x";
+            const basePath = ["root"];
+
+            // Act
+            const result = getAbsolutePath(path, basePath);
+
+            // Assert
+            // 单层 basePath 移除两个元素会超出根目录
+            expect(result).toBeUndefined();
         });
     });
 
     describe("特殊关键字", () => {
-        it("CURRENT 应该返回当前路径", () => {
+        it("CURRENT 应该返回父级路径", () => {
             // Arrange
             const path = "CURRENT";
             const basePath = ["a", "b", "c"];
@@ -225,7 +298,7 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["a", "b", "c"]);
+            expect(result).toEqual(["a", "b"]);
         });
 
         it("SELF 应该返回当前路径", () => {
@@ -256,6 +329,18 @@ describe("getAbsolutePath", () => {
             // Arrange
             const path = "PARENT";
             const basePath = ["root"];
+
+            // Act
+            const result = getAbsolutePath(path, basePath);
+
+            // Assert
+            expect(result).toEqual([]);
+        });
+
+        it("CURRENT 在空路径时应该返回空数组", () => {
+            // Arrange
+            const path = "CURRENT";
+            const basePath: string[] = [];
 
             // Act
             const result = getAbsolutePath(path, basePath);
@@ -368,8 +453,9 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
+            // './' 表示父级，从 ['store', 'users', 'items'] 的父级 ['store', 'users'] 开始
             // PATH_DELIMITER 是 '.'，所以 'child/grandchild' 不会按 '/' 分割
-            expect(result).toEqual(["store", "users", "items", "child/grandchild"]);
+            expect(result).toEqual(["store", "users", "child/grandchild"]);
         });
 
         it("应该正确处理多层父路径回溯", () => {
@@ -381,7 +467,10 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["a", "b", "sibling"]);
+            // 第一级 '../'：['a', 'b', 'c', 'd', 'e'] -> ['a', 'b', 'c']
+            // 第二级 '../'：['a', 'b', 'c'] -> ['a']
+            // 第三级 '../'：['a'] -> undefined (超出根目录)
+            expect(result).toBeUndefined();
         });
 
         it("混合使用相对路径和特殊关键字", () => {
@@ -393,7 +482,8 @@ describe("getAbsolutePath", () => {
             const result = getAbsolutePath(path, basePath);
 
             // Assert
-            expect(result).toEqual(["store", "users", "data"]);
+            // '../' 移除最后两个元素，从 ['store', 'users', 'active'] 变成 ['store']
+            expect(result).toEqual(["store", "data"]);
         });
     });
 });

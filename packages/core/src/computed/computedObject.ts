@@ -6,6 +6,8 @@
 import type { AutoStore } from "../store/store";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { joinValuePath } from "../utils/joinValuePath";
+import { setVal } from "../utils/setVal";
+import { getAbsolutePath } from "../utils/getAbsolutePath";
 import type {
     ComputedContext,
     ComputedDescriptor,
@@ -53,7 +55,7 @@ export class ComputedObject<
         if (!this[`_${name}`]) {
             const reports: Record<string, any> = this.options.reports || {};
             const path = reports[name];
-            if (Array.isArray(path) && path.length > 0) {
+            if (typeof path === "string" || (Array.isArray(path) && path.length > 0)) {
                 // @ts-ignore
                 this[`_${name}`] = getAbsolutePath(path, this.path);
             }

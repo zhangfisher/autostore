@@ -1,23 +1,25 @@
-import { InvalidDependsError, InvalidScopeError, TimeoutError } from '../errors';
-import type { AutoStore } from '../store/store';
-import type { Dict } from '../types';
-import type { AsyncComputedObject } from './async';
-import type { ComputedObject } from './computedObject';
-import type { SyncComputedObject } from './sync';
+import { InvalidDependsError, InvalidScopeError, TimeoutError } from "../errors";
+import type { AutoStore } from "../store/store";
+import type { Dict } from "../types";
+import type { AsyncComputedObject } from "./async";
+import type { ComputedObject } from "./computedObject";
+import type { SyncComputedObject } from "./sync";
 import type {
     AsyncComputedGetter,
+    AsyncLiteComputedGetter,
     ComputedDepends,
     ComputedDescriptor,
     ComputedGetter,
     ComputedOptions,
     RuntimeComputedOptions,
     SyncComputedOptions,
-} from './types';
-import { computed } from './computed';
-import { isAbsolutePath } from '../utils/isAbsolutePath';
-import { isObserverDescriptor } from '../utils/isObserverDescriptor';
-import { PATH_DELIMITER } from '../consts';
-import { isPathEq } from '../utils';
+} from "./types";
+import { computed } from "./computed";
+import { isAbsolutePath } from "../utils/isAbsolutePath";
+import { isObserverDescriptor } from "../utils/isObserverDescriptor";
+import { PATH_DELIMITER } from "../consts";
+import { isPathEq } from "../utils";
+import { AsyncLiteComputedObject } from "./liteAsync";
 
 export class ComputedObjects<State extends Dict = Dict> extends Map<string, ComputedObject<Dict>> {
     constructor(public store: AutoStore<State>) {
@@ -61,10 +63,10 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
         options?: SyncComputedOptions<Value, Scope>,
     ): SyncComputedObject<Value, Scope>;
     create<Value = any, Scope = any>(
-        getter: AsyncComputedGetter<Value, Scope>,
+        getter: AsyncLiteComputedGetter<Value, Scope>,
         depends: ComputedDepends,
         options?: ComputedOptions<Value, Scope>,
-    ): AsyncComputedObject<Value, Scope>;
+    ): AsyncLiteComputedObject<Value, Scope>;
     create<Value = any, Scope = any>(
         descriptor: ComputedDescriptor<Value, Scope>,
     ): AsyncComputedObject<Value, Scope> | SyncComputedObject<Value, Scope>;
@@ -76,16 +78,16 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
             // 异步依赖是手工指定的，所以需要检查是否是绝对路径，不允许相对路径，因为没有计算上下文
             if (!isAbsolutePath(descrioptor.options.depends)) {
                 throw new InvalidDependsError(
-                    'The scope of the dynamic computed object must be the root state object or an absolute path',
+                    "The scope of the dynamic computed object must be the root state object or an absolute path",
                 );
             }
         }
         const scope = descrioptor.options.scope;
-        if (scope === undefined || scope === 'ROOT') {
-            descrioptor.options.scope = 'ROOT';
+        if (scope === undefined || scope === "ROOT") {
+            descrioptor.options.scope = "ROOT";
         } else if (!isAbsolutePath([scope])) {
             throw new InvalidScopeError(
-                'The scope of the dynamic computed object must be the root state object or an absolute path',
+                "The scope of the dynamic computed object must be the root state object or an absolute path",
             );
         }
 
@@ -138,9 +140,9 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
             return Promise.all([...this.values()].map((computedObject) => computedObject.run()));
         }
         let filter: (computedObject: ComputedObject) => boolean;
-        if (typeof arguments[0] === 'function') {
+        if (typeof arguments[0] === "function") {
             filter = arguments[0];
-        } else if (typeof arguments[0] === 'string') {
+        } else if (typeof arguments[0] === "string") {
             // 运行指定的id
             filter = (computedObject: ComputedObject) => computedObject.id === arguments[0];
         }

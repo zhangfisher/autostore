@@ -21,25 +21,26 @@ import { PATH_DELIMITER } from "../consts";
  * // 绝对路径（字符串形式）直接分割
  * getAbsolutePath('a.b.c') // ['a', 'b', 'c']
  *
- * // 相对路径 './'
- * getAbsolutePath('./x', ['a', 'b', 'c']) // ['a', 'b', 'c', 'x']
+ * // 相对路径 './' (同级/父级)
+ * getAbsolutePath('./x', ['a', 'b', 'c']) // ['a', 'b', 'x']
  *
- * // 相对路径 '../'
- * getAbsolutePath('../x', ['a', 'b', 'c']) // ['a', 'b', 'x']
+ * // 相对路径 '../' (父级，移除最后两个元素)
+ * getAbsolutePath('../x', ['a', 'b', 'c']) // ['a', 'x']
+ * getAbsolutePath('../x', ['data', 'title']) // ['x']
  *
  * // 多级 '../'
- * getAbsolutePath('../../x', ['a', 'b', 'c']) // ['a', 'x']
+ * getAbsolutePath('../../x', ['a', 'b', 'c', 'd', 'e']) // ['a', 'x']
  *
  * // 超出根目录
  * getAbsolutePath('../../../../x', ['a', 'b', 'c']) // undefined
  *
  * // 特殊关键字
- * getAbsolutePath('CURRENT', ['a', 'b', 'c']) // ['a', 'b', 'c']
+ * getAbsolutePath('CURRENT', ['a', 'b', 'c']) // ['a', 'b']
  * getAbsolutePath('SELF', ['a', 'b', 'c']) // ['a', 'b', 'c']
  * getAbsolutePath('PARENT', ['a', 'b', 'c']) // ['a', 'b']
  *
  * // 数组第一个元素是相对路径
- * getAbsolutePath(['./a', 'b', 'c'], ["x", "y"]) // ["x", "y", "a", "b", "c"]
+ * getAbsolutePath(['./a', 'b', 'c'], ["x", "y"]) // ["x", "a", "b", "c"]
  * getAbsolutePath(['../a', 'b', 'c'], ["x", "y"]) // ["x", "a", "b", "c"]
  * ```
  */
@@ -68,30 +69,32 @@ export function getAbsolutePath(
             }
 
             // 处理特殊关键字
-            if (path === "CURRENT" || path === "SELF") {
+            if (path === "SELF") {
                 return basePath;
             }
 
-            if (path === "PARENT") {
+            if (path === "CURRENT" || path === "PARENT") {
                 return basePath.slice(0, -1);
             }
 
-            // 处理以 './' 开头的相对路径
+            // 处理以 './' 开头的相对路径（表示父级/同级）
             if (path.startsWith("./")) {
                 const relativePart = path.slice(2); // 移除 './'
+                const parentPath = basePath.slice(0, -1); // 父级路径
                 if (relativePart === "") {
-                    return basePath;
+                    return parentPath;
                 }
-                return [...basePath, ...relativePart.split(PATH_DELIMITER)];
+                return [...parentPath, ...relativePart.split(PATH_DELIMITER)];
             }
 
             // 处理以 '../' 开头的相对路径
             if (path.startsWith("../")) {
                 const relativePart = path.slice(3); // 移除 '../'
-                const parentPath = basePath.slice(0, -1); // 上一级
+                // ../ 表示移除 basePath 的最后两个元素（当前节点和其父级）
+                const parentPath = basePath.length >= 2 ? basePath.slice(0, -2) : undefined;
 
-                // 如果父级路径为空，返回 undefined（超出根目录）
-                if (parentPath.length === 0 && relativePart.startsWith("../")) {
+                // 如果超出根目录，返回 undefined
+                if (parentPath === undefined) {
                     return undefined;
                 }
 
