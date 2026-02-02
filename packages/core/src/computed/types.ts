@@ -329,12 +329,54 @@ export type SyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDe
 >;
 
 // 简单异步计算
+
+export interface LiteAsyncComputedOptions {
+    /**
+     * 当开始执行异步计算时用于指定在此处写入true
+     * 执行完成后写入false
+     *
+     *
+     * 支持相对路径写法，
+     * loadingPath: ['./loading'] 代表在当前同一对象的loading写入
+     *
+     */
+    loadingPath?: string[] | string;
+    /**
+     * 当执行异步计算出错时在此处写入错误信息
+     *  支持相对路径写法，
+     */
+    errorPath?: string[] | string;
+}
+
+export interface AsyncLiteComputedGetterArgs {
+    /**
+     * 提供一个函数用来获取当前Scope的快照
+     * 传入的scope是一个经过Proxy处理的响应式对象，此方法可以对scope进行转换为普通对象
+     */
+    getSnap?: <T = Dict>(scope: any) => T;
+    /**
+     * 额外的参数，用来传递给计算函数
+     */
+    extras?: any;
+    /**
+     * 触发计算的操作
+     */
+    operate?: StateOperate;
+    /**
+     * 是否是第一次运行
+     */
+    first?: boolean;
+}
+export type AsyncLiteComputedGetter<Value, Scope = any> = (
+    scope: Scope,
+    args: Required<AsyncLiteComputedGetterArgs>,
+) => Promise<Value>;
 export type AsyncLiteComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
     "computed",
     Value,
     Scope,
-    AsyncComputedGetter<Value, Scope>,
-    ComputedOptions<Value, Scope>
+    AsyncLiteComputedGetter<Value, Scope>,
+    LiteAsyncComputedOptions & ComputedOptions<Value, Scope>
 >;
 
 export type AsyncLiteComputedDescriptorBuilder<

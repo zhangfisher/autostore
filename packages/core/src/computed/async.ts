@@ -7,19 +7,19 @@
  *
  *
  */
-import { isFunction, isPathEq, markRaw } from '../utils';
-import { delay } from 'flex-tools/async/delay';
-import { getValueScope } from '../scope';
-import type { ComputedProgressbar } from './types';
-import type { AsyncComputedGetterArgs, AsyncComputedValue, RuntimeComputedOptions } from './types';
-import { ComputedObject } from './computedObject';
-import type { Dict } from '../types';
-import { getSnap } from '../utils/getSnap';
-import { getError } from '../utils/getError';
-import type { StateOperate } from '../store/types';
-import { updateObjectVal } from '../utils/updateObjectVal';
-import { ASYNC_COMPUTED_VALUE } from '../consts';
-import { AbortError } from '../errors';
+import { isFunction, isPathEq, markRaw } from "../utils";
+import { delay } from "flex-tools/async/delay";
+import { getValueScope } from "../scope";
+import type { ComputedProgressbar } from "./types";
+import type { AsyncComputedGetterArgs, AsyncComputedValue, RuntimeComputedOptions } from "./types";
+import { ComputedObject } from "./computedObject";
+import type { Dict } from "../types";
+import { getSnap } from "../utils/getSnap";
+import { getError } from "../utils/getError";
+import type { StateOperate } from "../store/types";
+import { updateObjectVal } from "../utils/updateObjectVal";
+import { ASYNC_COMPUTED_VALUE } from "../consts";
+import { AbortError } from "../errors";
 
 type GetterRunContext = {
     error: any;
@@ -68,7 +68,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         setTimeout(() => {
             if (
                 this.options.immediate === true ||
-                (this.options.immediate === 'auto' && this.options.initial === undefined)
+                (this.options.immediate === "auto" && this.options.initial === undefined)
             ) {
                 this.run({ first: true });
             }
@@ -114,7 +114,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             const ops: StateOperate[] = [];
             Object.entries(values).forEach(([key, value]) => {
                 const op: StateOperate = {
-                    type: 'set',
+                    type: "set",
                     path: [...this.path, key],
                     value: value,
                     parent: this.value,
@@ -125,7 +125,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             });
             if (isBatch) {
                 this.store.operates.emit(this.strPath, {
-                    type: 'batch',
+                    type: "batch",
                     path: this.path,
                     value: ops,
                 });
@@ -142,12 +142,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
         // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
         if (this.isDisable(options?.enable)) {
-            this.store.log(() => `Async computed <${this.toString()}> is disabled`, 'warn');
+            this.store.log(() => `Async computed <${this.toString()}> is disabled`, "warn");
             return;
         }
         this.error = undefined;
         this._firstRun = true;
-        !first && this.store.log(() => `Run async computed for : ${this.toString()}`);
+        if (!first) {
+            this.store.log(() => `Run async computed for : ${this.toString()}`);
+        }
 
         // 2. 合成最终的配置参数
         const finalComputedOptions = (
@@ -157,7 +159,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         // 3. 根据配置参数获取计算函数的上下文对象
         const scope = getValueScope<AsyncComputedValue<Value>, Scope>(
             this as any,
-            'computed',
+            "computed",
             this.context,
             finalComputedOptions,
         );
@@ -166,12 +168,12 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         if (this._isRunning && !reentry) {
             this.store.log(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
-                'warn',
+                "warn",
             );
-            this.emitStoreEvent('computed:cancel', {
+            this.emitStoreEvent("computed:cancel", {
                 path: this.path,
                 id: this.id,
-                reason: 'reentry',
+                reason: "reentry",
                 computedObject: this,
             });
             return;
@@ -227,7 +229,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      * @returns
      */
     private getAbortController(options?: Required<RuntimeComputedOptions>) {
-        if (options && typeof options.abortController === 'function') {
+        if (options && typeof options.abortController === "function") {
             const abortController = options.abortController();
             if (abortController && abortController instanceof AbortController) {
                 this._userAbortController = abortController;
@@ -261,23 +263,26 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             tmId = setTimeout(() => {
                 ctx.hasTimeout = true;
                 ctx.hasError = true;
-                ctx.error = 'TIMEOUT';
-                if (typeof ctx.timeoutCallback === 'function') ctx.timeoutCallback();
+                ctx.error = "TIMEOUT";
+                if (typeof ctx.timeoutCallback === "function") ctx.timeoutCallback();
                 clearInterval(countdownId);
                 this.updateComputedValue({
                     loading: false,
-                    error: 'TIMEOUT',
+                    error: "TIMEOUT",
                     timeout: 0,
                 });
             }, timeoutValue);
             // 启用设置倒计时:  比如timeout= 6*1000, countdown= 6
             if (countdown > 1) {
-                countdownId = setInterval(() => {
-                    this.updateComputedValue({
-                        timeout: countdown--,
-                    });
-                    if (countdown === 0) clearInterval(countdownId);
-                }, timeoutValue / (countdown + 1));
+                countdownId = setInterval(
+                    () => {
+                        this.updateComputedValue({
+                            timeout: countdown--,
+                        });
+                        if (countdown === 0) clearInterval(countdownId);
+                    },
+                    timeoutValue / (countdown + 1),
+                );
             }
         }
 
@@ -308,7 +313,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             },
             getProgressbar: this.createComputeProgressbar.bind(this),
             getSnap: (scope: any) => getSnap(scope),
-            cancel: abortController.abort,
+            cancel: abortController.abort.bind(abortController),
             extras: options.extras,
             operate: options.operate,
             first: options.first,
@@ -327,7 +332,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         const abortHandler = () => {
             ctx.hasAbort = true;
         };
-        abortController.signal.addEventListener('abort', abortHandler);
+        abortController.signal.addEventListener("abort", abortHandler);
 
         let timeout = { clear: () => {}, enable: false };
         let computedResult: any;
@@ -395,22 +400,22 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             }
             // 计算完成后触发事件
             if (ctx.hasAbort) {
-                this.emitStoreEvent('computed:cancel', {
+                this.emitStoreEvent("computed:cancel", {
                     path: this.path,
                     id: this.id,
-                    reason: 'abort',
+                    reason: "abort",
                     computedObject: this,
                 });
             } else if (ctx.hasError || ctx.hasTimeout) {
                 this.error = ctx.error;
-                this.emitStoreEvent('computed:error', {
+                this.emitStoreEvent("computed:error", {
                     path: this.path,
                     id: this.id,
                     error: ctx.error,
                     computedObject: this,
                 });
             } else {
-                this.emitStoreEvent('computed:done', {
+                this.emitStoreEvent("computed:done", {
                     path: this.path,
                     id: this.id,
                     value: computedResult,
@@ -427,7 +432,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             );
         } finally {
             // 清理 abort 事件监听器，防止内存泄漏
-            abortController.signal.removeEventListener('abort', abortHandler);
+            abortController.signal.removeEventListener("abort", abortHandler);
         }
     }
 
@@ -452,7 +457,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         scope: any,
         value: any,
     ) {
-        if (typeof options.onDone !== 'function') return;
+        if (typeof options.onDone !== "function") return;
         options.onDone.call(this, {
             id: this.id,
             path: this.path,
@@ -467,7 +472,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         this.store.log(
             () =>
                 `AsyncComputed<${this.id}> is running by depends ${params.type}/${params.path.join(
-                    '.',
+                    ".",
                 )} operate `,
         );
         this.run({
@@ -523,7 +528,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             if (dep.length === 0) return dep;
             for (const obj of this.store.computedObjects.values()) {
                 if (isPathEq(obj.path, dep) && obj.async) {
-                    return [`${dep}.value`];
+                    return [`${dep.join(this.store.options.delimiter)}.value`];
                 }
             }
             return dep;
