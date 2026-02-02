@@ -44,6 +44,28 @@ export class ComputedObject<
         return this.async ? (this.value as any).value : this.value;
     }
     /**
+     * 报告计算状态
+     * @param name
+     * @param value
+     */
+    protected _reportComputedStatus(name: "loading" | "error", value: any) {
+        // @ts-ignore
+        if (!this[`_${name}`]) {
+            const reports: Record<string, any> = this.options.reports || {};
+            const path = reports[name];
+            if (Array.isArray(path) && path.length > 0) {
+                // @ts-ignore
+                this[`_${name}`] = getAbsolutePath(path, this.path);
+            }
+        } // @ts-ignore
+        if (Array.isArray(this[`_${name}`])) {
+            this.store.update((state) => {
+                // @ts-ignore
+                setVal(state, this[`_${name}`]!, value);
+            });
+        }
+    }
+    /**
      * 检查计算函数是否被禁用
      *
      * @param value

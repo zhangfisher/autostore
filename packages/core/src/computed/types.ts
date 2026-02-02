@@ -263,6 +263,24 @@ export interface ComputedOptions<
         scope: Scope;
         value: any;
     }): void;
+    /**
+     * 在计算前后向指定路径的状态写入额外值
+     *
+     */
+    reports?: {
+        /**
+         * 在计算前后向loading指定状态写入true/false用于反馈
+         *
+         * 如loading=["./loading"]，则在开始计算前往当前计算属性所在的对象的loading=true
+         *  计算完成后置loading=false
+         *
+         */
+        loading?: string | string[];
+        /**
+         * 在计算出错时向指定路径写入错误信息
+         */
+        error?: string | string[];
+    };
 }
 
 export type AsyncComputedValue<Value = any> = {
@@ -330,24 +348,6 @@ export type SyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDe
 
 // 简单异步计算
 
-export interface LiteAsyncComputedOptions {
-    /**
-     * 当开始执行异步计算时用于指定在此处写入true
-     * 执行完成后写入false
-     *
-     *
-     * 支持相对路径写法，
-     * loadingPath: ['./loading'] 代表在当前同一对象的loading写入
-     *
-     */
-    loadingPath?: string[] | string;
-    /**
-     * 当执行异步计算出错时在此处写入错误信息
-     *  支持相对路径写法，
-     */
-    errorPath?: string[] | string;
-}
-
 export interface AsyncLiteComputedGetterArgs {
     /**
      * 提供一个函数用来获取当前Scope的快照
@@ -367,22 +367,24 @@ export interface AsyncLiteComputedGetterArgs {
      */
     first?: boolean;
 }
+
 export type AsyncLiteComputedGetter<Value, Scope = any> = (
     scope: Scope,
     args: Required<AsyncLiteComputedGetterArgs>,
 ) => Promise<Value>;
+
 export type AsyncLiteComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
     "computed",
     Value,
     Scope,
     AsyncLiteComputedGetter<Value, Scope>,
-    LiteAsyncComputedOptions & ComputedOptions<Value, Scope>
+    ComputedOptions<Value, Scope>
 >;
 
 export type AsyncLiteComputedDescriptorBuilder<
     Value = any,
     Scope = any,
-> = ObserverDescriptorBuilder<"computed", Value, Scope, AsyncComputedDescriptor<Value, Scope>>;
+> = ObserverDescriptorBuilder<"computed", Value, Scope, AsyncLiteComputedDescriptor<Value, Scope>>;
 
 // 全功能异步计算
 export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
@@ -402,17 +404,22 @@ export type AsyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverD
 
 export type ComputedDescriptor<Value = any, Scope = any> =
     | SyncComputedDescriptor<Value, Scope>
+    | AsyncLiteComputedDescriptor<Value, Scope>
     | AsyncComputedDescriptor<Value, Scope>;
+
 export type ComputedDescriptorBuilder<Value = any, Scope = any> =
     | SyncComputedDescriptorBuilder<Value, Scope>
+    | AsyncLiteComputedDescriptorBuilder<Value, Scope>
     | AsyncComputedDescriptorBuilder<Value, Scope>;
 
 export type ComputedDescriptorParameter<Value = any, Scope = any> =
     | ComputedDescriptorBuilder<Value, Scope>
     | ComputedGetter<Value, Scope>
-    | AsyncComputedGetter<Value, Scope>;
+    | AsyncComputedGetter<Value, Scope>
+    | AsyncLiteComputedGetter<Value, Scope>;
 
 export type ComputedBuilder<Value, Scope> =
     | ComputedDescriptorBuilder<Value, Scope>
     | AsyncComputedGetter<Value, Scope>
+    | AsyncLiteComputedGetter<Value, Scope>
     | ComputedGetter<Value, Scope>;

@@ -1,29 +1,26 @@
 /**
  *
- * 异步计算
+ * 轻量异步计算
  *
+ * 计算结果直接写入到原地
  *
- *
- *
+ * 没有进度条、超时、可中止、倒计时、重试等高级功能
  *
  */
-import { getAbsolutePath, isPathEq, setVal } from "../utils";
+import { isPathEq } from "../utils";
 import { getValueScope } from "../scope";
 import { ComputedObject } from "./computedObject";
 import { getSnap } from "../utils/getSnap";
 import type { StateOperate } from "../store/types";
-import {
-    AsyncLiteComputedGetterArgs,
-    LiteAsyncComputedOptions,
-    RuntimeComputedOptions,
-} from "./types";
+import { AsyncLiteComputedGetterArgs, ComputedOptions, RuntimeComputedOptions } from "./types";
 
 export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedObject<
     Value,
-    LiteAsyncComputedOptions
+    ComputedOptions
 > {
     private _isRunning: boolean = false;
     private _firstRun: boolean = false; // 是否已经第一次运行过
+    lite: boolean = true; // 标识这是一个简单计算对象
     get async() {
         return true;
     }
@@ -100,23 +97,6 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             this._isRunning = false;
         }
     }
-    private _updateComputeContext(name: "loading" | "error", value: any) {
-        // @ts-ignore
-        if (!this[`_${name}`]) {
-            // @ts-ignore
-            const path = this.options[`${name}Path`];
-            if (Array.isArray(path) && path.length > 0) {
-                // @ts-ignore
-                this[`_${name}`] = getAbsolutePath(path, this.path);
-            }
-        } // @ts-ignore
-        if (Array.isArray(this[`_${name}`])) {
-            this.store.update((state) => {
-                // @ts-ignore
-                setVal(state, this[`_${name}`]!, value);
-            });
-        }
-    }
     /**
      * 执行计算函数
      *
@@ -133,41 +113,38 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
         let computedResult: any;
 
         try {
-            try {
-                //
-                this._updateComputeContext("loading", true);
-                // 执行计算函数
-                computedResult = await this.getter.call(this, scope, getterArgs);
-                this.store.peep(() => {
-                    this.value = computedResult; // 将结果回写入store,且不触发get事件
-                });
-                this._updateComputeContext("error", undefined);
-            } catch (e: any) {
-                hasError = e;
-                this._updateComputeContext("error", e.message);
-            } finally {
-                this._updateComputeContext("loading", false);
-            }
-            // 计算完成后触发事件
-            if (hasError) {
-                this.error = hasError;
-                this.emitStoreEvent("computed:error", {
-                    path: this.path,
-                    id: this.id,
-                    error: hasError,
-                    computedObject: this,
-                });
-            } else {
-                this.emitStoreEvent("computed:done", {
-                    path: this.path,
-                    id: this.id,
-                    value: computedResult,
-                    computedObject: this,
-                });
-            }
-            this.onDoneCallback(options, computedResult, scope, computedResult);
+            //
+            this._reportComputedStatus("loading", true);
+            // 执行计算函数
+            computedResult = await this.getter.call(this, scope, getterArgs);
+            this.store.peep(() => {
+                this.value = computedResult; // 将结果回写入store,且不触发get事件
+            });
+            this._reportComputedStatus("error", undefined);
+        } catch (e: any) {
+            hasError = e;
+            this._reportComputedStatus("error", e.message);
         } finally {
+            this._reportComputedStatus("loading", false);
         }
+        // 计算完成后触发事件
+        if (hasError) {
+            this.error = hasError;
+            this.emitStoreEvent("computed:error", {
+                path: this.path,
+                id: this.id,
+                error: hasError,
+                computedObject: this,
+            });
+        } else {
+            this.emitStoreEvent("computed:done", {
+                path: this.path,
+                id: this.id,
+                value: computedResult,
+                computedObject: this,
+            });
+        }
+        this.onDoneCallback(options, computedResult, scope, computedResult);
     }
 
     /**

@@ -36,6 +36,13 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
     private _defaultAbortController: AbortController | null = null;
     private _userAbortController?: AbortController;
     private _firstRun: boolean = false; // 是否已经第一次运行过
+    /**
+     * 用于标识这是一个简单计算对象
+     *
+     * 不同于全功能异步计算对象
+     *
+     */
+    lite: boolean = false;
     get async() {
         return true;
     }
