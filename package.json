@@ -11,7 +11,7 @@
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
 		"changeset": "changeset",
-		"publish:all": "turbo build  && changeset version && changeset publish",
+		"publish:all": "bun run build  && changeset version && changeset publish",
 		"build": "turbo build --filter=autostore --filter=@autostorejs/syncer --filter=@autostorejs/devtools --filter=@autostorejs/react",
 		"docs:preview": "vitepress preview new-docs",
 		"sync": "cnpm sync autostore @autostorejs/react @autostorejs/form @autostorejs/syncer",
@@ -28,7 +28,7 @@
 		"oxfmt": "^0.27.0",
 		"oxlint": "^1.42.0",
 		"oxlint-tsgolint": "^0.11.2",
-		"turbo": "^2.7.5",
+		"turbo": "^2.8.2",
 		"typescript": "^5.9.3",
 		"vitepress": "^1.6.4",
 		"vue": "^3.5.27"
