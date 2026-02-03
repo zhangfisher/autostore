@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 4.0.1
+
+### Patch Changes
+
+-   00f9de3: 更新同步器实现
+-   Updated dependencies [00f9de3]
+    -   autostore@4.0.1
+
 ## 4.0.0
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.1
+
+### Patch Changes
+
+-   00f9de3: 更新同步器实现
+
 ## 4.0.0
 
 ### Major Changes
