@@ -165,7 +165,7 @@ export function MultiStoreExample() {
 
     // 监听 counterStore 变化
     useEffect(() => {
-        const unwatch = counterStore.watch(({ path, value }) => {
+        const unwatch = counterStore.watch(({ path, value }: any) => {
             if (path[0] === 'count') {
                 setCount(value);
                 setDoubleCount(counterStore.state.doubleCount);
@@ -186,7 +186,7 @@ export function MultiStoreExample() {
 
     // 监听 todoStore 变化
     useEffect(() => {
-        const unwatch = todoStore.watch(({ path }) => {
+        const unwatch = todoStore.watch(({ path }: any) => {
             if (path[0] === 'todos') {
                 setTodos([...todoStore.state.todos]);
                 setTotalCount(todoStore.state.totalCount);
@@ -208,7 +208,7 @@ export function MultiStoreExample() {
 
     // 监听 userStore 变化
     useEffect(() => {
-        const unwatch = userStore.watch(({ path }) => {
+        const unwatch = userStore.watch(({ path }: any) => {
             if (path[0] === 'user') {
                 setUser({ ...userStore.state.user });
                 // 减少日志频率

@@ -1176,4 +1176,366 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
             });
         });
     });
+
+    describe("[简单异步计算] 异步计算的error状态", () => {
+        test("[简单异步计算] 异步计算的默认错误状态", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        price: 2,
+                        count: 3,
+                        error: undefined as string | undefined,
+                        total: computed(
+                            async (scope) => {
+                                await delay(10);
+                                throw new Error("计算错误");
+                            },
+                            ["price", "count"],
+                            {
+                                initial: 5,
+                                reports: {
+                                    error: "./error",
+                                },
+                            },
+                        ),
+                    },
+                    {
+                        onComputedError: ({ error }) => {
+                            expect(error.message).toBe("计算错误");
+                            expect(store.state.error).toBe("计算错误");
+                            expect(store.state.total).toEqual(5); // 保持初始值
+                            resolve();
+                        },
+                    },
+                );
+                store.state.count++;
+            });
+        });
+
+        test("[简单异步计算] 使用绝对路径设置error状态", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        price: 2,
+                        count: 3,
+                        ui: {
+                            error: undefined as string | undefined,
+                        },
+                        total: computed(
+                            async (scope) => {
+                                await delay(10);
+                                throw new Error("计算失败");
+                            },
+                            ["price", "count"],
+                            {
+                                initial: 5,
+                                reports: {
+                                    error: "ui.error",
+                                },
+                            },
+                        ),
+                    },
+                    {
+                        onComputedError: () => {
+                            expect(store.state.ui.error).toBe("计算失败");
+                            expect(store.state.total).toEqual(5);
+                            resolve();
+                        },
+                    },
+                );
+                store.state.count++;
+            });
+        });
+
+        test("[简单异步计算] 使用数组形式绝对路径设置error状态", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        price: 2,
+                        count: 3,
+                        ui: {
+                            error: undefined as string | undefined,
+                        },
+                        total: computed(
+                            async (scope) => {
+                                await delay(10);
+                                throw new Error("数组路径错误");
+                            },
+                            ["price", "count"],
+                            {
+                                initial: 5,
+                                reports: {
+                                    error: ["ui", "error"],
+                                },
+                            },
+                        ),
+                    },
+                    {
+                        onComputedError: () => {
+                            expect(store.state.ui.error).toBe("数组路径错误");
+                            expect(store.state.total).toEqual(5);
+                            resolve();
+                        },
+                    },
+                );
+                store.state.count++;
+            });
+        });
+
+        test("[简单异步计算] 在嵌套对象中使用相对路径设置error状态", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        data: {
+                            price: 2,
+                            count: 3,
+                            error: undefined as string | undefined,
+                            total: computed(
+                                async (_scope) => {
+                                    await delay(10);
+                                    throw new Error("嵌套对象错误");
+                                },
+                                ["./price", "./count"],
+                                {
+                                    initial: 5,
+                                    reports: {
+                                        error: "./error",
+                                    },
+                                },
+                            ),
+                        },
+                    },
+                    {
+                        onComputedError: () => {
+                            expect(store.state.data.error).toBe("嵌套对象错误");
+                            expect(store.state.data.total).toEqual(5);
+                            resolve();
+                        },
+                    },
+                );
+                store.state.data.count++;
+            });
+        });
+
+        test("[简单异步计算] 使用父级相对路径设置error状态", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        error: undefined as string | undefined,
+                        data: {
+                            price: 2,
+                            count: 3,
+                            total: computed(
+                                async (_scope) => {
+                                    await delay(10);
+                                    throw new Error("父级路径错误");
+                                },
+                                ["./price", "./count"],
+                                {
+                                    initial: 5,
+                                    reports: {
+                                        error: "../error",
+                                    },
+                                },
+                            ),
+                        },
+                    },
+                    {
+                        onComputedError: () => {
+                            expect(store.state.error).toBe("父级路径错误");
+                            expect(store.state.data.total).toEqual(5);
+                            resolve();
+                        },
+                    },
+                );
+                store.state.data.count++;
+            });
+        });
+
+        test("[简单异步计算] 计算成功时error状态被清除", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        price: 2,
+                        count: 3,
+                        error: "之前的错误" as string | undefined,
+                        total: computed(
+                            async (scope) => {
+                                await delay(10);
+                                return scope.price * scope.count;
+                            },
+                            ["price", "count"],
+                            {
+                                initial: 5,
+                                reports: {
+                                    error: "./error",
+                                },
+                            },
+                        ),
+                    },
+                    {
+                        onComputedDone: () => {
+                            expect(store.state.total).toEqual(8);
+                            expect(store.state.error).toBeUndefined();
+                            resolve();
+                        },
+                    },
+                );
+                store.state.count++;
+            });
+        });
+
+        test("[简单异步计算] 多次计算时error状态正确切换", () => {
+            const errorStates: (string | undefined)[] = [];
+            return new Promise<void>((resolve) => {
+                let shouldThrow = true;
+                const store = new AutoStore(
+                    {
+                        price: 2,
+                        count: 3,
+                        error: undefined as string | undefined,
+                        total: computed(
+                            async (scope) => {
+                                await delay(10);
+                                if (shouldThrow) {
+                                    throw new Error("计算错误");
+                                }
+                                return scope.price * scope.count;
+                            },
+                            ["price", "count"],
+                            {
+                                initial: 0,
+                                reports: {
+                                    error: "./error",
+                                },
+                            },
+                        ),
+                    },
+                    {
+                        onComputedDone: () => {
+                            // 第二次计算成功
+                            expect(store.state.error).toBeUndefined();
+                            expect(store.state.total).toEqual(10);
+                            expect(errorStates).toEqual(["计算错误", undefined]);
+                            resolve();
+                        },
+                        onComputedError: () => {
+                            // 第一次计算失败
+                            errorStates.push(store.state.error);
+                            shouldThrow = false;
+                            // 触发第二次计算
+                            setTimeout(() => {
+                                store.state.count = 5;
+                            }, 20);
+                        },
+                    },
+                );
+                // 触发第一次计算
+                store.state.count = 4;
+            });
+        });
+
+        test("[简单异步计算] 不指定reports.error时不设置error状态", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        price: 2,
+                        count: 3,
+                        error: undefined as string | undefined,
+                        total: computed(
+                            async (scope) => {
+                                await delay(10);
+                                throw new Error("不应该被记录");
+                            },
+                            ["price", "count"],
+                            {
+                                initial: 5,
+                            },
+                        ),
+                    },
+                    {
+                        onComputedError: () => {
+                            expect(store.state.error).toBeUndefined(); // 保持原值
+                            expect(store.state.total).toEqual(5);
+                            resolve();
+                        },
+                    },
+                );
+                store.state.count++;
+            });
+        });
+
+        test("[简单异步计算] 相对路径指向嵌套对象的error", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        price: 2,
+                        count: 3,
+                        status: {
+                            error: undefined as string | undefined,
+                        },
+                        total: computed(
+                            async (_scope) => {
+                                await delay(10);
+                                throw new Error("嵌套状态错误");
+                            },
+                            ["price", "count"],
+                            {
+                                initial: 5,
+                                reports: {
+                                    error: "./status.error",
+                                },
+                            },
+                        ),
+                    },
+                    {
+                        onComputedError: () => {
+                            expect(store.state.status.error).toBe("嵌套状态错误");
+                            expect(store.state.total).toEqual(5);
+                            resolve();
+                        },
+                    },
+                );
+                store.state.count++;
+            });
+        });
+
+        test("[简单异步计算] 同时设置loading和error状态", () => {
+            return new Promise<void>((resolve) => {
+                const store = new AutoStore(
+                    {
+                        price: 2,
+                        count: 3,
+                        loading: false,
+                        error: undefined as string | undefined,
+                        total: computed(
+                            async (_scope) => {
+                                expect(store.state.loading).toBeTruthy();
+                                expect(store.state.error).toBeUndefined();
+                                await delay(10);
+                                throw new Error("计算错误");
+                            },
+                            ["price", "count"],
+                            {
+                                initial: 5,
+                                reports: {
+                                    loading: "./loading",
+                                    error: "./error",
+                                },
+                            },
+                        ),
+                    },
+                    {
+                        onComputedError: () => {
+                            expect(store.state.loading).toBeFalsy();
+                            expect(store.state.error).toBe("计算错误");
+                            expect(store.state.total).toEqual(5);
+                            resolve();
+                        },
+                    },
+                );
+                store.state.count++;
+            });
+        });
+    });
 });

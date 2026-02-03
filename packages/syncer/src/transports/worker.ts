@@ -31,6 +31,23 @@ export interface IWorker {
      * 终止 Worker（可选）
      */
     terminate?: () => void;
+    /**
+     * SharedWorker 的 port 属性（可选）
+     */
+    port?: {
+        start?: () => void;
+        postMessage(message: any, transfer?: any[]): void;
+        addEventListener(
+            type: string,
+            listener: (event: MessageEvent) => void,
+            options?: AddEventListenerOptions | boolean,
+        ): void;
+        removeEventListener(
+            type: string,
+            listener: (event: MessageEvent) => void,
+            options?: EventListenerOptions | boolean,
+        ): void;
+    };
 }
 
 /**

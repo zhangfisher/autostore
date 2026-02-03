@@ -296,11 +296,20 @@ export class AutoStoreSwitchSyncer extends AutoStoreSyncerBase {
                     };
 
                     // 广播到所有订阅了该 store 的 transports，排除源端
+                    console.log(
+                        `[AutoStoreSwitchSyncer] 准备广播 (store: ${storeId}, sourceTransportId: ${sourceTransportId}, transports: ${Array.from(transports.values()).map((t) => t.id).join(", ")})`,
+                    );
                     transports.forEach((transport) => {
                         // 排除源端，防止循环更新
                         if (transport.id === sourceTransportId) {
+                            console.log(
+                                `[AutoStoreSwitchSyncer] 跳过源端 (transport id: ${transport.id})`,
+                            );
                             return;
                         }
+                        console.log(
+                            `[AutoStoreSwitchSyncer] 发送到 transport ${transport.id}`,
+                        );
                         // 发送操作
                         transport.send(remoteOperate);
                     });

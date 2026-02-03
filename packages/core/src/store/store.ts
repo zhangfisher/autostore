@@ -62,7 +62,7 @@ import type { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } fr
 import type { StoreEvents } from "./types";
 import { BATCH_UPDATE_EVENT } from "../consts";
 import { createReactiveObject } from "./reactive";
-import type { ConfigurableState, SchemaDescriptor } from "../schema/types";
+import type { SchemaDescriptor } from "../schema/types";
 import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects";
 import { WatchObject } from "../watch/watchObject";

@@ -1,15 +1,15 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { resolve } from "path";
 
 export default defineConfig({
     plugins: [react()],
     resolve: {
         alias: {
             // 使用 monorepo 中的包
-            'autostore': resolve(__dirname, '../../../core/src'),
-            '@autostorejs/syncer': resolve(__dirname, '../../src'),
-            '@autostorejs/react': resolve(__dirname, '../../../react/src'),
+            autostore: resolve(__dirname, "../../../core/src"),
+            "@autostorejs/syncer": resolve(__dirname, "../../src"),
+            "@autostorejs/react": resolve(__dirname, "../../../react/src"),
         },
     },
     server: {
@@ -22,9 +22,16 @@ export default defineConfig({
         },
     },
     worker: {
-        format: 'es',
+        format: "es",
+        // Worker 中的 Vite 配置
+        plugins: () => [react()],
     },
     optimizeDeps: {
-        exclude: ['autostore', '@autostorejs/syncer', '@autostorejs/react'],
+        exclude: ["autostore", "@autostorejs/syncer", "@autostorejs/react"],
+    },
+
+    define: {
+        // 覆盖 Node.js 全局变量
+        "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "development"),
     },
 });
