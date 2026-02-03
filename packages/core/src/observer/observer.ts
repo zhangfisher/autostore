@@ -16,7 +16,7 @@ import type { ComputedContext } from "../computed/types";
 import type { StateOperate, StoreEvents, UpdateOptions } from "../store/types";
 import type { Watcher, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
-import { isFunction } from "flex-tools";
+import { isFunction } from "../utils/isFunction";
 
 export class ObserverObject<
     Value = any,

@@ -9,27 +9,37 @@ const gzipPromise = promisify(gzip);
 // import copy from "esbuild-copy-files-plugin";
 
 export default defineConfig({
-	entry: ["src/index.ts"],
-	format: ["esm", "cjs", "iife"],
-	dts: { resolve: true },
-	splitting: true,
-	sourcemap: true,
-	globalName: "AutoStoreSpaces",
-	clean: true,
-	treeshake: true,
-	minify: true,
-	noExternal: ["flex-tools", "type-fest"],
-	onSuccess: async () => {
-		const cjsFile = readFileSync("dist/index.cjs");
-		const esmFile = readFileSync("dist/index.js");
-		const iifeFile = readFileSync("dist/index.global.js");
-		const cjsCompressed = await gzipPromise(cjsFile);
-		const esmCompressed = await gzipPromise(esmFile);
-		const iifeCompressed = await gzipPromise(iifeFile);
-		console.log(`\x1b[33mGzipped size: \x1b[0m`);
-		console.log(`  - cjs: \x1b[32m${(cjsCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
-		console.log(`  - esm: \x1b[32m${(esmCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
-		console.log(`  - iife: \x1b[32m${(iifeCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
-		fs.copyFileSync(path.resolve("./dist/index.global.js"), path.resolve("../../docs/public/autostore.js"));
-	},
+    entry: ["src/index.ts"],
+    format: ["esm", "cjs", "iife"],
+    dts: { resolve: true },
+    splitting: true,
+    sourcemap: true,
+    globalName: "AutoStoreSpaces",
+    clean: true,
+    treeshake: true,
+    minify: true,
+    noExternal: ["type-fest"],
+    // 传递 esbuild 选项以优化浏览器环境
+    esbuildOptions(options) {
+        // 仅对 IIFE 格式应用浏览器平台配置
+        if (options.format === "iife") {
+            options.platform = "browser";
+        }
+    },
+    onSuccess: async () => {
+        const cjsFile = readFileSync("dist/index.cjs");
+        const esmFile = readFileSync("dist/index.js");
+        const iifeFile = readFileSync("dist/index.global.js");
+        const cjsCompressed = await gzipPromise(cjsFile);
+        const esmCompressed = await gzipPromise(esmFile);
+        const iifeCompressed = await gzipPromise(iifeFile);
+        console.log(`\x1b[33mGzipped size: \x1b[0m`);
+        console.log(`  - cjs: \x1b[32m${(cjsCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
+        console.log(`  - esm: \x1b[32m${(esmCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
+        console.log(`  - iife: \x1b[32m${(iifeCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
+        fs.copyFileSync(
+            path.resolve("./dist/index.global.js"),
+            path.resolve("../../docs/public/autostore.js"),
+        );
+    },
 });

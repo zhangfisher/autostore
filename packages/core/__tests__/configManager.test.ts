@@ -10,10 +10,10 @@
  */
 /** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
 
-import { describe, test, expect, beforeEach } from 'bun:test';
-import { AutoStore, ConfigManager, configurable } from '../src';
+import { describe, test, expect, beforeEach } from "bun:test";
+import { AutoStore, ConfigManager, configurable } from "../src";
 
-describe('ConfigManager - source、load、save 和 reset 功能', () => {
+describe("ConfigManager - source、load、save 和 reset 功能", () => {
     let configManager: ConfigManager;
     let mockSource: {
         data: Record<string, any>;
@@ -46,34 +46,34 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
         });
     });
 
-    describe('source.load - 从外部存储加载配置', () => {
-        test('load 应该从 source 加载配置数据', async () => {
+    describe("source.load - 从外部存储加载配置", () => {
+        test("load 应该从 source 加载配置数据", async () => {
             // 先创建三个 Store
             const orderStore = new AutoStore(
                 {
                     order: {
                         price: configurable(99.9, {
-                            label: '订单价格',
+                            label: "订单价格",
                         }),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app1',
+                    configKey: "app1",
                 },
             );
 
             const userStore = new AutoStore(
                 {
                     user: {
-                        name: configurable('Bob', {
-                            label: '用户名',
+                        name: configurable("Bob", {
+                            label: "用户名",
                         }),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app2',
+                    configKey: "app2",
                 },
             );
 
@@ -81,21 +81,21 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 {
                     shop: {
                         discount: configurable(0.1, {
-                            label: '折扣',
+                            label: "折扣",
                         }),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app3',
+                    configKey: "app3",
                 },
             );
 
             // 设置外部存储的数据（在创建 Store 之后）
             mockSource.data = {
-                'app1.order.price': 199.9,
-                'app2.user.name': 'Alice',
-                'app3.shop.discount': 0.2,
+                "app1.order.price": 199.9,
+                "app2.user.name": "Alice",
+                "app3.shop.discount": 0.2,
             };
 
             // 加载配置
@@ -106,11 +106,11 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
 
             // 验证值被正确加载
             expect(orderStore.state.order.price).toBe(199.9);
-            expect(userStore.state.user.name).toBe('Alice');
+            expect(userStore.state.user.name).toBe("Alice");
             expect(shopStore.state.shop.discount).toBe(0.2);
         });
 
-        test('load 应该只加载已注册的配置项', async () => {
+        test("load 应该只加载已注册的配置项", async () => {
             // 先创建 Store
             const orderStore = new AutoStore(
                 {
@@ -121,16 +121,16 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
             // 外部存储有多个配置项
             mockSource.data = {
-                'app.order.price': 199.9,
-                'app.order.quantity': 50,
-                'app.user.name': 'Alice',
-                'unknown.value': 'should not load',
+                "app.order.price": 199.9,
+                "app.order.quantity": 50,
+                "app.user.name": "Alice",
+                "unknown.value": "should not load",
             };
 
             await configManager.load();
@@ -144,7 +144,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(orderStore.state.user).toBeUndefined();
         });
 
-        test('多次调用 load 应该覆盖现有值', async () => {
+        test("多次调用 load 应该覆盖现有值", async () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -153,19 +153,19 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
             // 第一次加载
             mockSource.data = {
-                'app.order.price': 100,
+                "app.order.price": 100,
             };
             await configManager.load();
             expect(orderStore.state.order.price).toBe(100);
 
             // 修改外部存储数据
-            mockSource.data['app.order.price'] = 299.9;
+            mockSource.data["app.order.price"] = 299.9;
 
             // 第二次加载
             await configManager.load();
@@ -173,7 +173,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(mockSource.loadCallCount).toBe(2);
         });
 
-        test('load 应该处理空数据', async () => {
+        test("load 应该处理空数据", async () => {
             mockSource.data = {};
 
             const orderStore = new AutoStore(
@@ -184,7 +184,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -195,7 +195,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(orderStore.state.order.price).toBe(99.9);
         });
 
-        test('load 应该支持异步加载', async () => {
+        test("load 应该支持异步加载", async () => {
             let loadResolved = false;
 
             // 使用异步 load
@@ -203,7 +203,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 load: async () => {
                     await new Promise((resolve) => setTimeout(resolve, 10));
                     loadResolved = true;
-                    return { 'app.order.price': 199.9 };
+                    return { "app.order.price": 199.9 };
                 },
                 save: async (values: Record<string, any>) => {
                     Object.assign(mockSource.data, values);
@@ -218,7 +218,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -230,8 +230,8 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
         });
     });
 
-    describe('source.save - 保存配置到外部存储', () => {
-        test('修改配置项应该触发 source.save', async () => {
+    describe("source.save - 保存配置到外部存储", () => {
+        test("修改配置项应该触发 source.save", async () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -240,7 +240,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -252,10 +252,10 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
 
             // 验证 save 被调用
             expect(mockSource.saveCallCount).toBeGreaterThan(0);
-            expect(mockSource.data['app.order.price']).toBe(199.9);
+            expect(mockSource.data["app.order.price"]).toBe(199.9);
         });
 
-        test('多个 Store 的变更应该分别保存', async () => {
+        test("多个 Store 的变更应该分别保存", async () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -264,19 +264,19 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app1',
+                    configKey: "app1",
                 },
             );
 
             const userStore = new AutoStore(
                 {
                     user: {
-                        name: configurable('Bob', {}),
+                        name: configurable("Bob", {}),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app2',
+                    configKey: "app2",
                 },
             );
 
@@ -288,25 +288,25 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app3',
+                    configKey: "app3",
                 },
             );
 
             // 修改各个 Store
             orderStore.state.order.price = 199.9;
-            userStore.state.user.name = 'Alice';
+            userStore.state.user.name = "Alice";
             shopStore.state.shop.discount = 0.2;
 
             // 等待异步保存
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 验证所有值都被保存
-            expect(mockSource.data['app1.order.price']).toBe(199.9);
-            expect(mockSource.data['app2.user.name']).toBe('Alice');
-            expect(mockSource.data['app3.shop.discount']).toBe(0.2);
+            expect(mockSource.data["app1.order.price"]).toBe(199.9);
+            expect(mockSource.data["app2.user.name"]).toBe("Alice");
+            expect(mockSource.data["app3.shop.discount"]).toBe(0.2);
         });
 
-        test('手动调用 save(all=true) 应该保存所有配置', async () => {
+        test("手动调用 save(all=true) 应该保存所有配置", async () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -316,7 +316,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -336,11 +336,11 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             // 验证所有配置都被保存
             expect(mockSource.saveCallCount).toBe(1);
             const savedData = mockSource.saveHistory[0];
-            expect(savedData['app.order.price']).toBeDefined();
-            expect(savedData['app.order.quantity']).toBeDefined(); // 未修改的也被保存
+            expect(savedData["app.order.price"]).toBeDefined();
+            expect(savedData["app.order.quantity"]).toBeDefined(); // 未修改的也被保存
         });
 
-        test('save 后 dirtyValues 应该被清空', async () => {
+        test("save 后 dirtyValues 应该被清空", async () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -349,7 +349,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -363,7 +363,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(Object.keys(configManager.dirtyValues).length).toBe(0);
         });
 
-        test('没有 save 方法时不应该报错', async () => {
+        test("没有 save 方法时不应该报错", async () => {
             const configManagerWithoutSave = new ConfigManager({
                 load: async () => ({}),
                 // 没有 save 方法
@@ -377,7 +377,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager: configManagerWithoutSave,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -391,10 +391,10 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
         });
     });
 
-    describe('onUpdate - 配置变更时触发 save', () => {
-        test('配置变更时应该调用 onUpdate', async () => {
+    describe("onUpdate - 配置变更时触发 save", () => {
+        test("配置变更时应该调用 onUpdate", async () => {
             let onUpdateCallCount = 0;
-            let lastConfigKey = '';
+            let lastConfigKey = "";
             let lastValue: any;
 
             // 创建带有 onUpdate 监听的 ConfigManager
@@ -418,7 +418,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager: trackingConfigManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -430,11 +430,11 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
 
             // 验证 onUpdate 被调用
             expect(onUpdateCallCount).toBeGreaterThan(0);
-            expect(lastConfigKey).toBe('app.order.price');
+            expect(lastConfigKey).toBe("app.order.price");
             expect(lastValue).toBe(199.9);
         });
 
-        test('onUpdate 应该传递正确的配置键和值', async () => {
+        test("onUpdate 应该传递正确的配置键和值", async () => {
             const savedData: Record<string, any> = {};
 
             const trackingConfigManager = new ConfigManager({
@@ -453,19 +453,19 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager: trackingConfigManager,
-                    configKey: 'app1',
+                    configKey: "app1",
                 },
             );
 
             const userStore = new AutoStore(
                 {
                     user: {
-                        name: configurable('Bob', {}),
+                        name: configurable("Bob", {}),
                     },
                 },
                 {
                     configManager: trackingConfigManager,
-                    configKey: 'app2',
+                    configKey: "app2",
                 },
             );
 
@@ -477,41 +477,41 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager: trackingConfigManager,
-                    configKey: 'app3',
+                    configKey: "app3",
                 },
             );
 
             // 修改各个配置项
             orderStore.state.order.price = 199.9;
-            userStore.state.user.name = 'Alice';
+            userStore.state.user.name = "Alice";
             shopStore.state.shop.discount = 0.2;
 
             // 等待保存
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 验证所有配置都被正确保存
-            expect(savedData['app1.order.price']).toBe(199.9);
-            expect(savedData['app2.user.name']).toBe('Alice');
-            expect(savedData['app3.shop.discount']).toBe(0.2);
+            expect(savedData["app1.order.price"]).toBe(199.9);
+            expect(savedData["app2.user.name"]).toBe("Alice");
+            expect(savedData["app3.shop.discount"]).toBe(0.2);
         });
     });
 
-    describe('reset - 恢复默认值', () => {
-        test('reset 应该将所有配置恢复为默认值', () => {
+    describe("reset - 恢复默认值", () => {
+        test("reset 应该将所有配置恢复为默认值", () => {
             const orderStore = new AutoStore(
                 {
                     order: {
                         price: configurable(99.9, {
-                            label: '订单价格',
+                            label: "订单价格",
                         }),
                         quantity: configurable(10, {
-                            label: '订单数量',
+                            label: "订单数量",
                         }),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -530,7 +530,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(orderStore.state.order.quantity).toBe(10);
         });
 
-        test('reset 应该清空 dirtyValues', async () => {
+        test("reset 应该清空 dirtyValues", async () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -539,7 +539,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -550,7 +550,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // 手动添加 dirtyValues（模拟未保存的变更）
-            configManager.dirtyValues['app.order.price'] = 299.9;
+            configManager.dirtyValues["app.order.price"] = 299.9;
 
             // 调用 reset
             configManager.reset();
@@ -559,7 +559,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(Object.keys(configManager.dirtyValues).length).toBe(0);
         });
 
-        test('reset 应该同时重置多个 Store 的配置', () => {
+        test("reset 应该同时重置多个 Store 的配置", () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -568,19 +568,19 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app1',
+                    configKey: "app1",
                 },
             );
 
             const userStore = new AutoStore(
                 {
                     user: {
-                        name: configurable('Bob', {}),
+                        name: configurable("Bob", {}),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app2',
+                    configKey: "app2",
                 },
             );
 
@@ -592,13 +592,13 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app3',
+                    configKey: "app3",
                 },
             );
 
             // 修改各个配置项
             orderStore.state.order.price = 199.9;
-            userStore.state.user.name = 'Alice';
+            userStore.state.user.name = "Alice";
             shopStore.state.shop.discount = 0.2;
 
             // 调用 reset
@@ -606,11 +606,11 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
 
             // 验证所有值都被重置
             expect(orderStore.state.order.price).toBe(99.9);
-            expect(userStore.state.user.name).toBe('Bob');
+            expect(userStore.state.user.name).toBe("Bob");
             expect(shopStore.state.shop.discount).toBe(0.1);
         });
 
-        test('reset 后修改配置项应该正常工作', () => {
+        test("reset 后修改配置项应该正常工作", () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -619,7 +619,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -632,18 +632,18 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(orderStore.state.order.price).toBe(299.9);
         });
 
-        test('reset 不应该影响默认值属性', () => {
+        test("reset 不应该影响默认值属性", () => {
             const orderStore = new AutoStore(
                 {
                     order: {
                         price: configurable(99.9, {
-                            label: '订单价格',
+                            label: "订单价格",
                         }),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -657,49 +657,49 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(orderStore.state.order.price).toBe(99.9);
 
             // Schema 属性应该保持不变
-            const schema = configManager.state['app.order.price'] as any;
-            expect(schema.schema.label).toBe('订单价格');
+            const schema = configManager.state["app.order.price"] as any;
+            expect(schema.schema.label).toBe("订单价格");
         });
     });
 
-    describe('多 Store 协同场景', () => {
-        test('三个 Store (order、user、shop) 共享 ConfigManager', async () => {
+    describe("多 Store 协同场景", () => {
+        test("三个 Store (order、user、shop) 共享 ConfigManager", async () => {
             // 创建三个 Store
             const orderStore = new AutoStore(
                 {
                     order: {
                         price: configurable(99.9, {
-                            label: '订单价格',
+                            label: "订单价格",
                             onValidate: (value) => value > 0,
                         }),
                         quantity: configurable(10, {
-                            label: '订单数量',
+                            label: "订单数量",
                             onValidate: (value) => value > 0,
                         }),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app1',
+                    configKey: "app1",
                 },
             );
 
             const userStore = new AutoStore(
                 {
                     user: {
-                        name: configurable('Bob', {
-                            label: '用户名',
-                            onValidate: (value) => typeof value === 'string' && value.length > 0,
+                        name: configurable("Bob", {
+                            label: "用户名",
+                            onValidate: (value) => typeof value === "string" && value.length > 0,
                         }),
                         age: configurable(25, {
-                            label: '年龄',
+                            label: "年龄",
                             onValidate: (value) => value >= 0 && value <= 150,
                         }),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app2',
+                    configKey: "app2",
                 },
             );
 
@@ -707,29 +707,29 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 {
                     shop: {
                         discount: configurable(0.1, {
-                            label: '折扣',
+                            label: "折扣",
                             onValidate: (value) => value >= 0 && value < 1,
                         }),
                         tax: configurable(0.05, {
-                            label: '税率',
+                            label: "税率",
                             onValidate: (value) => value >= 0 && value < 1,
                         }),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app3',
+                    configKey: "app3",
                 },
             );
 
             // 1. 测试加载配置
             mockSource.data = {
-                'app1.order.price': 199.9,
-                'app1.order.quantity': 50,
-                'app2.user.name': 'Alice',
-                'app2.user.age': 30,
-                'app3.shop.discount': 0.2,
-                'app3.shop.tax': 0.1,
+                "app1.order.price": 199.9,
+                "app1.order.quantity": 50,
+                "app2.user.name": "Alice",
+                "app2.user.age": 30,
+                "app3.shop.discount": 0.2,
+                "app3.shop.tax": 0.1,
             };
 
             await configManager.load();
@@ -737,33 +737,33 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
 
             expect(orderStore.state.order.price).toBe(199.9);
             expect(orderStore.state.order.quantity).toBe(50);
-            expect(userStore.state.user.name).toBe('Alice');
+            expect(userStore.state.user.name).toBe("Alice");
             expect(userStore.state.user.age).toBe(30);
             expect(shopStore.state.shop.discount).toBe(0.2);
             expect(shopStore.state.shop.tax).toBe(0.1);
 
             // 2. 测试修改配置触发 save
             orderStore.state.order.price = 299.9;
-            userStore.state.user.name = 'Charlie';
+            userStore.state.user.name = "Charlie";
             shopStore.state.shop.discount = 0.3;
 
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             expect(mockSource.saveCallCount).toBeGreaterThan(0);
-            expect(mockSource.data['app1.order.price']).toBe(299.9);
-            expect(mockSource.data['app2.user.name']).toBe('Charlie');
-            expect(mockSource.data['app3.shop.discount']).toBe(0.3);
+            expect(mockSource.data["app1.order.price"]).toBe(299.9);
+            expect(mockSource.data["app2.user.name"]).toBe("Charlie");
+            expect(mockSource.data["app3.shop.discount"]).toBe(0.3);
 
             // 3. 测试 reset
             orderStore.state.order.price = 399.9;
-            userStore.state.user.name = 'David';
+            userStore.state.user.name = "David";
             shopStore.state.shop.discount = 0.5;
 
             configManager.reset();
 
             expect(orderStore.state.order.price).toBe(99.9);
             expect(orderStore.state.order.quantity).toBe(10);
-            expect(userStore.state.user.name).toBe('Bob');
+            expect(userStore.state.user.name).toBe("Bob");
             expect(userStore.state.user.age).toBe(25);
             expect(shopStore.state.shop.discount).toBe(0.1);
             expect(shopStore.state.shop.tax).toBe(0.05);
@@ -772,14 +772,14 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(Object.keys(configManager.dirtyValues).length).toBe(0);
         });
 
-        test('不同 Store 的配置项应该独立校验', async () => {
+        test("不同 Store 的配置项应该独立校验", async () => {
             const orderStore = new AutoStore(
                 {
                     order: {
                         price: configurable(99.9, {
                             onValidate: (value) => {
                                 if (value <= 0) {
-                                    throw new Error('价格必须大于0');
+                                    throw new Error("价格必须大于0");
                                 }
                                 return true;
                             },
@@ -788,17 +788,17 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app1',
+                    configKey: "app1",
                 },
             );
 
             const userStore = new AutoStore(
                 {
                     user: {
-                        name: configurable('Bob', {
+                        name: configurable("Bob", {
                             onValidate: (value) => {
                                 if (value.length < 3) {
-                                    throw new Error('用户名至少3个字符');
+                                    throw new Error("用户名至少3个字符");
                                 }
                                 return true;
                             },
@@ -807,7 +807,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app2',
+                    configKey: "app2",
                 },
             );
 
@@ -817,7 +817,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                         discount: configurable(0.1, {
                             onValidate: (value) => {
                                 if (value < 0 || value >= 1) {
-                                    throw new Error('折扣必须在0到1之间');
+                                    throw new Error("折扣必须在0到1之间");
                                 }
                                 return true;
                             },
@@ -826,15 +826,15 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app3',
+                    configKey: "app3",
                 },
             );
 
             // 初始化外部数据并加载
             mockSource.data = {
-                'app1.order.price': 199.9,
-                'app2.user.name': 'Alice',
-                'app3.shop.discount': 0.2,
+                "app1.order.price": 199.9,
+                "app2.user.name": "Alice",
+                "app3.shop.discount": 0.2,
             };
 
             await configManager.load();
@@ -842,25 +842,25 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             // 验证各个配置项独立校验
             expect(() => {
                 orderStore.state.order.price = -10;
-            }).toThrow('价格必须大于0');
+            }).toThrow("价格必须大于0");
 
             expect(() => {
-                userStore.state.user.name = 'ab';
-            }).toThrow('用户名至少3个字符');
+                userStore.state.user.name = "ab";
+            }).toThrow("用户名至少3个字符");
 
             expect(() => {
                 shopStore.state.shop.discount = 1.5;
-            }).toThrow('折扣必须在0到1之间');
+            }).toThrow("折扣必须在0到1之间");
 
             // 一个配置项校验失败不应该影响其他配置项
             expect(orderStore.state.order.price).toBe(199.9);
-            expect(userStore.state.user.name).toBe('Alice');
+            expect(userStore.state.user.name).toBe("Alice");
             expect(shopStore.state.shop.discount).toBe(0.2);
         });
     });
 
-    describe('边界情况和错误处理', () => {
-        test('load 不存在的配置项应该跳过', async () => {
+    describe("边界情况和错误处理", () => {
+        test("load 不存在的配置项应该跳过", async () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -869,13 +869,13 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
             mockSource.data = {
-                'app.order.price': 199.9,
-                'nonexistent.value': 'should be ignored',
+                "app.order.price": 199.9,
+                "nonexistent.value": "should be ignored",
             };
 
             // 不应该报错
@@ -884,7 +884,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(orderStore.state.order.price).toBe(199.9);
         });
 
-        test('空 ConfigManager 调用 reset 不应该报错', () => {
+        test("空 ConfigManager 调用 reset 不应该报错", () => {
             const emptyConfigManager = new ConfigManager({
                 load: async () => ({}),
             });
@@ -894,7 +894,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             }).not.toThrow();
         });
 
-        test('多次调用 reset 应该保持幂等性', () => {
+        test("多次调用 reset 应该保持幂等性", () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -903,7 +903,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app',
+                    configKey: "app",
                 },
             );
 
@@ -920,7 +920,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(orderStore.state.order.price).toBe(99.9);
         });
 
-        test('ConfigManager.size 应该反映配置项数量', async () => {
+        test("ConfigManager.size 应该反映配置项数量", async () => {
             // 初始应该没有配置项
             expect(configManager.size).toBe(0);
 
@@ -933,19 +933,19 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
                 },
                 {
                     configManager,
-                    configKey: 'app1',
+                    configKey: "app1",
                 },
             );
 
             const userStore = new AutoStore(
                 {
                     user: {
-                        name: configurable('Bob', {}),
+                        name: configurable("Bob", {}),
                     },
                 },
                 {
                     configManager,
-                    configKey: 'app2',
+                    configKey: "app2",
                 },
             );
 
@@ -954,7 +954,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
 
             // 加载配置不应该改变配置项数量
             mockSource.data = {
-                'app1.order.price': 199.9,
+                "app1.order.price": 199.9,
             };
             await configManager.load();
 
@@ -962,288 +962,8 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
         });
     });
 
-    describe('AutoStoreOptions.configManager - ConfigSource 类型', () => {
-        test('应该接受 ConfigSource 对象并创建 ConfigManager', async () => {
-            const mockData: Record<string, any> = {
-                'app.order.price': 199.9,
-            };
-
-            // 使用 ConfigSource 对象
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: {
-                        load: async () => ({ ...mockData }),
-                        save: async (values: any) => {
-                            Object.assign(mockData, values);
-                        },
-                    },
-                    configKey: 'app',
-                },
-            );
-
-            // 验证 ConfigManager 被创建
-            expect(orderStore.configManager).toBeDefined();
-            expect(orderStore.configManager?.size).toBe(1);
-
-            // 加载配置
-            await orderStore.configManager!.load();
-            expect(orderStore.state.order.price).toBe(199.9);
-
-            // 修改配置
-            orderStore.state.order.price = 299.9;
-            await new Promise((resolve) => setTimeout(resolve, 10));
-            expect(mockData['app.order.price']).toBe(299.9);
-        });
-
-        test('ConfigSource 只有 load 方法时应该正常工作', async () => {
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: {
-                        load: async () => ({ 'app.order.price': 199.9 }),
-                        // 没有 save 方法
-                    },
-                    configKey: 'app',
-                },
-            );
-
-            // 应该能正常加载
-            await orderStore.configManager!.load();
-            expect(orderStore.state.order.price).toBe(199.9);
-
-            // 修改配置不应该报错
-            orderStore.state.order.price = 299.9;
-            await new Promise((resolve) => setTimeout(resolve, 10));
-            expect(orderStore.state.order.price).toBe(299.9);
-        });
-
-        test('多个 Store 共享同一个 ConfigSource', async () => {
-            const mockData: Record<string, any> = {};
-
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: {
-                        load: async () => ({ ...mockData }),
-                        save: async (values: any) => {
-                            Object.assign(mockData, values);
-                        },
-                    },
-                    configKey: 'app1',
-                },
-            );
-
-            const userStore = new AutoStore(
-                {
-                    user: {
-                        name: configurable('Bob', {}),
-                    },
-                },
-                {
-                    configManager: {
-                        load: async () => ({ ...mockData }),
-                        save: async (values: any) => {
-                            Object.assign(mockData, values);
-                        },
-                    },
-                    configKey: 'app2',
-                },
-            );
-
-            // 每个 Store 应该有自己的 ConfigManager 实例
-            expect(orderStore.configManager).not.toBe(userStore.configManager);
-
-            // 修改配置
-            orderStore.state.order.price = 199.9;
-            userStore.state.user.name = 'Alice';
-
-            await new Promise((resolve) => setTimeout(resolve, 10));
-
-            // 每个 ConfigManager 应该独立保存
-            expect(orderStore.state.order.price).toBe(199.9);
-            expect(userStore.state.user.name).toBe('Alice');
-        });
-
-        test('ConfigSource.load 支持同步返回', async () => {
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: {
-                        load: () => ({ 'app.order.price': 199.9 }),
-                        save: async () => {},
-                    },
-                    configKey: 'app',
-                },
-            );
-
-            // 同步 load 也应该正常工作
-            await orderStore.configManager!.load();
-            expect(orderStore.state.order.price).toBe(199.9);
-        });
-
-        test('ConfigSource.save 支持同步调用', async () => {
-            const savedData: Record<string, any> = {};
-
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: {
-                        load: async () => ({}),
-                        save: (values: any) => {
-                            Object.assign(savedData, values);
-                        },
-                    },
-                    configKey: 'app',
-                },
-            );
-
-            // 修改配置
-            orderStore.state.order.price = 199.9;
-            await new Promise((resolve) => setTimeout(resolve, 10));
-
-            // 验证同步保存被调用
-            expect(savedData['app.order.price']).toBe(199.9);
-        });
-    });
-
-    describe('AutoStoreOptions.configManager - boolean 类型', () => {
-        test('configManager=true 应该创建默认的 ConfigManager', () => {
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: true,
-                    configKey: 'app',
-                },
-            );
-
-            // 应该创建 ConfigManager
-            expect(orderStore.configManager).toBeDefined();
-            expect(orderStore.configManager?.size).toBe(1);
-
-            // 配置项应该可以正常工作
-            expect(orderStore.state.order.price).toBe(99.9);
-
-            // 修改配置
-            orderStore.state.order.price = 199.9;
-            expect(orderStore.state.order.price).toBe(199.9);
-
-            // ConfigManager 应该有 load 方法
-            expect(typeof orderStore.configManager?.load).toBe('function');
-        });
-
-        test('configManager=true 时调用 load 不应该报错', async () => {
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: true,
-                    configKey: 'app',
-                },
-            );
-
-            // 默认 load 返回空对象
-            await orderStore.configManager!.load();
-
-            // 值应该保持为默认值
-            expect(orderStore.state.order.price).toBe(99.9);
-        });
-
-        test('configManager=true 时 reset 应该正常工作', () => {
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: true,
-                    configKey: 'app',
-                },
-            );
-
-            // 修改配置
-            orderStore.state.order.price = 199.9;
-
-            // 调用 reset
-            orderStore.configManager!.reset();
-
-            // 值应该恢复为默认值
-            expect(orderStore.state.order.price).toBe(99.9);
-        });
-
-        test('configManager=true 多个 Store 应该各自创建独立的 ConfigManager', () => {
-            const orderStore = new AutoStore(
-                {
-                    order: {
-                        price: configurable(99.9, {}),
-                    },
-                },
-                {
-                    configManager: true,
-                    configKey: 'app1',
-                },
-            );
-
-            const userStore = new AutoStore(
-                {
-                    user: {
-                        name: configurable('Bob', {}),
-                    },
-                },
-                {
-                    configManager: true,
-                    configKey: 'app2',
-                },
-            );
-
-            // 应该有两个独立的 ConfigManager 实例
-            expect(orderStore.configManager).toBeDefined();
-            expect(userStore.configManager).toBeDefined();
-            expect(orderStore.configManager).not.toBe(userStore.configManager);
-
-            // 各自的 ConfigManager 应该只有一个配置项
-            expect(orderStore.configManager?.size).toBe(1);
-            expect(userStore.configManager?.size).toBe(1);
-
-            // reset 一个不应该影响另一个
-            orderStore.state.order.price = 199.9;
-            userStore.state.user.name = 'Alice';
-
-            orderStore.configManager!.reset();
-
-            expect(orderStore.state.order.price).toBe(99.9);
-            expect(userStore.state.user.name).toBe('Alice');
-        });
-
-        test('configManager=false 应该不创建 ConfigManager', () => {
+    describe("AutoStoreOptions.configManager - boolean 类型", () => {
+        test("configManager=false 应该不创建 ConfigManager", () => {
             const orderStore = new AutoStore(
                 {
                     order: {
@@ -1264,7 +984,7 @@ describe('ConfigManager - source、load、save 和 reset 功能', () => {
             expect(orderStore.state.order.price).toBe(199.9);
         });
 
-        test('configManager 未指定且不存在全局 ConfigManager 时应该不创建', () => {
+        test("configManager 未指定且不存在全局 ConfigManager 时应该不创建", () => {
             // 确保没有全局 ConfigManager
             // @ts-expect-error - 测试目的
             delete globalThis.AutoStoreConfigManager;

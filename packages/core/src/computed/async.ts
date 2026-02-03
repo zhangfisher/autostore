@@ -7,8 +7,7 @@
  *
  *
  */
-import { isFunction, isPathEq, markRaw } from "../utils";
-import { delay } from "flex-tools/async/delay";
+import { isFunction, isPathEq, markRaw, delay } from "../utils";
 import { getValueScope } from "../scope";
 import type { ComputedProgressbar } from "./types";
 import type { AsyncComputedGetterArgs, AsyncComputedValue, RuntimeComputedOptions } from "./types";

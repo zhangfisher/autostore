@@ -304,8 +304,10 @@ export interface AutoStoreOptions<State extends Dict> {
     validators?: Record<string, StateValidator<State>>;
     /**
      * 提供一个配置管理器对象
+     * 如果没有配指定或=true则默认指向全局
+     *
      */
-    configManager?: ConfigManager | ConfigSource | boolean;
+    configManager?: ConfigManager | boolean;
     /**
      * 为当前Store的所有配置项均指定一个统一的前缀
      */
