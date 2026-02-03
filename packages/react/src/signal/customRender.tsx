@@ -46,6 +46,7 @@ export function createCustomRender<State extends Dict>(
     path: string,
     options: SignalComponentOptions,
 ) {
+    // @ts-ignore
     const ErrorBoundary: ComponentType<{ error: any }> =
         options.errorBoundary || store.options.signalErrorBoundary;
     return React.memo(

@@ -434,6 +434,7 @@ describe("Store Events", () => {
             await delay(20);
 
             // 钩子和事件都应该被触发
+            // @ts-ignore
             expect(cancelEvents.length).toBe(2);
             expect(cancelEvents[0].path).toEqual(["slowComputed"]);
             expect(cancelEvents[0].reason).toBe("abort");

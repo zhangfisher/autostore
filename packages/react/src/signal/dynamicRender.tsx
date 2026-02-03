@@ -70,6 +70,7 @@ export function createDynamicRender<State extends Dict>(
     builder: ObserverDescriptorBuilder | ComputedGetter<any> | AsyncComputedGetter<any>,
     options: SignalComponentOptions,
 ) {
+    // @ts-ignore
     const ErrorBoundary: ComponentType<{ error: any }> =
         options.errorBoundary || store.options.signalErrorBoundary;
     return React.memo(
@@ -108,6 +109,7 @@ export function createDynamicRender<State extends Dict>(
             });
 
             useEffect(() => {
+                // @ts-ignore
                 let watcher: Watcher = { off: () => {} };
                 if (observerObj) {
                     watcher = observerObj.watch(

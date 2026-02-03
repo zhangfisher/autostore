@@ -49,7 +49,6 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     },
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
-
                         onComputedDone: () => {
                             // 计算完成时触发
                             results.push(store.state.total);
@@ -81,7 +80,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     },
                     {
                         onComputedDone: () => {
-                            const cobj = store.computedObjects.get("x")!;
+                            const cobj = store.computedObjects.get("x")! as any;
                             expect(cobj.value).toBe(6);
                             resolve();
                         },
@@ -108,7 +107,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     ),
                 });
                 setTimeout(() => {
-                    const cobj = store.computedObjects.get("x")!;
+                    const cobj = store.computedObjects.get("x")! as any;
                     expect(cobj.value).toBe(6);
                     expect(count).toBe(0); // 提供转让
                     resolve();
@@ -137,7 +136,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     },
                     {
                         onComputedDone: () => {
-                            const cobj = store.computedObjects.get("x")!;
+                            const cobj = store.computedObjects.get("x")! as any;
                             expect(cobj.value).toBe(6);
                             expect(count).toBe(1); // 提供转让
                             resolve();

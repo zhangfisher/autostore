@@ -1,6 +1,6 @@
-import { Bench } from 'tinybench';
-import { AutoStore } from 'autostore';
-import { derive, share } from 'helux';
+import { Bench } from "tinybench";
+import { AutoStore } from "autostore";
+import { derive, share } from "helux";
 
 const bench = new Bench({
     time: 1000,
@@ -40,12 +40,12 @@ const a10 = derive(() => {
     return a9.val + 1;
 });
 bench
-    .add('[AutoStore] 多重依赖链计算', () => {
+    .add("[AutoStore] 多重依赖链同步计算", () => {
         for (let i = 1; i <= 1000; i++) {
             autoStore.state.a0 = i;
         }
     })
-    .add('[Helux] 多重依赖链计算', () => {
+    .add("[Helux] 多重依赖链同步计算", () => {
         for (let i = 1; i <= 1000; i++) {
             setA0((draft) => {
                 draft.value = i;

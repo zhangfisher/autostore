@@ -53,6 +53,7 @@ export function createStaticRender<State extends Dict>(
     selector: ObjectKeyPaths<State> | StateGetter<State>,
     options: SignalComponentOptions,
 ) {
+    // @ts-ignore
     const ErrorBoundary: ComponentType<{ error: any }> =
         options.errorBoundary || store.options.signalErrorBoundary;
     return React.memo(

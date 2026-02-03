@@ -301,19 +301,25 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
             this._configManager = this.options.configManager as ConfigManager;
             //if (!this.options.configKey) this.options.configKey = this.id;
         } else if (isConfigSource(this.options.configManager)) {
-            // ConfigSource 对象，创建新的 ConfigManager
-            const { ConfigManager } = require("../schema/manager");
-            // 如果独立配置管理器，则不需要指定configKey
-            //this.options.configKey = undefined;
-            this._configManager = new ConfigManager(this.options.configManager);
-        } else if (this.options.configManager === true) {
-            // configManager 为 true，创建默认的 ConfigManager
-            const { ConfigManager } = require("../schema/manager");
-            // 如果独立配置管理器，则不需要指定configKey
-            this.options.configKey = undefined;
-            this._configManager = new ConfigManager({
-                load: () => ({}),
+            import("../schema/manager").then(({ ConfigManager }) => {
+                // 如果独立配置管理器，则不需要指定configKey
+                //this.options.configKey = undefined;
+                // @ts-ignore
+                this._configManager = new ConfigManager(this.options.configManager);
             });
+            // ConfigSource 对象，创建新的 ConfigManager
+            // const { ConfigManager } = require("../schema/manager");
+        } else if (this.options.configManager === true) {
+            import("../schema/manager").then(({ ConfigManager }) => {
+                this.options.configKey = undefined;
+                this._configManager = new ConfigManager({
+                    load: () => ({}),
+                });
+            });
+            // configManager 为 true，创建默认的 ConfigManager
+            //const { ConfigManager } = require("../schema/manager");
+            // 如果独立配置管理器，则不需要指定configKey
+
             // @ts-expect-error
         } else if (this._options.configManager === undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
             if (!this.options.configKey) this.options.configKey = this.id;

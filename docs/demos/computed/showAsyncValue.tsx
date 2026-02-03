@@ -1,5 +1,5 @@
 import React from "react"
-import { createStore,computed,AsyncComputedObject } from "@autostorejs/react"
+import { createStore,computed } from "@autostorejs/react"
 import { Box,JsonView } from "x-react-components"
 
 const store = createStore({
@@ -20,9 +20,8 @@ export default ()=>{
     />
   </Box>
   <Box title={`store.computedObjects.get("order.total")=`}>
-        store.computedObjects.get("order.total")! instanceof AsyncComputedObject = {String(store.computedObjects.get("order.total")! instanceof AsyncComputedObject)}
+        {/* 计算对象实例 */}
+        typeof store.computedObjects.get("order.total") = {typeof store.computedObjects.get("order.total")}
   </Box>
   </>)
-  
-  
 }
