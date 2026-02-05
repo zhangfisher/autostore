@@ -1,3 +1,5 @@
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { AutoStore, configurable, ConfigManager, ValidateError, computed } from "../src";
 /**
  * ConfigManager 和 configurable 功能单元测试
  *
@@ -9,12 +11,32 @@
  *
  * 测试各种数据类型和校验场景
  */
-/** biome-ignore-all lint/complexity/useLiteralKeys: <explanation> */
 
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { AutoStore, configurable, ConfigManager, ValidateError, computed } from '../src';
+/**
+ * 辅助函数：验证配置项是否正确注册到 ConfigManager
+ * @param configManager ConfigManager 实例
+ * @param store AutoStore 实例
+ * @param paths 配置项路径数组，如 ["order.count", "user.name"]
+ */
+function assertConfigRegistered(
+    configManager: ConfigManager,
+    store: AutoStore<any>,
+    paths: string[],
+) {
+    // 获取预期的 configKey 前缀
+    // 如果 store.options.configKey 未定义，默认为 store.id
+    // 如果 store.options.configKey 为空字符串，则不添加前缀
+    const configKey = store.options.configKey; // || store.id;
+    const prefix = configKey === "" ? "" : `${configKey}.`;
 
-describe('ConfigManager 和 configurable 集成测试', () => {
+    for (const path of paths) {
+        const fullPath = prefix + path;
+        expect(fullPath in configManager.state).toBe(true);
+        expect(configManager.state[fullPath]).toBeDefined();
+    }
+}
+
+describe("ConfigManager 和 configurable 集成测试", () => {
     let configManager: ConfigManager;
 
     beforeEach(() => {
@@ -30,13 +52,13 @@ describe('ConfigManager 和 configurable 集成测试', () => {
         configManager = null as any;
     });
 
-    describe('基本功能 - 自动注册配置项', () => {
-        test('使用 configurable 声明的字段应该自动注册到 ConfigManager', () => {
+    describe("基本功能 - 自动注册配置项", () => {
+        test("使用 configurable 声明的字段应该自动注册到 ConfigManager", () => {
             const store = new AutoStore(
                 {
                     order: {
                         count: configurable(100, {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 return value >= 0 && value <= 1000;
                             },
                         }),
@@ -49,15 +71,18 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             // ConfigManager 应该包含配置项
             expect(configManager.size).toBeGreaterThan(0);
             expect(store.state.order.count).toBe(100);
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["order.count"]);
         });
 
-        test('注册后校验函数应该生效', () => {
+        test("注册后校验函数应该生效", () => {
             const store = new AutoStore(
                 {
                     count: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 0 || value > 1000) {
-                                throw new ValidateError('数量必须在 0 到 1000 之间');
+                                throw new ValidateError("数量必须在 0 到 1000 之间");
                             }
                             return true;
                         },
@@ -67,6 +92,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count"]);
 
             // 合法值应该成功
             store.state.count = 200;
@@ -76,16 +104,17 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             expect(() => {
                 store.state.count = 2000;
             }).toThrow(ValidateError);
-            expect(configManager.errors.count).toBe('数量必须在 0 到 1000 之间');
+            expect(Object.keys(configManager.errors).length).toBe(1);
+            expect(configManager.errors[`${store.id}.count`]).toBe("数量必须在 0 到 1000 之间");
         });
 
-        test('校验失败时错误应该记录到 ConfigManager.errors', () => {
+        test("校验失败时错误应该记录到 ConfigManager.errors", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value <= 0) {
-                                throw new ValidateError('价格必须大于0');
+                                throw new ValidateError("价格必须大于0");
                             }
                             return true;
                         },
@@ -95,6 +124,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price"]);
 
             // 触发校验失败
             expect(() => {
@@ -102,20 +134,20 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             }).toThrow(ValidateError);
 
             // 错误应该被记录到 ConfigManager.errors
-            expect(configManager.errors['price']).toBeDefined();
-            expect(configManager.errors['price']).toBe('价格必须大于0');
+            expect(configManager.errors[`${store.id}.price`]).toBeDefined();
+            expect(configManager.errors[`${store.id}.price`]).toBe("价格必须大于0");
 
             // 值不应该被修改
             expect(store.state.price).toBe(100);
         });
 
-        test('校验成功后应该清除错误', () => {
+        test("校验成功后应该清除错误", () => {
             const store = new AutoStore(
                 {
                     quantity: configurable(10, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 0 || value > 100) {
-                                throw new ValidateError('数量超出范围');
+                                throw new ValidateError("数量超出范围");
                             }
                             return true;
                         },
@@ -123,93 +155,106 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
                 {
                     configManager,
+                    configKey: "",
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["quantity"]);
 
             // 触发校验失败
             expect(() => {
                 store.state.quantity = 200;
             }).toThrow(ValidateError);
 
-            expect(configManager.errors['quantity']).toBeDefined();
+            expect(configManager.errors[`quantity`]).toBeDefined();
 
             // 修正为合法值
             store.state.quantity = 50;
             expect(store.state.quantity).toBe(50);
 
             // 错误应该被清除
-            expect(configManager.errors['quantity']).toBeUndefined();
+            expect(configManager.errors[`${store.id}.quantity`]).toBeUndefined();
         });
     });
 
-    describe('onInvalid - 不同验证行为', () => {
+    describe("onInvalid - 不同验证行为", () => {
         test('onInvalid="pass" - 校验失败但继续写入', () => {
             const store = new AutoStore(
                 {
                     count: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 0 || value > 1000) {
-                                throw new ValidateError('数量超出范围');
+                                throw new ValidateError("数量超出范围");
                             }
                             return true;
                         },
-                        onInvalid: 'pass',
+                        onInvalid: "pass",
                     }),
                 },
                 {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count"]);
 
             // 校验失败但应该继续写入
             store.state.count = 2000;
             expect(store.state.count).toBe(2000);
 
             // 错误应该被记录
-            expect(configManager.errors['count']).toBeDefined();
-            expect(configManager.errors['count']).toBe('数量超出范围');
+            expect(configManager.errors[`${store.id}.count`]).toBeDefined();
+            expect(configManager.errors[`${store.id}.count`]).toBe("数量超出范围");
         });
 
         test('onInvalid="ignore" - 校验失败静默忽略', () => {
             const store = new AutoStore(
                 {
                     count: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 0 || value > 1000) {
-                                throw new ValidateError('数量超出范围');
+                                throw new ValidateError("数量超出范围");
                             }
                             return true;
                         },
-                        onInvalid: 'ignore',
+                        onInvalid: "ignore",
                     }),
                 },
                 {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count"]);
 
             // 校验失败，值不应该被修改
             store.state.count = 2000;
             expect(store.state.count).toBe(100);
 
             // 错误应该被记录
-            expect(configManager.errors['count']).toBeDefined();
+            expect(configManager.errors[`${store.id}.count`]).toBeDefined();
         });
 
         test('onInvalid="throw" - 校验失败抛出异常（默认）', () => {
             const store = new AutoStore(
                 {
                     count: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 0 && value <= 1000;
                         },
-                        onInvalid: 'throw',
+                        onInvalid: "throw",
                     }),
                 },
                 {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count"]);
 
             // 校验失败应该抛出异常
             expect(() => {
@@ -217,23 +262,26 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             }).toThrow(ValidateError);
 
             expect(store.state.count).toBe(100);
-            expect(configManager.errors['count']).toBeDefined();
+            expect(configManager.errors[`${store.id}.count`]).toBeDefined();
         });
 
         test('onInvalid="throw-pass" - 写入数据但抛出异常', () => {
             const store = new AutoStore(
                 {
                     count: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 0 && value <= 1000;
                         },
-                        onInvalid: 'throw-pass',
+                        onInvalid: "throw-pass",
                     }),
                 },
                 {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count"]);
 
             // 应该抛出异常
             expect(() => {
@@ -244,18 +292,18 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             expect(store.state.count).toBe(2000);
 
             // 错误应该被记录
-            expect(configManager.errors['count']).toBeDefined();
+            expect(configManager.errors[`${store.id}.count`]).toBeDefined();
         });
     });
 
-    describe('测试各种数据类型', () => {
-        describe('number 类型', () => {
-            test('应该校验数字类型的值', () => {
+    describe("测试各种数据类型", () => {
+        describe("number 类型", () => {
+            test("应该校验数字类型的值", () => {
                 const store = new AutoStore(
                     {
                         price: configurable(99.9, {
-                            onValidate: (value) => {
-                                return typeof value === 'number' && value > 0;
+                            validate: (value) => {
+                                return typeof value === "number" && value > 0;
                             },
                         }),
                     },
@@ -263,6 +311,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                         configManager,
                     },
                 );
+
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["price"]);
 
                 // 合法值
                 store.state.price = 199.9;
@@ -276,15 +327,15 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 // 非法值（非数字）
                 expect(() => {
                     // @ts-expect-error - 测试类型错误
-                    store.state.price = 'free';
+                    store.state.price = "free";
                 }).toThrow(ValidateError);
             });
 
-            test('应该支持整数校验', () => {
+            test("应该支持整数校验", () => {
                 const store = new AutoStore(
                     {
                         quantity: configurable(10, {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 return Number.isInteger(value) && value > 0;
                             },
                         }),
@@ -293,6 +344,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                         configManager,
                     },
                 );
+
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["quantity"]);
 
                 // 整数应该成功
                 store.state.quantity = 20;
@@ -304,11 +358,11 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 }).toThrow(ValidateError);
             });
 
-            test('应该支持范围校验', () => {
+            test("应该支持范围校验", () => {
                 const store = new AutoStore(
                     {
                         age: configurable(25, {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 return value >= 0 && value <= 150;
                             },
                         }),
@@ -317,6 +371,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                         configManager,
                     },
                 );
+
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["age"]);
 
                 // 正常范围应该成功
                 store.state.age = 30;
@@ -333,13 +390,13 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             });
         });
 
-        describe('string 类型', () => {
-            test('应该校验字符串类型的值', () => {
+        describe("string 类型", () => {
+            test("应该校验字符串类型的值", () => {
                 const store = new AutoStore(
                     {
-                        username: configurable('admin', {
-                            onValidate: (value) => {
-                                return typeof value === 'string' && value.length >= 3;
+                        username: configurable("admin", {
+                            validate: (value) => {
+                                return typeof value === "string" && value.length >= 3;
                             },
                         }),
                     },
@@ -348,13 +405,16 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     },
                 );
 
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["username"]);
+
                 // 合法值
-                store.state.username = 'user123';
-                expect(store.state.username).toBe('user123');
+                store.state.username = "user123";
+                expect(store.state.username).toBe("user123");
 
                 // 非法值（太短）
                 expect(() => {
-                    store.state.username = 'ab';
+                    store.state.username = "ab";
                 }).toThrow(ValidateError);
 
                 // 非法值（非字符串）
@@ -364,11 +424,11 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 }).toThrow(ValidateError);
             });
 
-            test('应该支持正则表达式校验', () => {
+            test("应该支持正则表达式校验", () => {
                 const store = new AutoStore(
                     {
-                        email: configurable('test@example.com', {
-                            onValidate: (value) => {
+                        email: configurable("test@example.com", {
+                            validate: (value) => {
                                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                                 return emailRegex.test(value);
                             },
@@ -379,21 +439,24 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     },
                 );
 
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["email"]);
+
                 // 合法邮箱
-                store.state.email = 'user@domain.com';
-                expect(store.state.email).toBe('user@domain.com');
+                store.state.email = "user@domain.com";
+                expect(store.state.email).toBe("user@domain.com");
 
                 // 非法邮箱
                 expect(() => {
-                    store.state.email = 'invalid-email';
+                    store.state.email = "invalid-email";
                 }).toThrow(ValidateError);
             });
 
-            test('应该支持字符串长度限制', () => {
+            test("应该支持字符串长度限制", () => {
                 const store = new AutoStore(
                     {
-                        title: configurable('标题', {
-                            onValidate: (value) => {
+                        title: configurable("标题", {
+                            validate: (value) => {
                                 return value.length >= 1 && value.length <= 50;
                             },
                         }),
@@ -403,29 +466,32 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     },
                 );
 
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["title"]);
+
                 // 正常长度
-                store.state.title = '这是一个标题';
-                expect(store.state.title).toBe('这是一个标题');
+                store.state.title = "这是一个标题";
+                expect(store.state.title).toBe("这是一个标题");
 
                 // 太长
                 expect(() => {
-                    store.state.title = 'a'.repeat(100);
+                    store.state.title = "a".repeat(100);
                 }).toThrow(ValidateError);
 
                 // 空字符串
                 expect(() => {
-                    store.state.title = '';
+                    store.state.title = "";
                 }).toThrow(ValidateError);
             });
         });
 
-        describe('boolean 类型', () => {
-            test('应该校验布尔类型的值', () => {
+        describe("boolean 类型", () => {
+            test("应该校验布尔类型的值", () => {
                 const store = new AutoStore(
                     {
                         enabled: configurable(true, {
-                            onValidate: (value) => {
-                                return typeof value === 'boolean';
+                            validate: (value) => {
+                                return typeof value === "boolean";
                             },
                         }),
                     },
@@ -433,6 +499,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                         configManager,
                     },
                 );
+
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["enabled"]);
 
                 // 合法值
                 store.state.enabled = false;
@@ -444,17 +513,17 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 // 非法值
                 expect(() => {
                     // @ts-expect-error - 测试类型错误
-                    store.state.enabled = 'yes';
+                    store.state.enabled = "yes";
                 }).toThrow(ValidateError);
             });
         });
 
-        describe('array 类型', () => {
-            test('应该校验数组类型的值', () => {
+        describe("array 类型", () => {
+            test("应该校验数组类型的值", () => {
                 const store = new AutoStore(
                     {
-                        tags: configurable(['tag1', 'tag2'], {
-                            onValidate: (value) => {
+                        tags: configurable(["tag1", "tag2"], {
+                            validate: (value) => {
                                 return Array.isArray(value) && value.length <= 5;
                             },
                         }),
@@ -464,30 +533,33 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     },
                 );
 
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["tags"]);
+
                 // 合法值
-                store.state.tags = ['tag3', 'tag4'];
-                expect(store.state.tags).toEqual(['tag3', 'tag4']);
+                store.state.tags = ["tag3", "tag4"];
+                expect(store.state.tags).toEqual(["tag3", "tag4"]);
 
                 // 数组太长
                 expect(() => {
-                    store.state.tags = ['a', 'b', 'c', 'd', 'e', 'f'];
+                    store.state.tags = ["a", "b", "c", "d", "e", "f"];
                 }).toThrow(ValidateError);
 
                 // 非数组
                 expect(() => {
                     // @ts-expect-error - 测试类型错误
-                    store.state.tags = 'not-array';
+                    store.state.tags = "not-array";
                 }).toThrow(ValidateError);
             });
 
-            test('应该校验数组元素类型', () => {
+            test("应该校验数组元素类型", () => {
                 const store = new AutoStore(
                     {
                         numbers: configurable([1, 2, 3], {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 return (
                                     Array.isArray(value) &&
-                                    value.every((item) => typeof item === 'number')
+                                    value.every((item) => typeof item === "number")
                                 );
                             },
                         }),
@@ -497,6 +569,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     },
                 );
 
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["numbers"]);
+
                 // 数字数组
                 store.state.numbers = [4, 5, 6];
                 expect(store.state.numbers).toEqual([4, 5, 6]);
@@ -504,23 +579,23 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 // 混合类型数组
                 expect(() => {
                     // @ts-expect-error - 测试类型错误
-                    store.state.numbers = [1, 2, 'three'];
+                    store.state.numbers = [1, 2, "three"];
                 }).toThrow(ValidateError);
             });
         });
 
-        describe('object 类型', () => {
-            test('应该校验对象类型的值', () => {
+        describe("object 类型", () => {
+            test("应该校验对象类型的值", () => {
                 const store = new AutoStore(
                     {
                         settings: configurable(
-                            { theme: 'dark' },
+                            { theme: "dark" },
                             {
-                                onValidate: (value) => {
+                                validate: (value) => {
                                     return (
-                                        typeof value === 'object' &&
+                                        typeof value === "object" &&
                                         value !== null &&
-                                        'theme' in value
+                                        "theme" in value
                                     );
                                 },
                             },
@@ -531,31 +606,34 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     },
                 );
 
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["settings"]);
+
                 // 合法对象
-                store.state.settings = { theme: 'light' };
-                expect(store.state.settings).toEqual({ theme: 'light' });
+                store.state.settings = { theme: "light" };
+                expect(store.state.settings).toEqual({ theme: "light" });
 
                 // 缺少必需字段
                 expect(() => {
                     // @ts-expect-error - 测试缺少字段
-                    store.state.settings = { other: 'value' };
+                    store.state.settings = { other: "value" };
                 }).toThrow(ValidateError);
 
                 // 非对象
                 expect(() => {
                     // @ts-expect-error - 测试类型错误
-                    store.state.settings = 'not-object';
+                    store.state.settings = "not-object";
                 }).toThrow(ValidateError);
             });
         });
 
-        describe('Date 类型', () => {
-            test('应该校验 Date 类型的值', () => {
-                const initialDate = new Date('2024-01-01');
+        describe("Date 类型", () => {
+            test("应该校验 Date 类型的值", () => {
+                const initialDate = new Date("2024-01-01");
                 const store = new AutoStore(
                     {
                         createdAt: configurable(initialDate, {
-                            onValidate: (value: any) => {
+                            validate: (value: any) => {
                                 // 检查是否为 Date 实例且日期有效
                                 return value instanceof Date && !isNaN(value.getTime());
                             },
@@ -566,39 +644,42 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     },
                 );
 
+                // 断言配置项被正确注册
+                assertConfigRegistered(configManager, store, ["createdAt"]);
+
                 // 合法 Date
-                const newDate = new Date('2024-12-31');
+                const newDate = new Date("2024-12-31");
                 store.state.createdAt = newDate;
                 // 验证 Date 已被正确设置
                 expect(store.state.createdAt instanceof Date).toBe(true);
 
                 // 非 Date
                 expect(() => {
-                    store.state.createdAt = '2024-01-01';
+                    store.state.createdAt = "2024-01-01";
                 }).toThrow(ValidateError);
 
                 // 无效 Date
                 expect(() => {
-                    store.state.createdAt = new Date('invalid');
+                    store.state.createdAt = new Date("invalid");
                 }).toThrow(ValidateError);
             });
         });
     });
 
-    describe('嵌套对象和复杂场景', () => {
-        test('应该支持嵌套对象的配置项', () => {
+    describe("嵌套对象和复杂场景", () => {
+        test("应该支持嵌套对象的配置项", () => {
             const store = new AutoStore(
                 {
                     user: {
                         profile: {
                             age: configurable(25, {
-                                onValidate: (value) => {
+                                validate: (value) => {
                                     return value >= 0 && value <= 150;
                                 },
                             }),
-                            name: configurable('John', {
-                                onValidate: (value) => {
-                                    return typeof value === 'string' && value.length > 0;
+                            name: configurable("John", {
+                                validate: (value) => {
+                                    return typeof value === "string" && value.length > 0;
                                 },
                             }),
                         },
@@ -609,12 +690,15 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["user.profile.age", "user.profile.name"]);
+
             // 两个字段都应该正常工作
             store.state.user.profile.age = 30;
             expect(store.state.user.profile.age).toBe(30);
 
-            store.state.user.profile.name = 'Alice';
-            expect(store.state.user.profile.name).toBe('Alice');
+            store.state.user.profile.name = "Alice";
+            expect(store.state.user.profile.name).toBe("Alice");
 
             // age 校验失败
             expect(() => {
@@ -623,34 +707,34 @@ describe('ConfigManager 和 configurable 集成测试', () => {
 
             // name 校验失败
             expect(() => {
-                store.state.user.profile.name = '';
+                store.state.user.profile.name = "";
             }).toThrow(ValidateError);
         });
 
-        test('应该支持多个配置项的独立校验', () => {
+        test("应该支持多个配置项的独立校验", () => {
             const store = new AutoStore(
                 {
                     order: {
                         price: configurable(100, {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 if (value <= 0) {
-                                    throw new ValidateError('价格必须大于0');
+                                    throw new ValidateError("价格必须大于0");
                                 }
                                 return true;
                             },
                         }),
                         quantity: configurable(10, {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 if (value < 1 || value > 100) {
-                                    throw new ValidateError('数量必须在 1 到 100 之间');
+                                    throw new ValidateError("数量必须在 1 到 100 之间");
                                 }
                                 return true;
                             },
                         }),
                         discount: configurable(0.1, {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 if (value < 0 || value >= 1) {
-                                    throw new ValidateError('折扣必须在 0 到 1 之间');
+                                    throw new ValidateError("折扣必须在 0 到 1 之间");
                                 }
                                 return true;
                             },
@@ -661,6 +745,13 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, [
+                "order.price",
+                "order.quantity",
+                "order.discount",
+            ]);
 
             // 所有字段初始值应该合法
             expect(store.state.order.price).toBe(100);
@@ -671,63 +762,70 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             expect(() => {
                 store.state.order.price = -10;
             }).toThrow(ValidateError);
-            expect(configManager.errors['order.price']).toBeDefined();
-            expect(configManager.errors['order.price']).toBe('价格必须大于0');
+            expect(configManager.errors[`${store.id}.order.price`]).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.price`]).toBe("价格必须大于0");
 
             // quantity 校验失败
             expect(() => {
                 store.state.order.quantity = 200;
             }).toThrow(ValidateError);
-            expect(configManager.errors['order.quantity']).toBeDefined();
-            expect(configManager.errors['order.quantity']).toBe('数量必须在 1 到 100 之间');
+            expect(configManager.errors[`${store.id}.order.quantity`]).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.quantity`]).toBe(
+                "数量必须在 1 到 100 之间",
+            );
 
             // discount 校验失败
             expect(() => {
                 store.state.order.discount = 1.5;
             }).toThrow(ValidateError);
-            expect(configManager.errors['order.discount']).toBeDefined();
-            expect(configManager.errors['order.discount']).toBe('折扣必须在 0 到 1 之间');
+            expect(configManager.errors[`${store.id}.order.discount`]).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.discount`]).toBe(
+                "折扣必须在 0 到 1 之间",
+            );
 
             // 三个错误应该独立存在
-            expect(configManager.errors['order.price']).toBeDefined();
-            expect(configManager.errors['order.quantity']).toBeDefined();
-            expect(configManager.errors['order.discount']).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.price`]).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.quantity`]).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.discount`]).toBeDefined();
 
             // 修正 price
             store.state.order.price = 200;
-            expect(configManager.errors['order.price']).toBeUndefined();
-            expect(configManager.errors['order.quantity']).toBeDefined();
-            expect(configManager.errors['order.discount']).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.price`]).toBeUndefined();
+            expect(configManager.errors[`${store.id}.order.quantity`]).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.discount`]).toBeDefined();
 
             // 修正 quantity
             store.state.order.quantity = 50;
-            expect(configManager.errors['order.price']).toBeUndefined();
-            expect(configManager.errors['order.quantity']).toBeUndefined();
-            expect(configManager.errors['order.discount']).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.price`]).toBeUndefined();
+            expect(configManager.errors[`${store.id}.order.quantity`]).toBeUndefined();
+            expect(configManager.errors[`${store.id}.order.discount`]).toBeDefined();
 
             // 修正 discount
             store.state.order.discount = 0.2;
-            expect(configManager.errors['order.price']).toBeUndefined();
-            expect(configManager.errors['order.quantity']).toBeUndefined();
-            expect(configManager.errors['order.discount']).toBeUndefined();
+            expect(configManager.errors[`${store.id}.order.price`]).toBeUndefined();
+            expect(configManager.errors[`${store.id}.order.quantity`]).toBeUndefined();
+            expect(configManager.errors[`${store.id}.order.discount`]).toBeUndefined();
         });
     });
 
-    describe('configKey - 配置键前缀', () => {
-        test('应该支持自定义 configKey', () => {
+    describe("configKey - 配置键前缀", () => {
+        test("应该支持自定义 configKey", () => {
             const store = new AutoStore(
                 {
                     count: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 0 && value <= 1000;
                         },
                     }),
                 },
                 {
                     configManager,
-                    configKey: 'myapp',
+                    configKey: "myapp",
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count"]);
 
             // 触发校验失败
             expect(() => {
@@ -735,13 +833,13 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             }).toThrow(ValidateError);
 
             // 错误应该记录在带前缀的键下
-            expect(configManager.errors['myapp.count']).toBeDefined();
+            expect(configManager.errors[`myapp.count`]).toBeDefined();
             expect(configManager.errors.count).toBeUndefined();
         });
     });
 
-    describe('边界情况和错误处理', () => {
-        test('没有 onValidate 时应该正常工作', () => {
+    describe("边界情况和错误处理", () => {
+        test("没有 validate 时应该正常工作", () => {
             const store = new AutoStore(
                 {
                     value: configurable(100, {}),
@@ -750,6 +848,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["value"]);
 
             // 没有校验函数，任何值都应该允许
             store.state.value = 200;
@@ -762,13 +863,13 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             expect(configManager.errors).toEqual({});
         });
 
-        test('校验函数抛出非 ValidateError 的异常应该被处理', () => {
+        test("校验函数抛出非 ValidateError 的异常应该被处理", () => {
             const store = new AutoStore(
                 {
                     value: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 0) {
-                                throw new Error('不允许负数');
+                                throw new Error("不允许负数");
                             }
                             return true;
                         },
@@ -779,18 +880,21 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["value"]);
+
             // 抛出的普通 Error 应该被处理
             expect(() => {
                 store.state.value = -10;
             }).toThrow();
 
             // 错误应该被记录
-            expect(configManager.errors.value).toBeDefined();
+            expect(configManager.errors[`${store.id}.value`]).toBeDefined();
         });
     });
 
-    describe('ConfigManager.fields 和 size 属性', () => {
-        test('fields 应该返回所有配置项', () => {
+    describe("ConfigManager.fields 和 size 属性", () => {
+        test("fields 应该返回所有配置项", () => {
             const store = new AutoStore(
                 {
                     count: configurable(100, {}),
@@ -801,6 +905,9 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count", "price"]);
+
             // size 应该反映配置项数量
             expect(configManager.size).toBe(2);
 
@@ -809,16 +916,16 @@ describe('ConfigManager 和 configurable 集成测试', () => {
         });
     });
 
-    describe('validate 事件触发', () => {
-        test('校验时应该触发 validate 事件', () => {
+    describe("validate 事件触发", () => {
+        test("校验时应该触发 validate 事件", () => {
             const validateEvents: any[] = [];
 
             const store = new AutoStore(
                 {
                     count: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 0 || value > 1000) {
-                                throw new ValidateError('数量超出范围');
+                                throw new ValidateError("数量超出范围");
                             }
                             return true;
                         },
@@ -829,7 +936,10 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
-            store.on('validate', (event) => {
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count"]);
+
+            store.on("validate", (event) => {
                 validateEvents.push({ ...event });
             });
 
@@ -848,21 +958,21 @@ describe('ConfigManager 和 configurable 集成测试', () => {
 
             const failureEvent = validateEvents.find((e) => e.error instanceof ValidateError);
             expect(failureEvent).toBeDefined();
-            expect(failureEvent?.error.message).toBe('数量超出范围');
+            expect(failureEvent?.error.message).toBe("数量超出范围");
         });
     });
 
-    describe('defaultSchema - 默认 Schema 配置', () => {
-        test('defaultSchema 应该为所有 configurable 字段提供公共的 onInvalid 行为', () => {
+    describe("defaultSchema - 默认 Schema 配置", () => {
+        test("defaultSchema 应该为所有 configurable 字段提供公共的 onInvalid 行为", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value > 0;
                         },
                     }),
                     quantity: configurable(10, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 1 && value <= 100;
                         },
                     }),
@@ -870,37 +980,40 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 {
                     configManager,
                     defaultSchema: {
-                        onInvalid: 'pass',
+                        onInvalid: "pass",
                     },
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price", "quantity"]);
+
             // price 校验失败，应该 pass（不抛异常，但写入值）
             store.state.price = -50;
             expect(store.state.price).toBe(-50);
-            expect(configManager.errors['price']).toBeDefined();
+            expect(configManager.errors[`${store.id}.price`]).toBeDefined();
 
             // quantity 校验失败，也应该是 pass
             store.state.quantity = 200;
             expect(store.state.quantity).toBe(200);
-            expect(configManager.errors['quantity']).toBeDefined();
+            expect(configManager.errors[`${store.id}.quantity`]).toBeDefined();
         });
 
-        test('defaultSchema 应该为所有 configurable 字段提供公共的 invalidTips', () => {
+        test("defaultSchema 应该为所有 configurable 字段提供公共的 invalidTips", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value <= 0) {
-                                throw new ValidateError('价格必须大于0');
+                                throw new ValidateError("价格必须大于0");
                             }
                             return true;
                         },
                     }),
                     quantity: configurable(10, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 1 || value > 100) {
-                                throw new ValidateError('数量超出范围');
+                                throw new ValidateError("数量超出范围");
                             }
                             return true;
                         },
@@ -909,41 +1022,45 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 {
                     configManager,
                     defaultSchema: {
-                        invalidTips: '配置项 {label} 校验失败',
+                        invalidTips: "配置项 {label} 校验失败",
                     },
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price", "quantity"]);
+
             // price 校验失败
             expect(() => {
                 store.state.price = -50;
             }).toThrow(ValidateError);
 
             // 错误信息应该包含 defaultSchema 的 invalidTips
-            expect(configManager.errors['price']).toBeDefined();
+            expect(configManager.errors[`${store.id}.price`]).toBeDefined();
 
             // quantity 校验失败
             expect(() => {
                 store.state.quantity = 200;
             }).toThrow(ValidateError);
 
-            expect(configManager.errors['quantity']).toBeDefined();
+            expect(configManager.errors[`${store.id}.quantity`]).toBeDefined();
         });
 
-        test('defaultSchema 应该为所有 configurable 字段提供公共的 label', () => {
+        test("defaultSchema 应该为所有 configurable 字段提供公共的 label", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value <= 0) {
-                                throw new ValidateError('价格必须大于0');
+                                throw new ValidateError("价格必须大于0");
                             }
                             return true;
                         },
                     }),
                     quantity: configurable(10, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 1 || value > 100) {
-                                throw new ValidateError('数量超出范围');
+                                throw new ValidateError("数量超出范围");
                             }
                             return true;
                         },
@@ -952,27 +1069,30 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 {
                     configManager,
                     defaultSchema: {
-                        label: '配置项',
+                        label: "配置项",
                     },
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price", "quantity"]);
 
             // 检查 ConfigManager 中是否保存了 label
             expect(configManager.fields).toBeDefined();
         });
 
-        test('configurable 自身的 schema 应该覆盖 defaultSchema 的值', () => {
+        test("configurable 自身的 schema 应该覆盖 defaultSchema 的值", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value > 0;
                         },
                         // 显式指定 throw，覆盖 defaultSchema 的 pass
-                        onInvalid: 'throw',
+                        onInvalid: "throw",
                     }),
                     quantity: configurable(10, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 1 && value <= 100;
                         },
                         // quantity 没有指定，应该使用 defaultSchema 的 pass
@@ -981,38 +1101,41 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 {
                     configManager,
                     defaultSchema: {
-                        onInvalid: 'pass',
+                        onInvalid: "pass",
                     },
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price", "quantity"]);
 
             // price 使用自己的 onInvalid='throw'，应该抛出异常
             expect(() => {
                 store.state.price = -50;
             }).toThrow(ValidateError);
-            expect(configManager.errors.price).toBeDefined();
+            expect(configManager.errors[`${store.id}.price`]).toBeDefined();
 
             // quantity 使用 defaultSchema 的 onInvalid='pass'，不应该抛出异常
             store.state.quantity = 200;
             expect(store.state.quantity).toBe(200);
-            expect(configManager.errors.quantity).toBeDefined();
+            expect(configManager.errors[`${store.id}.quantity`]).toBeDefined();
         });
 
-        test('defaultSchema 中的 onValidate 不应该覆盖 configurable 的 onValidate', () => {
+        test("defaultSchema 中的 validate 不应该覆盖 configurable 的 validate", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value <= 0) {
-                                throw new ValidateError('价格必须大于0');
+                                throw new ValidateError("价格必须大于0");
                             }
                             return true;
                         },
                     }),
                     quantity: configurable(10, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value < 1 || value > 100) {
-                                throw new ValidateError('数量超出范围');
+                                throw new ValidateError("数量超出范围");
                             }
                             return true;
                         },
@@ -1020,39 +1143,42 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
                 {
                     configManager,
-                    // defaultSchema 中的 onValidate 应该被忽略，不会覆盖
+                    // defaultSchema 中的 validate 应该被忽略，不会覆盖
                     defaultSchema: {
-                        onValidate: () => {
+                        validate: () => {
                             return true; // 这个验证函数应该被忽略
                         },
                     },
                 },
             );
 
-            // price 应该使用自己的 onValidate，而不是 defaultSchema 的
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price", "quantity"]);
+
+            // price 应该使用自己的 validate，而不是 defaultSchema 的
             expect(() => {
                 store.state.price = -50;
             }).toThrow(ValidateError);
-            expect(configManager.errors['price']).toBe('价格必须大于0');
+            expect(configManager.errors[`${store.id}.price`]).toBe("价格必须大于0");
 
-            // quantity 也应该使用自己的 onValidate
+            // quantity 也应该使用自己的 validate
             expect(() => {
                 store.state.quantity = 200;
             }).toThrow(ValidateError);
-            expect(configManager.errors['quantity']).toBe('数量超出范围');
+            expect(configManager.errors[`${store.id}.quantity`]).toBe("数量超出范围");
         });
 
-        test('defaultSchema 应该与嵌套对象中的 configurable 字段一起工作', () => {
+        test("defaultSchema 应该与嵌套对象中的 configurable 字段一起工作", () => {
             const store = new AutoStore(
                 {
                     order: {
                         price: configurable(100, {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 return value > 0;
                             },
                         }),
                         quantity: configurable(10, {
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 return value >= 1 && value <= 100;
                             },
                         }),
@@ -1061,37 +1187,40 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 {
                     configManager,
                     defaultSchema: {
-                        onInvalid: 'pass',
-                        invalidTips: '字段 {label} 校验失败',
+                        onInvalid: "pass",
+                        invalidTips: "字段 {label} 校验失败",
                     },
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["order.price", "order.quantity"]);
+
             // 嵌套字段应该继承 defaultSchema 的配置
             store.state.order.price = -50;
             expect(store.state.order.price).toBe(-50);
-            expect(configManager.errors['order.price']).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.price`]).toBeDefined();
 
             store.state.order.quantity = 200;
             expect(store.state.order.quantity).toBe(200);
-            expect(configManager.errors['order.quantity']).toBeDefined();
+            expect(configManager.errors[`${store.id}.order.quantity`]).toBeDefined();
         });
 
-        test('defaultSchema 中的多个字段应该同时生效', () => {
+        test("defaultSchema 中的多个字段应该同时生效", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value > 0;
                         },
                     }),
                     quantity: configurable(10, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 1 && value <= 100;
                         },
                     }),
                     discount: configurable(0.1, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 0 && value < 1;
                         },
                     }),
@@ -1099,35 +1228,38 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 {
                     configManager,
                     defaultSchema: {
-                        onInvalid: 'pass',
-                        invalidTips: '字段 {label} 校验失败',
-                        label: '配置项',
+                        onInvalid: "pass",
+                        invalidTips: "字段 {label} 校验失败",
+                        label: "配置项",
                         required: true,
                     },
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price", "quantity", "discount"]);
+
             // 所有字段都应该继承 defaultSchema 的配置
             store.state.price = -50;
             expect(store.state.price).toBe(-50);
-            expect(configManager.errors['price']).toBeDefined();
+            expect(configManager.errors[`${store.id}.price`]).toBeDefined();
 
             store.state.quantity = 200;
             expect(store.state.quantity).toBe(200);
-            expect(configManager.errors['quantity']).toBeDefined();
+            expect(configManager.errors[`${store.id}.quantity`]).toBeDefined();
 
             store.state.discount = 1.5;
             expect(store.state.discount).toBe(1.5);
-            expect(configManager.errors['discount']).toBeDefined();
+            expect(configManager.errors[`${store.id}.discount`]).toBeDefined();
         });
 
-        test('defaultSchema 为空时，configurable 应该正常工作', () => {
+        test("defaultSchema 为空时，configurable 应该正常工作", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             if (value <= 0) {
-                                throw new ValidateError('价格必须大于0');
+                                throw new ValidateError("价格必须大于0");
                             }
                             return true;
                         },
@@ -1139,11 +1271,14 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price"]);
+
             // 没有默认 schema，应该使用 configurable 自己的配置
             expect(() => {
                 store.state.price = -50;
             }).toThrow(ValidateError);
-            expect(configManager.errors['price']).toBe('价格必须大于0');
+            expect(configManager.errors[`${store.id}.price`]).toBe("价格必须大于0");
             expect(store.state.price).toBe(100);
         });
 
@@ -1151,12 +1286,12 @@ describe('ConfigManager 和 configurable 集成测试', () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value > 0;
                         },
                     }),
                     quantity: configurable(10, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 1 && value <= 100;
                         },
                     }),
@@ -1164,26 +1299,29 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 {
                     configManager,
                     defaultSchema: {
-                        onInvalid: 'ignore',
+                        onInvalid: "ignore",
                     },
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price", "quantity"]);
+
             // 校验失败，值不应该被修改，错误应该被记录
             store.state.price = -50;
             expect(store.state.price).toBe(100); // 值不变
-            expect(configManager.errors['price']).toBeDefined();
+            expect(configManager.errors[`${store.id}.price`]).toBeDefined();
 
             store.state.quantity = 200;
             expect(store.state.quantity).toBe(10); // 值不变
-            expect(configManager.errors['quantity']).toBeDefined();
+            expect(configManager.errors[`${store.id}.quantity`]).toBeDefined();
         });
 
         test('defaultSchema 中的 onInvalid="throw-pass" 应该生效', () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value > 0;
                         },
                     }),
@@ -1191,10 +1329,13 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 {
                     configManager,
                     defaultSchema: {
-                        onInvalid: 'throw-pass',
+                        onInvalid: "throw-pass",
                     },
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price"]);
 
             // 应该抛出异常
             expect(() => {
@@ -1203,15 +1344,15 @@ describe('ConfigManager 和 configurable 集成测试', () => {
 
             // 但值应该被写入
             expect(store.state.price).toBe(-50);
-            expect(configManager.errors['price']).toBeDefined();
+            expect(configManager.errors[`${store.id}.price`]).toBeDefined();
         });
     });
 
-    describe('可计算配置参数 - 配置项本身支持计算属性', () => {
-        test('类型验证 - enable 可以是计算属性', () => {
+    describe("可计算配置参数 - 配置项本身支持计算属性", () => {
+        test("类型验证 - enable 可以是计算属性", () => {
             // 这个测试验证类型系统接受计算属性
             // 实际的运行时行为需要额外的实现支持
-            new AutoStore(
+            const store = new AutoStore(
                 {
                     order: {
                         count: configurable(100, {
@@ -1219,7 +1360,7 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                             enable: computed((scope: any) => {
                                 return scope.value < 100;
                             }),
-                            onValidate: (value) => {
+                            validate: (value) => {
                                 return value >= 0 && value <= 1000;
                             },
                         }),
@@ -1230,17 +1371,20 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["order.count"]);
+
             // 验证配置项已注册
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - label 可以是计算属性', () => {
-            new AutoStore(
+        test("类型验证 - label 可以是计算属性", () => {
+            const store = new AutoStore(
                 {
                     price: configurable(100, {
                         // label 根据价格值动态变化
                         label: computed((scope: any) => {
-                            return scope.value > 50 ? '高价商品' : '普通商品';
+                            return scope.value > 50 ? "高价商品" : "普通商品";
                         }),
                     }),
                 },
@@ -1249,24 +1393,27 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["price"]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - invalidTips 可以是计算属性', () => {
-            new AutoStore(
+        test("类型验证 - invalidTips 可以是计算属性", () => {
+            const store = new AutoStore(
                 {
                     quantity: configurable(10, {
                         // 根据当前值动态生成错误提示
                         invalidTips: computed((scope: any) => {
                             if (scope.value < 0) {
-                                return '数量不能为负数';
+                                return "数量不能为负数";
                             }
                             if (scope.value > 100) {
                                 return `数量 ${scope.value} 超出最大限制 100`;
                             }
-                            return '数量格式错误';
+                            return "数量格式错误";
                         }),
-                        onValidate: (value) => {
+                        validate: (value) => {
                             return value >= 0 && value <= 100;
                         },
                     }),
@@ -1276,15 +1423,18 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["quantity"]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - required 可以是计算属性', () => {
-            new AutoStore(
+        test("类型验证 - required 可以是计算属性", () => {
+            const store = new AutoStore(
                 {
                     user: {
                         age: configurable(18, {}),
-                        parentName: configurable('', {
+                        parentName: configurable("", {
                             // 当 age 小于 18 时，parentName 是必填的
                             required: computed((scope: any) => {
                                 return scope.age < 18;
@@ -1297,18 +1447,21 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["user.age", "user.parentName"]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - visible 可以是计算属性', () => {
-            new AutoStore(
+        test("类型验证 - visible 可以是计算属性", () => {
+            const store = new AutoStore(
                 {
                     settings: {
-                        mode: configurable('basic', {}),
-                        advancedOption: configurable('default', {
+                        mode: configurable("basic", {}),
+                        advancedOption: configurable("default", {
                             // 只有在 mode 为 'advanced' 时才显示
                             visible: computed((scope: any) => {
-                                return scope.mode === 'advanced';
+                                return scope.mode === "advanced";
                             }),
                         }),
                     },
@@ -1318,11 +1471,17 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, [
+                "settings.mode",
+                "settings.advancedOption",
+            ]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - 多个配置参数可以同时是计算属性', () => {
-            new AutoStore(
+        test("类型验证 - 多个配置参数可以同时是计算属性", () => {
+            const store = new AutoStore(
                 {
                     count: configurable(50, {
                         // enable: 当值在 0-100 范围内时启用
@@ -1332,11 +1491,11 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                         // label: 根据值动态显示
                         label: computed((scope: any) => {
                             if (scope.value < 30) {
-                                return '少量';
+                                return "少量";
                             } else if (scope.value < 70) {
-                                return '中量';
+                                return "中量";
                             } else {
-                                return '大量';
+                                return "大量";
                             }
                         }),
                         // required: 当值大于 50 时为必填
@@ -1350,11 +1509,14 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["count"]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - 计算属性可以引用其他配置项的值', () => {
-            new AutoStore(
+        test("类型验证 - 计算属性可以引用其他配置项的值", () => {
+            const store = new AutoStore(
                 {
                     order: {
                         price: configurable(100, {}),
@@ -1378,16 +1540,23 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, [
+                "order.price",
+                "order.discount",
+                "order.finalPrice",
+            ]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - placeholder 可以是计算属性', () => {
-            new AutoStore(
+        test("类型验证 - placeholder 可以是计算属性", () => {
+            const store = new AutoStore(
                 {
-                    username: configurable('', {
+                    username: configurable("", {
                         placeholder: computed((scope: any) => {
-                            if (scope.value === '') {
-                                return '请输入用户名';
+                            if (scope.value === "") {
+                                return "请输入用户名";
                             }
                             return `当前用户名: ${scope.value}`;
                         }),
@@ -1398,11 +1567,14 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["username"]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - tooltip 可以是计算属性', () => {
-            new AutoStore(
+        test("类型验证 - tooltip 可以是计算属性", () => {
+            const store = new AutoStore(
                 {
                     progress: configurable(0, {
                         tooltip: computed((scope: any) => {
@@ -1415,17 +1587,20 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["progress"]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - 计算属性配置参数与普通配置参数可以混合使用', () => {
-            new AutoStore(
+        test("类型验证 - 计算属性配置参数与普通配置参数可以混合使用", () => {
+            const store = new AutoStore(
                 {
                     quantity: configurable(10, {
                         // 静态配置
-                        name: 'quantity',
-                        widget: 'number',
-                        datatype: 'number',
+                        name: "quantity",
+                        widget: "number",
+                        datatype: "number",
 
                         // 计算配置
                         enable: computed((scope: any) => scope.value > 0),
@@ -1440,21 +1615,24 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["quantity"]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - 计算属性配置参数可以访问父级配置项', () => {
-            new AutoStore(
+        test("类型验证 - 计算属性配置参数可以访问父级配置项", () => {
+            const store = new AutoStore(
                 {
                     user: {
                         age: configurable(18, {}),
-                        parentName: configurable('', {
+                        parentName: configurable("", {
                             // enable 依赖于父级配置项 user.age
                             enable: computed((scope: any) => {
                                 return scope.age < 18;
                             }),
                             label: computed((scope: any) => {
-                                return scope.age < 18 ? '监护人姓名' : '紧急联系人';
+                                return scope.age < 18 ? "监护人姓名" : "紧急联系人";
                             }),
                         }),
                     },
@@ -1464,13 +1642,16 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                 },
             );
 
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, ["user.age", "user.parentName"]);
+
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test('类型验证 - 非函数属性以 on/to/render 开头也可以是计算属性', () => {
+        test("类型验证 - 非函数属性以 on/to/render 开头也可以是计算属性", () => {
             // 这个测试验证:即使属性名以 on/to/render 开头,
             // 如果它不是函数类型,仍然可以是 ComputedBuilder
-            new AutoStore(
+            const store = new AutoStore(
                 {
                     settings: {
                         // oneTimeFlag 是一个布尔值,不是函数,可以是计算属性
@@ -1482,7 +1663,7 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                         // totalCount 以 to 开头,但是是数字,可以是计算属性
                         totalCount: configurable(0, {
                             totalCount: computed((scope: any) => {
-                                return typeof scope.value === 'number' ? scope.value + 1 : 0;
+                                return typeof scope.value === "number" ? scope.value + 1 : 0;
                             }),
                         }),
                     },
@@ -1491,6 +1672,12 @@ describe('ConfigManager 和 configurable 集成测试', () => {
                     configManager,
                 },
             );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, store, [
+                "settings.oneTimeFlag",
+                "settings.totalCount",
+            ]);
 
             expect(configManager.size).toBeGreaterThan(0);
         });

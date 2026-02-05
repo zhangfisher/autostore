@@ -25,16 +25,16 @@
  *
  */
 
-import { VALUE_SCHEMA_BUILDER_FLAG } from '../consts';
-import { forEachObject, isFunction, isPlainObject } from '../utils';
-import { markRaw } from '../utils/markRaw';
+import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
+import { forEachObject, isFunction, isPlainObject } from "../utils";
+import { markRaw } from "../utils/markRaw";
 
 import type {
     AutoStateSchema,
     SchemaDescriptorBuilder,
     SchemaBuilder,
     ComputedableStateSchema,
-} from './types';
+} from "./types";
 
 type SchemaArgs = {
     value: any;
@@ -50,7 +50,10 @@ function markRawSchema(schema: any) {
         forEachObject(schema, ({ value, key, parent }) => {
             if (
                 isFunction(value) &&
-                (key.startsWith('on') || key.startsWith('render') || key.startsWith('to'))
+                (key === "validate" ||
+                    key.startsWith("on") ||
+                    key.startsWith("render") ||
+                    key.startsWith("to"))
             ) {
                 // @ts-expect-error
                 parent[key] = markRaw(value);
@@ -83,21 +86,25 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
 
 // 函数重载:提供更好的类型推断
 export function schema<Value>(initial: Value): SchemaDescriptorBuilder<Value>;
-export function schema<Value>(initial: Value, schema: ComputedableStateSchema<Value>): SchemaDescriptorBuilder<Value>;
+export function schema<Value>(
+    initial: Value,
+    schema: ComputedableStateSchema<Value>,
+): SchemaDescriptorBuilder<Value>;
 export function schema<Value>(initial: Value, schema?: ComputedableStateSchema<Value>) {
     const args = parseSchemaArgs([initial, schema]);
     const value = initial;
-    if (typeof value === 'object') {
+    if (typeof value === "object") {
         markRaw(value);
     }
-    args.schema.datatype = Array.isArray(value) ? 'array' : typeof value;
+    args.schema.datatype = Array.isArray(value) ? "array" : typeof value;
+    // args.schema.value = value;
     const builder = () => ({
         value,
         schema: args.schema,
     });
     builder[VALUE_SCHEMA_BUILDER_FLAG] = true;
     return builder as SchemaDescriptorBuilder<Value>;
-};
+}
 
 export const configurable = schema;
 
@@ -107,8 +114,8 @@ export function createTypeSchemaBuilder<Value = any>(
 ) {
     const typeSchema = function (initial: Value, options?: any) {
         const opts = Object.assign({}, options);
-        if (typeof opts.onValidate !== 'function') {
-            opts.onValidate = isValid;
+        if (typeof opts.validate !== "function") {
+            opts.validate = isValid;
         }
         if (!opts.invalidTips) {
             opts.invalidTips = defaultTips;
@@ -119,16 +126,16 @@ export function createTypeSchemaBuilder<Value = any>(
 }
 
 export const schemas = {
-    number: createTypeSchemaBuilder<number>((val) => typeof val === 'number', 'must be a number'),
-    string: createTypeSchemaBuilder<string>((val) => typeof val === 'string', 'must be a string'),
+    number: createTypeSchemaBuilder<number>((val) => typeof val === "number", "must be a number"),
+    string: createTypeSchemaBuilder<string>((val) => typeof val === "string", "must be a string"),
     boolean: createTypeSchemaBuilder<boolean>(
-        (val) => typeof val === 'boolean',
-        'must be a boolean',
+        (val) => typeof val === "boolean",
+        "must be a boolean",
     ),
-    date: createTypeSchemaBuilder<Date>((val) => val instanceof Date, 'must be a date'),
-    bigint: createTypeSchemaBuilder<bigint>((val) => typeof val === 'bigint', 'must be a bigint'),
-    array: createTypeSchemaBuilder<any[]>((val) => Array.isArray(val), 'must be an array'),
-    object: createTypeSchemaBuilder<object>((val) => typeof val === 'object', 'must be an object'),
+    date: createTypeSchemaBuilder<Date>((val) => val instanceof Date, "must be a date"),
+    bigint: createTypeSchemaBuilder<bigint>((val) => typeof val === "bigint", "must be a bigint"),
+    array: createTypeSchemaBuilder<any[]>((val) => Array.isArray(val), "must be an array"),
+    object: createTypeSchemaBuilder<object>((val) => typeof val === "object", "must be an object"),
 };
 
 export const s = schemas;

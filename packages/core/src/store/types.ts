@@ -283,7 +283,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * 允许throw new ValidateError('错误信息')来提供错误信息
      *
      */
-    onValidate?: (this: AutoStore<State>, newValue: any, oldValue: any, path: string[]) => boolean;
+    validate?: (this: AutoStore<State>, newValue: any, oldValue: any, path: string[]) => boolean;
     /**
      * 为指定的路径的状态值单独指定一个校验函数
      * 优先于onValidate

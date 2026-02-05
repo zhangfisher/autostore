@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: <explanation> */
-import { describe, test, expect } from 'bun:test';
-import { AutoStore, ValidateError } from '../src';
+import { describe, test, expect } from "bun:test";
+import { AutoStore, ValidateError } from "../src";
 
 /**
  * onValidate 校验功能测试
@@ -14,16 +14,16 @@ import { AutoStore, ValidateError } from '../src';
  *   - behavior='throw': 校验失败，抛出异常（默认）
  *   - behavior='throw-pass': 写入数据但同时抛出异常
  */
-describe('onValidate', () => {
-    describe('基本用法 - 返回 boolean', () => {
-        test('返回 true 时应该允许写入', () => {
+describe("onValidate", () => {
+    describe("基本用法 - 返回 boolean", () => {
+        test("返回 true 时应该允许写入", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             return newValue >= 0 && newValue <= 150;
                         }
                         return true;
@@ -35,14 +35,14 @@ describe('onValidate', () => {
             expect(store.state.user.age).toBe(25);
         });
 
-        test('返回 false 时应该抛出异常（等效于 throw）', () => {
+        test("返回 false 时应该抛出异常（等效于 throw）", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             return newValue >= 0 && newValue <= 150;
                         }
                         return true;
@@ -57,21 +57,21 @@ describe('onValidate', () => {
         });
     });
 
-    describe('验证失败行为 - behavior=pass', () => {
+    describe("验证失败行为 - behavior=pass", () => {
         test('抛出 behavior="pass" 的 ValidateError 时应该继续写入', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
                             // 校验失败，但继续写入
-                            const error = new ValidateError('Age must be between 0 and 150');
-                            error.behavior = 'pass';
+                            const error = new ValidateError("Age must be between 0 and 150");
+                            error.behavior = "pass";
                             throw error;
                         }
                         return true;
@@ -85,21 +85,21 @@ describe('onValidate', () => {
         });
     });
 
-    describe('验证失败行为 - behavior=ignore', () => {
+    describe("验证失败行为 - behavior=ignore", () => {
         test('抛出 behavior="ignore" 的 ValidateError 时应该静默忽略（不写入）', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
                             // 校验失败，忽略写入
-                            const error = new ValidateError('Age must be between 0 and 150');
-                            error.behavior = 'ignore';
+                            const error = new ValidateError("Age must be between 0 and 150");
+                            error.behavior = "ignore";
                             throw error;
                         }
                         return true;
@@ -118,13 +118,13 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            const error = new ValidateError('Age must be between 0 and 150');
-                            error.behavior = 'ignore';
+                            const error = new ValidateError("Age must be between 0 and 150");
+                            error.behavior = "ignore";
                             throw error;
                         }
                         return true;
@@ -139,21 +139,21 @@ describe('onValidate', () => {
         });
     });
 
-    describe('验证失败行为 - behavior=throw', () => {
+    describe("验证失败行为 - behavior=throw", () => {
         test('抛出 behavior="throw" 的 ValidateError 时应该抛出异常', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
                             // 校验失败，抛出异常
-                            const error = new ValidateError('Age must be between 0 and 150');
-                            error.behavior = 'throw';
+                            const error = new ValidateError("Age must be between 0 and 150");
+                            error.behavior = "throw";
                             throw error;
                         }
                         return true;
@@ -167,19 +167,19 @@ describe('onValidate', () => {
             expect(store.state.user.age).toBe(18); // 值不应该被修改
         });
 
-        test('抛出默认 ValidateError 时应该抛出异常（默认 behavior=throw）', () => {
+        test("抛出默认 ValidateError 时应该抛出异常（默认 behavior=throw）", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
                             // 不设置 behavior，默认为 'throw'
-                            throw new ValidateError('Age must be between 0 and 150');
+                            throw new ValidateError("Age must be between 0 and 150");
                         }
                         return true;
                     },
@@ -193,21 +193,21 @@ describe('onValidate', () => {
         });
     });
 
-    describe('验证失败行为 - behavior=throw-pass', () => {
+    describe("验证失败行为 - behavior=throw-pass", () => {
         test('抛出 behavior="throw-pass" 的 ValidateError 时应该写入数据但同时抛出异常', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
                             // 写入数据但同时抛出异常
-                            const error = new ValidateError('Age must be between 0 and 150');
-                            error.behavior = 'throw-pass';
+                            const error = new ValidateError("Age must be between 0 and 150");
+                            error.behavior = "throw-pass";
                             throw error;
                         }
                         return true;
@@ -225,18 +225,18 @@ describe('onValidate', () => {
         });
     });
 
-    describe('复杂场景 - 嵌套对象', () => {
-        test('校验嵌套对象属性', () => {
+    describe("复杂场景 - 嵌套对象", () => {
+        test("校验嵌套对象属性", () => {
             const store = new AutoStore(
                 {
                     user: {
-                        name: 'John',
+                        name: "John",
                         age: 25,
                     },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[path.length - 1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[path.length - 1] === "age") {
                             return newValue >= 0 && newValue <= 150;
                         }
                         return true;
@@ -256,16 +256,16 @@ describe('onValidate', () => {
         });
     });
 
-    describe('复杂场景 - 数组操作', () => {
-        test('校验数组元素赋值', () => {
+    describe("复杂场景 - 数组操作", () => {
+        test("校验数组元素赋值", () => {
             const store = new AutoStore(
                 {
                     items: [1, 2, 3],
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'items') {
-                            return typeof newValue === 'number' && newValue > 0;
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "items") {
+                            return typeof newValue === "number" && newValue > 0;
                         }
                         return true;
                     },
@@ -284,8 +284,8 @@ describe('onValidate', () => {
         });
     });
 
-    describe('ValidateError 自定义错误信息', () => {
-        test('ValidateError 应该携带自定义错误信息', () => {
+    describe("ValidateError 自定义错误信息", () => {
+        test("ValidateError 应该携带自定义错误信息", () => {
             let capturedError: any;
 
             const store = new AutoStore(
@@ -293,19 +293,19 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            throw new ValidateError('年龄必须在 0 到 150 之间');
+                            throw new ValidateError("年龄必须在 0 到 150 之间");
                         }
                         return true;
                     },
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 if (event.error) {
                     capturedError = event.error;
                 }
@@ -318,10 +318,10 @@ describe('onValidate', () => {
             }
 
             expect(capturedError).toBeInstanceOf(ValidateError);
-            expect(capturedError.message).toBe('年龄必须在 0 到 150 之间');
+            expect(capturedError.message).toBe("年龄必须在 0 到 150 之间");
         });
 
-        test('不同的 behavior 应该携带不同的错误信息', () => {
+        test("不同的 behavior 应该携带不同的错误信息", () => {
             let capturedError: any;
             let capturedBehavior: any;
 
@@ -330,13 +330,13 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            const error = new ValidateError('Invalid age value');
-                            error.behavior = 'ignore';
+                            const error = new ValidateError("Invalid age value");
+                            error.behavior = "ignore";
                             throw error;
                         }
                         return true;
@@ -344,7 +344,7 @@ describe('onValidate', () => {
                 },
             );
 
-            store.on('validate', (event: any) => {
+            store.on("validate", (event: any) => {
                 if (event.error) {
                     capturedError = event.error;
                     capturedBehavior = event.error.behavior;
@@ -354,13 +354,13 @@ describe('onValidate', () => {
             store.state.user.age = 200; // 不会抛出异常，因为 behavior='ignore'
 
             expect(capturedError).toBeInstanceOf(ValidateError);
-            expect(capturedError.message).toBe('Invalid age value');
-            expect(capturedBehavior).toBe('ignore');
+            expect(capturedError.message).toBe("Invalid age value");
+            expect(capturedBehavior).toBe("ignore");
         });
     });
 
-    describe('参数验证', () => {
-        test('onValidate 应该接收正确的参数', () => {
+    describe("参数验证", () => {
+        test("onValidate 应该接收正确的参数", () => {
             let capturedPath: string[] | undefined;
             let capturedNewValue: any;
             let capturedOldValue: any;
@@ -370,7 +370,7 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
+                    validate(newValue, oldValue, path) {
                         capturedPath = path;
                         capturedNewValue = newValue;
                         capturedOldValue = oldValue;
@@ -381,12 +381,12 @@ describe('onValidate', () => {
 
             store.state.user.age = 25;
 
-            expect(capturedPath).toEqual(['user', 'age']);
+            expect(capturedPath).toEqual(["user", "age"]);
             expect(capturedNewValue).toBe(25);
             expect(capturedOldValue).toBe(18);
         });
 
-        test('onValidate 中 this 应该指向 store 实例', () => {
+        test("onValidate 中 this 应该指向 store 实例", () => {
             let capturedThis: any;
 
             const store = new AutoStore(
@@ -394,7 +394,7 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
+                    validate(newValue, oldValue, path) {
                         capturedThis = this;
                         return true;
                     },
@@ -407,8 +407,8 @@ describe('onValidate', () => {
         });
     });
 
-    describe('oldValue 对比', () => {
-        test('应该能够访问 oldValue 进行对比', () => {
+    describe("oldValue 对比", () => {
+        test("应该能够访问 oldValue 进行对比", () => {
             let capturedOldValue: any;
 
             const store = new AutoStore(
@@ -416,19 +416,19 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             capturedOldValue = oldValue;
                             // 只允许年龄增大，不允许减小
                             if (newValue < oldValue) {
-                                const error = new ValidateError('年龄不能减小');
-                                error.behavior = 'throw';
+                                const error = new ValidateError("年龄不能减小");
+                                error.behavior = "throw";
                                 throw error;
                             }
                             // 同时校验年龄范围
                             if (newValue > 150) {
-                                const error = new ValidateError('年龄不能超过 150');
-                                error.behavior = 'throw';
+                                const error = new ValidateError("年龄不能超过 150");
+                                error.behavior = "throw";
                                 throw error;
                             }
                         }
@@ -454,21 +454,21 @@ describe('onValidate', () => {
             expect(store.state.user.age).toBe(30); // 值保持不变
         });
 
-        test('应该能够基于 oldValue 和 newValue 的差值进行校验', () => {
+        test("应该能够基于 oldValue 和 newValue 的差值进行校验", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             // 每次年龄增幅不能超过 10 岁
                             const diff = newValue - oldValue;
                             if (diff > 10) {
                                 const error = new ValidateError(
                                     `年龄增幅过大：${diff} 岁，最大允许增幅 10 岁`,
                                 );
-                                error.behavior = 'throw';
+                                error.behavior = "throw";
                                 throw error;
                             }
                         }
@@ -492,20 +492,20 @@ describe('onValidate', () => {
             expect(store.state.user.age).toBe(32); // 值保持不变
         });
 
-        test('应该能够基于 oldValue 的类型进行校验', () => {
+        test("应该能够基于 oldValue 的类型进行校验", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             // 类型必须与 oldValue 一致
                             if (typeof newValue !== typeof oldValue) {
                                 const error = new ValidateError(
                                     `类型不匹配：期望 ${typeof oldValue}，实际 ${typeof newValue}`,
                                 );
-                                error.behavior = 'throw';
+                                error.behavior = "throw";
                                 throw error;
                             }
                         }
@@ -521,7 +521,7 @@ describe('onValidate', () => {
             // 尝试设置为字符串应该失败
             expect(() => {
                 // @ts-expect-error - 测试类型不匹配
-                store.state.user.age = '25';
+                store.state.user.age = "25";
             }).toThrow(ValidateError);
             expect(store.state.user.age).toBe(25);
 
@@ -533,7 +533,7 @@ describe('onValidate', () => {
             expect(store.state.user.age).toBe(25);
         });
 
-        test('应该在 validate 事件中包含 oldValue', () => {
+        test("应该在 validate 事件中包含 oldValue", () => {
             let capturedOldValue: any;
 
             const store = new AutoStore(
@@ -541,10 +541,10 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue > 150) {
-                                throw new ValidateError('年龄不能超过 150');
+                                throw new ValidateError("年龄不能超过 150");
                             }
                         }
                         return true;
@@ -552,7 +552,7 @@ describe('onValidate', () => {
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 if (event.error) {
                     capturedOldValue = event.oldValue;
                 }
@@ -567,27 +567,27 @@ describe('onValidate', () => {
             expect(capturedOldValue).toBe(18);
         });
 
-        test('应该能够基于 oldValue 的存在性进行校验', () => {
+        test("应该能够基于 oldValue 的存在性进行校验", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             // 如果 oldValue 是 undefined，说明是首次设置
                             if (oldValue === undefined) {
                                 // 首次设置只允许正数
                                 if (newValue <= 0) {
-                                    const error = new ValidateError('初始年龄必须是正数');
-                                    error.behavior = 'throw';
+                                    const error = new ValidateError("初始年龄必须是正数");
+                                    error.behavior = "throw";
                                     throw error;
                                 }
                             } else {
                                 // 非首次设置，允许任何非负数
                                 if (newValue < 0) {
-                                    const error = new ValidateError('年龄不能为负数');
-                                    error.behavior = 'throw';
+                                    const error = new ValidateError("年龄不能为负数");
+                                    error.behavior = "throw";
                                     throw error;
                                 }
                             }
@@ -612,15 +612,15 @@ describe('onValidate', () => {
         });
     });
 
-    describe('validate 选项', () => {
+    describe("validate 选项", () => {
         test('validate="none" 时应该跳过校验', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             return newValue >= 0 && newValue <= 150;
                         }
                         return true;
@@ -634,7 +634,7 @@ describe('onValidate', () => {
                     () => {
                         store.state.user.age = 200;
                     },
-                    { validate: 'none' },
+                    { validate: "none" },
                 );
             }).not.toThrow();
 
@@ -647,14 +647,14 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
                             // 校验失败，抛出 ValidateError
-                            const error = new ValidateError('Age validation failed');
-                            error.behavior = 'throw';
+                            const error = new ValidateError("Age validation failed");
+                            error.behavior = "throw";
                             throw error;
                         }
                         return true;
@@ -667,7 +667,7 @@ describe('onValidate', () => {
                 () => {
                     store.state.user.age = 200;
                 },
-                { validate: 'none' },
+                { validate: "none" },
             );
 
             expect(store.state.user.age).toBe(200);
@@ -679,14 +679,14 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
                             // 校验失败，但设置 behavior='pass' 继续写入
-                            const error = new ValidateError('Age validation failed');
-                            error.behavior = 'pass';
+                            const error = new ValidateError("Age validation failed");
+                            error.behavior = "pass";
                             throw error;
                         }
                         return true;
@@ -705,8 +705,8 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             return true; // 总是返回 true
                         }
                         return true;
@@ -718,7 +718,7 @@ describe('onValidate', () => {
                 () => {
                     store.state.user.age = 200;
                 },
-                { validate: 'ignore' },
+                { validate: "ignore" },
             );
 
             // validate='ignore' 时不执行校验函数
@@ -726,8 +726,8 @@ describe('onValidate', () => {
         });
     });
 
-    describe('validate 事件', () => {
-        test('校验时应该触发 validate 事件', () => {
+    describe("validate 事件", () => {
+        test("校验时应该触发 validate 事件", () => {
             let validateEventCount = 0;
             let capturedError: any;
 
@@ -736,8 +736,8 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             return newValue >= 0 && newValue <= 150;
                         }
                         return true;
@@ -745,7 +745,7 @@ describe('onValidate', () => {
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 validateEventCount++;
                 if (event.error) {
                     capturedError = event.error;
@@ -767,7 +767,7 @@ describe('onValidate', () => {
             expect(capturedError).toBeInstanceOf(ValidateError);
         });
 
-        test('validate 事件应该包含完整的路径、值和错误信息', () => {
+        test("validate 事件应该包含完整的路径、值和错误信息", () => {
             const capturedEvents: any[] = [];
 
             const store = new AutoStore(
@@ -775,13 +775,13 @@ describe('onValidate', () => {
                     user: {
                         profile: {
                             age: 18,
-                            name: 'John',
+                            name: "John",
                         },
                     },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[path.length - 1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[path.length - 1] === "age") {
                             if (newValue < 0 || newValue > 150) {
                                 throw new ValidateError(`年龄 ${newValue} 不在有效范围内 [0-150]`);
                             }
@@ -791,14 +791,14 @@ describe('onValidate', () => {
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 capturedEvents.push({ ...event });
             });
 
             // 测试 1: 成功的校验 - 应该触发事件，error 为 undefined
             store.state.user.profile.age = 25;
             expect(capturedEvents).toHaveLength(1);
-            expect(capturedEvents[0].path).toEqual(['user', 'profile', 'age']);
+            expect(capturedEvents[0].path).toEqual(["user", "profile", "age"]);
             expect(capturedEvents[0].newValue).toBe(25);
             expect(capturedEvents[0].oldValue).toBe(18);
             expect(capturedEvents[0].error).toBeUndefined();
@@ -811,22 +811,22 @@ describe('onValidate', () => {
             }
 
             expect(capturedEvents).toHaveLength(2);
-            expect(capturedEvents[1].path).toEqual(['user', 'profile', 'age']);
+            expect(capturedEvents[1].path).toEqual(["user", "profile", "age"]);
             expect(capturedEvents[1].newValue).toBe(200);
             expect(capturedEvents[1].oldValue).toBe(25);
             expect(capturedEvents[1].error).toBeInstanceOf(ValidateError);
-            expect(capturedEvents[1].error.message).toBe('年龄 200 不在有效范围内 [0-150]');
+            expect(capturedEvents[1].error.message).toBe("年龄 200 不在有效范围内 [0-150]");
 
             // 测试 3: 另一个成功的校验
             store.state.user.profile.age = 30;
             expect(capturedEvents).toHaveLength(3);
-            expect(capturedEvents[2].path).toEqual(['user', 'profile', 'age']);
+            expect(capturedEvents[2].path).toEqual(["user", "profile", "age"]);
             expect(capturedEvents[2].newValue).toBe(30);
             expect(capturedEvents[2].oldValue).toBe(25);
             expect(capturedEvents[2].error).toBeUndefined();
         });
 
-        test('validate 事件应该在不同 behavior 下正确传递错误', () => {
+        test("validate 事件应该在不同 behavior 下正确传递错误", () => {
             const capturedEvents: any[] = [];
 
             const store = new AutoStore(
@@ -834,13 +834,13 @@ describe('onValidate', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
                             const error = new ValidateError(`年龄 ${newValue} 超出范围`);
-                            error.behavior = 'pass'; // 校验失败但继续写入
+                            error.behavior = "pass"; // 校验失败但继续写入
                             throw error;
                         }
                         return true;
@@ -848,7 +848,7 @@ describe('onValidate', () => {
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 capturedEvents.push({ ...event });
             });
 
@@ -856,14 +856,14 @@ describe('onValidate', () => {
             store.state.user.age = 200;
             expect(store.state.user.age).toBe(200);
             expect(capturedEvents).toHaveLength(1);
-            expect(capturedEvents[0].path).toEqual(['user', 'age']);
+            expect(capturedEvents[0].path).toEqual(["user", "age"]);
             expect(capturedEvents[0].newValue).toBe(200);
             expect(capturedEvents[0].oldValue).toBe(18);
             expect(capturedEvents[0].error).toBeInstanceOf(ValidateError);
-            expect(capturedEvents[0].error.behavior).toBe('pass');
+            expect(capturedEvents[0].error.behavior).toBe("pass");
         });
 
-        test('validate 事件应该捕获多个校验失败的场景', () => {
+        test("validate 事件应该捕获多个校验失败的场景", () => {
             const capturedEvents: any[] = [];
 
             const store = new AutoStore(
@@ -874,8 +874,8 @@ describe('onValidate', () => {
                     ],
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[path.length - 1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[path.length - 1] === "age") {
                             if (newValue < 0 || newValue > 120) {
                                 throw new ValidateError(`年龄 ${newValue} 无效`);
                             }
@@ -885,21 +885,21 @@ describe('onValidate', () => {
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 capturedEvents.push({ ...event });
             });
 
             // 第一次成功
             store.state.users[0].age = 26;
             expect(capturedEvents).toHaveLength(1);
-            expect(capturedEvents[0].path).toEqual(['users', '0', 'age']);
+            expect(capturedEvents[0].path).toEqual(["users", "0", "age"]);
             expect(capturedEvents[0].newValue).toBe(26);
             expect(capturedEvents[0].error).toBeUndefined();
 
             // 第二次成功
             store.state.users[1].age = 31;
             expect(capturedEvents).toHaveLength(2);
-            expect(capturedEvents[1].path).toEqual(['users', '1', 'age']);
+            expect(capturedEvents[1].path).toEqual(["users", "1", "age"]);
             expect(capturedEvents[1].newValue).toBe(31);
             expect(capturedEvents[1].error).toBeUndefined();
 
@@ -910,7 +910,7 @@ describe('onValidate', () => {
                 // 预期会抛出异常
             }
             expect(capturedEvents).toHaveLength(3);
-            expect(capturedEvents[2].path).toEqual(['users', '0', 'age']);
+            expect(capturedEvents[2].path).toEqual(["users", "0", "age"]);
             expect(capturedEvents[2].newValue).toBe(200);
             expect(capturedEvents[2].oldValue).toBe(26);
             expect(capturedEvents[2].error).toBeInstanceOf(ValidateError);
@@ -922,13 +922,13 @@ describe('onValidate', () => {
                 // 预期会抛出异常
             }
             expect(capturedEvents).toHaveLength(4);
-            expect(capturedEvents[3].path).toEqual(['users', '1', 'age']);
+            expect(capturedEvents[3].path).toEqual(["users", "1", "age"]);
             expect(capturedEvents[3].newValue).toBe(-10);
             expect(capturedEvents[3].oldValue).toBe(31);
             expect(capturedEvents[3].error).toBeInstanceOf(ValidateError);
         });
 
-        test('validate 事件的 error 属性应该区分有错误和无错误的情况', () => {
+        test("validate 事件的 error 属性应该区分有错误和无错误的情况", () => {
             const successEvents: any[] = [];
             const failureEvents: any[] = [];
 
@@ -937,13 +937,13 @@ describe('onValidate', () => {
                     items: [1, 2, 3],
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'items') {
-                            if (typeof newValue !== 'number') {
-                                throw new ValidateError('必须是数字');
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "items") {
+                            if (typeof newValue !== "number") {
+                                throw new ValidateError("必须是数字");
                             }
                             if (newValue < 0) {
-                                throw new ValidateError('不能为负数');
+                                throw new ValidateError("不能为负数");
                             }
                         }
                         return true;
@@ -951,7 +951,7 @@ describe('onValidate', () => {
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 if (event.error) {
                     failureEvents.push(event);
                 } else {
@@ -968,14 +968,14 @@ describe('onValidate', () => {
             // 失败的校验 - 类型错误
             try {
                 // @ts-expect-error - 测试类型错误
-                store.state.items[1] = 'invalid';
+                store.state.items[1] = "invalid";
             } catch {
                 // 预期会抛出异常
             }
             expect(successEvents).toHaveLength(1);
             expect(failureEvents).toHaveLength(1);
             expect(failureEvents[0].error).toBeInstanceOf(ValidateError);
-            expect(failureEvents[0].error.message).toBe('必须是数字');
+            expect(failureEvents[0].error.message).toBe("必须是数字");
 
             // 失败的校验 - 值错误
             try {
@@ -986,21 +986,21 @@ describe('onValidate', () => {
             expect(successEvents).toHaveLength(1);
             expect(failureEvents).toHaveLength(2);
             expect(failureEvents[1].error).toBeInstanceOf(ValidateError);
-            expect(failureEvents[1].error.message).toBe('不能为负数');
+            expect(failureEvents[1].error.message).toBe("不能为负数");
         });
     });
 
-    describe('边界情况', () => {
-        test('onValidate 抛出异常时的处理', () => {
+    describe("边界情况", () => {
+        test("onValidate 抛出异常时的处理", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age' && newValue > 150) {
-                            const error = new ValidateError('Age must be <= 150');
-                            error.behavior = 'throw';
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age" && newValue > 150) {
+                            const error = new ValidateError("Age must be <= 150");
+                            error.behavior = "throw";
                             throw error;
                         }
                         return true;
@@ -1016,7 +1016,7 @@ describe('onValidate', () => {
             expect(store.state.user.age).toBe(18);
         });
 
-        test('没有 onValidate 函数时应该正常工作', () => {
+        test("没有 onValidate 函数时应该正常工作", () => {
             const store = new AutoStore({
                 user: { age: 18 },
             });
@@ -1026,13 +1026,13 @@ describe('onValidate', () => {
             expect(store.state.user.age).toBe(200);
         });
 
-        test('null 和 undefined 值的校验', () => {
+        test("null 和 undefined 值的校验", () => {
             const store = new AutoStore(
                 {
-                    value: 'hello',
+                    value: "hello",
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
+                    validate(newValue, oldValue, path) {
                         // 允许 null，但不允许 undefined
                         return newValue !== undefined;
                     },
@@ -1068,16 +1068,16 @@ describe('onValidate', () => {
  * - ignore: 校验失败静默忽略
  * - throw-pass: 写入数据但同时抛出异常
  */
-describe('validators 和 onInvalid', () => {
-    describe('validators - 完全路径匹配', () => {
-        test('应该使用完全匹配的 validator 进行校验', () => {
+describe("validators 和 onInvalid", () => {
+    describe("validators - 完全路径匹配", () => {
+        test("应该使用完全匹配的 validator 进行校验", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
                     validators: {
-                        'user.age': (newValue, oldValue, path) => {
+                        "user.age": (newValue, oldValue, path) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
@@ -1095,7 +1095,7 @@ describe('validators 和 onInvalid', () => {
             expect(store.state.user.age).toBe(25);
         });
 
-        test('validators 优先级应该高于 onValidate', () => {
+        test("validators 优先级应该高于 onValidate", () => {
             let onValidateCalled = false;
             let validatorCalled = false;
 
@@ -1105,12 +1105,12 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue, oldValue, path) => {
+                        "user.age": (newValue, oldValue, path) => {
                             validatorCalled = true;
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onValidate(newValue, oldValue, path) {
+                    validate(newValue, oldValue, path) {
                         onValidateCalled = true;
                         // 总是返回 true
                         return true;
@@ -1126,8 +1126,8 @@ describe('validators 和 onInvalid', () => {
         });
     });
 
-    describe('validators - 通配符匹配', () => {
-        test('应该使用通配符 * 匹配单层路径', () => {
+    describe("validators - 通配符匹配", () => {
+        test("应该使用通配符 * 匹配单层路径", () => {
             const store = new AutoStore(
                 {
                     items: [
@@ -1137,8 +1137,8 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'items.*.price': (newValue, oldValue, path) => {
-                            return typeof newValue === 'number' && newValue > 0;
+                        "items.*.price": (newValue, oldValue, path) => {
+                            return typeof newValue === "number" && newValue > 0;
                         },
                     },
                 },
@@ -1158,7 +1158,7 @@ describe('validators 和 onInvalid', () => {
             expect(store.state.items[0].price).toBe(150);
         });
 
-        test('应该使用通配符 ** 匹配多层路径', () => {
+        test("应该使用通配符 ** 匹配多层路径", () => {
             const store = new AutoStore(
                 {
                     user: {
@@ -1169,9 +1169,9 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.**': (newValue, oldValue, path) => {
+                        "user.**": (newValue, oldValue, path) => {
                             // 匹配 user 及其所有子路径
-                            if (path[path.length - 1] === 'age') {
+                            if (path[path.length - 1] === "age") {
                                 return newValue >= 0 && newValue <= 150;
                             }
                             return true;
@@ -1191,18 +1191,18 @@ describe('validators 和 onInvalid', () => {
             expect(store.state.user.profile.age).toBe(25);
         });
 
-        test('通配符应该匹配数组索引', () => {
+        test("通配符应该匹配数组索引", () => {
             const store = new AutoStore(
                 {
                     users: [
-                        { name: 'Alice', age: 25 },
-                        { name: 'Bob', age: 30 },
-                        { name: 'Charlie', age: 35 },
+                        { name: "Alice", age: 25 },
+                        { name: "Bob", age: 30 },
+                        { name: "Charlie", age: 35 },
                     ],
                 },
                 {
                     validators: {
-                        'users.*.age': (newValue) => {
+                        "users.*.age": (newValue) => {
                             return newValue >= 0 && newValue <= 120;
                         },
                     },
@@ -1227,8 +1227,8 @@ describe('validators 和 onInvalid', () => {
         });
     });
 
-    describe('validators - 多个验证器匹配', () => {
-        test('应该使用第一个匹配的验证器', () => {
+    describe("validators - 多个验证器匹配", () => {
+        test("应该使用第一个匹配的验证器", () => {
             let firstValidatorCalled = false;
             let secondValidatorCalled = false;
 
@@ -1238,11 +1238,11 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             firstValidatorCalled = true;
                             return newValue >= 0 && newValue <= 150;
                         },
-                        'user.*': (newValue) => {
+                        "user.*": (newValue) => {
                             secondValidatorCalled = true;
                             return true;
                         },
@@ -1259,7 +1259,7 @@ describe('validators 和 onInvalid', () => {
         });
     });
 
-    describe('onInvalid 选项', () => {
+    describe("onInvalid 选项", () => {
         test('onInvalid="pass" 时校验失败应该继续写入', () => {
             const store = new AutoStore(
                 {
@@ -1267,11 +1267,11 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onInvalid: 'pass',
+                    onInvalid: "pass",
                 },
             );
 
@@ -1287,11 +1287,11 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onInvalid: 'ignore',
+                    onInvalid: "ignore",
                 },
             );
 
@@ -1312,11 +1312,11 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onInvalid: 'throw',
+                    onInvalid: "throw",
                 },
             );
 
@@ -1334,11 +1334,11 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onInvalid: 'throw-pass',
+                    onInvalid: "throw-pass",
                 },
             );
 
@@ -1352,8 +1352,8 @@ describe('validators 和 onInvalid', () => {
         });
     });
 
-    describe('validators 与 onInvalid 组合使用', () => {
-        test('validator 返回 false 时应该使用 onInvalid 选项', () => {
+    describe("validators 与 onInvalid 组合使用", () => {
+        test("validator 返回 false 时应该使用 onInvalid 选项", () => {
             const store = new AutoStore(
                 {
                     items: [
@@ -1363,11 +1363,11 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'items.*.price': (newValue) => {
+                        "items.*.price": (newValue) => {
                             return newValue > 0;
                         },
                     },
-                    onInvalid: 'pass',
+                    onInvalid: "pass",
                 },
             );
 
@@ -1376,23 +1376,23 @@ describe('validators 和 onInvalid', () => {
             expect(store.state.items[0].price).toBe(-50);
         });
 
-        test('validator 抛出异常时应该优先使用异常中的 behavior', () => {
+        test("validator 抛出异常时应该优先使用异常中的 behavior", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            const error = new ValidateError('年龄超出范围');
-                            error.behavior = 'ignore';
+                            const error = new ValidateError("年龄超出范围");
+                            error.behavior = "ignore";
                             throw error;
                         },
                     },
-                    onInvalid: 'throw', // 应该被 validator 的 behavior 覆盖
+                    onInvalid: "throw", // 应该被 validator 的 behavior 覆盖
                 },
             );
 
@@ -1402,8 +1402,8 @@ describe('validators 和 onInvalid', () => {
         });
     });
 
-    describe('validators - 自定义 delimiter', () => {
-        test('应该使用自定义的 delimiter 连接路径', () => {
+    describe("validators - 自定义 delimiter", () => {
+        test("应该使用自定义的 delimiter 连接路径", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
@@ -1411,7 +1411,7 @@ describe('validators 和 onInvalid', () => {
                 {
                     // delimiter: '/',
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
@@ -1430,8 +1430,8 @@ describe('validators 和 onInvalid', () => {
         });
     });
 
-    describe('validators 与 onValidate 的 fallback 逻辑', () => {
-        test('当没有匹配的 validator 时应该使用 onValidate', () => {
+    describe("validators 与 onValidate 的 fallback 逻辑", () => {
+        test("当没有匹配的 validator 时应该使用 onValidate", () => {
             let validatorCalled = false;
             let onValidateCalled = false;
 
@@ -1442,14 +1442,14 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             validatorCalled = true;
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onValidate(newValue, oldValue, path) {
+                    validate(newValue, oldValue, path) {
                         onValidateCalled = true;
-                        if (path[0] === 'items' && path[1] === 'price') {
+                        if (path[0] === "items" && path[1] === "price") {
                             return newValue > 0;
                         }
                         return true;
@@ -1470,8 +1470,8 @@ describe('validators 和 onInvalid', () => {
         });
     });
 
-    describe('validators - 复杂场景', () => {
-        test('应该支持多个路径的验证器', () => {
+    describe("validators - 复杂场景", () => {
+        test("应该支持多个路径的验证器", () => {
             const store = new AutoStore(
                 {
                     order: {
@@ -1482,13 +1482,13 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'order.price': (newValue) => {
+                        "order.price": (newValue) => {
                             return newValue > 0;
                         },
-                        'order.quantity': (newValue) => {
+                        "order.quantity": (newValue) => {
                             return newValue > 0 && Number.isInteger(newValue);
                         },
-                        'order.discount': (newValue) => {
+                        "order.discount": (newValue) => {
                             return newValue >= 0 && newValue < 1;
                         },
                     },
@@ -1521,7 +1521,7 @@ describe('validators 和 onInvalid', () => {
             }).toThrow(ValidateError);
         });
 
-        test('应该支持通配符匹配多个嵌套对象', () => {
+        test("应该支持通配符匹配多个嵌套对象", () => {
             const store = new AutoStore(
                 {
                     users: {
@@ -1532,7 +1532,7 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'users.*.age': (newValue) => {
+                        "users.*.age": (newValue) => {
                             return newValue >= 0 && newValue <= 120;
                         },
                     },
@@ -1556,15 +1556,15 @@ describe('validators 和 onInvalid', () => {
         });
     });
 
-    describe('错误记录到 errors 对象', () => {
-        test('校验失败时应该将错误写入 errors 对象', () => {
+    describe("错误记录到 errors 对象", () => {
+        test("校验失败时应该将错误写入 errors 对象", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
@@ -1581,17 +1581,17 @@ describe('validators 和 onInvalid', () => {
 
             // 检查错误是否被记录
             // expect(store.errors['user.age']).toBeInstanceOf(ValidateError);
-            expect(store.errors['user.age']).toBeDefined();
+            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
         });
 
-        test('校验成功时应该从 errors 对象删除对应的错误', () => {
+        test("校验成功时应该从 errors 对象删除对应的错误", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
@@ -1607,12 +1607,12 @@ describe('validators 和 onInvalid', () => {
             }).toThrow(ValidateError);
 
             // 应该有错误记录
-            expect(store.errors['user.age']).toBeDefined();
+            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
 
             // 修正为合法值，错误应该被删除
             store.state.user.age = 25;
             expect(store.state.user.age).toBe(25);
-            expect(store.errors['user.age']).toBeUndefined();
+            expect(store.errors[`${store.id}.user.age`]).toBeUndefined();
         });
 
         test('onInvalid="pass" 时也应该记录错误', () => {
@@ -1622,18 +1622,18 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onInvalid: 'pass',
+                    onInvalid: "pass",
                 },
             );
 
             // pass 模式：校验失败但继续写入，同时记录错误
             store.state.user.age = 200;
             expect(store.state.user.age).toBe(200);
-            expect(store.errors['user.age']).toBeDefined();
+            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
         });
 
         test('onInvalid="ignore" 时应该记录错误但不写入', () => {
@@ -1643,18 +1643,18 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onInvalid: 'ignore',
+                    onInvalid: "ignore",
                 },
             );
 
             // ignore 模式：校验失败不写入，但记录错误
             store.state.user.age = 200;
             expect(store.state.user.age).toBe(18); // 值保持不变
-            expect(store.errors['user.age']).toBeDefined();
+            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
         });
 
         test('onInvalid="throw-pass" 时应该记录错误并抛出异常', () => {
@@ -1664,11 +1664,11 @@ describe('validators 和 onInvalid', () => {
                 },
                 {
                     validators: {
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
-                    onInvalid: 'throw-pass',
+                    onInvalid: "throw-pass",
                 },
             );
 
@@ -1678,23 +1678,23 @@ describe('validators 和 onInvalid', () => {
             }).toThrow(ValidateError);
 
             expect(store.state.user.age).toBe(200); // 值已被写入
-            expect(store.errors['user.age']).toBeDefined(); // 错误被记录
+            expect(store.errors[`${store.id}.user.age`]).toBeDefined(); // 错误被记录
         });
 
-        test('多个路径的错误应该独立记录', () => {
+        test("多个路径的错误应该独立记录", () => {
             const store = new AutoStore(
                 {
                     user: {
-                        name: 'John',
+                        name: "John",
                         age: 25,
                     },
                 },
                 {
                     validators: {
-                        'user.name': (newValue) => {
-                            return typeof newValue === 'string' && newValue.length > 0;
+                        "user.name": (newValue) => {
+                            return typeof newValue === "string" && newValue.length > 0;
                         },
-                        'user.age': (newValue) => {
+                        "user.age": (newValue) => {
                             return newValue >= 0 && newValue <= 150;
                         },
                     },
@@ -1706,52 +1706,28 @@ describe('validators 和 onInvalid', () => {
                 store.state.user.age = 200;
             }).toThrow(ValidateError);
 
-            expect(store.errors['user.age']).toBeDefined();
-            expect(store.errors['user.name']).toBeUndefined();
+            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
+            expect(store.errors[`${store.id}.user.name`]).toBeUndefined();
 
             // 触发 name 的错误
             expect(() => {
-                store.state.user.name = '';
+                store.state.user.name = "";
             }).toThrow(ValidateError);
-            expect(store.errors['user.name']).toBeDefined();
+            expect(store.errors[`${store.id}.user.name`]).toBeDefined();
 
             // 两个错误都应该存在
-            expect(store.errors['user.age']).toBeDefined();
-            expect(store.errors['user.name']).toBeDefined();
+            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
+            expect(store.errors[`${store.id}.user.name`]).toBeDefined();
 
             // 修正 age，只有 name 的错误
             store.state.user.age = 30;
-            expect(store.errors['user.age']).toBeUndefined();
-            expect(store.errors['user.name']).toBeDefined();
+            expect(store.errors[`${store.id}.user.age`]).toBeUndefined();
+            expect(store.errors[`${store.id}.user.name`]).toBeDefined();
 
             // 修正 name，所有错误都应该清除
-            store.state.user.name = 'Alice';
-            expect(store.errors['user.age']).toBeUndefined();
-            expect(store.errors['user.name']).toBeUndefined();
-        });
-
-        test('使用自定义 delimiter 时错误路径应该正确', () => {
-            const store = new AutoStore(
-                {
-                    user: { age: 18 },
-                },
-                {
-                    // delimiter: '/',
-                    validators: {
-                        'user.age': (newValue) => {
-                            return newValue >= 0 && newValue <= 150;
-                        },
-                    },
-                },
-            );
-
-            // 触发错误
-            expect(() => {
-                store.state.user.age = 200;
-            }).toThrow(ValidateError);
-
-            // 错误应该记录在 'user/age' 路径下
-            expect(store.errors['user.age']).toBeDefined(); // 使用错误的分隔符
+            store.state.user.name = "Alice";
+            expect(store.errors[`${store.id}.user.age`]).toBeUndefined();
+            expect(store.errors[`${store.id}.user.name`]).toBeUndefined();
         });
     });
 });

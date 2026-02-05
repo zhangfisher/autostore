@@ -1,11 +1,11 @@
-import { PATH_DELIMITER, GLOBAL_CONFIG_MANAGER } from '../consts';
-import { AutoStore } from '../store/store';
-import { isSchemaBuilder, setVal, withSchema } from '../utils';
-import { getVal } from '../utils/getVal';
-import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from './types';
-import { isFunction } from '../utils/isFunction';
-import type { AutoStoreOptions } from '../store/types';
-import type { Dict } from '../types';
+import { PATH_DELIMITER, GLOBAL_CONFIG_MANAGER } from "../consts";
+import { AutoStore } from "../store/store";
+import { isSchemaBuilder, setVal, withSchema } from "../utils";
+import { getVal } from "../utils/getVal";
+import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from "./types";
+import { isFunction } from "../utils/isFunction";
+import type { AutoStoreOptions } from "../store/types";
+import type { Dict } from "../types";
 
 /**
  *
@@ -47,10 +47,14 @@ export class ConfigManager extends AutoStore<
 > {
     dirtyValues: Record<string, any> = {};
     private _reseting: boolean = false;
-    constructor(public source: ConfigSource, options?: ConfigManagerOptions<AutoStoreConfigures>) {
+    constructor(
+        public source: ConfigSource,
+        options?: ConfigManagerOptions<AutoStoreConfigures>,
+    ) {
         const finalOptions = Object.assign(
             {
                 global: false,
+                configManager: false,
             },
             options,
         ) as any;
@@ -108,10 +112,13 @@ export class ConfigManager extends AutoStore<
     }
 
     private _getValues() {
-        return Object.entries(this.state).reduce((acc, [key, schema]) => {
-            acc[key] = (schema as any).value;
-            return acc;
-        }, {} as Record<string, any>);
+        return Object.entries(this.state).reduce(
+            (acc, [key, schema]) => {
+                acc[key] = (schema as any).value;
+                return acc;
+            },
+            {} as Record<string, any>,
+        );
     }
     /**
      * 恢复默认值
@@ -123,16 +130,16 @@ export class ConfigManager extends AutoStore<
             this.dirtyValues = {};
             // 将状态值恢复为默认值
             // this.state 中的每个值是一个 SchemaDescriptor，包含 value 和 schema 属性
-            Object.values(this.state).forEach((descriptor: any) => {
+            Object.values(this.state).forEach((schema: any) => {
                 // 此操作会导致写入时的校验操作，
                 try {
                     // 使用 withSchema 包裹默认值，实现静默更新
                     // 避免触发校验、事件通知、onUpdate 和 save
-                    const defaultValue = descriptor.schema.default;
+                    const defaultValue = schema.default;
                     if (defaultValue !== undefined) {
-                        descriptor.value = withSchema(defaultValue, {
+                        schema.value = withSchema(defaultValue, {
                             slient: true,
-                            validate: 'none',
+                            validate: "none",
                         });
                     }
                 } catch {
@@ -189,14 +196,14 @@ export class ConfigManager extends AutoStore<
 
         // 如果没有设置 onInvalid，则使用默认值 'throw'
         if ((descriptor.schema as any).onInvalid === undefined) {
-            (descriptor.schema as any).onInvalid = 'throw';
+            (descriptor.schema as any).onInvalid = "throw";
         }
-        if (isFunction(descriptor.schema.onValidate)) {
+        if (isFunction(descriptor.schema.validate)) {
             // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
             // @ts-expect-error
-            descriptor.schema.onValidate.getErrorMessage = (error: Error) => {
+            descriptor.schema.validate.getErrorMessage = (error: Error) => {
                 const message = descriptor.schema.invalidTips;
-                if (typeof message === 'string') {
+                if (typeof message === "string") {
                     return message
                         .params(descriptor.schema)
                         .params({ error: error.message, stack: error.stack });
@@ -207,13 +214,13 @@ export class ConfigManager extends AutoStore<
             const onInvalid = descriptor.schema.onInvalid;
             // 只有当 onInvalid 显式指定时才设置它
             if (onInvalid !== undefined) {
-                (descriptor.schema.onValidate as any).onInvalid = onInvalid;
+                (descriptor.schema.validate as any).onInvalid = onInvalid;
             }
             // 注册验证函数，用于写入状态值时调用进行验证
             if (!store.options.validators) {
                 store.options.validators = {};
             }
-            store.options.validators[strPath] = descriptor.schema.onValidate;
+            store.options.validators[strPath] = descriptor.schema.validate;
         } else {
             if (store.options.validators) {
                 delete store.options.validators[strPath];
@@ -225,7 +232,7 @@ export class ConfigManager extends AutoStore<
         // 添加到配置中
         this.update(
             (state) => {
-                setVal(state, [configKey.join(PATH_DELIMITER)], descriptor);
+                setVal(state, [configKey.join(PATH_DELIMITER)], descriptor.schema);
             },
             {
                 silent: true,
@@ -234,10 +241,14 @@ export class ConfigManager extends AutoStore<
         // 返回初始值，避免读取代理导致循环依赖
         return initialValue;
     }
-    private _createValueProxy(finalDescriptor: object, store: AutoStore<any>, path: string[]) {
-        // 由于ConfigManager是全局对象，而Store可能是动态 // 弱引用Store对象
+    private _createValueProxy(
+        finalDescriptor: SchemaDescriptor,
+        store: AutoStore<any>,
+        path: string[],
+    ) {
+        // 由于ConfigManager是全局对象，而Store可能是动态同弱引用Store对象
         const storeRef = new WeakRef(store);
-        return Object.defineProperty(finalDescriptor, 'value', {
+        return Object.defineProperty(finalDescriptor.schema, "value", {
             get() {
                 const store = storeRef.deref();
                 if (store) return getVal(store.state, path);
@@ -252,7 +263,11 @@ export class ConfigManager extends AutoStore<
     }
     getConfigValue(path: string[]) {
         return this.peep((state) => {
-            return getVal(state, [...path, 'value']);
+            return getVal(state, [...path, "value"]);
         });
     }
+}
+
+declare global {
+    var AutoStoreConfigManger: ConfigManager;
 }

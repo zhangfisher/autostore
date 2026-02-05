@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: <explanation> */
-import { describe, test, expect } from 'bun:test';
-import { AutoStore, ValidateError, withSchema } from '../src';
+import { describe, test, expect } from "bun:test";
+import { AutoStore, ValidateError, withSchema } from "../src";
 
 /**
  * withSchema 功能测试
@@ -9,8 +9,8 @@ import { AutoStore, ValidateError, withSchema } from '../src';
  * - validate: 控制校验行为 ('none' | 'pass' | 'throw' | 'ignore' | 'throw-pass')
  * - silent (拼写为 slient): 控制是否触发事件
  */
-describe('withSchema', () => {
-    describe('validate 选项', () => {
+describe("withSchema", () => {
+    describe("validate 选项", () => {
         describe('validate="none" - 跳过校验', () => {
             test('validate="none" 时应该跳过校验并写入数据', () => {
                 const store = new AutoStore(
@@ -18,8 +18,8 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 return newValue >= 0 && newValue <= 150;
                             }
                             return true;
@@ -28,7 +28,7 @@ describe('withSchema', () => {
                 );
 
                 // 使用 withSchema 跳过校验
-                store.state.user.age = withSchema(200, { validate: 'none' });
+                store.state.user.age = withSchema(200, { validate: "none" });
                 expect(store.state.user.age).toBe(200);
             });
 
@@ -38,13 +38,13 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                const error = new ValidateError('Age validation failed');
-                                error.behavior = 'throw';
+                                const error = new ValidateError("Age validation failed");
+                                error.behavior = "throw";
                                 throw error;
                             }
                             return true;
@@ -53,7 +53,7 @@ describe('withSchema', () => {
                 );
 
                 // 即使校验函数抛出异常，也应该跳过校验
-                store.state.user.age = withSchema(200, { validate: 'none' });
+                store.state.user.age = withSchema(200, { validate: "none" });
                 expect(store.state.user.age).toBe(200);
             });
 
@@ -64,19 +64,19 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
+                        validate(newValue, oldValue, path) {
                             validateEventCount++;
                             return true;
                         },
                     },
                 );
 
-                store.on('validate', () => {
+                store.on("validate", () => {
                     validateEventCount++;
                 });
 
                 // validate="none" 不应该触发校验事件
-                store.state.user.age = withSchema(200, { validate: 'none' });
+                store.state.user.age = withSchema(200, { validate: "none" });
 
                 // 校验函数和 validate 事件都不应该被触发
                 expect(validateEventCount).toBe(0);
@@ -91,13 +91,13 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                const error = new ValidateError('Age must be between 0 and 150');
-                                error.behavior = 'throw';
+                                const error = new ValidateError("Age must be between 0 and 150");
+                                error.behavior = "throw";
                                 throw error;
                             }
                             return true;
@@ -106,7 +106,7 @@ describe('withSchema', () => {
                 );
 
                 // 使用 withSchema 的 validate="pass" 覆盖校验函数的 behavior
-                store.state.user.age = withSchema(200, { validate: 'pass' });
+                store.state.user.age = withSchema(200, { validate: "pass" });
                 expect(store.state.user.age).toBe(200);
             });
 
@@ -116,12 +116,12 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                throw new ValidateError('Age must be between 0 and 150');
+                                throw new ValidateError("Age must be between 0 and 150");
                             }
                             return true;
                         },
@@ -129,9 +129,9 @@ describe('withSchema', () => {
                 );
 
                 // 校验失败但继续写入
-                store.state.user.age = withSchema(200, { validate: 'pass' });
+                store.state.user.age = withSchema(200, { validate: "pass" });
                 expect(store.state.user.age).toBe(200);
-                expect(store.errors['user.age']).toBeDefined();
+                expect(store.errors[`${store.id}.user.age`]).toBeDefined();
             });
         });
 
@@ -142,13 +142,13 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                const error = new ValidateError('Age must be between 0 and 150');
-                                error.behavior = 'throw';
+                                const error = new ValidateError("Age must be between 0 and 150");
+                                error.behavior = "throw";
                                 throw error;
                             }
                             return true;
@@ -157,7 +157,7 @@ describe('withSchema', () => {
                 );
 
                 // 校验失败，忽略写入
-                store.state.user.age = withSchema(200, { validate: 'ignore' });
+                store.state.user.age = withSchema(200, { validate: "ignore" });
                 expect(store.state.user.age).toBe(18); // 值保持不变
             });
 
@@ -167,12 +167,12 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                throw new ValidateError('Age must be between 0 and 150');
+                                throw new ValidateError("Age must be between 0 and 150");
                             }
                             return true;
                         },
@@ -181,7 +181,7 @@ describe('withSchema', () => {
 
                 // 不应该抛出异常
                 expect(() => {
-                    store.state.user.age = withSchema(200, { validate: 'ignore' });
+                    store.state.user.age = withSchema(200, { validate: "ignore" });
                 }).not.toThrow();
             });
 
@@ -191,12 +191,12 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                throw new ValidateError('Age must be between 0 and 150');
+                                throw new ValidateError("Age must be between 0 and 150");
                             }
                             return true;
                         },
@@ -204,9 +204,9 @@ describe('withSchema', () => {
                 );
 
                 // ignore 模式：校验失败不写入，但记录错误
-                store.state.user.age = withSchema(200, { validate: 'ignore' });
+                store.state.user.age = withSchema(200, { validate: "ignore" });
                 expect(store.state.user.age).toBe(18); // 值保持不变
-                expect(store.errors['user.age']).toBeDefined();
+                expect(store.errors[`${store.id}.user.age`]).toBeDefined();
             });
         });
 
@@ -217,13 +217,13 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                const error = new ValidateError('Age must be between 0 and 150');
-                                error.behavior = 'pass';
+                                const error = new ValidateError("Age must be between 0 and 150");
+                                error.behavior = "pass";
                                 throw error;
                             }
                             return true;
@@ -233,7 +233,7 @@ describe('withSchema', () => {
 
                 // 使用 validate="throw" 覆盖校验函数的 behavior="pass"
                 expect(() => {
-                    store.state.user.age = withSchema(200, { validate: 'throw' });
+                    store.state.user.age = withSchema(200, { validate: "throw" });
                 }).toThrow(ValidateError);
                 expect(store.state.user.age).toBe(18); // 值不应该被修改
             });
@@ -244,12 +244,12 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                throw new ValidateError('Age must be between 0 and 150');
+                                throw new ValidateError("Age must be between 0 and 150");
                             }
                             return true;
                         },
@@ -271,13 +271,13 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                const error = new ValidateError('Age must be between 0 and 150');
-                                error.behavior = 'pass';
+                                const error = new ValidateError("Age must be between 0 and 150");
+                                error.behavior = "pass";
                                 throw error;
                             }
                             return true;
@@ -287,7 +287,7 @@ describe('withSchema', () => {
 
                 // 应该抛出异常
                 expect(() => {
-                    store.state.user.age = withSchema(200, { validate: 'throw-pass' });
+                    store.state.user.age = withSchema(200, { validate: "throw-pass" });
                 }).toThrow(ValidateError);
 
                 // 但是值应该已经被写入
@@ -300,12 +300,12 @@ describe('withSchema', () => {
                         user: { age: 18 },
                     },
                     {
-                        onValidate(newValue, oldValue, path) {
-                            if (path[0] === 'user' && path[1] === 'age') {
+                        validate(newValue, oldValue, path) {
+                            if (path[0] === "user" && path[1] === "age") {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                throw new ValidateError('Age must be between 0 and 150');
+                                throw new ValidateError("Age must be between 0 and 150");
                             }
                             return true;
                         },
@@ -313,39 +313,39 @@ describe('withSchema', () => {
                 );
 
                 try {
-                    store.state.user.age = withSchema(200, { validate: 'throw-pass' });
+                    store.state.user.age = withSchema(200, { validate: "throw-pass" });
                 } catch {
                     // 预期会抛出异常
                 }
 
                 expect(store.state.user.age).toBe(200); // 值已被写入
-                expect(store.errors['user.age']).toBeDefined(); // 错误被记录
+                expect(store.errors[`${store.id}.user.age`]).toBeDefined(); // 错误被记录
             });
         });
 
-        describe('validate 与 validators 组合', () => {
-            test('validate 选项应该覆盖 validators 的行为', () => {
+        describe("validate 与 validators 组合", () => {
+            test("validate 选项应该覆盖 validators 的行为", () => {
                 const store = new AutoStore(
                     {
                         user: { age: 18 },
                     },
                     {
                         validators: {
-                            'user.age': (newValue) => {
+                            "user.age": (newValue) => {
                                 if (newValue >= 0 && newValue <= 150) {
                                     return true;
                                 }
-                                const error = new ValidateError('Age must be between 0 and 150');
-                                error.behavior = 'throw';
+                                const error = new ValidateError("Age must be between 0 and 150");
+                                error.behavior = "throw";
                                 throw error;
                             },
                         },
-                        onInvalid: 'throw',
+                        onInvalid: "throw",
                     },
                 );
 
                 // 使用 validate="pass" 覆盖 validator 的 behavior
-                store.state.user.age = withSchema(200, { validate: 'pass' });
+                store.state.user.age = withSchema(200, { validate: "pass" });
                 expect(store.state.user.age).toBe(200);
             });
 
@@ -356,7 +356,7 @@ describe('withSchema', () => {
                     },
                     {
                         validators: {
-                            'user.age': (newValue) => {
+                            "user.age": (newValue) => {
                                 return newValue >= 0 && newValue <= 150;
                             },
                         },
@@ -364,20 +364,20 @@ describe('withSchema', () => {
                 );
 
                 // validate="none" 跳过校验
-                store.state.user.age = withSchema(200, { validate: 'none' });
+                store.state.user.age = withSchema(200, { validate: "none" });
                 expect(store.state.user.age).toBe(200);
             });
         });
     });
 
-    describe('silent 选项 (拼写为 slient)', () => {
-        test('silent=true 时应该不触发 watch', () => {
+    describe("silent 选项 (拼写为 slient)", () => {
+        test("silent=true 时应该不触发 watch", () => {
             let watchCallCount = 0;
             const store = new AutoStore({
                 user: { age: 18 },
             });
 
-            store.watch('user.age', () => {
+            store.watch("user.age", () => {
                 watchCallCount++;
             });
 
@@ -391,13 +391,13 @@ describe('withSchema', () => {
             expect(store.state.user.age).toBe(30);
         });
 
-        test('silent=true 时应该不触发数组元素的 watch', () => {
+        test("silent=true 时应该不触发数组元素的 watch", () => {
             let watchCallCount = 0;
             const store = new AutoStore({
                 items: [1, 2, 3],
             });
 
-            store.watch('items.0', () => {
+            store.watch("items.0", () => {
                 watchCallCount++;
             });
 
@@ -411,7 +411,7 @@ describe('withSchema', () => {
             expect(store.state.items[0]).toBe(20);
         });
 
-        test('silent=true 时应该不触发嵌套路径的 watch', () => {
+        test("silent=true 时应该不触发嵌套路径的 watch", () => {
             let watchCallCount = 0;
             const store = new AutoStore({
                 user: {
@@ -421,7 +421,7 @@ describe('withSchema', () => {
                 },
             });
 
-            store.watch('user.profile.age', () => {
+            store.watch("user.profile.age", () => {
                 watchCallCount++;
             });
 
@@ -435,13 +435,13 @@ describe('withSchema', () => {
             expect(store.state.user.profile.age).toBe(30);
         });
 
-        test('silent=false 时应该正常触发 watch', () => {
+        test("silent=false 时应该正常触发 watch", () => {
             let watchCallCount = 0;
             const store = new AutoStore({
                 user: { age: 18 },
             });
 
-            store.watch('user.age', () => {
+            store.watch("user.age", () => {
                 watchCallCount++;
             });
 
@@ -451,13 +451,13 @@ describe('withSchema', () => {
             expect(store.state.user.age).toBe(25);
         });
 
-        test('不指定 silent 时应该默认触发 watch', () => {
+        test("不指定 silent 时应该默认触发 watch", () => {
             let watchCallCount = 0;
             const store = new AutoStore({
                 user: { age: 18 },
             });
 
-            store.watch('user.age', () => {
+            store.watch("user.age", () => {
                 watchCallCount++;
             });
 
@@ -468,7 +468,7 @@ describe('withSchema', () => {
         });
     });
 
-    describe('validate 和 silent 组合使用', () => {
+    describe("validate 和 silent 组合使用", () => {
         test('validate="pass" 和 silent=true 组合', () => {
             let watchCallCount = 0;
             const store = new AutoStore(
@@ -476,24 +476,24 @@ describe('withSchema', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            throw new ValidateError('Age must be between 0 and 150');
+                            throw new ValidateError("Age must be between 0 and 150");
                         }
                         return true;
                     },
                 },
             );
 
-            store.watch('user.age', () => {
+            store.watch("user.age", () => {
                 watchCallCount++;
             });
 
             // 校验失败但继续写入，同时不触发 watch
-            store.state.user.age = withSchema(200, { validate: 'pass', slient: true });
+            store.state.user.age = withSchema(200, { validate: "pass", slient: true });
             expect(store.state.user.age).toBe(200);
             expect(watchCallCount).toBe(0); // 不应该触发 watch
         });
@@ -505,8 +505,8 @@ describe('withSchema', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             return newValue >= 0 && newValue <= 150;
                         }
                         return true;
@@ -514,12 +514,12 @@ describe('withSchema', () => {
                 },
             );
 
-            store.watch('user.age', () => {
+            store.watch("user.age", () => {
                 watchCallCount++;
             });
 
             // 跳过校验，不触发 watch
-            store.state.user.age = withSchema(200, { validate: 'none', slient: true });
+            store.state.user.age = withSchema(200, { validate: "none", slient: true });
             expect(store.state.user.age).toBe(200);
             expect(watchCallCount).toBe(0); // 不应该触发 watch
         });
@@ -531,33 +531,33 @@ describe('withSchema', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            throw new ValidateError('Age must be between 0 and 150');
+                            throw new ValidateError("Age must be between 0 and 150");
                         }
                         return true;
                     },
                 },
             );
 
-            store.watch('user.age', () => {
+            store.watch("user.age", () => {
                 watchCallCount++;
             });
 
             // 校验失败抛出异常，即使设置 silent=true 也不会写入数据
             expect(() => {
-                store.state.user.age = withSchema(200, { validate: 'throw', slient: true });
+                store.state.user.age = withSchema(200, { validate: "throw", slient: true });
             }).toThrow(ValidateError);
             expect(store.state.user.age).toBe(18); // 值保持不变
             expect(watchCallCount).toBe(0); // 不会触发 watch
         });
     });
 
-    describe('复杂场景', () => {
-        test('在嵌套对象中使用 withSchema', () => {
+    describe("复杂场景", () => {
+        test("在嵌套对象中使用 withSchema", () => {
             let watchCallCount = 0;
             const store = new AutoStore(
                 {
@@ -568,77 +568,77 @@ describe('withSchema', () => {
                     },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[path.length - 1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[path.length - 1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            throw new ValidateError('Age must be between 0 and 150');
+                            throw new ValidateError("Age must be between 0 and 150");
                         }
                         return true;
                     },
                 },
             );
 
-            store.watch('user.profile.age', () => {
+            store.watch("user.profile.age", () => {
                 watchCallCount++;
             });
 
             // 在嵌套路径中使用 withSchema
             store.state.user.profile.age = withSchema(200, {
-                validate: 'pass',
+                validate: "pass",
                 slient: true,
             });
             expect(store.state.user.profile.age).toBe(200);
             expect(watchCallCount).toBe(0);
         });
 
-        test('在数组元素中使用 withSchema', () => {
+        test("在数组元素中使用 withSchema", () => {
             let watchCallCount = 0;
             const store = new AutoStore(
                 {
                     items: [1, 2, 3],
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'items') {
-                            return typeof newValue === 'number' && newValue > 0;
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "items") {
+                            return typeof newValue === "number" && newValue > 0;
                         }
                         return true;
                     },
                 },
             );
 
-            store.watch('items.0', () => {
+            store.watch("items.0", () => {
                 watchCallCount++;
             });
 
             // 在数组元素中使用 withSchema
-            store.state.items[0] = withSchema(-10, { validate: 'pass', slient: true });
+            store.state.items[0] = withSchema(-10, { validate: "pass", slient: true });
             expect(store.state.items[0]).toBe(-10);
             expect(watchCallCount).toBe(0);
         });
 
-        test('多次赋值使用不同的 withSchema 选项', () => {
+        test("多次赋值使用不同的 withSchema 选项", () => {
             let watchCallCount = 0;
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            throw new ValidateError('Age must be between 0 and 150');
+                            throw new ValidateError("Age must be between 0 and 150");
                         }
                         return true;
                     },
                 },
             );
 
-            store.watch('user.age', () => {
+            store.watch("user.age", () => {
                 watchCallCount++;
             });
 
@@ -653,7 +653,7 @@ describe('withSchema', () => {
             expect(store.state.user.age).toBe(30);
 
             // 第三次：跳过校验的静默赋值
-            store.state.user.age = withSchema(200, { validate: 'none', slient: true });
+            store.state.user.age = withSchema(200, { validate: "none", slient: true });
             expect(watchCallCount).toBe(1);
             expect(store.state.user.age).toBe(200);
 
@@ -664,8 +664,8 @@ describe('withSchema', () => {
         });
     });
 
-    describe('边界情况', () => {
-        test('withSchema 包装的值应该保持原始类型', () => {
+    describe("边界情况", () => {
+        test("withSchema 包装的值应该保持原始类型", () => {
             const store = new AutoStore({
                 value: 100,
             });
@@ -673,17 +673,17 @@ describe('withSchema', () => {
             // 数字
             store.state.value = withSchema(200, {});
             expect(store.state.value).toBe(200);
-            expect(typeof store.state.value).toBe('number');
+            expect(typeof store.state.value).toBe("number");
 
             // 字符串
             //@ts-expect-error
-            store.state.value = withSchema('hello', {});
+            store.state.value = withSchema("hello", {});
             //@ts-expect-error
-            expect(store.state.value).toBe('hello');
-            expect(typeof store.state.value).toBe('string');
+            expect(store.state.value).toBe("hello");
+            expect(typeof store.state.value).toBe("string");
 
             // 对象
-            const obj = { name: 'John' };
+            const obj = { name: "John" };
             //@ts-expect-error
             store.state.value = withSchema(obj, {});
             //@ts-expect-error
@@ -709,7 +709,7 @@ describe('withSchema', () => {
             expect(store.state.value).toBe(undefined);
         });
 
-        test('withSchema 应该支持所有类型的值', () => {
+        test("withSchema 应该支持所有类型的值", () => {
             const store = new AutoStore({
                 value: null,
             });
@@ -721,9 +721,9 @@ describe('withSchema', () => {
             expect(store.state.value).toBe(100);
 
             //@ts-expect-error
-            store.state.value = withSchema('string', {});
+            store.state.value = withSchema("string", {});
             //@ts-expect-error
-            expect(store.state.value).toBe('string');
+            expect(store.state.value).toBe("string");
 
             //@ts-expect-error
             store.state.value = withSchema(true, {});
@@ -731,9 +731,9 @@ describe('withSchema', () => {
             expect(store.state.value).toBe(true);
 
             //@ts-expect-error
-            store.state.value = withSchema({ key: 'value' }, {});
+            store.state.value = withSchema({ key: "value" }, {});
             //@ts-expect-error
-            expect(store.state.value).toEqual({ key: 'value' });
+            expect(store.state.value).toEqual({ key: "value" });
 
             //@ts-expect-error
             store.state.value = withSchema([1, 2, 3], {});
@@ -744,17 +744,17 @@ describe('withSchema', () => {
             expect(store.state.value).toBe(null);
         });
 
-        test('没有 onValidate 时使用 withSchema 应该正常工作', () => {
+        test("没有 onValidate 时使用 withSchema 应该正常工作", () => {
             const store = new AutoStore({
                 user: { age: 18 },
             });
 
             // 没有 onValidate，withSchema 应该正常工作
-            store.state.user.age = withSchema(200, { validate: 'none', slient: true });
+            store.state.user.age = withSchema(200, { validate: "none", slient: true });
             expect(store.state.user.age).toBe(200);
         });
 
-        test('withSchema 在计算属性中使用', () => {
+        test("withSchema 在计算属性中使用", () => {
             const store = new AutoStore({
                 base: 10,
                 doubled: (scope: any) => scope.base * 2,
@@ -769,7 +769,7 @@ describe('withSchema', () => {
         });
     });
 
-    describe('validate 事件与 withSchema', () => {
+    describe("validate 事件与 withSchema", () => {
         test('validate="pass" 时应该触发 validate 事件', () => {
             let validateEventCount = 0;
             let capturedError: any;
@@ -778,19 +778,19 @@ describe('withSchema', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            throw new ValidateError('Age must be between 0 and 150');
+                            throw new ValidateError("Age must be between 0 and 150");
                         }
                         return true;
                     },
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 validateEventCount++;
                 if (event.error) {
                     capturedError = event.error;
@@ -798,7 +798,7 @@ describe('withSchema', () => {
             });
 
             // validate="pass" 应该触发 validate 事件
-            store.state.user.age = withSchema(200, { validate: 'pass' });
+            store.state.user.age = withSchema(200, { validate: "pass" });
             expect(validateEventCount).toBe(1);
             expect(capturedError).toBeInstanceOf(ValidateError);
             expect(store.state.user.age).toBe(200);
@@ -811,19 +811,19 @@ describe('withSchema', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
+                    validate(newValue, oldValue, path) {
                         validateEventCount++;
                         return true;
                     },
                 },
             );
 
-            store.on('validate', () => {
+            store.on("validate", () => {
                 validateEventCount++;
             });
 
             // validate="none" 不应该触发 validate 事件
-            store.state.user.age = withSchema(200, { validate: 'none' });
+            store.state.user.age = withSchema(200, { validate: "none" });
             expect(validateEventCount).toBe(0);
             expect(store.state.user.age).toBe(200);
         });
@@ -836,19 +836,19 @@ describe('withSchema', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            throw new ValidateError('Age must be between 0 and 150');
+                            throw new ValidateError("Age must be between 0 and 150");
                         }
                         return true;
                     },
                 },
             );
 
-            store.on('validate', (event) => {
+            store.on("validate", (event) => {
                 validateEventCount++;
                 if (event.error) {
                     capturedError = event.error;
@@ -856,27 +856,27 @@ describe('withSchema', () => {
             });
 
             // validate="ignore" 应该触发 validate 事件
-            store.state.user.age = withSchema(200, { validate: 'ignore' });
+            store.state.user.age = withSchema(200, { validate: "ignore" });
             expect(validateEventCount).toBe(1);
             expect(capturedError).toBeInstanceOf(ValidateError);
             expect(store.state.user.age).toBe(18); // 值保持不变
         });
     });
 
-    describe('错误处理', () => {
-        test('withSchema 应该正确处理校验错误', () => {
+    describe("错误处理", () => {
+        test("withSchema 应该正确处理校验错误", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            const error = new ValidateError('自定义错误信息');
-                            error.behavior = 'throw';
+                            const error = new ValidateError("自定义错误信息");
+                            error.behavior = "throw";
                             throw error;
                         }
                         return true;
@@ -886,8 +886,8 @@ describe('withSchema', () => {
 
             // 应该抛出包含自定义错误信息的异常
             expect(() => {
-                store.state.user.age = withSchema(200, { validate: 'throw' });
-            }).toThrow('自定义错误信息');
+                store.state.user.age = withSchema(200, { validate: "throw" });
+            }).toThrow("自定义错误信息");
         });
 
         test('validate="throw-pass" 应该在写入后抛出异常', () => {
@@ -896,12 +896,12 @@ describe('withSchema', () => {
                     user: { age: 18 },
                 },
                 {
-                    onValidate(newValue, oldValue, path) {
-                        if (path[0] === 'user' && path[1] === 'age') {
+                    validate(newValue, oldValue, path) {
+                        if (path[0] === "user" && path[1] === "age") {
                             if (newValue >= 0 && newValue <= 150) {
                                 return true;
                             }
-                            throw new ValidateError('Age must be between 0 and 150');
+                            throw new ValidateError("Age must be between 0 and 150");
                         }
                         return true;
                     },
@@ -910,7 +910,7 @@ describe('withSchema', () => {
 
             // 应该抛出异常
             expect(() => {
-                store.state.user.age = withSchema(200, { validate: 'throw-pass' });
+                store.state.user.age = withSchema(200, { validate: "throw-pass" });
             }).toThrow(ValidateError);
 
             // 但是值应该已经被写入

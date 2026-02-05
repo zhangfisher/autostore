@@ -277,7 +277,6 @@ describe("异步计算属性的超时功能", () => {
                 }
                 resolve();
             });
-            console.log("Run all timers not implemented in Bun yet");
         });
     }, 500000);
 });

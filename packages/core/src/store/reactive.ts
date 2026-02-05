@@ -1,15 +1,15 @@
-import { isRaw } from '../utils/isRaw';
-import { hookArrayMethods } from './hookArray';
-import type { StateOperateType, StateValidator } from './types';
-import { CyleDependError, ValidateError } from '../errors';
-import type { ComputedState, Dict } from '../types';
-import type { AutoStore } from './store';
-import { isNumber } from '../utils/isNumber';
-import { markRaw } from '../utils/markRaw';
-import { isPathMatched } from '../utils/isPathMatched';
-import { getSchemaValue, ValueSchema } from '../utils/withSchema';
+import { isRaw } from "../utils/isRaw";
+import { hookArrayMethods } from "./hookArray";
+import type { StateOperateType, StateValidator } from "./types";
+import { CyleDependError, ValidateError } from "../errors";
+import type { ComputedState, Dict } from "../types";
+import type { AutoStore } from "./store";
+import { isNumber } from "../utils/isNumber";
+import { markRaw } from "../utils/markRaw";
+import { isPathMatched } from "../utils/isPathMatched";
+import { getSchemaValue, ValueSchema } from "../utils/withSchema";
 
-const __NOTIFY__ = Symbol('__NOTIFY__');
+const __NOTIFY__ = Symbol("__NOTIFY__");
 
 export type ReactiveNotifyParams<T = any> = {
     type: StateOperateType;
@@ -37,7 +37,7 @@ type CreateReactiveObjectOptions = {
 function getValidate(this: AutoStore<any>, path: string[]): StateValidator<any> | undefined {
     // 优先在 validators 中查找匹配的验证函数
     if (this.options.validators) {
-        const pathString = path.join(this.options.delimiter || '.');
+        const pathString = path.join(this.options.delimiter || ".");
 
         // 查找完全匹配的验证器
         if (this.options.validators[pathString]) {
@@ -53,8 +53,8 @@ function getValidate(this: AutoStore<any>, path: string[]): StateValidator<any> 
         }
     }
 
-    // 如果在 validators 中没有找到，则返回 onValidate
-    return this.options.onValidate;
+    // 如果在 validators 中没有找到，则返回 validate
+    return this.options.validate;
 }
 
 function isValidPass(
@@ -67,15 +67,18 @@ function isValidPass(
 ) {
     //@ts-expect-error
     const behavior = schema?.validate || this._updateValidateBehavior;
-    if (behavior === 'none') return true;
+    if (behavior === "none") return true;
 
     const validate = getValidate.call(this, path);
-    if (typeof validate !== 'function') return true;
+    if (typeof validate !== "function") return true;
 
     let isPass: boolean | Error = true;
     let error: any;
-    const pathKey = path.join(this.options.delimiter || '.');
-    const configKey = this.options.configKey ? `${this.options.configKey}.${pathKey}` : pathKey;
+    const pathKey = path.join(this.options.delimiter || ".");
+    const configKey =
+        this.options.configKey && this.options.configKey.trim().length > 0
+            ? `${this.options.configKey.trim()}.${pathKey}`
+            : pathKey;
     try {
         const isValid = validate!.call(this, newValue, oldValue, path);
         if (isValid === false) {
@@ -97,20 +100,20 @@ function isValidPass(
         // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid
         // 这样可以确保 configurable 中配置的 onInvalid 优先生效
         const finalBehavior =
-            behavior || e.behavior || validate.onInvalid || this.options.onInvalid || 'throw';
+            behavior || e.behavior || validate.onInvalid || this.options.onInvalid || "throw";
 
-        if (finalBehavior === 'pass') {
+        if (finalBehavior === "pass") {
             isPass = true;
-        } else if (finalBehavior === 'ignore') {
+        } else if (finalBehavior === "ignore") {
             isPass = false;
-        } else if (finalBehavior === 'throw-pass') {
+        } else if (finalBehavior === "throw-pass") {
             isPass = e;
         } else {
             isPass = false;
             throw e;
         }
     } finally {
-        this.emit('validate', {
+        this.emit("validate", {
             path,
             newValue,
             oldValue,
@@ -129,7 +132,7 @@ function createProxy(
     options: CreateReactiveObjectOptions,
 ): any {
     if (isRaw(target)) return target;
-    if (typeof target !== 'object' || target === null) {
+    if (typeof target !== "object" || target === null) {
         return target;
     }
     if (proxyCache.has(target)) {
@@ -138,10 +141,10 @@ function createProxy(
     const proxyObj = new Proxy(target, {
         get: (obj, key, receiver) => {
             const value = Reflect.get(obj, key, receiver);
-            if (typeof key !== 'string') return value;
+            if (typeof key !== "string") return value;
             const path = [...parentPath, String(key)];
-            if (typeof value === 'function' || !Object.hasOwn(obj, key)) {
-                if (typeof value === 'function') {
+            if (typeof value === "function" || !Object.hasOwn(obj, key)) {
+                if (typeof value === "function") {
                     if (Array.isArray(obj) && !isNumber(key)) {
                         return hookArrayMethods(
                             options.notify,
@@ -153,7 +156,7 @@ function createProxy(
                     }
                     if (!isRaw(value) && Object.hasOwn(obj, key)) {
                         // 拦截
-                        if (typeof this.options.onObserverInitial === 'function') {
+                        if (typeof this.options.onObserverInitial === "function") {
                             try {
                                 const isCreated = this.options.onObserverInitial.call(
                                     this,
@@ -166,18 +169,18 @@ function createProxy(
                                     return value;
                                 }
                             } catch (e: any) {
-                                this.log(`onObserverBeforeCreate error: ${e.message}`, 'error');
+                                this.log(`onObserverBeforeCreate error: ${e.message}`, "error");
                             }
                         }
-                        const pathKey = path.join('.');
+                        const pathKey = path.join(".");
                         try {
                             if (isComputedCreating.has(pathKey)) {
                                 // 如果已经创建过计算属性，则直接返回
                                 const cylePaths = [...isComputedCreating.keys(), pathKey];
                                 isComputedCreating.clear();
                                 throw new CyleDependError(
-                                    `Find circular dependency at <"${path}">, steps: ${cylePaths.join(
-                                        ' -> ',
+                                    `Find circular dependency at <"${pathKey}">, steps: ${cylePaths.join(
+                                        " -> ",
                                     )}`,
                                 );
                             }
@@ -189,7 +192,7 @@ function createProxy(
                                 obj,
                             ); // 如果值是一个函数，则创建一个计算属性或Watch对象
                             // 如果返回的不是函数（比如是 schema builder 返回的 initialValue），则将其设置到对象中
-                            if (typeof result !== 'function') {
+                            if (typeof result !== "function") {
                                 Reflect.set(obj, key, result, receiver);
                             }
                             return result;
@@ -204,7 +207,7 @@ function createProxy(
                 }
             }
             options.notify({
-                type: 'get',
+                type: "get",
                 path,
                 indexs: [],
                 value,
@@ -224,10 +227,12 @@ function createProxy(
                 if (key === __NOTIFY__) return true;
 
                 // 写入成功后，检查是否是配置项，如果是则调用 ConfigManager.onUpdate
-                const pathKey = path.join(this.options.delimiter || '.');
-                const configKey = this.options.configKey
-                    ? `${this.options.configKey}.${pathKey}`
-                    : pathKey;
+                const pathKey = path.join(this.options.delimiter || ".");
+                const configKeyArg = this.options.configKey;
+                const configKey =
+                    configKeyArg && configKeyArg.length > 0
+                        ? `${this.options.configKey}.${pathKey}`
+                        : pathKey;
                 if (success && this.configManager && this.configurabled.has(pathKey)) {
                     setTimeout(() => {
                         this.configManager?.onUpdate(this, configKey, val);
@@ -236,7 +241,7 @@ function createProxy(
 
                 if (success && !schema?.slient && key !== __NOTIFY__ && val !== oldValue) {
                     options.notify({
-                        type: Array.isArray(obj) ? 'update' : 'set',
+                        type: Array.isArray(obj) ? "update" : "set",
                         path,
                         indexs: [],
                         value: val,
@@ -259,7 +264,7 @@ function createProxy(
             const success = Reflect.deleteProperty(obj, prop);
             if (success && prop !== __NOTIFY__) {
                 options.notify({
-                    type: 'delete',
+                    type: "delete",
                     path,
                     indexs: [],
                     value,

@@ -642,7 +642,7 @@ describe("Store Events", () => {
                     age: 25,
                 },
                 {
-                    onValidate(_newValue, _oldValue, _path) {
+                    validate(_newValue, _oldValue, _path) {
                         if (_path[0] === "age" && _newValue < 0) {
                             return false;
                         }
@@ -729,7 +729,7 @@ describe("Store Events", () => {
                     age: 25,
                 },
                 {
-                    onValidate(_newValue, _oldValue, _path) {
+                    validate(_newValue, _oldValue, _path) {
                         return _newValue >= 0;
                     },
                     onInvalid: "pass", // 验证失败时继续写入，但仍然触发错误
@@ -876,7 +876,7 @@ describe("Store Events", () => {
 
             const value = store.state.slowComputed;
 
-            await delay(15);
+            await delay(50);
 
             // 取消计算
             value.cancel();

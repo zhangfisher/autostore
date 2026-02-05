@@ -11,7 +11,8 @@
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
 		"changeset": "changeset",
-		"publish:all": "turbo build  && changeset version && changeset publish",
+		"apply-config": "bun scripts/apply-publish-config.ts",
+		"publish:all": "bun scripts/apply-publish-config.ts apply && turbo build && changeset version && changeset publish && bun scripts/apply-publish-config.ts restore",
 		"build": "turbo build --filter=autostore --filter=@autostorejs/syncer --filter=@autostorejs/devtools --filter=@autostorejs/react",
 		"docs:preview": "vitepress preview new-docs",
 		"sync": "cnpm sync autostore @autostorejs/react @autostorejs/form @autostorejs/syncer",
@@ -24,6 +25,7 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@changesets/cli": "^2.29.8",
+		"@types/bun": "^1.3.8",
 		"@types/node": "^25.0.6",
 		"oxfmt": "^0.27.0",
 		"oxlint": "^1.42.0",

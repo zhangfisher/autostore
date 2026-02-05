@@ -1,15 +1,15 @@
-import { describe, test } from 'bun:test';
-import type { Equal, Expect } from '@type-challenges/utils';
-import { AutoStore, configurable, schema, computed, SchemaKeyPaths } from '../../src';
+import { describe, test } from "bun:test";
+import type { Equal, Expect } from "@type-challenges/utils";
+import { AutoStore, configurable, schema, computed, SchemaKeyPaths } from "../../src";
 
 /**
  * Schema 基础类型测试
  */
-describe('Schema 基础类型', () => {
-    test('configurable 函数类型', () => {
+describe("Schema 基础类型", () => {
+    test("configurable 函数类型", () => {
         const store = new AutoStore({
             user: {
-                name: configurable('张三'),
+                name: configurable("张三"),
                 age: configurable(18),
                 admin: configurable(true),
             },
@@ -26,11 +26,11 @@ describe('Schema 基础类型', () => {
         const check3: Expect<Equal<typeof admin, boolean>> = true as any;
     });
 
-    test('schema 函数类型', () => {
+    test("schema 函数类型", () => {
         const store = new AutoStore({
             value: schema(100, {
-                label: '数值',
-                widget: 'number',
+                label: "数值",
+                widget: "number",
                 min: 0,
                 max: 100,
             }),
@@ -40,18 +40,18 @@ describe('Schema 基础类型', () => {
         const check: Expect<Equal<typeof value, number>> = true as any;
     });
 
-    test('嵌套 schema 类型', () => {
+    test("嵌套 schema 类型", () => {
         const store = new AutoStore({
             user: {
-                name: configurable('张三', {
-                    label: '姓名',
-                    placeholder: '请输入姓名',
+                name: configurable("张三", {
+                    label: "姓名",
+                    placeholder: "请输入姓名",
                 }),
                 address: {
-                    city: configurable('北京', {
-                        label: '城市',
+                    city: configurable("北京", {
+                        label: "城市",
                     }),
-                    street: '长安街',
+                    street: "长安街",
                 },
             },
         });
@@ -65,10 +65,10 @@ describe('Schema 基础类型', () => {
         const check3: Expect<Equal<typeof street, string>> = true as any;
     });
 
-    test('数组 schema 类型', () => {
+    test("数组 schema 类型", () => {
         const store = new AutoStore({
-            tags: configurable(['a', 'b', 'c'], {
-                label: '标签',
+            tags: configurable(["a", "b", "c"], {
+                label: "标签",
             }),
         });
 
@@ -80,22 +80,22 @@ describe('Schema 基础类型', () => {
 /**
  * Schema 选项类型测试
  */
-describe('Schema 选项类型', () => {
-    test('基础 schema 选项', () => {
+describe("Schema 选项类型", () => {
+    test("基础 schema 选项", () => {
         const store = new AutoStore({
             value: configurable(100, {
-                label: '数值',
-                help: '帮助信息',
-                tooltip: '提示',
+                label: "数值",
+                help: "帮助信息",
+                tooltip: "提示",
                 default: 100,
-                invalidTips: '无效值',
-                datatype: 'number',
-                icon: 'icon',
+                invalidTips: "无效值",
+                datatype: "number",
+                icon: "icon",
                 required: true,
                 visible: true,
-                description: '描述',
-                placeholder: '占位符',
-                group: '分组',
+                description: "描述",
+                placeholder: "占位符",
+                group: "分组",
                 advanced: false,
                 divider: false,
                 order: 1,
@@ -105,10 +105,10 @@ describe('Schema 选项类型', () => {
         });
     });
 
-    test('widget 配置类型', () => {
+    test("widget 配置类型", () => {
         const store = new AutoStore({
             numberValue: configurable(100, {
-                widget: 'number',
+                widget: "number",
                 min: 0,
                 max: 100,
                 step: 1,
@@ -116,11 +116,11 @@ describe('Schema 选项类型', () => {
         });
     });
 
-    test('enable 和 computed 选项', () => {
+    test("enable 和 computed 选项", () => {
         const store = new AutoStore({
             admin: configurable(true),
-            username: configurable('admin', {
-                enable: computed((scope) => scope.admin, ['./admin']),
+            username: configurable("admin", {
+                enable: computed((scope) => scope.admin, ["./admin"]),
             }),
         });
     });
@@ -129,11 +129,11 @@ describe('Schema 选项类型', () => {
 /**
  * Schema 验证类型测试
  */
-describe('Schema 验证类型', () => {
-    test('onValidate 回调类型', () => {
+describe("Schema 验证类型", () => {
+    test("onValidate 回调类型", () => {
         const store = new AutoStore({
             age: configurable(18, {
-                onValidate: (value, oldValue, path) => {
+                validate: (value, oldValue, path) => {
                     // value 应该是 number
                     const check1: Expect<Equal<typeof value, number>> = true;
                     // oldValue 应该是 number | undefined
@@ -147,28 +147,28 @@ describe('Schema 验证类型', () => {
         });
     });
 
-    test('onInvalid 选项类型', () => {
+    test("onInvalid 选项类型", () => {
         const store1 = new AutoStore({
             value: configurable(0, {
-                onInvalid: 'pass',
+                onInvalid: "pass",
             }),
         });
 
         const store2 = new AutoStore({
             value: configurable(0, {
-                onInvalid: 'throw',
+                onInvalid: "throw",
             }),
         });
 
         const store3 = new AutoStore({
             value: configurable(0, {
-                onInvalid: 'ignore',
+                onInvalid: "ignore",
             }),
         });
 
         const store4 = new AutoStore({
             value: configurable(0, {
-                onInvalid: 'throw-pass',
+                onInvalid: "throw-pass",
             }),
         });
     });
@@ -177,8 +177,8 @@ describe('Schema 验证类型', () => {
 /**
  * Schema 转换函数类型测试
  */
-describe('Schema 转换函数', () => {
-    test('toView 和 toState 函数', () => {
+describe("Schema 转换函数", () => {
+    test("toView 和 toState 函数", () => {
         const store = new AutoStore({
             date: configurable(new Date(), {
                 toView: (value) => {
@@ -193,7 +193,7 @@ describe('Schema 转换函数', () => {
         });
     });
 
-    test('toInput 函数', () => {
+    test("toInput 函数", () => {
         const store = new AutoStore({
             value: configurable(100, {
                 toInput: (value) => {
@@ -204,7 +204,7 @@ describe('Schema 转换函数', () => {
         });
     });
 
-    test('toRender 函数', () => {
+    test("toRender 函数", () => {
         const store = new AutoStore({
             value: configurable(100, {
                 toRender: (value) => {
@@ -219,17 +219,17 @@ describe('Schema 转换函数', () => {
 /**
  * Schema actions 类型测试
  */
-describe('Schema actions', () => {
-    test('actions 配置类型', () => {
+describe("Schema actions", () => {
+    test("actions 配置类型", () => {
         const store = new AutoStore({
             value: configurable(100, {
                 actions: [
                     {
-                        label: '增加',
+                        label: "增加",
                         onClick: () => {},
                     },
                     {
-                        label: '减少',
+                        label: "减少",
                         onClick: () => {},
                     },
                 ],
@@ -241,16 +241,16 @@ describe('Schema actions', () => {
 /**
  * Store types 属性类型测试
  */
-describe('Store types 属性', () => {
-    test('types.schemas 类型', () => {
+describe("Store types 属性", () => {
+    test("types.schemas 类型", () => {
         const store = new AutoStore({
             user: {
-                name: configurable('张三'),
+                name: configurable("张三"),
                 age: configurable(18),
                 admin: configurable(true),
                 address: {
-                    city: configurable('北京'),
-                    street: '长安街',
+                    city: configurable("北京"),
+                    street: "长安街",
                 },
             },
         });
@@ -260,31 +260,31 @@ describe('Store types 属性', () => {
             Equal<
                 SchemasType,
                 {
-                    'user.name': string;
-                    'user.age': number;
-                    'user.admin': boolean;
-                    'user.address.city': string;
+                    "user.name": string;
+                    "user.age": number;
+                    "user.admin": boolean;
+                    "user.address.city": string;
                 }
             >
         > = true as any;
     });
 
-    test('types.schemaKeys 类型', () => {
+    test("types.schemaKeys 类型", () => {
         const store = new AutoStore({
             user: {
-                name: configurable('张三'),
+                name: configurable("张三"),
                 age: configurable(18),
                 admin: configurable(true),
                 address: {
-                    city: configurable('北京'),
-                    street: '长安街',
+                    city: configurable("北京"),
+                    street: "长安街",
                 },
             },
         });
 
         type SchemaKeysType = keyof typeof store.types.schemas;
         const check: Expect<
-            Equal<SchemaKeysType, 'user.name' | 'user.age' | 'user.admin' | 'user.address.city'>
+            Equal<SchemaKeysType, "user.name" | "user.age" | "user.admin" | "user.address.city">
         > = true as any;
     });
 });
@@ -292,17 +292,17 @@ describe('Store types 属性', () => {
 /**
  * Schema 样式类型测试
  */
-describe('Schema 样式', () => {
-    test('styles 和 classs 选项', () => {
+describe("Schema 样式", () => {
+    test("styles 和 classs 选项", () => {
         const store = new AutoStore({
             value: configurable(100, {
                 styles: {
-                    color: 'red',
-                    fontSize: '14px',
+                    color: "red",
+                    fontSize: "14px",
                 },
                 classs: {
-                    'value-input': true,
-                    'value-large': false,
+                    "value-input": true,
+                    "value-large": false,
                 },
             }),
         });

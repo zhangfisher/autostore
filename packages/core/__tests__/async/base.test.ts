@@ -876,7 +876,6 @@ describe("所有异步计算基础功能", () => {
                         console.log("Restore mocks not implemented in Bun yet");
                         resolve();
                     });
-                console.log("Run all timers not implemented in Bun yet");
             });
         });
     });

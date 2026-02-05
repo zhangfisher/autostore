@@ -80,7 +80,6 @@ import { computed } from "../computed/computed";
 import { watch } from "../watch/watch";
 import { configurable, schema } from "../schema/schema";
 import type { ConfigManager } from "../schema/manager";
-import { isConfigSource } from "../utils/isConfigSource";
 import { createShadow } from "./shadow";
 import {
     forEachObject,
@@ -191,7 +190,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         }
         return this._configurabled!;
     }
-    get errors() {
+    get errors(): Record<string, string> {
         if (!this._errors) {
             this._errors = {};
         }
@@ -291,39 +290,19 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         }
     }
     private _createConfigManager() {
+        const configManager = this.options.configManager;
+        // 只在 configKey 为 undefined 时设置为 store.id
+        // 如果 configKey 为空字符串，则保持不变（不添加前缀）
+        if (this.options.configKey === undefined) this.options.configKey = this.id;
         // 处理 configManager 选项
-        if (
-            this.options.configManager &&
-            typeof this.options.configManager === "object" &&
-            "add" in this.options.configManager
-        ) {
+        if (configManager && typeof configManager === "object" && "add" in configManager) {
             // 已经是 ConfigManager 实例（有 add 方法）
-            this._configManager = this.options.configManager as ConfigManager;
-            //if (!this.options.configKey) this.options.configKey = this.id;
-        } else if (isConfigSource(this.options.configManager)) {
-            import("../schema/manager").then(({ ConfigManager }) => {
-                // 如果独立配置管理器，则不需要指定configKey
-                //this.options.configKey = undefined;
-                // @ts-ignore
-                this._configManager = new ConfigManager(this.options.configManager);
-            });
-            // ConfigSource 对象，创建新的 ConfigManager
-            // const { ConfigManager } = require("../schema/manager");
-        } else if (this.options.configManager === true) {
-            import("../schema/manager").then(({ ConfigManager }) => {
-                this.options.configKey = undefined;
-                this._configManager = new ConfigManager({
-                    load: () => ({}),
-                });
-            });
-            // configManager 为 true，创建默认的 ConfigManager
-            //const { ConfigManager } = require("../schema/manager");
-            // 如果独立配置管理器，则不需要指定configKey
-
+            this._configManager = configManager as ConfigManager;
+        } else if (
             // @ts-expect-error
-        } else if (this._options.configManager === undefined && globalThis[GLOBAL_CONFIG_MANAGER]) {
-            if (!this.options.configKey) this.options.configKey = this.id;
-            // 使用全局 ConfigManager
+            globalThis[GLOBAL_CONFIG_MANAGER] &&
+            configManager !== false
+        ) {
             // @ts-expect-error
             this._configManager = globalThis[GLOBAL_CONFIG_MANAGER];
         }
