@@ -24,7 +24,7 @@
 		}
 	},
 	"scripts": {
-		"build": "tsup"
+		"build": "tsup" 
 	},
 	"keywords": [],
 	"author": "",
@@ -45,5 +45,8 @@
 	},
 	"peerDependencies": {
 		"react": "^18.3.1"
-	}
+	},
+    "files": [
+        "dist"
+    ]
 }

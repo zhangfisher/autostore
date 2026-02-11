@@ -27,7 +27,9 @@
         "dev": "vite",
         "build": "tsup",
         "build:vite": "tsc && vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "prepublishOnly": "bun ../../scripts/apply-publish-config.js",
+        "postpublish": "bun ../../scripts/restore-package-json.js"
     },
     "dependencies": {
         "@iconify-json/lucide": "^1.2.86",
