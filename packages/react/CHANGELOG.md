@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 4.0.2
+
+### Patch Changes
+
+-   c98966d: fix some errors
+-   Updated dependencies [c98966d]
+    -   autostore@4.0.2
+
 ## 4.0.1
 
 ### Patch Changes
