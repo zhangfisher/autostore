@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.6
+
+### Patch Changes
+
+-   3ee957d: fix ci
+
 ## 4.0.5
 
 ### Patch Changes
