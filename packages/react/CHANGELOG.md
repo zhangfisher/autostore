@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 4.0.4
+
+### Patch Changes
+
+-   ed5adb9: update ci
+-   Updated dependencies [ed5adb9]
+    -   autostore@4.0.4
+
 ## 4.0.3
 
 ### Patch Changes
