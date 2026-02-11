@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.3
+
+### Patch Changes
+
+-   3a94376: fix build scripts
+
 ## 4.0.2
 
 ### Patch Changes
