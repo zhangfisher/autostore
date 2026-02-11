@@ -15,7 +15,7 @@
 	"license": "ISC",
 	"dependencies": {
 		"autostore": "workspace:*",
-		"@autostorejs/devtools": "workspace:*", 
+		"@autostorejs/devtools": "workspace:*",
 		"@autostorejs/react": "workspace:*",
 		"@autostorejs/syncer": "workspace:*",
 		"@lite-tree/icons": "^1.0.6",
