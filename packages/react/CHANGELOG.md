@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 4.0.1
+
+### Patch Changes
+
+-   bf53248: 全新同步功能发布
+-   Updated dependencies [bf53248]
+    -   autostore@4.0.1
+
 ## 4.0.0
 
 ### Patch Changes

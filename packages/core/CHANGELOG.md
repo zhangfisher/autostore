@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.1
+
+### Patch Changes
+
+-   bf53248: 全新同步功能发布
+
 ## 4.0.0
 
 ### Major Changes
