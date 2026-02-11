@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 4.0.2
+
+### Patch Changes
+
+-   c98966d: fix some errors
+
 ## 4.0.1
 
 ### Patch Changes
