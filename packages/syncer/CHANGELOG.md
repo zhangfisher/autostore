@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 4.0.3
+
+### Patch Changes
+
+-   3a94376: fix build scripts
+-   Updated dependencies [3a94376]
+    -   autostore@4.0.3
+
 ## 4.0.2
 
 ### Patch Changes
