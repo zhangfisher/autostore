@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 4.0.4
+
+### Patch Changes
+
+-   ed5adb9: update ci
+
 ## 4.0.3
 
 ### Patch Changes
