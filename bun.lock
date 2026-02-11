@@ -123,7 +123,7 @@
     },
     "packages/core": {
       "name": "autostore",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "dependencies": {
         "fastevent": "^2.3.6",
         "flex-tools": "^1.5.9",
@@ -141,7 +141,7 @@
     },
     "packages/devTools": {
       "name": "@autostorejs/devtools",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "dependencies": {
         "redux": "^5.0.1",
       },
@@ -178,7 +178,7 @@
     },
     "packages/react": {
       "name": "@autostorejs/react",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "dependencies": {
         "autostore": "workspace:*",
         "flexstyled": "^2.1.2",
@@ -199,7 +199,7 @@
     },
     "packages/syncer": {
       "name": "@autostorejs/syncer",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "dependencies": {
         "comlink": "^4.4.2",
         "flex-tools": "^1.5.9",
