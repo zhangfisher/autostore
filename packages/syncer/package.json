@@ -4,14 +4,8 @@
 	"main": "src/index.ts",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/zhangfisher/autostore.git"
-	},
-	"exports": {
-		".": "./src/index.ts",
-		"./plugin": "./src/plugin.ts",
-		"./syncers/*": "./src/syncers/*.ts",
-		"./transports/*": "./src/transports/*.ts"
-	},
+		"url": "git+https://github.com/zhangfisher/autostore.git"
+	}, 
 	"publishConfig": {
 		"access": "public",
 		"main": "dist/index.cjs",
