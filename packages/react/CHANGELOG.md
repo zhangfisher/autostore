@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 4.0.5
+
+### Patch Changes
+
+-   0abe705: fix ci update
+-   Updated dependencies [0abe705]
+    -   autostore@4.0.5
+
 ## 4.0.4
 
 ### Patch Changes
