@@ -530,4 +530,102 @@ describe("使用update方法对同步计算属性进行更新", () => {
         await delay(50);
         expect(await store.state.total.value).toBe(30);
     });
+    test("computed 返回对象时，可以通过 watch 监听对象成员", () => {
+        return new Promise<void>((resolve) => {
+            const store = new AutoStore({
+                firstName: "zhang",
+                lastName: "fisher",
+                userInfo: computed((scope: any) => {
+                    return {
+                        fullName: scope.firstName + " " + scope.lastName,
+                        greeting: "hello",
+                    };
+                }),
+            });
+            // 第一次读取 userInfo 以触发计算
+            expect(store.state.userInfo.fullName).toBe("zhang fisher");
+            expect(store.state.userInfo.greeting).toBe("hello");
+
+            // 使用 ** 通配符监听 userInfo 下的所有路径变化
+            store.watch(
+                "userInfo.**",
+                (event) => {
+                    // userInfo.fullName 会触发 get 事件
+                    if (event.path.join(".") === "userInfo.fullName" && event.type === "get") {
+                        expect(event.value).toBe("li fisher");
+                        resolve();
+                    }
+                },
+                { operates: ["get"] },
+            );
+
+            // 修改 firstName，应该触发 userInfo 的重新计算
+            store.state.firstName = "li";
+            // 读取 computed 后的值，触发 get 事件
+            expect(store.state.userInfo.fullName).toBe("li fisher");
+        });
+    });
+    test("computed 返回对象时，监听整个 computed 对象的变化", () => {
+        return new Promise<void>((resolve) => {
+            const store = new AutoStore({
+                firstName: "zhang",
+                lastName: "fisher",
+                userInfo: computed((scope: any) => {
+                    return {
+                        fullName: scope.firstName + " " + scope.lastName,
+                        greeting: "hello",
+                    };
+                }),
+            });
+            // 第一次读取 userInfo 以触发计算
+            expect(store.state.userInfo).toEqual({
+                fullName: "zhang fisher",
+                greeting: "hello",
+            });
+
+            // 监听整个 userInfo 对象的变化
+            store.watch(
+                "userInfo",
+                (event) => {
+                    expect(event.value).toEqual({
+                        fullName: "li fisher",
+                        greeting: "hello",
+                    });
+                    expect(event.oldValue).toEqual({
+                        fullName: "zhang fisher",
+                        greeting: "hello",
+                    });
+                    expect(event.path).toEqual(["userInfo"]);
+                    resolve();
+                },
+                { operates: ["set"] },
+            );
+
+            // 修改 firstName，应该触发 userInfo 的重新计算
+            store.state.firstName = "li";
+        });
+    });
+    test("computed 返回对象时，监听结果对象的变化", () => {
+        return new Promise<void>((resolve) => {
+            const store = new AutoStore({
+                firstName: "zhang",
+                lastName: "fisher",
+                userInfo: computed((scope: any) => {
+                    return {
+                        fullName: scope.firstName + " " + scope.lastName,
+                        greeting: "hello",
+                    };
+                }),
+            });
+            // 监听整个 userInfo 对象的变化
+            store.watch("userInfo.greeting", ({ path, value }) => {
+                expect(value).toBe("li");
+                expect(path).toEqual(["userInfo", "greeting"]);
+                resolve();
+            });
+
+            // 修改 firstName，应该触发 userInfo 的重新计算
+            store.state.userInfo.greeting = "li";
+        });
+    });
 });

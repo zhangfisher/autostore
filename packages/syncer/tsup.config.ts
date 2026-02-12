@@ -14,4 +14,17 @@ export default defineConfig([
         minify: true,
         noExternal: ["flex-tools"],
     },
+    {
+        entry: ["src/index.lite.ts"],
+        format: ["esm", "cjs", "iife"],
+        globalName: "AutoStoreSyncer",
+        outDir: "dist/lite",
+        dts: { resolve: true },
+        splitting: true,
+        sourcemap: true,
+        clean: true,
+        treeshake: true,
+        minify: true,
+        noExternal: ["flex-tools"],
+    },
 ]);

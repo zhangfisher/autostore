@@ -7,12 +7,12 @@
  * 没有进度条、超时、可中止、倒计时、重试等高级功能
  *
  */
-import { isPathEq } from "../utils";
 import { getValueScope } from "../scope";
 import { ComputedObject } from "./computedObject";
 import { getSnap } from "../utils/getSnap";
 import type { StateOperate } from "../store/types";
 import { AsyncLiteComputedGetterArgs, ComputedOptions, RuntimeComputedOptions } from "./types";
+import { markRaw } from "../utils";
 
 export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedObject<
     Value,
@@ -117,6 +117,7 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             this._reportComputedStatus("loading", true);
             // 执行计算函数
             computedResult = await this.getter.call(this, scope, getterArgs);
+            if (options.raw) markRaw(computedResult);
             this.store.peep(() => {
                 this.value = computedResult; // 将结果回写入store,且不触发get事件
             });
@@ -198,49 +199,4 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
         const spath = this.path!.join(this.store.options.delimiter);
         return [`${spath}.*`, spath];
     }
-    /**
-     * 由于所有异步计算属性均会被转换为一个AsyncComputedValue<{value,timeout,....}>的形式
-     * 这样，当我们在指定一个依赖是异步属性时，就需要指定为xxxx.value才可以个侦听到变化
-     *
-     * @example
-     * const store = createStore({
-     *            a0: 1,
-     *            a1: computed(async (scope:any)=>{
-     *              return scope.a0 + 1
-     *            },["a0"],{initial:2}),
-     *            a2: computed(async (scope:any)=>{
-     *              return scope.a1.value + 1
-     *            },["a1.value"],{initial:3})
-     *        });
-     *
-     *  以上a2依赖于a1，由于a1是一个异步对象，所以在写依赖时就必须写上["a1.value"]
-     *  这就有点反直觉了。
-     *
-     * 本函数在异步计算对象订阅变更事件时调用，用来返回字符串形式的依赖数组
-     *
-     * 本函数的功能就是对所有依赖进行判断如果其是一个异步计算依赖，则自动添加.value，这样就可以如下方式来写依赖了
-     *
-     * 	const store = createStore({
-     *            a0: 1,
-     *            a1: computed(async (scope:any)=>{
-     *              return scope.a0 + 1
-     *            },["a0"],{initial:2}),
-     *            a2: computed(async (scope:any)=>{
-     *              return scope.a1.value + 1
-     *            },["a1"],{initial:3})
-     *        });
-     *
-     */
-    // protected getDepends() {
-    //     const depends = super.getDepends();
-    //     return depends.map((dep) => {
-    //         if (dep.length === 0) return dep;
-    //         for (const obj of this.store.computedObjects.values()) {
-    //             if (isPathEq(obj.path, dep) && obj.async) {
-    //                 return dep; //[`${dep.join(this.store.options.delimiter)}.value`];
-    //             }
-    //         }
-    //         return dep;
-    //     }) as unknown as string[][];
-    // }
 }

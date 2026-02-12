@@ -8,6 +8,7 @@ import type { StateOperate } from "../store/types";
 import { noRepeat } from "../utils/noRepeat";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "../utils/isFunction";
+import { markRaw } from "../utils/markRaw";
 
 /**
  *
@@ -86,6 +87,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
         if (first) this.initial = computedResult;
         this.store.peep(() => {
             // 将结果回写入store,且不触发get事件
+            if (options.raw) markRaw(computedResult);
             this.value = computedResult;
         });
         if (this.error) {

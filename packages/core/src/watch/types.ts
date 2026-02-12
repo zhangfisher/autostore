@@ -1,11 +1,11 @@
-import type { StateOperate, StateOperateType } from '../store/types';
-import type { WatchObject } from './watchObject';
+import type { StateOperate, StateOperateType } from "../store/types";
+import type { WatchObject } from "./watchObject";
 import type {
     ObserverDescriptor,
     ObserverDescriptorBuilder,
     ObserverOptions,
-} from '../observer/types';
-import type { FastEventSubscriber } from 'fastevent';
+} from "../observer/types";
+import type { FastEventSubscriber } from "fastevent";
 
 export type WatchListener<Value = any, Parent = any> = (
     operate: StateOperate<Value, Parent>,
@@ -13,7 +13,7 @@ export type WatchListener<Value = any, Parent = any> = (
 
 export type WatchListenerOptions = {
     once?: boolean; // 只侦听一次后自动移除
-    operates?: '*' | 'read' | 'write' | StateOperateType[]; // 只侦听的操作类型
+    operates?: "*" | "read" | "write" | StateOperateType[]; // 只侦听的操作类型
     filter?: (args: StateOperate) => boolean; // 过滤器
 };
 export type Watcher = FastEventSubscriber;
@@ -23,6 +23,7 @@ export type WatchDependFilter<Value = any> = (path: string[], value: Value) => b
 export interface WatchOptions<Value = any> extends ObserverOptions<Value> {
     async?: false;
     filter: WatchDependFilter<Value>;
+    raw?: boolean;
 }
 
 export type WatchScope<Value = any> = {
@@ -36,7 +37,7 @@ export type WatchGetter<Value = any, DependValue = any> = (
 ) => Exclude<Value, Promise<any>>; //| undefined
 
 export type WatchDescriptor<Value = any, DependValue = any> = ObserverDescriptor<
-    'watch',
+    "watch",
     Value,
     WatchScope<DependValue>,
     WatchGetter<Value, DependValue>,
@@ -48,7 +49,7 @@ export type WatchDescriptor<Value = any, DependValue = any> = ObserverDescriptor
  * @template Scope 监听函数的第一个参数的类型
  */
 export type WatchDescriptorBuilder<Value = any, DependValue = any> = ObserverDescriptorBuilder<
-    'watch',
+    "watch",
     Value,
     WatchScope<DependValue>,
     WatchDescriptor<Value, DependValue>

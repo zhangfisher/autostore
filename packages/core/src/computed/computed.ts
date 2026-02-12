@@ -10,7 +10,6 @@ import type {
     ComputedGetter,
     ComputedOptions,
     SyncComputedOptions,
-    AsyncComputedDescriptorBuilder,
     SyncComputedDescriptorBuilder,
     AsyncLiteComputedDescriptorBuilder,
 } from "./types";

@@ -281,6 +281,38 @@ export interface ComputedOptions<
          */
         error?: string | string[];
     };
+    /**
+     * 默认情况下，计算结果也会进行响应式处理
+     * 通过显式指定raw=true，可以标识为非响应式
+     *
+     * 例:
+     *
+     * const store = new AutoStore({
+     *    book:computed(()=>{
+     *        return {
+     *           name:"AutoStore",
+     *           price:100
+     *        }
+     *    })
+     * })
+     *
+     * book是一个响应式对象，即通过Proxy代理，允许通过store.watch("book.name")来监听变化
+     *
+     * 如果，指定raw=true，则会使用markRaw包裹book，book将不再Proxy，也就无法store.watch("book.name")来监听变化
+     *
+     * 此参数在计算结果是一个大型对象，且无需代理整个对象时能提高性能。
+     *
+     *  book:computed(()=>{
+     *        return {
+     *           name:"AutoStore",
+     *           price:100
+     *        }
+     *    },{ raw:true})
+     *
+     * 等效于 markRaw(store.state.book)
+     *
+     */
+    raw?: boolean;
 }
 
 export type LiteComputedOptions<

@@ -377,6 +377,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
                     if (ctx.hasAbort) throw new AbortError();
                     if (!ctx.hasTimeout) {
+                        if (options.raw) markRaw(computedResult);
                         afterUpdated.value = computedResult;
                         if (timeout.enable) afterUpdated.timeout = 0;
                     }
