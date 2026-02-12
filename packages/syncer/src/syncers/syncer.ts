@@ -34,6 +34,9 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
     private _operateCache: StateRemoteOperate[] = []; // 本地操作缓存
     private _subscribers: EventSubscriber[] = [];
 
+    private _version: number = 0; // 本地版本
+    private _historys: [number, string[]][] = [];
+
     constructor(
         public store: AutoStore<any>,
         options?: AutoStoreSyncerOptions,
@@ -51,6 +54,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
                 pathMap: {},
                 peers: ["*"],
                 debug: false,
+                maxHistory: 100,
             },
             options,
         ) as any;
@@ -210,10 +214,24 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
             if (this.options.direction === "backward") {
                 return;
             }
-            this._sendToRemote(operate);
+            try {
+                this._sendToRemote(operate);
+            } finally {
+                this._addHistory(operate);
+            }
         } finally {
             if (this.options.debug === true) {
                 this.emit("localOperate", operate);
+            }
+        }
+    }
+
+    private _addHistory(operate: StateOperate) {
+        if (this.options.reliable) {
+            this._version++;
+            this._historys.push([this._version, operate.path]);
+            if (this._historys.length > this.options.maxHistory) {
+                this._historys.splice(0, 1);
             }
         }
     }
@@ -224,7 +242,6 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
         }
         return true;
     }
-
     private _sendToRemote(operate: StateOperate) {
         const localEntry = this.options.local;
         const remoteEntry = this.options.remote;
@@ -250,8 +267,32 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
         this._sendOperate(remoteOperate);
     }
 
+    /**
+     * 检测是否丢失操作
+     *
+     * @param operate
+     */
+    private _detectLostOperate(operate: StateRemoteOperate) {
+        const remoteVersion = operate?.version;
+        // 如果远程操作没有version，说明对方没有启用reliable，则不支持检测是否丢失操作
+        if (remoteVersion === undefined) {
+            return;
+        }
+        /**
+         * 接收到的operate.version是远程store的版本
+         */
+        if (remoteVersion > this._version + 1) {
+            // 有丢失操作
+        } else if (remoteVersion < this._version) {
+            // 重复操作
+        } else {
+        }
+    }
     private _onReceiveFromRemote(operate: StateRemoteOperate) {
         try {
+            if (this.options.reliable) {
+                this._detectLostOperate(operate);
+            }
             if (typeof this._options.onReceive === "function") {
                 if (this._options.onReceive.call(this, operate) === false) return;
             }

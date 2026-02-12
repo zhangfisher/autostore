@@ -48,17 +48,39 @@ export type AutoStoreSyncerOptions = {
      */
     peers?: string[];
     debug?: boolean;
+    /**
+     * 启用版本跟踪、同步检测和异步恢复
+     */
+    reliable?: boolean;
+    /**
+     * 记录本地更新历史的长度
+     */
+    maxHistory?: number;
 };
 
 export type StateRemoteOperate<Value = any> = {
     id: string;
-    type: StateOperateType | "$stop" | "$push" | "$pull" | "$update" | "$error" | "$ping" | "$pong";
+    type:
+        | StateOperateType
+        | "$stop"
+        | "$push"
+        | "$pull"
+        | "$update"
+        | "$error"
+        | "$ping"
+        | "$pong"
+        | "$sync_req"
+        | "$sync_res";
     path: string[];
     value: Value;
     indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
     parentPath?: string[];
     reply?: boolean;
     flags: number;
+    /**
+     * 本地的版本
+     */
+    version?: number;
 };
 
 export type AutoStoreCloneOptions<
