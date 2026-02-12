@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 4.0.7
+
+### Patch Changes
+
+-   18ae236: add publishConfig support
+-   Updated dependencies [18ae236]
+    -   autostore@4.0.7
+
 ## 4.0.6
 
 ### Patch Changes
