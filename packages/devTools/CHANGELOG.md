@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 4.0.8
+
+### Patch Changes
+
+-   977ad77: fix ci release
+
 ## 4.0.7
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 4.0.8
+
+### Patch Changes
+
+-   977ad77: fix ci release
+-   Updated dependencies [977ad77]
+    -   autostore@4.0.8
+
 ## 4.0.7
 
 ### Patch Changes
