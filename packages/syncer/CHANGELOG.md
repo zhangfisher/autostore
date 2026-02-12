@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 4.0.9
+
+### Patch Changes
+
+-   fadc0b8: fix publishConfig
+-   Updated dependencies [fadc0b8]
+    -   autostore@4.0.9
+
 ## 4.0.8
 
 ### Patch Changes

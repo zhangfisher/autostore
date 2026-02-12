@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.9
+
+### Patch Changes
+
+-   fadc0b8: fix publishConfig
+
 ## 4.0.8
 
 ### Patch Changes
