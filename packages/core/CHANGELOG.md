@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.10
+
+### Patch Changes
+
+-   6b18807: fix ci error
+
 ## 4.0.9
 
 ### Patch Changes

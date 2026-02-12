@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 4.0.10
+
+### Patch Changes
+
+-   6b18807: fix ci error
+-   Updated dependencies [6b18807]
+    -   autostore@4.0.10
+
 ## 4.0.9
 
 ### Patch Changes
