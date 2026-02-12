@@ -38,7 +38,10 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: bun run publish-packages
+          publish: |
+            bun run scripts/apply-publish-config.js 
+            bun run publish-packages            
+            git checkout -- package.json packages/*/package.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_registry: https://registry.npmjs.org
