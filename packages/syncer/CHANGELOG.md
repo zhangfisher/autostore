@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 4.0.11
+
+### Patch Changes
+
+-   1eddd98: fix some errors
+-   Updated dependencies [1eddd98]
+    -   autostore@4.0.11
+
 ## 4.0.10
 
 ### Patch Changes
