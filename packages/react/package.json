@@ -15,11 +15,6 @@
 				"types": "dist/index.d.ts",
 				"require": "dist/index.cjs",
 				"import": "dist/index.js"
-			},
-			"./lite": {
-				"types": "dist/lite/index.d.ts",
-				"require": "dist/lite/index.cjs",
-				"import": "dist/lite/index.js"
 			}
 		}
 	},
