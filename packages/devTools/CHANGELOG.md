@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 4.0.7
+
+### Patch Changes
+
+-   18ae236: add publishConfig support
+
 ## 4.0.6
 
 ### Patch Changes
