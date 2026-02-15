@@ -1,6 +1,6 @@
 {
 	"name": "@autostorejs/syncer",
-	"version": "4.0.10",
+	"version": "4.0.11",
 	"main": "src/index.ts",
 	"repository": {
 		"type": "git",
@@ -8,12 +8,12 @@
 	},
 	"publishConfig": {
 		"access": "public",
-        "main": "dist/index.js",
-        "exports":{
-            "types":"dist/index.d.ts",
-            "require":"dist/index.cjs",
-            "import":"dist/index.js"
-        }
+		"main": "dist/index.js",
+		"exports": {
+			"types": "dist/index.d.ts",
+			"require": "dist/index.cjs",
+			"import": "dist/index.js"
+		}
 	},
 	"type": "module",
 	"scripts": {

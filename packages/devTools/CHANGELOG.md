@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 4.0.11
+
+### Patch Changes
+
+-   1eddd98: fix some errors
+
 ## 4.0.10
 
 ### Patch Changes
