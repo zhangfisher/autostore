@@ -123,8 +123,8 @@ function getPackagesInfo(rootDir) {
 
   console.log(`📦 工作区配置:`, rootPkg.workspaces);
 
-  // 查找所有包目录
-  const packageDirs = findPackageDirs(rootDir, rootPkg.workspaces);
+  // 查找所有包目录rootPkg.workspaces
+  const packageDirs = findPackageDirs(rootDir, ["packages/*"]);
   console.log(`🔍 找到 ${packageDirs.length} 个包目录`);
 
   const packagesInfo = [];

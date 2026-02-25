@@ -21,8 +21,8 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@autostorejs/devtools": "4.0.11",
-    "@autostorejs/react": "4.0.11",
+    "@autostorejs/devtools": "workspace:*",
+    "@autostorejs/react": "workspace:*",
     "@eslint/js": "^9.9.0",
     "@storybook/addon-essentials": "8.3.5",
     "@storybook/addon-interactions": "8.3.5",
@@ -35,7 +35,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
-    "autostore": "4.0.11",
+    "autostore": "workspace:*",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
