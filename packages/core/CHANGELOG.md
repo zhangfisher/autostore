@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.12
+
+### Patch Changes
+
+-   49b440f: fix types errors
+
 ## 4.0.11
 
 ### Patch Changes
