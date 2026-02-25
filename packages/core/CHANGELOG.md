@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.13
+
+### Patch Changes
+
+-   8bce8c8: fix deps
+
 ## 4.0.12
 
 ### Patch Changes
