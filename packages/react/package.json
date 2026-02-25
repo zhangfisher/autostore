@@ -1,47 +1,47 @@
 {
-  "name": "@autostorejs/react",
-  "version": "4.0.11",
-  "description": "Very easy and elegant state management library for react",
-  "type": "module",
-  "main": "src/index.tsx",
-  "access": "public",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/zhangfisher/autostore.git"
-  },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "require": "./dist/index.cjs",
-        "import": "./dist/index.js"
-      }
-    }
-  },
-  "scripts": {
-    "build": "tsup"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "autostore": "4.0.11",
-    "flexstyled": "^2.1.2"
-  },
-  "devDependencies": {
-    "@swc/core": "^1.15.11",
-    "@types/node": "^24.10.9",
-    "@types/react": "^18.3.27",
-    "react": "^18.3.1",
-    "terser": "^5.46.0",
-    "tsup": "^8.5.1",
-    "type-fest": "^5.4.3",
-    "typescript": "^5.9.3"
-  },
-  "peerDependencies": {
-    "react": "^18.3.1"
-  },
-  "files": [
-    "dist"
-  ]
+	"name": "@autostorejs/react",
+	"version": "4.0.12",
+	"description": "Very easy and elegant state management library for react",
+	"type": "module",
+	"main": "src/index.tsx",
+	"access": "public",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/zhangfisher/autostore.git"
+	},
+	"publishConfig": {
+		"exports": {
+			".": {
+				"types": "./dist/index.d.ts",
+				"require": "./dist/index.cjs",
+				"import": "./dist/index.js"
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsup"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"autostore": "workspace:*",
+		"flexstyled": "^2.1.2"
+	},
+	"devDependencies": {
+		"@swc/core": "^1.15.11",
+		"@types/node": "^24.10.9",
+		"@types/react": "^18.3.27",
+		"react": "^18.3.1",
+		"terser": "^5.46.0",
+		"tsup": "^8.5.1",
+		"type-fest": "^5.4.3",
+		"typescript": "^5.9.3"
+	},
+	"peerDependencies": {
+		"react": "^18.3.1"
+	},
+	"files": [
+		"dist"
+	]
 }

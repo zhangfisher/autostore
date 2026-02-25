@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 4.0.12
+
+### Patch Changes
+
+-   49b440f: fix types errors
+-   Updated dependencies [49b440f]
+    -   autostore@4.0.12
+
 ## 4.0.11
 
 ### Patch Changes
