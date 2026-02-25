@@ -1,5 +1,13 @@
 # @autostorejs/react
 
+## 4.0.13
+
+### Patch Changes
+
+-   8bce8c8: fix deps
+-   Updated dependencies [8bce8c8]
+    -   autostore@4.0.13
+
 ## 4.0.12
 
 ### Patch Changes
