@@ -11,7 +11,7 @@
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
 		"changeset": "changeset",
-		"publish-packages": "bun run build && bun run scripts/apply-publish-config.js && changeset version && bun publish --access public && git checkout -- package.json packages/*/package.json && changeset tag",
+		"publish-packages": "bun run build && bun run scripts/apply-publish-config.js && changeset version && bun run scripts/update-workspace-deps.js && changeset publish && git checkout -- package.json packages/*/package.json && changeset tag",
 		"build": "turbo build --filter=autostore --filter=@autostorejs/syncer --filter=@autostorejs/devtools --filter=@autostorejs/react",
 		"docs:preview": "vitepress preview new-docs",
 		"sync": "cnpm sync autostore @autostorejs/react @autostorejs/syncer",
