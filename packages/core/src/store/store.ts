@@ -119,7 +119,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     private _peeping: boolean = false;
     private _safeEval?: (code: string) => any;
     // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <noUnusedPrivateClassMembers>
-    private _updateValidateBehavior: UpdateOptions["validate"]; // 更新时的校验行为
+    private _updateValidateBehavior: UpdateOptions["onInvalid"]; // 更新时的校验行为
     private _configManager?: ConfigManager; // 保存 ConfigManager 实例
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
@@ -644,7 +644,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         this.update(fn, { silent: true });
     }
     batchUpdate(fn: (state: ComputedState<State>) => void) {
-        this.update(fn, { batch: true, validate: "pass" });
+        this.update(fn, { batch: true, onInvalid: "pass" });
     }
     /**
      * 更新状态值
@@ -708,7 +708,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
             silent = false,
             peep = false,
             flags = 0,
-            validate,
+            onInvalid: validate,
         } = options || {};
         if (typeof fn === "function") {
             this._updateFlags = flags;

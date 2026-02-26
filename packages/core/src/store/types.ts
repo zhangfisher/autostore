@@ -384,7 +384,8 @@ export type UpdateOptions = {
      * 以上当写入count时不会执行任意校验行为
      *
      */
-    validate?: "none" | "pass" | "throw" | "ignore" | "throw-pass";
+    onInvalid?: "none" | "pass" | "throw" | "ignore" | "throw-pass";
+
     /**
      * 执行读取操作时，不会触发GET事件
      * 即偷听

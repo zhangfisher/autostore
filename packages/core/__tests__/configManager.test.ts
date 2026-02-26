@@ -138,7 +138,72 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
             expect(userStore.state.user.name).toBe("Alice");
             expect(shopStore.state.shop.discount).toBe(0.2);
         });
+        test("load方法在store创建前执行，应能自动更新配置数据", async () => {
+            // 设置外部存储的数据（在创建 Store 之后）
+            mockSource.data = {
+                "app1.order.price": 199.9,
+                "app2.user.name": "Alice",
+                "app3.shop.discount": 0.2,
+            };
 
+            // 加载配置
+            await configManager.load();
+            // 先创建三个 Store
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {
+                            label: "订单价格",
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                    configKey: "app1",
+                },
+            );
+
+            const userStore = new AutoStore(
+                {
+                    user: {
+                        name: configurable("Bob", {
+                            label: "用户名",
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                    configKey: "app2",
+                },
+            );
+
+            const shopStore = new AutoStore(
+                {
+                    shop: {
+                        discount: configurable(0.1, {
+                            label: "折扣",
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                    configKey: "app3",
+                },
+            );
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, orderStore, ["order.price"]);
+            assertConfigRegistered(configManager, userStore, ["user.name"]);
+            assertConfigRegistered(configManager, shopStore, ["shop.discount"]);
+
+            // 验证 load 被调用
+            expect(mockSource.loadCallCount).toBe(1);
+
+            // 验证值被正确加载
+            expect(orderStore.state.order.price).toBe(199.9);
+            expect(userStore.state.user.name).toBe("Alice");
+            expect(shopStore.state.shop.discount).toBe(0.2);
+        });
         test("load 应该只加载已注册的配置项", async () => {
             // 先创建 Store
             const orderStore = new AutoStore(

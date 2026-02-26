@@ -71,6 +71,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
         let computedResult = finalComputedOptions.initial;
         try {
             computedResult = this.getter.call(this, scope, { operate, first });
+            if (finalComputedOptions.raw) markRaw(computedResult);
         } catch (e: any) {
             this.error = e;
         }
@@ -90,19 +91,17 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
             if (options.raw) markRaw(computedResult);
             this.value = computedResult;
         });
-        if (this.error) {
-            if (!first) {
+
+        if (!first) {
+            if (this.error) {
                 this.emitStoreEvent("computed:error", {
                     id: this.id,
                     path: this.path,
                     error: this.error,
                     computedObject: this as unknown as ComputedObject,
                 });
-            }
-
-            // if (this.options.throwError) throw this.error!;
-        } else {
-            if (!first) {
+                if (this.options.throwError) throw this.error as any;
+            } else {
                 this.emitStoreEvent("computed:done", {
                     id: this.id,
                     path: this.path,

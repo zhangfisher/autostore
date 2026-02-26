@@ -1,6 +1,4 @@
 import { OBSERVER_DESCRIPTOR_BUILDER_FLAG, OBSERVER_DESCRIPTOR_FLAG } from "../consts";
-import { InvalidComputedArgumentsError } from "../errors";
-import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { normalizeDeps } from "../utils/normalizeDeps";
 import { getDefaultComputedOptions } from "../utils/getDefaultComputedOptions";
 import type {

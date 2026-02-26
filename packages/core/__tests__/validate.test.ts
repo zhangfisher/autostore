@@ -634,7 +634,7 @@ describe("onValidate", () => {
                     () => {
                         store.state.user.age = 200;
                     },
-                    { validate: "none" },
+                    { onInvalid: "none" },
                 );
             }).not.toThrow();
 
@@ -667,7 +667,7 @@ describe("onValidate", () => {
                 () => {
                     store.state.user.age = 200;
                 },
-                { validate: "none" },
+                { onInvalid: "none" },
             );
 
             expect(store.state.user.age).toBe(200);
@@ -718,7 +718,7 @@ describe("onValidate", () => {
                 () => {
                     store.state.user.age = 200;
                 },
-                { validate: "ignore" },
+                { onInvalid: "ignore" },
             );
 
             // validate='ignore' 时不执行校验函数
@@ -1581,7 +1581,7 @@ describe("validators 和 onInvalid", () => {
 
             // 检查错误是否被记录
             // expect(store.errors['user.age']).toBeInstanceOf(ValidateError);
-            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
+            expect(store.errors[`user.age`]).toBeDefined();
         });
 
         test("校验成功时应该从 errors 对象删除对应的错误", () => {
@@ -1607,12 +1607,12 @@ describe("validators 和 onInvalid", () => {
             }).toThrow(ValidateError);
 
             // 应该有错误记录
-            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
+            expect(store.errors[`user.age`]).toBeDefined();
 
             // 修正为合法值，错误应该被删除
             store.state.user.age = 25;
             expect(store.state.user.age).toBe(25);
-            expect(store.errors[`${store.id}.user.age`]).toBeUndefined();
+            expect(store.errors[`user.age`]).toBeUndefined();
         });
 
         test('onInvalid="pass" 时也应该记录错误', () => {
@@ -1633,7 +1633,7 @@ describe("validators 和 onInvalid", () => {
             // pass 模式：校验失败但继续写入，同时记录错误
             store.state.user.age = 200;
             expect(store.state.user.age).toBe(200);
-            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
+            expect(store.errors[`user.age`]).toBeDefined();
         });
 
         test('onInvalid="ignore" 时应该记录错误但不写入', () => {
@@ -1654,7 +1654,7 @@ describe("validators 和 onInvalid", () => {
             // ignore 模式：校验失败不写入，但记录错误
             store.state.user.age = 200;
             expect(store.state.user.age).toBe(18); // 值保持不变
-            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
+            expect(store.errors[`user.age`]).toBeDefined();
         });
 
         test('onInvalid="throw-pass" 时应该记录错误并抛出异常', () => {
@@ -1678,7 +1678,7 @@ describe("validators 和 onInvalid", () => {
             }).toThrow(ValidateError);
 
             expect(store.state.user.age).toBe(200); // 值已被写入
-            expect(store.errors[`${store.id}.user.age`]).toBeDefined(); // 错误被记录
+            expect(store.errors[`user.age`]).toBeDefined(); // 错误被记录
         });
 
         test("多个路径的错误应该独立记录", () => {
@@ -1706,28 +1706,28 @@ describe("validators 和 onInvalid", () => {
                 store.state.user.age = 200;
             }).toThrow(ValidateError);
 
-            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
-            expect(store.errors[`${store.id}.user.name`]).toBeUndefined();
+            expect(store.errors[`user.age`]).toBeDefined();
+            expect(store.errors[`user.name`]).toBeUndefined();
 
             // 触发 name 的错误
             expect(() => {
                 store.state.user.name = "";
             }).toThrow(ValidateError);
-            expect(store.errors[`${store.id}.user.name`]).toBeDefined();
+            expect(store.errors[`user.name`]).toBeDefined();
 
             // 两个错误都应该存在
-            expect(store.errors[`${store.id}.user.age`]).toBeDefined();
-            expect(store.errors[`${store.id}.user.name`]).toBeDefined();
+            expect(store.errors[`user.age`]).toBeDefined();
+            expect(store.errors[`user.name`]).toBeDefined();
 
             // 修正 age，只有 name 的错误
             store.state.user.age = 30;
-            expect(store.errors[`${store.id}.user.age`]).toBeUndefined();
-            expect(store.errors[`${store.id}.user.name`]).toBeDefined();
+            expect(store.errors[`user.age`]).toBeUndefined();
+            expect(store.errors[`user.name`]).toBeDefined();
 
             // 修正 name，所有错误都应该清除
             store.state.user.name = "Alice";
-            expect(store.errors[`${store.id}.user.age`]).toBeUndefined();
-            expect(store.errors[`${store.id}.user.name`]).toBeUndefined();
+            expect(store.errors[`user.age`]).toBeUndefined();
+            expect(store.errors[`user.name`]).toBeUndefined();
         });
     });
 });

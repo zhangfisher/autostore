@@ -1,10 +1,17 @@
-# 读写状态
+# 状态更新
 
 ## 引言
 
-当创建好`AutoStore`实例后就可以存取状态。
+当创建好`AutoStore`实例后就可以存取状态。支持两种形式的更新：
 
-`store.state`返回的是一个响应式`Proxy`对象，直接读写会触发内部的依赖收集和事件响应。
+- 直接写入：像普通对象一样
+- 使用`store.update`方法：可以进行更多的控制
+
+## 指南
+
+### 直接读取
+
+`store.state`返回的是一个响应式`Proxy`对象，可以像普通对象一样进行读取
 
 ```ts
 const store = new AutoStore({
@@ -14,50 +21,13 @@ const store = new AutoStore({
 store.state.age = 100; // [!code ++]
 ```
 
-## 指南
+:::warning 重点
+读写状态时会触发内部的依赖收集和事件响应，会触发状态的读取事件，可以通过`store.watch`来监听读写事件。
+:::
 
-### 静默更新
+### 更新方法
 
-对状态进行读取时，会触发相应的`StateOperateType`类型的事件，如`get`或`set`等。
-
-在某些场景下，我们可能不希望触发这些事件，可以使用`silentUpdate`方法。
-
-```tsx
-store.silentUpdate(() => {
-    store.state.age = 100;
-});
-```
-
-### 批量更新
-
-一般情况下，更新多个状态时会触发多个更新事件。在`React`场景中，为了优化渲染，我们可能希望一次性更新多个状态，只触发一次渲染。此时就可以使用`batchUpdate`方法。
-
-```tsx
-store.batchUpdate(() => {
-    store.state.age = 100;
-    store.state.name = 'Fisher';
-});
-```
-
-关于更多的批量更新的技术细节见[批量更新](../store/batchUpdate.md)。
-
-### 静默读取
-
-正常访问状态时会触发`get`事件，如果不希望触发`get`事件，可以使用`peep`方法。
-
-```tsx
-store.peep((state) => {
-    return state.age;
-});
-// 读取age不会触发get事件
-store.peep('age'); // 100
-```
-
-以上方法不会触发`get <age>`事件。
-
-### update
-
-`update`方法用来更新状态，其函数签名如下：
+`AutoStore`提供`update`方法用来更新状态，相比较直接进行更新可以进行更多的控制，其函数签名如下：
 
 ```tsx
 type UpdateOptions = {
@@ -83,7 +53,7 @@ type UpdateOptions = {
      *
      *
      */
-    validate?: 'none' | 'pass' | 'throw' | 'ignore';
+    validate?: "none" | "pass" | "throw" | "ignore" | "throw-pass";
     /**
      * 执行读取操作时，不会触发GET事件
      * 即偷听
@@ -113,5 +83,70 @@ type UpdateOptions = {
 update(fn:(state:ComputedState<State>)=>void,options?:UpdateOptions)
 ```
 
--   `batchUpdate`仅是`update((state)=>{....},{batch:true})`的快捷方式。
--   `silentUpdate`仅是`update((state)=>{....},{silent:true})`的快捷方式。
+### 静默更新
+
+对状态进行读取时，会触发相应的`StateOperateType`类型的事件，如`get`或`set`等。
+
+在某些场景下，我们可能不希望触发这些事件，可以使用`silentUpdate`方法。
+
+```tsx
+store.update(
+    (state) => {
+        state.age = 100;
+    },
+    {
+        silent: true, //
+    },
+);
+// 或
+store.silentUpdate(...)
+```
+
+- `silentUpdate`仅是`update((state)=>{....},{silent:true})`的快捷方式。
+
+### 批量更新
+
+一般情况下，更新多个状态时会触发多个更新事件。在`React`场景中，为了优化渲染，我们可能希望一次性更新多个状态，只触发一次渲染。此时就可以使用`batchUpdate`方法。
+
+```tsx
+store.update(
+    (state) => {
+        state.age = 100;
+        state.name = "Fisher";
+    },
+    {
+        batch: true,
+    },
+);
+// 或
+store.batchUpdate(...)
+```
+
+- `batchUpdate`仅是`update((state)=>{....},{batch:true})`的快捷方式。
+
+关于更多的批量更新的技术细节见[批量更新](../store/batchUpdate.md)。
+
+### 静默读取
+
+正常访问状态时会触发`get`事件，如果不希望触发`get`事件，可以使用`peep`方法。
+
+```tsx
+store.peep((state) => {
+    return state.age;
+});
+// 读取age不会触发get事件
+store.peep("age"); // 100
+```
+
+以上方法不会触发`get <age>`事件。
+
+### 事件回放
+
+在批量更新结束后，会自动回放`update(()=>{...},{batch:true})`之间的所有操作事件，结束后再触发一个\***\*batch_update\*\***事件,此特性主要用于性能优化时使用。
+比如在`React`中，往往需要在批量更新后再执行渲染，此时就可以监听`__batch_update__`事件来进行渲染优化。
+
+`reply`参数可以控制是否回放更新区间的的所有操作事件，如果`reply=false`则回放操作事件,仅会触发`__batch_update__`事件。
+
+### 校验
+
+`validate`用于控制写入状态时进行校验的行为，详见数据校验。

@@ -139,7 +139,7 @@ export class ConfigManager extends AutoStore<
                     if (defaultValue !== undefined) {
                         schema.value = withSchema(defaultValue, {
                             slient: true,
-                            validate: "none",
+                            onInvalid: "none",
                         });
                     }
                 } catch {
@@ -226,20 +226,29 @@ export class ConfigManager extends AutoStore<
                 delete store.options.validators[strPath];
             }
         }
+        const loadedValue = this.peep((state) =>
+            getVal(state, [configKey.join(PATH_DELIMITER), "value"]),
+        );
 
-        // 创建代理用于从原始的Store值读写状态值
-        this._createValueProxy(descriptor, store, pathKey);
         // 添加到配置中
         this.update(
             (state) => {
                 setVal(state, [configKey.join(PATH_DELIMITER)], descriptor.schema);
+                if (loadedValue !== undefined) {
+                    descriptor.schema.value = loadedValue;
+                }
             },
             {
                 silent: true,
+                peep: true,
             },
         );
+
+        // 创建代理用于从原始的Store值读写状态值
+        this._createValueProxy(descriptor, store, pathKey);
+
         // 返回初始值，避免读取代理导致循环依赖
-        return initialValue;
+        return loadedValue || initialValue;
     }
     private _createValueProxy(
         finalDescriptor: SchemaDescriptor,

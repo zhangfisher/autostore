@@ -1,6 +1,6 @@
 # 全局监视
 
-使用`store.watch`方法用于全局监视`State`中的数据变化，当所监视的数据发生变化时，可以执行侦听器函数。
+使用`store.watch`方法用于全局监视`State`中的数据变化，当所监视的数据发生变化时，可以执行监听器函数。
 
 ## 监听方法
 
@@ -18,28 +18,26 @@ watch(paths:'*' | string | (string|string[])[],
 返回`Watcher`类型，用于取消监听。
 
 ```ts
-type Watcher = { off:()=>void }
+type Watcher = { off: () => void };
 ```
-
 
 ### 监听函数
 
 `WatchListener`是一个函数，用来处理监视到的数据变化，其签名如下：
 
 ```ts
-type WatchListener<Value=any,Parent=any> = 
-        (operate:StateOperate<Value,Parent>)=>void
+type WatchListener<Value = any, Parent = any> = (operate: StateOperate<Value, Parent>) => void;
 
-type StateOperate<Value=any,Parent=any> = {
-    type       : StateOperateType,
-    path       : string[],
-    value      : Value,
-    indexs?    : number[],                
-    oldValue?  : Value,
-    parentPath?: string[],
-    parent?    : Parent,    
-    reply?     : boolean               
-} 
+type StateOperate<Value = any, Parent = any> = {
+    type: StateOperateType;
+    path: string[];
+    value: Value;
+    indexs?: number[];
+    oldValue?: Value;
+    parentPath?: string[];
+    parent?: Parent;
+    reply?: boolean;
+};
 ```
 
 - 当侦听到数据变化时，`watch`会调用`WatchListener`函数，并传入一个`StateOperate`对象。
@@ -47,17 +45,16 @@ type StateOperate<Value=any,Parent=any> = {
 
 `StateOperate`对象的属性如下：
 
-| 属性       | 类型   | 说明                                                         |
-| :----------: | :------: | ------------------------------------------------------------ |
-| `type`       | `string` | 状态操作类型，取值`get`,`set`,`delete`,`insert`,`update`,`remove`,`batch`  |
-| `path`       | `string[]` | 状态路径 |
-| `value`      | `any`    | 值 |
-| `indexs`     | `number[]` | 数组操作时的索引 |
-| `oldValue`   | `any`    | 旧值 |
-| `parentPath` | `string[]` | 父路径 |
-| `parent`     | `any`    | 父值 |
-| `reply`      | `boolean` | 批量操作时是否回放 |
-
+|     属性     |    类型    | 说明                                                                      |
+| :----------: | :--------: | ------------------------------------------------------------------------- |
+|    `type`    |  `string`  | 状态操作类型，取值`get`,`set`,`delete`,`insert`,`update`,`remove`,`batch` |
+|    `path`    | `string[]` | 状态路径                                                                  |
+|   `value`    |   `any`    | 值                                                                        |
+|   `indexs`   | `number[]` | 数组操作时的索引                                                          |
+|  `oldValue`  |   `any`    | 旧值                                                                      |
+| `parentPath` | `string[]` | 父路径                                                                    |
+|   `parent`   |   `any`    | 父值                                                                      |
+|   `reply`    | `boolean`  | 批量操作时是否回放                                                        |
 
 - `watch`能状态的读写操作,包括`get`,`set`,`delete`,`insert`,`update`,`remove`,`batch`等操作进行监听。
 - `get`,`set`,`delete`适于对象的值的读写
@@ -65,26 +62,25 @@ type StateOperate<Value=any,Parent=any> = {
 - `batch`适于批量操作,当使用`batchUpdate`会触发此类型的操作事件，详见[批量操作](../store/state)
 - `reply`参数用于标识该操作是否是在批量更新时的事件回放。
 
-
 :::warning 注意
 监听函数只能是一个同步函数
 :::
 
 ### 监听选项
 
-```ts  
+```ts
 type WatchListenerOptions = {
-    once?    : boolean                                        
-    operates?: '*' | 'read' | 'write' | StateOperateType[]     // 只侦听的操作类型
-    filter?  : (args:StateOperate)=>boolean                // 过滤器
-}
+    once?: boolean;
+    operates?: "*" | "read" | "write" | StateOperateType[]; // 只侦听的操作类型
+    filter?: (args: StateOperate) => boolean; // 过滤器
+};
 ```
 
-| 属性       | 类型   | 说明                                                         |
-| :----------: | :------: | ------------------------------------------------------------ |
-| `once`       | `boolean` | 是否只监听一次 |
-| `operates`   | `'*'\| 'read' \| 'write' \| StateOperateType[]` | 只侦听的操作类型 |
-| `filter`     | `(args:StateOperate)=>boolean` | 过滤器函数，返回`true`则执行监听函数，否则不执行 |
+|    属性    |                      类型                       | 说明                                             |
+| :--------: | :---------------------------------------------: | ------------------------------------------------ |
+|   `once`   |                    `boolean`                    | 是否只监听一次                                   |
+| `operates` | `'*'\| 'read' \| 'write' \| StateOperateType[]` | 只侦听的操作类型                                 |
+|  `filter`  |         `(args:StateOperate)=>boolean`          | 过滤器函数，返回`true`则执行监听函数，否则不执行 |
 
 - 监听函数最重要的参数是`operates`，用来配置要监听的操作类型，可以是`'*'`，`'read'`，`'write'`，或者一个操作类型数组。
 - 默认`operates='write'`，即监听所有写操作。
@@ -110,10 +106,8 @@ store.watch((operate)=>{
 
 <demo react="watch/watchAll.tsx"/>
 
-
 - 通过`watch`方法监听所有的数据变化，当数据发生变化时，会执行监听函数。
 - `watch.options`支持指定要监听的哪些操作类型，比如`watch(listener,{operates:['set','delete']})`。
-
 
 ## 局部监听
 
@@ -134,7 +128,6 @@ store.watch((operate)=>{
 - 对数组成员的操作参数会多一个`indexs`属性，用来标识数组的索引。
 - `get`操作事件也适用于数组
 
-
 <demo react="watch/watchArray.tsx"/>
  
 ## 依赖收集
@@ -144,26 +137,28 @@ store.watch((operate)=>{
 以下是同步计算属性在初始化时的依赖收集的代码：
 
 ```ts
-function collectDependencies(){
-      let dependencies:string[][] = []       
-      // 1. 侦听所有的get操作
-      const watcher = this.store.watch((event)=>{      
-          // 将依赖路径保存起来
-          dependencies.push(event.path)            
-      },{operates:['get']})   
-      // 2. 运行一次同步计算的getter函数
-      this.run({first:true})   
-      // 3. 依赖收集完成后就结束监听
-      watcher.off() 
-      // .......
-      return dependencies
-}  
+function collectDependencies() {
+    let dependencies: string[][] = [];
+    // 1. 侦听所有的get操作
+    const watcher = this.store.watch(
+        (event) => {
+            // 将依赖路径保存起来
+            dependencies.push(event.path);
+        },
+        { operates: ["get"] },
+    );
+    // 2. 运行一次同步计算的getter函数
+    this.run({ first: true });
+    // 3. 依赖收集完成后就结束监听
+    watcher.off();
+    // .......
+    return dependencies;
+}
 ```
 
 :::info
 `store.watch`方法用于全局监视`State`中的数据变化，计算属性的实现也是基于`watch`方法。
 :::
-
 
 ## 增量同步
 
@@ -179,28 +174,23 @@ function collectDependencies(){
 
 `store.watch`支持通配符，比如`watch('order.*',listener)`，当`order`对象中的任意属性发生变化时，都会执行监听函数。
 
-| 通配符 | 说明 |
-| :----: | :----: |
-| `*` | 匹配任意字符 |
-| `**` | 用在路径的最后面，代表后续所有字符 |
-
+| 通配符 |                说明                |
+| :----: | :--------------------------------: |
+|  `*`   |            匹配任意字符            |
+|  `**`  | 用在路径的最后面，代表后续所有字符 |
 
 ```ts
-
 // 匹配order对象中的任意属性
-store.watch('order.*',listener)
+store.watch("order.*", listener);
 // order.a   ✅
 // order.b   ✅
-// order.a.b ❌  
-// order.a.b.c  ❌  
+// order.a.b ❌
+// order.a.b.c  ❌
 
 // 匹配order对象中的任意属性
-store.watch('order.**',listener)
+store.watch("order.**", listener);
 // order.a   ✅
 // order.b   ✅
-// order.a.b ✅ 
-// order.a.b.c  ✅ 
+// order.a.b ✅
+// order.a.b.c  ✅
 ```
-
-
-

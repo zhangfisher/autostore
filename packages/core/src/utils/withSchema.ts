@@ -1,6 +1,6 @@
 export type ValueSchema = {
     // 执行校验时的行为
-    validate?: 'none' | 'pass' | 'throw' | 'ignore' | 'throw-pass';
+    onInvalid?: "none" | "pass" | "throw" | "ignore" | "throw-pass";
     // 静默更新，不触发事件
     slient?: boolean;
 };
@@ -19,11 +19,11 @@ export type ValueSchema = {
  * @param options
  * @returns
  */
-export const WITH_SCHEMA_VALUE = '__WITH_SCHEMA_VALUE__';
+export const WITH_SCHEMA_VALUE = "__WITH_SCHEMA_VALUE__";
 export function withSchema<T = any>(value: T, options?: ValueSchema) {
     return Object.assign(
         {
-            validate: 'throw',
+            validate: "throw",
         },
         options,
         {
@@ -34,7 +34,7 @@ export function withSchema<T = any>(value: T, options?: ValueSchema) {
 }
 
 export function isWithSchemaValue(value: any): boolean {
-    return value && typeof value === 'object' && value[WITH_SCHEMA_VALUE] === true;
+    return value && typeof value === "object" && value[WITH_SCHEMA_VALUE] === true;
 }
 export function getSchemaValue(value: any): [any, Required<ValueSchema> | undefined] {
     if (isWithSchemaValue(value)) {

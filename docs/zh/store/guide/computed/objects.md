@@ -2,10 +2,10 @@
 
 ## 关于
 
-当使用`computed`创建好计算属性后，我们可以通过`store.computedObjects`来管理`store`内的所有计算属性，包括同步计算对象和异步计算对象。
+当使用`computed`或`asyncComputed`创建好计算属性后，我们可以通过`store.computedObjects`来管理`store`内的所有计算属性，包括同步计算对象和异步计算对象。
 
 通过`store.computedObjects`可以访问到所有的计算对象，`store.computedObjects`是一个`Map`对象。
- 
+
 <demo react="computed/computedObject.tsx" />
 
 **说明**:

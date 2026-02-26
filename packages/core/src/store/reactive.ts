@@ -66,7 +66,7 @@ function isValidPass(
     schema: ValueSchema | undefined,
 ) {
     //@ts-expect-error
-    const behavior = schema?.validate || this._updateValidateBehavior;
+    const behavior = schema?.onInvalid || this._updateValidateBehavior;
     if (behavior === "none") return true;
 
     const validate = getValidate.call(this, path);
@@ -91,16 +91,20 @@ function isValidPass(
             delete this.configManager.errors[configKey];
         }
         if (this.errors) {
-            delete this.errors[configKey];
+            delete this.errors[pathKey];
         }
     } catch (e: any) {
         error = e;
-        const errors = this.configManager?.errors || this.errors;
-        errors[configKey] = validate.getErrorMessage?.(e) || e.message || e.stack;
+        const errors = this.configManager?.errors;
+        const errMsg = validate.getErrorMessage?.(e) || e.message || e.stack;
+        if (errors) {
+            errors[configKey] = errMsg;
+        }
+        this.errors[pathKey] = errMsg;
         // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid
         // 这样可以确保 configurable 中配置的 onInvalid 优先生效
         const finalBehavior =
-            behavior || e.behavior || validate.onInvalid || this.options.onInvalid || "throw";
+            behavior || e.onInvalid || validate.onInvalid || this.options.onInvalid || "throw";
 
         if (finalBehavior === "pass") {
             isPass = true;

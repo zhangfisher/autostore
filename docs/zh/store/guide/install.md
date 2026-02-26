@@ -1,8 +1,8 @@
 # 安装
 
--   `autostore`: 核心包
--   `@autostorejs/devtools`: 使用`Redux DevTools`调试`AutoStore`
--   `@autostorejs/syncr`: 远程同步两个`AutoStore`
+- `autostore`: 核心包
+- `@autostorejs/devtools`: 使用`Redux DevTools`调试`AutoStore`
+- `@autostorejs/syncr`: 远程同步两个`AutoStore`
 
 ## autostore
 
@@ -26,6 +26,10 @@ yarn add autostore
 pnpm add autostore
 ```
 
+```bash [bun]
+bun add autostore
+```
+
 :::
 
 ## @autostorejs/devtools
@@ -46,8 +50,32 @@ yarn add @autostorejs/devtools
 pnpm add @autostorejs/devtools
 ```
 
+```bash [bun]
+bun add @autostorejs/devtools
+```
+
 :::
 
 ## @autostorejs/syncer
 
-用来远程同步两个`AutoStore`的数据，如在同步`browser`和`worker`的`AutoStore`数据。
+用来实现同步不同`AutoStore`的数据，支持一对一，一对多等同步。
+
+:::code-group
+
+```bash [npm]
+npm install  @autostorejs/syncer
+```
+
+```bash [yarn]
+yarn add @autostorejs/syncer
+```
+
+```bash [pnpm]
+pnpm add @autostorejs/syncer
+```
+
+```bash [bun]
+bun add @autostorejs/syncer
+```
+
+:::

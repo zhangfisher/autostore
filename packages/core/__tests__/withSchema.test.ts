@@ -28,7 +28,7 @@ describe("withSchema", () => {
                 );
 
                 // 使用 withSchema 跳过校验
-                store.state.user.age = withSchema(200, { validate: "none" });
+                store.state.user.age = withSchema(200, { onInvalid: "none" });
                 expect(store.state.user.age).toBe(200);
             });
 
@@ -53,7 +53,7 @@ describe("withSchema", () => {
                 );
 
                 // 即使校验函数抛出异常，也应该跳过校验
-                store.state.user.age = withSchema(200, { validate: "none" });
+                store.state.user.age = withSchema(200, { onInvalid: "none" });
                 expect(store.state.user.age).toBe(200);
             });
 
@@ -76,7 +76,7 @@ describe("withSchema", () => {
                 });
 
                 // validate="none" 不应该触发校验事件
-                store.state.user.age = withSchema(200, { validate: "none" });
+                store.state.user.age = withSchema(200, { onInvalid: "none" });
 
                 // 校验函数和 validate 事件都不应该被触发
                 expect(validateEventCount).toBe(0);
@@ -106,7 +106,7 @@ describe("withSchema", () => {
                 );
 
                 // 使用 withSchema 的 validate="pass" 覆盖校验函数的 behavior
-                store.state.user.age = withSchema(200, { validate: "pass" });
+                store.state.user.age = withSchema(200, { onInvalid: "pass" });
                 expect(store.state.user.age).toBe(200);
             });
 
@@ -129,9 +129,9 @@ describe("withSchema", () => {
                 );
 
                 // 校验失败但继续写入
-                store.state.user.age = withSchema(200, { validate: "pass" });
+                store.state.user.age = withSchema(200, { onInvalid: "pass" });
                 expect(store.state.user.age).toBe(200);
-                expect(store.errors[`${store.id}.user.age`]).toBeDefined();
+                expect(store.errors[`user.age`]).toBeDefined();
             });
         });
 
@@ -157,7 +157,7 @@ describe("withSchema", () => {
                 );
 
                 // 校验失败，忽略写入
-                store.state.user.age = withSchema(200, { validate: "ignore" });
+                store.state.user.age = withSchema(200, { onInvalid: "ignore" });
                 expect(store.state.user.age).toBe(18); // 值保持不变
             });
 
@@ -181,7 +181,7 @@ describe("withSchema", () => {
 
                 // 不应该抛出异常
                 expect(() => {
-                    store.state.user.age = withSchema(200, { validate: "ignore" });
+                    store.state.user.age = withSchema(200, { onInvalid: "ignore" });
                 }).not.toThrow();
             });
 
@@ -204,9 +204,9 @@ describe("withSchema", () => {
                 );
 
                 // ignore 模式：校验失败不写入，但记录错误
-                store.state.user.age = withSchema(200, { validate: "ignore" });
+                store.state.user.age = withSchema(200, { onInvalid: "ignore" });
                 expect(store.state.user.age).toBe(18); // 值保持不变
-                expect(store.errors[`${store.id}.user.age`]).toBeDefined();
+                expect(store.errors[`user.age`]).toBeDefined();
             });
         });
 
@@ -233,7 +233,7 @@ describe("withSchema", () => {
 
                 // 使用 validate="throw" 覆盖校验函数的 behavior="pass"
                 expect(() => {
-                    store.state.user.age = withSchema(200, { validate: "throw" });
+                    store.state.user.age = withSchema(200, { onInvalid: "throw" });
                 }).toThrow(ValidateError);
                 expect(store.state.user.age).toBe(18); // 值不应该被修改
             });
@@ -287,7 +287,7 @@ describe("withSchema", () => {
 
                 // 应该抛出异常
                 expect(() => {
-                    store.state.user.age = withSchema(200, { validate: "throw-pass" });
+                    store.state.user.age = withSchema(200, { onInvalid: "throw-pass" });
                 }).toThrow(ValidateError);
 
                 // 但是值应该已经被写入
@@ -313,13 +313,13 @@ describe("withSchema", () => {
                 );
 
                 try {
-                    store.state.user.age = withSchema(200, { validate: "throw-pass" });
+                    store.state.user.age = withSchema(200, { onInvalid: "throw-pass" });
                 } catch {
                     // 预期会抛出异常
                 }
 
                 expect(store.state.user.age).toBe(200); // 值已被写入
-                expect(store.errors[`${store.id}.user.age`]).toBeDefined(); // 错误被记录
+                expect(store.errors[`user.age`]).toBeDefined(); // 错误被记录
             });
         });
 
@@ -345,7 +345,7 @@ describe("withSchema", () => {
                 );
 
                 // 使用 validate="pass" 覆盖 validator 的 behavior
-                store.state.user.age = withSchema(200, { validate: "pass" });
+                store.state.user.age = withSchema(200, { onInvalid: "pass" });
                 expect(store.state.user.age).toBe(200);
             });
 
@@ -364,7 +364,7 @@ describe("withSchema", () => {
                 );
 
                 // validate="none" 跳过校验
-                store.state.user.age = withSchema(200, { validate: "none" });
+                store.state.user.age = withSchema(200, { onInvalid: "none" });
                 expect(store.state.user.age).toBe(200);
             });
         });
@@ -493,7 +493,7 @@ describe("withSchema", () => {
             });
 
             // 校验失败但继续写入，同时不触发 watch
-            store.state.user.age = withSchema(200, { validate: "pass", slient: true });
+            store.state.user.age = withSchema(200, { onInvalid: "pass", slient: true });
             expect(store.state.user.age).toBe(200);
             expect(watchCallCount).toBe(0); // 不应该触发 watch
         });
@@ -519,7 +519,7 @@ describe("withSchema", () => {
             });
 
             // 跳过校验，不触发 watch
-            store.state.user.age = withSchema(200, { validate: "none", slient: true });
+            store.state.user.age = withSchema(200, { onInvalid: "none", slient: true });
             expect(store.state.user.age).toBe(200);
             expect(watchCallCount).toBe(0); // 不应该触发 watch
         });
@@ -549,7 +549,7 @@ describe("withSchema", () => {
 
             // 校验失败抛出异常，即使设置 silent=true 也不会写入数据
             expect(() => {
-                store.state.user.age = withSchema(200, { validate: "throw", slient: true });
+                store.state.user.age = withSchema(200, { onInvalid: "throw", slient: true });
             }).toThrow(ValidateError);
             expect(store.state.user.age).toBe(18); // 值保持不变
             expect(watchCallCount).toBe(0); // 不会触发 watch
@@ -586,7 +586,7 @@ describe("withSchema", () => {
 
             // 在嵌套路径中使用 withSchema
             store.state.user.profile.age = withSchema(200, {
-                validate: "pass",
+                onInvalid: "pass",
                 slient: true,
             });
             expect(store.state.user.profile.age).toBe(200);
@@ -614,7 +614,7 @@ describe("withSchema", () => {
             });
 
             // 在数组元素中使用 withSchema
-            store.state.items[0] = withSchema(-10, { validate: "pass", slient: true });
+            store.state.items[0] = withSchema(-10, { onInvalid: "pass", slient: true });
             expect(store.state.items[0]).toBe(-10);
             expect(watchCallCount).toBe(0);
         });
@@ -653,7 +653,7 @@ describe("withSchema", () => {
             expect(store.state.user.age).toBe(30);
 
             // 第三次：跳过校验的静默赋值
-            store.state.user.age = withSchema(200, { validate: "none", slient: true });
+            store.state.user.age = withSchema(200, { onInvalid: "none", slient: true });
             expect(watchCallCount).toBe(1);
             expect(store.state.user.age).toBe(200);
 
@@ -750,7 +750,7 @@ describe("withSchema", () => {
             });
 
             // 没有 onValidate，withSchema 应该正常工作
-            store.state.user.age = withSchema(200, { validate: "none", slient: true });
+            store.state.user.age = withSchema(200, { onInvalid: "none", slient: true });
             expect(store.state.user.age).toBe(200);
         });
 
@@ -798,7 +798,7 @@ describe("withSchema", () => {
             });
 
             // validate="pass" 应该触发 validate 事件
-            store.state.user.age = withSchema(200, { validate: "pass" });
+            store.state.user.age = withSchema(200, { onInvalid: "pass" });
             expect(validateEventCount).toBe(1);
             expect(capturedError).toBeInstanceOf(ValidateError);
             expect(store.state.user.age).toBe(200);
@@ -823,7 +823,7 @@ describe("withSchema", () => {
             });
 
             // validate="none" 不应该触发 validate 事件
-            store.state.user.age = withSchema(200, { validate: "none" });
+            store.state.user.age = withSchema(200, { onInvalid: "none" });
             expect(validateEventCount).toBe(0);
             expect(store.state.user.age).toBe(200);
         });
@@ -856,7 +856,7 @@ describe("withSchema", () => {
             });
 
             // validate="ignore" 应该触发 validate 事件
-            store.state.user.age = withSchema(200, { validate: "ignore" });
+            store.state.user.age = withSchema(200, { onInvalid: "ignore" });
             expect(validateEventCount).toBe(1);
             expect(capturedError).toBeInstanceOf(ValidateError);
             expect(store.state.user.age).toBe(18); // 值保持不变
@@ -886,7 +886,7 @@ describe("withSchema", () => {
 
             // 应该抛出包含自定义错误信息的异常
             expect(() => {
-                store.state.user.age = withSchema(200, { validate: "throw" });
+                store.state.user.age = withSchema(200, { onInvalid: "throw" });
             }).toThrow("自定义错误信息");
         });
 
@@ -910,7 +910,7 @@ describe("withSchema", () => {
 
             // 应该抛出异常
             expect(() => {
-                store.state.user.age = withSchema(200, { validate: "throw-pass" });
+                store.state.user.age = withSchema(200, { onInvalid: "throw-pass" });
             }).toThrow(ValidateError);
 
             // 但是值应该已经被写入

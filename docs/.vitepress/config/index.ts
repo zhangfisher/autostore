@@ -16,6 +16,7 @@ export default defineConfig({
         nav: [
             { text: "首页", link: "/" },
             { text: "核心库", link: "/zh/store/" },
+            { text: "同步", link: "/zh/react/" },
             { text: "React", link: "/zh/react/" },
             // { text: '表单', link: '/zh/form/' },
             { text: "开源推荐", link: "https://zhangfisher.github.io/repos/" },
@@ -159,17 +160,19 @@ export default defineConfig({
             ],
             "/zh/store/": [
                 {
-                    text: "指南",
+                    text: "关于",
                     items: [
                         { text: "概念", link: "/zh/store/guide/store/about" },
                         { text: "安装", link: "/zh/store/guide/install" },
+                    ],
+                },
+                {
+                    text: "指南",
+                    items: [
                         { text: "创建", link: "/zh/store/guide/store/create" },
-                        { text: "读写状态", link: "/zh/store/guide/store/read-write" },
+                        { text: "状态更新", link: "/zh/store/guide/store/read-write" },
                         { text: "事件", link: "/zh/store/guide/store/events" },
                         { text: "批量更新", link: "/zh/store/guide/store/batchUpdate" },
-                        { text: "校验模式", link: "/zh/store/guide/store/schema" },
-                        { text: "同步", link: "/zh/store/guide/store/sync" },
-                        { text: "Shadow", link: "/zh/store/guide/store/shadow" },
                         {
                             text: "计算属性",
                             collapsed: true,
@@ -197,7 +200,11 @@ export default defineConfig({
                                 { text: "监视对象", link: "/zh/store/guide/watch/objects" },
                             ],
                         },
-                        { text: "配置参数", link: "/zh/store/guide/store/state" },
+                        { text: "校验", link: "/zh/store/guide/store/validate" },
+                        { text: "配置系统", link: "/zh/store/guide/store/config" },
+                        { text: "同步", link: "/zh/store/guide/store/sync" },
+                        { text: "Shadow", link: "/zh/store/guide/store/shadow" },
+                        { text: "配置参数", link: "/zh/store/guide/store/options" },
                     ],
                 },
             ],

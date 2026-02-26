@@ -502,7 +502,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      * 这样，当我们在指定一个依赖是异步属性时，就需要指定为xxxx.value才可以个侦听到变化
      *
      * @example
-     * const store = createStore({
+     * const store = new AutoStore({
      *            a0: 1,
      *            a1: computed(async (scope:any)=>{
      *              return scope.a0 + 1
@@ -519,7 +519,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      *
      * 本函数的功能就是对所有依赖进行判断如果其是一个异步计算依赖，则自动添加.value，这样就可以如下方式来写依赖了
      *
-     * 	const store = createStore({
+     * 	const store = new AutoStore({
      *            a0: 1,
      *            a1: computed(async (scope:any)=>{
      *              return scope.a0 + 1
