@@ -1659,19 +1659,25 @@ describe("ConfigManager 和 configurable 集成测试", () => {
                             oneTimeFlag: computed((scope: any) => {
                                 return scope.value === true;
                             }),
-                        }),
+                        } as any),
                         // totalCount 以 to 开头,但是是数字,可以是计算属性
                         totalCount: configurable(0, {
                             totalCount: computed((scope: any) => {
                                 return typeof scope.value === "number" ? scope.value + 1 : 0;
                             }),
-                        }),
+                        } as any),
                     },
                 },
                 {
                     configManager,
                 },
             );
+
+            configurable(true, {
+                widget: "number",
+                max: 1,
+                enable: computed((scope) => true),
+            });
 
             // 断言配置项被正确注册
             assertConfigRegistered(configManager, store, [

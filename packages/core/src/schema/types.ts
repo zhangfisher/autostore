@@ -35,7 +35,13 @@ export interface AutoStoreAction {
     onClick?: (action: AutoStoreAction) => void;
 }
 
-export type AutoStoreWidgetTypes = keyof AutoStoreWidgets;
+/**
+ * 从 AutoStoreWidgets 提取 widget 键类型
+ * 当 AutoStoreWidgets 为空接口时，回退到 string 类型
+ */
+type WidgetKeys<T> = keyof T extends never ? string : keyof T;
+
+export type AutoStoreWidgetTypes = WidgetKeys<AutoStoreWidgets>;
 
 /**
  * 从 AutoStoreWidgets 中提取指定 widget 的配置类型
@@ -45,13 +51,13 @@ export type WidgetConfig<W extends keyof AutoStoreWidgets> = AutoStoreWidgets[W]
 /**
  * AutoStateSchema 基础接口（不包含 widget 特定配置）
  */
-interface AutoStateSchemaBase<Value = any> {
+export interface AutoStateSchemaBase<Value = any> {
     value: Value;
     /**
      * 配置项控件类型
      * 即渲染渲染表单字段控件
      */
-    widget?: string;
+    widget?: AutoStoreWidgetTypes;
     /**
      * 配置键名称
      * 即在ConfigManager.state配置对象中存储key路径
@@ -189,49 +195,18 @@ export type AutoStateSchema<
 // 让对象的成员值允许是ComputedBuilder，可计算值
 // 例外：函数类型的属性，如果名称以 on、to、render 开头，则不允许为 ComputedBuilder
 // 保留字段：key、value、path、datatype 等系统字段不允许为 ComputedBuilder
-export type Computedable<Obj extends Record<string, any>> = {
-    [Key in keyof Obj]: Key extends "name" | "id" | "key" | "value" | "path" | "datatype"
-        ? Obj[Key] // 保留字段，不允许为 ComputedBuilder
-        : Key extends `${"on" | "to" | "render"}${string}`
-          ? Obj[Key] extends (...args: any[]) => any
-              ? Obj[Key] // 函数类型，不允许为 ComputedBuilder
-              : Obj[Key] | ComputedBuilder<Obj[Key], any>
-          : Obj[Key] | ComputedBuilder<Obj[Key], any>;
+export type Computedable<Obj extends Record<string, any>, Value = any> = {
+    [Key in keyof Obj]: Key extends "validate"
+        ? (value: Value, oldValue: Value, path: string[]) => boolean
+        : Key extends "name" | "id" | "key" | "value" | "path" | "datatype"
+          ? Obj[Key] // 保留字段，不允许为 ComputedBuilder
+          : Key extends `${"on" | "to" | "render"}${string}`
+            ? Obj[Key] extends (...args: any[]) => any
+                ? Obj[Key] // 函数类型，不允许为 ComputedBuilder
+                : Obj[Key] | ComputedBuilder<Obj[Key], any>
+            : Obj[Key] | ComputedBuilder<Obj[Key], any>;
 };
-
-// 用于计算属性配置的类型，确保 onValidate 等函数的参数类型能正确推断
-// 我们使用简化的方式: 直接在类型中列出所有属性
-export type ComputedableStateSchema<Value = any> = {
-    // 函数类型属性(onValidate等)保持原始类型，不允许为 ComputedBuilder
-    validate?: (value: Value, oldValue: Value, path: string[]) => boolean;
-    /**
-     * 当配置被渲染到只读视图时调用
-     */
-    toView?: (value: any) => any;
-    /**
-     * 从表单转换到状态时调用
-     */
-    toState?: (value: any) => Value;
-    /**
-     * 将状态值转换为表单输入字段时调用
-     */
-    toInput?: (value: Value) => any;
-    /**
-     * 当渲染该配置表单字段时调用
-     */
-    toRender?: (value: any) => any;
-
-    // 保留字段不允许为 ComputedBuilder
-    name?: string;
-    id?: string;
-    key?: string;
-    value?: any;
-    path?: string[];
-    datatype?: string;
-
-    // 其他属性可以是值或 ComputedBuilder
-    [key: string]: any;
-};
+export type ComputedableStateSchema<Value = any> = Computedable<AutoStateSchema<Value>, Value>;
 
 export type SchemaDescriptor<Value = any> = {
     path?: string[];
@@ -266,3 +241,37 @@ export type SchemaKeyPaths<State> = Exclude<
 export type ConfigurableState<State extends Record<string, any>> = {
     [Key in SchemaKeyPaths<State>]: GetTypeByPath<ComputedState<State>, Key>;
 };
+
+// 用于计算属性配置的类型，确保 onValidate 等函数的参数类型能正确推断
+// 我们使用简化的方式: 直接在类型中列出所有属性
+// export type ComputedableStateSchema<Value = any> = {
+//     // 函数类型属性(onValidate等)保持原始类型，不允许为 ComputedBuilder
+//     validate?: (value: Value, oldValue: Value, path: string[]) => boolean;
+//     /**
+//      * 当配置被渲染到只读视图时调用
+//      */
+//     toView?: (value: any) => any;
+//     /**
+//      * 从表单转换到状态时调用
+//      */
+//     toState?: (value: any) => Value;
+//     /**
+//      * 将状态值转换为表单输入字段时调用
+//      */
+//     toInput?: (value: Value) => any;
+//     /**
+//      * 当渲染该配置表单字段时调用
+//      */
+//     toRender?: (value: any) => any;
+
+//     // 保留字段不允许为 ComputedBuilder
+//     name?: string;
+//     id?: string;
+//     key?: string;
+//     value?: any;
+//     path?: string[];
+//     datatype?: string;
+
+//     // 其他属性可以是值或 ComputedBuilder
+//     [key: string]: any;
+// };

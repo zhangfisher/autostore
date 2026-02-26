@@ -88,9 +88,12 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
 export function schema<Value>(initial: Value): SchemaDescriptorBuilder<Value>;
 export function schema<Value>(
     initial: Value,
-    schema: ComputedableStateSchema<Value>,
+    schema: Omit<ComputedableStateSchema<Value>, "value">,
 ): SchemaDescriptorBuilder<Value>;
-export function schema<Value>(initial: Value, schema?: ComputedableStateSchema<Value>) {
+export function schema<Value>(
+    initial: Value,
+    schema?: Omit<ComputedableStateSchema<Value>, "value">,
+) {
     const args = parseSchemaArgs([initial, schema]);
     const value = initial;
     if (typeof value === "object") {

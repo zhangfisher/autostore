@@ -44,7 +44,7 @@ describe("withSchema", () => {
                                     return true;
                                 }
                                 const error = new ValidateError("Age validation failed");
-                                error.behavior = "throw";
+                                error.onInvalid = "throw";
                                 throw error;
                             }
                             return true;
@@ -97,7 +97,7 @@ describe("withSchema", () => {
                                     return true;
                                 }
                                 const error = new ValidateError("Age must be between 0 and 150");
-                                error.behavior = "throw";
+                                error.onInvalid = "throw";
                                 throw error;
                             }
                             return true;
@@ -148,7 +148,7 @@ describe("withSchema", () => {
                                     return true;
                                 }
                                 const error = new ValidateError("Age must be between 0 and 150");
-                                error.behavior = "throw";
+                                error.onInvalid = "throw";
                                 throw error;
                             }
                             return true;
@@ -223,7 +223,7 @@ describe("withSchema", () => {
                                     return true;
                                 }
                                 const error = new ValidateError("Age must be between 0 and 150");
-                                error.behavior = "pass";
+                                error.onInvalid = "pass";
                                 throw error;
                             }
                             return true;
@@ -277,7 +277,7 @@ describe("withSchema", () => {
                                     return true;
                                 }
                                 const error = new ValidateError("Age must be between 0 and 150");
-                                error.behavior = "pass";
+                                error.onInvalid = "pass";
                                 throw error;
                             }
                             return true;
@@ -336,7 +336,7 @@ describe("withSchema", () => {
                                     return true;
                                 }
                                 const error = new ValidateError("Age must be between 0 and 150");
-                                error.behavior = "throw";
+                                error.onInvalid = "throw";
                                 throw error;
                             },
                         },
@@ -876,7 +876,7 @@ describe("withSchema", () => {
                                 return true;
                             }
                             const error = new ValidateError("自定义错误信息");
-                            error.behavior = "throw";
+                            error.onInvalid = "throw";
                             throw error;
                         }
                         return true;

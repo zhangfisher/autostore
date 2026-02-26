@@ -16,5 +16,5 @@ export class ValidateError extends AutoStoreError {
      * - 'throw-pass' - 写入数据但同时抛出异常
      * - undefined - 使用 validate.onInvalid 的配置
      */
-    behavior?: 'pass' | 'ignore' | 'throw' | 'throw-pass';
+    onInvalid?: "pass" | "ignore" | "throw" | "throw-pass";
 }

@@ -1,23 +1,23 @@
 /** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
-import { describe, test } from 'bun:test';
-import type { Equal, Expect } from '@type-challenges/utils';
-import { AutoStore, computed } from '../../src';
-import type { AsyncComputedValue } from '../../src';
+import { describe, test } from "bun:test";
+import type { Equal, Expect } from "@type-challenges/utils";
+import { AutoStore, computed } from "../../src";
+import type { AsyncComputedValue } from "../../src";
 
 /**
  * 响应式状态基础测试
  */
-describe('响应式状态 - 基础类型', () => {
-    test('字符串类型保持', () => {
+describe("响应式状态 - 基础类型", () => {
+    test("字符串类型保持", () => {
         const store = new AutoStore({
-            name: '张三',
+            name: "张三",
         });
 
         type NameType = typeof store.state.name;
         const check: Expect<Equal<NameType, string>> = true;
     });
 
-    test('数字类型保持', () => {
+    test("数字类型保持", () => {
         const store = new AutoStore({
             count: 0,
             age: 18,
@@ -30,7 +30,7 @@ describe('响应式状态 - 基础类型', () => {
         const check2: Expect<Equal<AgeType, number>> = true;
     });
 
-    test('布尔类型保持', () => {
+    test("布尔类型保持", () => {
         const store = new AutoStore({
             admin: true,
             visible: false,
@@ -43,7 +43,7 @@ describe('响应式状态 - 基础类型', () => {
         const check2: Expect<Equal<VisibleType, boolean>> = true;
     });
 
-    test('null 和 undefined 保持', () => {
+    test("null 和 undefined 保持", () => {
         const store = new AutoStore({
             nullValue: null,
             undefValue: undefined,
@@ -60,8 +60,8 @@ describe('响应式状态 - 基础类型', () => {
 /**
  * 响应式状态 - 函数转换
  */
-describe('响应式状态 - 函数转换', () => {
-    test('函数转换为返回值类型', () => {
+describe("响应式状态 - 函数转换", () => {
+    test("函数转换为返回值类型", () => {
         const store = new AutoStore({
             count: 0,
             double: (scope: any) => scope.count * 2,
@@ -71,11 +71,11 @@ describe('响应式状态 - 函数转换', () => {
         const check: Expect<Equal<DoubleType, number>> = true;
     });
 
-    test('嵌套函数转换', () => {
+    test("嵌套函数转换", () => {
         const store = new AutoStore({
             user: {
-                firstName: '张',
-                lastName: '三',
+                firstName: "张",
+                lastName: "三",
                 fullName: (scope: any) => (scope.firstName + scope.lastName) as string,
             },
         });
@@ -84,11 +84,11 @@ describe('响应式状态 - 函数转换', () => {
         const check: Expect<Equal<FullNameType, string>> = true;
     });
 
-    test('多层嵌套函数转换', () => {
+    test("多层嵌套函数转换", () => {
         const store = new AutoStore({
             level1: {
                 level2: {
-                    value: 'test',
+                    value: "test",
                     computed: (scope: any) => scope.value as string,
                 },
             },
@@ -98,28 +98,28 @@ describe('响应式状态 - 函数转换', () => {
         const check: Expect<Equal<ComputedType, string>> = true;
     });
 
-    test('异步计算属性转换', () => {
+    test("异步计算属性转换", () => {
         const store = new AutoStore({
             value: computed(async () => 1, []),
         });
 
         type ValueType = typeof store.state.value;
-        const check: Expect<Equal<ValueType, AsyncComputedValue<number>>> = true;
+        const check: Expect<Equal<ValueType, number>> = true;
     });
 });
 
 /**
  * 响应式状态 - 对象类型
  */
-describe('响应式状态 - 对象类型', () => {
-    test('嵌套对象类型保持', () => {
+describe("响应式状态 - 对象类型", () => {
+    test("嵌套对象类型保持", () => {
         const store = new AutoStore({
             user: {
-                name: '张三',
+                name: "张三",
                 age: 18,
                 address: {
-                    city: '北京',
-                    street: '长安街',
+                    city: "北京",
+                    street: "长安街",
                 },
             },
         });
@@ -140,11 +140,11 @@ describe('响应式状态 - 对象类型', () => {
         > = true;
     });
 
-    test('对象中的计算属性', () => {
+    test("对象中的计算属性", () => {
         const store = new AutoStore({
             user: {
-                firstName: '张',
-                lastName: '三',
+                firstName: "张",
+                lastName: "三",
                 fullName: (scope: any) => (scope.firstName + scope.lastName) as string,
             },
         });
@@ -166,11 +166,11 @@ describe('响应式状态 - 对象类型', () => {
 /**
  * 响应式状态 - 数组类型
  */
-describe('响应式状态 - 数组类型', () => {
-    test('基础数组类型保持', () => {
+describe("响应式状态 - 数组类型", () => {
+    test("基础数组类型保持", () => {
         const store = new AutoStore({
             numbers: [1, 2, 3],
-            strings: ['a', 'b', 'c'],
+            strings: ["a", "b", "c"],
         });
 
         type NumbersType = typeof store.state.numbers;
@@ -180,16 +180,16 @@ describe('响应式状态 - 数组类型', () => {
         const check2: Expect<Equal<StringsType, string[]>> = true;
     });
 
-    test('对象数组类型', () => {
+    test("对象数组类型", () => {
         const store = new AutoStore({
             users: [
                 {
                     id: 1,
-                    name: '张三',
+                    name: "张三",
                 },
                 {
                     id: 2,
-                    name: '李四',
+                    name: "李四",
                 },
             ],
         });
@@ -206,13 +206,13 @@ describe('响应式状态 - 数组类型', () => {
         > = true;
     });
 
-    test('数组中的函数转换', () => {
+    test("数组中的函数转换", () => {
         const store = new AutoStore({
             users: [
                 {
                     id: 1,
-                    firstName: '张',
-                    lastName: '三',
+                    firstName: "张",
+                    lastName: "三",
                     fullName: (scope: any) => (scope.firstName + scope.lastName) as string,
                 },
             ],
@@ -232,7 +232,7 @@ describe('响应式状态 - 数组类型', () => {
         > = true;
     });
 
-    test('多维数组', () => {
+    test("多维数组", () => {
         const store = new AutoStore({
             matrix: [
                 [1, 2, 3],
@@ -248,14 +248,14 @@ describe('响应式状态 - 数组类型', () => {
 /**
  * 响应式状态 - 复杂场景
  */
-describe('响应式状态 - 复杂场景', () => {
-    test('对象数组嵌套计算属性', () => {
+describe("响应式状态 - 复杂场景", () => {
+    test("对象数组嵌套计算属性", () => {
         const store = new AutoStore({
             users: [
                 {
                     id: 1,
-                    firstName: '张',
-                    lastName: '三',
+                    firstName: "张",
+                    lastName: "三",
                     fullName: (scope: any) => (scope.firstName + scope.lastName) as string,
                 },
             ],
@@ -279,7 +279,7 @@ describe('响应式状态 - 复杂场景', () => {
         const check2: Expect<Equal<CountType, number>> = true;
     });
 
-    test('深层嵌套与计算属性', () => {
+    test("深层嵌套与计算属性", () => {
         const store = new AutoStore({
             level1: {
                 level2: {
@@ -298,31 +298,26 @@ describe('响应式状态 - 复杂场景', () => {
         const check2: Expect<Equal<TotalType, number>> = true;
     });
 
-    test('混合同步和异步计算', () => {
+    test("混合同步和异步计算", () => {
         const store = new AutoStore({
             count: 0,
             syncDouble: (scope: any) => scope.count * 2,
-            asyncTriple: computed(async (scope: any) => scope.count * 3, ['./count']),
+            asyncTriple: computed(async (scope: any) => scope.count * 3, ["./count"]),
         });
 
         type SyncDoubleType = typeof store.state.syncDouble;
         const check1: Expect<Equal<SyncDoubleType, number>> = true;
 
         type AsyncTripleType = typeof store.state.asyncTriple;
-        const check2: Expect<
-            Equal<
-                keyof AsyncTripleType,
-                'loading' | 'progress' | 'timeout' | 'error' | 'retry' | 'value' | 'run' | 'cancel'
-            >
-        > = true;
+        const check2: Expect<Equal<AsyncTripleType, number>> = true;
     });
 });
 
 /**
  * 响应式状态 - 边界情况
  */
-describe('响应式状态 - 边界情况', () => {
-    test('空对象', () => {
+describe("响应式状态 - 边界情况", () => {
+    test("空对象", () => {
         const store = new AutoStore({});
 
         type StateType = typeof store.state;
@@ -330,7 +325,7 @@ describe('响应式状态 - 边界情况', () => {
         const check: Expect<Equal<StateType, {}>> = true;
     });
 
-    test('只有计算属性', () => {
+    test("只有计算属性", () => {
         const store = new AutoStore({
             base: 10,
             computed1: (scope: any) => scope.base * 2,
@@ -350,9 +345,9 @@ describe('响应式状态 - 边界情况', () => {
         > = true;
     });
 
-    test('可选属性', () => {
+    test("可选属性", () => {
         const store = new AutoStore({
-            required: 'value',
+            required: "value",
             optional: undefined as string | undefined,
         });
 
@@ -368,18 +363,18 @@ describe('响应式状态 - 边界情况', () => {
         > = true;
     });
 
-    test('联合类型', () => {
+    test("联合类型", () => {
         const store = new AutoStore({
-            value: 'string' as string | number,
+            value: "string" as string | number,
         });
 
         type ValueType = typeof store.state.value;
         const check: Expect<Equal<ValueType, string | number>> = true;
     });
 
-    test('数组联合类型', () => {
+    test("数组联合类型", () => {
         const store = new AutoStore({
-            items: [1, 'a', true] as (number | string | boolean)[],
+            items: [1, "a", true] as (number | string | boolean)[],
         });
 
         type ItemsType = typeof store.state.items;

@@ -118,7 +118,7 @@ const productStore = new AutoStore(
 );
 ```
 
-- `configurable`用于配置模块是的状态的`schema`元数据，包括校验信息、校验行为、标题(label)、渲染参数等一系列任意元数据。
+- `configurable`用于配置模块状态的`schema`元数据，包括校验信息、校验行为、标题(label)、渲染参数等一系列任意元数据。
 
 :::warning 提示
 
@@ -126,7 +126,7 @@ const productStore = new AutoStore(
 - **A:** 因为在前端应用系统中，可能需要将整个应用可配置项渲染出来，因此在各个模块中分散声明配置项的渲染参数是比较方便的。
   :::
 
-### 第3步: 更新配置
+### 第4步: 更新配置
 
 以上创建了一个全局配置管理器`AutoStoreConfigManager`实例和三个业务模块，本个业务模块中的可配置项会自动注册到全局配置管理器`AutoStoreConfigManager`实例。
 
@@ -172,7 +172,7 @@ const configManager = new ConfigManager({
 shopStore.state.order.discount = 0.8;
 ```
 
-### 第4步: 加载配置
+### 第5步: 加载配置
 
 创建配置管理器时可以指定`load`用于从外部存储加载配置。
 
@@ -192,10 +192,71 @@ const configManager = new ConfigManager({
     },
 });
 // 加载配置
-configManager.load();
+await configManager.load();
 ```
 
+执行`configManager.load()`时会将配置数据自动更新到各个业务模块的对应位置。
+
+### 渲染配置界面
+
+对于前端项目，如果要渲染整个应用配置界面，可以直接遍历`configManager.state`或`AutoStoreConfigManager.state`，因为`configManager`本身就是一个`AutoStore`实例。
+
 ## 指南
+
+### configurable
+
+`configurable`函数用于配置模块状态的schema元数据，包括校验信息、校验行为、标题(label)、渲染参数等一系列任意元数据。
+
+```ts
+function configurable<Value>(initial: Value): SchemaDescriptorBuilder<Value>;
+function configurable<Value>(
+    initial: Value,
+    schema: ComputedableStateSchema<Value>,
+): SchemaDescriptorBuilder<Value>;
+function configurable<Value>(initial: Value, schema?: ComputedableStateSchema<Value>);
+```
+
+`ComputedableStateSchema`参数如下：
+
+```ts
+export type ComputedableStateSchema<Value = any> = {
+    /**
+     * 校验函数，当写入状态时的校验函数
+     */
+    validate?: (value: Value, oldValue: Value, path: string[]) => boolean;
+    /**
+     * 当配置被渲染到只读视图时调用
+     */
+    toView?: (value: any) => any;
+    /**
+     * 从表单转换到状态时调用
+     */
+    toState?: (value: any) => Value;
+    /**
+     * 将状态值转换为表单输入字段时调用
+     */
+    toInput?: (value: Value) => any;
+    /**
+     * 当渲染该配置表单字段时调用
+     */
+    toRender?: (value: any) => any;
+
+    // 保留字段不允许为 ComputedBuilder
+    name?: string;
+    id?: string;
+    key?: string;
+    value?: any;
+    path?: string[];
+    datatype?: string;
+
+    // 其他属性可以是值或 ComputedBuilder
+    [key: string]: any;
+};
+```
+
+:::warning 提示
+`configurable`还有一个别名`schema`
+:::
 
 ### 内置校验模式
 

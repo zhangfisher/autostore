@@ -188,7 +188,7 @@ describe("ObserverObject 类型", () => {
         const observerObject = store.computedObjects.get("value");
         if (observerObject) {
             type ObserverObjectType = typeof observerObject;
-
+            type keys = keyof ObserverObjectType;
             // ObserverObject 应该有这些核心属性
             type Case = Expect<
                 Equal<

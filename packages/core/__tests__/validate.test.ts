@@ -71,7 +71,7 @@ describe("onValidate", () => {
                             }
                             // 校验失败，但继续写入
                             const error = new ValidateError("Age must be between 0 and 150");
-                            error.behavior = "pass";
+                            error.onInvalid = "pass";
                             throw error;
                         }
                         return true;
@@ -86,7 +86,7 @@ describe("onValidate", () => {
     });
 
     describe("验证失败行为 - behavior=ignore", () => {
-        test('抛出 behavior="ignore" 的 ValidateError 时应该静默忽略（不写入）', () => {
+        test('抛出 onInvalid="ignore" 的 ValidateError 时应该静默忽略（不写入）', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
@@ -99,7 +99,7 @@ describe("onValidate", () => {
                             }
                             // 校验失败，忽略写入
                             const error = new ValidateError("Age must be between 0 and 150");
-                            error.behavior = "ignore";
+                            error.onInvalid = "ignore";
                             throw error;
                         }
                         return true;
@@ -112,7 +112,7 @@ describe("onValidate", () => {
             expect(store.state.user.age).toBe(18); // 值保持不变
         });
 
-        test('behavior="ignore" 时不应该抛出异常', () => {
+        test('onInvalid="ignore" 时不应该抛出异常', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
@@ -124,7 +124,7 @@ describe("onValidate", () => {
                                 return true;
                             }
                             const error = new ValidateError("Age must be between 0 and 150");
-                            error.behavior = "ignore";
+                            error.onInvalid = "ignore";
                             throw error;
                         }
                         return true;
@@ -139,8 +139,8 @@ describe("onValidate", () => {
         });
     });
 
-    describe("验证失败行为 - behavior=throw", () => {
-        test('抛出 behavior="throw" 的 ValidateError 时应该抛出异常', () => {
+    describe("验证失败行为 - onInvalid=throw", () => {
+        test('抛出 onInvalid="throw" 的 ValidateError 时应该抛出异常', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
@@ -153,7 +153,7 @@ describe("onValidate", () => {
                             }
                             // 校验失败，抛出异常
                             const error = new ValidateError("Age must be between 0 and 150");
-                            error.behavior = "throw";
+                            error.onInvalid = "throw";
                             throw error;
                         }
                         return true;
@@ -167,7 +167,7 @@ describe("onValidate", () => {
             expect(store.state.user.age).toBe(18); // 值不应该被修改
         });
 
-        test("抛出默认 ValidateError 时应该抛出异常（默认 behavior=throw）", () => {
+        test("抛出默认 ValidateError 时应该抛出异常（默认 onInvalid=throw）", () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
@@ -193,8 +193,8 @@ describe("onValidate", () => {
         });
     });
 
-    describe("验证失败行为 - behavior=throw-pass", () => {
-        test('抛出 behavior="throw-pass" 的 ValidateError 时应该写入数据但同时抛出异常', () => {
+    describe("验证失败行为 - onInvalid=throw-pass", () => {
+        test('抛出 onInvalid="throw-pass" 的 ValidateError 时应该写入数据但同时抛出异常', () => {
             const store = new AutoStore(
                 {
                     user: { age: 18 },
@@ -207,7 +207,7 @@ describe("onValidate", () => {
                             }
                             // 写入数据但同时抛出异常
                             const error = new ValidateError("Age must be between 0 and 150");
-                            error.behavior = "throw-pass";
+                            error.onInvalid = "throw-pass";
                             throw error;
                         }
                         return true;
@@ -321,7 +321,7 @@ describe("onValidate", () => {
             expect(capturedError.message).toBe("年龄必须在 0 到 150 之间");
         });
 
-        test("不同的 behavior 应该携带不同的错误信息", () => {
+        test("不同的 onInvalid 应该携带不同的错误信息", () => {
             let capturedError: any;
             let capturedBehavior: any;
 
@@ -336,7 +336,7 @@ describe("onValidate", () => {
                                 return true;
                             }
                             const error = new ValidateError("Invalid age value");
-                            error.behavior = "ignore";
+                            error.onInvalid = "ignore";
                             throw error;
                         }
                         return true;
@@ -347,7 +347,7 @@ describe("onValidate", () => {
             store.on("validate", (event: any) => {
                 if (event.error) {
                     capturedError = event.error;
-                    capturedBehavior = event.error.behavior;
+                    capturedBehavior = event.error.onInvalid;
                 }
             });
 
@@ -422,13 +422,13 @@ describe("onValidate", () => {
                             // 只允许年龄增大，不允许减小
                             if (newValue < oldValue) {
                                 const error = new ValidateError("年龄不能减小");
-                                error.behavior = "throw";
+                                error.onInvalid = "throw";
                                 throw error;
                             }
                             // 同时校验年龄范围
                             if (newValue > 150) {
                                 const error = new ValidateError("年龄不能超过 150");
-                                error.behavior = "throw";
+                                error.onInvalid = "throw";
                                 throw error;
                             }
                         }
@@ -468,7 +468,7 @@ describe("onValidate", () => {
                                 const error = new ValidateError(
                                     `年龄增幅过大：${diff} 岁，最大允许增幅 10 岁`,
                                 );
-                                error.behavior = "throw";
+                                error.onInvalid = "throw";
                                 throw error;
                             }
                         }
@@ -505,7 +505,7 @@ describe("onValidate", () => {
                                 const error = new ValidateError(
                                     `类型不匹配：期望 ${typeof oldValue}，实际 ${typeof newValue}`,
                                 );
-                                error.behavior = "throw";
+                                error.onInvalid = "throw";
                                 throw error;
                             }
                         }
@@ -580,14 +580,14 @@ describe("onValidate", () => {
                                 // 首次设置只允许正数
                                 if (newValue <= 0) {
                                     const error = new ValidateError("初始年龄必须是正数");
-                                    error.behavior = "throw";
+                                    error.onInvalid = "throw";
                                     throw error;
                                 }
                             } else {
                                 // 非首次设置，允许任何非负数
                                 if (newValue < 0) {
                                     const error = new ValidateError("年龄不能为负数");
-                                    error.behavior = "throw";
+                                    error.onInvalid = "throw";
                                     throw error;
                                 }
                             }
@@ -654,7 +654,7 @@ describe("onValidate", () => {
                             }
                             // 校验失败，抛出 ValidateError
                             const error = new ValidateError("Age validation failed");
-                            error.behavior = "throw";
+                            error.onInvalid = "throw";
                             throw error;
                         }
                         return true;
@@ -686,7 +686,7 @@ describe("onValidate", () => {
                             }
                             // 校验失败，但设置 behavior='pass' 继续写入
                             const error = new ValidateError("Age validation failed");
-                            error.behavior = "pass";
+                            error.onInvalid = "pass";
                             throw error;
                         }
                         return true;
@@ -840,7 +840,7 @@ describe("onValidate", () => {
                                 return true;
                             }
                             const error = new ValidateError(`年龄 ${newValue} 超出范围`);
-                            error.behavior = "pass"; // 校验失败但继续写入
+                            error.onInvalid = "pass"; // 校验失败但继续写入
                             throw error;
                         }
                         return true;
@@ -860,7 +860,7 @@ describe("onValidate", () => {
             expect(capturedEvents[0].newValue).toBe(200);
             expect(capturedEvents[0].oldValue).toBe(18);
             expect(capturedEvents[0].error).toBeInstanceOf(ValidateError);
-            expect(capturedEvents[0].error.behavior).toBe("pass");
+            expect(capturedEvents[0].error.onInvalid).toBe("pass");
         });
 
         test("validate 事件应该捕获多个校验失败的场景", () => {
@@ -1000,7 +1000,7 @@ describe("onValidate", () => {
                     validate(newValue, oldValue, path) {
                         if (path[0] === "user" && path[1] === "age" && newValue > 150) {
                             const error = new ValidateError("Age must be <= 150");
-                            error.behavior = "throw";
+                            error.onInvalid = "throw";
                             throw error;
                         }
                         return true;
@@ -1388,7 +1388,7 @@ describe("validators 和 onInvalid", () => {
                                 return true;
                             }
                             const error = new ValidateError("年龄超出范围");
-                            error.behavior = "ignore";
+                            error.onInvalid = "ignore";
                             throw error;
                         },
                     },

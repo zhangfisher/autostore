@@ -1159,7 +1159,9 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
 
             const orderStore = new AutoStore({
                 order: {
-                    price: configurable(99.9, {}),
+                    price: configurable(99.9, {
+                        widget: "number",
+                    }),
                 },
             });
 
