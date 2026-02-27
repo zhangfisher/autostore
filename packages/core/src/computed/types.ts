@@ -25,6 +25,7 @@ import type {
 import type { StateOperate } from "../store/types";
 import type { ComputedObject } from "./computedObject";
 import type { Dict } from "../types";
+import { RefState } from "../store/refState";
 
 /**
  * 同步计算属性配置参数
@@ -95,6 +96,7 @@ export interface AsyncComputedGetterArgs {
      * 是否是第一次运行
      */
     first?: boolean;
+    ref?: <Value = any>(path: string | string[]) => Value;
 }
 
 export type AsyncComputedGetter<Value, Scope = any> = (

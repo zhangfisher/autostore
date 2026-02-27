@@ -77,7 +77,6 @@ export type PickComputedResult<T> =
 如：ComputedState<{count:async ()=>1}> => {count:number}
 
 */
-
 export type ComputedState<T> = T extends unknown[]
     ? ComputedState<T[number]>[]
     : T extends RawObject<T>

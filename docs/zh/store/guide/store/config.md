@@ -625,12 +625,12 @@ const netStore = new AutoStore(
         dhcp: true,
         ip: configurable("192.168.1.1", {
             label: "IP地址",
-            enable: (scope: any) => {
-                // ❗ scope===AutoStoreConfigManager.state
-                // ❗ 而dhcp并没有声明为可配置项
-                // ❗ 因此AutoStoreConfigManager.state不存在network.dhcp
-                // ❗ enable是在AutoStoreConfigManager
-                // ❗ dhcp是在netStore，两者并不在同一个Store中
+            enable: (scope: any, { refStore }) => {
+                //❗ scope===AutoStoreConfigManager.state
+                //❗ 而dhcp并没有声明为可配置项
+                //❗ 因此AutoStoreConfigManager.state不存在network.dhcp
+                //❗ enable是在AutoStoreConfigManager
+                //❗ dhcp是在netStore，两者并不在同一个Store中
                 return scope["network.dhcp"].value; // [!code ++] ❌无效
             },
         }),

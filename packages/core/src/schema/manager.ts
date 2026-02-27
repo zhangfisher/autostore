@@ -1,6 +1,6 @@
 import { PATH_DELIMITER, GLOBAL_CONFIG_MANAGER } from "../consts";
 import { AutoStore } from "../store/store";
-import { isSchemaBuilder, markRaw, setVal, withSchema } from "../utils";
+import { isRaw, isSchemaBuilder, markRaw, setVal, withSchema } from "../utils";
 import { getVal } from "../utils/getVal";
 import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from "./types";
 import { isFunction } from "../utils/isFunction";
@@ -230,6 +230,33 @@ export class ConfigManager extends AutoStore<
         if ((descriptor.schema as any).onInvalid === undefined) {
             (descriptor.schema as any).onInvalid = "throw";
         }
+        // 安装校验器
+        this._installValidator(strPath, descriptor, store);
+        // 由于该配置项可能已先load还未注册，因此需要覆盖现有的值
+        const loadedValue = this.peep((state) =>
+            getVal(state, [configKey.join(PATH_DELIMITER), "value"]),
+        );
+        // 用于为schema中的observerObject提供refStore，以便能访问
+        this._handleRefState(descriptor.schema, store);
+        // 动态添加
+        this.state[configKey.join(PATH_DELIMITER)] = descriptor.schema;
+        if (loadedValue !== undefined) {
+            descriptor.schema.value = loadedValue;
+        }
+        // 创建代理用于从原始的Store值读写状态值
+        this._createValueProxy(descriptor, store, pathKey);
+
+        // 返回初始值，避免读取代理导致循环依赖
+        return loadedValue || initialValue;
+    }
+    private _handleRefState(schema: object, store: AutoStore<any>) {
+        Object.values(schema).forEach((v) => {
+            if (isFunction(v) && !isRaw(v)) {
+                v._getRefStore = () => new WeakRef(store);
+            }
+        });
+    }
+    private _installValidator(path: string, descriptor: SchemaDescriptor, store: AutoStore<any>) {
         if (isFunction(descriptor.schema.validate)) {
             // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
             // @ts-expect-error
@@ -252,34 +279,19 @@ export class ConfigManager extends AutoStore<
             if (!store.options.validators) {
                 store.options.validators = {};
             }
-            store.options.validators[strPath] = descriptor.schema.validate;
+            store.options.validators[path] = descriptor.schema.validate;
         } else {
             if (store.options.validators) {
-                delete store.options.validators[strPath];
+                delete store.options.validators[path];
             }
         }
-        // 由于该配置项可能已先load还未注册，因此需要覆盖现有的值
-        const loadedValue = this.peep((state) =>
-            getVal(state, [configKey.join(PATH_DELIMITER), "value"]),
-        );
-
-        // 动态添加
-        this.state[configKey.join(PATH_DELIMITER)] = descriptor.schema;
-        if (loadedValue !== undefined) {
-            descriptor.schema.value = loadedValue;
-        }
-
-        // 创建代理用于从原始的Store值读写状态值
-        this._createValueProxy(descriptor, store, pathKey);
-
-        // 返回初始值，避免读取代理导致循环依赖
-        return loadedValue || initialValue;
     }
     private _createValueProxy(
         finalDescriptor: SchemaDescriptor,
         store: AutoStore<any>,
         path: string[],
     ) {
+        // oxlint-disable-next-line typescript/no-this-alias
         const self = this;
 
         // 由于ConfigManager是全局对象，而Store可能是动态，可能会被销毁，因此应采用弱引用

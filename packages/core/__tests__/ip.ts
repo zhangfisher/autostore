@@ -14,12 +14,10 @@ configManager.watch(({ path, value }) => {
 });
 const netStore = new AutoStore(
     {
-        dhcp: configurable(true, {
-            label: "自动获取IP地址",
-        }),
+        dhcp: true,
         ip: configurable("192.168.1.1", {
             label: "IP地址",
-            enable: (scope: any) => {
+            enable: (scope: any, { ref }) => {
                 return scope["network.dhcp"].value;
             },
         }),
@@ -27,8 +25,8 @@ const netStore = new AutoStore(
     { configManager, id: "network" },
 );
 netStore.state.dhcp = true;
-console.log(configManager.state["network.dhcp"].value);
+// console.log(configManager.state["network.dhcp"].value);
 console.log(configManager.state["network.ip"].enable);
 netStore.state.dhcp = false;
-console.log(configManager.state["network.dhcp"].value);
+// console.log(configManager.state["network.dhcp"].value);
 console.log(configManager.state["network.ip"].enable);

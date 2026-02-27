@@ -17,6 +17,7 @@ import type { StateOperate, StoreEvents, UpdateOptions } from "../store/types";
 import type { Watcher, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
+import { createRefState, RefState } from "../store/refState";
 
 export class ObserverObject<
     Value = any,
@@ -36,6 +37,7 @@ export class ObserverObject<
     private _error?: Error; // 记录最后一次运行时的错误
     store: AutoStore<any>;
     _shadowStore!: AutoStore<any>;
+    _refState?: RefState;
     /**
      *  构造函数。
      *
@@ -171,6 +173,16 @@ export class ObserverObject<
             this.update(this._options.initial, { silent: true });
         }
         this.onInitial();
+    }
+    private _createRefState() {
+        // @ts-expect-error
+        const _getRefStore = this.descriptor.getter._getRefStore;
+        if (isFunction(_getRefStore)) {
+            const storeRef = _getRefStore() as WeakRef<AutoStore<any>>;
+            if (storeRef) {
+                this._refState = createRefState(storeRef, this as ObserverObject);
+            }
+        }
     }
     /**
      * 供子类继承进行初始化
