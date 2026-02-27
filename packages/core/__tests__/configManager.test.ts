@@ -56,18 +56,23 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
         };
 
         // 创建 ConfigManager，使用模拟的 source
-        configManager = new ConfigManager({
-            load: async () => {
-                mockSource.loadCallCount++;
-                return { ...mockSource.data };
+        configManager = new ConfigManager(
+            {
+                load: async () => {
+                    mockSource.loadCallCount++;
+                    return { ...mockSource.data };
+                },
+                save: async (values: Record<string, any>) => {
+                    mockSource.saveCallCount++;
+                    mockSource.saveHistory.push({ ...values });
+                    // 更新数据源
+                    Object.assign(mockSource.data, values);
+                },
             },
-            save: async (values: Record<string, any>) => {
-                mockSource.saveCallCount++;
-                mockSource.saveHistory.push({ ...values });
-                // 更新数据源
-                Object.assign(mockSource.data, values);
+            {
+                autoload: false,
             },
-        });
+        );
     });
 
     describe("source.load - 从外部存储加载配置", () => {
@@ -334,6 +339,48 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
             expect(loadResolved).toBe(true);
             expect(orderStore.state.order.price).toBe(199.9);
         });
+        test("调用 load 方法更新配置时不应该执行 save方法", async () => {
+            let saveCallCount = 0;
+            const configManager = new ConfigManager({
+                load: () => {
+                    return { "app.order.price": 100 };
+                },
+                save: (values) => {
+                    saveCallCount++;
+                },
+            });
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            orderStore.watch("order.price", ({ value }) => {
+                expect(value).toBe(100);
+            });
+
+            // 断言配置项被正确注册
+            assertConfigRegistered(configManager, orderStore, ["order.price"]);
+
+            // 第一次加载
+            await configManager.load();
+            expect(orderStore.state.order.price).toBe(100);
+            expect(saveCallCount).toBe(0);
+
+            // 第二次加载
+            await configManager.load();
+            expect(orderStore.state.order.price).toBe(100);
+            expect(saveCallCount).toBe(0);
+
+            // 验证整个过程中 save 方法从未被调用
+            expect(saveCallCount).toBe(0);
+        });
     });
 
     describe("source.save - 保存配置到外部存储", () => {
@@ -347,6 +394,18 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
                 {
                     configManager,
                     configKey: "app",
+                },
+            );
+
+            const userStore = new AutoStore(
+                {
+                    user: {
+                        name: configurable("Bob", {}),
+                    },
+                },
+                {
+                    configManager,
+                    configKey: "app2",
                 },
             );
 

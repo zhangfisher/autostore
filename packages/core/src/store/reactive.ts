@@ -8,6 +8,7 @@ import { isNumber } from "../utils/isNumber";
 import { markRaw } from "../utils/markRaw";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
+import { isFunction } from "../utils/isFunction";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 
@@ -230,7 +231,8 @@ function createProxy(
                 const success = Reflect.set(obj, key, val, receiver);
                 if (key === __NOTIFY__) return true;
 
-                // 写入成功后，检查是否是配置项，如果是则调用 ConfigManager.onUpdate
+                // 写入成功后，检查是否是配置项，如果是则调用 ConfigManager.onUpdate通知配置系统进行更新
+                // 配置系统不使用订阅方式是因为直接调用onUpdate更高效
                 const pathKey = path.join(this.options.delimiter || ".");
                 const configKeyArg = this.options.configKey;
                 const configKey =

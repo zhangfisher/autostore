@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { AutoStore, configurable, ConfigManager, ValidateError, computed } from "../src";
+import { delay } from "flex-tools/async/delay";
 /**
  * ConfigManager 和 configurable 功能单元测试
  *
@@ -1348,8 +1349,8 @@ describe("ConfigManager 和 configurable 集成测试", () => {
         });
     });
 
-    describe("可计算配置参数 - 配置项本身支持计算属性", () => {
-        test("类型验证 - enable 可以是计算属性", () => {
+    describe("响应式配置元数据 - 配置项本身支持计算属性", () => {
+        test("响应式配置元数据 - enable 可以是计算属性", () => {
             // 这个测试验证类型系统接受计算属性
             // 实际的运行时行为需要额外的实现支持
             const store = new AutoStore(
@@ -1378,7 +1379,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - label 可以是计算属性", () => {
+        test("响应式配置元数据 - label 可以是计算属性", () => {
             const store = new AutoStore(
                 {
                     price: configurable(100, {
@@ -1399,7 +1400,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - invalidTips 可以是计算属性", () => {
+        test("响应式配置元数据 - invalidTips 可以是计算属性", () => {
             const store = new AutoStore(
                 {
                     quantity: configurable(10, {
@@ -1429,7 +1430,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - required 可以是计算属性", () => {
+        test("响应式配置元数据 - required 可以是计算属性", () => {
             const store = new AutoStore(
                 {
                     user: {
@@ -1453,7 +1454,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - visible 可以是计算属性", () => {
+        test("响应式配置元数据 - visible 可以是计算属性", () => {
             const store = new AutoStore(
                 {
                     settings: {
@@ -1480,7 +1481,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - 多个配置参数可以同时是计算属性", () => {
+        test("响应式配置元数据 - 多个配置参数可以同时是计算属性", () => {
             const store = new AutoStore(
                 {
                     count: configurable(50, {
@@ -1515,7 +1516,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - 计算属性可以引用其他配置项的值", () => {
+        test("响应式配置元数据 - 计算属性可以引用其他配置项的值", () => {
             const store = new AutoStore(
                 {
                     order: {
@@ -1550,7 +1551,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - placeholder 可以是计算属性", () => {
+        test("响应式配置元数据 - placeholder 可以是计算属性", () => {
             const store = new AutoStore(
                 {
                     username: configurable("", {
@@ -1573,7 +1574,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - tooltip 可以是计算属性", () => {
+        test("响应式配置元数据 - tooltip 可以是计算属性", () => {
             const store = new AutoStore(
                 {
                     progress: configurable(0, {
@@ -1593,7 +1594,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - 计算属性配置参数与普通配置参数可以混合使用", () => {
+        test("响应式配置元数据 - 计算属性配置参数与普通配置参数可以混合使用", () => {
             const store = new AutoStore(
                 {
                     quantity: configurable(10, {
@@ -1621,7 +1622,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - 计算属性配置参数可以访问父级配置项", () => {
+        test("响应式配置元数据 - 计算属性配置参数可以访问父级配置项", () => {
             const store = new AutoStore(
                 {
                     user: {
@@ -1648,7 +1649,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             expect(configManager.size).toBeGreaterThan(0);
         });
 
-        test("类型验证 - 非函数属性以 on/to/render 开头也可以是计算属性", () => {
+        test("响应式配置元数据 - 非函数属性以 on/to/render 开头也可以是计算属性", () => {
             // 这个测试验证:即使属性名以 on/to/render 开头,
             // 如果它不是函数类型,仍然可以是 ComputedBuilder
             const store = new AutoStore(
@@ -1686,6 +1687,29 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             ]);
 
             expect(configManager.size).toBeGreaterThan(0);
+        });
+        test("响应式配置元数据 - 当启用或禁用DHCP时IP的使用应该同步变化", async () => {
+            const netStore = new AutoStore(
+                {
+                    dhcp: configurable(true, {
+                        label: "自动获取IP地址",
+                    }),
+                    ip: configurable("192.168.1.1", {
+                        label: "IP地址",
+                        enable: (scope: any) => {
+                            return scope["network.dhcp"].value;
+                        },
+                    }),
+                },
+                { configManager, id: "network" },
+            );
+            netStore.state.dhcp = true;
+            expect(configManager.state["network.dhcp"].value).toBeTruthy();
+            expect(configManager.state["network.ip"].enable).toBeTruthy();
+            netStore.state.dhcp = false;
+            expect(configManager.state["network.dhcp"].value).toBeFalsy();
+            await delay(0);
+            expect(configManager.state["network.ip"].enable).toBeFalsy();
         });
     });
 });

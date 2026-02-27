@@ -1,6 +1,6 @@
 import { PATH_DELIMITER, GLOBAL_CONFIG_MANAGER } from "../consts";
 import { AutoStore } from "../store/store";
-import { isSchemaBuilder, setVal, withSchema } from "../utils";
+import { isSchemaBuilder, markRaw, setVal, withSchema } from "../utils";
 import { getVal } from "../utils/getVal";
 import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from "./types";
 import { isFunction } from "../utils/isFunction";
@@ -37,9 +37,17 @@ export interface ConfigSource {
      * @returns
      */
     save?: (values: Record<string, any>) => void | Promise<void>;
+    /**
+     * 重载配置时调用
+     * 可以在此将外部存储中的配置恢复
+     * @returns
+     */
+    reset?: () => void;
 }
 export type ConfigManagerOptions<State extends Dict> = AutoStoreOptions<State> & {
     global?: string | boolean;
+    autoload?: boolean;
+    autosave?: boolean;
 };
 export class ConfigManager extends AutoStore<
     AutoStoreConfigures,
@@ -53,8 +61,11 @@ export class ConfigManager extends AutoStore<
     ) {
         const finalOptions = Object.assign(
             {
-                global: false,
+                global: true,
                 configManager: false,
+                autoload: true,
+                autosave: true,
+                scope: "ROOT",
             },
             options,
         ) as any;
@@ -65,8 +76,15 @@ export class ConfigManager extends AutoStore<
             const globalKey =
                 finalOptions.global === true ? GLOBAL_CONFIG_MANAGER : finalOptions.global;
             // @ts-expect-error - 动态设置 globalThis 属性
-            globalThis[globalKey] = this;
+            if (globalThis[globalKey] === undefined) {
+                // @ts-expect-error - 动态设置 globalThis 属性
+                globalThis[globalKey] = this;
+            }
+            if (finalOptions.autoload) this.load().catch(() => {});
+            // @ts-expect-error - 动态设置 globalThis 属性
+            return (globalThis[globalKey] = this);
         }
+        if (finalOptions.autoload) this.load().catch(() => {});
     }
     get fields() {
         return this.state;
@@ -137,7 +155,7 @@ export class ConfigManager extends AutoStore<
                     // 避免触发校验、事件通知、onUpdate 和 save
                     const defaultValue = schema.default;
                     if (defaultValue !== undefined) {
-                        schema.value = withSchema(defaultValue, {
+                        schema.value = withSchema(markRaw(defaultValue), {
                             slient: true,
                             onInvalid: "none",
                         });
@@ -147,20 +165,32 @@ export class ConfigManager extends AutoStore<
                 }
             });
         } finally {
+            if (typeof this.source.reset === "function") {
+                this.source.reset.call(this);
+            }
             this._reseting = false;
         }
     }
     /**
-     * 此方法由Store实例在写入状态值时调用
+     * 此方法由Store实例在更新状态值时调用
      * @param store
      * @param path
      * @param value
      */
     onUpdate(_store: AutoStore<any>, configKey: string, value: any) {
-        this.dirtyValues[configKey] = value;
-        this.source.save?.(this.dirtyValues);
-        // 保存后清空 dirtyValues，避免重复保存
-        this.dirtyValues = {};
+        try {
+            this.dirtyValues[configKey] = value;
+            if (this.options.autosave) {
+                this.source.save?.(this.dirtyValues);
+                this.dirtyValues = {};
+            }
+        } finally {
+            this._notify({
+                type: "set",
+                path: [configKey, "value"],
+                value,
+            });
+        }
     }
     add(
         store: AutoStore<any>,
@@ -182,6 +212,8 @@ export class ConfigManager extends AutoStore<
         if (descriptor.schema.default === undefined) {
             descriptor.schema.default = initialValue;
         }
+        descriptor.schema.value = initialValue;
+
         // defaultSchema 只作为默认值，不会覆盖 descriptor.schema 中已有的属性
         if (store.options.defaultSchema) {
             Object.keys(store.options.defaultSchema).forEach((key) => {
@@ -226,23 +258,16 @@ export class ConfigManager extends AutoStore<
                 delete store.options.validators[strPath];
             }
         }
+        // 由于该配置项可能已先load还未注册，因此需要覆盖现有的值
         const loadedValue = this.peep((state) =>
             getVal(state, [configKey.join(PATH_DELIMITER), "value"]),
         );
 
-        // 添加到配置中
-        this.update(
-            (state) => {
-                setVal(state, [configKey.join(PATH_DELIMITER)], descriptor.schema);
-                if (loadedValue !== undefined) {
-                    descriptor.schema.value = loadedValue;
-                }
-            },
-            {
-                silent: true,
-                peep: true,
-            },
-        );
+        // 动态添加
+        this.state[configKey.join(PATH_DELIMITER)] = descriptor.schema;
+        if (loadedValue !== undefined) {
+            descriptor.schema.value = loadedValue;
+        }
 
         // 创建代理用于从原始的Store值读写状态值
         this._createValueProxy(descriptor, store, pathKey);
@@ -255,20 +280,39 @@ export class ConfigManager extends AutoStore<
         store: AutoStore<any>,
         path: string[],
     ) {
-        // 由于ConfigManager是全局对象，而Store可能是动态同弱引用Store对象
+        const self = this;
+
+        // 由于ConfigManager是全局对象，而Store可能是动态，可能会被销毁，因此应采用弱引用
         const storeRef = new WeakRef(store);
-        return Object.defineProperty(finalDescriptor.schema, "value", {
-            get() {
-                const store = storeRef.deref();
-                if (store) return getVal(store.state, path);
-            },
-            set(value) {
-                const store = storeRef.deref();
-                store?.update((state: any) => {
-                    setVal(state, path, value);
-                });
-            },
-        });
+        return Object.defineProperty(
+            finalDescriptor.schema,
+            "value",
+            markRaw({
+                get() {
+                    const store = storeRef.deref();
+                    if (store) {
+                        const value = getVal(store.state, path);
+                        self._notify({
+                            type: "get",
+                            path: [...path, "value"],
+                            value,
+                        });
+                        return value;
+                    }
+                },
+                set(value) {
+                    const store = storeRef.deref();
+                    store?.update((state: any) => {
+                        setVal(state, path, value);
+                    });
+                    self._notify({
+                        type: "set",
+                        path: [...path, "value"],
+                        value,
+                    });
+                },
+            }),
+        );
     }
     getConfigValue(path: string[]) {
         return this.peep((state) => {
