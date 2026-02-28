@@ -325,7 +325,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             operate: options.operate,
             first: options.first,
             abortSignal: abortController.signal,
-            ref: () => undefined as any,
+            ref: this._refStateCtx?.off as any,
         };
 
         const ctx: GetterRunContext = {

@@ -625,7 +625,7 @@ const netStore = new AutoStore(
         dhcp: true,
         ip: configurable("192.168.1.1", {
             label: "IP地址",
-            enable: (scope: any, { refStore }) => {
+            enable: (scope: any) => {
                 //❗ scope===AutoStoreConfigManager.state
                 //❗ 而dhcp并没有声明为可配置项
                 //❗ 因此AutoStoreConfigManager.state不存在network.dhcp
@@ -633,6 +633,39 @@ const netStore = new AutoStore(
                 //❗ dhcp是在netStore，两者并不在同一个Store中
                 return scope["network.dhcp"].value; // [!code ++] ❌无效
             },
+        }),
+    },
+    { id: "network" },
+);
+```
+
+在上例中，如果我们预期`enable`的值依赖于是否开启`dhcp`，但是问题是，`enable`声明的计算属性是在`AutoStoreConfigManager`这个`AutoStore`中，而`dhcp`是声明在`netStore`实例中，两者并不在同一个`AutoStore`实例中，无法通过简单的计算属性进行计算关联。
+
+但是在实际场景中，我们又预期当`dhcp=true`时，`ip`的`enable`能依赖于`dhcp`的值，当`dhcp`值变化时，配置元数据中的计算属性`enable`可以自动重新计算。此特性在前端进行界面渲染时非常有用。
+
+这问题本质上是，**配置元数据中需要引用所在的`AutoStore`的值，并且在引用值变化时可以`自动重新计算`。**
+
+为解决此问题，我们引入了`refStore`的机制来解决，参阅下文。
+
+### 引用状态
+
+为解决上例中的配置元数据引用所在`AutoStore`的问题，引用了`RefState`机制。
+
+在配置元数据时使用`computed`或`watch`创建计算属性和监视对象时可以通过`ref`函数引用所在`AutoStore`的状态值。
+
+#### 基本用法
+
+还是以上例中的`netStore`为例:
+
+```ts {6-8}
+const netStore = new AutoStore(
+    {
+        dhcp: true,
+        ip: configurable("192.168.1.1", {
+            label: "IP地址",
+            enable: computed((scope: any, { ref }) => {
+                return ref("dhcp");
+            }),
         }),
     },
     { id: "network" },

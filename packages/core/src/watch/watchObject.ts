@@ -66,7 +66,7 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
                     path: watchPath,
                     value: watchValue,
                 },
-                this as any,
+                { self: this as any, ref: this._refStateCtx?.ref },
             );
             if (this.options.raw) {
                 markRaw(result);

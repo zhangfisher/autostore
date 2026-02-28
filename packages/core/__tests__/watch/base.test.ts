@@ -1,11 +1,11 @@
-import { describe, test, expect, mock } from 'bun:test';
-import { watch } from '../../src/watch/watch';
-import { AutoStore } from '../../src';
-import { WatchObject } from '../../src/watch/watchObject';
+import { describe, test, expect, mock } from "bun:test";
+import { watch } from "../../src/watch/watch";
+import { AutoStore } from "../../src";
+import { WatchObject } from "../../src/watch/watchObject";
 
-describe('watch功能测试', () => {
-    describe('静态声明watch', () => {
-        test('创建监视对象', async () => {
+describe("watch功能测试", () => {
+    describe("静态声明watch", () => {
+        test("创建监视对象", async () => {
             const store = new AutoStore({
                 books: {
                     price: 10,
@@ -15,21 +15,21 @@ describe('watch功能测试', () => {
                             return 100;
                         },
                         () => true,
-                        { initial: 1, group: 'x' },
+                        { initial: 1, group: "x" },
                     ),
                 },
             });
             store.state.books.total; // 注意：watch仅在第一次读取时创建
-            const watchId = 'books.total';
+            const watchId = "books.total";
             expect(store.watchObjects.size).toBe(1);
             expect(store.watchObjects.has(watchId)).toBeDefined();
             expect(store.watchObjects.get(watchId)?.id).toBe(watchId);
             expect(store.watchObjects.get(watchId)?.options.initial).toBe(1);
-            expect(store.watchObjects.get(watchId)?.path).toEqual(['books', 'total']);
-            expect(store.watchObjects.get(watchId)?.options.group).toBe('x');
+            expect(store.watchObjects.get(watchId)?.path).toEqual(["books", "total"]);
+            expect(store.watchObjects.get(watchId)?.options.group).toBe("x");
         });
 
-        test('监视字段total的初始值为1', async () => {
+        test("监视字段total的初始值为1", async () => {
             const store = new AutoStore({
                 books: {
                     price: 10,
@@ -39,14 +39,14 @@ describe('watch功能测试', () => {
                             return 100;
                         },
                         () => true,
-                        { initial: 1, group: 'x' },
+                        { initial: 1, group: "x" },
                     ),
                 },
             });
             store.state.books.total; // 注意：watch仅在第一次读取时创建
             expect(store.state.books.total).toBe(1);
         });
-        test('立刻创建监视字段total对象', async () => {
+        test("立刻创建监视字段total对象", async () => {
             const store = new AutoStore({
                 books: {
                     price: 10,
@@ -56,13 +56,13 @@ describe('watch功能测试', () => {
                             return 100;
                         },
                         () => true,
-                        { initial: 1, group: 'x' },
+                        { initial: 1, group: "x" },
                     ),
                 },
             });
             expect(store.state.books.total).toBe(1);
         });
-        test('侦听count变化后更新total值', async () => {
+        test("侦听count变化后更新total值", async () => {
             const store = new AutoStore({
                 books: {
                     price: 10,
@@ -71,7 +71,7 @@ describe('watch功能测试', () => {
                         ({ value }) => {
                             return value + 1;
                         },
-                        { initial: 1, group: 'x' },
+                        { initial: 1, group: "x" },
                     ),
                 },
             });
@@ -80,7 +80,7 @@ describe('watch功能测试', () => {
             expect(store.state.books.total).toBe(12);
         });
 
-        test('通过enable控制total是否侦听', async () => {
+        test("通过enable控制total是否侦听", async () => {
             const listener = mock();
             const store = new AutoStore({
                 books: {
@@ -92,12 +92,12 @@ describe('watch功能测试', () => {
                             return value * 100;
                         },
                         (path: string[]) => {
-                            return path[path.length - 1] === 'count';
+                            return path[path.length - 1] === "count";
                         },
                         {
-                            id: 'total',
+                            id: "total",
                             initial: 1,
-                            group: 'x',
+                            group: "x",
                         },
                     ),
                 },
@@ -105,7 +105,7 @@ describe('watch功能测试', () => {
             // 注意：watch仅在第一次读取时创建，如果没有读一下，则不会创建watch对象
             store.state.books.total;
 
-            const watchObj = store.watchObjects.get('total')!;
+            const watchObj = store.watchObjects.get("total")!;
             for (let i = 0; i < 10; i++) {
                 watchObj.options.enable = i % 2 === 0;
                 // 修改count值，导致total值变化
@@ -114,7 +114,7 @@ describe('watch功能测试', () => {
             expect(store.state.books.total).toBe(1900); // 1900
             expect(listener).toHaveBeenCalledTimes(5);
         });
-        test('侦听所有变化', () => {
+        test("侦听所有变化", () => {
             return new Promise<void>((resolve) => {
                 const changed: string[][] = [];
                 const paths: string[][] = [];
@@ -124,8 +124,8 @@ describe('watch功能测试', () => {
                     a: 1,
                     b: 2,
                     diary: watch(
-                        ({ path, value }, watchObj) => {
-                            expect(watchObj).toBeInstanceOf(WatchObject);
+                        ({ path, value }, { self }) => {
+                            expect(self).toBeInstanceOf(WatchObject);
                             changed.push(path);
                             return value;
                         },
@@ -134,12 +134,12 @@ describe('watch功能测试', () => {
                     ),
                 });
 
-                store.watch('diary', ({ path }) => {
+                store.watch("diary", ({ path }) => {
                     paths.push(path);
                     values.push(store.state.diary);
                     if (paths.length === 2) {
-                        expect(changed).toStrictEqual([['a'], ['b']]);
-                        expect(paths).toStrictEqual([['diary'], ['diary']]);
+                        expect(changed).toStrictEqual([["a"], ["b"]]);
+                        expect(paths).toStrictEqual([["diary"], ["diary"]]);
                         expect(values).toStrictEqual([100, 200]);
                         resolve();
                     }
@@ -150,7 +150,7 @@ describe('watch功能测试', () => {
             });
         });
 
-        test('通过通配符进行侦听', () => {
+        test("通过通配符进行侦听", () => {
             return new Promise<void>((resolve) => {
                 const store = new AutoStore({
                     books: {
@@ -161,10 +161,10 @@ describe('watch功能测试', () => {
                     },
                 });
                 const paths: string[] = [];
-                store.watch('books.*', ({ path }) => {
-                    paths.push(path.join('.'));
+                store.watch("books.*", ({ path }) => {
+                    paths.push(path.join("."));
                     if (paths.length === 4) {
-                        expect(paths).toStrictEqual(['books.a', 'books.b', 'books.c', 'books.d']);
+                        expect(paths).toStrictEqual(["books.a", "books.b", "books.c", "books.d"]);
                         resolve();
                     }
                 });
@@ -176,8 +176,8 @@ describe('watch功能测试', () => {
         });
     });
 
-    describe('使用watch实现diary', () => {
-        test('当所依赖的字段value发生变化时, diary的值也发生变化', () => {
+    describe("使用watch实现diary", () => {
+        test("当所依赖的字段value发生变化时, diary的值也发生变化", () => {
             return new Promise<void>((resolve) => {
                 const changed: string[][] = [];
                 const paths: string[][] = [];
@@ -195,15 +195,15 @@ describe('watch功能测试', () => {
                             changed.push(path);
                             return true;
                         },
-                        (path) => path[path.length - 1] === 'value',
+                        (path) => path[path.length - 1] === "value",
                         { initial: false },
                     ),
                 });
 
-                store.watch('diary', ({ path }) => {
+                store.watch("diary", ({ path }) => {
                     paths.push(path);
                     values.push(store.state.diary);
-                    expect(changed).toStrictEqual([['a', 'value']]);
+                    expect(changed).toStrictEqual([["a", "value"]]);
                     resolve();
                 });
                 expect(store.state.diary).toBe(false);
@@ -211,7 +211,7 @@ describe('watch功能测试', () => {
                 expect(store.state.diary).toBe(true);
             });
         });
-        test('重置diary的值', () => {
+        test("重置diary的值", () => {
             return new Promise<void>((resolve) => {
                 const changed: string[][] = [];
                 const paths: string[][] = [];
@@ -229,20 +229,20 @@ describe('watch功能测试', () => {
                             changed.push(path);
                             return true;
                         },
-                        (path) => path[path.length - 1] === 'value',
-                        { initial: false, id: 'x' },
+                        (path) => path[path.length - 1] === "value",
+                        { initial: false, id: "x" },
                     ),
                 });
 
-                store.watch('diary', ({ path }) => {
+                store.watch("diary", ({ path }) => {
                     paths.push(path);
                     values.push(store.state.diary);
                     if (paths.length === 3) {
                         expect(changed).toStrictEqual([
-                            ['a', 'value'],
-                            ['b', 'value'],
+                            ["a", "value"],
+                            ["b", "value"],
                         ]);
-                        expect(paths).toStrictEqual([['diary'], ['diary'], ['diary']]);
+                        expect(paths).toStrictEqual([["diary"], ["diary"], ["diary"]]);
                         expect(values).toStrictEqual([true, false, true]);
                         resolve();
                     }
@@ -251,7 +251,7 @@ describe('watch功能测试', () => {
                 store.state.a.value = 100;
                 expect(store.state.diary).toBe(true);
 
-                store.watchObjects.get('x')?.reset();
+                store.watchObjects.get("x")?.reset();
                 expect(store.state.diary).toBe(false);
                 store.state.b.value = 100;
                 expect(store.state.diary).toBe(true);
@@ -259,8 +259,8 @@ describe('watch功能测试', () => {
         });
     });
 
-    describe('使用watch实现validate', () => {
-        test('validate初始状态为true,当所有的字段都通过验证时，返回true，否则返回false', () => {
+    describe("使用watch实现validate", () => {
+        test("validate初始状态为true,当所有的字段都通过验证时，返回true，否则返回false", () => {
             // validate的逻辑是当所有的字段都通过验证时，返回true，否则返回false
             return new Promise<void>((resolve) => {
                 const store = new AutoStore({
@@ -274,20 +274,20 @@ describe('watch功能测试', () => {
                         validate: true,
                     },
                     validate: watch<boolean, boolean>(
-                        ({ path, value }, watchObj) => {
-                            if (typeof value === 'boolean') {
-                                const srcKey = path.join('.');
+                        ({ path, value }, { self }) => {
+                            if (typeof value === "boolean") {
+                                const srcKey = path.join(".");
                                 if (value) {
-                                    delete watchObj.cache[srcKey];
+                                    delete self.cache[srcKey];
                                 } else {
-                                    watchObj.cache[srcKey] = value;
+                                    self.cache[srcKey] = value;
                                 }
                             }
                             // 由于cache里面只记录validate=false的值，所以如果cache不为空则代表有字段的validate=false
-                            return Object.keys(watchObj.cache).length === 0;
+                            return Object.keys(self.cache).length === 0;
                         },
-                        (path) => path[path.length - 1] === 'validate', // 只侦听validate字段的值变化
-                        { initial: true, id: 'x' },
+                        (path) => path[path.length - 1] === "validate", // 只侦听validate字段的值变化
+                        { initial: true, id: "x" },
                     ),
                 });
 
@@ -309,8 +309,8 @@ describe('watch功能测试', () => {
         });
     });
 
-    describe('动态声明watch', () => {
-        test('动态创建监视对象', async () => {
+    describe("动态声明watch", () => {
+        test("动态创建监视对象", async () => {
             const store = new AutoStore({
                 books: {
                     price: 10,
@@ -322,21 +322,21 @@ describe('watch功能测试', () => {
                     return 100;
                 },
                 () => true,
-                { id: 'w', initial: 1, group: 'x' },
+                { id: "w", initial: 1, group: "x" },
             );
 
             expect(store.watchObjects.size).toBe(1);
-            expect(store.watchObjects.has('w')).toBeDefined();
-            expect(store.watchObjects.get('w')?.id).toBe('w');
+            expect(store.watchObjects.has("w")).toBeDefined();
+            expect(store.watchObjects.get("w")?.id).toBe("w");
 
-            expect(watchObj.id).toBe('w');
+            expect(watchObj.id).toBe("w");
             expect(watchObj.initial).toBe(1);
-            expect(watchObj.path).toEqual(['#w']);
-            expect(watchObj.group).toBe('x');
+            expect(watchObj.path).toEqual(["#w"]);
+            expect(watchObj.group).toBe("x");
             expect(watchObj.associated).toBe(false);
         });
 
-        test('动态监视字段total的计算', async () => {
+        test("动态监视字段total的计算", async () => {
             const store = new AutoStore({
                 books: {
                     price: 10,
@@ -348,18 +348,18 @@ describe('watch功能测试', () => {
                     return value;
                 },
                 () => true,
-                { initial: 1, id: 'total' },
+                { initial: 1, id: "total" },
             );
             expect(watchObj.initial).toBe(1);
             expect(watchObj.value).toBe(1);
             expect(watchObj.associated).toBe(false);
             store.state.books.count = 3;
             // @ts-expect-error
-            expect(watchObj).toBe(store.watchObjects.get('total'));
+            expect(watchObj).toBe(store.watchObjects.get("total"));
             expect(watchObj.value).toBe(3);
         });
 
-        test('通过enable控制动态对象total是否侦听', async () => {
+        test("通过enable控制动态对象total是否侦听", async () => {
             const listener = mock();
             const store = new AutoStore({
                 books: {
@@ -373,14 +373,14 @@ describe('watch功能测试', () => {
                     return value;
                 },
                 () => true,
-                { initial: 1, id: 'total', enable: false },
+                { initial: 1, id: "total", enable: false },
             );
             expect(watchObj.initial).toBe(1);
             expect(watchObj.value).toBe(1);
             expect(watchObj.associated).toBe(false);
             store.state.books.count = 3;
             // @ts-expect-error
-            expect(watchObj).toBe(store.watchObjects.get('total'));
+            expect(watchObj).toBe(store.watchObjects.get("total"));
             expect(watchObj.value).toBe(1);
             watchObj.enable = true;
             store.state.books.count = 4;

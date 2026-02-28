@@ -41,6 +41,7 @@ export interface ComputedGetterArgs {
      *
      */
     operate?: StateOperate;
+    ref: RefState;
 }
 
 export type ComputedGetter<Value, Scope = any> = (
@@ -96,7 +97,11 @@ export interface AsyncComputedGetterArgs {
      * 是否是第一次运行
      */
     first?: boolean;
-    ref?: <Value = any>(path: string | string[]) => Value;
+    /**
+     * 引用关联Store状态值，并在状态值变更重新执行计算函数
+     * 仅在confiturable中生效
+     */
+    ref: RefState;
 }
 
 export type AsyncComputedGetter<Value, Scope = any> = (
@@ -410,6 +415,11 @@ export interface AsyncLiteComputedGetterArgs {
      * 是否是第一次运行
      */
     first?: boolean;
+    /**
+     * 引用关联Store状态值，并在状态值变更重新执行计算函数
+     * 仅在confiturable中生效
+     */
+    ref: RefState;
 }
 
 export type AsyncLiteComputedGetter<Value, Scope = any> = (

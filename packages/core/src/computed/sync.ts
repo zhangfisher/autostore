@@ -70,7 +70,12 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
         // 4. 执行getter函数
         let computedResult = finalComputedOptions.initial;
         try {
-            computedResult = this.getter.call(this, scope, { operate, first });
+            const getterArgs = {
+                operate,
+                first,
+                ref: this._refStateCtx?.ref,
+            };
+            computedResult = this.getter.call(this, scope, getterArgs);
             if (finalComputedOptions.raw) markRaw(computedResult);
         } catch (e: any) {
             this.error = e;

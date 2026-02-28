@@ -4,6 +4,7 @@ import type {
     ComputedGetter,
 } from "../computed/types";
 import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
+import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
 import type { WatchDescriptorBuilder } from "../watch/types";
 
@@ -159,6 +160,11 @@ export type ObserverOptions<Value = any, Schema extends Dict = Dict> = {
      * 比如配置元数据等
      */
     schema?: Schema;
+    /**
+     * 提供额外的引用store，可以在computed或watch中使用ref引用其他store状态值
+     * 并且在引用状态值变化时自动重新执行observerObject.run
+     */
+    refStore?: AutoStore<any>;
 };
 
 export type ObserverBuilder<Value = any, Scope = any> =

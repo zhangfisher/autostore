@@ -107,6 +107,7 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             extras: options.extras,
             operate: options.operate,
             first: options.first,
+            ref: this._refStateCtx?.ref as any,
         };
 
         let hasError: any = undefined;

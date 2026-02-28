@@ -17,7 +17,7 @@ import type { StateOperate, StoreEvents, UpdateOptions } from "../store/types";
 import type { Watcher, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
-import { createRefState, RefState } from "../store/refState";
+import { createRefState, RefStateContext } from "../store/refState";
 
 export class ObserverObject<
     Value = any,
@@ -37,7 +37,7 @@ export class ObserverObject<
     private _error?: Error; // 记录最后一次运行时的错误
     store: AutoStore<any>;
     _shadowStore!: AutoStore<any>;
-    _refState?: RefState;
+    _refStateCtx?: RefStateContext;
     /**
      *  构造函数。
      *
@@ -67,6 +67,7 @@ export class ObserverObject<
         if (!this._path) this._path = [`#${this._id}`];
         this._initial = this._options.initial;
         this.onInitOptions(this._options);
+        this._createRefStateCtx(context?.value);
         this._depends = calcDependPaths(this._path, this._options.depends);
         this._onObserverCreated();
         this._onInitial();
@@ -174,15 +175,26 @@ export class ObserverObject<
         }
         this.onInitial();
     }
-    private _createRefState() {
-        // @ts-expect-error
-        const _getRefStore = this.descriptor.getter._getRefStore;
+
+    private _createRefStateCtx(value: any) {
+        const _getRefStore =
+            value?._getRefStore ||
+            (() => {
+                const refStore = this.options.refStore || this.store.options.refStore;
+                if (refStore) {
+                    return new WeakRef(refStore);
+                }
+            });
         if (isFunction(_getRefStore)) {
             const storeRef = _getRefStore() as WeakRef<AutoStore<any>>;
             if (storeRef) {
-                this._refState = createRefState(storeRef, this as ObserverObject);
+                this._refStateCtx = createRefState(storeRef, this as ObserverObject);
             }
         }
+        // if (value) {
+        //     const _getRefStore = value._getRefStore;
+
+        // }
     }
     /**
      * 供子类继承进行初始化
@@ -294,9 +306,12 @@ export class ObserverObject<
      * @param _
      */
     protected onDependsChange(_: StateOperate) {}
-
+    /**
+     *
+     */
     attach() {
         if (!this._attached && this.depends && this.depends.length > 0) {
+            // 监听依赖变化
             this._subscribers.push(
                 this.store.watch(this.getDepends(), this.onDependsChange.bind(this), {
                     operates: "write",
@@ -316,6 +331,7 @@ export class ObserverObject<
         this._subscribers.forEach((subscriber) => {
             subscriber.off();
         });
+        this._refStateCtx?.off();
         this._attached = false;
         this._subscribers = [];
         this.store.watchObjects.delete(this.id);
@@ -333,4 +349,5 @@ export class ObserverObject<
      *
      */ //  eslint-disable-next-line @typescript-eslint/no-unused-vars
     run(..._args: any[]): any {}
+    protected getGetterArgs() {}
 }
