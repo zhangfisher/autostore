@@ -258,14 +258,18 @@ export class ConfigManager extends AutoStore<
     }
     private _installValidator(path: string, descriptor: SchemaDescriptor, store: AutoStore<any>) {
         if (isFunction(descriptor.schema.validate)) {
+            // 错误信息模板
+            const template = descriptor.schema.errorMessage;
             // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
             // @ts-expect-error
             descriptor.schema.validate.getErrorMessage = (error: Error) => {
-                const message = descriptor.schema.invalidTips;
-                if (typeof message === "string") {
-                    return message
-                        .params(descriptor.schema)
-                        .params({ error: error.message, stack: error.stack });
+                if (typeof template === "string") {
+                    // 合并所有变量到同一个对象中，一次性完成插值
+                    return template.params({
+                        ...descriptor.schema,
+                        error: error.message,
+                        errorStack: error.stack,
+                    });
                 }
                 return error.message;
             };

@@ -1023,7 +1023,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
                 {
                     configManager,
                     defaultSchema: {
-                        invalidTips: "配置项 {label} 校验失败",
+                        errorMessage: "配置项 {label} 校验失败",
                     },
                 },
             );
@@ -1189,7 +1189,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
                     configManager,
                     defaultSchema: {
                         onInvalid: "pass",
-                        invalidTips: "字段 {label} 校验失败",
+                        errorMessage: "字段 {label} 校验失败",
                     },
                 },
             );
@@ -1230,7 +1230,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
                     configManager,
                     defaultSchema: {
                         onInvalid: "pass",
-                        invalidTips: "字段 {label} 校验失败",
+                        errorMessage: "字段 {label} 校验失败",
                         label: "配置项",
                         required: true,
                     },
@@ -1405,7 +1405,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
                 {
                     quantity: configurable(10, {
                         // 根据当前值动态生成错误提示
-                        invalidTips: computed((scope: any) => {
+                        errorMessage: computed((scope: any) => {
                             if (scope.value < 0) {
                                 return "数量不能为负数";
                             }

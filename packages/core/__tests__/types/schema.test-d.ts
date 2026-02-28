@@ -88,7 +88,7 @@ describe("Schema 选项类型", () => {
                 help: "帮助信息",
                 tooltip: "提示",
                 default: 100,
-                invalidTips: "无效值",
+                errorMessage: "无效值",
                 datatype: "number",
                 icon: "icon",
                 required: true,

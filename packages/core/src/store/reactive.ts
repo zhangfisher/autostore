@@ -8,7 +8,6 @@ import { isNumber } from "../utils/isNumber";
 import { markRaw } from "../utils/markRaw";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
-import { isFunction } from "../utils/isFunction";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 
@@ -96,10 +95,14 @@ function isValidPass(
         }
     } catch (e: any) {
         error = e;
-        const errors = this.configManager?.errors;
+        // 读取错误信息
         const errMsg = validate.getErrorMessage?.(e) || e.message || e.stack;
-        if (errors) {
-            errors[configKey] = errMsg;
+        if (this.configManager) {
+            const errors = this.configManager?.errors;
+            if (errors) {
+                errors[configKey] = errMsg;
+            }
+            (this.configManager.state as any)[configKey].errorMessage = errMsg;
         }
         this.errors[pathKey] = errMsg;
         // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid

@@ -94,10 +94,12 @@ export interface AutoStateSchemaBase<Value = any> {
      * 支持插值变量
      * - 当前所有配置项的值，例如: invalidTips="{label}数据格式错误"
      * - error: 错误信息，即错误对象的message属性
-     * - stack: 错误堆栈信息,即错误对象的stack属性
+     * - errorStack: 错误堆栈信息,即错误对象的stack属性
+     * - value: 错误值
+     * - path: 路径
      *
      */
-    invalidTips?: string;
+    errorMessage?: string;
     datatype?: string;
     /**
      * 是否启用

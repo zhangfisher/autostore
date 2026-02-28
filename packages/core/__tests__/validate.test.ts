@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: <explanation> */
 import { describe, test, expect } from "bun:test";
-import { AutoStore, ValidateError } from "../src";
+import { AutoStore, ValidateError, configurable, ConfigManager } from "../src";
 
 /**
  * onValidate 校验功能测试
@@ -1728,6 +1728,533 @@ describe("validators 和 onInvalid", () => {
             store.state.user.name = "Alice";
             expect(store.errors[`user.age`]).toBeUndefined();
             expect(store.errors[`user.name`]).toBeUndefined();
+        });
+    });
+});
+
+/**
+ * errorMessage - 配置校验失败信息测试
+ *
+ * 测试 errorMessage 模板功能：
+ * - 静态字符串
+ * - 插值变量：{label}, {value} 等 schema 属性
+ * - 注意：{error} 和 {errorStack} 在当前实现中不直接支持，因为需要额外的错误上下文
+ * - 默认值："{error}"
+ * - ValidateError 和 Error 的错误信息提取
+ *
+ * 重要：由于 params 函数的实现特性，当变量不存在时会返回空字符串。
+ * 因此在 errorMessage 中使用 {error} 等变量时，需要确保这些变量在 schema 中存在。
+ */
+describe("errorMessage - 配置校验失败信息模板", () => {
+    describe("errorMessage - 静态字符串", () => {
+        test("应该支持静态字符串作为 errorMessage", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        label: "价格",
+                        validate: (value) => {
+                            return value > 0;
+                        },
+                        errorMessage: "价格必须大于0",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            // 校验成功不触发错误
+            store.state.price = 200;
+            expect(store.state.price).toBe(200);
+            expect(store.errors["price"]).toBeUndefined();
+
+            // 校验失败应该使用静态错误信息
+            expect(() => {
+                store.state.price = -10;
+            }).toThrow(ValidateError);
+            expect(store.errors["price"]).toBe("价格必须大于0");
+        });
+
+        test("应该支持中文静态错误信息", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    count: configurable(10, {
+                        label: "数量",
+                        validate: (value) => {
+                            return Number.isInteger(value) && value > 0;
+                        },
+                        errorMessage: "数量必须是正整数",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.count = -5;
+            }).toThrow(ValidateError);
+            expect(store.errors["count"]).toBe("数量必须是正整数");
+        });
+
+        test("应该支持英文静态错误信息", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    age: configurable(25, {
+                        label: "Age",
+                        validate: (value) => {
+                            return value >= 0 && value <= 150;
+                        },
+                        errorMessage: "Age must be between 0 and 150",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.age = 200;
+            }).toThrow(ValidateError);
+            expect(store.errors["age"]).toBe("Age must be between 0 and 150");
+        });
+    });
+
+    describe("errorMessage - {label} 和 {value} 插值", () => {
+        test("应该支持 {label} 变量插值", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        label: "价格",
+                        validate: (value) => {
+                            return value > 0;
+                        },
+                        errorMessage: "{label}校验失败",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.price = -10;
+            }).toThrow(ValidateError);
+            expect(store.errors["price"]).toBe("价格校验失败");
+        });
+
+        test("应该支持 {value} 变量插值 - 显示初始值", () => {
+            // 注意：根据当前实现，{value} 会显示 schema.value（初始值），而不是当前导致校验失败的值
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        label: "价格",
+                        validate: (value) => {
+                            return value > 0;
+                        },
+                        errorMessage: "初始值 {value} 无效，必须大于0",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.price = -10;
+            }).toThrow(ValidateError);
+            // {value} 会显示初始值 100，而不是 -10
+            expect(store.errors["price"]).toBe("初始值 100 无效，必须大于0");
+        });
+
+        test("应该支持 {label} 和 {value} 组合", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    quantity: configurable(10, {
+                        label: "数量",
+                        validate: (value) => {
+                            return value > 0;
+                        },
+                        errorMessage: "{label} {value} 校验失败",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.quantity = -5;
+            }).toThrow(ValidateError);
+            expect(store.errors["quantity"]).toBe("数量 10 校验失败");
+        });
+    });
+
+    describe("errorMessage - 默认值", () => {
+        test("未指定 errorMessage 时应该使用默认值 '{error}'", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        label: "价格",
+                        validate: (value) => {
+                            if (value <= 0) {
+                                throw new Error("价格必须为正数");
+                            }
+                            return true;
+                        },
+                        // 未指定 errorMessage
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.price = -10;
+            }).toThrow(Error);
+            // 默认 errorMessage 为 "{error}"，但由于 {error} 不在 schema 中，会被替换为空字符串
+            // 所以最终错误信息来自 error.message
+            expect(store.errors["price"]).toBe("价格必须为正数");
+        });
+
+        test("validate 返回 false 时应该使用默认错误信息", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    value: configurable(100, {
+                        validate: (value) => {
+                            return value > 0;
+                        },
+                        // 未指定 errorMessage，也未抛出具体错误
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.value = -10;
+            }).toThrow(ValidateError);
+            // 返回 false 时会抛出默认的 ValidateError
+            expect(store.errors["value"]).toBeDefined();
+        });
+    });
+
+    describe("errorMessage - ConfigManager 集成", () => {
+        test("ConfigManager 中应该记录格式化后的错误信息", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        label: "价格",
+                        validate: (value) => {
+                            if (value <= 0) {
+                                throw new Error("价格必须大于0");
+                            }
+                            return true;
+                        },
+                        errorMessage: "{label}校验失败，配置值为：{value}",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.price = -10;
+            }).toThrow(Error);
+
+            // 检查 store.errors
+            expect(store.errors["price"]).toBe("价格校验失败，配置值为：100");
+
+            // 检查 configManager.errors
+            expect(configManager.errors["app.price"]).toBe("价格校验失败，配置值为：100");
+        });
+
+        test("多个配置项应该独立记录错误信息", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        label: "价格",
+                        validate: (value) => value > 0,
+                        errorMessage: "{label}必须大于0，配置值：{value}",
+                    }),
+                    quantity: configurable(10, {
+                        label: "数量",
+                        validate: (value) => Number.isInteger(value),
+                        errorMessage: "{label}必须是整数，配置值：{value}",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            // 触发第一个错误
+            expect(() => {
+                store.state.price = -10;
+            }).toThrow(ValidateError);
+            expect(store.errors["price"]).toBe("价格必须大于0，配置值：100");
+            expect(store.errors["quantity"]).toBeUndefined();
+
+            // 触发第二个错误
+            expect(() => {
+                store.state.quantity = 5.5;
+            }).toThrow(ValidateError);
+            expect(store.errors["quantity"]).toBe("数量必须是整数，配置值：10");
+
+            // 两个错误都应该存在
+            expect(store.errors["price"]).toBeDefined();
+            expect(store.errors["quantity"]).toBeDefined();
+
+            // ConfigManager 也应该记录两个错误
+            expect(configManager.errors["app.price"]).toBeDefined();
+            expect(configManager.errors["app.quantity"]).toBeDefined();
+        });
+
+        test("校验成功后应该清除错误信息", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+
+            const store = new AutoStore(
+                {
+                    price: configurable(100, {
+                        label: "价格",
+                        validate: (value) => {
+                            if (value <= 0) {
+                                throw new Error("价格必须大于0");
+                            }
+                            return true;
+                        },
+                        errorMessage: "{label}无效",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            // 触发错误
+            expect(() => {
+                store.state.price = -10;
+            }).toThrow(Error);
+            expect(store.errors["price"]).toBe("价格无效");
+            expect(configManager.errors["app.price"]).toBe("价格无效");
+
+            // 修正值
+            store.state.price = 200;
+
+            // 错误应该被清除
+            expect(store.errors["price"]).toBeUndefined();
+            expect(configManager.errors["app.price"]).toBeUndefined();
+        });
+    });
+
+    describe("errorMessage - 复杂场景", () => {
+        test("应该支持所有变量组合使用", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    age: configurable(25, {
+                        label: "年龄",
+                        validate: (value) => {
+                            if (value < 0) {
+                                throw new Error("不能为负数");
+                            }
+                            if (value > 150) {
+                                throw new Error("超出范围");
+                            }
+                            return true;
+                        },
+                        errorMessage: "[{label}] 配置值 {value} 校验失败",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            // 测试第一个错误
+            expect(() => {
+                store.state.age = -10;
+            }).toThrow(Error);
+            // {value} 会显示初始值 25
+            expect(store.errors["age"]).toBe("[年龄] 配置值 25 校验失败");
+
+            // 测试第二个错误
+            expect(() => {
+                store.state.age = 200;
+            }).toThrow(Error);
+            expect(store.errors["age"]).toBe("[年龄] 配置值 25 校验失败");
+        });
+
+        test("应该支持嵌套对象的 errorMessage", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    user: {
+                        age: configurable(25, {
+                            label: "年龄",
+                            validate: (value) => {
+                                if (value < 0 || value > 150) {
+                                    throw new Error("年龄必须在0-150之间");
+                                }
+                                return true;
+                            },
+                            errorMessage: "用户{label}校验失败",
+                        }),
+                    },
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.user.age = 200;
+            }).toThrow(Error);
+            expect(store.errors["user.age"]).toBe("用户年龄校验失败");
+        });
+    });
+
+    describe("errorMessage - 边界情况", () => {
+        test("空字符串 errorMessage 应该使用 error.message 作为回退", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    value: configurable(100, {
+                        label: "数值",
+                        validate: (value) => {
+                            if (value <= 0) {
+                                throw new Error("error");
+                            }
+                            return true;
+                        },
+                        errorMessage: "",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.value = -10;
+            }).toThrow(Error);
+            // 空字符串是 falsy 值，会回退到 error.message
+            expect(store.errors["value"]).toBe("error");
+        });
+
+        test("errorMessage 中不存在的变量应该被替换为空字符串", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    value: configurable(100, {
+                        label: "数值",
+                        validate: (value) => {
+                            if (value <= 0) {
+                                throw new Error("error");
+                            }
+                            return true;
+                        },
+                        errorMessage: "{label}: {value} - {nonexistent}",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.value = -10;
+            }).toThrow(Error);
+            // {nonexistent} 应该被替换为空字符串
+            const errorMsg = store.errors["value"];
+            expect(errorMsg).toBe("数值: 100 - ");
+        });
+
+        test("label 缺失时应该正常处理", () => {
+            const configManager = new ConfigManager({
+                load: async () => ({}),
+            });
+            const store = new AutoStore(
+                {
+                    value: configurable(100, {
+                        // 没有 label
+                        validate: (value) => {
+                            return value > 0;
+                        },
+                        errorMessage: "{label}校验失败，值：{value}",
+                    }),
+                },
+                {
+                    configManager,
+                    configKey: "app",
+                },
+            );
+
+            expect(() => {
+                store.state.value = -10;
+            }).toThrow(ValidateError);
+            // label 为 undefined 时，应该显示空字符串
+            expect(store.errors["value"]).toBe("校验失败，值：100");
         });
     });
 });

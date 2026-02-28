@@ -100,7 +100,9 @@ export function schema<Value>(
         markRaw(value);
     }
     args.schema.datatype = Array.isArray(value) ? "array" : typeof value;
-    // args.schema.value = value;
+    if (!args.schema.errorMessage) {
+        args.schema.errorMessage = "{error}";
+    }
     const builder = () => ({
         value,
         schema: args.schema,

@@ -649,11 +649,9 @@ const netStore = new AutoStore(
 
 ### 引用状态
 
-为解决上例中的配置元数据引用所在`AutoStore`的问题，引用了`RefState`机制。
+为解决上例中的配置元数据引用所在`AutoStore`的问题，引用了`RefStore`机制。参阅[RefStore](./refStore)
 
 在配置元数据时使用`computed`或`watch`创建计算属性和监视对象时可以通过`ref`函数引用所在`AutoStore`的状态值。
-
-#### 基本用法
 
 还是以上例中的`netStore`为例:
 
@@ -672,11 +670,113 @@ const netStore = new AutoStore(
 );
 ```
 
+- 通过`ref`可以引用`netStore`的状态值，并且当`dhcp`变化时配置元数据`enable`会自动更新。
+
+以下是一个更加复杂表单应用场景的示例：
+
+```ts
+const formStore = new AutoStore(
+    {
+        hasAddress: false,
+        address: configurable("", {
+            label: "地址",
+            required: computed((_scope: any, { ref }) => {
+                // 有地址时address是必填项
+                return ref("hasAddress") === true;
+            }),
+        }),
+        city: configurable("", {
+            label: "城市",
+            required: computed((_scope: any, { ref }) => {
+                return ref("hasAddress") === true;
+            }),
+        }),
+        zipCode: configurable("", {
+            label: "邮编",
+            required: computed((_scope: any, { ref }) => {
+                const hasAddress = ref("hasAddress");
+                const city = ref("city");
+                // 只有在有地址且已填写城市时才必填
+                return hasAddress && city !== "";
+            }),
+        }),
+    },
+    { configManager, id: "form" },
+);
+
+// 初始状态
+expect(configManager.state["form.address"].required).toBe(false);
+expect(configManager.state["form.city"].required).toBe(false);
+expect(configManager.state["form.zipCode"].required).toBe(false);
+
+// 启用地址
+formStore.state.hasAddress = true;
+expect(configManager.state["form.address"].required).toBe(true);
+expect(configManager.state["form.city"].required).toBe(true);
+expect(configManager.state["form.zipCode"].required).toBe(false);
+
+// 填写城市
+formStore.state.city = "Beijing";
+expect(configManager.state["form.zipCode"].required).toBe(true);
+```
+
+在上例中，配置元数据`required`依赖于`formStore.state`的相应状态，并在状态更新时自动重新计算。
+如此，在我们使用`formStore`来管理表单数据时，就可以很容易实现表单字段之间的元数据的联动。
+
 ### 数据校验
 
-配置数据的校验功能是基于`AutoStore`的底层校验功能实现，可以参阅[./validate].
+配置数据的校验功能是基于`AutoStore`的底层校验功能实现，阅读前请先参阅[./validate].
 
-### 内置校验模式
+### 校验函数
+
+声明可配置项时可以指定`validate`函数，函数签名如下：
+
+```ts
+function validate(
+    newValue: Value,    // 新值
+    oldValue: Value,    // 原值
+    path: string[]  // 路径
+) => boolean;
+```
+
+以下是简单示例
+
+```ts {4-6}
+const store = new AutoStore({
+    order: {
+        count: configurable(100, {
+            validate: (value, oldValue, path) => {
+                return value >= 0 && value <= 1000;
+            },
+        }),
+    },
+});
+```
+
+- 当写入配置值时会自动执行`validate`函数。
+
+### 校验错误信息
+
+`errorMessage`参数用于指定校验出错信息。
+
+```ts {4-6}
+const store = new AutoStore({
+    order: {
+        count: configurable(100, {
+            validate: (value, oldValue, path) => {
+                return value >= 0 && value <= 100;
+            },
+            errorMessage: "值必须大于0小于100",
+        }),
+    },
+});
+```
+
+`validate`校验错误信息可以通过以下方式提供：
+
+- 在`validate`函数内部`throw new ValidateError("错误信息")`
+
+#### 内置校验模式
 
 `AutoStore`内置了以下：
 
