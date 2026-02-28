@@ -191,10 +191,6 @@ export class ObserverObject<
                 this._refStateCtx = createRefState(storeRef, this as ObserverObject);
             }
         }
-        // if (value) {
-        //     const _getRefStore = value._getRefStore;
-
-        // }
     }
     /**
      * 供子类继承进行初始化

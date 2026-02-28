@@ -1,6 +1,6 @@
 # 配置系统
 
-`AutoStore`支持一套非常优雅的可配置系统，允许开发者将`AutoStore`的状态成员指定可配置，指定相应元数据，帮助开发者创建一套应用程序的响应式配置系统。
+`AutoStore`支持一套非常优雅的可配置系统，用于帮助开发者开发一套应用程序的响应式配置系统。
 
 ## 快速入门
 
@@ -497,9 +497,9 @@ Object.entires(AutoStoreConfigManager.state).forEach(([key, value]) => {
     console.log(key, "=", JSON.stringify(value));
 });
 //
-// order.discount = {"label": "折扣","value": 0.9,...其他无数据}
-// user.age = {"label": "年龄","value": 12,...其他无数据}
-// product.price = {"label": "单价","value": 123,...其他无数据}
+// order.discount = {"label": "折扣","value": 0.9,errorMessage:null...其他无数据}
+// user.age = {"label": "年龄","value": 12,errorMessage:null,...其他无数据}
+// product.price = {"label": "单价","value": 123,errorMessage:null,...其他无数据}
 // ...
 ```
 
@@ -727,7 +727,7 @@ expect(configManager.state["form.zipCode"].required).toBe(true);
 
 配置数据的校验功能是基于`AutoStore`的底层校验功能实现，阅读前请先参阅[./validate].
 
-### 校验函数
+#### 校验函数
 
 声明可配置项时可以指定`validate`函数，函数签名如下：
 
@@ -755,169 +755,104 @@ const store = new AutoStore({
 
 - 当写入配置值时会自动执行`validate`函数。
 
-### 校验错误信息
+#### 校验错误信息
 
-`errorMessage`参数用于指定校验出错信息。
+当校验出错时，通过`errorMessage`参数用于指定生成友好的校验错误信息。
 
-```ts {4-6}
+```ts {8,11}
 const store = new AutoStore({
     order: {
         count: configurable(100, {
+            label: "数量",
             validate: (value, oldValue, path) => {
                 return value >= 0 && value <= 100;
             },
-            errorMessage: "值必须大于0小于100",
+            errorMessage: "{label}必须大于0小于100",
+            // 所有配置元数据均可以作为插值变量，如下：
+            custom: 1,
+            errorMessage: "{label}必须大于0小于100,{custom}",
         }),
     },
 });
 ```
 
-`validate`校验错误信息可以通过以下方式提供：
+`errorMessage`支持插值变量, 如上例中的`{label}`。
 
-- 在`validate`函数内部`throw new ValidateError("错误信息")`
+**所有的配置元数据**均可以作为插值变量，比较常见的插值变量包括：
+| 名称 | 说明 |
+|:---:| ---- |
+| `error` | 错误信息，即`error.message`,`errorMessage`默认值为`{error}`|
+| `errorStack` | 错误栈信息，即`error.stack`|
+| `path` | 当前配置项路径|
+| `value` | 当前配置|
+| `label` | 配置标签 |
 
-#### 内置校验模式
+当校验出错时，错误信息会被写入到三个地方：
 
-`AutoStore`内置了以下：
+- `AutoStoreConfigManager.errors`
+- `<AutoStore>.errors`
+- `<所在配置元数据>.errorMessage`
 
-- `s.number` 数字校验器
-- `s.string` 字符串校验器
-- `s.boolean` 布尔校验器
-- `s.array` 数组校验器
-- `s.object` 对象校验器
-- `s.date` 日期校验器
-- `v.bigint` 大整数校验器
+因此，如果你在渲染配置界面时，可以直接渲染`errorMessage`
 
-**声明如下：**
-
-```ts {1,3-9}
-import { schemas } from "autostore"
-
-schemas.number
-schemas.string
-schemas.boolean
-schemas.array
-schemas.object
-schemas.date
-schemas.bigint
-(
-    // 初始值
-    initial:number,
-    // 校验函数
-    validate:AutoStoreValidate,
-    // 校验选项
-    options?:SchemaObjectArgs | SchemaObjectArgs['errorTips']
-)
-
-export type AutoStoreValidate<Value=any> = (
-    newValue:Value,
-    oldValue:Value,
-    path:string
-)=>boolean
-```
-
-**示例：**
-
-```ts
-import { s } from "autostore"
-
-s.number(100,{
-    onValidate: (val)=>val>10,"价格必须大于10"
-})
-s.number(100,{
-    onValidate:(val)=>val>10,
-    invalidTips:"价格必须大于10",
-    title:"价格",
-    required:true
-    description:"产品价格",
-    tags:["价格"]
-})
-
-s.string("1234",{
-    onValidate:(val)=>val.length>3,"密码长度必须大于3"
-})
-s.string("1234",{
-    invalidTips:"密码长度必须大于3",
-    title:"密码",
-    required:true,
-    placeholder:"请输入密码"
-})
+```tsx {6}
+Object.entires(AutoStoreConfigManager.state).map(([key, schema]) => {
+    return (
+        <div>
+            <label>{schema.label}</label>
+            <input value={schema.value} />
+            {schema.errorMessage ? <span>{schema.errorMessage}</span> : ""}
+        </div>
+    );
+});
+//
+// order.discount = {"label": "折扣","value": 0.9,errorMessage:null...其他无数据}
+// user.age = {"label": "年龄","value": 12,errorMessage:null,...其他无数据}
+// product.price = {"label": "单价","value": 123,errorMessage:null,...其他无数据}
+// ...
 ```
 
 :::warning 提示
-`s`是`schemas`的简写。
+`errorMessage`是一个支持插值变量的模板字符串，在创建可配置项时会在内部保存起来,以便在后续使用。
+在校验出错时，会根据结合错误对象+模板字符串插值后写入到`errorMessage`。这样原始的模板字符串就变成插值后的校验错误信息。
 :::
 
-### 校验信息
+#### 校验失败行为
 
-每一个校验器均支持指定校验信息，用于在校验错误时显示。
+当写入配置状态值时会执行`validate`函数对值进行校验，如果校验失败（触发错误）则可以根据`onInvalid`参数决定如何处理。
 
 ```ts
-s.string("1234", {
-    onValidate: (val) => val.length > 3,
-    invalidTips: "密码长度必须大于3", // [!code++]
-});
-```
-
-### 校验失败行为
-
-当执行`onValidate`时，如果校验失败，会抛出`Error`对象，可以通过`onFail`参数指定校验失败时的行为。
-
-**类型：** `'pass' | 'throw' | 'ignore' | 'throw-pass'`
-
-- `pass`  
-  对写入操作放行，不抛出错误，错误的值也写入到`state`中。
-- `throw`  
-  校验失败时，抛出错误，不更新`state`。
-- `ignore`  
-  忽略错误，不更新`state`。
-- `throw-pass`
-  对写入操作放行，错误的值也写入到`state`中,但同时也抛出错误。
-
-```ts {6,12,18,24}
 const store = new AutoStore({
-    a: configurable("12345", {
-        label: "用户名",
-        onValidate: (value) => value.length >= 6,
-        invalidTips: "用户名长度必须大于等于6",
-        onFail: "pass",
-    }),
-    b: configurable("12345", {
-        label: "用户名",
-        onValidate: (value) => value.length >= 6,
-        invalidTips: "用户名长度必须大于等于6",
-        onFail: "throw",
-    }),
-    c: configurable("12345", {
-        label: "用户名",
-        onValidate: (value) => value.length >= 6,
-        invalidTips: "用户名长度必须大于等于6",
-        onFail: "ignore",
-    }),
-    d: configurable("12345", {
-        label: "用户名",
-        onValidate: (value) => value.length >= 6,
-        invalidTips: "用户名长度必须大于等于6",
-        onFail: "throw-pass",
+    price: configurable(100, {
+        validate: (value) => {
+            return value > 0;
+        },
+        onInvalid: "throw", // [!code ++]
     }),
 });
 ```
 
-:::warning 提示
-可以通过`store.validators.errors`读取所有的校验错误信息。
-:::
+`onInvalid`取值如下：
 
-### 校验事件
+|      值      | 默认 | 说明                                   |
+| :----------: | :--: | -------------------------------------- |
+|   `throw`    |  ✅  | 会触发`ValidateError`错误              |
+|   `ignore`   |      | 静默忽略，即不触发错误，也不写入       |
+|    `pass`    |      | 继续写入,不抛出错误                    |
+| `throw-pass` |      | 继续写入,然后再触发`ValidateError`错误 |
 
-当执行`onValidate`时，无论校验失败或失败，均会抛出`validate`事件.
+更多关于`onInvalid`参数的信息可以参阅[校验](./validate)
+
+#### 校验事件
+
+当执行`validate`时，无论校验失败或失败，均会抛出`validate`事件.
 
 ```ts
-'validate': { path: string[], newValue: any, oldValue: any, error: string | undefined }
 const store = new AutoStore({
     user: {
         name: configurable('NAME', {
             label: '用户名',
-            onValidate: (value) => {
+            validate: (value) => {
                 return value.length >= 6
             }
         })
@@ -933,46 +868,3 @@ store.on('validate', ({
 })
 
 ```
-
-### 动态创建
-
-可以动态创建`schema`对象。
-
-```ts
-import { s } from 'autostore';
-const store = new AutoStore({
-    user: {
-        name: 'voerkai18n'
-    }
-})
-
-store.schemas.add('user.name', schema({.....}))
-
-```
-
-### 访问数据
-
-`store.schemas.getState()`用来提取出所以`schema`标注过的所有数据。
-
-```ts
-import { s, schema } from "autostore";
-const store = new AutoStore({
-    order: {
-        name: schema<string>("张三"),
-        price: schema<number>(100),
-        count: schema<number>(3),
-    },
-});
-
-store.schemas.getState();
-
-// {
-//     "order.name": "张三",
-//     "order.price": 100,
-//     "order.count": 3
-// }
-```
-
-:::warning 提示
-`schema`函数还有一个别名`configurable`
-:::

@@ -269,6 +269,7 @@ export class ConfigManager extends AutoStore<
                         ...descriptor.schema,
                         error: error.message,
                         errorStack: error.stack,
+                        path,
                     });
                 }
                 return error.message;

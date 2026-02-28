@@ -2,7 +2,7 @@
 
 ## 引入
 
-`RefStore`提供一种机制，让你可以在创建`计算属性`和`监视属性`时让计算属性的重新计算可以依赖于其他`AutoStore`实例。
+`RefStore`提供一种机制，让你可以在创建`计算属性`和`监视属性`时让计算属性在所依赖的其他`AutoStore`实例状态变化时重新计算。
 
 ```ts
 const refStore = new AutoStore(
@@ -37,7 +37,7 @@ expect(mainStore.state.userName).toBe("User: Bob");
 ```
 
 - 在创建`AutoStore`指定`refStore`参数
-- 在计算属性的Getter函数中通过`ref`函数访问`refStore`状态值。
+- 在计算属性的`Getter`函数中通过`ref`函数访问`refStore`状态值。
 - 当`ref`函数所引用的`refStore`的状态值变化时，**会自动重新执行`computed`计算函数**
 - 上例中等效于`mainStore.state.userName`计算属性依赖于`refStore.user.name`状态。
 

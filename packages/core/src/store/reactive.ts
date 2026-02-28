@@ -89,6 +89,9 @@ function isValidPass(
         // 校验成功，删除该路径的错误记录
         if (this.configManager) {
             delete this.configManager.errors[configKey];
+            if (configKey in this.configManager.state) {
+                (this.configManager.state as any)[configKey].errorMessage = null;
+            }
         }
         if (this.errors) {
             delete this.errors[pathKey];
@@ -102,7 +105,9 @@ function isValidPass(
             if (errors) {
                 errors[configKey] = errMsg;
             }
-            (this.configManager.state as any)[configKey].errorMessage = errMsg;
+            if (configKey in this.configManager.state) {
+                (this.configManager.state as any)[configKey].errorMessage = errMsg;
+            }
         }
         this.errors[pathKey] = errMsg;
         // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid
