@@ -1,5 +1,16 @@
 # @autostorejs/react
 
+## 5.0.0
+
+### Minor Changes
+
+-   13d9af8: 升级同步功能包
+
+### Patch Changes
+
+-   Updated dependencies [13d9af8]
+    -   autostore@5.0.0
+
 ## 4.0.13
 
 ### Patch Changes
