@@ -5,8 +5,7 @@
  * 与多个浏览器页签进行完整同步
  */
 
-import { AutoStoreBroadcastSyncer } from "@autostorejs/syncer";
-import { WorkerTransport } from "@autostorejs/syncer";
+import { WorkerTransport, AutoStoreBroadcastSyncer } from "../../../../../src";
 import { store } from "./store";
 
 // 将 store 挂载到全局，方便调试

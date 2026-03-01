@@ -18,7 +18,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { AutoStore } from 'autostore';
-import { AutoStoreWorkerSyncer } from '@autostorejs/syncer';
+import { AutoStoreWorkerSyncer } from '../../../../../src';
 
 // 将 store 创建移到函数内部，避免模块加载时初始化
 // 使用函数延迟初始化，只在组件首次渲染时创建

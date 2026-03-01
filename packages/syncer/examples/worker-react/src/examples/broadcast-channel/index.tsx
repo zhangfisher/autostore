@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { AutoStore } from 'autostore';
-import { AutoStoreBroadcastChannelSyncer } from '@autostorejs/syncer';
+import { AutoStoreBroadcastChannelSyncer } from '../../../../../src';
 
 export function BroadcastChannelExample() {
     const [connected, setConnected] = useState(false);
@@ -64,7 +64,7 @@ export function BroadcastChannelExample() {
     const [user, setUser] = useState(store.state.user);
 
     useEffect(() => {
-        const unwatch = store.watch(({ path, value }) => {
+        const unwatch = store.watch(({ path, value }: any) => {
             if (path[0] === 'count') {
                 setCount(value);
                 addLogMessage(`[更新] count = ${value}`);
@@ -86,7 +86,7 @@ export function BroadcastChannelExample() {
 
     const increment = () => {
         store.update(
-            (state) => {
+            (state: any) => {
                 state.count++;
             },
             { flags: 0 },
@@ -96,7 +96,7 @@ export function BroadcastChannelExample() {
 
     const decrement = () => {
         store.update(
-            (state) => {
+            (state: any) => {
                 state.count--;
             },
             { flags: 0 },
@@ -115,7 +115,7 @@ export function BroadcastChannelExample() {
     };
 
     const toggleTodo = (id: number) => {
-        const todo = store.state.todos.find((t) => t.id === id);
+        const todo = store.state.todos.find((t: any) => t.id === id);
         if (todo) {
             todo.completed = !todo.completed;
             addLogMessage(`[本地] 切换待办: ${todo.text}`);
@@ -123,7 +123,7 @@ export function BroadcastChannelExample() {
     };
 
     const deleteTodo = (id: number) => {
-        const index = store.state.todos.findIndex((t) => t.id === id);
+        const index = store.state.todos.findIndex((t: any) => t.id === id);
         if (index !== -1) {
             const todoText = store.state.todos[index].text;
             store.state.todos.splice(index, 1);
@@ -137,7 +137,7 @@ export function BroadcastChannelExample() {
             return;
         }
         const count = store.state.todos.length;
-        store.update((state) => {
+        store.update((state: any) => {
             state.todos = [];
         });
         addLogMessage(`[本地] 清空所有待办事项 (${count}条)`);
@@ -233,7 +233,7 @@ export function BroadcastChannelExample() {
                         {todos.length === 0 ? (
                             <p style={styles.empty}>暂无待办事项</p>
                         ) : (
-                            todos.map((todo) => (
+                            todos.map((todo: any) => (
                                 <div key={todo.id} style={styles.todoItem}>
                                     <input
                                         type="checkbox"

@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { AutoStore } from 'autostore';
-import { AutoStoreWorkerSyncer } from '@autostorejs/syncer';
+import { AutoStoreWorkerSyncer } from '../../../../../src';
 const store = new AutoStore({
     count: 0,
     messages: [] as string[],

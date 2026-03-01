@@ -26,8 +26,7 @@
  * ╚═══════════════════════════════════════════════════════════════════╝
  */
 
-import { AutoStoreSwitchSyncer } from "@autostorejs/syncer";
-import { WorkerTransport } from "@autostorejs/syncer";
+import { WorkerTransport, AutoStoreSwitchSyncer } from "../../../../../src";
 import { counterStore, todoStore, userStore } from "./stores";
 
 // 创建 AutoStoreSwitchSyncer，管理多个 store
