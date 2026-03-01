@@ -4,13 +4,13 @@
 	"commit": true,
 	"access": "public",
 	"fixed": [[
-        "autostore", 
-        "@autostorejs/react", 
-        "@autostorejs/syncer", 
+        "autostore",
+        "@autostorejs/react",
+        "@autostorejs/syncer",
         "@autostorejs/devtools"
     ]],
 	"linked": [],
-	"baseBranch": "master",
+	"baseBranch": "4.0",
 	"updateInternalDependencies": "patch",
 	"ignore": [
 		"autostore-docs", 
