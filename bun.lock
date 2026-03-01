@@ -122,7 +122,7 @@
     },
     "packages/core": {
       "name": "autostore",
-      "version": "4.0.13",
+      "version": "4.0.14",
       "dependencies": {
         "fastevent": "^2.3.6",
         "flex-tools": "^1.5.9",
@@ -140,7 +140,7 @@
     },
     "packages/devTools": {
       "name": "@autostorejs/devtools",
-      "version": "4.0.13",
+      "version": "4.0.14",
       "dependencies": {
         "redux": "^5.0.1",
       },
@@ -151,7 +151,7 @@
     },
     "packages/react": {
       "name": "@autostorejs/react",
-      "version": "4.0.13",
+      "version": "4.0.14",
       "dependencies": {
         "autostore": "workspace:*",
         "flexstyled": "^2.1.2",
@@ -172,9 +172,8 @@
     },
     "packages/syncer": {
       "name": "@autostorejs/syncer",
-      "version": "4.0.13",
+      "version": "4.0.14",
       "dependencies": {
-        "comlink": "^4.4.2",
         "flex-tools": "^1.5.9",
         "mitt": "^3.0.1",
       },
@@ -1038,8 +1037,6 @@
     "color-name": ["color-name@1.1.4", "https://registry.npmmirror.com/color-name/-/color-name-1.1.4.tgz", {}, "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA=="],
 
     "color-string": ["color-string@2.1.4", "https://registry.npmmirror.com/color-string/-/color-string-2.1.4.tgz", { "dependencies": { "color-name": "^2.0.0" } }, "sha512-Bb6Cq8oq0IjDOe8wJmi4JeNn763Xs9cfrBcaylK1tPypWzyoy2G3l90v9k64kjphl/ZJjPIShFztenRomi8WTg=="],
-
-    "comlink": ["comlink@4.4.2", "https://registry.npmmirror.com/comlink/-/comlink-4.4.2.tgz", {}, "sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g=="],
 
     "comma-separated-tokens": ["comma-separated-tokens@2.0.3", "https://registry.npmmirror.com/comma-separated-tokens/-/comma-separated-tokens-2.0.3.tgz", {}, "sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg=="],
 

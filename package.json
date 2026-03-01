@@ -14,7 +14,7 @@
 		"publish-packages": "bun run build && bun run scripts/apply-publish-config.js && changeset version && bun run scripts/update-workspace-deps.js && changeset publish && git checkout -- package.json packages/*/package.json",
 		"build": "turbo build --filter=autostore --filter=@autostorejs/syncer --filter=@autostorejs/devtools --filter=@autostorejs/react",
 		"docs:preview": "vitepress preview new-docs",
-		"sync": "cnpm sync autostore @autostorejs/react @autostorejs/syncer",
+		"sync": "cnpm sync autostore @autostorejs/react @autostorejs/syncer @autostorejs/devtools",
 		"update:changelog": "cpx packages/core/CHANGELOG.md docs/zh/guide/intro/core.changelog.md",
 		"lint": "oxlint",
 		"lint:fix": "oxlint --fix"

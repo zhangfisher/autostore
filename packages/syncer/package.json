@@ -1,6 +1,6 @@
 {
 	"name": "@autostorejs/syncer",
-	"version": "4.0.13",
+	"version": "4.0.14",
 	"main": "src/index.ts",
 	"repository": {
 		"type": "git",
@@ -30,7 +30,6 @@
 		"autostore": "workspace:*"
 	},
 	"dependencies": {
-		"comlink": "^4.4.2",
 		"flex-tools": "^1.5.9",
 		"mitt": "^3.0.1"
 	},

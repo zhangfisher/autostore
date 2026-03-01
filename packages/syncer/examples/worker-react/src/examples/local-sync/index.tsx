@@ -12,7 +12,7 @@
 
 import { useState, useEffect } from 'react';
 import { AutoStore } from 'autostore';
-import { AutoStoreSyncer, LocalTransport, EventEmitterTransport } from '@autostorejs/syncer';
+import { AutoStoreSyncer, LocalTransport, EventEmitterTransport } from '../../../../../src';
 
 // 简单的 EventEmitter 实现
 class SimpleEventEmitter {
@@ -119,7 +119,11 @@ export function LocalSyncExample() {
             // Store1: 默认 mode (push), 自动启动
             const syncer1 = new AutoStoreSyncer(s1, { transport: t1, autostart: true });
             // Store2: pull 模式, 自动启动
-            const syncer2 = new AutoStoreSyncer(s2, { transport: t2, mode: 'pull', autostart: true });
+            const syncer2 = new AutoStoreSyncer(s2, {
+                transport: t2,
+                mode: 'pull',
+                autostart: true,
+            });
             addSyncerListeners(syncer1);
             addSyncerListeners(syncer2);
             syncer = {
@@ -155,7 +159,11 @@ export function LocalSyncExample() {
             // Store1: 默认 mode (push), 自动启动
             const syncer1 = new AutoStoreSyncer(s1, { transport: t1, autostart: true });
             // Store2: pull 模式, 自动启动
-            const syncer2 = new AutoStoreSyncer(s2, { transport: t2, mode: 'pull', autostart: true });
+            const syncer2 = new AutoStoreSyncer(s2, {
+                transport: t2,
+                mode: 'pull',
+                autostart: true,
+            });
             addSyncerListeners(syncer1);
             addSyncerListeners(syncer2);
             syncer = {
@@ -181,7 +189,11 @@ export function LocalSyncExample() {
             addSyncerListeners(syncer);
         } else if (syncType === 'clone') {
             const cloned = (s1 as any).clone();
-            setStores({ store1: s1, store2: cloned, syncer: { syncing: false, start: () => {}, stop: () => {} } });
+            setStores({
+                store1: s1,
+                store2: cloned,
+                syncer: { syncing: false, start: () => {}, stop: () => {} },
+            });
             return;
         }
 
@@ -362,7 +374,9 @@ export function LocalSyncExample() {
                         disabled={!stores.syncer || syncType === 'clone'}
                         style={{
                             ...styles.toggleBtn,
-                            ...(stores.syncer?.syncing ? styles.toggleBtnActive : styles.toggleBtnInactive),
+                            ...(stores.syncer?.syncing
+                                ? styles.toggleBtnActive
+                                : styles.toggleBtnInactive),
                         }}>
                         {stores.syncer?.syncing ? '⏹ 停止' : '▶ 开始'}
                     </button>
