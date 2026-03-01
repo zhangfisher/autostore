@@ -1,6 +1,17 @@
 # 配置系统
 
-`AutoStore`支持一套非常优雅的可配置系统，用于帮助开发者开发一套应用程序的响应式配置系统。
+`AutoStore`支持一套非常优雅的可配置系统，允许将`AutoStore`状态树中的任意状态声明为可配置状态进行集中管理，用于帮助开发者开发一套应用程序的响应式配置系统。
+
+## 核心特性
+
+- **集中化管理** - 所有模块的可配置项自动注册到全局配置管理器，统一加载、保存和遍历
+- **响应式元数据** - 配置元数据（如 `enable`、`required`、`visible`）支持计算属性，可与其他配置项或状态值联动
+- **声明式配置** - 通过 `configurable()` 函数在状态定义处直接声明可配置项及其校验规则、标签等元数据
+- **双向同步** - 配置变更自动同步到各业务模块，模块内变更自动触发保存到持久层
+- **灵活的存储抽象** - 通过 `load/save` 函数抽象配置源，支持 localStorage、API、文件等任意存储后端
+- **完整的校验系统** - 内置校验函数、错误信息模板、多种失败处理策略（`throw`/`ignore`/`pass`）
+- **跨 Store 引用** - `ref()` 函数支持在配置元数据中引用所在 Store 的状态值，实现复杂联动逻辑
+- **UI 友好** - 元数据可包含渲染参数（如 `widget`），便于自动生成配置界面
 
 ## 快速入门
 
@@ -31,7 +42,7 @@ const configManager = new ConfigManager({
 
 接下来，我们先在应用系统内部构建`3`个模块,并使用`AutoStore`存储模块状态数据。
 
-```ts {1,5}
+```ts {4,15,26}
 import { AutoStore } from "autostore";
 
 // shop模块
@@ -71,7 +82,7 @@ const productStore = new AutoStore(
 在我们的示例应用中，我们希望三个模块中的状态：`shop.order.discount`,`user.user.age`,`product.price`是可以配置的。
 因此，我们需要使用`configurable`函数来声明模块状态中的可配置项。
 
-```ts {1,5}
+```ts {9-11,21-26,36-41}
 import { AutoStore, configurable } from "autostore";
 
 // shop模块
@@ -124,13 +135,14 @@ const productStore = new AutoStore(
 
 - **Q:** 为什么`configurable`可以提供渲染参数？跟UI渲染有什么关系？
 - **A:** 因为在前端应用系统中，可能需要将整个应用可配置项渲染出来，因此在各个模块中分散声明配置项的渲染参数是比较方便的。
+  但是`AutoStore`本身是不负责渲染的，而只是帮助管理配置相关的元数据。
   :::
 
 ### 第4步: 更新配置
 
-以上创建了一个全局配置管理器`AutoStoreConfigManager`实例和三个业务模块，本个业务模块中的可配置项会自动注册到全局配置管理器`AutoStoreConfigManager`实例。
+以上创建了一个全局配置管理器`AutoStoreConfigManager`实例和三个业务模块，每个业务模块中的可配置项会自动注册到全局配置管理器`AutoStoreConfigManager`实例。
 
-而`AutoStoreConfigManager`实例本身就是一个`AutoStore`实例，当在三个业务模块`AutoStore`时会将内部的所有可配置项(使用`configurable`声明)注册到`AutoStoreConfigManager`中，注册后的`AutoStoreConfigManager.state`.如下
+而`AutoStoreConfigManager`实例本身就是一个`AutoStore`实例，三个业务模块`AutoStore`时会将内部的所有可配置项(使用`configurable`声明)注册到`AutoStoreConfigManager`中，注册后的`AutoStoreConfigManager.state`.如下
 
 ```json
 // AutoStoreConfigManager.state
