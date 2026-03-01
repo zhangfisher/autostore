@@ -1,5 +1,13 @@
 # @autostorejs/syncer
 
+## 4.0.14
+
+### Patch Changes
+
+-   13d9af8: 升级同步功能包
+-   Updated dependencies [13d9af8]
+    -   autostore@4.0.14
+
 ## 4.0.13
 
 ### Patch Changes

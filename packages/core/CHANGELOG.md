@@ -1,5 +1,11 @@
 # autostore
 
+## 4.0.14
+
+### Patch Changes
+
+-   13d9af8: 升级同步功能包
+
 ## 4.0.13
 
 ### Patch Changes
