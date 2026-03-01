@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 5.0.0
+
+### Minor Changes
+
+-   7d3f29b: 升级同步功能包，版本 4.0.13 → 4.1.0
+
 ## 4.0.13
 
 ### Patch Changes
