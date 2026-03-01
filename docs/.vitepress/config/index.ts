@@ -168,16 +168,48 @@ export default defineConfig({
                 },
                 {
                     text: "指南",
-                    collapsed: true,
                     items: [
+                        {
+                            text: "Syncer",
+                            link: "/zh/sync/guide/syncers/syncer",
+                        },
+                        {
+                            text: "Clone",
+                            link: "/zh/sync/guide/syncers/clone",
+                        },
+                        {
+                            text: "WorkerSyncer",
+                            link: "/zh/sync/guide/syncers/worker-syncer",
+                        },
+                        {
+                            text: "BroadcastSyncer",
+                            link: "/zh/sync/guide/syncers/broadcast-syncer",
+                        },
+                        {
+                            text: "broadcastChannelSyncer",
+                            link: "/zh/sync/guide/syncers/broadcast-channel-syncer",
+                        },
+                        {
+                            text: "SwitchSyncer",
+                            link: "/zh/sync/guide/syncers/switch-syncer",
+                        },
                         {
                             text: "同步器",
                             collapsed: true,
                             items: [
                                 { text: "关于", link: "/zh/sync/guide/syncers/syncer" },
-                                { text: "广播同步器", link: "/zh/sync/guide/syncers/broadcast-syncer" },
-                                { text: "交换同步器", link: "/zh/sync/guide/syncers/switch-syncer" },
-                                { text: "Worker同步器", link: "/zh/sync/guide/syncers/worker-syncer" },
+                                {
+                                    text: "广播同步器",
+                                    link: "/zh/sync/guide/syncers/broadcast-syncer",
+                                },
+                                {
+                                    text: "交换同步器",
+                                    link: "/zh/sync/guide/syncers/switch-syncer",
+                                },
+                                {
+                                    text: "Worker同步器",
+                                    link: "/zh/sync/guide/syncers/worker-syncer",
+                                },
                             ],
                         },
                         {
@@ -185,18 +217,12 @@ export default defineConfig({
                             collapsed: true,
                             items: [
                                 { text: "本地传输器", link: "/zh/sync/guide/transports/local" },
-                                { text: "广播频道传输器", link: "/zh/sync/guide/transports/broadcast-channel" },
+                                { text: "事件传输器", link: "/zh/sync/guide/transports/local" },
+                                {
+                                    text: "广播频道传输器",
+                                    link: "/zh/sync/guide/transports/broadcast-channel",
+                                },
                                 { text: "Worker传输器", link: "/zh/sync/guide/transports/worker" },
-                            ],
-                        },
-                        {
-                            text: "功能特性",
-                            collapsed: true,
-                            items: [
-                                { text: "路径映射", link: "/zh/sync/guide/features/path-map" },
-                                { text: "过滤器", link: "/zh/sync/guide/features/filter" },
-                                { text: "同步方向", link: "/zh/sync/guide/features/direction" },
-                                { text: "心跳检测", link: "/zh/sync/guide/features/heartbeat" },
                             ],
                         },
                     ],

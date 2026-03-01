@@ -437,6 +437,7 @@ export class AutoStoreSyncer extends AutoStoreSyncerBase {
      * @param operate
      */
     private _updateStore(operate: StateRemoteOperate) {
+        // oxlint-disable-next-line no-unused-vars
         let hasError: any;
         try {
             const store = this.store;

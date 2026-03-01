@@ -1,12 +1,6 @@
----
-page: true
-title: 同步
-sidebar: auto
----
-
 # 同步
 
-@autostorejs/syncer 为 AutoStore 提供了强大的状态同步能力，支持多种同步场景和通信方式。
+`@autostorejs/syncer` 为 `AutoStore` 提供了强大的状态同步能力，支持多种同步场景和通信方式。
 
 ## 特性
 
@@ -26,10 +20,10 @@ npm install @autostorejs/syncer
 
 ## 使用场景
 
-| 场景 | 推荐方案 | 说明 |
-|------|----------|------|
-| 同一进程内同步 | `store.sync()` | 使用 `store.sync()` 方法 |
-| 跨标签页同步 | `BroadcastChannelTransport` | 使用 BroadcastChannel API |
-| 主线程与 Worker 同步 | `WorkerTransport` | 使用 WebWorker 或 SharedWorker |
-| 一主多从同步 | `AutoStoreBroadcastSyncer` | 一个主 Store 与多个客户端同步 |
-| SharedWorker 多 Store 同步 | `AutoStoreSwitchSyncer` | 在 SharedWorker 中管理多个 Store |
+| 场景                         | 推荐方案                    | 说明                               |
+| ---------------------------- | --------------------------- | ---------------------------------- |
+| 同一进程内同步               | `store.sync()`              | 使用 `store.sync()` 方法           |
+| 跨标签页同步                 | `BroadcastChannelTransport` | 使用 `BroadcastChannel API`        |
+| 主线程与 `Worker` 同步       | `WorkerTransport`           | 使用 `WebWorker` 或 `SharedWorker` |
+| 一主多从同步                 | `AutoStoreBroadcastSyncer`  | 一个主 `Store` 与多个客户端同步    |
+| `SharedWorker` 多 Store 同步 | `AutoStoreSwitchSyncer`     | 在 `SharedWorker` 中管理多个 Store |
