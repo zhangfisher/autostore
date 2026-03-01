@@ -1,312 +1,469 @@
 import type { ComputedObject } from "../computed/computedObject";
-import type { ComputedScope } from "../computed/types";
+import type { ComputedDescriptor, ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
 import type { ObserverType } from "../observer/types";
 import type { Dict } from "../types";
-import type { SchemaOptions } from "../schema";
 import type { AutoStore } from "./store";
+import type { AutoStateSchema } from "../schema/types";
+import type { ConfigManager, ConfigSource } from "../schema/manager";
+import type { TransformedEvents } from "fastevent";
+import type { ObserverDescriptor } from "../observer/types";
+import type { WatchObject } from "../watch/watchObject";
+import type { CreateSandboxOptions } from "../utils/createSandbox";
+
 export type BatchChangeEvent = "__batch_update__";
-export type StateChangeEvents = Record<string, StateOperate>;
-
-export type StateOperateType =
-	| "get"
-	| "set"
-	| "delete" // 用于对象
-	| "insert"
-	| "update"
-	| "remove" // 用于数组
-	| "batch"; // 批量操作
-
-export interface StateOperate<Value = any, Parent = any> {
-	type: StateOperateType;
-	path: string[];
-	value: Value;
-	indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
-	oldValue?: Value;
-	parentPath?: string[];
-	parent?: Parent;
-	/**
-	 * 是否是批量操作时的回放事件
-	 */
-	reply?: boolean;
-	flags?: number;
-	/**
-	 * 该操作是否来自shadow转发
-	 */
-	shadow?: boolean;
+export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
+export interface StateValidatorFunction<State extends Dict> {
+    (this: AutoStore<State>, newValue: any, oldValue: any, path: string[]): boolean;
+    getErrorMessage?: (error: Error) => string;
+    onInvalid?: ValidationBehavior;
 }
 
+export type StateValidator<State extends Dict> = StateValidatorFunction<State>;
+
+export type ValidationBehavior = "pass" | "ignore" | "throw" | "throw-pass";
+
+export type StateOperateType =
+    | "get"
+    | "set"
+    | "delete" // 用于对象
+    | "insert"
+    | "update"
+    | "remove" // 用于数组
+    | "batch"; // 批量操作
+
+export interface StateOperate<Value = any, Parent = any> {
+    type: StateOperateType;
+    path: string[];
+    value: Value;
+    indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
+    oldValue?: Value;
+    parentPath?: string[];
+    parent?: Parent;
+    /**
+     * 是否是批量操作时的回放事件
+     */
+    reply?: boolean;
+    flags?: number;
+    /**
+     * 该操作是否来自shadow转发
+     */
+    shadow?: boolean;
+}
 export interface AutoStoreOptions<State extends Dict> {
-	/**
-	 * 提供一个id，用于标识当前store
-	 */
-	id?: string;
+    /**
+     * 提供一个id，用于标识当前store
+     */
+    id?: string;
 
-	/**
-	 * 是否启用调试模式
-	 * @description
-	 *
-	 * 调试模式下会在控制台输出一些日志信息
-	 *
-	 */
-	debug?: boolean;
-	/**
-	 * 声明是否shadow,默认false
-	 */
-	shadow?: boolean;
-	/**
-	 *  是否马上创建动态对象
-	 *
-	 *
-	 * @description
-	 *
-	 * 默认情况下，计算函数仅在第一次读取时执行,
-	 * 如果lazy=true时，则延迟创建计算对象
-	 *
-	 * @default true
-	 *
-	 * @deprecated
-	 *
-	 *
-	 */
-	lazy?: boolean;
-	/**
-	 * 是否启用计算
-	 *
-	 * @description
-	 *
-	 * 当enableComputed=false时，会创建计算属性，但不会执行计算函数
-	 * 可以通过enableComputed方法启用
-	 *
-	 * 相当于全局计算总开关
-	 *
-	 *
-	 *
-	 */
-	enableComputed?: boolean;
+    /**
+     * 是否启用调试模式
+     * @description
+     *
+     * 调试模式下会在控制台输出一些日志信息
+     *
+     */
+    debug?: boolean;
+    /**
+     * 声明是否shadow,默认false
+     */
+    shadow?: boolean;
+    /**
+     *  是否马上创建动态对象
+     *
+     *
+     * @description
+     *
+     * 默认情况下，计算函数仅在第一次读取时执行,
+     * 如果lazy=true时，则延迟创建计算对象
+     *
+     * - false: 在创建时马上进行第一次计算，马上就可以收集到依赖
+     * - true:  计算函数仅在第一次读取时执行
+     * - auto:  默认值，计算对象会马上创建
+     *          同步计算会马上读取以收集依赖
+     *          主要差别在于异步计算如果指定了initial初始化值，则在初始化时不会执行
+     *
+     * @default 'auto'
+     *
+     */
+    lazy?: boolean;
+    /**
+     * 是否启用计算
+     *
+     * @description
+     *
+     * 当enableComputed=false时，会创建计算属性，但不会执行计算函数
+     * 可以通过enableComputed方法启用
+     *
+     * 相当于全局计算总开关
+     *
+     *
+     *
+     */
+    enableComputed?: boolean;
 
-	/**
-	 * 路径分隔符,默认是`.`
-	 */
-	delimiter?: string;
-	/**
-	 * 获取计算函数的根scope
-	 *
-	 * @description
-	 *
-	 * 计算函数在获取scope时调用，允许修改其根scope
-	 *
-	 * 默认指向的是当前根对象，此处可以修改其指向
-	 *
-	 * 比如,return  state.fields，代表计算函数的根指向state.fields
-	 * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
-	 *
-	 */
-	getRootScope?: (state: State, options: { observerType: ObserverType; valuePath: string[] | undefined }) => any;
+    /**
+     * 路径分隔符,默认是`.`
+     */
+    delimiter?: string;
+    /**
+     * 获取计算函数的根scope
+     *
+     * @description
+     *
+     * 计算函数在获取scope时调用，允许修改其根scope
+     *
+     * 默认指向的是当前根对象，此处可以修改其指向
+     *
+     * 比如,return  state.fields，代表计算函数的根指向state.fields
+     * 这样在指定依赖时，如depends="count"，则会自动转换为state.fields.count
+     *
+     */
+    getRootScope?: (
+        state: State,
+        options: { observerType: ObserverType; valuePath: string[] | undefined },
+    ) => any;
 
-	/**
-	 *
-	 * 为所有动态值对象提供默认的scope参数
-	 *
-	 * @description
-	 * 默认情况下，所有computedObject,watchObject的scope参数均为CURRENT
-	 * 可以通过此参数来为所有的computedObject,watchObject提供默认的scope参数
-	 * 比如让所有的computedObject,watchObject的默认scope参数均为ROOT
-	 *
-	 */
-	scope?: ComputedScope;
-	/**
-	 * 当启用debug=true时用来输出日志信息
-	 *
-	 * @param message
-	 * @param level
-	 * @returns
-	 */
-	log?: (message: any, level?: "info" | "error" | "warn") => void;
-	/**
-	 * 启用重置功能
-	 *
-	 * @description
-	 *
-	 * 当启用resetable=true时，会记录数据的首次变化，然后在store.reset()方法调用时，将数据恢复到初始状态
-	 *
-	 */
-	resetable?: boolean;
-	/**
-	 * 计算函数是否允许重入
-	 */
-	reentry?: boolean;
-	/**
-	 *
-	 * 当创建计算属性时调用
-	 *
-	 * @description
-	 *
-	 * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
-	 *
-	 * @example
-	 *
-	 * createStore({...},{
-	 *  onCreateComputed(computedObject){
-	 *      const oldGetter = computedObject.getter
-	 *      computedObject.getter = function(){
-	 *          do something
-	 *          return oldGetter.call(this,...arguments)
-	 *      }
-	 *  }
-	 * })
-	 * @param this
-	 * @param computedObject
-	 * @returns
-	 */
-	onComputedCreated?: (this: AutoStore<State>, computedObject: ComputedObject) => void;
+    /**
+     *
+     * 为所有动态值对象提供默认的scope参数
+     *
+     * @description
+     * 默认情况下，所有computedObject,watchObject的scope参数均为CURRENT
+     * 可以通过此参数来为所有的computedObject,watchObject提供默认的scope参数
+     * 比如让所有的computedObject,watchObject的默认scope参数均为ROOT
+     *
+     */
+    scope?: ComputedScope;
+    /**
+     * 当启用debug=true时用来输出日志信息
+     *
+     * @param message
+     * @param level
+     * @returns
+     */
+    log?: (message: any, level?: "info" | "error" | "warn") => void;
+    /**
+     * 启用重置功能
+     *
+     * @description
+     *
+     * 当启用resetable=true时，会记录数据的首次变化，然后在store.reset()方法调用时，将数据恢复到初始状态
+     *
+     */
+    resetable?: boolean;
+    /**
+     * 计算函数是否允许重入
+     */
+    reentry?: boolean;
+    /**
+     *
+     * 当创建计算属性时调用
+     *
+     * @description
+     *
+     * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
+     *
+     * @example
+     *
+     * createStore({...},{
+     *  onCreateComputed(computedObject){
+     *      const oldGetter = computedObject.getter
+     *      computedObject.getter = function(){
+     *          do something
+     *          return oldGetter.call(this,...arguments)
+     *      }
+     *  }
+     * })
+     * @param this
+     * @param computedObject
+     * @returns
+     */
+    onComputedCreated?: (this: AutoStore<State>, computedObject: ComputedObject) => void;
 
-	/**
-	 * 当每一次计算完成后调用
-	 * @param this
-	 * @param computedObject
-	 * @returns
-	 */
-	onComputedDone?: (
-		this: AutoStore<State>,
-		args: { id: string; path: string[]; value: any; computedObject: ComputedObject },
-	) => void;
+    /**
+     * 当每一次计算完成后调用
+     * @param this
+     * @param computedObject
+     * @returns
+     */
+    onComputedDone?: (
+        this: AutoStore<State>,
+        args: { id: string; path: string[]; value: any; computedObject: ComputedObject },
+    ) => void;
 
-	/**
-	 * 当计算出错时调用
-	 * @param this
-	 * @param error
-	 * @param computedObject
-	 * @returns
-	 */
-	onComputedError?: (
-		this: AutoStore<State>,
-		args: { id: string; path: string[]; error: Error; computedObject: ComputedObject },
-	) => void;
-	/**
-	 * 当每一次计算对象被取消时调用
-	 * 仅在异步计算时有效
-	 * @param this
-	 * @param computedObject
-	 * @returns
-	 */
-	onComputedCancel?: (
-		this: AutoStore<State>,
-		args: {
-			id: string;
-			path: string[];
-			reason: "timeout" | "abort" | "reentry" | "error";
-			computedObject: ComputedObject<any>;
-		},
-	) => void;
-	/**
-	 *
-	 * 当创建观察对象实例化时调用
-	 *
-	 * 一般可以在此对ObserverObject进行一些处理
-	 * 比如重新封装run函数等
-	 *
-	 */
-	onObserverCreated?: (observerObject: ObserverObject<any, any>) => void;
+    /**
+     * 当计算出错时调用
+     * @param this
+     * @param error
+     * @param computedObject
+     * @returns
+     */
+    onComputedError?: (
+        this: AutoStore<State>,
+        args: { id: string; path: string[]; error: Error; computedObject: ComputedObject },
+    ) => void;
+    /**
+     * 当每一次计算对象被取消时调用
+     * 仅在异步计算时有效
+     * @param this
+     * @param computedObject
+     * @returns
+     */
+    onComputedCancel?: (
+        this: AutoStore<State>,
+        args: {
+            id: string;
+            path: string[];
+            reason: "timeout" | "abort" | "reentry" | "error";
+            computedObject: ComputedObject<any>;
+        },
+    ) => void;
+    onObserverBeforeCreate?: (
+        this: AutoStore<State>,
+        descriptor: ObserverDescriptor<any, any, any>,
+    ) => void;
+    /**
+     *
+     * 当创建观察对象实例化时调用
+     *
+     * 一般可以在此对ObserverObject进行一些处理
+     * 比如重新封装run函数等
+     *
+     */
+    onObserverCreated?: (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void;
 
-	onObserverBeforeCreate?: (observerObject: ObserverObject<any, any>) => void;
-	/**
-	 *
-	 *
-	 *
-	 * 当状态值是一个函数时，创建对应的可观察对象前调用
-	 *
-	 * 即第一次读取时调用，
-	 *
-	 * 返回false则不创建对应的可观察对象，将函数标志为raw
-	 *
-	 */
-	onObserverInitial?: (this: AutoStore<State>, path: string[], value: any, parent: any) => void | boolean;
-	/**
-	 * 默认的値模式
-	 */
-	defaultSchemaOptions?: Partial<SchemaOptions<any>>;
-	/**
-	 * 当写入时状态时执行此校验函数
-	 */
-	onValidate?: (this: AutoStore<State>, path: string[], newValue: any, oldValue: any) => boolean;
-
-	/**
-	 *
-	 * 获取影子store
-	 * 为所有observer对象提供store对象
-	 *
-	 */
-	getShadowStore?: () => AutoStore<any>;
+    /**
+     *
+     *
+     *
+     * 当状态值是一个函数时，创建对应的可观察对象前调用
+     *
+     * 即第一次读取时调用，
+     *
+     * 返回false则不创建对应的可观察对象，将函数标志为raw
+     *
+     */
+    onObserverInitial?: (
+        this: AutoStore<State>,
+        path: string[],
+        value: any,
+        parent: any,
+    ) => boolean | undefined;
+    /**
+     *
+     * 获取影子store
+     * 为所有observer对象提供store对象
+     *
+     */
+    getShadowStore?: () => AutoStore<any>;
+    /**
+     * 默认的値模式
+     */
+    defaultSchema?: Partial<AutoStateSchema<any>>;
+    /**
+     *
+     * 校验失败时的默认行为
+     *
+     * - throw: 默认，触发ValidateError错误
+     * - throw-pass： 继续写入,然后再触发ValidateError错误
+     * - pass: 继续写入,不抛出错误
+     * - ignore: 静默忽略，即不触发错误，也不写入
+     *
+     * 错误信息均会写入到errors中
+     *
+     * 当校验函数返回 false 或抛出错误时，使用此选项决定如何处理
+     * 可被校验函数抛出的 ValidateError.behavior 覆盖
+     *
+     */
+    onInvalid?: "pass" | "throw" | "ignore" | "throw-pass";
+    /**
+     * 当写入时状态时执行此校验函数
+     *
+     * 允许throw new ValidateError('错误信息')来提供错误信息
+     *
+     */
+    validate?: (this: AutoStore<State>, newValue: any, oldValue: any, path: string[]) => boolean;
+    /**
+     * 为指定的路径的状态值单独指定一个校验函数
+     * 优先于onValidate
+     *
+     * 如:
+     *
+     * validators:{
+     *     'order.price':(newValue,oldValue)=>{
+     *         return newValue>0
+     *     }
+     *     // 允许使用通配符来匹配多个路径
+     *     'order.*.price':(newValue,oldValue)=>{
+     *         return newValue>0
+     *     }
+     * }
+     *
+     */
+    validators?: Record<string, StateValidator<State>>;
+    /**
+     * 提供一个配置管理器对象
+     */
+    configManager?: ConfigManager | ConfigSource | boolean;
+    /**
+     * 为当前Store的所有配置项均指定一个统一的前缀
+     */
+    configKey?: string;
+    /**
+     *
+     * 当启用时，如果值是一个字符串，并且以```xxx```形式，代表这是一个表达式
+     * 则会创建一个代码执行沙箱运行并返回值
+     *
+     * 注意：
+     *    仅在lazy=false时在实例化时才会对字符串表达式进行解释执行
+     * 后续读取时不会执行此操作
+     *
+     * @example
+     *
+     *
+     */
+    enableValueExpr?: boolean;
+    /**
+     * 沙箱配置选项
+     *
+     * @description
+     *
+     * 当 enableValueExpr=true 时，用于配置代码执行沙箱的行为
+     */
+    sandbox?: {
+        /**
+         * 用于创建一个代码执行沙箱
+         *
+         * 可选的，如果没有提供时，会提供一个简单的基于new Function的沙箱
+         *
+         * @returns
+         */
+        create?: (
+            context: Record<string, any>,
+            options?: CreateSandboxOptions,
+        ) => (code: string) => any;
+        /**
+         * 为代码执行沙箱中的代码提供额外的上下文
+         */
+        context?: Record<string, any>;
+    };
+    /**
+     * 提供额外的引用store，可以在computed或watch中使用ref引用其他store状态值
+     * 并且在引用状态值变化时自动重新执行observerObject.run
+     */
+    refStore?: AutoStore<any>;
 }
 
 export type UpdateOptions = {
-	/**
-	 * 执行批量更新操作，期间不会触发事件，等更新函数执行后再触发batch事件
-	 *  =false 不执行批量更新操作
-	 *  =true  执行批量更新操作，批量更新事件名称为__batch_update__
-	 *  <string> 执行批量更新操作，批量更新事件名称为指定的字符串
-	 */
-	batch?: boolean | string;
-	/**
-	 * 执行更新操作时，静默，不会触发任何事件
-	 *
-	 */
-	silent?: boolean;
-	/**
-	 *
-	 * 更新时执行校验的模式
-	 * - none    不进行校验，即不执行校验函数
-	 * - pass    校验失败时放行，即进行更新
-	 * - ignore  校验失败时忽略更新操作，不进行更新
-	 * - throw   校验失败时抛出异常 (默认)
-	 *
-	 *
-	 */
-	validate?: "none" | "pass" | "throw" | "ignore";
-	/**
-	 * 执行读取操作时，不会触发GET事件
-	 * 即偷听
-	 */
-	peep?: boolean;
-	/**
-	 * 在批量更新结束后，会自动回放update(()=>{...})之间的所有操作事件
-	 * 然后再触发一个__batch_update__事件
-	 *
-	 * @description
-	 *
-	 * =true 默认会回放所有操作事件
-	 * =false 不会回放操作事件,仅会触发__batch_update__事件
-	 */
-	reply?: boolean;
-	/**
-	 * 额外的更新标识
-	 * 用在执行更新操作时传递额外的标识
-	 *
-	 * store.update(()=>{...},{flags:8})
-	 *
-	 * 在update期间触发的事件operate中会包含此值，可以通过operate.flags获取到此值
-	 *
-	 */
-	flags?: number;
+    /**
+     * 执行批量更新操作，期间不会触发事件，等更新函数执行后再触发batch事件
+     *  =false 不执行批量更新操作
+     *  =true  执行批量更新操作，批量更新事件名称为__batch_update__
+     *  <string> 执行批量更新操作，批量更新事件名称为指定的字符串
+     */
+    batch?: boolean | string;
+    /**
+     * 执行更新操作时，静默，不会触发任何事件
+     *
+     */
+    silent?: boolean;
+    /**
+     *
+     * 更新时执行校验的模式
+     * - none    不进行校验，即不执行校验函数
+     * - pass    校验失败时放行，即进行更新
+     * - ignore  校验失败时忽略更新操作，不进行更新
+     * - throw   校验失败时抛出异常 (默认)
+     *
+     * 更新时的校验行为
+     * 用于在调用store.update时强制校验行为
+     * 比如
+     *
+     *  store.update(state=>{
+     *     state.count=1
+     *  },{
+     *     validate:'none'
+     * })
+     *
+     * 以上当写入count时不会执行任意校验行为
+     *
+     */
+    onInvalid?: "none" | "pass" | "throw" | "ignore" | "throw-pass";
+
+    /**
+     * 执行读取操作时，不会触发GET事件
+     * 即偷听
+     */
+    peep?: boolean;
+    /**
+     * 在批量更新结束后，会自动回放update(()=>{...})之间的所有操作事件
+     * 然后再触发一个__batch_update__事件
+     *
+     * @description
+     *
+     * =true 默认会回放所有操作事件
+     * =false 不会回放操作事件,仅会触发__batch_update__事件
+     */
+    reply?: boolean;
+    /**
+     * 额外的更新标识
+     * 用在执行更新操作时传递额外的标识
+     *
+     * store.update(()=>{...},{flags:8})
+     *
+     * 在update期间触发的事件operate中会包含此值，可以通过operate.flags获取到此值
+     *
+     */
+    flags?: number;
 };
 
 export type StateTracker = {
-	stop: () => void;
-	start(isStop?: (operate: StateOperate) => boolean): Promise<StateOperate[]>;
+    stop: () => void;
+    start(isStop?: (operate: StateOperate) => boolean): Promise<StateOperate[]>;
 };
 
 export type StoreSyncer = { on: () => void; off: () => void };
 
 export type StoreSyncOptions = {
-	from?: string;
-	to?: string;
-	filter?: (this: AutoStore<any>, operate: StateOperate) => boolean;
-	immediate?: boolean; // 初始化时立刻同步一次
-	direction?: "both" | "forward" | "backward"; // 0:双向同步, 1: from->to,  2: to->from
-	// 同步时，是否路径进行映射处理，比如将['order','price']映射成['order.price']等
-	pathMap?: {
-		from: (path: string[], value: any) => string[] | undefined;
-		to: (path: string[], value: any) => string[] | undefined;
-	};
+    from?: string;
+    to?: string;
+    filter?: (this: AutoStore<any>, operate: StateOperate) => boolean;
+    immediate?: boolean; // 初始化时立刻同步一次
+    direction?: "both" | "forward" | "backward"; // 0:双向同步, 1: from->to,  2: to->from
+    // 同步时，是否路径进行映射处理，比如将['order','price']映射成['order.price']等
+    pathMap?: {
+        from: (path: string[], value: any) => string[] | undefined;
+        to: (path: string[], value: any) => string[] | undefined;
+    };
+};
+
+export type StoreEvents = TransformedEvents<{
+    load: AutoStore<any>; // 响应对象创建后
+    unload: AutoStore<any>; // 响应对象销毁后
+    reset: string | undefined; // 对象重置时触发，入参为重置的路径字符串
+    "computed:created": ComputedObject; // 当计算对象创建时
+    "computed:done": { id: string; path: string[]; value: any; computedObject: ComputedObject }; // 当计算函数执行成功后
+    "computed:error": { id: string; path: string[]; error: any; computedObject: ComputedObject }; // 当计算函数执行出错时
+    "computed:cancel": {
+        id: string;
+        path: string[];
+        reason: "timeout" | "abort" | "reentry" | "error";
+        computedObject: ComputedObject;
+    }; // 当计算函数被取消时
+    "watch:created": WatchObject;
+    "watch:done": { value: any; watchObject: WatchObject };
+    "watch:error": { error: any; watchObject: WatchObject };
+    //
+    "observer:beforeCreate": ComputedDescriptor;
+    "observer:created": ObserverObject<any, any>;
+    "observer:done": ObserverDescriptor<any, any, any>;
+    // 当验证器验证失败时触发
+    validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
+    // 当schema被修改时触发
+    // 'schema:updated': SchemaObject
+}>;
+
+export type EventDefines = {
+    [key: string]: any;
 };

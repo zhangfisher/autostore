@@ -1,49 +1,60 @@
 # 创建
 
-使用`computed`函数创建计算属性。
+## 概述
+
+使用`computed`或`asyncComputed`函数创建计算属性。
+
+- 同步计算属性
 
 ```ts
-
 // 同步计算属性
-function computed<Value = any, Scope = any >(
-    getter: ComputedGetter<Value,Scope>,  // 计算函数
-    options?: SyncComputedOptions<Value,Scope>
-):Value;
-// 异步计算属性
 function computed<Value = any, Scope = any>(
-   getter: AsyncComputedGetter<Value,Scope>, // 计算函数
-   depends: ComputedDepends,       // 指定依赖
-   options?: ComputedOptions<Value,Scope>
-): ComputedDescriptorBuilder<Value,Scope>;
+    getter: ComputedGetter<Value, Scope>, // 计算函数
+    options?: SyncComputedOptions<Value, Scope>,
+): Value;
 ```
 
+- 异步计算属性
 
+```ts
+// 简单异步计算
+function computed<Value = any, Scope = any>(
+    getter: AsyncComputedGetter<Value, Scope>, // 计算函数
+    depends: ComputedDepends, // 指定依赖
+    options?: ComputedOptions<Value, Scope>,
+): ComputedDescriptorBuilder<Value, Scope>;
+// 增强异步计算
+function asyncComputed<Value = any, Scope = any>(
+    getter: AsyncComputedGetter<Value, Scope>,
+    depends: ComputedDepends,
+    options?: ComputedOptions<Value, Scope>,
+): AsyncComputedDescriptorBuilder<Value, Scope>;
+```
 
-## 状态中声明计算属性
-
-直接在状态中声明计算属性。
+## 指南
 
 ### 同步计算属性
 
+直接在状态中声明计算属性。
+
 使用`computed(<getter>,<options>)`函数声明同步计算属性。
 
-```tsx  {5-8}
-const store = createStore({
-  order:{
-    price:100,
-    count:3,
-    // 1. 快速创建，自动收集依赖
-    total1:(order)=>order.price * order.count,
-    // 2. 使用computed函数创建计算属性,并指定创建
-    total2:computed((order)=>order.price * order.count),
-  }
-})
+```tsx {5-8}
+const store = new AutoStore({
+    order: {
+        price: 100,
+        count: 3,
+        // 1. 快速创建，自动收集依赖
+        total1: (order) => order.price * order.count,
+        // 2. 使用computed函数创建计算属性,并指定创建
+        total2: computed((order) => order.price * order.count),
+    },
+});
 ```
 
 以下是一个同步计算属性的示例：
 
 <demo react="computed/createSyncBase.tsx"/>
- 
 
 更详细介绍请参考[同步计算属性](./sync.md)
 
@@ -53,10 +64,14 @@ const store = createStore({
 
 ### 异步计算属性
 
+异步计算属性可以有两种方法：
+
+- **简单异步计算** - `computed`
+
 使用`computed(<getter>,<depends>,<options>)`函数声明异步计算属性。
 
 ```typescript {5-12}
-const store = createStore({
+const store = new AutoStore({
   user:{
     firstName:"Zhang",
     lastName:"Fisher",
@@ -70,19 +85,32 @@ const store = createStore({
       {...options....})
   }
 })
-
-
 ```
 
 更详细介绍请参考[异步计算属性](./async.md)
 
+- **增强异步计算** - `asyncComputed`
+
+```typescript {5-10}
+const store = new AutoStore({
+  user:{
+    firstName:"Zhang",
+    lastName:"Fisher",
+    // 使用asyncComputed函数创建计算属性,依赖和选项
+    fullName:asyncComputed(async (user，args)=>{
+        user.firstName+user.lastName,
+      },
+      ['./firstName','./lastName'],
+      {...options....})
+  }
+})
+```
 
 :::warning 提示
-异步计算属性需要通过`computed`函数来指定依赖。
+不同于同步计算，创建异步计算属性时需要指定依赖。
 :::
 
-
-## 动态创建计算对象
+### 动态创建计算对象
 
 也可以不在状态中声明`computed`，而是使用`store.computedObjects.create`动态创建计算属性。
 
@@ -91,78 +119,76 @@ const store = createStore({
 ```typescript
 // 创建同步计算对象
 function create<Value = any, Scope = any>(
-  getter: ComputedGetter<Value,Scope>,
-  options?: SyncComputedOptions<Value,Scope>
-):SyncComputedObject<Value,Scope>
+    getter: ComputedGetter<Value, Scope>,
+    options?: SyncComputedOptions<Value, Scope>,
+): SyncComputedObject<Value, Scope>;
 // 创建异步计算对象
 function create<Value = any, Scope = any>(
-  getter: AsyncComputedGetter<Value,Scope>,
-  depends: ComputedDepends,options?: ComputedOptions<Value,Scope>
-): AsyncComputedObject<Value,Scope>    
+    getter: AsyncComputedGetter<Value, Scope>,
+    depends: ComputedDepends,
+    options?: ComputedOptions<Value, Scope>,
+): AsyncComputedObject<Value, Scope>;
 // 使用创建计算对象
 function create<Value = any, Scope = any>(
-  descriptor:ComputedDescriptor<Value,Scope>
-): AsyncComputedObject<Value,Scope> | SyncComputedObject<Value,Scope>    
-   
+    descriptor: ComputedDescriptor<Value, Scope>,
+): AsyncComputedObject<Value, Scope> | SyncComputedObject<Value, Scope>;
 ```
 
 动态创建计算属性的三种方法：
 
-### 动态创建同步计算
+#### 动态创建同步计算
 
-```ts  
-import { createStore } from '@autostorejs/react';
+```ts
+import { new AutoStore } from "@autostorejs/react";
 
-const store = createStore({
-  order:{
-    price:100,
-    count:3,
-  }
-})
+const store = new AutoStore({
+    order: {
+        price: 100,
+        count: 3,
+    },
+});
 
 // 简单的同步计算
-const totalObj = store.computedObjects.create((order)=>order.price * order.count)
-
+const totalObj = store.computedObjects.create((order) => order.price * order.count);
 ```
 
-### 动态创建异步计算
+#### 动态创建异步计算
 
-```ts 
-import { createStore } from '@autostorejs/react'; 
+```ts
+import { new AutoStore } from "@autostorejs/react";
 
-const store = createStore({
-  order:{
-    price:100,
-    count:3,
-  }
-})
+const store = new AutoStore({
+    order: {
+        price: 100,
+        count: 3,
+    },
+});
 
 // 简单的异步计算
-store.computedObjects.create(async (order)=>order.price * order.count,
-  ['order.price','order.count']     //  ✅ 使用绝对依赖
-  ['./price','./count']             // ❌ 不支持相对依赖
-)
+store.computedObjects.create(
+    async (order) => order.price * order.count,
+    ["order.price", "order.count"][("./price", "./count")], //  ✅ 使用绝对依赖 // ❌ 不支持相对依赖
+);
 ```
 
-
-### 使用computed创建
+#### 使用computed创建
 
 上述两种方式内部也是使用`computed`来创建的，其等效于:
 
-```ts 
-
+```ts
 // 同步计算
-store.computedObjects.create(computed((order)=>order.price * order.count))
+store.computedObjects.create(computed((order) => order.price * order.count));
 
 //  异步计算
-store.computedObjects.create(computed(async (order)=>order.price * order.count,
-  ['order.price','order.count'] //  ✅ 使用绝对依赖
-  ['./price','./count']  // ❌ 不支持相对依赖
-))
+store.computedObjects.create(
+    computed(
+        async (order) => order.price * order.count,
+        ["order.price", "order.count"][("./price", "./count")], //  ✅ 使用绝对依赖 // ❌ 不支持相对依赖
+    ),
+);
 ```
 
 使用`computed`可以进行更多的配置，比如`options`等。
- 
 
 ## 小结
 
@@ -174,10 +200,10 @@ store.computedObjects.create(computed(async (order)=>order.price * order.count,
 
 更详细介绍请参考[动态创建计算对象](./objects.md)
 
-
 :::warning 提示
 使用`computed(<getter>,<depends>,<options>)`创建计算属性时，涉及到:
+
 - `getter`：计算函数, 在依赖更新时执行。详见[计算函数](./getter.md)
 - `depends`：依赖, 详见[依赖](./deps.md)
 - `options`：各种控制选项, 详见[选项](./options.md)
-:::
+  :::

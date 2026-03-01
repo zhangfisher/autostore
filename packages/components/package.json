@@ -6,7 +6,7 @@
   "access": "public",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zhangfisher/autostore.git"
+    "url": "git+https://github.com/zhangfisher/autostore.git"
   },
   "publishConfig": {
     "main": "dist/index.js",
@@ -33,5 +33,9 @@
   },
   "peerDependencies": {
     "react": "^18.2.0"
-  }
+  },
+    "files": [
+        "readme.md",
+        "dist"
+    ]
 }

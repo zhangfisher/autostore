@@ -1,23 +1,26 @@
 {
 	"name": "autostore",
-	"version": "3.2.11",
+	"version": "4.0.13",
 	"description": "Very easy and elegant state management library.",
 	"type": "module",
 	"main": "src/index.ts",
 	"access": "public",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/zhangfisher/autostore.git"
+		"url": "git+https://github.com/zhangfisher/autostore.git"
 	},
 	"publishConfig": {
-		"main": "dist/index.cjs",
-		"module": "dist/index.js",
-		"types": "dist/index.d.ts"
+		"types": "./dist/index.d.ts",
+		"main": "./dist/index.js",
+		"exports": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		}
 	},
 	"scripts": {
 		"build": "tsup",
-		"bench": "tsx src/index.ts",
-		"test": "vitest"
+		"test": "bun test"
 	},
 	"files": [
 		"readme.md",
@@ -35,16 +38,17 @@
 	"author": "zhangfisher",
 	"license": "MIT",
 	"devDependencies": {
+		"@swc/core": "^1.15.11",
 		"@type-challenges/utils": "^0.1.1",
-		"@types/node": "^22.18.10",
-		"ts-node": "^10.9.2",
-		"tsup": "^8.5.0",
-		"type-fest": "^5.1.0",
+		"@types/bun": "^1.3.8",
+		"@types/node": "^25.0.9",
+		"tsup": "^8.5.1",
+		"type-fest": "^5.4.3",
 		"typescript": "^5.9.3",
-		"vitest": "^3.2.4",
 		"zlib": "^1.0.5"
 	},
 	"dependencies": {
+		"fastevent": "^2.3.6",
 		"flex-tools": "^1.5.9"
 	}
 }

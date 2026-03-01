@@ -3,13 +3,13 @@
 layout: home
 
 hero:
-    name: 'AutoStore'
-    text: '响应式数据管理'
+    name: "AutoStore"
+    text: "响应式数据管理"
     tagline: 自动依赖收集/异步计算/信号组件/表单
     actions:
         - theme: brand
-          text: 快速入门
-          link: /zh/guide/intro/get-started
+          text: 开始
+          link: /zh/store/
         - theme: alt
           text: Github
           link: https://github.com/zhangfisher/autostore

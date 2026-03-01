@@ -1,5 +1,85 @@
 # @autostorejs/devtools
 
+## 4.0.13
+
+### Patch Changes
+
+-   8bce8c8: fix deps
+
+## 4.0.12
+
+### Patch Changes
+
+-   49b440f: fix types errors
+
+## 4.0.11
+
+### Patch Changes
+
+-   1eddd98: fix some errors
+
+## 4.0.10
+
+### Patch Changes
+
+-   6b18807: fix ci error
+
+## 4.0.9
+
+### Patch Changes
+
+-   fadc0b8: fix publishConfig
+
+## 4.0.8
+
+### Patch Changes
+
+-   977ad77: fix ci release
+
+## 4.0.7
+
+### Patch Changes
+
+-   18ae236: add publishConfig support
+
+## 4.0.6
+
+### Patch Changes
+
+-   3ee957d: fix ci
+
+## 4.0.5
+
+### Patch Changes
+
+-   0abe705: fix ci update
+
+## 4.0.4
+
+### Patch Changes
+
+-   ed5adb9: update ci
+
+## 4.0.3
+
+### Patch Changes
+
+-   3a94376: fix build scripts
+
+## 4.0.2
+
+### Patch Changes
+
+-   c98966d: fix some errors
+
+## 4.0.1
+
+### Patch Changes
+
+-   bf53248: 全新同步功能发布
+
+## 4.0.0
+
 ## 3.2.11
 
 ## 3.2.10

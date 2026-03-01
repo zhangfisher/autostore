@@ -1,0 +1,279 @@
+import type { ComputedBuilder } from "../computed/types";
+import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
+import { ComputedState, GetTypeByPath, StatePath } from "../types";
+
+/**
+ * 用于保存所有配置项的类型
+ * key： 配置项名称路径，如user.order.price
+ * value: AutoStoreFieldSchema & { value:<从原始Store中读取，写入时也会写入到原始Store的对应项>}
+ */
+export type AutoStoreConfigures = Record<
+    string,
+    AutoStateSchema & {
+        value: any;
+    }
+>;
+
+// biome-ignore lint/suspicious/noEmptyInterface: <noEmptyInterface>
+export interface AutoStoreWidgets {
+    number: {
+        max: number;
+        min: number;
+        step?: number;
+    };
+}
+export interface AutoStoreAction {
+    id?: string;
+    label?: string;
+    icon?: string;
+    disabled?: boolean;
+    visible?: boolean;
+    default?: boolean;
+    checked?: boolean;
+    tooltip?: string;
+    value?: any;
+    onClick?: (action: AutoStoreAction) => void;
+}
+
+/**
+ * 从 AutoStoreWidgets 提取 widget 键类型
+ * 当 AutoStoreWidgets 为空接口时，回退到 string 类型
+ */
+type WidgetKeys<T> = keyof T extends never ? string : keyof T;
+
+export type AutoStoreWidgetTypes = WidgetKeys<AutoStoreWidgets>;
+
+/**
+ * 从 AutoStoreWidgets 中提取指定 widget 的配置类型
+ */
+export type WidgetConfig<W extends keyof AutoStoreWidgets> = AutoStoreWidgets[W];
+
+/**
+ * AutoStateSchema 基础接口（不包含 widget 特定配置）
+ */
+export interface AutoStateSchemaBase<Value = any> {
+    value: Value;
+    /**
+     * 配置项控件类型
+     * 即渲染渲染表单字段控件
+     */
+    widget?: AutoStoreWidgetTypes;
+    /**
+     * 配置键名称
+     * 即在ConfigManager.state配置对象中存储key路径
+     * 如果没有指定，则等于配置项所在的路径,如path=["order","price"],则key=order.price
+     */
+    key?: string;
+    /**
+     * 配置项名称
+     * 一般是英文名称，用于渲染表单名称
+     * 如果没有指定，默认等于路径的最后一个节点，如path=["order","price"],则name=price
+     */
+    name?: string;
+    /**
+     * 配置项标题
+     * 一般是中文名称，用于渲染表单标题
+     * 默认值等于name
+     */
+    label?: string;
+    /**
+     * 配置项帮助信息
+     */
+    help?: string;
+    /**
+     * 配置项提示信息
+     */
+    tooltip?: string;
+    /**
+     * 默认值
+     */
+    default?: Value;
+    /**
+     * 当校验出错时的无效提示信息
+     *
+     * 支持插值变量
+     * - 当前所有配置项的值，例如: invalidTips="{label}数据格式错误"
+     * - error: 错误信息，即错误对象的message属性
+     * - errorStack: 错误堆栈信息,即错误对象的stack属性
+     * - value: 错误值
+     * - path: 路径
+     *
+     */
+    errorMessage?: string;
+    datatype?: string;
+    /**
+     * 是否启用
+     */
+    enable?: boolean;
+    /**
+     * 配置项图标
+     */
+    icon?: string;
+    /**
+     * 是否必填
+     */
+    required?: boolean;
+    /**
+     * 是否可见
+     */
+    visible?: boolean;
+    description?: string;
+    placeholder?: string;
+    /**
+     * 分组名称
+     */
+    group?: string;
+    /**
+     * 是否是高级选项
+     */
+    advanced?: boolean;
+    /**
+     * 是否显示分割线
+     */
+    divider?: boolean;
+    /**
+     * 排序号
+     */
+    order?: number;
+    width?: number | string;
+    height?: number | string;
+    styles?: Record<string, any>; // 用于扩展widget样式，如{"<选择器>":"样式"}
+    classs?: Record<string, any>; // 用于扩展widget类，如{"<选择器>":"类名"}
+
+    /**
+     *
+     * 校验失败时的默认行为
+     *
+     * - throw: 默认，触发ValidateError错误
+     * - throw-pass： 继续写入,然后再触发ValidateError错误
+     * - pass: 继续写入,不抛出错误
+     * - ignore: 静默忽略，即不触发错误，也不写入
+     *
+     * 错误信息均会写入到errors中
+     *
+     * 当校验函数返回 false 或抛出错误时，使用此选项决定如何处理
+     * 可被校验函数抛出的 ValidateError.behavior 覆盖
+     *
+     */
+    onInvalid?: "pass" | "throw" | "ignore" | "throw-pass";
+    /**
+     * 校验函数
+     * 允许通过throw new Error()来提供错误信息
+     * @param value
+     * @returns
+     */
+    validate?: (value: Value, oldValue: Value, path: string[]) => boolean;
+    /**
+     * 在视图模式下的渲染函数
+     */
+    toView?: (value: Value) => any;
+    /**
+     * 写入到状态时的转换函数
+     */
+    toState?: (value: any) => any;
+    /**
+     * 将状态转换为输入值的函数
+     */
+    toInput?: (value: any) => any;
+    /**
+     * 用于自定义渲染表单字段
+     */
+    toRender?: (value: any) => any;
+    /**
+     * 动作
+     */
+    actions?: AutoStoreAction[];
+}
+
+/**
+ * 完整的 AutoStateSchema 类型，根据 widget 参数自动合并对应 widget 配置
+ */
+export type AutoStateSchema<
+    Value = any,
+    Widget extends AutoStoreWidgetTypes = AutoStoreWidgetTypes,
+> = AutoStateSchemaBase<Value> &
+    (Widget extends keyof AutoStoreWidgets ? Partial<WidgetConfig<Widget>> : {});
+
+// 让对象的成员值允许是ComputedBuilder，可计算值
+// 例外：函数类型的属性，如果名称以 on、to、render 开头，则不允许为 ComputedBuilder
+// 保留字段：key、value、path、datatype 等系统字段不允许为 ComputedBuilder
+export type Computedable<Obj extends Record<string, any>, Value = any> = {
+    [Key in keyof Obj]: Key extends "validate"
+        ? (value: Value, oldValue: Value, path: string[]) => boolean
+        : Key extends "name" | "id" | "key" | "value" | "path" | "datatype"
+          ? Obj[Key] // 保留字段，不允许为 ComputedBuilder
+          : Key extends `${"on" | "to" | "render"}${string}`
+            ? Obj[Key] extends (...args: any[]) => any
+                ? Obj[Key] // 函数类型，不允许为 ComputedBuilder
+                : Obj[Key] | ComputedBuilder<Obj[Key], any>
+            : Obj[Key] | ComputedBuilder<Obj[Key], any>;
+};
+export type ComputedableStateSchema<Value = any> = Computedable<AutoStateSchema<Value>, Value>;
+
+export type SchemaDescriptor<Value = any> = {
+    path?: string[];
+    value: Value;
+    schema: AutoStateSchema<Value>;
+};
+
+export interface SchemaDescriptorBuilder<Value = any> {
+    [VALUE_SCHEMA_BUILDER_FLAG]: true;
+    (): SchemaDescriptor<Value>;
+}
+
+export type SchemaBuilder<Value = any> = <T = Value>(
+    value: T,
+    schema?: ComputedableStateSchema<Value>,
+) => SchemaDescriptorBuilder<T>;
+
+export type SchemaKeyPaths<State> = Exclude<
+    keyof {
+        [K in StatePath<State> as GetTypeByPath<State, K> extends {
+            [VALUE_SCHEMA_BUILDER_FLAG]: true;
+        }
+            ? K
+            : GetTypeByPath<State, K> extends Array<infer Item>
+              ? Item extends { [VALUE_SCHEMA_BUILDER_FLAG]: true }
+                  ? `${K}.${number}`
+                  : never
+              : never]: any;
+    },
+    number | symbol
+>;
+export type ConfigurableState<State extends Record<string, any>> = {
+    [Key in SchemaKeyPaths<State>]: GetTypeByPath<ComputedState<State>, Key>;
+};
+
+// 用于计算属性配置的类型，确保 onValidate 等函数的参数类型能正确推断
+// 我们使用简化的方式: 直接在类型中列出所有属性
+// export type ComputedableStateSchema<Value = any> = {
+//     // 函数类型属性(onValidate等)保持原始类型，不允许为 ComputedBuilder
+//     validate?: (value: Value, oldValue: Value, path: string[]) => boolean;
+//     /**
+//      * 当配置被渲染到只读视图时调用
+//      */
+//     toView?: (value: any) => any;
+//     /**
+//      * 从表单转换到状态时调用
+//      */
+//     toState?: (value: any) => Value;
+//     /**
+//      * 将状态值转换为表单输入字段时调用
+//      */
+//     toInput?: (value: Value) => any;
+//     /**
+//      * 当渲染该配置表单字段时调用
+//      */
+//     toRender?: (value: any) => any;
+
+//     // 保留字段不允许为 ComputedBuilder
+//     name?: string;
+//     id?: string;
+//     key?: string;
+//     value?: any;
+//     path?: string[];
+//     datatype?: string;
+
+//     // 其他属性可以是值或 ComputedBuilder
+//     [key: string]: any;
+// };

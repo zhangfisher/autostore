@@ -144,3 +144,38 @@ class MyState {
 const mys = new MyState();
 
 mys.reactive.order.name;
+
+/**
+ * Widget 类型提取测试
+ * 验证 widget 字段从 AutoStoreWidgets 提取类型
+ * 并且当 AutoStoreWidgets 为空时回退到 string
+ */
+import type { AutoStateSchema, AutoStoreWidgetTypes } from "../src/schema/types";
+
+// 测试 1: 验证 AutoStoreWidgetTypes 是 "number" 类型
+type WidgetTypeTest = AutoStoreWidgetTypes;
+const _widgetTypeCheck: WidgetTypeTest = "number"; // ✅
+
+// 测试 2: widget 可以是 "number"
+const _validWidget: AutoStateSchema = {
+	widget: "number", // ✅ 应该通过类型检查
+	min: 0,
+	max: 100,
+	value: 50,
+};
+
+// 测试 3: widget 特定配置的类型推断
+type NumberWidgetConfig = AutoStateSchema<number, "number">;
+const numberSchema: NumberWidgetConfig = {
+	widget: "number",
+	min: 0, // ✅ 类型推断正确
+	max: 100, // ✅ 类型推断正确
+	step: 1, // ✅ 可选字段
+	value: 50,
+};
+
+type WidgetConfigTests = [
+	Expect<Equal<typeof numberSchema.min, number | undefined>>,
+	Expect<Equal<typeof numberSchema.max, number | undefined>>,
+	Expect<Equal<typeof numberSchema.step, number | undefined>>,
+];

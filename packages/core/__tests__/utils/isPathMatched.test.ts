@@ -1,6 +1,7 @@
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 // FILEPATH: e:/Work/Code/sources/autostore/packages/core/src/utils/__tests__/isPathMatched.test.ts
 
-import { describe, expect, it, test } from 'vitest';
+
 import { isPathMatched } from '../../src/utils/isPathMatched';
 
 describe('isPathMatched', () => {

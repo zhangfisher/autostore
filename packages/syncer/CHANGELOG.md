@@ -1,5 +1,116 @@
 # @autostorejs/syncer
 
+## 4.0.13
+
+### Patch Changes
+
+-   8bce8c8: fix deps
+-   Updated dependencies [8bce8c8]
+    -   autostore@4.0.13
+
+## 4.0.12
+
+### Patch Changes
+
+-   49b440f: fix types errors
+-   Updated dependencies [49b440f]
+    -   autostore@4.0.12
+
+## 4.0.11
+
+### Patch Changes
+
+-   1eddd98: fix some errors
+-   Updated dependencies [1eddd98]
+    -   autostore@4.0.11
+
+## 4.0.10
+
+### Patch Changes
+
+-   6b18807: fix ci error
+-   Updated dependencies [6b18807]
+    -   autostore@4.0.10
+
+## 4.0.9
+
+### Patch Changes
+
+-   fadc0b8: fix publishConfig
+-   Updated dependencies [fadc0b8]
+    -   autostore@4.0.9
+
+## 4.0.8
+
+### Patch Changes
+
+-   977ad77: fix ci release
+-   Updated dependencies [977ad77]
+    -   autostore@4.0.8
+
+## 4.0.7
+
+### Patch Changes
+
+-   18ae236: add publishConfig support
+-   Updated dependencies [18ae236]
+    -   autostore@4.0.7
+
+## 4.0.6
+
+### Patch Changes
+
+-   3ee957d: fix ci
+-   Updated dependencies [3ee957d]
+    -   autostore@4.0.6
+
+## 4.0.5
+
+### Patch Changes
+
+-   0abe705: fix ci update
+-   Updated dependencies [0abe705]
+    -   autostore@4.0.5
+
+## 4.0.4
+
+### Patch Changes
+
+-   ed5adb9: update ci
+-   Updated dependencies [ed5adb9]
+    -   autostore@4.0.4
+
+## 4.0.3
+
+### Patch Changes
+
+-   3a94376: fix build scripts
+-   Updated dependencies [3a94376]
+    -   autostore@4.0.3
+
+## 4.0.2
+
+### Patch Changes
+
+-   c98966d: fix some errors
+-   Updated dependencies [c98966d]
+    -   autostore@4.0.2
+
+## 4.0.1
+
+### Patch Changes
+
+-   bf53248: 全新同步功能发布
+-   Updated dependencies [bf53248]
+    -   autostore@4.0.1
+
+## 4.0.0
+
+### Patch Changes
+
+-   Updated dependencies [737ca89]
+    -   autostore@4.0.0
+
 ## 3.2.11
 
 ### Patch Changes

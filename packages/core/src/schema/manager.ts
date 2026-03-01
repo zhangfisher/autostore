@@ -1,169 +1,343 @@
-import { PATH_DELIMITER } from "../consts";
-import type { AutoStore } from "../store/store";
-import type { Dict } from "../types";
-import { isSchemaBuilder, markRaw, pathStartsWith, setVal } from "../utils";
+import { PATH_DELIMITER, GLOBAL_CONFIG_MANAGER } from "../consts";
+import { AutoStore } from "../store/store";
+import { isRaw, isSchemaBuilder, markRaw, setVal, withSchema } from "../utils";
 import { getVal } from "../utils/getVal";
-import { isFuncDefine } from "../utils/isFuncDefine";
-import { parseFunc } from "../utils/parseFunc";
-import type {
-	SchemaOptions,
-	SchemaValidator,
-	ComputedSchemaState,
-	SchemaDescriptor,
-	SchemaDescriptorBuilder,
-} from "./types";
+import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from "./types";
+import { isFunction } from "../utils/isFunction";
+import type { AutoStoreOptions } from "../store/types";
+import type { Dict } from "../types";
 
-export class SchemaManager<
-	State extends Dict,
-	SchemaStore extends AutoStore<ComputedSchemaState<State>> = AutoStore<ComputedSchemaState<State>>,
+/**
+ *
+ * 配置管理器
+ *
+ *  {
+ *     '<Sotre.options.configKey>.<配置项所在路径>':StateSchema
+ *     'order.price':StateSchema
+ *     'user.name':StateSchema
+ * }
+ * const config = new ConfigManager({
+ *      load(path:string[]){
+ *          return {}
+ *      }
+ *      save(path:string[],value:any){
+ *      }
+ * })
+ * - 加载所有配置
+ * await config.load()
+ *
+ *
+ *
+ */
+export interface ConfigSource {
+    load: () => Record<string, any> | Promise<Record<string, any>>;
+    /**
+     * 每一个配置项变更时均会调用
+     * @param values
+     * @returns
+     */
+    save?: (values: Record<string, any>) => void | Promise<void>;
+    /**
+     * 重载配置时调用
+     * 可以在此将外部存储中的配置恢复
+     * @returns
+     */
+    reset?: () => void;
+}
+export type ConfigManagerOptions<State extends Dict> = AutoStoreOptions<State> & {
+    global?: string | boolean;
+    autoload?: boolean;
+    autosave?: boolean;
+};
+export class ConfigManager extends AutoStore<
+    AutoStoreConfigures,
+    ConfigManagerOptions<AutoStoreConfigures>
 > {
-	errors: Dict<string> = {}; // {<路径名称>:"错误信息"}
-	_subscribers: any[] = [];
-	store!: SchemaStore;
-	_descriptors: Record<string, SchemaDescriptor["options"]> = {};
-	constructor(public shadow: AutoStore<any>) {}
+    dirtyValues: Record<string, any> = {};
+    private _reseting: boolean = false;
+    constructor(
+        public source: ConfigSource,
+        options?: ConfigManagerOptions<AutoStoreConfigures>,
+    ) {
+        const finalOptions = Object.assign(
+            {
+                global: true,
+                configManager: false,
+                autoload: true,
+                autosave: true,
+                scope: "ROOT",
+            },
+            options,
+        ) as any;
+        super({}, finalOptions);
 
-	get fields() {
-		return this.store.state as Record<string, SchemaOptions>;
-	}
-	get size() {
-		return Object.keys(this.fields).length;
-	}
+        // 处理 global 选项，将实例挂载到 globalThis
+        if (finalOptions.global !== false) {
+            const globalKey =
+                finalOptions.global === true ? GLOBAL_CONFIG_MANAGER : finalOptions.global;
+            // @ts-expect-error - 动态设置 globalThis 属性
+            if (globalThis[globalKey] === undefined) {
+                // @ts-expect-error - 动态设置 globalThis 属性
+                globalThis[globalKey] = this;
+            }
+            if (finalOptions.autoload) this.load().catch(() => {});
+            // @ts-expect-error - 动态设置 globalThis 属性
+            return (globalThis[globalKey] = this);
+        }
+        if (finalOptions.autoload) this.load().catch(() => {});
+    }
+    get fields() {
+        return this.state;
+    }
+    get size() {
+        return Object.keys(this.fields).length;
+    }
+    /**
+     * 加载数据到当前实例
+     * @param {Record<string, any>} data - 要加载的数据对象，键值对形式
+     */
+    async load() {
+        const values = await this.source.load();
+        this.update(
+            (state) => {
+                Object.entries(values).forEach(([key, value]) => {
+                    // 直接使用扁平键访问 schema
+                    const schema = state[key];
+                    if (schema) {
+                        // schema 存在，通过 setter 更新原始 Store
+                        schema.value = value;
+                    } else {
+                        // schema 不存在，创建新的 schema 对象
+                        state[key] = { value };
+                    }
+                });
+            },
+            {
+                silent: true,
+            },
+        );
+    }
+    /**
+     * 手工调用保存配置数据到数据源
+     * @param all 保存所有配置数据,false=只保存变更的数据
+     */
+    async save(all?: boolean) {
+        const values = all ? this._getValues() : this.dirtyValues;
+        if (Object.keys(values).length > 0) {
+            await this.source.save?.(values);
+            this.dirtyValues = {};
+        }
+    }
 
-	_getKey(path: any): string {
-		return Array.isArray(path) ? path.join("_$_") : path.split(PATH_DELIMITER).join("_$_");
-	}
-	_getPath(path: string) {
-		return path.split("_$_");
-	}
+    private _getValues() {
+        return Object.entries(this.state).reduce(
+            (acc, [key, schema]) => {
+                acc[key] = (schema as any).value;
+                return acc;
+            },
+            {} as Record<string, any>,
+        );
+    }
+    /**
+     * 恢复默认值
+     */
+    reset() {
+        if (this._reseting) return;
+        try {
+            this._reseting = true;
+            this.dirtyValues = {};
+            // 将状态值恢复为默认值
+            // this.state 中的每个值是一个 SchemaDescriptor，包含 value 和 schema 属性
+            Object.values(this.state).forEach((schema: any) => {
+                // 此操作会导致写入时的校验操作，
+                try {
+                    // 使用 withSchema 包裹默认值，实现静默更新
+                    // 避免触发校验、事件通知、onUpdate 和 save
+                    const defaultValue = schema.default;
+                    if (defaultValue !== undefined) {
+                        schema.value = withSchema(markRaw(defaultValue), {
+                            slient: true,
+                            onInvalid: "none",
+                        });
+                    }
+                } catch {
+                    // 忽略校验错误
+                }
+            });
+        } finally {
+            if (typeof this.source.reset === "function") {
+                this.source.reset.call(this);
+            }
+            this._reseting = false;
+        }
+    }
+    /**
+     * 此方法由Store实例在更新状态值时调用
+     * @param store
+     * @param path
+     * @param value
+     */
+    onUpdate(_store: AutoStore<any>, configKey: string, value: any) {
+        try {
+            this.dirtyValues[configKey] = value;
+            if (this.options.autosave) {
+                this.source.save?.(this.dirtyValues);
+                this.dirtyValues = {};
+            }
+        } finally {
+            this._notify({
+                type: "set",
+                path: [configKey, "value"],
+                value,
+            });
+        }
+    }
+    add(
+        store: AutoStore<any>,
+        path: string | string[],
+        schema: SchemaDescriptorBuilder | SchemaDescriptor,
+    ) {
+        this.operates.options.delimiter = store.options.delimiter;
 
-	add<V = any, Options extends SchemaOptions<V> = SchemaOptions<V>>(
-		path: string | string[],
-		schema: SchemaDescriptorBuilder | SchemaDescriptor<V, Options>,
-	) {
-		const descriptor = isSchemaBuilder(schema) ? schema() : schema;
+        const descriptor: SchemaDescriptor = isSchemaBuilder(schema) ? schema() : schema;
 
-		const pathKey = Array.isArray(path) ? path : path.split(PATH_DELIMITER);
-		const key = this._getKey(path);
-		if (!descriptor.options.onFail) descriptor.options.onFail = "throw-pass";
+        const pathKey = Array.isArray(path) ? path : path.split(store.options.delimiter);
+        const strPath = pathKey.join(store.options.delimiter);
+        // 创建配置键路径（需要复制数组，避免修改原数组）
+        const configKey = [...pathKey];
+        if (store.options.configKey) configKey.splice(0, 0, store.options.configKey);
 
-		const finalDescriptor = Object.assign({}, this.shadow.options.defaultSchemaOptions, descriptor.options, {
-			path: pathKey,
-			datatype: descriptor.datatype,
-			value: descriptor.value,
-		}) as unknown as SchemaDescriptor["options"];
+        // 保存初始值，用于返回
+        const initialValue = descriptor.value;
+        if (descriptor.schema.default === undefined) {
+            descriptor.schema.default = initialValue;
+        }
+        descriptor.schema.value = initialValue;
 
-		Object.entries(finalDescriptor).forEach(([key, value]) => {
-			if (isFuncDefine(value)) {
-				const func = parseFunc(value);
-				if (typeof func === "function") {
-					// if (key === 'onValidate') {
-					if (key.startsWith("on") || key.startsWith("to")) {
-						(finalDescriptor as any)[key] = markRaw(func);
-					} else {
-						(finalDescriptor as any)[key] = func;
-					}
-				}
-			}
-		});
+        // defaultSchema 只作为默认值，不会覆盖 descriptor.schema 中已有的属性
+        if (store.options.defaultSchema) {
+            Object.keys(store.options.defaultSchema).forEach((key) => {
+                const defaultValue = (store.options.defaultSchema as any)[key];
+                const currentValue = (descriptor.schema as any)[key];
+                // 只有当当前值未定义时，才使用 defaultSchema 的值
+                if (currentValue === undefined) {
+                    (descriptor.schema as any)[key] = defaultValue;
+                }
+            });
+        }
 
-		this._descriptors[key] = finalDescriptor;
+        // 如果没有设置 onInvalid，则使用默认值 'throw'
+        if ((descriptor.schema as any).onInvalid === undefined) {
+            (descriptor.schema as any).onInvalid = "throw";
+        }
+        // 安装校验器
+        this._installValidator(strPath, descriptor, store);
+        // 由于该配置项可能已先load还未注册，因此需要覆盖现有的值
+        const loadedValue = this.peep((state) =>
+            getVal(state, [configKey.join(PATH_DELIMITER), "value"]),
+        );
+        // 用于为schema中的observerObject提供refStore，以便能访问
+        this._handleRefState(descriptor.schema, store);
+        // 动态添加
+        this.state[configKey.join(PATH_DELIMITER)] = descriptor.schema;
+        if (loadedValue !== undefined) {
+            descriptor.schema.value = loadedValue;
+        }
+        // 创建代理用于从原始的Store值读写状态值
+        this._createValueProxy(descriptor, store, pathKey);
 
-		if (this.shadow && descriptor.value !== undefined && descriptor.flags !== -1) {
-			this.shadow.update(
-				(state) => {
-					setVal(state, pathKey, descriptor.value);
-				},
-				{
-					validate: "pass",
-					silent: true,
-				},
-			);
-		}
-		return descriptor;
-	}
-	/**
-	 * 等store的所有计算属性处理完毕再创建schemas
-	 *
-	 */
-	build() {
-		if (this.store) return;
-		if (!this._descriptors) return;
-		this.store = this.shadow.shadow(this._descriptors) as unknown as SchemaStore;
-	}
-	get<T extends keyof SchemaStore["state"] = keyof SchemaStore["state"]>(path: T): SchemaOptions | undefined {
-		if (!this.store) return;
-		return getVal(this.store.state, [this._getKey(path as any)]);
-	}
-	has(path: string | string[]): boolean {
-		if (!this.store) return false;
-		const key = this._getKey(path);
-		return key in (this.store.state as any);
-	}
-	watch() {
-		// @ts-ignore
-		return this.store.watch(...arguemnts);
-	}
-	getValidator<T extends keyof SchemaStore["state"] = keyof SchemaStore["state"]>(
-		path: T,
-	): SchemaValidator<SchemaStore["state"][T]> | undefined {
-		if (!this.store) return;
-		const options = this.get(path);
-		if (!options) return;
-		return {
-			validate: options.onValidate!,
-			onFail: options.onFail!,
-			message: options.invalidTips!,
-		};
-	}
+        // 返回初始值，避免读取代理导致循环依赖
+        return loadedValue || initialValue;
+    }
+    private _handleRefState(schema: object, store: AutoStore<any>) {
+        Object.values(schema).forEach((v) => {
+            if (isFunction(v) && !isRaw(v)) {
+                v._getRefStore = () => new WeakRef(store);
+            }
+        });
+    }
+    private _installValidator(path: string, descriptor: SchemaDescriptor, store: AutoStore<any>) {
+        if (isFunction(descriptor.schema.validate)) {
+            // 错误信息模板
+            const template = descriptor.schema.errorMessage;
+            // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
+            // @ts-expect-error
+            descriptor.schema.validate.getErrorMessage = (error: Error) => {
+                if (typeof template === "string") {
+                    // 合并所有变量到同一个对象中，一次性完成插值
+                    return template.params({
+                        ...descriptor.schema,
+                        error: error.message,
+                        errorStack: error.stack,
+                        path,
+                    });
+                }
+                return error.message;
+            };
+            // 获取 validationBehavior，用于指定校验失败时的默认行为
+            const onInvalid = descriptor.schema.onInvalid;
+            // 只有当 onInvalid 显式指定时才设置它
+            if (onInvalid !== undefined) {
+                (descriptor.schema.validate as any).onInvalid = onInvalid;
+            }
+            // 注册验证函数，用于写入状态值时调用进行验证
+            if (!store.options.validators) {
+                store.options.validators = {};
+            }
+            store.options.validators[path] = descriptor.schema.validate;
+        } else {
+            if (store.options.validators) {
+                delete store.options.validators[path];
+            }
+        }
+    }
+    private _createValueProxy(
+        finalDescriptor: SchemaDescriptor,
+        store: AutoStore<any>,
+        path: string[],
+    ) {
+        // oxlint-disable-next-line typescript/no-this-alias
+        const self = this;
 
-	addValidator(path: string[], validator: SchemaValidator) {
-		if (!this.store) return;
-		const key = this._getKey(path);
-		this.store.update((state) => {
-			Object.assign((state as any)[key], {
-				onValidate: markRaw(validator.validate),
-				onFail: validator.onFail || "throw-pass",
-				invalidTips: validator.message,
-			});
-		});
-	}
+        // 由于ConfigManager是全局对象，而Store可能是动态，可能会被销毁，因此应采用弱引用
+        const storeRef = new WeakRef(store);
+        return Object.defineProperty(
+            finalDescriptor.schema,
+            "value",
+            markRaw({
+                get() {
+                    const store = storeRef.deref();
+                    if (store) {
+                        const value = getVal(store.state, path);
+                        self._notify({
+                            type: "get",
+                            path: [...path, "value"],
+                            value,
+                        });
+                        return value;
+                    }
+                },
+                set(value) {
+                    const store = storeRef.deref();
+                    store?.update((state: any) => {
+                        setVal(state, path, value);
+                    });
+                    self._notify({
+                        type: "set",
+                        path: [...path, "value"],
+                        value,
+                    });
+                },
+            }),
+        );
+    }
+    getConfigValue(path: string[]) {
+        return this.peep((state) => {
+            return getVal(state, [...path, "value"]);
+        });
+    }
+}
 
-	remove(path: keyof SchemaStore["state"]) {
-		const key = this._getKey(path);
-		if (this.store) {
-			delete (this.store.state as any)[key];
-		}
-	}
-
-	getValues() {
-		const values: Record<string, any> = {};
-		Object.entries(this._descriptors || {}).forEach(([key, options]) => {
-			const path = this._getPath(key);
-			const name = (options as any).name ?? path.join(PATH_DELIMITER);
-			this.shadow.peep((state) => {
-				values[name] = getVal(state, path);
-			});
-		});
-		return values;
-	}
-	/**
-	 * 过滤出指定路径的schema
-	 *
-	 * 如:
-	 * schemas.find("user.order")
-	 * schemas.find(["user.order","order"])
-	 *
-	 * @param path
-	 */
-	find(path: string | string[]) {
-		const spath = Array.isArray(path) ? path : path.split(PATH_DELIMITER);
-		return Object.entries(this.fields)
-			.filter(([key]) => {
-				return pathStartsWith(spath, this._getPath(key));
-			})
-			.map(([_, options]) => {
-				return options;
-			});
-	}
+declare global {
+    var AutoStoreConfigManger: ConfigManager;
 }

@@ -1,11 +1,21 @@
 {
-	"$schema": "https://unpkg.com/@changesets/config@3.0.3/schema.json",
+	"$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
 	"changelog": "@changesets/cli/changelog",
 	"commit": true,
 	"access": "public",
-	"fixed": [["autostore", "@autostorejs/react", "@autostorejs/syncer", "@autostorejs/form", "@autostorejs/devtools"]],
+	"fixed": [[
+        "autostore",
+        "@autostorejs/react",
+        "@autostorejs/syncer",
+        "@autostorejs/devtools"
+    ]],
 	"linked": [],
-	"baseBranch": "master",
+	"baseBranch": "4.0",
 	"updateInternalDependencies": "patch",
-	"ignore": ["autostore-docs"]
+	"ignore": [
+		"autostore-docs", 
+		"x-react-components",
+		"@autostore-examples/benchmark",
+		"@autostore-examples/react" 
+	]
 }

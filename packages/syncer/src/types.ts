@@ -1,84 +1,95 @@
 import type { AutoStoreOptions, Dict, GetTypeByPath, StateOperateType } from "autostore";
-import type { AutoStoreSyncer } from "./syncer";
+import type { AutoStoreSyncer } from "./syncers/syncer";
+import { AutoStoreSyncTransportBase } from "./transports/base";
 
 export type AutoStoreSyncerOptions = {
-	mode?: "push" | "pull";
-	id?: string;
-	local?: string[] | string;
-	remote?: string[] | string;
-	transport?: IAutoStoreSyncTransport;
-	autostart?: boolean;
-	// 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
-	onSend?: (operate: StateRemoteOperate) => boolean | undefined;
-	// 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
-	onReceive?: (operate: StateRemoteOperate) => boolean | undefined;
-	// 是否进行一次同步
-	immediate?: boolean;
-	// 当启用缓存时，缓存的最大数量,超出部分会自动删除
-	maxCacheSize?: number;
-	// 0:双向同步, 1: from->to,  2: to->from
-	direction?: "both" | "forward" | "backward";
-	// 是否进行一次同步
-	filter?: (path: string[], value: any) => boolean;
-	/**
-	 * 将远程操作映射到本地
-	 * 比如将['order','price']映射成['order.price']等
-	 * pathMap.toLocal在接收到更新时调用
-	 * pathMap.toRemote在发送到远程时调用
-	 *
-	 * 注意：
-	 *  如果是双向同步，则需要同时指定from,to才可以正常工作
-	 */
-	pathMap?: {
-		toLocal?: (path: string[], value: any) => string[] | undefined;
-		toRemote?: (path: string[], value: any) => string[] | undefined;
-	};
+    /**
+     * 决定了当初始化时执行何种操作
+     *
+     * - psuh: 双向均向对方执行push操作,这样如果两个store初始状态均不一样会导致状态合并
+     * - none: 不执行任意操作
+     */
+    mode?: "push" | "pull" | "none" | "both";
+    id?: string;
+    local?: string[] | string;
+    remote?: string[] | string;
+    transport?: AutoStoreSyncTransportBase;
+    autostart?: boolean;
+    // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
+    onSend?: (operate: StateRemoteOperate) => boolean | undefined;
+    // 发送到远程之前触发，可以在此修改operate，叠加自己的数据到了operate, 返回false可以阻止发送
+    onReceive?: (operate: StateRemoteOperate) => boolean | undefined;
+    // 是否进行一次同步
+    immediate?: boolean;
+    // 当启用缓存时，缓存的最大数量,超出部分会自动删除
+    maxCacheSize?: number;
+    // 0:双向同步, 1: from->to,  2: to->from
+    direction?: "both" | "forward" | "backward";
+    // 是否进行一次同步
+    filter?: (path: string[], value: any) => boolean;
+    /**
+     * 将远程操作映射到本地
+     * 比如将['order','price']映射成['order.price']等
+     * pathMap.toLocal在接收到更新时调用
+     * pathMap.toRemote在发送到远程时调用
+     *
+     * 注意：
+     *  如果是双向同步，则需要同时指定from,to才可以正常工作
+     */
+    pathMap?: {
+        toLocal?: (path: string[], value: any) => string[] | undefined;
+        toRemote?: (path: string[], value: any) => string[] | undefined;
+    };
+    /**
+     * 要与之同步的远程 store 的 id 列表
+     * 当从 transport 接收到 operate 时，会检查 operate.id 是否在 peers 中
+     * '*' 表示接受所有来源的 operate
+     * @default ['*']
+     */
+    peers?: string[];
+    debug?: boolean;
 };
 
 export type StateRemoteOperate<Value = any> = {
-	id: string; // 同步器id，在一对多/多对一时，用于区分不同的同步器
-	type:
-		| StateOperateType
-		| "$stop"
-		| "$push"
-		| "$update"
-		| "$push-schemas"
-		| "$pull-store"
-		| "$update-store"
-		| "$pull-schemas"
-		| "$update-schemas"
-		| "$update-schema-option";
-	path: string[];
-	value: Value;
-	indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
-	parentPath?: string[];
-	reply?: boolean;
-	flags: number;
-	__schema__?: boolean;
+    id: string;
+    type: StateOperateType | "$stop" | "$push" | "$pull" | "$update" | "$error" | "$ping" | "$pong";
+    path: string[];
+    value: Value;
+    indexs?: number[]; // 数组操作时，操作的索引，如[1,2]表示操作了数组的第1个和第2个元素
+    parentPath?: string[];
+    reply?: boolean;
+    flags: number;
 };
 
-export interface IAutoStoreSyncTransport {
-	id?: string; // 额外的id标识
-	ready?: boolean;
-	send(operate: StateRemoteOperate): void;
-	receive(callback: (operate: StateRemoteOperate) => void): void;
-	// 当接收到了远程的stop操作时触发
-	onStop?: () => void;
-}
+export type AutoStoreCloneOptions<
+    State extends Dict,
+    Entry extends string,
+> = AutoStoreOptions<State> & {
+    entry?: Entry;
+    sync?: "none" | AutoStoreSyncerOptions["direction"];
+};
 
-export type AutoStoreCloneOptions<State extends Dict, Entry extends string> = AutoStoreOptions<State> & {
-	entry?: Entry;
-	sync?: "none" | AutoStoreSyncerOptions["direction"];
+/**
+ * AutoStoreBroadcaster 配置选项
+ */
+export type AutoStoreBroadcasterOptions = {
+    /**
+     * 是否自动广播
+     * 当主 store 发生变化时，是否自动广播到所有连接的客户端
+     * @default true
+     */
+    autostart?: boolean;
+    heartbeat?: number;
 };
 
 declare module "autostore" {
-	interface AutoStore<State extends Dict> {
-		sync(toStore: AutoStore<any>, options?: AutoStoreSyncerOptions): AutoStoreSyncer;
-		clone<Entry extends string, CloneState extends Record<string, any> = GetTypeByPath<State, Entry>>(
-			options?: AutoStoreCloneOptions<State, Entry>,
-		): AutoStore<CloneState>;
-	}
-	interface StateOperate {
-		__schema__?: boolean;
-	}
+    interface AutoStore<State extends Dict> {
+        sync(toStore: AutoStore<any>, options?: AutoStoreSyncerOptions): AutoStoreSyncer;
+        clone<
+            Entry extends string,
+            CloneState extends Record<string, any> = GetTypeByPath<State, Entry>,
+        >(
+            options?: AutoStoreCloneOptions<State, Entry>,
+        ): AutoStore<CloneState>;
+    }
 }

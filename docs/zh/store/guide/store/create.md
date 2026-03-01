@@ -1,9 +1,13 @@
-# 创建
+# 创建 Store
 
-`AutoStore`核心类，所有的功能都是基于`AutoStore`对象来实现的。
+`AutoStore` 是 AutoStore 的核心类,所有的功能都是基于 `AutoStore` 实例来实现的。
+
+## 基本用法
+
+### 创建实例
 
 ```ts
-import { AutoStore } from 'autostore';
+import { AutoStore } from "autostore";
 
 const store = new AutoStore(
     {
@@ -19,88 +23,118 @@ const store = new AutoStore(
 );
 ```
 
-创建好`store`对象后，可以通过`store.state`对象来访问状态数据。
+### 访问和修改状态
 
--   **访问状态数据**: `store.state.price`
--   **修改状态数据**: `store.state.price = 200`，这样会触发`total`的重新计算，因为其依赖于`price`和`count`。
--   **监听状态数据变化**: `watch("count",callback)`方法用来监听状态数据的读写操作，当状态数据变化时会触发回调函数。
+创建好 `store` 对象后,可以通过 `store.state` 对象来访问和修改状态数据。
 
-## 配置参数
+```ts
+// 访问状态数据
+console.log(store.state.price); // 100
+console.log(store.state.total); // 200
 
-创建`AutoStore`实例支持以下参数`AutoStoreOptions`:
+// 修改状态数据
+store.state.price = 200; // 会触发 total 的重新计算
+console.log(store.state.total); // 400
 
-### id
+// 监听状态数据变化
+store.watch("count", ({ value, oldValue }) => {
+    console.log(`count 从 ${oldValue} 变为 ${value}`);
+});
+```
 
--   **类型**: `string`
--   **默认值:** `随机字符串`
+## 状态定义
 
-为`Store`对象提供一个 id，用于标识当前`Store`对象。
-一般不需要配置，仅仅在启用`debug`模式和`devTools`时，用来区分不同的`Store`对象。
+### 普通状态
 
-### debug
+```ts
+const store = new AutoStore({
+    name: "AutoStore",
+    version: "1.0.0",
+    author: {
+        name: "John",
+        email: "john@example.com",
+    },
+    tags: ["reactive", "state-management"],
+});
+```
 
--   **类型**: `boolean`
--   **默认值:** `false`
+### 同步计算属性
 
-启用`debug`模式，会在输出日志信息。
+使用函数定义计算属性,函数接收 `scope` 参数用于访问依赖的状态:
 
-### enableComputed
+```ts
+const store = new AutoStore({
+    firstName: "zhang",
+    lastName: "san",
+    // 同步计算属性
+    fullName: (scope) => scope.firstName + " " + scope.lastName,
+    // 同步计算属性
+    fullName: computed((scope) => scope.firstName + " " + scope.lastName, {
+        // 提供额外的计算参数
+    }),
+});
+```
 
--   **类型**: `boolean`
--   **默认值:** `false`
+### 异步计算属性
 
-是否启用计算,当`enableComputed=false`时，会创建计算属性，但所有计算函数均不会执行。相当于全局计算总开关。
+使用 `computed` 和`asyncComputed` 函数创建异步计算属性:
 
-### getRootScope
+```ts
+import { computed } from "autostore";
 
--   **类型**: `(state:State,options:{computedType:ObserverType, valuePath:string[] | undefined}) => any`
--   **默认值:** `undefined`
+const store = new AutoStore({
+    userId: 1,
+    user: computed(
+        async (scope) => {
+            await delay();
+            return "autostore";
+        },
+        ["userId"],
+        {
+            initial: null, // 初始值
+            timeout: 5000, // 超时时间
+        },
+    ),
+});
+```
 
-计算函数在获取`scope`时调用，允许修改其根`scope`。
-默认指向的是当前根对象，此处可以修改其指向。
+也可以使用`asyncComputed` 函数创建增强异步计算属性:
 
-比如`return  state.fields`，代表计算函数的根指向`state.fields`。这样在指定依赖时，如`depends="count"`，则会自动转换为`state.fields.count`。
+```ts
+import { asyncComputed } from "autostore";
 
-### scope
+const store = new AutoStore({
+    userId: 1,
+    user: asyncComputed(
+        async (scope) => {
+            await delay();
+            return "autostore";
+        },
+        ["userId"],
+        {
+            initial: null, // 初始值
+            timeout: 5000, // 超时时间
+        },
+    ),
+});
+```
 
--   **类型**: `ComputedScope`
--   **默认值:** `undefined`
+使用`computed`和`asyncComputed`创建异步计算属性的差别在于：
 
-默认情况下，所有`computedObject`,`watchObject`的`scope`参数均为`CURRENT`。
-比如可以通过此参数来将所有的`computedObject`,`watchObject`的默认`scope`参数均为`ROOT `
+- 使用`computed`时
+  计算结果原地直接写入，即上例中`store.state.user==='autostore'`
+- 使用`asyncComputed`时
+  创建的是增强型的异步计算属性,支持对异步计算进行超时、倒计时、进度、重试、可中止等功能，可以对异步过程进行更多的控制，计算结果原地写入的是`AsyncComputedValue`，即上例：
 
-### log
-
--   **类型**: `(message:any,level?:'info' | 'error' | 'warn')=>void`
--   **默认值:** `undefined`
-
-当启用`debug=true`时用来输出日志信息的函数。
-可以使用此函数来自定义输出日志信息的方式，能更方便与应用系统的日志结合。
-
-### onComputedCreated
-
--   **类型**: `(this:AutoStore<State>,computedObject:ComputedObject)=> void`
--   **默认值:** `undefined`
-
-当创建计算属性时调用。
-
-### onComputedDone
-
--   **类型**: `(this:AutoStore<State>,args:{id:string,path:string[],value:any,computedObject:ComputedObject})=> void`
--   **默认值:** `undefined`
-
-当计算属性计算完成时调用。
-
-### onComputedError
-
--   **类型**: `(this:AutoStore<State>,args:{id:string,path:string[],error:Error,computedObject:ComputedObject})=> void`
--   **默认值:** `undefined`
-
-当计算属性计算出错时调用。
-
-### onComputedCancel
-
--   **类型**: `(this:AutoStore<State>,args:{id:string,path:string[],reason:'timeout' | 'abort' | 'reentry' | 'error',computedObject:ComputedObject<any>})=> void`
--   **默认值:** `undefined`
-
-当计算属性被取消时调用。
+```ts
+store.state.user === {
+    loading: false;
+    progress: 0; // 进度值
+    timeout: 0; // 超时时间，单位ms，当启用超时时进行倒计时
+    error: null;
+    retry: 0; // 重试次数，当执行重试操作时，会进行倒计时
+    value: "autostore"; // 计算结果保存到此处
+    run: (options?: RuntimeComputedOptions) => void; // 重新执行任务
+    cancel: () => void; // 中止正在执行的异步计算
+};
+```

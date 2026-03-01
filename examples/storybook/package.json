@@ -45,7 +45,7 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1",
-    "x-react-components": "workspace:*"
+    "x-react-components": "2.0.5"
   },
   "eslintConfig": {
     "extends": [

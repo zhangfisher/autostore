@@ -10,17 +10,42 @@
 
 ![](./images/store.drawio.png)
 
-**基本过程如下：**
+**工作流程如下：**
 
-1. 首先直接在`State`中声明计算属性函数，如`total=computed(scope)=>scope.price*scope.count`。
-2. 调用`createStore`创建`AutoStore`时，会使用`Proxy`代理`State`对象，用来拦截对`State`对象的读写操作，建立一个状态变更的事件发布/订阅机制。
-3. 然后在初始化时扫描整个`State`数据，如果是`函数`或者`ObserverDescriptorBuilder`对象（即`computed`和`watch`封装的函数），则会创建`ComputedObject`或`WatchObject`,然后根据依赖订阅事件。
-4. `ComputedObject`会根据状态上下文和依赖收集，侦听状态变更事件。
-5. 当`State`中的数据变化时，会自动触发计算属性的重新计算，将计算结果赋值给`State`中的对应属性。
+1. **声明计算属性**
 
-在上图中，当`price`和`count`变化时，会自动触发`total`的重新计算，将计算结果赋值给`total`属性。这样，当我们访问`state.total`时,就是计算结果，而不是一个函数了。
+在 `State` 中直接定义计算函数，例如：
 
-**以上就是`@autostorejs/react`计算属性移花接木的过程原理**
+```typescript
+total: computed((scope) => scope.price * scope.count);
+```
+
+2. **创建响应式代理**
+
+调用 `new AutoStore` 时，使用 `Proxy` 代理 `State` 对象，拦截所有读写操作，建立事件发布/订阅机制
+
+3. **扫描并初始化**
+
+遍历整个 `State` 数据：
+
+- 遇到 `computed` 或 `watch` 封装的函数
+- 创建对应的 `ComputedObject` 或 `WatchObject` 实例
+- 根据依赖关系订阅相关事件
+
+4. **建立响应式监听**
+
+`ComputedObject` 自动监听所依赖状态的变化事件
+
+5. **自动更新计算结果**
+
+当依赖的数据变化时：- 自动触发计算函数重新执行 - 将计算结果赋值回 `state` 中的对应属性
+
+:::tip 移花接木的妙处
+在上图中，当 `price` 或 `count` 变化时，会自动触发 `total` 的重新计算，并将结果写入 `total` 属性。
+这样，访问 `state.total` 时得到的是**计算结果值**（如 `number`），而不是**函数**本身！
+:::
+
+**以上就是`AutoStore`计算属性移花接木的过程原理**
 
 ## 同步计算
 
@@ -41,7 +66,7 @@ const state = {
 此时的`total`就是一个普通函数,`typeof(state.total)==='function'`。
 
 ```tsx
-const { state } = createStore({
+const { state } = new AutoStore({
     order: {
         price: 10,
         count: 1,
@@ -52,9 +77,9 @@ const { state } = createStore({
 });
 ```
 
-运行`createStore`后会扫描整个对象，如果发现`computed`声明，则：
+运行`new AutoStore`后会扫描整个对象，如果发现`computed`声明，则：
 
-1. `createStore`会根据状态上下文和`computed`函数创建一个`SyncComputedObject`对象,保存在`store.comnutedObjects`里面。
+1. `new AutoStore`会根据状态上下文和`computed`函数创建一个`SyncComputedObject`对象,保存在`store.comnutedObjects`里面。
 2. 运行一次同步计算函数收集依赖，然后将返回值写入`state.total`,此时`typeof(state.total)==='number'`。
 
 ## 异步计算
@@ -70,7 +95,7 @@ const state = {
             async (scope) => {
                 return scope.price * scope.count;
             },
-            ['./price', './count'],
+            ["./price", "./count"],
         ),
     },
 };
@@ -79,7 +104,7 @@ const state = {
 此时的`total`就是一个普通函数,`typeof(state.total)==='function'`。
 
 ```tsx
-const { state } = createStore({
+const { state } = new AutoStore({
     order: {
         price: 10,
         count: 1,
@@ -87,16 +112,17 @@ const { state } = createStore({
             async (scope) => {
                 return scope.price * scope.count;
             },
-            ['./price', './count'],
+            ["./price", "./count"],
         ),
     },
 });
 ```
 
-运行`createStore`后会扫描整个对象，如果发现`computed`声明，则：
+运行`new AutoStore`后会扫描整个对象，如果发现`computed`声明，则：
 
 1. 根据`computed`声明结合状态上下文创建一个`AsyncComputedObject`对象,保存在`store.comnutedObjects`里面。
-2. 将`state.total`替换成`AsyncComputedValue`。
+2. 将`state.total`替换成计算结果。
+3. 异步计算还可以使用`asyncComputed`代替`computed`，创建功能更加强大的异步计算对象，此时`state.total`替换成`AsyncComputedValue`。
 
 ```ts
 state.total={

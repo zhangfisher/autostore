@@ -1,6 +1,7 @@
+import { describe, test, it, expect, mock, beforeAll, afterAll, beforeEach, afterEach } from "bun:test"
 // FILEPATH: e:/Work/Code/sources/autostore/packages/core/src/utils/__tests__/setVal.test.ts
 
-import { describe, expect, it } from 'vitest';
+
 import { setVal } from '../../src/utils/setVal';
 import { ASYNC_COMPUTED_VALUE } from '../../src/consts';
 

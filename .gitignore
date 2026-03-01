@@ -67,3 +67,4 @@ templates/*/node_modules
 
 
 packages/form/public/uploads
+scripts/monorepo
