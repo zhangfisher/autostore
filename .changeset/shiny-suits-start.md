@@ -1,8 +1,8 @@
 ---
-'@autostorejs/devtools': minor
-'@autostorejs/syncer': minor
-'@autostorejs/react': minor
-'autostore': minor
+"@autostorejs/devtools": patch
+"@autostorejs/syncer": patch
+"@autostorejs/react": patch
+"autostore": patch
 ---
 
 升级同步功能包
