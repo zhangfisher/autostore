@@ -1,43 +1,52 @@
 {
-	"name": "autostore-workspace",
-	"version": "1.0.0",
-	"description": "autostore",
-	"main": "index.js",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/zhangfisher/autostore.git"
-	},
-	"scripts": {
-		"docs:dev": "vitepress dev docs",
-		"docs:build": "vitepress build docs",
-		"changeset": "changeset",
-		"publish-packages": "bun run build && bun run scripts/apply-publish-config.js && changeset version && bun run scripts/update-workspace-deps.js && changeset publish && git checkout -- package.json packages/*/package.json",
-		"build": "turbo build --filter=autostore --filter=@autostorejs/syncer --filter=@autostorejs/devtools --filter=@autostorejs/react",
-		"docs:preview": "vitepress preview new-docs",
-		"sync": "cnpm sync autostore @autostorejs/react @autostorejs/syncer @autostorejs/devtools",
-		"update:changelog": "cpx packages/core/CHANGELOG.md docs/zh/guide/intro/core.changelog.md",
-		"lint": "oxlint",
-		"lint:fix": "oxlint --fix"
-	},
-	"keywords": [],
-	"author": "zhangfisher",
-	"license": "MIT",
-	"devDependencies": {
-		"@changesets/cli": "^2.29.8",
-		"@types/bun": "^1.3.9",
-		"@types/node": "^25.3.3",
-		"oxfmt": "^0.35.0",
-		"oxlint": "^1.50.0",
-		"oxlint-tsgolint": "^0.12.2",
-		"turbo": "^2.8.12",
-		"typescript": "^5.9.3",
-		"vitepress": "^1.6.4",
-		"vue": "^3.5.28"
-	},
-	"workspaces": [
-		"packages/*",
-		"examples/*",
-		"docs"
-	],
-	"packageManager": "bun@1.3.6"
+    "name": "autostore-workspace",
+    "version": "1.0.0",
+    "description": "autostore",
+    "main": "index.js",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/zhangfisher/autostore.git"
+    },
+    "scripts": {
+        "docs:dev": "vitepress dev docs",
+        "docs:build": "vitepress build docs",
+        "changeset": "changeset",
+        "publish-packages": "bun run build && bun run scripts/apply-publish-config.js && changeset version && bun run scripts/update-workspace-deps.js && changeset publish && git checkout -- package.json packages/*/package.json",
+        "only-publish-packages": "bun run build && bun run scripts/apply-publish-config.js && bun run scripts/update-workspace-deps.js && npm publish --workspaces && git checkout -- package.json packages/*/package.json",
+        "build": "turbo build --filter=autostore --filter=@autostorejs/syncer --filter=@autostorejs/devtools --filter=@autostorejs/react",
+        "docs:preview": "vitepress preview new-docs",
+        "sync": "cnpm sync autostore @autostorejs/react @autostorejs/syncer @autostorejs/devtools",
+        "update:changelog": "cpx packages/core/CHANGELOG.md docs/zh/guide/intro/core.changelog.md",
+        "lint": "oxlint",
+        "lint:fix": "oxlint --fix",
+        "publish-versions": "bun run scripts/publish-versions.js"
+    },
+    "keywords": [],
+    "author": "zhangfisher",
+    "license": "MIT",
+    "devDependencies": {
+        "@changesets/cli": "^2.29.8",
+        "@types/bun": "^1.3.9",
+        "@types/node": "^25.3.3",
+        "oxfmt": "^0.35.0",
+        "oxlint": "^1.50.0",
+        "oxlint-tsgolint": "^0.12.2",
+        "turbo": "^2.8.12",
+        "typescript": "^5.9.3",
+        "vitepress": "^1.6.4",
+        "vue": "^3.5.28"
+    },
+    "workspaces": [
+        "packages/*",
+        "examples/*",
+        "docs"
+    ],
+    "packageManager": "bun@1.3.6",
+    "json-comments": {
+        "tips": "请安装JSONComments插件为JSON文件提供注释功能, 详见: https://github.com/zhangfisher/json_comments_extension",
+        "package.json": {
+            "scripts.only-publish-packages": "仅发布包不更新版本号，用于手动发布时使用", 
+            "scripts.publish-versions": "推送到github后强制发布指定的版本"
+        }
+    }
 }

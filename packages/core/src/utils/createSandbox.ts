@@ -63,7 +63,7 @@ export function createSandbox(context: Record<string, any>, options?: CreateSand
     const keys = Object.keys(context);
     // 获取对应的值
     const values = Object.values(context);
-    const disabledGlobals = options?.disabledGlobals || ['alert', 'window', 'document'];
+    const disabledGlobals = options?.disabledGlobals || ["alert", "window", "document"];
     // 处理禁用的全局变量
     // 将它们作为参数传递 undefined 值，从而遮蔽全局作用域中的同名变量
     // 但要排除已经在 context 中定义的变量（context 优先级更高）

@@ -22,7 +22,9 @@
       "Bash(git branch:*)",
       "Bash(timeout:*)",
       "Bash(bunx eslint:*)",
-      "Bash(bunx:*)"
+      "Bash(bunx:*)",
+      "Bash(cat packages/pkg-*/package.json)",
+      "Bash(done)"
     ],
     "additionalDirectories": [
       "e:\\Work\\Code\\sources\\autostore\\packages\\syncer\\examples\\worker-react\\src\\examples"

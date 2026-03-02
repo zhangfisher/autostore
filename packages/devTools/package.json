@@ -1,42 +1,42 @@
 {
-  "name": "@autostorejs/devtools",
-  "version": "4.0.14",
-  "description": "devtools for autostore",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/zhangfisher/autostore.git"
-  },
-  "exports": {
-    ".": "./src/index.ts",
-    "./cycleDetect": "./src/cycleDetect.ts"
-  },
-  "main": "src/index.ts",
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "import": "./dist/index.mjs",
-        "require": "./dist/index.js"
-      },
-      "./cycleDetect": {
-        "import": "./dist/cycleDetect.mjs",
-        "require": "./dist/cycleDetect.js"
-      }
-    }
-  },
-  "scripts": {
-    "build": "tsup"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "redux": "^5.0.1"
-  },
-  "devDependencies": {
-    "@types/node": "^24.10.9",
-    "tsup": "^8.5.1"
-  },
-  "files": [
-    "dist"
-  ]
+	"name": "@autostorejs/devtools",
+	"version": "4.1.0",
+	"description": "devtools for autostore",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/zhangfisher/autostore.git"
+	},
+	"exports": {
+		".": "./src/index.ts",
+		"./cycleDetect": "./src/cycleDetect.ts"
+	},
+	"main": "src/index.ts",
+	"publishConfig": {
+		"exports": {
+			".": {
+				"import": "./dist/index.mjs",
+				"require": "./dist/index.js"
+			},
+			"./cycleDetect": {
+				"import": "./dist/cycleDetect.mjs",
+				"require": "./dist/cycleDetect.js"
+			}
+		}
+	},
+	"scripts": {
+		"build": "tsup"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"redux": "^5.0.1"
+	},
+	"devDependencies": {
+		"@types/node": "^24.10.9",
+		"tsup": "^8.5.1"
+	},
+	"files": [
+		"dist"
+	]
 }

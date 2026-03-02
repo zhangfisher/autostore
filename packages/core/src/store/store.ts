@@ -298,12 +298,9 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         if (configManager && typeof configManager === "object" && "add" in configManager) {
             // 已经是 ConfigManager 实例（有 add 方法）
             this._configManager = configManager as ConfigManager;
-        } else if (
-            // @ts-expect-error
-            globalThis[GLOBAL_CONFIG_MANAGER] &&
-            configManager !== false
-        ) {
-            // @ts-expect-error
+            // @ts-ignore
+        } else if (globalThis[GLOBAL_CONFIG_MANAGER] && configManager !== false) {
+            // @ts-ignore
             this._configManager = globalThis[GLOBAL_CONFIG_MANAGER];
         }
     }

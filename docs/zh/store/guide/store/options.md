@@ -504,7 +504,7 @@ const store = new AutoStore(state, {
 - **类型**: `boolean`
 - **默认值**: `true`
 
-当启用时,如果值是一个字符串,并且以 `\`\`\`xxx\`\`\`` 形式,代表这是一个表达式,则会创建一个代码执行沙箱运行并返回值。
+当启用时,如果值是一个字符串,并且以使用```包裹形式,代表这是一个表达式,则会创建一个代码执行沙箱运行并返回值。
 
 **注意:** 仅在 `lazy=false` 时在实例化时才会对字符串表达式进行解释执行,后续读取时不会执行此操作。
 
@@ -512,7 +512,9 @@ const store = new AutoStore(state, {
 const store = new AutoStore(
     {
         // 字符串表达式
-        value: "```Math.random()```",
+        value: "```computed((scope)=>{....})```", // [!code ++]
+        // 等效于
+        value: computed((scope)=>{....}) // [!code ++]
     },
     {
         enableValueExpr: true,
@@ -525,16 +527,27 @@ const store = new AutoStore(
 - **类型**: `{ create?: (context: Record<string, any>, options?: CreateSandboxOptions) => (code: string) => any, context?: Record<string, any> }`
 - **默认值**: `undefined`
 
-沙箱配置选项。当 `enableValueExpr=true` 时,用于配置代码执行沙箱的行为。
+沙箱配置选项。
+
+当 `enableValueExpr=true` 时,代表值是一个表达式，内部会基于`new Function`创建一个简单的代码执行沙箱用于执行该表达式。
+
+默认的沙箱相对简单，您可以根据需要自行创建。比如下面是基于`eval`执行表达式代码。
 
 ````ts
 const store = new AutoStore(
     {
-        value: "```compute(10, 20)```",
+        value: "```compute((scope)=>{return scope.count +1 })```",
     },
     {
         enableValueExpr: true,
         sandbox: {
+            // 创建沙箱
+            create: (context) => {
+                return (code) => {
+                    return eval(code);
+                };
+            },
+            // 提供可用上下文变量
             context: {
                 compute: (a, b) => a + b,
             },
@@ -542,6 +555,10 @@ const store = new AutoStore(
     },
 );
 ````
+
+:::warning 提示
+默认沙箱中支持`computed`,`asyncComputed`,`watch`,`configurable`,`schema`函数。
+:::
 
 ## 实例属性
 

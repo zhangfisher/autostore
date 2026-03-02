@@ -27,7 +27,6 @@ import type { Dict } from "../types";
  * await config.load()
  *
  *
- *
  */
 export interface ConfigSource {
     load: () => Record<string, any> | Promise<Record<string, any>>;
@@ -181,8 +180,9 @@ export class ConfigManager extends AutoStore<
         try {
             this.dirtyValues[configKey] = value;
             if (this.options.autosave) {
-                this.source.save?.(this.dirtyValues);
-                this.dirtyValues = {};
+                Promise.resolve(this.source.save?.(this.dirtyValues)).then(() => {
+                    this.dirtyValues = {};
+                });
             }
         } finally {
             this._notify({
@@ -339,5 +339,5 @@ export class ConfigManager extends AutoStore<
 }
 
 declare global {
-    var AutoStoreConfigManger: ConfigManager;
+    var AutoStoreConfigManager: ConfigManager;
 }
