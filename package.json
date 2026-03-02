@@ -19,7 +19,8 @@
         "update:changelog": "cpx packages/core/CHANGELOG.md docs/zh/guide/intro/core.changelog.md",
         "lint": "oxlint",
         "lint:fix": "oxlint --fix",
-        "publish-versions": "bun run scripts/publish-versions.js"
+        "publish-versions": "bun run scripts/publish-versions.js",
+        "download":"npm pack autostore @autostorejs/syncer @autostorejs/react @autostorejs/devtools"
     },
     "keywords": [],
     "author": "zhangfisher",
