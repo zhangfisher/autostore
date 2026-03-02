@@ -8,7 +8,7 @@
         "url": "https://github.com/zhangfisher/autostore.git"
     },
     "scripts": {
-        "docs:dev": "vitepress dev docs",
+        "docs:dev": "cd docs && vitepress dev .",
         "docs:build": "vitepress build docs",
         "changeset": "changeset",
         "publish-packages": "bun run build && bun run scripts/apply-publish-config.js && changeset version && bun run scripts/update-workspace-deps.js && changeset publish && git checkout -- package.json packages/*/package.json",

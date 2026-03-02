@@ -992,7 +992,6 @@ const orderStore = new AutoStore(
     {
         order: {
             price: configurable(99.9, {
-                maxLen: 1,
                 label: "订单价格",
                 validate: (value) => value > 0,
             }),

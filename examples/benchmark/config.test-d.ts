@@ -1,14 +1,5 @@
-import { describe, test, it, expect } from "bun:test";
-import type { Equal, Expect } from "@type-challenges/utils";
-import { AutoStore, computed, ConfigManager, configurable } from "../../src";
-import type {
-    ObserverObject,
-    ObserverOptions,
-    ObserverDescriptor,
-    ConfigurableState,
-} from "../../src";
-import { AutoStoreConfigures } from "../../src/schema/types";
-
+import { AutoStore, ConfigManager, configurable } from "autostore";
+import type { ConfigurableState } from "autostore";
 const configManager = new ConfigManager({
     load: () => {
         return {};
@@ -57,12 +48,14 @@ const shopStore = new AutoStore(
         shop: {
             discount: configurable(0.1, {
                 label: "折扣",
+                widget: "text",
                 validate: (value) => value >= 0 && value < 1,
             }),
             tax: configurable(0.05, {
                 label: "税率",
                 widget: "number",
                 max: "1",
+                min: 2,
                 validate: (value) => value >= 0 && value < 1,
             }),
         },
@@ -86,8 +79,8 @@ declare module "autostore" {
             step?: number;
         };
         text: {
-            maxLength?: number;
-            minLength?: number;
+            maxLength: number;
+            minLength: number;
             pattern?: RegExp | string;
             rows?: number;
             multiline?: boolean;
