@@ -2,6 +2,20 @@ import path from "path";
 import { defineConfig } from "vitepress";
 import { vitepressDemoPlugin } from "vitepress-demo-plugin";
 import { transformerTwoslash } from "@shikijs/vitepress-twoslash";
+import { createTwoslasher as createTwoslasherESLint } from "twoslash-eslint";
+
+// 创建 ESLint 支持的 Twoslash 实例
+const twoslasher = createTwoslasherESLint({
+    eslintConfig: [
+        {
+            // 基础 ESLint 配置
+            // 可以根据需要添加规则
+        },
+    ],
+    cwd: path.resolve(__dirname, "../.."), // 项目根目录
+    includeDocs: true,
+    mergeMessages: true,
+});
 
 export default defineConfig({
     base: "/autostore/",
@@ -270,11 +284,7 @@ export default defineConfig({
             });
         },
         // 版本兼容性问题：@shikijs/vitepress-twoslash v4.0.1 与 VitePress 内置 shiki v2.5.0 类型不匹配
-        codeTransformers: [
-            transformerTwoslash({
-                // typesCache: createFileSystemTypesCache()
-            }),
-        ] as any,
+        codeTransformers: [transformerTwoslash({})] as any,
     },
     // @ts-ignore
     build: {

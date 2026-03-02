@@ -31,10 +31,13 @@
     "x-react-components": "4.1.1"
   },
   "devDependencies": {
+    "@shikijs/twoslash": "^4.0.1",
     "@shikijs/vitepress-twoslash": "^4.0.1",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^19.2.3",
     "code-inspector-plugin": "^1.4.2",
+    "eslint": "^10.0.2",
+    "twoslash-eslint": "^0.3.6",
     "typescript": "^5.8.3",
     "vitepress-demo-plugin": "^1.4.7"
   }

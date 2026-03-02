@@ -993,6 +993,9 @@ const orderStore = new AutoStore(
         order: {
             price: configurable(99.9, {
                 label: "订单价格",
+                widget: "number",
+                min: 1,
+                max: 10,
                 validate: (value) => value > 0,
             }),
             quantity: configurable(10, {

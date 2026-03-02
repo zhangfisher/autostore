@@ -31,9 +31,12 @@ import { markRaw } from "../utils/markRaw";
 
 import type {
     AutoStateSchema,
+    AutoStateSchemaBase,
+    AutoStoreWidgets,
     SchemaDescriptorBuilder,
     SchemaBuilder,
     ComputedableStateSchema,
+    WidgetConfigPrecise,
 } from "./types";
 
 type SchemaArgs = {
@@ -84,11 +87,17 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
     return finalArgs as SchemaArgs;
 }
 
-// 函数重载:提供更好的类型推断
+// 函数重载:提供更好的类型推断，支持 Widget 泛型参数推断
+// 将包含 widget 的重载放在前面，确保 TypeScript 优先匹配更具体的类型
 export function schema<Value>(initial: Value): SchemaDescriptorBuilder<Value>;
+export function schema<Value, W extends keyof AutoStoreWidgets>(
+    initial: Value,
+    schema: Omit<AutoStateSchemaBase<Value>, "value"> & { widget: W } & WidgetConfigPrecise<W>,
+): SchemaDescriptorBuilder<Value, W>;
+// 不包含 widget 的配置，或者 widget 不匹配已知类型时的回退重载
 export function schema<Value>(
     initial: Value,
-    schema: Omit<ComputedableStateSchema<Value>, "value">,
+    schema: Omit<AutoStateSchemaBase<Value>, "value" | "widget"> & { widget?: never },
 ): SchemaDescriptorBuilder<Value>;
 export function schema<Value>(
     initial: Value,
@@ -108,7 +117,7 @@ export function schema<Value>(
         schema: args.schema,
     });
     builder[VALUE_SCHEMA_BUILDER_FLAG] = true;
-    return builder as SchemaDescriptorBuilder<Value>;
+    return builder as any;
 }
 
 export const configurable = schema;

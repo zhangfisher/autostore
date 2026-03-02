@@ -182,13 +182,39 @@ export interface AutoStateSchemaBase<Value = any> {
 }
 
 /**
- * 完整的 AutoStateSchema 类型，根据 widget 参数自动合并对应 widget 配置
+ * 提取类型的可选键
  */
-export type AutoStateSchema<
-    Value = any,
-    Widget extends AutoStoreWidgetTypes = AutoStoreWidgetTypes,
-> = AutoStateSchemaBase<Value> &
-    (Widget extends keyof AutoStoreWidgets ? Partial<WidgetConfig<Widget>> : {});
+type OptionalKeys<T> = {
+    [K in keyof T]-?: {} extends Pick<T, K> ? K : never
+}[keyof T];
+
+/**
+ * 提取类型的必需键
+ */
+type RequiredKeys<T> = {
+    [K in keyof T]-?: {} extends Pick<T, K> ? never : K
+}[keyof T];
+
+/**
+ * 创建精确的 Widget 配置类型：
+ * - 必需属性保持必需
+ * - 可选属性保持可选
+ */
+export type WidgetConfigPrecise<W extends keyof AutoStoreWidgets> =
+    Pick<AutoStoreWidgets[W], RequiredKeys<AutoStoreWidgets[W]>> &
+    Partial<Pick<AutoStoreWidgets[W], OptionalKeys<AutoStoreWidgets[W]>>>;
+
+/**
+ * 完整的 AutoStateSchema 类型，根据 widget 参数自动合并对应 widget 配置
+ * 使用泛型参数 Widget 来实现类型安全的 widget 配置推断
+ */
+export type AutoStateSchema<Value = any, Widget extends keyof AutoStoreWidgets = never> =
+    keyof AutoStoreWidgets extends never
+    ? AutoStateSchemaBase<Value>
+    : [Widget] extends [never]
+    ? AutoStateSchemaBase<Value>
+    : Omit<AutoStateSchemaBase<Value>, "widget"> &
+        (Widget extends keyof AutoStoreWidgets ? WidgetConfigPrecise<Widget> : {});
 
 // 让对象的成员值允许是ComputedBuilder，可计算值
 // 例外：函数类型的属性，如果名称以 on、to、render 开头，则不允许为 ComputedBuilder
@@ -204,23 +230,24 @@ export type Computedable<Obj extends Record<string, any>, Value = any> = {
                 : Obj[Key] | ComputedBuilder<Obj[Key], any>
             : Obj[Key] | ComputedBuilder<Obj[Key], any>;
 };
-export type ComputedableStateSchema<Value = any> = Computedable<AutoStateSchema<Value>, Value>;
+export type ComputedableStateSchema<Value = any, Widget extends keyof AutoStoreWidgets = never> =
+    Computedable<AutoStateSchema<Value, Widget>, Value>;
 
-export type SchemaDescriptor<Value = any> = {
+export type SchemaDescriptor<Value = any, Widget extends keyof AutoStoreWidgets = never> = {
     path?: string[];
     value: Value;
-    schema: AutoStateSchema<Value>;
+    schema: AutoStateSchema<Value, Widget>;
 };
 
-export interface SchemaDescriptorBuilder<Value = any> {
+export interface SchemaDescriptorBuilder<Value = any, Widget extends keyof AutoStoreWidgets = never> {
     [VALUE_SCHEMA_BUILDER_FLAG]: true;
-    (): SchemaDescriptor<Value>;
+    (): SchemaDescriptor<Value, Widget>;
 }
 
-export type SchemaBuilder<Value = any> = <T = Value>(
+export type SchemaBuilder<Value = any> = <T = Value, W extends keyof AutoStoreWidgets = never>(
     value: T,
-    schema?: ComputedableStateSchema<Value>,
-) => SchemaDescriptorBuilder<T>;
+    schema?: ComputedableStateSchema<Value, W>,
+) => SchemaDescriptorBuilder<T, W>;
 
 export type SchemaKeyPaths<State> = Exclude<
     keyof {

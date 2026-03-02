@@ -29,6 +29,9 @@ const userStore = new AutoStore(
         user: {
             name: configurable("Bob", {
                 label: "用户名",
+                widget: "select",
+                options: [],
+                multiple: true,
                 validate: (value) => typeof value === "string" && value.length > 0,
             }),
             age: configurable(25, {
@@ -49,12 +52,15 @@ const shopStore = new AutoStore(
             discount: configurable(0.1, {
                 label: "折扣",
                 widget: "text",
+                maxLength: 1,
+                minLength: 1,
+                multiline: true,
                 validate: (value) => value >= 0 && value < 1,
             }),
             tax: configurable(0.05, {
                 label: "税率",
                 widget: "number",
-                max: "1",
+                max: 1,
                 min: 2,
                 validate: (value) => value >= 0 && value < 1,
             }),
