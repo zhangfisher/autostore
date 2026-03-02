@@ -1,5 +1,6 @@
 import type { ComputedBuilder } from "../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
+import { AutoStore } from "../store/store";
 import { ComputedState, GetTypeByPath, StatePath } from "../types";
 
 /**
@@ -7,21 +8,16 @@ import { ComputedState, GetTypeByPath, StatePath } from "../types";
  * key： 配置项名称路径，如user.order.price
  * value: AutoStoreFieldSchema & { value:<从原始Store中读取，写入时也会写入到原始Store的对应项>}
  */
-export type AutoStoreConfigures = Record<
-    string,
-    AutoStateSchema & {
-        value: any;
-    }
->;
+// export type AutoStoreConfigures = Record<
+//     string,
+//     AutoStateSchema & {
+//         value: any;
+//     }
+// >;
+export interface AutoStoreConfigures {}
 
 // biome-ignore lint/suspicious/noEmptyInterface: <noEmptyInterface>
-export interface AutoStoreWidgets {
-    number: {
-        max: number;
-        min: number;
-        step?: number;
-    };
-}
+export interface AutoStoreWidgets {}
 export interface AutoStoreAction {
     id?: string;
     label?: string;
@@ -240,8 +236,14 @@ export type SchemaKeyPaths<State> = Exclude<
     },
     number | symbol
 >;
-export type ConfigurableState<State extends Record<string, any>> = {
-    [Key in SchemaKeyPaths<State>]: GetTypeByPath<ComputedState<State>, Key>;
+
+// 获取可配置项的
+export type ConfigurableState<Store extends AutoStore<any>, Prefix extends string = ""> = {
+    [Key in SchemaKeyPaths<Store["rawStateType"]> as Prefix extends ""
+        ? Key
+        : `${Prefix}.${Key}`]: Omit<AutoStateSchemaBase, "value"> & {
+        value: GetTypeByPath<ComputedState<Store["rawStateType"]>, Key>;
+    };
 };
 
 // 用于计算属性配置的类型，确保 onValidate 等函数的参数类型能正确推断

@@ -1,7 +1,13 @@
 import { describe, test, it, expect } from "bun:test";
 import type { Equal, Expect } from "@type-challenges/utils";
 import { AutoStore, computed } from "../../src";
-import type { ObserverObject, ObserverOptions, ObserverDescriptor } from "../../src";
+import type {
+    ObserverObject,
+    ObserverOptions,
+    ObserverDescriptor,
+    ObserverDepends,
+    ObserverScope,
+} from "../../src";
 
 /**
  * Observer 基础类型测试
@@ -94,7 +100,7 @@ describe("ObserverOptions 类型", () => {
 
         // depends 是可选的二维数组
         type DependsType = Options["depends"];
-        type Case6 = Expect<Equal<DependsType, (string | string[])[][] | undefined>>;
+        type Case6 = Expect<Equal<DependsType, ObserverDepends | undefined>>;
 
         // group 是可选的 string
         type GroupType = Options["group"];
@@ -150,17 +156,20 @@ describe("ObserverDescriptor 类型", () => {
         type OptionsType = Descriptor["options"];
         type Case3 = Expect<
             Equal<
-                keyof OptionsType,
-                | "id"
-                | "initial"
-                | "scope"
-                | "enable"
-                | "async"
-                | "depends"
-                | "group"
-                | "objectify"
-                | "throwError"
-                | "schema"
+                OptionsType,
+                {
+                    id?: string;
+                    initial?: number | undefined;
+                    scope?: ObserverScope;
+                    enable?: boolean;
+                    async?: boolean;
+                    depends?: ObserverDepends;
+                    group?: string;
+                    objectify?: boolean;
+                    throwError?: boolean;
+                    schema?: Record<string, any> | undefined;
+                    refStore?: AutoStore<any>;
+                }
             >
         >;
     });

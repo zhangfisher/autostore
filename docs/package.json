@@ -31,7 +31,7 @@
     "x-react-components": "2.0.5"
   },
   "devDependencies": {
-    "@shikijs/vitepress-twoslash": "^3.22.0",
+    "@shikijs/vitepress-twoslash": "^4.0.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "code-inspector-plugin": "^1.4.1",

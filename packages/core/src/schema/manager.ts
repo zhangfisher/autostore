@@ -68,7 +68,7 @@ export class ConfigManager extends AutoStore<
             },
             options,
         ) as any;
-        super({}, finalOptions);
+        super({} as any, finalOptions);
 
         // 处理 global 选项，将实例挂载到 globalThis
         if (finalOptions.global !== false) {
@@ -101,12 +101,14 @@ export class ConfigManager extends AutoStore<
             (state) => {
                 Object.entries(values).forEach(([key, value]) => {
                     // 直接使用扁平键访问 schema
+                    // @ts-ignore
                     const schema = state[key];
                     if (schema) {
                         // schema 存在，通过 setter 更新原始 Store
                         schema.value = value;
                     } else {
                         // schema 不存在，创建新的 schema 对象
+                        // @ts-ignore
                         state[key] = { value };
                     }
                 });
@@ -239,6 +241,7 @@ export class ConfigManager extends AutoStore<
         // 用于为schema中的observerObject提供refStore，以便能访问
         this._handleRefState(descriptor.schema, store);
         // 动态添加
+        // @ts-ignore
         this.state[configKey.join(PATH_DELIMITER)] = descriptor.schema;
         if (loadedValue !== undefined) {
             descriptor.schema.value = loadedValue;

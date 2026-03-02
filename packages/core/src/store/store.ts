@@ -124,6 +124,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
+    rawStateType: State;
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
             Object.assign(
