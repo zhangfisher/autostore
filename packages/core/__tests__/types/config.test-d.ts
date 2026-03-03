@@ -6,6 +6,7 @@ import type {
     ObserverOptions,
     ObserverDescriptor,
     ConfigurableState,
+    StoreRawStateType,
 } from "../../src";
 import { AutoStoreConfigures } from "../../src/schema/types";
 
@@ -32,6 +33,12 @@ const orderStore = new AutoStore(
         configKey: "app1",
     },
 );
+
+type orderStoreTypes = typeof orderStore.types;
+type orderStoreTypeKeys = keyof orderStoreTypes;
+type orderStoreRawState = typeof orderStore.types.rawState;
+type orderStoreEvents = keyof typeof orderStore.types.events;
+type orderRawType = StoreRawStateType<typeof orderStore>;
 
 const userStore = new AutoStore(
     {
@@ -105,3 +112,24 @@ declare module "autostore" {
     }
 }
 AutoStoreConfigManager.state["app1.order.price"].value;
+
+// ========== Widget 属性类型推断测试 ==========
+// 验证 ConfigurableState 正确包含 widget 特定配置属性
+
+type TestNumberWidget = ConfigurableState<typeof shopStore, "app3">;
+
+// 验证 number widget 的属性类型存在且正确
+type _Test1 = Expect<Equal<TestNumberWidget["app3.shop.tax"]["min"], number>>;
+type _Test2 = Expect<Equal<TestNumberWidget["app3.shop.tax"]["max"], number>>;
+type _Test3 = Expect<Equal<TestNumberWidget["app3.shop.tax"]["step"], number | undefined>>;
+
+// 验证没有前缀的配置类型
+type TestNumberWidgetNoPrefix = ConfigurableState<typeof shopStore, "">;
+type _Test4 = Expect<Equal<TestNumberWidgetNoPrefix["shop.tax"]["min"], number>>;
+type _Test5 = Expect<Equal<TestNumberWidgetNoPrefix["shop.tax"]["max"], number>>;
+
+// 验证实际使用场景的类型推断 - 通过 AutoStoreConfigManager 访问
+// 注意：需要在 AutoStoreConfigures 中包含对应的键才能正常访问
+AutoStoreConfigManager.state["shop.tax"].min;
+AutoStoreConfigManager.state["shop.tax"].max;
+AutoStoreConfigManager.state["shop.tax"].step;

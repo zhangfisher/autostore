@@ -460,10 +460,10 @@ export type StoreEvents = TransformedEvents<{
     "observer:done": ObserverDescriptor<any, any, any>;
     // 当验证器验证失败时触发
     validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
-    // 当schema被修改时触发
-    // 'schema:updated': SchemaObject
 }>;
 
 export type EventDefines = {
     [key: string]: any;
 };
+
+export type StoreRawStateType<Store extends AutoStore<any>> = Store["types"]["rawState"];

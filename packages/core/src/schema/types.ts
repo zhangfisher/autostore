@@ -1,6 +1,7 @@
 import type { ComputedBuilder } from "../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
 import { AutoStore } from "../store/store";
+import { StoreRawStateType } from "../store/types";
 import { ComputedState, GetTypeByPath, StatePath } from "../types";
 
 /**
@@ -185,14 +186,14 @@ export interface AutoStateSchemaBase<Value = any> {
  * 提取类型的可选键
  */
 type OptionalKeys<T> = {
-    [K in keyof T]-?: {} extends Pick<T, K> ? K : never
+    [K in keyof T]-?: {} extends Pick<T, K> ? K : never;
 }[keyof T];
 
 /**
  * 提取类型的必需键
  */
 type RequiredKeys<T> = {
-    [K in keyof T]-?: {} extends Pick<T, K> ? never : K
+    [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
 }[keyof T];
 
 /**
@@ -200,21 +201,25 @@ type RequiredKeys<T> = {
  * - 必需属性保持必需
  * - 可选属性保持可选
  */
-export type WidgetConfigPrecise<W extends keyof AutoStoreWidgets> =
-    Pick<AutoStoreWidgets[W], RequiredKeys<AutoStoreWidgets[W]>> &
+export type WidgetConfigPrecise<W extends keyof AutoStoreWidgets> = Pick<
+    AutoStoreWidgets[W],
+    RequiredKeys<AutoStoreWidgets[W]>
+> &
     Partial<Pick<AutoStoreWidgets[W], OptionalKeys<AutoStoreWidgets[W]>>>;
 
 /**
  * 完整的 AutoStateSchema 类型，根据 widget 参数自动合并对应 widget 配置
  * 使用泛型参数 Widget 来实现类型安全的 widget 配置推断
  */
-export type AutoStateSchema<Value = any, Widget extends keyof AutoStoreWidgets = never> =
-    keyof AutoStoreWidgets extends never
+export type AutoStateSchema<
+    Value = any,
+    Widget extends keyof AutoStoreWidgets = never,
+> = keyof AutoStoreWidgets extends never
     ? AutoStateSchemaBase<Value>
     : [Widget] extends [never]
-    ? AutoStateSchemaBase<Value>
-    : Omit<AutoStateSchemaBase<Value>, "widget"> &
-        (Widget extends keyof AutoStoreWidgets ? WidgetConfigPrecise<Widget> : {});
+      ? AutoStateSchemaBase<Value>
+      : AutoStateSchemaBase<Value> &
+            (Widget extends keyof AutoStoreWidgets ? WidgetConfigPrecise<Widget> : {});
 
 // 让对象的成员值允许是ComputedBuilder，可计算值
 // 例外：函数类型的属性，如果名称以 on、to、render 开头，则不允许为 ComputedBuilder
@@ -230,8 +235,10 @@ export type Computedable<Obj extends Record<string, any>, Value = any> = {
                 : Obj[Key] | ComputedBuilder<Obj[Key], any>
             : Obj[Key] | ComputedBuilder<Obj[Key], any>;
 };
-export type ComputedableStateSchema<Value = any, Widget extends keyof AutoStoreWidgets = never> =
-    Computedable<AutoStateSchema<Value, Widget>, Value>;
+export type ComputedableStateSchema<
+    Value = any,
+    Widget extends keyof AutoStoreWidgets = never,
+> = Computedable<AutoStateSchema<Value, Widget>, Value>;
 
 export type SchemaDescriptor<Value = any, Widget extends keyof AutoStoreWidgets = never> = {
     path?: string[];
@@ -239,10 +246,20 @@ export type SchemaDescriptor<Value = any, Widget extends keyof AutoStoreWidgets 
     schema: AutoStateSchema<Value, Widget>;
 };
 
-export interface SchemaDescriptorBuilder<Value = any, Widget extends keyof AutoStoreWidgets = never> {
+export interface SchemaDescriptorBuilder<
+    Value = any,
+    Widget extends keyof AutoStoreWidgets = never,
+> {
     [VALUE_SCHEMA_BUILDER_FLAG]: true;
     (): SchemaDescriptor<Value, Widget>;
 }
+
+/**
+ * 从 SchemaDescriptorBuilder 中提取 Widget 类型
+ * 用于在 ConfigurableState 中恢复 widget 特定配置的类型信息
+ */
+export type ExtractWidgetFromBuilder<T> =
+    T extends SchemaDescriptorBuilder<any, infer W> ? W : never;
 
 export type SchemaBuilder<Value = any> = <T = Value, W extends keyof AutoStoreWidgets = never>(
     value: T,
@@ -264,45 +281,13 @@ export type SchemaKeyPaths<State> = Exclude<
     number | symbol
 >;
 
-// 获取可配置项的
+// 获取可配置项的类型
+// 使用 AutoStateSchema 以包含 widget 特定配置属性（如 min, max, step 等）
 export type ConfigurableState<Store extends AutoStore<any>, Prefix extends string = ""> = {
-    [Key in SchemaKeyPaths<Store["rawStateType"]> as Prefix extends ""
+    [Key in SchemaKeyPaths<StoreRawStateType<Store>> as Prefix extends ""
         ? Key
-        : `${Prefix}.${Key}`]: Omit<AutoStateSchemaBase, "value"> & {
-        value: GetTypeByPath<ComputedState<Store["rawStateType"]>, Key>;
-    };
+        : `${Prefix}.${Key}`]: AutoStateSchema<
+        GetTypeByPath<ComputedState<StoreRawStateType<Store>>, Key>,
+        ExtractWidgetFromBuilder<GetTypeByPath<StoreRawStateType<Store>, Key>>
+    >;
 };
-
-// 用于计算属性配置的类型，确保 onValidate 等函数的参数类型能正确推断
-// 我们使用简化的方式: 直接在类型中列出所有属性
-// export type ComputedableStateSchema<Value = any> = {
-//     // 函数类型属性(onValidate等)保持原始类型，不允许为 ComputedBuilder
-//     validate?: (value: Value, oldValue: Value, path: string[]) => boolean;
-//     /**
-//      * 当配置被渲染到只读视图时调用
-//      */
-//     toView?: (value: any) => any;
-//     /**
-//      * 从表单转换到状态时调用
-//      */
-//     toState?: (value: any) => Value;
-//     /**
-//      * 将状态值转换为表单输入字段时调用
-//      */
-//     toInput?: (value: Value) => any;
-//     /**
-//      * 当渲染该配置表单字段时调用
-//      */
-//     toRender?: (value: any) => any;
-
-//     // 保留字段不允许为 ComputedBuilder
-//     name?: string;
-//     id?: string;
-//     key?: string;
-//     value?: any;
-//     path?: string[];
-//     datatype?: string;
-
-//     // 其他属性可以是值或 ComputedBuilder
-//     [key: string]: any;
-// };

@@ -1009,9 +1009,12 @@ const orderStore = new AutoStore(
                 max: 10,
                 validate: (value) => value > 0,
             }),
-            quantity: configurable(10, {
-                label: "订单数量",
-                validate: (value) => value > 0,
+            vip: configurable(true, {
+                label: "VIP客户",
+                widget: "checkbox",
+                trueValue: "是",
+                falseValue: "否",
+                indeterminate: true,
             }),
         },
     },
@@ -1044,8 +1047,8 @@ declare module "autostore" {
             multiple?: boolean;
         };
         checkbox: {
-            trueValue?: any;
-            falseValue?: any;
+            trueValue?: string;
+            falseValue?: string;
             indeterminate?: boolean;
         };
     }
@@ -1061,10 +1064,21 @@ type AllWidgetNames = {
 //
 type OrderPriceSchema = (typeof AutoStoreConfigManager.state)["app.order.price"];
 type SchemaKeys = keyof OrderPriceSchema;
-AutoStoreConfigManager.state["app.order.price"].widget;
-// @noErrors
-AutoStoreConfigManager.state["app1.order.price"].m;
-//                                                ^|
 
-AutoStoreConfigManager.state["app.order.quantity"].widget;
+// {widget:'number',max:number,min:number,step?:number}
+AutoStoreConfigManager.state["app.order.price"].widget;
+AutoStoreConfigManager.state["app.order.price"].min;
+AutoStoreConfigManager.state["app.order.price"].max;
+AutoStoreConfigManager.state["app.order.price"].step;
+
+// {widget:'checkbox',trueValue?:string,falseValue?:string,indeterminate?:boolean}
+AutoStoreConfigManager.state["app.order.vip"].widget;
+AutoStoreConfigManager.state["app.order.vip"].trueValue;
+AutoStoreConfigManager.state["app.order.vip"].falseValue;
+AutoStoreConfigManager.state["app.order.vip"].indeterminate;
 ```
+
+:::warning 提示
+`AutoStore`的配置系统只负责管理配置数据，在应用程序开发时，一般需要提供配置UI，此时就可以过遍历`AutoStoreConfigManager.state`来渲染配置UI界面。
+并且一般是需要根据不同的配置项类型使用不同的组件进行渲染，此时就可以在通过`widget`指定组件名称让渲染系统进行渲染。
+:::

@@ -17,7 +17,16 @@ const orderStore = new AutoStore(
             }),
             quantity: configurable(10, {
                 label: "订单数量",
+                widget: "select",
+                options: [],
                 validate: (value) => value > 0,
+            }),
+            vip: configurable(true, {
+                label: "VIP客户",
+                widget: "checkbox",
+                trueValue: "是",
+                falseValue: "否",
+                indeterminate: true,
             }),
         },
     },
@@ -99,8 +108,8 @@ declare module "autostore" {
             multiple?: boolean;
         };
         checkbox: {
-            trueValue?: any;
-            falseValue?: any;
+            trueValue?: string;
+            falseValue?: string;
             indeterminate?: boolean;
         };
     }
@@ -109,4 +118,12 @@ AutoStoreConfigManager.state["app1.order.price"].value;
 type OrderPriceSchema = (typeof AutoStoreConfigManager.state)["app1.order.price"];
 type SchemaKeys = keyof OrderPriceSchema;
 
+AutoStoreConfigManager.state["app1.order.price"].widget;
 AutoStoreConfigManager.state["app1.order.price"].min;
+AutoStoreConfigManager.state["app1.order.price"].max;
+AutoStoreConfigManager.state["app1.order.price"].step;
+
+AutoStoreConfigManager.state["app1.order.vip"].widget;
+AutoStoreConfigManager.state["app1.order.vip"].trueValue;
+AutoStoreConfigManager.state["app1.order.vip"].falseValue;
+AutoStoreConfigManager.state["app1.order.vip"].indeterminate;
