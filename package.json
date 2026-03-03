@@ -9,7 +9,7 @@
     },
     "scripts": {
         "docs:dev": "cd docs && vitepress dev .",
-        "docs:build": "vitepress build docs",
+        "docs:build": "cd docs && vitepress build .",
         "changeset": "changeset",
         "publish-packages": "bun run build && bun run scripts/apply-publish-config.js && changeset version && bun run scripts/update-workspace-deps.js && changeset publish && git checkout -- package.json packages/*/package.json",
         "only-publish-packages": "bun run build && bun run scripts/apply-publish-config.js && bun run scripts/update-workspace-deps.js && npm publish --workspaces && git checkout -- package.json packages/*/package.json",

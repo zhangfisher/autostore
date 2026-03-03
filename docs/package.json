@@ -17,11 +17,12 @@
     "@autostorejs/devtools": "workspace:*",
     "@autostorejs/react": "workspace:*",
     "@autostorejs/syncer": "workspace:*",
+    "autostore": "workspace:*",
+    "x-react-components": "workspace:*",    
     "@lite-tree/icons": "^1.0.6",
     "@lite-tree/vue": "^1.1.4",
     "@shikijs/twoslash": "^4.0.1",
     "@shoelace-style/shoelace": "^2.20.1",
-    "autostore": "workspace:*",
     "flex-tools": "^1.4.9",
     "flexstyled": "^2.1.2",
     "react": "^19.2.4",
@@ -29,8 +30,7 @@
     "themepro": "^1.0.5",
     "twoslash": "^0.3.6",
     "vitepress": "^1.6.4",
-    "vue": "^3.5.14",
-    "x-react-components": "4.1.1"
+    "vue": "^3.5.14"
   },
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "^4.0.1",

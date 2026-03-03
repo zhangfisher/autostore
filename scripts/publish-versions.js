@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * 更新所有包的版本号并创建 publish-<版本号> tag
+ * 更新所有包的版本号并创建 release-<版本号> tag
  *
  * 用法:
  *   bun run update-versions -v 1.2.3          # 更新版本号并创建 tag
@@ -202,10 +202,10 @@ async function pushTagToRemote(tagName) {
 }
 
 /**
- * 创建 publish-<版本号> tag
+ * 创建 release-<版本号> tag
  */
 async function createPublishTag(version) {
-    const tagName = `publish-${version}`;
+    const tagName = `release-${version}`;
 
     if (dryRun) {
         console.log(`\n[DRY-RUN] 将创建标签: ${tagName}`);
@@ -266,7 +266,7 @@ async function updateAllPackageVersions(targetVersion) {
  * 主函数
  */
 async function main() {
-    const tagName = `publish-${targetVersion}`;
+    const tagName = `release-${targetVersion}`;
 
     try {
         // 验证版本号
@@ -311,11 +311,11 @@ async function main() {
         console.log();
         if (dryRun) {
             console.log(
-                `📊 预览完成: 将更新 ${updatedCount} 个包并创建标签 publish-${targetVersion}`,
+                `📊 预览完成: 将更新 ${updatedCount} 个包并创建标签 release-${targetVersion}`,
             );
         } else {
             console.log(
-                `✅ 更新完成: 已更新 ${updatedCount} 个包并创建标签 publish-${targetVersion}`,
+                `✅ 更新完成: 已更新 ${updatedCount} 个包并创建标签 release-${targetVersion}`,
             );
         }
     } catch (error) {

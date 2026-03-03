@@ -5,7 +5,7 @@ on:
     branches:
       - "master"
     tags:
-      - "publish-*"
+      - "release-*"
   # 允许你从 Actions 选项卡手动运行此工作流程
   # Allows you to run this workflow manually from the Actions tab
   workflow_run:
@@ -45,7 +45,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: ${{ startsWith(github.ref_name, 'publish-') && 'bun run only-publish-packages' || 'bun run publish-packages' }}
+          publish: ${{ startsWith(github.ref_name, 'release-') && 'bun run only-publish-packages' || 'bun run publish-packages' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_registry: https://registry.npmjs.org
