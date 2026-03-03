@@ -102,6 +102,10 @@ import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 
 export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<AutoStoreEvents> {
+    declare types: FastEvent<AutoStoreEvents>["types"] & {
+        rawState: State;
+        state: ComputedState<State>;
+    };
     private _data: ComputedState<State>;
     private _errors?: Record<string, string>;
     public computedObjects: ComputedObjects<State>;
@@ -179,15 +183,6 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     }
     get state() {
         return this._data;
-    }
-
-    // @ts-ignore - TypeScript 版本差异：某些环境检测到 getter 覆盖父类 getter 的错误，其他环境不会
-    get types() {
-        const stypes = super.types;
-        return super.types as typeof stypes & {
-            rawState: State;
-            state: ComputedState<State>;
-        };
     }
 
     get operates() {
