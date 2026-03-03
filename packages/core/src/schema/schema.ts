@@ -30,7 +30,7 @@ import { forEachObject, isFunction, isPlainObject } from "../utils";
 import { markRaw } from "../utils/markRaw";
 
 import type {
-    AutoStateSchema,
+    AutoStoreStateSchema,
     AutoStateSchemaBase,
     AutoStoreWidgets,
     SchemaDescriptorBuilder,
@@ -41,7 +41,7 @@ import type {
 
 type SchemaArgs = {
     value: any;
-    schema: AutoStateSchema;
+    schema: AutoStoreStateSchema;
 };
 
 /**

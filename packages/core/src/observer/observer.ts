@@ -13,7 +13,7 @@ import { setVal } from "../utils/setVal";
 import { getId } from "../utils/getId";
 import type { ObserverDescriptor, ObserverOptions } from "./types";
 import type { ComputedContext } from "../computed/types";
-import type { StateOperate, StoreEvents, UpdateOptions } from "../store/types";
+import type { StateOperate, AutoStoreEvents, UpdateOptions } from "../store/types";
 import type { Watcher, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
@@ -282,7 +282,7 @@ export class ObserverObject<
         return this.path!.join(this.store.options.delimiter);
     }
 
-    protected emitStoreEvent(event: keyof StoreEvents, args: any) {
+    protected emitStoreEvent(event: keyof AutoStoreEvents, args: any) {
         setTimeout(() => {
             this.store.emit(event, args);
         }, 0);

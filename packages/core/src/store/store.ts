@@ -59,7 +59,7 @@ import type { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
 import type { ComputedContext, ComputedDescriptor } from "../computed/types";
 import type { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
-import type { StoreEvents } from "./types";
+import type { AutoStoreEvents } from "./types";
 import { BATCH_UPDATE_EVENT } from "../consts";
 import { createReactiveObject } from "./reactive";
 import type { SchemaDescriptor } from "../schema/types";
@@ -101,7 +101,7 @@ import type {
 import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 
-export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<StoreEvents> {
+export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<AutoStoreEvents> {
     private _data: ComputedState<State>;
     private _errors?: Record<string, string>;
     public computedObjects: ComputedObjects<State>;
@@ -185,6 +185,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         const stypes = super.types;
         return super.types as typeof stypes & {
             rawState: State;
+            state: ComputedState<State>;
         };
     }
 

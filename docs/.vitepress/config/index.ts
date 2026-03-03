@@ -69,6 +69,7 @@ export default defineConfig({
                         { text: "RefStore", link: "/zh/store/guide/store/refStore" },
                         { text: "配置系统", link: "/zh/store/guide/store/config" },
                         { text: "选项", link: "/zh/store/guide/store/options" },
+                        { text: "Typescript", link: "/zh/store/guide/store/typescript" },
                     ],
                 },
             ],

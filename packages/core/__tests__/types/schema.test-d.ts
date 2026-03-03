@@ -1,6 +1,6 @@
 import { describe, test } from "bun:test";
 import type { Equal, Expect } from "@type-challenges/utils";
-import { AutoStore, configurable, schema, computed, SchemaKeyPaths } from "../../src";
+import { AutoStore, configurable, schema, computed, ConfigurableKeyPaths } from "../../src";
 
 /**
  * Schema 基础类型测试

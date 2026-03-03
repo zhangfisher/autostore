@@ -20,7 +20,7 @@
         "lint": "oxlint",
         "lint:fix": "oxlint --fix",
         "publish-versions": "bun run scripts/publish-versions.js",
-        "download":"npm pack autostore @autostorejs/syncer @autostorejs/react @autostorejs/devtools"
+        "download": "npm pack autostore @autostorejs/syncer @autostorejs/react @autostorejs/devtools"
     },
     "keywords": [],
     "author": "zhangfisher",

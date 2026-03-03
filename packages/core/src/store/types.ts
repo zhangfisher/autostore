@@ -4,7 +4,7 @@ import type { ObserverObject } from "../observer/observer";
 import type { ObserverType } from "../observer/types";
 import type { Dict } from "../types";
 import type { AutoStore } from "./store";
-import type { AutoStateSchema } from "../schema/types";
+import type { AutoStoreStateSchema } from "../schema/types";
 import type { ConfigManager, ConfigSource } from "../schema/manager";
 import type { TransformedEvents } from "fastevent";
 import type { ObserverDescriptor } from "../observer/types";
@@ -260,7 +260,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 默认的値模式
      */
-    defaultSchema?: Partial<AutoStateSchema<any>>;
+    defaultSchema?: Partial<AutoStoreStateSchema<any>>;
     /**
      *
      * 校验失败时的默认行为
@@ -438,7 +438,7 @@ export type StoreSyncOptions = {
     };
 };
 
-export type StoreEvents = TransformedEvents<{
+export type AutoStoreEvents = TransformedEvents<{
     load: AutoStore<any>; // 响应对象创建后
     unload: AutoStore<any>; // 响应对象销毁后
     reset: string | undefined; // 对象重置时触发，入参为重置的路径字符串

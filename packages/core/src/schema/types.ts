@@ -211,7 +211,7 @@ export type WidgetConfigPrecise<W extends keyof AutoStoreWidgets> = Pick<
  * 完整的 AutoStateSchema 类型，根据 widget 参数自动合并对应 widget 配置
  * 使用泛型参数 Widget 来实现类型安全的 widget 配置推断
  */
-export type AutoStateSchema<
+export type AutoStoreStateSchema<
     Value = any,
     Widget extends keyof AutoStoreWidgets = never,
 > = keyof AutoStoreWidgets extends never
@@ -238,12 +238,12 @@ export type Computedable<Obj extends Record<string, any>, Value = any> = {
 export type ComputedableStateSchema<
     Value = any,
     Widget extends keyof AutoStoreWidgets = never,
-> = Computedable<AutoStateSchema<Value, Widget>, Value>;
+> = Computedable<AutoStoreStateSchema<Value, Widget>, Value>;
 
 export type SchemaDescriptor<Value = any, Widget extends keyof AutoStoreWidgets = never> = {
     path?: string[];
     value: Value;
-    schema: AutoStateSchema<Value, Widget>;
+    schema: AutoStoreStateSchema<Value, Widget>;
 };
 
 export interface SchemaDescriptorBuilder<
@@ -266,7 +266,7 @@ export type SchemaBuilder<Value = any> = <T = Value, W extends keyof AutoStoreWi
     schema?: ComputedableStateSchema<Value, W>,
 ) => SchemaDescriptorBuilder<T, W>;
 
-export type SchemaKeyPaths<State> = Exclude<
+export type ConfigurableKeyPaths<State> = Exclude<
     keyof {
         [K in StatePath<State> as GetTypeByPath<State, K> extends {
             [VALUE_SCHEMA_BUILDER_FLAG]: true;
@@ -284,9 +284,9 @@ export type SchemaKeyPaths<State> = Exclude<
 // 获取可配置项的类型
 // 使用 AutoStateSchema 以包含 widget 特定配置属性（如 min, max, step 等）
 export type ConfigurableState<Store extends AutoStore<any>, Prefix extends string = ""> = {
-    [Key in SchemaKeyPaths<StoreRawStateType<Store>> as Prefix extends ""
+    [Key in ConfigurableKeyPaths<StoreRawStateType<Store>> as Prefix extends ""
         ? Key
-        : `${Prefix}.${Key}`]: AutoStateSchema<
+        : `${Prefix}.${Key}`]: AutoStoreStateSchema<
         GetTypeByPath<ComputedState<StoreRawStateType<Store>>, Key>,
         ExtractWidgetFromBuilder<GetTypeByPath<StoreRawStateType<Store>, Key>>
     >;

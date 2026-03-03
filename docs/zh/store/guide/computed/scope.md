@@ -14,7 +14,7 @@ toc: content
 
 `Autostore`在创建`Store`时，支持配置`scope`参数来指定计算属性函数的第一个参数，如下：
 
-```ts {20}
+```ts {19-20}
 export enum ObserverScopeRef{
   Root    = 'root',                   // 指向State根对象
   Current = 'current',                // 指向计算属性所在的对象
@@ -55,7 +55,7 @@ const store = new AutoStore( {
 
 可以在创建`Store`时，通过`scope`参数来全局指定计算属性的默认`scope`，如下：
 
-```tsx {6,11}
+```tsx {8,13}
 const store = new AutoStore(
     {
         user: {
@@ -77,7 +77,7 @@ const store = new AutoStore(
 
 也可以局部指定计算属性的`scope`，如下：
 
-```tsx {6,9}
+```tsx {8,11}
 const store = new AutoStore({
     user: {
         firstName: "Zhang",
@@ -101,7 +101,7 @@ const store = new AutoStore({
 
 默认情况下，`scope==ObserverScopeRef.Current`时，计算函数的`scope`指向计算函数所在的对象。
 
-```tsx {16}
+```tsx {18}
 import { ObserverScopeRef, useStore } from "@autostorejs/react";
 import { ColorBlock } from "x-react-components";
 
@@ -140,7 +140,7 @@ export default () => {
 
 `@autostorejs/react`会将计算属函数的`scope`指向`ObserverScopeRef.Root`，即当前的`State`根对象，如下：
 
-```tsx {15}
+```tsx {17}
 import { useStore, ObserverScopeRef } from "@autostorejs/react";
 import { ColorBlock } from "x-react-components";
 
@@ -172,7 +172,7 @@ export default () => {
 
 当`scope==ObserverScopeRef.Parent`时，指向计算函数所在的对象的父对象。
 
-```tsx {10-11,17}
+```tsx {11-12,19}
 import { new AutoStore, ObserverScopeRef } from "@autostorejs/react";
 import { ColorBlock } from "x-react-components";
 
@@ -208,7 +208,7 @@ export default () => {
 
 当`store.options.scope==<字符串>`时，此时`<字符串>`就是指向绝对路径。
 
-```tsx {9-10,17}
+```tsx {10-11,19}
 import { new AutoStore } from "@autostorejs/react";
 import { ColorBlock } from "x-react-components";
 
@@ -246,7 +246,7 @@ export default () => {
 
 ### 字符串数组
 
-```tsx {9-10,17}
+```tsx {10-11,19}
 import { new AutoStore } from "@autostorejs/react";
 import { ColorBlock } from "x-react-components";
 
@@ -286,7 +286,7 @@ export default () => {
 
 当`scope==ObserverScopeRef.Depends`时，指向计算函数的依赖项的值。
 
-```tsx
+```tsx {12,15}
 import { new AutoStore, computed, ObserverScopeRef } from "@autostorejs/react";
 import { ColorBlock } from "x-react-components";
 
