@@ -883,6 +883,8 @@ store.on('validate', ({
 
 ### Typescript类型
 
+#### 扩展全局配置类型
+
 `interface AutoStoreConfigures`用于扩展全局配置数据的类型，如下：
 
 ```ts twoslash
@@ -977,11 +979,20 @@ AutoStoreConfigManager.state["shop.discount"].value;
 AutoStoreConfigManager.state["shop.tax"].value;
 ```
 
-配置系统还提供`interface AutoStoreWidgets`类型用于扩展可用的`widget`
+#### 定义Widget类型
+
+配置系统还提供`interface AutoStoreWidgets`类型用于扩展可用的`widget`，这主要用于渲染配置数据时使用。
 
 ```ts twoslash
-import { AutoStore, computed, ConfigManager, configurable } from "autostore";
-import type { AutoStoreConfigures, ConfigurableState, AutoStoreWidgets } from "autostore";
+import {
+    AutoStore,
+    computed,
+    ConfigManager,
+    configurable,
+    type AutoStoreConfigures,
+    type ConfigurableState,
+    type AutoStoreWidgets,
+} from "autostore";
 
 const configManager = new ConfigManager({
     load: () => {
@@ -1029,7 +1040,7 @@ declare module "autostore" {
             multiline?: boolean;
         };
         select: {
-            options: Array<{ label: string; value: any; disabled?: boolean }>;
+            options: Array<{ label: string; value: any }>;
             multiple?: boolean;
         };
         checkbox: {
@@ -1047,6 +1058,13 @@ type AllWidgetNames = {
     [K in keyof AutoStoreWidgets]: K;
 }[keyof AutoStoreWidgets];
 
+//
+type OrderPriceSchema = (typeof AutoStoreConfigManager.state)["app.order.price"];
+type SchemaKeys = keyof OrderPriceSchema;
 AutoStoreConfigManager.state["app.order.price"].widget;
+// @noErrors
+AutoStoreConfigManager.state["app1.order.price"].m;
+//                                                ^|
+
 AutoStoreConfigManager.state["app.order.quantity"].widget;
 ```

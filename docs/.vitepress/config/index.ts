@@ -2,20 +2,6 @@ import path from "path";
 import { defineConfig } from "vitepress";
 import { vitepressDemoPlugin } from "vitepress-demo-plugin";
 import { transformerTwoslash } from "@shikijs/vitepress-twoslash";
-import { createTwoslasher as createTwoslasherESLint } from "twoslash-eslint";
-
-// 创建 ESLint 支持的 Twoslash 实例
-const twoslasher = createTwoslasherESLint({
-    eslintConfig: [
-        {
-            // 基础 ESLint 配置
-            // 可以根据需要添加规则
-        },
-    ],
-    cwd: path.resolve(__dirname, "../.."), // 项目根目录
-    includeDocs: true,
-    mergeMessages: true,
-});
 
 export default defineConfig({
     base: "/autostore/",
@@ -33,7 +19,6 @@ export default defineConfig({
             { text: "核心库", link: "/zh/store/" },
             { text: "同步", link: "/zh/sync/" },
             { text: "React", link: "/zh/react/" },
-            // { text: '表单', link: '/zh/form/' },
             { text: "开源推荐", link: "https://zhangfisher.github.io/repos/" },
         ],
         sidebar: {
@@ -284,7 +269,15 @@ export default defineConfig({
             });
         },
         // 版本兼容性问题：@shikijs/vitepress-twoslash v4.0.1 与 VitePress 内置 shiki v2.5.0 类型不匹配
-        codeTransformers: [transformerTwoslash({})] as any,
+        codeTransformers: [
+            transformerTwoslash({
+                throws: false,
+                errorRendering: "hover",
+                explicitTrigger: true,
+            }),
+        ] as any,
+        // @ts-ignore
+        languages: ["js", "jsx", "ts", "tsx"],
     },
     // @ts-ignore
     build: {
@@ -295,7 +288,6 @@ export default defineConfig({
                     // 将较大的依赖项分组到单独的块中
                     vendor: ["vue", "vue-router"],
                     shiki: ["shiki", "@shikijs/vitepress-twoslash"],
-                    // 添加其他大型依赖项
                 },
             },
         },

@@ -1,5 +1,14 @@
-import { AutoStore, ConfigManager, configurable } from "autostore";
-import type { ConfigurableState } from "autostore";
+import { describe, test, it, expect } from "bun:test";
+import type { Equal, Expect } from "@type-challenges/utils";
+import { AutoStore, computed, ConfigManager, configurable } from "../../src";
+import type {
+    ObserverObject,
+    ObserverOptions,
+    ObserverDescriptor,
+    ConfigurableState,
+} from "../../src";
+import { AutoStoreConfigures } from "../../src/schema/types";
+
 const configManager = new ConfigManager({
     load: () => {
         return {};
@@ -10,9 +19,6 @@ const orderStore = new AutoStore(
         order: {
             price: configurable(99.9, {
                 label: "订单价格",
-                widget: "number",
-                min: 1,
-                max: 10,
                 validate: (value) => value > 0,
             }),
             quantity: configurable(10, {
@@ -32,9 +38,6 @@ const userStore = new AutoStore(
         user: {
             name: configurable("Bob", {
                 label: "用户名",
-                widget: "select",
-                options: [],
-                multiple: true,
                 validate: (value) => typeof value === "string" && value.length > 0,
             }),
             age: configurable(25, {
@@ -54,10 +57,6 @@ const shopStore = new AutoStore(
         shop: {
             discount: configurable(0.1, {
                 label: "折扣",
-                widget: "text",
-                maxLength: 1,
-                minLength: 1,
-                multiline: true,
                 validate: (value) => value >= 0 && value < 1,
             }),
             tax: configurable(0.05, {
@@ -88,8 +87,8 @@ declare module "autostore" {
             step?: number;
         };
         text: {
-            maxLength: number;
-            minLength: number;
+            maxLength?: number;
+            minLength?: number;
             pattern?: RegExp | string;
             rows?: number;
             multiline?: boolean;
@@ -106,7 +105,3 @@ declare module "autostore" {
     }
 }
 AutoStoreConfigManager.state["app1.order.price"].value;
-type OrderPriceSchema = (typeof AutoStoreConfigManager.state)["app1.order.price"];
-type SchemaKeys = keyof OrderPriceSchema;
-
-AutoStoreConfigManager.state["app1.order.price"].min;

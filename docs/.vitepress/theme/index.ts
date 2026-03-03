@@ -13,25 +13,19 @@ import Tree from "./Tree.vue";
 import TwoslashFloatingVue from "@shikijs/vitepress-twoslash/client";
 
 import "@shikijs/vitepress-twoslash/style.css";
-import "themepro/themes/index.css"
-
-//@ts-ignore
-if (!import.meta.env.SSR) {
- //@ts-ignore
-  import('themepro')
-}
 
 export default {
-	extends: DefaultTheme,
-	Layout: () => {
-		return h(DefaultTheme.Layout, null, {
-			// https://vitepress.dev/guide/extending-default-theme#layout-slots
-		});
-	},
-	enhanceApp({ app }) {
-		// ...
-		app.component("LiteTree", LiteTree);
-		app.component("Tree", Tree);
-		app.use(TwoslashFloatingVue);
-	},
+    extends: DefaultTheme,
+    Layout: () => {
+        return h(DefaultTheme.Layout, null, {
+            // https://vitepress.dev/guide/extending-default-theme#layout-slots
+        });
+    },
+    enhanceApp({ app }) {
+        // ...
+        app.component("LiteTree", LiteTree);
+        app.component("Tree", Tree);
+        // @ts-ignore
+        app.use(TwoslashFloatingVue);
+    },
 } satisfies Theme;
