@@ -181,6 +181,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         return this._data;
     }
 
+    // @ts-ignore - TypeScript 版本差异：某些环境检测到 getter 覆盖父类 getter 的错误，其他环境不会
     get types() {
         const stypes = super.types;
         return super.types as typeof stypes & {

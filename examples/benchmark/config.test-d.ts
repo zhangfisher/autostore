@@ -87,6 +87,7 @@ type orderStoreConfigurableState = ConfigurableState<typeof orderStore, "app1">;
 type userConfigurableState = ConfigurableState<typeof userStore, "app2">;
 type ShopConfigurableState = ConfigurableState<typeof shopStore>;
 
+shopStore.types.rawState;
 declare module "autostore" {
     interface AutoStoreConfigures
         extends orderStoreConfigurableState, userConfigurableState, ShopConfigurableState {}
