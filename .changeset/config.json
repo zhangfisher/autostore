@@ -10,7 +10,7 @@
         "@autostorejs/devtools"
     ]],
 	"linked": [],
-	"baseBranch": "4.0",
+	"baseBranch": "master",
 	"updateInternalDependencies": "patch",
 	"ignore": [
 		"autostore-docs", 
