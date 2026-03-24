@@ -30,7 +30,7 @@
 		"autostore": "workspace:*"
 	},
 	"dependencies": {
-		"flex-tools": "^1.5.9",
+		"flex-tools": "^1.6.3",
 		"mitt": "^3.0.1"
 	},
 	"files": [
@@ -38,10 +38,10 @@
 		"dist"
 	],
 	"devDependencies": {
-		"@types/bun": "^1.3.7",
+		"@types/bun": "^1.3.11",
 		"autostore": "workspace:*",
 		"tsup": "^8.5.1",
-		"typescript": "^5.9.3",
-		"vitest": "^3.2.4"
+		"typescript": "^6.0.2",
+		"vitest": "^4.1.1"
 	}
 }

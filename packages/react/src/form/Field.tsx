@@ -77,10 +77,18 @@ import type { SignalComponentRenderArgs } from '../types';
 import { getInputValueFromEvent } from '../utils';
 import type { Get } from 'type-fest';
 
-export type BooleanComputedGetter<State extends Dict, Scope = ComputedState<State>> = boolean | ComputedGetter<boolean, Scope>;
-export type NumberComputedGetter<State extends Dict, Scope = ComputedState<State>> = number | ComputedGetter<number, Scope>;
-export type StringComputedGetter<State extends Dict, Scope = ComputedState<State>> = string | ComputedGetter<string, Scope>;
-export type ArrayComputedGetter<State extends Dict, Scope = ComputedState<State>> = any[] | ComputedGetter<any[], Scope>;
+export type BooleanComputedGetter<State extends Dict, Scope = ComputedState<State>> =
+    | boolean
+    | ComputedGetter<boolean, Scope>;
+export type NumberComputedGetter<State extends Dict, Scope = ComputedState<State>> =
+    | number
+    | ComputedGetter<number, Scope>;
+export type StringComputedGetter<State extends Dict, Scope = ComputedState<State>> =
+    | string
+    | ComputedGetter<string, Scope>;
+export type ArrayComputedGetter<State extends Dict, Scope = ComputedState<State>> =
+    | any[]
+    | ComputedGetter<any[], Scope>;
 
 export type AutoFieldRenderBindProps<NAME, VALUE> = {
     name: NAME;
@@ -104,7 +112,19 @@ export interface AutoFieldRenderProps<NAME, VALUE> extends SignalComponentRender
     bind: AutoFieldRenderBindProps<NAME, VALUE>;
 }
 
-export interface AutoFieldProps<NAME, VALUE, VALIDATE, VISIBLE, REQUIRED, READONLY, ENABLE, HELP, LABEL, PLACEHOLDER, SELECT> {
+export interface AutoFieldProps<
+    NAME,
+    VALUE,
+    VALIDATE,
+    VISIBLE,
+    REQUIRED,
+    READONLY,
+    ENABLE,
+    HELP,
+    LABEL,
+    PLACEHOLDER,
+    SELECT,
+> {
     name: NAME;
     validate?: VALIDATE;
     visible?: VISIBLE;
@@ -130,9 +150,24 @@ export interface AutoField<State extends Dict> {
         LABEL extends StringComputedGetter<State, VALUE> = StringComputedGetter<State, VALUE>,
         PLACEHOLDER extends StringComputedGetter<State, VALUE> = StringComputedGetter<State, VALUE>,
         HELP extends StringComputedGetter<State, VALUE> = StringComputedGetter<State, VALUE>,
-        SELECT extends AsyncComputedDescriptorBuilder<any[], VALUE> = AsyncComputedDescriptorBuilder<any[], VALUE>,
+        SELECT extends AsyncComputedDescriptorBuilder<
+            any[],
+            VALUE
+        > = AsyncComputedDescriptorBuilder<any[], VALUE>,
     >(
-        props: AutoFieldProps<NAME, VALUE, VALIDATE, VISIBLE, REQUIRED, READONLY, ENABLE, HELP, LABEL, PLACEHOLDER, SELECT>,
+        props: AutoFieldProps<
+            NAME,
+            VALUE,
+            VALIDATE,
+            VISIBLE,
+            REQUIRED,
+            READONLY,
+            ENABLE,
+            HELP,
+            LABEL,
+            PLACEHOLDER,
+            SELECT
+        >,
     ): React.ReactNode;
 }
 
@@ -162,11 +197,17 @@ function buildFieldRenderProps(props: any) {
     );
 }
 
-export function prop(getter: ComputedGetter<any> | AsyncComputedGetter<any>, options?: ComputedOptions<any>): ComputedGetter<any> {
+export function prop(
+    getter: ComputedGetter<any> | AsyncComputedGetter<any>,
+    options?: ComputedOptions<any>,
+): ComputedGetter<any> {
     return computed(getter as any, options) as ComputedGetter<any>;
 }
 
-export function createAutoFieldComponent<State extends Dict>(store: ReactAutoStore<State>, formCtx: React.MutableRefObject<AutoFormContext<State> | null>): AutoField<State> {
+export function createAutoFieldComponent<State extends Dict>(
+    store: ReactAutoStore<State>,
+    formCtx: React.MutableRefObject<AutoFormContext<State> | null>,
+): AutoField<State> {
     const { useAsyncState, useComputedObject } = store;
 
     return (props: any) => {
@@ -184,14 +225,46 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             onError: () => false, //出错时返回false
         }) as ComputedObject<boolean>;
 
-        const required = useComputedObject<boolean>(props.required, { id: `${prefix}required`, initial: false, throwError: false }) as ComputedObject<boolean> | undefined;
-        const visible = useComputedObject<boolean>(props.visible, { id: `${prefix}visible`, initial: true, throwError: false }) as ComputedObject<boolean> | undefined;
-        const readonly = useComputedObject<boolean>(props.readonly, { id: `${prefix}readonly`, initial: false, throwError: false }) as ComputedObject<boolean> | undefined;
-        const enable = useComputedObject<boolean>(props.enable, { id: `${prefix}enable`, initial: true, throwError: false }) as ComputedObject<boolean> | undefined;
-        const select = useComputedObject<any[]>(props.select, { id: `${prefix}select`, initial: [], throwError: false }) as ComputedObject<any[]> | undefined;
-        const help = useComputedObject<string>(props.help, { id: `${prefix}help`, initial: '', throwError: false }) as ComputedObject<string> | undefined;
-        const label = useComputedObject<string>(props.label, { id: `${prefix}label`, initial: '', throwError: false }) as ComputedObject<string> | undefined;
-        const placeholder = useComputedObject<string>(props.placeholder, { id: `${prefix}placeholder`, initial: '', throwError: false }) as ComputedObject<string> | undefined;
+        const required = useComputedObject<boolean>(props.required, {
+            id: `${prefix}required`,
+            initial: false,
+            throwError: false,
+        }) as ComputedObject<boolean> | undefined;
+        const visible = useComputedObject<boolean>(props.visible, {
+            id: `${prefix}visible`,
+            initial: true,
+            throwError: false,
+        }) as ComputedObject<boolean> | undefined;
+        const readonly = useComputedObject<boolean>(props.readonly, {
+            id: `${prefix}readonly`,
+            initial: false,
+            throwError: false,
+        }) as ComputedObject<boolean> | undefined;
+        const enable = useComputedObject<boolean>(props.enable, {
+            id: `${prefix}enable`,
+            initial: true,
+            throwError: false,
+        }) as ComputedObject<boolean> | undefined;
+        const select = useComputedObject<any[]>(props.select, {
+            id: `${prefix}select`,
+            initial: [],
+            throwError: false,
+        }) as ComputedObject<any[]> | undefined;
+        const help = useComputedObject<string>(props.help, {
+            id: `${prefix}help`,
+            initial: '',
+            throwError: false,
+        }) as ComputedObject<string> | undefined;
+        const label = useComputedObject<string>(props.label, {
+            id: `${prefix}label`,
+            initial: '',
+            throwError: false,
+        }) as ComputedObject<string> | undefined;
+        const placeholder = useComputedObject<string>(props.placeholder, {
+            id: `${prefix}placeholder`,
+            initial: '',
+            throwError: false,
+        }) as ComputedObject<string> | undefined;
 
         const fieldPropObjs = {
             validate,
@@ -219,7 +292,7 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
 
         const [_, setRefresh] = useState(0);
 
-        const renderProps = useRef<any>();
+        const renderProps = useRef<any>(null);
         if (!renderProps.current) {
             const bind = {
                 name,
@@ -246,14 +319,17 @@ export function createAutoFieldComponent<State extends Dict>(store: ReactAutoSto
             });
         }
         // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-        const getFieldPropObj = useCallback((path: string[]): [string | undefined, ComputedObject<any> | undefined] => {
-            const spath = path.join(PATH_DELIMITER);
-            if (spath.startsWith('#' + prefix)) {
-                const [propKey] = spath.substring(('#' + prefix).length).split(PATH_DELIMITER);
-                return [propKey, fieldPropObjs[propKey]];
-            }
-            return [undefined, undefined];
-        }, []);
+        const getFieldPropObj = useCallback(
+            (path: string[]): [string | undefined, ComputedObject<any> | undefined] => {
+                const spath = path.join(PATH_DELIMITER);
+                if (spath.startsWith('#' + prefix)) {
+                    const [propKey] = spath.substring(('#' + prefix).length).split(PATH_DELIMITER);
+                    return [propKey, fieldPropObjs[propKey]];
+                }
+                return [undefined, undefined];
+            },
+            [],
+        );
 
         // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
         useEffect(() => {

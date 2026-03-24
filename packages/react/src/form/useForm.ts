@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AutoStore,  Dict } from "autostore";
+import { AutoStore, Dict } from "autostore";
 import { ReactAutoStore } from "../store";
 import { AutoFormStore, UseFormOptions, AutoFormObject } from "./types";
 import { AutoForm, AutoFormContext, createAutoFormComponent } from "./Form";
-import { createAutoFieldComponent,AutoField } from "./Field";
+import { createAutoFieldComponent, AutoField } from "./Field";
 import { Validator } from "./validator";
-
-
-
 
 /**
  *
@@ -50,7 +47,7 @@ import { Validator } from "./validator";
  *          value={myform.xxx}
  *      />
  *   </From>
- * 
+ *
  *
  *
  * @returns
@@ -65,81 +62,86 @@ import { Validator } from "./validator";
  * @returns 一个包含表单状态和操作结果的对象。
  */
 
+export function useForm<State extends Dict>(
+    store: ReactAutoStore<any> | AutoStore<any>,
+    options?: UseFormOptions<State>,
+): AutoFormObject<State>;
+export function useForm<State extends Dict>(
+    state: State,
+    options?: UseFormOptions<State>,
+): AutoFormObject<State>;
+export function useForm<State extends Dict>(): AutoFormObject<State> {
+    const formComponentRef = useRef<AutoForm<State>>(null);
+    const fieldComponentRef = useRef<AutoField<State>>(null);
+    const formRef = useRef<HTMLFormElement | null>(null);
+    const formContext = useRef<AutoFormContext<State> | null>(null);
+    const storeRef = useRef<AutoFormStore<State> | null>(null);
 
+    const opts: UseFormOptions<State> = arguments[1] || {};
+    if (!opts.ref) opts.ref = formRef as any;
 
-export function useForm<State extends Dict>(store:ReactAutoStore<any> | AutoStore<any>,options?:UseFormOptions<State>):AutoFormObject<State>
-export function useForm<State extends Dict>(state:State,options?:UseFormOptions<State>): AutoFormObject<State>
-export function useForm<State extends Dict>(): AutoFormObject<State>{
-	
-	const formComponentRef = useRef<AutoForm<State>>()
-	const fieldComponentRef = useRef<AutoField<State>>()
-	const formRef = useRef<HTMLFormElement | null>(null);				
-	const formContext = useRef<AutoFormContext<State> | null>(null)
-	const storeRef = useRef<AutoFormStore<State> | null>(null)
-	
-	const opts:UseFormOptions<State> = arguments[1] || {}
-	if(!opts.ref) opts.ref = formRef;
-	
-	if(!storeRef.current){
-		const formStore =  (arguments[0] instanceof ReactAutoStore ? arguments[0] : new ReactAutoStore(arguments[0],arguments[1])) as AutoFormStore<State>
-		formStore.resetable = true
-		storeRef.current = formStore
-	} 	
+    if (!storeRef.current) {
+        const formStore = (
+            arguments[0] instanceof ReactAutoStore
+                ? arguments[0]
+                : new ReactAutoStore(arguments[0], arguments[1])
+        ) as AutoFormStore<State>;
+        formStore.resetable = true;
+        storeRef.current = formStore;
+    }
 
-	const [valid, setValid] = useState<boolean>(true);
-	const [dirty, setDirty] = useState<boolean>(false);
-	const [submiting, setSubmiting] = useState<boolean>(false);
-	const [error, setError] = useState<any>(null);
+    const [valid, setValid] = useState<boolean>(true);
+    const [dirty, setDirty] = useState<boolean>(false);
+    const [submiting, setSubmiting] = useState<boolean>(false);
+    const [error, setError] = useState<any>(null);
 
- 
-	const store = storeRef.current!  
-	
-	const reset = useCallback(()=>{
-		setDirty(false)		
-		store.reset(opts.entry)		
-	},[])
+    const store = storeRef.current!;
 
-	const submit = useCallback(()=>{
-		formRef.current?.dispatchEvent(new Event('submit'))
-	},[])
+    const reset = useCallback(() => {
+        setDirty(false);
+        store.reset(opts.entry);
+    }, []);
 
-	if(!formComponentRef.current){ 
-		formContext.current = {
-			options:opts, 
-			setDirty: (val:boolean=true) => setDirty(val),
-			setValid,
-			setSubmiting,
-			setError,
-			state:store.state,
-			formRef 
-		}
-		formComponentRef.current = createAutoFormComponent<State>(store,formContext)
-		fieldComponentRef.current = createAutoFieldComponent<State>(store, formContext)
-		formContext.current.validator = new Validator<State>(store,formContext.current!)		
-	}
+    const submit = useCallback(() => {
+        formRef.current?.dispatchEvent(new Event("submit"));
+    }, []);
 
-	useEffect(()=>{			
-		return ()=>{
-			formComponentRef.current  = undefined;
-			fieldComponentRef.current = undefined;
-			formContext.current       = null
-			storeRef.current?.destroy()
-			storeRef.current	      = null			
-		}
-	},[])
+    if (!formComponentRef.current) {
+        formContext.current = {
+            options: opts,
+            setDirty: (val: boolean = true) => setDirty(val),
+            setValid,
+            setSubmiting,
+            setError,
+            state: store.state,
+            formRef,
+        };
+        formComponentRef.current = createAutoFormComponent<State>(store, formContext);
+        fieldComponentRef.current = createAutoFieldComponent<State>(store, formContext);
+        formContext.current.validator = new Validator<State>(store, formContext.current!);
+    }
 
+    useEffect(() => {
+        return () => {
+            formComponentRef.current = null;
+            fieldComponentRef.current = null;
+            formContext.current = null;
+            storeRef.current?.destroy();
+            storeRef.current = null;
+        };
+    }, []);
 
-	return {
-		...store,
-		state:store.state,
-		Form: formComponentRef.current,
-		Field: fieldComponentRef.current!,
-		valid,
-		dirty,
-		error,
-		submiting,
-		submit,
-		reset,
-		validator:formContext.current!.validator
-	} as unknown as AutoFormObject<State>
-}   
+    return {
+        ...store,
+        state: store.state,
+        Form: formComponentRef.current,
+        Field: fieldComponentRef.current!,
+        valid,
+        dirty,
+        error,
+        submiting,
+        submit,
+        reset,
+        validator: formContext.current!.validator,
+    } as unknown as AutoFormObject<State>;
+}
