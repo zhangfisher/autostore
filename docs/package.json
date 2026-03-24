@@ -18,7 +18,7 @@
     "@autostorejs/react": "workspace:*",
     "@autostorejs/syncer": "workspace:*",
     "autostore": "workspace:*",
-    "x-react-components": "workspace:*",    
+    "x-react-components": "workspace:*",
     "@lite-tree/icons": "^1.0.6",
     "@lite-tree/vue": "^1.1.4",
     "@shikijs/twoslash": "^4.0.1",

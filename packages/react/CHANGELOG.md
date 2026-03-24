@@ -1,5 +1,16 @@
 # @autostorejs/react
 
+## 5.0.0
+
+### Minor Changes
+
+-   533b33a: upgrade fastevent
+
+### Patch Changes
+
+-   Updated dependencies [533b33a]
+    -   autostore@5.0.0
+
 ## 4.0.13
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # autostore
 
+## 5.0.0
+
+### Minor Changes
+
+-   533b33a: upgrade fastevent
+
 ## 4.0.13
 
 ### Patch Changes
