@@ -33,6 +33,7 @@ function assertConfigRegistered(
     for (const path of paths) {
         const fullPath = prefix + path;
         expect(fullPath in configManager.state).toBe(true);
+        // @t
         expect(configManager.state[fullPath]).toBeDefined();
     }
 }
@@ -864,6 +865,7 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
             expect(orderStore.state.order.price).toBe(99.9);
 
             // Schema 属性应该保持不变
+            //@ts-ignore
             const schema = configManager.state["app.order.price"] as any;
             expect(schema.label).toBe("订单价格");
         });

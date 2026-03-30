@@ -27,18 +27,21 @@ function assertConfigRegistered(
     for (const path of paths) {
         const fullPath = prefix + path;
         expect(fullPath in configManager.state).toBe(true);
+        // @ts-ignore
         expect(configManager.state[fullPath]).toBeDefined();
     }
 }
 
 describe("configurable 的 ref 功能测试", () => {
     let configManager: ConfigManager;
+    let configState: any;
 
     beforeEach(() => {
         configManager = new ConfigManager({
             load: () => ({}),
             save: () => {},
         });
+        configState = configManager.state;
     });
 
     afterEach(() => {
@@ -46,7 +49,7 @@ describe("configurable 的 ref 功能测试", () => {
     });
 
     describe("基本功能 - ref 访问 store 状态", () => {
-        test("enable 计算属性可以通过 ref 访问同一 store 中的状态", () => {
+        test("enable 计算属性可以通过 ref 访问同一store 中的状态", () => {
             const netStore = new AutoStore(
                 {
                     dhcp: configurable(true, {
@@ -65,9 +68,8 @@ describe("configurable 的 ref 功能测试", () => {
 
             // 断言配置项被正确注册
             assertConfigRegistered(configManager, netStore, ["dhcp", "ip"]);
-
             // 初始状态 dhcp=true，ip 应该启用
-            expect(configManager.state["network.ip"].enable).toBe(true);
+            expect(configState["network.ip"].enable).toBe(true);
             expect(netStore.state.dhcp).toBe(true);
         });
         test("当 ref 访问的状态值变化时，计算属性应该重新执行", async () => {
@@ -91,14 +93,14 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, netStore, ["dhcp", "ip"]);
 
             // 初始状态
-            expect(configManager.state["network.ip"].enable).toBe(true);
+            expect(configState["network.ip"].enable).toBe(true);
 
             // 修改 dhcp 为 false
             netStore.state.dhcp = false;
             await delay(0); // 等待计算属性更新
 
             // enable 应该变为 false
-            expect(configManager.state["network.ip"].enable).toBe(false);
+            expect(configState["network.ip"].enable).toBe(false);
             expect(netStore.state.dhcp).toBe(false);
 
             // 再次修改 dhcp 为 true
@@ -106,38 +108,7 @@ describe("configurable 的 ref 功能测试", () => {
             await delay(0);
 
             // enable 应该变为 true
-            expect(configManager.state["network.ip"].enable).toBe(true);
-        });
-
-        test("ref 可以使用数组路径访问状态", () => {
-            const store = new AutoStore(
-                {
-                    settings: {
-                        mode: configurable("basic", {
-                            label: "模式",
-                        }),
-                    },
-                    advancedOption: configurable("default", {
-                        label: "高级选项",
-                        enable: computed((_scope: any, { ref }) => {
-                            // 使用数组路径访问
-                            const mode = ref(["settings", "mode"]);
-                            return mode === "advanced";
-                        }),
-                    }),
-                },
-                { configManager, id: "app" },
-            );
-
-            // 断言配置项被正确注册
-            assertConfigRegistered(configManager, store, ["settings.mode", "advancedOption"]);
-
-            // 初始模式为 basic，advancedOption 应该禁用
-            expect(configManager.state["app.advancedOption"].enable).toBe(false);
-
-            // 修改模式为 advanced
-            store.state.settings.mode = "advanced";
-            expect(configManager.state["app.advancedOption"].enable).toBe(true);
+            expect(configState["network.ip"].enable).toBe(true);
         });
 
         test("ref 可以访问嵌套对象的状态", () => {
@@ -163,15 +134,15 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["user.age", "parentName"]);
 
             // 初始年龄 18，parentName 应该禁用
-            expect(configManager.state["profile.parentName"].enable).toBe(false);
+            expect(configState["profile.parentName"].enable).toBe(false);
 
             // 修改年龄为 15
             store.state.user.age = 15;
-            expect(configManager.state["profile.parentName"].enable).toBe(true);
+            expect(configState["profile.parentName"].enable).toBe(true);
 
             // 修改年龄为 20
             store.state.user.age = 20;
-            expect(configManager.state["profile.parentName"].enable).toBe(false);
+            expect(configState["profile.parentName"].enable).toBe(false);
         });
     });
 
@@ -201,19 +172,19 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["price", "discount", "finalPrice"]);
 
             // 初始状态：price=100, discount=0.1，应该启用
-            expect(configManager.state["order.finalPrice"].enable).toBe(true);
+            expect(configState["order.finalPrice"].enable).toBe(true);
 
             // 修改 price 为 0
             store.state.price = 0;
-            expect(configManager.state["order.finalPrice"].enable).toBe(false);
+            expect(configState["order.finalPrice"].enable).toBe(false);
 
             // 恢复 price
             store.state.price = 100;
-            expect(configManager.state["order.finalPrice"].enable).toBe(true);
+            expect(configState["order.finalPrice"].enable).toBe(true);
 
             // 修改 discount 为 0
             store.state.discount = 0;
-            expect(configManager.state["order.finalPrice"].enable).toBe(false);
+            expect(configState["order.finalPrice"].enable).toBe(false);
         });
 
         test("多个配置项可以同时使用 ref 访问相同的状态", () => {
@@ -248,15 +219,15 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["mode", "option1", "option2", "option3"]);
 
             // 初始模式为 basic，所有选项都应该禁用
-            expect(configManager.state["settings.option1"].enable).toBe(false);
-            expect(configManager.state["settings.option2"].enable).toBe(false);
-            expect(configManager.state["settings.option3"].enable).toBe(false);
+            expect(configState["settings.option1"].enable).toBe(false);
+            expect(configState["settings.option2"].enable).toBe(false);
+            expect(configState["settings.option3"].enable).toBe(false);
 
             // 修改模式为 advanced，所有选项都应该启用
             store.state.mode = "advanced";
-            expect(configManager.state["settings.option1"].enable).toBe(true);
-            expect(configManager.state["settings.option2"].enable).toBe(true);
-            expect(configManager.state["settings.option3"].enable).toBe(true);
+            expect(configState["settings.option1"].enable).toBe(true);
+            expect(configState["settings.option2"].enable).toBe(true);
+            expect(configState["settings.option3"].enable).toBe(true);
         });
     });
 
@@ -281,6 +252,7 @@ describe("configurable 的 ref 功能测试", () => {
                             const userLoggedIn = ref("userLoggedIn");
                             return featureEnabled && userLoggedIn;
                         }),
+                        visible: computed(() => true),
                     }),
                     premiumFeature: configurable("default", {
                         label: "高级功能",
@@ -302,21 +274,21 @@ describe("configurable 的 ref 功能测试", () => {
             ]);
 
             // 初始状态
-            expect(configManager.state["app.userLoggedIn"].enable).toBe(true);
-            expect(configManager.state["app.premiumUser"].enable).toBe(false);
-            expect(configManager.state["app.premiumFeature"].enable).toBe(false);
+            expect(configState["app.userLoggedIn"].enable).toBe(true);
+            expect(configState["app.premiumUser"].enable).toBe(false);
+            expect(configState["app.premiumFeature"].enable).toBe(false);
 
             // 启用 feature
             store.state.featureEnabled = true;
-            expect(configManager.state["app.userLoggedIn"].enable).toBe(true);
+            expect(configState["app.userLoggedIn"].enable).toBe(true);
 
             // 用户登录
             store.state.userLoggedIn = true;
-            expect(configManager.state["app.premiumUser"].enable).toBe(true);
+            expect(configState["app.premiumUser"].enable).toBe(true);
 
             // 启用高级用户
             store.state.premiumUser = true;
-            expect(configManager.state["app.premiumFeature"].enable).toBe(true);
+            expect(configState["app.premiumFeature"].enable).toBe(true);
         });
 
         test("ref 访问不存在的路径应该返回 undefined", () => {
@@ -339,7 +311,7 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["value"]);
 
             // enable 应该为 true（因为 nonExistent === undefined）
-            expect(configManager.state["test.value"].enable).toBe(true);
+            expect(configState["test.value"].enable).toBe(true);
         });
     });
 
@@ -364,10 +336,10 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["price", "finalPrice"]);
 
             // label 应该根据 price 动态变化
-            expect(configManager.state["product.finalPrice"].label).toBe("最终价格: 100");
+            expect(configState["product.finalPrice"].label).toBe("最终价格: 100");
 
             store.state.price = 200;
-            expect(configManager.state["product.finalPrice"].label).toBe("最终价格: 200");
+            expect(configState["product.finalPrice"].label).toBe("最终价格: 200");
         });
 
         test("ref 可以在 required 计算属性中使用", () => {
@@ -390,11 +362,11 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["hasGuardian", "guardianName"]);
 
             // 初始状态不需要监护人
-            expect(configManager.state["user.guardianName"].required).toBe(false);
+            expect(configState["user.guardianName"].required).toBe(false);
 
             // 启用监护人
             store.state.hasGuardian = true;
-            expect(configManager.state["user.guardianName"].required).toBe(true);
+            expect(configState["user.guardianName"].required).toBe(true);
         });
 
         test("ref 可以在 visible 计算属性中使用", () => {
@@ -417,11 +389,11 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["showAdvanced", "advancedOption"]);
 
             // 初始状态不显示高级选项
-            expect(configManager.state["settings.advancedOption"].visible).toBe(false);
+            expect(configState["settings.advancedOption"].visible).toBe(false);
 
             // 显示高级选项
             store.state.showAdvanced = true;
-            expect(configManager.state["settings.advancedOption"].visible).toBe(true);
+            expect(configState["settings.advancedOption"].visible).toBe(true);
         });
 
         test("ref 可以在 placeholder 计算属性中使用", () => {
@@ -445,11 +417,11 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["username", "email"]);
 
             // 初始 placeholder
-            expect(configManager.state["account.email"].placeholder).toBe("请输入邮箱");
+            expect(configState["account.email"].placeholder).toBe("请输入邮箱");
 
             // 输入用户名后
             store.state.username = "john";
-            expect(configManager.state["account.email"].placeholder).toBe("john@example.com");
+            expect(configState["account.email"].placeholder).toBe("john@example.com");
         });
     });
 
@@ -480,7 +452,7 @@ describe("configurable 的 ref 功能测试", () => {
             // 断言配置项被正确注册
             assertConfigRegistered(configManager, store, ["value", "dependent"]);
 
-            expect(configManager.state["test.dependent"].enable).toBe(true);
+            expect(configState["test.dependent"].enable).toBe(true);
 
             // 重置计数器
             callCount = 0;
@@ -514,7 +486,7 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["value", "dependent"]);
 
             // 访问 enable 来触发计算
-            expect(configManager.state["test.dependent"].enable).toBe(true);
+            expect(configState["test.dependent"].enable).toBe(true);
             const initialCount = callCount;
             expect(initialCount).toBeGreaterThan(0);
 
@@ -549,7 +521,7 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["value"]);
 
             // 即使 ref 为 undefined，也应该正常工作
-            expect(configManager.state["test.value"].enable).toBe(true);
+            expect(configState["test.value"].enable).toBe(true);
         });
 
         test("ref 访问深层嵌套路径", () => {
@@ -576,10 +548,10 @@ describe("configurable 的 ref 功能测试", () => {
             // 断言配置项被正确注册
             assertConfigRegistered(configManager, store, ["level1.level2.level3", "checker"]);
 
-            expect(configManager.state["nested.checker"].enable).toBe(true);
+            expect(configState["nested.checker"].enable).toBe(true);
 
             store.state.level1.level2.level3 = "other";
-            expect(configManager.state["nested.checker"].enable).toBe(false);
+            expect(configState["nested.checker"].enable).toBe(false);
         });
 
         test("多个计算属性通过 ref 形成依赖链", async () => {
@@ -623,17 +595,17 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["source", "level1", "level2", "level3"]);
 
             // 初始状态
-            expect(configManager.state["chain.level1"].enable).toBe(true);
-            expect(configManager.state["chain.level2"].enable).toBe(true);
-            expect(configManager.state["chain.level3"].enable).toBe(true);
+            expect(configState["chain.level1"].enable).toBe(true);
+            expect(configState["chain.level2"].enable).toBe(true);
+            expect(configState["chain.level3"].enable).toBe(true);
 
             // 关闭源
             store.state.source = 0;
             await delay(0);
 
-            expect(configManager.state["chain.level1"].enable).toBe(false);
-            expect(configManager.state["chain.level2"].enable).toBe(false);
-            expect(configManager.state["chain.level3"].enable).toBe(false);
+            expect(configState["chain.level1"].enable).toBe(false);
+            expect(configState["chain.level2"].enable).toBe(false);
+            expect(configState["chain.level3"].enable).toBe(false);
         });
     });
 
@@ -664,15 +636,15 @@ describe("configurable 的 ref 功能测试", () => {
             assertConfigRegistered(configManager, store, ["multiplier", "base"]);
 
             // 初始状态: 2 * 2 = 4 < 15，应该禁用
-            expect(configManager.state["mixed.base"].enable).toBe(false);
+            expect(configState["mixed.base"].enable).toBe(false);
 
             // 修改 multiplier 为 5
             store.state.multiplier = 5;
-            expect(configManager.state["mixed.base"].enable).toBe(true); // 5 * 5 = 25 > 15
+            expect(configState["mixed.base"].enable).toBe(true); // 5 * 5 = 25 > 15
 
             // 修改 multiplier 为 3
             store.state.multiplier = 3;
-            expect(configManager.state["mixed.base"].enable).toBe(false); // 3 * 3 = 9 < 15
+            expect(configState["mixed.base"].enable).toBe(false); // 3 * 3 = 9 < 15
         });
     });
 
@@ -706,22 +678,22 @@ describe("configurable 的 ref 功能测试", () => {
 
             // 初始状态 DHCP 开启
             expect(netStore.state.dhcp).toBe(true);
-            expect(configManager.state["network.ip"].enable).toBe(false);
-            expect(configManager.state["network.subnetMask"].enable).toBe(false);
+            expect(configState["network.ip"].enable).toBe(false);
+            expect(configState["network.subnetMask"].enable).toBe(false);
 
             // 关闭 DHCP
             netStore.state.dhcp = false;
             await delay(0);
 
-            expect(configManager.state["network.ip"].enable).toBe(true);
-            expect(configManager.state["network.subnetMask"].enable).toBe(true);
+            expect(configState["network.ip"].enable).toBe(true);
+            expect(configState["network.subnetMask"].enable).toBe(true);
 
             // 重新开启 DHCP
             netStore.state.dhcp = true;
             await delay(0);
 
-            expect(configManager.state["network.ip"].enable).toBe(false);
-            expect(configManager.state["network.subnetMask"].enable).toBe(false);
+            expect(configState["network.ip"].enable).toBe(false);
+            expect(configState["network.subnetMask"].enable).toBe(false);
         });
 
         test("用户权限配置场景", () => {
@@ -768,21 +740,21 @@ describe("configurable 的 ref 功能测试", () => {
             ]);
 
             // Guest 角色
-            expect(configManager.state["permissions.canEdit"].enable).toBe(false);
-            expect(configManager.state["permissions.canDelete"].enable).toBe(false);
-            expect(configManager.state["permissions.canPublish"].enable).toBe(false);
+            expect(configState["permissions.canEdit"].enable).toBe(false);
+            expect(configState["permissions.canDelete"].enable).toBe(false);
+            expect(configState["permissions.canPublish"].enable).toBe(false);
 
             // Editor 角色
             userStore.state.role = "editor";
-            expect(configManager.state["permissions.canEdit"].enable).toBe(true);
-            expect(configManager.state["permissions.canDelete"].enable).toBe(false);
-            expect(configManager.state["permissions.canPublish"].enable).toBe(true);
+            expect(configState["permissions.canEdit"].enable).toBe(true);
+            expect(configState["permissions.canDelete"].enable).toBe(false);
+            expect(configState["permissions.canPublish"].enable).toBe(true);
 
             // Admin 角色
             userStore.state.role = "admin";
-            expect(configManager.state["permissions.canEdit"].enable).toBe(true);
-            expect(configManager.state["permissions.canDelete"].enable).toBe(true);
-            expect(configManager.state["permissions.canPublish"].enable).toBe(true);
+            expect(configState["permissions.canEdit"].enable).toBe(true);
+            expect(configState["permissions.canDelete"].enable).toBe(true);
+            expect(configState["permissions.canPublish"].enable).toBe(true);
         });
 
         test("表单验证场景 - 条件必填", () => {
@@ -825,19 +797,19 @@ describe("configurable 的 ref 功能测试", () => {
             ]);
 
             // 初始状态
-            expect(configManager.state["form.address"].required).toBe(false);
-            expect(configManager.state["form.city"].required).toBe(false);
-            expect(configManager.state["form.zipCode"].required).toBe(false);
+            expect(configState["form.address"].required).toBe(false);
+            expect(configState["form.city"].required).toBe(false);
+            expect(configState["form.zipCode"].required).toBe(false);
 
             // 启用地址
             formStore.state.hasAddress = true;
-            expect(configManager.state["form.address"].required).toBe(true);
-            expect(configManager.state["form.city"].required).toBe(true);
-            expect(configManager.state["form.zipCode"].required).toBe(false);
+            expect(configState["form.address"].required).toBe(true);
+            expect(configState["form.city"].required).toBe(true);
+            expect(configState["form.zipCode"].required).toBe(false);
 
             // 填写城市
             formStore.state.city = "Beijing";
-            expect(configManager.state["form.zipCode"].required).toBe(true);
+            expect(configState["form.zipCode"].required).toBe(true);
         });
     });
 });

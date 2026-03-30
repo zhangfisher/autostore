@@ -33,12 +33,14 @@ function assertConfigRegistered(
     for (const path of paths) {
         const fullPath = prefix + path;
         expect(fullPath in configManager.state).toBe(true);
+        //@ts-ignore
         expect(configManager.state[fullPath]).toBeDefined();
     }
 }
 
 describe("ConfigManager 和 configurable 集成测试", () => {
     let configManager: ConfigManager;
+    let configState: any;
 
     beforeEach(() => {
         // 每个测试前创建一个新的 ConfigManager
@@ -46,6 +48,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             load: () => ({}),
             save: () => {},
         });
+        configState = configManager.state as any;
     });
 
     afterEach(() => {
@@ -656,6 +659,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
 
                 // 非 Date
                 expect(() => {
+                    // @ts-ignore
                     store.state.createdAt = "2024-01-01";
                 }).toThrow(ValidateError);
 
@@ -1674,11 +1678,11 @@ describe("ConfigManager 和 configurable 集成测试", () => {
                 },
             );
 
-            configurable(true, {
-                widget: "number",
-                max: 1,
-                enable: computed((scope) => true),
-            });
+            // configurable(true, {
+            //     widget: "number",
+            //     max: 1,
+            //     enable: computed((scope) => true),
+            // });
 
             // 断言配置项被正确注册
             assertConfigRegistered(configManager, store, [
@@ -1704,12 +1708,12 @@ describe("ConfigManager 和 configurable 集成测试", () => {
                 { configManager, id: "network" },
             );
             netStore.state.dhcp = true;
-            expect(configManager.state["network.dhcp"].value).toBeTruthy();
-            expect(configManager.state["network.ip"].enable).toBeTruthy();
+            expect(configState["network.dhcp"].value).toBeTruthy();
+            expect(configState["network.ip"].enable).toBeTruthy();
             netStore.state.dhcp = false;
-            expect(configManager.state["network.dhcp"].value).toBeFalsy();
+            expect(configState["network.dhcp"].value).toBeFalsy();
             await delay(0);
-            expect(configManager.state["network.ip"].enable).toBeFalsy();
+            expect(configState["network.ip"].enable).toBeFalsy();
         });
     });
 });

@@ -23,7 +23,7 @@ export interface AutoStoreAction {
     id?: string;
     label?: string;
     icon?: string;
-    disabled?: boolean;
+    enable?: boolean;
     visible?: boolean;
     default?: boolean;
     checked?: boolean;
@@ -97,6 +97,9 @@ export interface AutoStateSchemaBase<Value = any> {
      *
      */
     errorMessage?: string;
+    /**
+     * 额外指指定数据类型，如`string`,`number`,用于转换时使用
+     */
     datatype?: string;
     /**
      * 是否启用
@@ -114,7 +117,13 @@ export interface AutoStateSchemaBase<Value = any> {
      * 是否可见
      */
     visible?: boolean;
+    /**
+     * 描述信息
+     */
     description?: string;
+    /**
+     * 输入占位符
+     */
     placeholder?: string;
     /**
      * 分组名称
@@ -134,9 +143,14 @@ export interface AutoStateSchemaBase<Value = any> {
     order?: number;
     width?: number | string;
     height?: number | string;
-    styles?: Record<string, any>; // 用于扩展widget样式，如{"<选择器>":"样式"}
-    classs?: Record<string, any>; // 用于扩展widget类，如{"<选择器>":"类名"}
-
+    /**
+     *  用于扩展widget样式，如{"<选择器>":"样式"}
+     */
+    styles?: Record<string, any>;
+    /**
+     * 用于扩展widget类，如{"<选择器>":"类名"}
+     */
+    classs?: Record<string, any>;
     /**
      *
      * 校验失败时的默认行为

@@ -97,12 +97,12 @@ export function schema<Value, W extends keyof AutoStoreWidgets>(
 // 不包含 widget 的配置，或者 widget 不匹配已知类型时的回退重载
 export function schema<Value>(
     initial: Value,
-    schema: Omit<AutoStateSchemaBase<Value>, "value" | "widget"> & { widget?: never },
+    schema: Omit<ComputedableStateSchema<Value>, "value" | "widget"> & { widget?: string },
 ): SchemaDescriptorBuilder<Value>;
 export function schema<Value>(
     initial: Value,
-    schema?: Omit<ComputedableStateSchema<Value>, "value">,
-) {
+    schema?: Omit<ComputedableStateSchema<Value>, "value" | "widget"> & { widget?: string },
+): any {
     const args = parseSchemaArgs([initial, schema]);
     const value = initial;
     if (typeof value === "object") {

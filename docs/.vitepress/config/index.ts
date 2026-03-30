@@ -275,6 +275,11 @@ export default defineConfig({
                 throws: false,
                 errorRendering: "hover",
                 explicitTrigger: true,
+                twoslashOptions: {
+                    compilerOptions: {
+                        ignoreDeprecations: "6.0",
+                    },
+                },
             }),
         ] as any,
         // @ts-ignore

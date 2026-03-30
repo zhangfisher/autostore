@@ -93,7 +93,50 @@ describe("AutoStore refStore 功能测试", () => {
             expect(mainStore.state.currentValue).toBe("dark");
         });
     });
+    describe("多个refStore ", () => {
+        test("引用多个refStore", () => {
+            const accountStore = new AutoStore(
+                {
+                    user: {
+                        name: "Alice",
+                        age: 25,
+                    },
+                },
+                { id: "account" },
+            );
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: 100,
+                        count: 1,
+                    },
+                },
+                { id: "shop" },
+            );
 
+            const mainStore = new AutoStore(
+                {
+                    userName: computed((scope, { ref }) => {
+                        const name = ref("@account/user.name");
+                        return `User: ${name}`;
+                    }),
+                    total: computed((scope, { ref }) => {
+                        return ref("@shop/order.price") * ref("@shop/order.count");
+                    }),
+                },
+                { refStore: [accountStore, orderStore], id: "main" },
+            );
+
+            expect(mainStore.state.userName).toBe("User: Alice");
+            accountStore.state.user.name = "Bob";
+            expect(mainStore.state.userName).toBe("User: Bob");
+            //
+            expect(mainStore.state.total).toBe(100);
+            orderStore.state.order.price = 200;
+            orderStore.state.order.count = 2;
+            expect(mainStore.state.total).toBe(400);
+        });
+    });
     describe("局部 refStore - 在 computed/asyncComputed options 中传入", () => {
         test("computed options 中的 refStore 优先于全局 refStore", async () => {
             const refStore1 = new AutoStore(
@@ -364,36 +407,6 @@ describe("AutoStore refStore 功能测试", () => {
             expect(callCount).toBe(0);
             expect(mainStore.state.value).toBe("Alice");
         });
-    });
-
-    describe("数组路径支持", () => {
-        test("computed 可以使用数组路径访问 refStore", async () => {
-            const refStore1 = new AutoStore(
-                {
-                    user: { name: "Alice" },
-                },
-                { id: "refStore1" },
-            );
-
-            const mainStore = new AutoStore(
-                {
-                    userName: computed((scope, { ref }) => {
-                        const name = ref(["user", "name"]);
-                        return name;
-                    }),
-                },
-                { refStore: refStore1, id: "main" },
-            );
-
-            expect(mainStore.state.userName).toBe("Alice");
-
-            refStore1.state.user.name = "Grace";
-            await delay(0);
-            expect(mainStore.state.userName).toBe("Grace");
-        });
-
-        // 跳过 asyncComputed 数组路径测试
-        // test("asyncComputed 可以使用数组路径", async () => { ... });
     });
 
     describe("性能优化", () => {

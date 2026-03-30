@@ -107,6 +107,57 @@ const mainStore = new AutoStore(
 );
 ```
 
+- **引用多个RefStore**
+
+`ref`函数允许使用`@<store.id>/<路径>`引用多个`RefStore`。
+
+```ts {22,26,30-32}
+const accountStore = new AutoStore({
+            user: {
+                name: "Alice",
+                age: 25,
+            },
+        },
+        { id: "account" },
+    );
+    const orderStore = new AutoStore(
+        {
+            order: {
+                price: 100,
+                count: 1,
+            },
+        },
+        { id: "shop" },
+    );
+
+    const mainStore = new AutoStore(
+        {
+            userName: computed((scope, { ref }) => {
+                const name = ref("@account/user.name");
+                return `User: ${name}`;
+            }),
+            total: computed((scope, { ref }) => {
+                return ref("@shop/order.price") * ref("@shop/order.count");
+            }),
+        },
+        {
+            refStore: [
+                accountStore, orderStore // 引用多个Store
+            ],
+        id: "main" },
+    );
+
+    expect(mainStore.state.userName).toBe("User: Alice");
+    accountStore.state.user.name = "Bob";
+    expect(mainStore.state.userName).toBe("User: Bob");
+    //
+    expect(mainStore.state.total).toBe(100);
+    orderStore.state.order.price = 200;
+    orderStore.state.order.count = 2;
+    expect(mainStore.state.total).toBe(400);
+});
+```
+
 ### ref函数
 
 在计算属性或状态内监视对象时，`ref`函数的作用：
@@ -118,7 +169,7 @@ const mainStore = new AutoStore(
 
 ```ts
 function ref<Value = any>(
-    path?: string | string[], // 引用refStore的路径
+    refPath?: string, // 引用refStore的路径
     options?: RefStateOptions,
 );
 export type RefStateOptions = {
@@ -127,9 +178,50 @@ export type RefStateOptions = {
 };
 ```
 
+`refPath`参数：
+
+- 引用`refStore`的路径
+- 当定义多个`refStore`时，可以通过`@<store.id>/<路径>`引用多个`RefStore`
+
 `RefStateOptions`参数如下：
 
 |    参数    | 默认值 | 描述                                                |
 | :--------: | :----: | --------------------------------------------------- |
 | `reactive` | `true` | 当状态值变化时是否自动重新运行计算函数              |
 | `runArgs`  |        | 传递给`ComputedObject/WatchObject`的`run`方法的参数 |
+
+### 类型推断
+
+默认情况下,`ref`函数没有类型推断功能，需要自行填写正确的路径。
+如果需要类型推断，需要扩展`interface RefStores`.
+
+```ts {7,15,19,23-28}
+const userStore = new AutoStore(
+    {
+        name: "test",
+        age: 30,
+    },
+    {
+        id: "user",
+    },
+);
+const orderStore = new AutoStore(
+    {
+        price: 100,
+        count: 3,
+        total: computed((scope, { ref }) => {
+            // ref("@user/name") ref函数具有类型推断功能
+        }),
+    },
+    {
+        id: "order",
+    },
+);
+// 扩展RefStores
+declare module "autostore" {
+    interface RefStores {
+        user: typeof userStore;
+        order: typeof orderStore;
+    }
+}
+```

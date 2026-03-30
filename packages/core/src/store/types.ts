@@ -2,8 +2,8 @@ import type { ComputedObject } from "../computed/computedObject";
 import type { ComputedDescriptor, ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
 import type { ObserverType } from "../observer/types";
-import type { Dict } from "../types";
-import type { AutoStore } from "./store";
+import type { Dict, ObjectKeyPaths } from "../types";
+import { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
 import type { ConfigManager, ConfigSource } from "../schema/manager";
 import type { TransformedEvents } from "fastevent";
@@ -352,7 +352,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * 提供额外的引用store，可以在computed或watch中使用ref引用其他store状态值
      * 并且在引用状态值变化时自动重新执行observerObject.run
      */
-    refStore?: AutoStore<any>;
+    refStore?: AutoStore<any> | AutoStore<any>[];
 }
 
 export type UpdateOptions = {
@@ -462,8 +462,24 @@ export type AutoStoreEvents = TransformedEvents<{
     validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
 }>;
 
-export type EventDefines = {
-    [key: string]: any;
-};
-
 export type StoreRawStateType<Store extends AutoStore<any>> = Store["types"]["rawState"];
+
+/**
+ * 用于扩展声明可扩展
+ *declare module "autostore" {
+    interface ConfigueableStores{
+       <store.id>: Store
+    }
+ }
+ *
+ */
+
+export interface RefStores {}
+
+export type RefStorePaths = {
+    [K in keyof RefStores]:
+        | `@${K & string}`
+        | `@${K & string}/${ObjectKeyPaths<RefStores[K]["state"]>}`;
+}[keyof RefStores];
+
+export type { RefState, RefStateOptions } from "./refState";
