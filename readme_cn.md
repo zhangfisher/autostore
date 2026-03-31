@@ -21,6 +21,22 @@ Very easy and elegant state management library. It is based on proxy and provide
 - Typescript: 完全支持Typescript，提供完整的类型推断和提示
 - 单元测试：提供完整的单元测试覆盖率，保证代码质量
 
+```ts
+
+const store = new AutoStore()
+
+
+class SDDD{
+
+    // 订阅装饰器
+    store.on("")
+    onMessage(message,args){
+
+    }
+}
+
+
+```
 
 ## 安装
 
@@ -32,7 +48,6 @@ pnpm add @autostorejs/react
 
 ## 快速入门
 
-
 - **基本用法**
 
 ```ts
@@ -43,7 +58,7 @@ const { $, state,useState } = createStore({
   user: {
     firstName: 'zhang',
     lastName: 'fisher',
-    fullName: (scope)=> { 
+    fullName: (scope)=> {
       return scope.firstName + scope.lastName;
     }
   }
@@ -60,6 +75,7 @@ const Card = () => {
 }
 
 ```
+
 - **信号组件**
 
 ```ts
@@ -70,14 +86,14 @@ const { $, state } = createStore({
   user: {
     firstName: 'zhang',
     lastName: 'fisher',
-    fullName: (scope)=> { 
+    fullName: (scope)=> {
       return scope.firstName + scope.lastName;
     }
   }
 });
 
 // signal component, only update when user.firstName or user.lastName change
-const Card = () => { 
+const Card = () => {
     return <div>$('user.fullName')</div>
 }
 
@@ -93,21 +109,20 @@ const { $, state } = createStore({
   user: {
     firstName: 'zhang',
     lastName: 'fisher',
-    fullName: computed(async (scope)=> { 
+    fullName: computed(async (scope)=> {
       return scope.firstName + scope.lastName;
     },["./firstName","./lastName"])
   }
 });
 
 // signal component, only update when user.firstName or user.lastName change
-const Card = () => { 
+const Card = () => {
     return <div>$('user.fullName')</div>
 }
 
 ```
 
 async computed with [loading](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8A%A0%E8%BD%BD%E7%8A%B6%E6%80%81),[timeout](https://zhangfisher.github.io/autostore/guide/computed-async#%E8%B6%85%E6%97%B6%E5%A4%84%E7%90%86), [retry](https://zhangfisher.github.io/autostore/guide/computed-async#%E9%87%8D%E8%AF%95), [cancel](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8F%96%E6%B6%88), [countdown](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%80%92%E8%AE%A1%E6%97%B6), [progress](https://zhangfisher.github.io/autostore/guide/computed-async#%E6%89%A7%E8%A1%8C%E8%BF%9B%E5%BA%A6).
-
 
 - **表单双向绑定**
 
@@ -125,7 +140,7 @@ const { $, state,useForm } = createStore({
 });
 
 // simple two-way form binding
-const Card = () => { 
+const Card = () => {
     const user = useForm()
     return <div {...user}>
       <input name="user.firstName" />
@@ -138,4 +153,3 @@ const Card = () => {
 ## License
 
 [MIT](./LICENSE)
-

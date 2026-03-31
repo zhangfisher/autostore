@@ -24,13 +24,12 @@ Very easy and elegant state management library. It is based on proxy and provide
 ## Install
 
 ```bash
-npm install @autostorejs/react
-yarn add @autostorejs/react
-pnpm add @autostorejs/react
+npm install autostore
+yarn add autostore
+pnpm add autostore
 ```
 
 ## Get-started
-
 
 - **Basic usage**
 
@@ -42,7 +41,7 @@ const { $, state,useReactive } = createStore({
   user: {
     firstName: 'zhang',
     lastName: 'fisher',
-    fullName: (scope)=> { 
+    fullName: (scope)=> {
       return scope.firstName + scope.lastName;
     }
   }
@@ -59,6 +58,7 @@ const Card = () => {
 }
 
 ```
+
 - **Signal Component**
 
 ```ts
@@ -69,14 +69,14 @@ const { $, state } = createStore({
   user: {
     firstName: 'zhang',
     lastName: 'fisher',
-    fullName: (scope)=> { 
+    fullName: (scope)=> {
       return scope.firstName + scope.lastName;
     }
   }
 });
 
 // signal component, only update when user.firstName or user.lastName change
-const Card = () => { 
+const Card = () => {
     return <div>$('user.fullName')</div>
 }
 
@@ -92,21 +92,20 @@ const { $, state } = createStore({
   user: {
     firstName: 'zhang',
     lastName: 'fisher',
-    fullName: computed(async (scope)=> { 
+    fullName: computed(async (scope)=> {
       return scope.firstName + scope.lastName;
     },["./firstName","./lastName"])
   }
 });
 
 // signal component, only update when user.firstName or user.lastName change
-const Card = () => { 
+const Card = () => {
     return <div>$('user.fullName')</div>
 }
 
 ```
 
-async computed with [loading](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8A%A0%E8%BD%BD%E7%8A%B6%E6%80%81),[timeout](https://zhangfisher.github.io/autostore/guide/computed-async#%E8%B6%85%E6%97%B6%E5%A4%84%E7%90%86), [retry](https://zhangfisher.github.io/autostore/guide/computed-async#%E9%87%8D%E8%AF%95), [cancel](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8F%96%E6%B6%88), [countdown](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%80%92%E8%AE%A1%E6%97%B6), [progress](https://zhangfisher.github.io/autostore/guide/computed-async#%E6%89%A7%E8%A1%8C%E8%BF%9B%E5%BA%A6). 
-
+async computed with [loading](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8A%A0%E8%BD%BD%E7%8A%B6%E6%80%81),[timeout](https://zhangfisher.github.io/autostore/guide/computed-async#%E8%B6%85%E6%97%B6%E5%A4%84%E7%90%86), [retry](https://zhangfisher.github.io/autostore/guide/computed-async#%E9%87%8D%E8%AF%95), [cancel](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%8F%96%E6%B6%88), [countdown](https://zhangfisher.github.io/autostore/guide/computed-async#%E5%80%92%E8%AE%A1%E6%97%B6), [progress](https://zhangfisher.github.io/autostore/guide/computed-async#%E6%89%A7%E8%A1%8C%E8%BF%9B%E5%BA%A6).
 
 - **Form Two-way Binding**
 
@@ -115,9 +114,9 @@ Form two-way binding is very simple.
 ```ts
 
 import { createStore,computed } from '@autostorejs/react';
- 
+
 // simple two-way form binding
-const Card = () => { 
+const Card = () => {
     const { Form } = useForm({
       user: {
         firstName: 'zhang',
@@ -132,26 +131,24 @@ const Card = () => {
 
 ```
 
-
 ## Recommendation
 
 - [Internationalization Solution for React/Vue/Nodejs/Solidjs - VoerkaI18n](https://zhangfisher.github.io/voerka-i18n/)
 - [React State Library - AutoStore](https://zhangfisher.github.io/autostore/)
 - [Terminal Interface Development Enhancement Library - Logsets](https://zhangfisher.github.io/logsets/)
-- [Log Output Library  - VoerkaLogger](https://zhangfisher.github.io/voerkalogger/)
+- [Log Output Library - VoerkaLogger](https://zhangfisher.github.io/voerkalogger/)
 - [Decorator Development - FlexDecorators](https://zhangfisher.github.io/flex-decorators/)
-- [Finite State Machine Library  - FlexState](https://zhangfisher.github.io/flexstate/)
+- [Finite State Machine Library - FlexState](https://zhangfisher.github.io/flexstate/)
 - [Universal Function Tool Library - FlexTools](https://zhangfisher.github.io/flex-tools/)
-- [CSS-IN-JS Library  - FlexStyled](https://zhangfisher.github.io/flexstyled/)
+- [CSS-IN-JS Library - FlexStyled](https://zhangfisher.github.io/flexstyled/)
 - [VSCode Plugin for Adding Comments to JSON Files - json_comments_extension](https://github.com/zhangfisher/json_comments_extension)
-- [Library for Developing Interactive Command Line Programs  - mixcli](https://github.com/zhangfisher/mixcli)
+- [Library for Developing Interactive Command Line Programs - mixcli](https://github.com/zhangfisher/mixcli)
 - [Powerful String Interpolation Variable Processing Tool Library - flexvars](https://github.com/zhangfisher/flexvars)
 - [Frontend Link Debugging Assistant Tool - yald](https://github.com/zhangfisher/yald)
 - [Asynchronous Signal - asyncsignal](https://github.com/zhangfisher/asyncsignal)
 - [bundle Vue styles into JavaScript - vite-plugin-vue-style-bundler ](https://github.com/zhangfisher/vite-plugin-vue-style-bundler)
 - [Tree Component- LiteTree](https://github.com/zhangfisher/lite-tree)
- 
+
 ## License
 
 [MIT](./LICENSE)
-
