@@ -97,9 +97,6 @@ export default defineConfig({
                                 { text: "渲染优化", link: "/zh/react/store/render" },
                                 { text: "事件", link: "/zh/react/store/events" },
                                 { text: "批量更新", link: "/zh/react/store/batchUpdate" },
-                                { text: "校验模式", link: "/zh/react/store/schema" },
-                                { text: "同步", link: "/zh/react/store/sync" },
-                                { text: "Shadow", link: "/zh/react/store/shadow" },
                             ],
                         },
                         {

@@ -6,7 +6,7 @@ const store = createStore({
     order: {
         price: 10,
         count: 1,
-        total: computed(
+        total: asyncComputed(
             async (scope) => {
                 return scope.price * scope.count;
             },
