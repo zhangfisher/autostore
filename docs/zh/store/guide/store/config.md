@@ -500,6 +500,63 @@ const store = new AutoStore(
 
 以上示例`AutoStore`指定`configKey=''`，所以在配置管理器中的配置数据为`{ enable: true }`
 
+### 手动声明配置
+
+除了使用`configurable`声明可配置项外，还支持直接手动添加。
+
+当`AutoStore`实例已经绑定了`configManager`时，可以使用以下方式直接声明可配置项。
+
+```ts
+store.configManager.add(
+    store,
+    path,
+    configurable(value, {
+        // .....配置
+    }),
+);
+```
+
+如果`configManager`是全局共享的，则可以直接声明。
+
+```ts
+configManager.add(
+    store,
+    path,
+    configurable(value, {
+        // .....配置
+    }),
+);
+```
+
+### 默认可配项管理
+
+可以指定`AutoStore.options.configManager=true`自动创建一个配置管理器.
+
+```ts
+const store = new AutoStore(
+    {},
+    {
+        configManager: true,
+    },
+);
+```
+
+等效于：
+
+```ts
+const store = new AutoStore(
+    {},
+    {
+        configManager: new ConfigManager({
+            get: () => {},
+            set: () => {},
+        }),
+    },
+);
+```
+
+这样，`AutoStore`的修改就可以从`store.configManager`得到所有已经更新配置数据。
+
 ### 遍历配置数据
 
 默认情况下，如果要遍历配置整个应用的所有配置项，只需要访问`AutoStoreConfigManager`即可。

@@ -160,10 +160,6 @@ export default defineConfig({
                                     items: [
                                         { text: "关于", link: "/zh/react/form/field/about" },
                                         {
-                                            text: "简单字段",
-                                            link: "/zh/react/form/field/simple-field",
-                                        },
-                                        {
                                             text: "useField",
                                             link: "/zh/react/form/field/use-field",
                                         },

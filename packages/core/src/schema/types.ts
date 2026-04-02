@@ -3,6 +3,10 @@ import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
 import { AutoStore } from "../store/store";
 import { StoreRawStateType } from "../store/types";
 import { ComputedState, GetTypeByPath, StatePath } from "../types";
+import type { AutoStoreWidgets } from "./widget-types";
+
+// 重新导出 AutoStoreWidgets 供外部使用
+export type { AutoStoreWidgets } from "./widget-types";
 
 /**
  * 用于保存所有配置项的类型
@@ -18,7 +22,9 @@ import { ComputedState, GetTypeByPath, StatePath } from "../types";
 export interface AutoStoreConfigures {}
 
 // biome-ignore lint/suspicious/noEmptyInterface: <noEmptyInterface>
-export interface AutoStoreWidgets {}
+
+// 公共属性接口（不包含事件处理器）
+
 export interface AutoStoreAction {
     id?: string;
     label?: string;

@@ -69,7 +69,7 @@ import type {
     AsyncComputedDescriptorBuilder,
 } from 'autostore';
 import { computed, PATH_DELIMITER, setVal } from 'autostore';
-import type React from 'react';
+import React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactAutoStore } from '../store';
 import type { AutoFormContext } from './Form';
@@ -150,10 +150,8 @@ export interface AutoField<State extends Dict> {
         LABEL extends StringComputedGetter<State, VALUE> = StringComputedGetter<State, VALUE>,
         PLACEHOLDER extends StringComputedGetter<State, VALUE> = StringComputedGetter<State, VALUE>,
         HELP extends StringComputedGetter<State, VALUE> = StringComputedGetter<State, VALUE>,
-        SELECT extends AsyncComputedDescriptorBuilder<
-            any[],
-            VALUE
-        > = AsyncComputedDescriptorBuilder<any[], VALUE>,
+        SELECT extends AsyncComputedDescriptorBuilder<any[], VALUE> =
+            AsyncComputedDescriptorBuilder<any[], VALUE>,
     >(
         props: AutoFieldProps<
             NAME,
@@ -298,20 +296,20 @@ export function createAutoFieldComponent<State extends Dict>(
                 name,
                 onChange,
                 value: value.value,
-                placeholder: placeholder ? placeholder.value : props.placeholder ?? '',
+                placeholder: placeholder ? placeholder.value : (props.placeholder ?? ''),
             };
-            const isValid = validate ? validate.val : props.validate ?? true;
+            const isValid = validate ? validate.val : (props.validate ?? true);
             renderProps.current = buildFieldRenderProps({
                 name,
                 validate: isValid,
-                required: required ? required.val : props.required ?? false,
-                visible: visible ? visible.val : props.visible ?? true,
-                readonly: readonly ? readonly.val : props.readonly ?? false,
-                enable: enable ? enable.value : props.enable ?? true,
+                required: required ? required.val : (props.required ?? false),
+                visible: visible ? visible.val : (props.visible ?? true),
+                readonly: readonly ? readonly.val : (props.readonly ?? false),
+                enable: enable ? enable.value : (props.enable ?? true),
                 select: select ? select.value : props.select,
                 help: help ? help.value : props.help,
                 label: label ? label.value : props.label,
-                placeholder: placeholder ? placeholder.value : props.placeholder ?? '',
+                placeholder: placeholder ? placeholder.value : (props.placeholder ?? ''),
                 bind,
                 ...value,
                 error: validate?.error?.message,

@@ -307,7 +307,27 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         } else if (globalThis[GLOBAL_CONFIG_MANAGER] && configManager !== false) {
             // @ts-ignore
             this._configManager = globalThis[GLOBAL_CONFIG_MANAGER];
+        } else if (configManager === true) {
+            setTimeout(() => {
+                this._createDefualtConfigManager();
+            });
         }
+    }
+    private _createDefualtConfigManager() {
+        let values: Record<string, any> = {};
+        import("../schema/manager").then(({ ConfigManagerClass }: any) => {
+            this._configManager = new ConfigManagerClass({
+                load: () => {
+                    return values;
+                },
+                save: (updated: Record<string, any>) => {
+                    Object.assign(values, updated);
+                },
+                reset: () => {
+                    values = {};
+                },
+            });
+        });
     }
     private _onFirstEachState({
         value,
