@@ -49,6 +49,10 @@ export interface StateOperate<Value = any, Parent = any> {
      * 该操作是否来自shadow转发
      */
     shadow?: boolean;
+    /**
+     * 当getter执行出错时携带此错误
+     */
+    error?: Error;
 }
 export interface AutoStoreOptions<State extends Dict> {
     /**

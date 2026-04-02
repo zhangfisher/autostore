@@ -41,3 +41,6 @@ export * from "./isRelPath";
 export * from "./isSchemaBuilder";
 export * from "./withSchema";
 export * from "./getAbsolutePath";
+export * from "./getComputedType";
+export * from "./isAsyncComputed";
+export * from "./isLiteAsyncComputed";

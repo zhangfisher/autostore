@@ -288,6 +288,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                 });
             } finally {
                 this.emit("reset", entry);
+                this.watchObjects.reset();
             }
         } else {
             this.log("resetable option is not enabled", "warn");

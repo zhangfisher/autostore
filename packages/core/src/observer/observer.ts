@@ -19,6 +19,14 @@ import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
 import { createRefState, RefStateContext } from "../store/refState";
 
+/**
+ *用于在计算之前和之后执行的回调
+ */
+export type ObserverObjectHooks = {
+    before: ((args: any, options: any) => void)[];
+    after: ((value: any, error?: Error) => void)[];
+};
+
 export class ObserverObject<
     Value = any,
     Options extends ObserverOptions<Value> = ObserverOptions<Value>,
@@ -38,6 +46,8 @@ export class ObserverObject<
     store: AutoStore<any>;
     _shadowStore!: AutoStore<any>;
     _refStateCtx?: RefStateContext;
+    private _hooks?: ObserverObjectHooks;
+
     /**
      *  构造函数。
      *
@@ -110,6 +120,12 @@ export class ObserverObject<
     }
     get attached() {
         return this._attached;
+    }
+    get hooks() {
+        if (!this._hooks) {
+            this._hooks = { before: [], after: [] };
+        }
+        return this._hooks!;
     }
     get depends() {
         return this._depends;
@@ -346,4 +362,18 @@ export class ObserverObject<
      */ //  eslint-disable-next-line @typescript-eslint/no-unused-vars
     run(..._args: any[]): any {}
     protected getGetterArgs() {}
+
+    protected _runHook(name: keyof ObserverObjectHooks, args: any[]) {
+        try {
+            this._hooks?.[name]?.forEach((hook) => {
+                try {
+                    return hook.apply(this, args as any);
+                } catch {}
+            });
+        } catch {}
+    }
+    /**
+     * 当执行store.reset时调用
+     */
+    reset() {}
 }

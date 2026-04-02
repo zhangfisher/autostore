@@ -109,13 +109,14 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             first: options.first,
             ref: this._refStateCtx?.ref as any,
         };
-
+        this.error = undefined;
         let hasError: any = undefined;
         let computedResult: any;
 
         try {
             //
             this._reportComputedStatus("loading", true);
+            this._runHook("before", [getterArgs, options]);
             // 执行计算函数
             computedResult = await this.getter.call(this, scope, getterArgs);
             if (options.raw) markRaw(computedResult);
@@ -128,6 +129,7 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             this._reportComputedStatus("error", e.message);
         } finally {
             this._reportComputedStatus("loading", false);
+            this._runHook("after", [computedResult, hasError]);
         }
         // 计算完成后触发事件
         if (hasError) {
@@ -191,11 +193,6 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             first: !this._firstRun,
         });
     }
-    /**
-     *
-     * 由于异步计算是一个对象，所以我们需要侦听的是对象的变化，而不仅是对象的值
-     *
-     */
     protected getValueWatchPath() {
         const spath = this.path!.join(this.store.options.delimiter);
         return [`${spath}.*`, spath];

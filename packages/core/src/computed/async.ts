@@ -341,7 +341,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             ctx.hasAbort = true;
         };
         abortController.signal.addEventListener("abort", abortHandler);
-
+        this.error = undefined;
         let timeout = { clear: () => {}, enable: false };
         let computedResult: any;
 
@@ -372,7 +372,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
                     // 如果有中止信号，则取消计算
                     if (ctx.hasAbort) throw new AbortError();
-
+                    this._runHook("before", [getterArgs, options]);
                     // 执行计算函数
                     computedResult = await this.getter.call(this, scope, getterArgs);
 
@@ -399,6 +399,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
                     }
                     afterUpdated.loading = false;
                     this.updateComputedValue(afterUpdated);
+                    this._runHook("after", [computedResult, ctx.error]);
                 }
                 // 出错时重试延迟, 最后一次不延迟
                 if (ctx.hasError) {

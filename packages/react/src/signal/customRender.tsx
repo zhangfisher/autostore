@@ -8,6 +8,7 @@ import type { ReactAutoStore } from '../store';
 import React, { type ComponentType, useEffect, useMemo, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
 import type { SignalComponentOptions, SignalComponentRender } from './types';
+import { useErrorBoundary } from './errorBoundary';
 
 /**
  *
@@ -46,12 +47,10 @@ export function createCustomRender<State extends Dict>(
     path: string,
     options: SignalComponentOptions,
 ) {
-    // @ts-ignore
-    const ErrorBoundary: ComponentType<{ error: any }> =
-        options.errorBoundary || store.options.signalErrorBoundary;
     return React.memo(
         () => {
-            const [error, setError] = useState<any>(null);
+            const deps = store.useDeps(path as any, 'none');
+            const [error, setError, ErrorBoundary] = useErrorBoundary(store, deps, path, options);
             const [value, setValue] = useState(() =>
                 getValueBySelector(store, path, false, setError),
             );
@@ -60,8 +59,6 @@ export function createCustomRender<State extends Dict>(
             const renderArgs = useMemo<AsyncComputedValue>(() => {
                 return isAsync ? value : ({ value } as AsyncComputedValue);
             }, [value]);
-
-            const deps = store.useDeps(path as any, 'none');
 
             useEffect(() => {
                 const watchPath = isAsync

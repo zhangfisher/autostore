@@ -26,29 +26,30 @@ export type ExtendAsyncOptions = "none" | "value" | "all";
  * @returns 依赖项列表
  */
 export function getDepends<State extends Dict>(
-	selector: string | string[] | ((...args: any[]) => any),
-	store: AutoStore<State>,
-	extendAsync?: ExtendAsyncOptions,
+    selector: string | string[] | ((...args: any[]) => any),
+    store: AutoStore<State>,
+    extendAsync?: ExtendAsyncOptions,
 ): string[][] {
-	let deps: string[][] = [];
-	if (typeof selector === "function") {
-		deps = store.collectDependencies(() => selector(store.state));
-	} else if (typeof selector === "string") {
-		deps = [selector.split(PATH_DELIMITER)];
-	} else if (Array.isArray(selector)) {
-		deps = [[...selector]];
-	} else {
-		deps = [];
-	}
-	// 判断是否是异步计算属性，如果是则需要自动添加value
-	if (extendAsync !== "none") {
-		deps.forEach((dep) => {
-			// 获取值,不触发GET事件,即偷看
-			const value = store.peep((state) => getVal(state, dep));
-			if (isAsyncComputedValue(value)) {
-				dep.push(extendAsync === "all" ? "*" : "value");
-			}
-		});
-	}
-	return deps;
+    let deps: string[][] = [];
+    if (typeof selector === "function") {
+        deps = store.collectDependencies(() => selector(store.state));
+    } else if (typeof selector === "string") {
+        deps = [selector.split(PATH_DELIMITER)];
+    } else if (Array.isArray(selector)) {
+        deps = [[...selector]];
+    } else {
+        deps = [];
+    }
+    // 判断是否是异步计算属性，如果是则需要自动添加value
+    if (extendAsync !== "none") {
+        deps.forEach((dep) => {
+            // 获取值,不触发GET事件,即偷看
+            const value = store.peep((state) => getVal(state, dep));
+            if (isAsyncComputedValue(value)) {
+                dep.push(extendAsync === "all" ? "*" : "value");
+            } else {
+            }
+        });
+    }
+    return deps;
 }

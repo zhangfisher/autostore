@@ -12,7 +12,12 @@
 
 ## 工作内幕
 
-创建异步计算属性的基本方法是直接在`State`中任意位置使用`computed`进行声明。
+创建异步计算属性的基本方法是直接在`State`中任意位置使用`computed`或`asyncComputed`进行声明。
+
+异步计算属性有两种：
+
+- **普通异步计算属性：** 使用`computed`进行声明
+- **高级异步计算属性：** 使用`asyncComputed`进行声明
 
 ```tsx {6-8}
 import { computed } from "@autostorejs/react";
@@ -20,7 +25,15 @@ const store = createStore({
     order: {
         price: 10,
         count: 1,
-        total: asyncComputed(
+        // 普通异步计算属性
+        total1: computed(
+            async (scope) => {
+                return scope.price * scope.count;
+            },
+            ["./price", "./count"],
+        ),
+        // 高级异步计算属性
+        total2: asyncComputed(
             async (scope) => {
                 return scope.price * scope.count;
             },
@@ -60,11 +73,18 @@ const store = createStore({
 同时会创建一个名称为`声明所在路径名称`的`AsyncComputedObject`对象保存在`store.computedObjects`中。
 因此，在上例中，`store.computedObjects.get("order.total")`就是`AsyncComputedObject`对象。
 
-## computed
+## 声明异步计算属性
 
-**`computed`是一个普通的函数，用于声明计算属性，异步计算属性的函数签名如下：**
+**`computed`和`asyncComputed`是一个普通的函数，用于声明计算属性，两者的签名签名基本一样，异步计算属性的函数签名如下：**
 
 ```ts
+// 普通异步计算属性
+function computed<Value = any, Scope = any>(
+    getter: AsyncComputedGetter<Value, Scope>,
+    depends: ComputedDepends,
+    options?: ComputedOptions<Value, Scope>,
+): ComputedDescriptorBuilder<Value, Scope>;
+// 高级异步计算属性
 function asyncComputed<Value = any, Scope = any>(
     getter: AsyncComputedGetter<Value, Scope>,
     depends: ComputedDepends,
@@ -104,7 +124,9 @@ function asyncComputed<Value = any, Scope = any>(
 
 ### 简单异步计算
 
-<demo react="computed/asyncSimpleBase.tsx" 
+下例中`fullName`是一个简单异步计算属性。
+
+<demo react="computed/asyncSimpleBaseLoading.tsx" 
   title="修改firstName或lastName时，fullName会自动重新计算。"
 />
 
@@ -128,6 +150,63 @@ function asyncComputed<Value = any, Scope = any>(
 
 - 当`loading=true`时，代表异步计算正在进行中。
 - 当`loading=false`时，代表异步计算已经完成。
+
+#### 简单异步计算
+
+简单异步计算加载状态有两种方式：
+
+- **在`useReactive`中直接返回响应式的`Loading`**
+
+`useReactive`的返回结果：`[计算结果，更新状态，加载状态，计算错误]`
+
+```ts {3}
+const [fullName, _, loading, error] = useReactive("user.fullName");
+```
+
+<demo react="computed/asyncSimpleBaseLoading.tsx"/>
+
+- **通过`reports`参数将计算加载状态更新到状态中**
+
+```ts {6,15-18}
+const store = createStore(
+    {
+        user: {
+            firstName: "Zhang",
+            lastName: "fisher",
+            loading: false,
+            fullName: computed(
+                async (user) => {
+                    await delay(1000); // 模拟异步计算
+                    return user.firstName + " " + user.lastName;
+                },
+                ["user.firstName", "./lastName"],
+                {
+                    initial: "ZhangFisher",
+                    reports: {
+                        loading: "./loading",
+                        error: "./error",
+                    },
+                },
+            ),
+        },
+    },
+    {
+        id: "async-base2",
+        debug: true, // 打开Redux devtools
+    },
+);
+```
+
+在创建计算属性时，通过`reports`参数指定将加载状态和错误信息同步更新到状态中的任意位置。
+上例中，`reports.loading="./loading"`代表计算属性在计算时会更新`user.loading`。
+
+**`reports.loading`值可以使用绝对路径或相对路径**
+
+<demo react="computed/asyncSimpleBase.tsx"/>
+
+#### 高级异步计算
+
+高级异步计算的加载状态由于其值中就包含了`loading`，可以直接使用。
 
 以下是一个异步计算加载状态的例子：
 
@@ -245,6 +324,12 @@ const store = createStore({
 - 默认`scope`指向的是`current`，即`total`所在的对象。
 - 其依赖是空，所以不会自动收集依赖，也不会自动重新计算。也就是说上例中的`price`和`count`变化时，`total`不会自动重新计算。但是在会在第一次访问时自动计算一次。
 - 如果需要重新计算，可以手动执行`store.state.total.run()`或`store.computedObjects.get(<id>).run()`。
+
+## 两种异步计算属性的区别
+
+- 普通异步计算属性和高级计算属性分别使用`computed`和`asyncComputed`进行声明
+- 普通异步计算属性支持`reports`参数用于报告计算加载状态和错误，而高级计算属性不支持`reports`属性，因此没有必要。
+- 普通异步计算不支持超时、可中止、倒计时、重试等功能，功能更加轻量。
 
 ## 注意事项
 

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { type Dict, isFunction, type Watcher } from 'autostore';
-import type { ReactAutoStore } from '../store';
-import type { UseWatchOptions, UseWatchType } from './types';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { type Dict, isFunction, type Watcher } from "autostore";
+import type { ReactAutoStore } from "../store";
+import type { UseWatchOptions, UseWatchType } from "./types";
 
 /**
  *
@@ -25,12 +25,12 @@ export function createUseWatch<State extends Dict>(store: ReactAutoStore<State>)
             args.length == 3
                 ? args[2]
                 : args.length == 2 && isFunction(args[0])
-                ? args[1]
-                : undefined,
+                  ? args[1]
+                  : undefined,
         ) as UseWatchOptions<any>;
 
         const [value, setValue] = useState(options?.initial);
-        const ref = useRef<any>();
+        const ref = useRef<any>(null);
         const executeGetter = useCallback(
             (operate: any) => {
                 Promise.resolve(getter(operate)).then((result) => {
@@ -48,7 +48,7 @@ export function createUseWatch<State extends Dict>(store: ReactAutoStore<State>)
             } else {
                 watcher = store.watch(deps, (operate) => executeGetter(operate), options);
             }
-            resetWatcher = store.on('reset', () => {
+            resetWatcher = store.on("reset", () => {
                 setTimeout(() => ref.current(options?.initial), 0);
             });
             return () => {

@@ -124,7 +124,7 @@ describe("watch功能测试", () => {
                     a: 1,
                     b: 2,
                     diary: watch(
-                        ({ path, value }, { self }) => {
+                        ({ path, value }, self) => {
                             expect(self).toBeInstanceOf(WatchObject);
                             changed.push(path);
                             return value;
@@ -274,7 +274,7 @@ describe("watch功能测试", () => {
                         validate: true,
                     },
                     validate: watch<boolean, boolean>(
-                        ({ path, value }, { self }) => {
+                        ({ path, value }, self) => {
                             if (typeof value === "boolean") {
                                 const srcKey = path.join(".");
                                 if (value) {

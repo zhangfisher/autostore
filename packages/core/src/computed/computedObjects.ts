@@ -5,7 +5,6 @@ import type { AsyncComputedObject } from "./async";
 import type { ComputedObject } from "./computedObject";
 import type { SyncComputedObject } from "./sync";
 import type {
-    AsyncComputedGetter,
     AsyncLiteComputedGetter,
     ComputedDepends,
     ComputedDescriptor,

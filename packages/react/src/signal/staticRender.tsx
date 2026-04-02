@@ -1,9 +1,10 @@
-import type { Dict, ObjectKeyPaths } from 'autostore';
+import { isPathEq, PATH_DELIMITER, Watcher, type Dict, type ObjectKeyPaths } from 'autostore';
 import type { ReactAutoStore } from '../store';
 import React, { type ComponentType, useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
 import type { SignalComponentOptions } from './types';
 import type { StateGetter } from '../hooks/types';
+import { useErrorBoundary } from './errorBoundary';
 
 /**
  *
@@ -12,6 +13,7 @@ import type { StateGetter } from '../hooks/types';
  * @example
  *
  * import { createStore } from "@autostorejs/react"
+import { ErrorBoundary } from '../../../components/src/ErrorBoundary';
  *
  * const { state, $ } = createStore({
  *    order:{
@@ -53,21 +55,28 @@ export function createStaticRender<State extends Dict>(
     selector: ObjectKeyPaths<State> | StateGetter<State>,
     options: SignalComponentOptions,
 ) {
-    // @ts-ignore
-    const ErrorBoundary: ComponentType<{ error: any }> =
-        options.errorBoundary || store.options.signalErrorBoundary;
     return React.memo(
         () => {
             const deps = store.useDeps(selector as any); // 收集依赖的路径
-            const [error, setError] = useState<any>(null);
+            const [error, setError, ErrorBoundary] = useErrorBoundary(
+                store,
+                deps,
+                selector,
+                options,
+            );
             const [value, setValue] = useState(() => {
                 return getValueBySelector(store, selector, true, setError);
             });
+
             useEffect(() => {
                 const watcher = store.watch(deps, () => {
                     setValue(getValueBySelector(store, selector, true, setError));
+                    setError(null);
                 });
-                return () => watcher.off();
+
+                return () => {
+                    watcher.off();
+                };
             }, [deps]);
             return (
                 <>

@@ -1,8 +1,8 @@
 import React from 'react';
 import { delay, createStore, asyncComputed } from '@autostorejs/react';
-import { Input, ColorBlock } from 'x-react-components';
+import { Input, ColorBlock, JsonView, Box } from 'x-react-components';
 
-const { useAsyncReactive, useField } = createStore(
+const store = createStore(
     {
         user: {
             firstName: 'Zhang',
@@ -25,8 +25,9 @@ const { useAsyncReactive, useField } = createStore(
         debug: true, // 打开Redux devtools
     },
 );
-
+const { useAsyncReactive, useReactive, useField } = store;
 export default () => {
+    const state = useReactive();
     const firstNameField = useField('user.firstName');
     const lastNameField = useField('user.lastName');
     const fullName = useAsyncReactive('user.fullName');
@@ -38,6 +39,9 @@ export default () => {
             <ColorBlock name="FullName" loading={fullName.loading}>
                 {fullName.value}
             </ColorBlock>
+            <Box title="state=">
+                <JsonView highlightKeys={['fullName']} data={state} />
+            </Box>
         </>
     );
 };

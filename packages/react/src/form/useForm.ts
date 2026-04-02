@@ -132,6 +132,7 @@ export function useForm<State extends Dict>(): AutoFormObject<State> {
     }, []);
 
     return {
+        // oxlint-disable-next-line typescript/no-misused-spread
         ...store,
         state: store.state,
         Form: formComponentRef.current,

@@ -66,7 +66,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
             this.context,
             finalComputedOptions,
         );
-
+        this.error = undefined;
         // 4. 执行getter函数
         let computedResult = finalComputedOptions.initial;
         try {
@@ -75,6 +75,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
                 first,
                 ref: this._refStateCtx?.ref,
             };
+            this._runHook("before", [getterArgs, finalComputedOptions]);
             computedResult = this.getter.call(this, scope, getterArgs);
             if (finalComputedOptions.raw) markRaw(computedResult);
         } catch (e: any) {
@@ -91,11 +92,15 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
             if (errValue !== undefined) computedResult = errValue;
         }
         if (first) this.initial = computedResult;
-        this.store.peep(() => {
-            // 将结果回写入store,且不触发get事件
-            if (options.raw) markRaw(computedResult);
-            this.value = computedResult;
-        });
+        // 当执行getter函数出错时，也触发变化事件，这样可以
+        if (this.error) {
+        } else {
+            this.store.peep(() => {
+                // 将结果回写入store,且不触发get事件
+                if (options.raw) markRaw(computedResult);
+                this.value = computedResult;
+            });
+        }
 
         if (!first) {
             if (this.error) {
@@ -115,6 +120,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
                 });
             }
         }
+        this._runHook("after", [computedResult, this.error]);
     }
     /**
      * 自动收集同步依赖

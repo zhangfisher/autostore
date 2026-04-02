@@ -6,7 +6,6 @@ import type {
     ObserverOptions,
 } from "../observer/types";
 import type { FastEventSubscriber } from "fastevent";
-import type { RefState } from "../store/refState";
 
 export type WatchListener<Value = any, Parent = any> = (
     operate: StateOperate<Value, Parent>,
@@ -34,10 +33,7 @@ export type WatchScope<Value = any> = {
 
 export type WatchGetter<Value = any, DependValue = any> = (
     scope: { path: string[]; value: DependValue },
-    options: {
-        self: WatchObject<Value>;
-        ref: RefState;
-    },
+    options: WatchObject<Value>,
 ) => Exclude<Value, Promise<any>>; //| undefined
 
 export type WatchDescriptor<Value = any, DependValue = any> = ObserverDescriptor<

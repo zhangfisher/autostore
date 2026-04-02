@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore, asyncComputed, delay } from '@autostorejs/react';
-import { ColorBlock, Button, JsonView } from 'x-react-components';
+import { ColorBlock, Button, JsonView, Box } from 'x-react-components';
 
 export default () => {
     const { state, $, useAsyncState } = useStore({
@@ -62,7 +62,9 @@ export default () => {
                     Change LastName with Error
                 </Button>
             </div>
-            <JsonView title="state.fullName" highlightKeys={['loading']} data={fullName} />
+            <Box title="state.fullName">
+                <JsonView highlightKeys={['loading']} data={fullName} />
+            </Box>
         </div>
     );
 };

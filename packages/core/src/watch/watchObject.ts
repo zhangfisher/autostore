@@ -24,6 +24,9 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
         if (!this._cache) this._cache = {};
         return this._cache!;
     }
+    get ref() {
+        return this._refStateCtx!.ref;
+    }
     toString() {
         return `WatchObject<${this.id}>`;
     }
@@ -58,7 +61,9 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
             this.store.log(`WatchObject <${this.toString()}> is disabled`);
             return;
         }
+        let hasError: any;
         try {
+            this._runHook("before", [this, this.options]);
             // 2.  执行监听函数
             const result = this.getter?.call(
                 this,
@@ -66,7 +71,7 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
                     path: watchPath,
                     value: watchValue,
                 },
-                { self: this as any, ref: this._refStateCtx?.ref },
+                this,
             );
             if (this.options.raw) {
                 markRaw(result);
@@ -74,7 +79,10 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
             this.value = result as Value;
             this.emitStoreEvent("watch:done", { value: result, watchObject: this });
         } catch (e) {
+            hasError = e;
             this.emitStoreEvent("watch:error", { error: e, watchObject: this });
+        } finally {
+            this._runHook("after", [this.value, hasError]);
         }
     }
 }
