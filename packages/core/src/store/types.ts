@@ -309,7 +309,7 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 提供一个配置管理器对象
      */
-    configManager?: ConfigManager | ConfigSource | boolean;
+    configManager?: ConfigManager | ConfigSource;
     /**
      * 为当前Store的所有配置项均指定一个统一的前缀
      */

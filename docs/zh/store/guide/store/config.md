@@ -528,35 +528,6 @@ configManager.add(
 );
 ```
 
-### 默认可配项管理
-
-可以指定`AutoStore.options.configManager=true`自动创建一个配置管理器.
-
-```ts
-const store = new AutoStore(
-    {},
-    {
-        configManager: true,
-    },
-);
-```
-
-等效于：
-
-```ts
-const store = new AutoStore(
-    {},
-    {
-        configManager: new ConfigManager({
-            get: () => {},
-            set: () => {},
-        }),
-    },
-);
-```
-
-这样，`AutoStore`的修改就可以从`store.configManager`得到所有已经更新配置数据。
-
 ### 遍历配置数据
 
 默认情况下，如果要遍历配置整个应用的所有配置项，只需要访问`AutoStoreConfigManager`即可。
