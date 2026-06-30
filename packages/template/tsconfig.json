@@ -6,7 +6,7 @@
             "DOM",
             "DOM.Iterable"
         ],
-        "target": "ESNext",
+        "target": "ES2022",
         "module": "Preserve",
         "moduleDetection": "force",
         "jsx": "react-jsx",
