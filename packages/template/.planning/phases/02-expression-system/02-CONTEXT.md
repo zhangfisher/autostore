@@ -27,8 +27,8 @@
 ### Binding 类设计
 
 - **D-05:** 创建独立的 **Binding 类** 作为连接器
-- **D-06:** Binding 接收表达式、指令、DOM，**内部创建计算对象**
-- **D-07:** Binding 构造函数：`constructor(el: HTMLElement, directive: Directive, expression: string, store: AutoStore)`
+- **D-06:** Binding 构造函数：`constructor(el: HTMLElement, directiveName: string, expression: string, store: AutoStore, directiveRegistry: DirectiveRegistry)`
+- **D-07:** Binding 内部根据 `directiveName` 从 `DirectiveRegistry` 查找指令对象
 - **D-08:** Binding 内部调用 `store.computedObjects.create(() => <expression>)` 创建计算对象
 - **D-09:** Binding 监听计算属性的变化事件
 - **D-10:** 变化时调用 `directive.update(el, value)` 让指令负责 DOM 更新
@@ -75,12 +75,14 @@
 - **D-29:** 利用 AutoStore computed 的内置依赖追踪
 - **D-30:** 利用 AutoStore computed 的自动缓存机制
 - **D-31:** 集成到 Phase 01 的监听器管理机制（WeakMap<AutoStore, Set<Unwatch>>）
+- **D-36:** Binding 需要访问 `DirectiveRegistry` 来查找指令对象
 
 ### Binding 创建流程
 
-- **D-32:** Binding 在 **TemplateScanner 扫描时创建**
-- **D-33:** 传入参数：`el`, `directive`, `expression`, `store`
-- **D-34:** Binding 内部调用 `store.computedObjects.create(() => expression)` 创建计算对象
+- **D-32:** TemplateScanner 扫描得到：`{ el, directiveName, expression }`
+- **D-33:** 传递给 `new Binding(el, directiveName, expression, store, directiveRegistry)`
+- **D-34:** Binding 内部根据 `directiveName` 从 `DirectiveRegistry` 查找指令对象
+- **D-35:** Binding 内部调用 `store.computedObjects.create(() => expression)` 创建计算对象
 
 ### TemplateScanner 扩展
 
@@ -156,13 +158,22 @@
 ```typescript
 class Binding {
   public computed: ComputedObject
+  private directive: Directive
 
   constructor(
     public el: HTMLElement,
-    public directive: Directive,
+    directiveName: string,
     public expression: string,
-    store: AutoStore
+    private store: AutoStore,
+    private directiveRegistry: DirectiveRegistry
   ) {
+    // 根据指令名称查找指令对象
+    this.directive = directiveRegistry.get(directiveName)
+    
+    if (!this.directive) {
+      throw new Error(`Directive not found: ${directiveName}`)
+    }
+    
     // 内部创建计算对象
     this.computed = store.computedObjects.create(
       () => this.expression,
@@ -262,25 +273,39 @@ interface Directive {
 }
 ```
 
-### TemplateScanner 扩展
+### 扫描和创建流程
 
 ```typescript
+// TemplateScanner 扫描模板，返回指令信息
 class TemplateScanner {
-  scan(el: HTMLElement, store: AutoStore, autoTemplate: AutoTemplate): DirectiveBinding[] {
-    // ... 现有扫描逻辑，返回 DirectiveBinding[]
+  scan(el: HTMLElement): DirectiveInfo[] {
+    // ... 扫描逻辑
     
-    // DirectiveBinding 结构：
-    // { el, directive, expression }
-    
-    return bindings
+    // 返回结构：{ el, directiveName, expression }
+    return [
+      { el: span, directiveName: 'text', expression: 'user.name' },
+      { el: div, directiveName: 'html', expression: 'content.html' }
+    ]
   }
 }
 
-// AutoTemplate 在 #setupWatcher 中创建 Binding
+// AutoTemplate 创建 Binding
 class AutoTemplate {
-  #setupWatcher(bindings: DirectiveBinding[]) {
-    bindings.forEach(({ el, directive, expression }) => {
-      const binding = new Binding(el, directive, expression, this.store)
+  #setupWatcher(directiveInfos: DirectiveInfo[]) {
+    directiveInfos.forEach(({ el, directiveName, expression }) => {
+      // 创建 Binding：传入 DOM、指令名称、表达式
+      const binding = new Binding(
+        el,
+        directiveName,     // 指令名称（如 'text', 'html'）
+        expression,        // 表达式（如 'user.name'）
+        this.store,
+        this.directiveRegistry
+      )
+      
+      // Binding 内部会：
+      // 1. 根据 directiveName 查找指令对象
+      // 2. 创建 AutoStore 计算对象
+      
       this.bindings.add(el, binding)
     })
   }
