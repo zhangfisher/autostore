@@ -37,7 +37,7 @@
 - **D-10:** BindingManager 使用 **WeakMap<HTMLElement, Set<Binding>>** 按 DOM 元素分组存储
 - **D-11:** 按元素分组有利于优化更新（同一元素可能有多个指令）
 - **D-12:** WeakMap 确保元素被移除时自动清理绑定，避免内存泄漏
-- **D-13:** AutoTemplate 通过 `this.bindingManager` 访问和管理 Binding
+- **D-13:** **AutoTemplate.bindings** 直接返回 BindingManager 实例
 
 ### 指令更新机制
 
@@ -216,20 +216,15 @@ class BindingManager {
 
 ```typescript
 class AutoTemplate {
-  private bindingManager: BindingManager
+  bindings: BindingManager
 
   constructor() {
-    this.bindingManager = new BindingManager()
-  }
-
-  // 访问绑定管理器
-  get bindings() {
-    return this.bindingManager.bindings
+    this.bindings = new BindingManager()
   }
 
   // 清理资源
   destroy() {
-    this.bindingManager.destroyAll()
+    this.bindings.destroyAll()
   }
 }
 ```
