@@ -24,7 +24,9 @@
       "Bash(bunx eslint:*)",
       "Bash(bunx:*)",
       "Bash(cat packages/pkg-*/package.json)",
-      "Bash(done)"
+      "Bash(done)",
+      "Skill(gsd-discuss-phase)",
+      "Skill(gsd-plan-phase)"
     ],
     "additionalDirectories": [
       "e:\\Work\\Code\\sources\\autostore\\packages\\syncer\\examples\\worker-react\\src\\examples"
