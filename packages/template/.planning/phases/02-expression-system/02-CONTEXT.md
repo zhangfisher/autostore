@@ -20,9 +20,12 @@
 ### 核心设计：表达式 = 计算属性
 
 - **D-01:** 每个指令表达式对应一个 AutoStore 计算对象
-- **D-02:** 使用 `store.computedObjects.create(() => <表达式>)` 创建计算对象
+- **D-02:** 使用 `store.computedObjects.create((scope) => getter(scope))` 创建计算对象
 - **D-03:** AutoStore 的 computed 系统自动处理依赖追踪和表达式解析
 - **D-04:** 本阶段不需要独立实现表达式解析引擎，而是创建与 AutoStore 的桥接
+- **D-37:** 表达式求值使用**参数解构**：`(...scope) => eval(expression)`
+- **D-38:** 参数解构使 `x-text="order.count"` 可以直接访问 `scope.order.count`
+- **D-39:** ExpressionParser 生成包装函数：`(scope) => (({...scope}) => eval(expr))(scope)`
 
 ### Binding 类设计
 
@@ -174,9 +177,13 @@ class Binding {
       throw new Error(`Directive not found: ${directiveName}`)
     }
     
+    // 解析表达式为 getter 函数（使用参数解构）
+    const getter = ExpressionParser.parse(this.expression)
+    
     // 内部创建计算对象
+    // getter 等效于：(scope) => (({...scope}) => eval(expr))(scope)
     this.computed = store.computedObjects.create(
-      () => this.expression,
+      (scope) => getter(scope),
       { throws: false }  // 容错模式
     )
     
@@ -271,6 +278,52 @@ interface Directive {
   // 清理
   destroy(el: HTMLElement): void
 }
+```
+
+### ExpressionParser 设计（参数解构）
+
+```typescript
+class ExpressionParser {
+  // 解析表达式为 getter 函数
+  static parse(expression: string): (scope: any) => any {
+    // 使用参数解构使表达式可以直接访问 scope 属性
+    // "order.count" → (scope) => (({...scope}) => order.count)(scope)
+    return new Function('scope', `
+      return (({...scope}) => {
+        return (${expression});
+      })(scope);
+    `)
+  }
+  
+  // 安全性检查
+  static validate(expression: string): { safe: boolean; error?: string } {
+    // 拒绝危险模式：function, =>, new, ;, (, ), [, ], =
+    const dangerous = [
+      /\bfunction\b/, /=>/, /\bnew\b/, /;/, /\(/, /\)/, /\[/, /\]/, /=/
+    ]
+    
+    for (const pattern of dangerous) {
+      if (pattern.test(expression)) {
+        return { safe: false, error: `Dangerous syntax: ${pattern}` }
+      }
+    }
+    
+    return { safe: true }
+  }
+}
+```
+
+**表达式转换示例：**
+```
+输入：x-text="order.count"
+  ↓
+ExpressionParser.parse("order.count")
+  ↓
+输出：(scope) => (({...scope}) => order.count)(scope)
+  ↓
+使用：store.computedObjects.create((scope) => getter(scope))
+  ↓
+最终效果：scope.order.count 可以正确访问
 ```
 
 ### 扫描和创建流程
