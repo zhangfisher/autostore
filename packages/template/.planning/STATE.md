@@ -1,3 +1,17 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-06-30T08:56:17.743Z"
+progress:
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
+
 # 项目状态 - AutoStore Template
 
 ## 项目信息
@@ -33,20 +47,24 @@
 ## 里程碑
 
 ### Milestone 1: MVP（阶段 1-3）
+
 **状态：** 🔜 未开始
 **目标：** 实现最小可用产品
 
 ### Milestone 2: 功能完整（阶段 4-5）
+
 **状态：** 🔜 未开始
 **目标：** 实现所有 v1 功能
 
 ### Milestone 3: 生产就绪（阶段 6）
+
 **状态：** 🔜 未开始
 **目标：** 性能优化、测试、发布
 
 ## 项目文档
 
 ### 规划文档
+
 - ✅ `.planning/PROJECT.md` - 项目上下文
 - ✅ `.planning/config.json` - 工作流配置
 - ✅ `.planning/REQUIREMENTS.md` - 需求规格
@@ -54,6 +72,7 @@
 - ✅ `.planning/STATE.md` - 项目状态（本文件）
 
 ### 研究文档
+
 - ✅ `.planning/research/STACK.md` - 技术栈研究
 - ✅ `.planning/research/FEATURES.md` - 功能研究
 - ✅ `.planning/research/ARCHITECTURE.md` - 架构研究
@@ -69,6 +88,7 @@
 **模型配置：** balanced
 
 **工作流代理：**
+
 - 研究：✓ 启用
 - 计划检查：✓ 启用
 - 验证：✓ 启用
@@ -78,6 +98,7 @@
 **最新提交：** a170c97 "docs: define v1 requirements"
 
 **已跟踪文件：**
+
 - .planning/PROJECT.md
 - .planning/config.json
 - .planning/research/STACK.md
