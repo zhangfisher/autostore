@@ -2,13 +2,14 @@
 
 **Gathered:** 2025-06-30
 **Status:** Ready for planning
+**Updated:** 2025-06-30 (支持自定义指令)
 
 ## Phase Boundary
 
 本阶段交付 **AutoStore Template 渲染引擎的核心架构和基础设施**，包括：
 
-- AutoRender 主类的生命周期管理（初始化、启动、停止、销毁）
-- DirectiveRegistry 指令注册系统的实现
+- AutoTemplate 主类的生命周期管理（初始化、启动、停止、销毁）
+- DirectiveRegistry 指令注册系统的实现（支持自定义指令）
 - TemplateScanner 模板扫描器的实现
 - 与 AutoStore 响应式系统的集成点（watch 监听器管理）
 
@@ -17,35 +18,42 @@
 ## Implementation Decisions
 
 ### 状态管理
-- **D-01:** 使用**类属性模式**存储 AutoRender 的内部状态
+- **D-01:** 使用**类属性模式**存储 AutoTemplate 的内部状态
 - **D-02:** 追踪**扩展状态**：`#started`、`#el`、`#store`、`#options`、`#scanner`、`#directives`（绑定列表）、`#watchers`（监听器列表）
 - **D-03:** 所有状态属性使用私有类属性（`#` 前缀）确保封装性
 
 ### 指令注册系统
 - **D-04:** 使用**独立注册方法**设计 - 提供 `registerDirective()` 方法
-- **D-05:** v1 **显式拒绝自定义指令** - `registerDirective()` 存在但抛出错误 `"Custom directives not supported in v1"`
+- **D-05:** **支持自定义指令** - `AutoTemplate.directives` 返回指令管理器实例，可通过 `AutoTemplate.directives.register()` 注册自定义指令
 - **D-06:** DirectiveRegistry 内部使用 **Map<string, Directive>** 存储指令
-- **D-07:** 内置指令在 AutoRender 构造函数中自动注册
+- **D-07:** 内置指令在 AutoTemplate 构造函数中自动注册
+- **D-08:** AutoTemplate 提供静态或实例属性 `.directives` 返回 DirectiveRegistry 实例，用于访问和管理指令
+
+### 自定义指令 API
+- **D-09:** `AutoTemplate.directives` 设计为实例属性（非静态），返回内部的 DirectiveRegistry 实例
+- **D-10:** `DirectiveRegistry.register(name, directive)` 方法接受指令名称和指令对象，支持用户注册自定义指令
+- **D-11:** 自定义指令与内置指令享有相同的优先级排序机制
+- **D-12:** 指令名称冲突时，后注册的指令覆盖先注册的指令（用户可覆盖内置指令）
 
 ### 模板扫描策略
-- **D-08:** 采用**增量扫描策略** - 初始全量扫描，后续只扫描新添加的元素
-- **D-09:** 使用 **WeakMap<HTMLElement, boolean>** 在**实例级别**追踪已扫描元素
-- **D-10:** 使用 TreeWalker API 高效遍历 DOM 树
+- **D-13:** 采用**增量扫描策略** - 初始全量扫描，后续只扫描新添加的元素
+- **D-14:** 使用 **WeakMap<HTMLElement, boolean>** 在**实例级别**追踪已扫描元素
+- **D-15:** 使用 TreeWalker API 高效遍历 DOM 树
 
 ### 错误处理
-- **D-11:** 采用**静默失败 + 日志**策略
-- **D-12:** 提供基础级别日志：error 级别记录所有错误，warn 级别记录可恢复问题
-- **D-13:** debug 模式通过 `options.debug` 启用
+- **D-16:** 采用**静默失败 + 日志**策略
+- **D-17:** 提供基础级别日志：error 级别记录所有错误，warn 级别记录可恢复问题
+- **D-18:** debug 模式通过 `options.debug` 启用
 
 ### AutoStore 集成
-- **D-14:** 使用 **WeakMap<AutoStore, Set<Unwatch>>** 管理监听器生命周期
-- **D-15:** 每个表达式建立独立的 watch 监听器
-- **D-16:** stop() 时调用所有 unwatch 函数清理监听器
+- **D-19:** 使用 **WeakMap<AutoStore, Set<Unwatch>>** 管理监听器生命周期
+- **D-20:** 每个表达式建立独立的 watch 监听器
+- **D-21:** stop() 时调用所有 unwatch 函数清理监听器
 
 ### 生命周期语义
-- **D-17:** destroy() 采用**硬销毁语义** - 调用后实例完全不可用，所有方法抛出错误
-- **D-18:** start() 可重复调用（幂等操作）
-- **D-19:** stop() 后可以重新调用 start() 恢复
+- **D-22:** destroy() 采用**硬销毁语义** - 调用后实例完全不可用，所有方法抛出错误
+- **D-23:** start() 可重复调用（幂等操作）
+- **D-24:** stop() 后可以重新调用 start() 恢复
 
 ### Claude's Discretion
 以下实现细节留给规划阶段决定：
@@ -53,6 +61,7 @@
 - TemplateScanner 返回的数据结构（DirectiveInfo 的具体字段）
 - 表达式解析的集成方式（是否在 Phase 1 实现基础解析）
 - 性能优化的具体实现（路径索引的细节）
+- `AutoTemplate.directives` 的具体实现方式（getter vs 实例属性）
 
 ## Canonical References
 
@@ -60,7 +69,7 @@
 
 ### 架构文档
 - `.planning/research/ARCHITECTURE.md` - 系统架构、组件边界、数据流、构建顺序建议
-  - §核心组件: AutoRender 类、DirectiveSystem、TemplateScanner 的详细设计
+  - §核心组件: AutoTemplate 类、DirectiveSystem、TemplateScanner 的详细设计
   - §数据流: 初始化流程和更新流程
   - §构建顺序建议: Phase 1 的具体实现建议
 
@@ -108,11 +117,38 @@
 
 **实现要求：** DirectiveRegistry 必须支持按优先级排序指令执行顺序。
 
+### 自定义指令 API 设计
+基于用户需求，自定义指令的注册和使用方式：
+
+```typescript
+// 创建实例
+const app = new AutoTemplate(el, store, options)
+
+// 注册自定义指令
+app.directives.register('my-directive', {
+  name: 'my-directive',
+  priority: 50,
+  init(el, binding, store) {
+    // 初始化逻辑
+  },
+  update(el, binding, store) {
+    // 更新逻辑（可选）
+  },
+  destroy(el) {
+    // 清理逻辑（可选）
+  }
+})
+
+// 启动引擎（自动扫描并应用自定义指令）
+app.start()
+```
+
 ### 错误提示示例
 从用户讨论中确认的错误处理要求：
 - 未知指令名称 → warn 级别日志，跳过该指令
 - 无效表达式 → error 级别日志，跳过该表达式
 - 初始化参数错误 → 抛出错误，终止启动
+- 指令名称冲突 → info 级别日志，后注册的覆盖先注册的
 
 ## Deferred Ideas
 
@@ -122,3 +158,4 @@
 
 *Phase: 1-核心基础设施*
 *Context gathered: 2025-06-30*
+*Updated: 2025-06-30 - 支持自定义指令*
