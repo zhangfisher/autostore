@@ -34,9 +34,10 @@
 ### Binding 创建与存储
 
 - **D-09:** Binding 在 **TemplateScanner 扫描时创建**
-- **D-10:** 使用 **WeakMap<HTMLElement, Set<Binding>>** 按 DOM 元素分组存储
-- **D-11:** 按元素分组有利于优化更新（同一元素可能有多个指令）
-- **D-12:** WeakMap 确保元素被移除时自动清理绑定，避免内存泄漏
+- **D-10:** **AutoTemplate.bindings** 属性保存所有 Binding
+- **D-11:** 使用 **WeakMap<HTMLElement, Set<Binding>>** 按 DOM 元素分组存储
+- **D-12:** 按元素分组有利于优化更新（同一元素可能有多个指令）
+- **D-13:** WeakMap 确保元素被移除时自动清理绑定，避免内存泄漏
 
 ### 指令更新机制
 
@@ -175,22 +176,22 @@ class Binding {
 
 ```typescript
 // AutoTemplate 类中
-#bindings: WeakMap<HTMLElement, Set<Binding>>
+bindings: WeakMap<HTMLElement, Set<Binding>>
 
 // 添加绑定
 addBinding(el: HTMLElement, binding: Binding) {
-  if (!this.#bindings.has(el)) {
-    this.#bindings.set(el, new Set())
+  if (!this.bindings.has(el)) {
+    this.bindings.set(el, new Set())
   }
-  this.#bindings.get(el)!.add(binding)
+  this.bindings.get(el)!.add(binding)
 }
 
 // 按元素清理
 cleanupElement(el: HTMLElement) {
-  const bindings = this.#bindings.get(el)
+  const bindings = this.bindings.get(el)
   if (bindings) {
     bindings.forEach(b => b.destroy())
-    this.#bindings.delete(el)
+    this.bindings.delete(el)
   }
 }
 ```
