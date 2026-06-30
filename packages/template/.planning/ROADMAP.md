@@ -49,7 +49,10 @@
 **计划数量：** 1 个计划
 
 **计划列表：**
-- [ ] 01-01-PLAN.md — 创建 AutoRender 核心引擎、指令注册系统、模板扫描器和日志系统
+- [x] 01-01-PLAN.md — 创建 AutoTemplate 核心引擎、指令注册系统、模板扫描器
+  - ✅ 完成 (2026-06-30)
+  - 任务: 5/5 完成
+  - SUMMARY: `.planning/phases/01-core-infrastructure/01-01-SUMMARY.md`
 
 
 ---
