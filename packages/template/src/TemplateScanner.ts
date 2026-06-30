@@ -140,7 +140,12 @@ export class TemplateScanner {
       }
 
       // 提取指令名称（转为小写）
-      const directiveName = match[1].toLowerCase();
+      const directiveName = match[1]?.toLowerCase();
+
+      // 如果指令名称无效，跳过
+      if (!directiveName) {
+        continue;
+      }
 
       // 检查指令是否在注册表中
       if (this.#registry.has(directiveName)) {

@@ -1,0 +1,13 @@
+{
+    "name": "@autostorejs/template",
+    "type": "module",
+    "module": "src/index.ts",
+    "devDependencies": {
+        "@types/bun": "latest",
+        "autostore": "workspace:*"
+    },
+    "peerDependencies": {
+        "autostore": "workspace:*",
+        "typescript": "^5.9.3"
+    }
+}

@@ -1,5 +1,5 @@
-import type { DirectiveBinding, RenderOptions } from './types';
-import type { AutoStore, Watcher } from 'autostore';
+import type { DirectiveBinding, RenderOptions, AnyAutoStore } from './types';
+import type { Watcher } from 'autostore';
 import { DirectiveRegistry } from './DirectiveRegistry';
 import { TemplateScanner } from './TemplateScanner';
 
@@ -31,7 +31,7 @@ export class AutoTemplate {
   /**
    * AutoStore 实例（D-01, D-02）
    */
-  #store: AutoStore;
+  #store: AnyAutoStore;
 
   /**
    * 配置选项（D-01, D-02）
@@ -77,7 +77,7 @@ export class AutoTemplate {
    * @throws {Error} 如果 el 不是 HTMLElement
    * @throws {Error} 如果 store 无效
    */
-  constructor(el: HTMLElement, store: AutoStore, options: RenderOptions = {}) {
+  constructor(el: HTMLElement, store: AnyAutoStore, options: RenderOptions = {}) {
     // 验证 el 必须是 HTMLElement
     if (!(el instanceof HTMLElement)) {
       throw new Error('Root element must be an HTMLElement');

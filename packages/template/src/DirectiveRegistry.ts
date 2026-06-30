@@ -1,5 +1,5 @@
 import type { Directive, DirectiveBinding } from './types';
-import type { AutoStore } from '@autostorejs/core';
+import type { AnyAutoStore } from './types';
 
 /**
  * 指令注册表类
@@ -16,11 +16,11 @@ export class DirectiveRegistry {
   #directives: Map<string, Directive>;
 
   /**
-   * AutoStore 实例引用（用于日志记录）
+   * AnyAutoStore 实例引用（用于日志记录）
    */
-  #store: AutoStore | null = null;
+  #store: AnyAutoStore | null = null;
 
-  constructor(store?: AutoStore) {
+  constructor(store?: AnyAutoStore) {
     this.#directives = new Map();
     this.#store = store || null;
   }
