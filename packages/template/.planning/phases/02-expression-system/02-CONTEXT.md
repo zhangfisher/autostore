@@ -27,22 +27,25 @@
 ### Binding 类设计
 
 - **D-05:** 创建独立的 **Binding 类** 作为连接器
-- **D-06:** Binding 连接三元组：`{ el: HTMLElement, directive: Directive, computed: ComputedObject }`
-- **D-07:** Binding 监听计算属性的变化事件
-- **D-08:** 变化时调用 `directive.update(el, value)` 让指令负责 DOM 更新
+- **D-06:** Binding 接收表达式、指令、DOM，**内部创建计算对象**
+- **D-07:** Binding 构造函数：`constructor(el: HTMLElement, directive: Directive, expression: string, store: AutoStore)`
+- **D-08:** Binding 内部调用 `store.computedObjects.create(() => <expression>)` 创建计算对象
+- **D-09:** Binding 监听计算属性的变化事件
+- **D-10:** 变化时调用 `directive.update(el, value)` 让指令负责 DOM 更新
+- **D-11:** 不需要 ExpressionBridge 中间层，Binding 直接负责计算对象创建
 
 ### BindingManager 类设计
 
-- **D-09:** 创建独立的 **BindingManager 类** 统一管理所有 Binding 对象
-- **D-10:** BindingManager 使用 **WeakMap<HTMLElement, Set<Binding>>** 按 DOM 元素分组存储
-- **D-11:** 按元素分组有利于优化更新（同一元素可能有多个指令）
-- **D-12:** WeakMap 确保元素被移除时自动清理绑定，避免内存泄漏
-- **D-13:** **AutoTemplate.bindings** 直接返回 BindingManager 实例
+- **D-12:** 创建独立的 **BindingManager 类** 统一管理所有 Binding 对象
+- **D-13:** BindingManager 使用 **WeakMap<HTMLElement, Set<Binding>>** 按 DOM 元素分组存储
+- **D-14:** 按元素分组有利于优化更新（同一元素可能有多个指令）
+- **D-15:** WeakMap 确保元素被移除时自动清理绑定，避免内存泄漏
+- **D-16:** **AutoTemplate.bindings** 直接返回 BindingManager 实例
 
 ### 指令更新机制
 
-- **D-13:** 指令提供 **更新器对象**：`{ update(el, value): void, destroy(el): void }`
-- **D-14:** 不同指令有不同的更新策略：
+- **D-17:** 指令提供 **更新器对象**：`{ update(el, value): void, destroy(el): void }`
+- **D-18:** 不同指令有不同的更新策略：
   - `x-text` → `el.textContent = value`
   - `x-html` → `el.innerHTML = value`
   - `x-if` → 条件性替换元素
@@ -50,15 +53,9 @@
 
 ### 计算对象管理
 
-- **D-16:** 每个指令创建 **独立的计算对象**（不复用）
-- **D-17:** 简化设计，避免引用计数的复杂性
-- **D-18:** 可接受适度的性能开销
-
-### ExpressionBridge 类（原命名）
-
-- **D-19:** 提供带配置的 API：`create(expr, store, options) → {computed, dependencies, cleanup}`
-- **D-20:** 支持配置项和自定义清理函数
-- **D-21:** 返回计算对象、依赖路径和清理函数
+- **D-19:** 每个指令创建 **独立的计算对象**（不复用）
+- **D-20:** 简化设计，避免引用计数的复杂性
+- **D-21:** 可接受适度的性能开销
 
 ### 错误处理
 
@@ -79,6 +76,12 @@
 - **D-30:** 利用 AutoStore computed 的自动缓存机制
 - **D-31:** 集成到 Phase 01 的监听器管理机制（WeakMap<AutoStore, Set<Unwatch>>）
 
+### Binding 创建流程
+
+- **D-32:** Binding 在 **TemplateScanner 扫描时创建**
+- **D-33:** 传入参数：`el`, `directive`, `expression`, `store`
+- **D-34:** Binding 内部调用 `store.computedObjects.create(() => expression)` 创建计算对象
+
 ### TemplateScanner 扩展
 
 - **D-32:** TemplateScanner 负责创建 Binding 对象
@@ -89,10 +92,10 @@
 以下实现细节留给规划阶段决定：
 - Binding 类的具体方法签名和属性设计
 - BindingManager 的完整 API 设计（get/remove/update 等方法）
-- ExpressionBridge.create() 的 options 参数结构
 - 指令更新器对象的 TypeScript 接口定义
 - 计算对象变化事件的监听机制（watch 回调或其他）
 - 是否需要支持按指令类型查找 Binding
+- 表达式解析失败的具体处理策略
 
 ## Canonical References
 
@@ -152,11 +155,23 @@
 
 ```typescript
 class Binding {
+  public computed: ComputedObject
+
   constructor(
     public el: HTMLElement,
     public directive: Directive,
-    public computed: ComputedObject
-  ) {}
+    public expression: string,
+    store: AutoStore
+  ) {
+    // 内部创建计算对象
+    this.computed = store.computedObjects.create(
+      () => this.expression,
+      { throws: false }  // 容错模式
+    )
+    
+    // 监听计算属性变化
+    this.setupListener()
+  }
 
   // 监听计算属性变化
   private setupListener() {
@@ -251,50 +266,23 @@ interface Directive {
 
 ```typescript
 class TemplateScanner {
-  scan(el: HTMLElement, store: AutoStore): DirectiveBinding[] {
-    // ... 现有扫描逻辑
+  scan(el: HTMLElement, store: AutoStore, autoTemplate: AutoTemplate): DirectiveBinding[] {
+    // ... 现有扫描逻辑，返回 DirectiveBinding[]
     
-    // 为每个指令创建计算对象和 Binding
-    bindings.forEach(binding => {
-      const computed = store.computedObjects.create(
-        () => binding.expression,
-        ['auto-generated']
-      )
-      
-      const bindingObj = new Binding(
-        binding.el,
-        binding.directive,
-        computed
-      )
-      
-      // 按元素分组存储
-      this.addBinding(binding.el, bindingObj)
-    })
+    // DirectiveBinding 结构：
+    // { el, directive, expression }
     
     return bindings
   }
 }
-```
 
-### ExpressionBridge 类（辅助工具）
-
-```typescript
-class ExpressionBridge {
-  create(
-    expr: string,
-    store: AutoStore,
-    options?: ExpressionOptions
-  ): CreateResult {
-    const computed = store.computedObjects.create(
-      () => expr,
-      options?.dependencies || []
-    )
-    
-    return {
-      computed,
-      dependencies: computed.dependencies,
-      cleanup: () => computed.destroy()
-    }
+// AutoTemplate 在 #setupWatcher 中创建 Binding
+class AutoTemplate {
+  #setupWatcher(bindings: DirectiveBinding[]) {
+    bindings.forEach(({ el, directive, expression }) => {
+      const binding = new Binding(el, directive, expression, this.store)
+      this.bindings.add(el, binding)
+    })
   }
 }
 ```
