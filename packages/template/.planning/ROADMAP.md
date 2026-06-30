@@ -86,6 +86,14 @@
 
 ### UI 提示：否
 
+### 执行计划
+
+**计划数量：** 2 个计划
+
+**计划列表：**
+- [ ] 02-01-PLAN.md — 实现 ExpressionParser 安全求值器、ExpressionBridge（表达式→AutoStore 计算对象）、Binding 类骨架
+- [ ] 02-02-PLAN.md — 实现 BindingManager，集成到 AutoTemplate 激活 #setupWatcher，端到端数据流贯通
+
 ---
 
 ## 阶段 3：基础指令
