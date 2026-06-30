@@ -91,7 +91,7 @@
 **计划数量：** 2 个计划
 
 **计划列表：**
-- [ ] 02-01-PLAN.md — 实现 ExpressionParser 安全求值器、ExpressionBridge（表达式→AutoStore 计算对象）、Binding 类骨架
+- [ ] 02-01-PLAN.md — 实现 ExpressionParser 安全求值器（EXPR-01/02/03）、简化版 Binding 类（内部查找指令+创建计算对象+监听+触发更新，D-05~D-11）
 - [ ] 02-02-PLAN.md — 实现 BindingManager，集成到 AutoTemplate 激活 #setupWatcher，端到端数据流贯通
 
 ---
