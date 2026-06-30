@@ -31,13 +31,13 @@
 - **D-07:** Binding 监听计算属性的变化事件
 - **D-08:** 变化时调用 `directive.update(el, value)` 让指令负责 DOM 更新
 
-### Binding 创建与存储
+### BindingManager 类设计
 
-- **D-09:** Binding 在 **TemplateScanner 扫描时创建**
-- **D-10:** **AutoTemplate.bindings** 属性保存所有 Binding
-- **D-11:** 使用 **WeakMap<HTMLElement, Set<Binding>>** 按 DOM 元素分组存储
-- **D-12:** 按元素分组有利于优化更新（同一元素可能有多个指令）
-- **D-13:** WeakMap 确保元素被移除时自动清理绑定，避免内存泄漏
+- **D-09:** 创建独立的 **BindingManager 类** 统一管理所有 Binding 对象
+- **D-10:** BindingManager 使用 **WeakMap<HTMLElement, Set<Binding>>** 按 DOM 元素分组存储
+- **D-11:** 按元素分组有利于优化更新（同一元素可能有多个指令）
+- **D-12:** WeakMap 确保元素被移除时自动清理绑定，避免内存泄漏
+- **D-13:** AutoTemplate 通过 `this.bindingManager` 访问和管理 Binding
 
 ### 指令更新机制
 
@@ -88,10 +88,11 @@
 ### Claude's Discretion
 以下实现细节留给规划阶段决定：
 - Binding 类的具体方法签名和属性设计
+- BindingManager 的完整 API 设计（get/remove/update 等方法）
 - ExpressionBridge.create() 的 options 参数结构
 - 指令更新器对象的 TypeScript 接口定义
-- 按元素分组的 WeakMap 的具体操作方法
 - 计算对象变化事件的监听机制（watch 回调或其他）
+- 是否需要支持按指令类型查找 Binding
 
 ## Canonical References
 
@@ -172,26 +173,63 @@ class Binding {
 }
 ```
 
-### 按元素分组的存储结构
+### BindingManager 设计
 
 ```typescript
-// AutoTemplate 类中
-bindings: WeakMap<HTMLElement, Set<Binding>>
+class BindingManager {
+  // 按元素分组的存储
+  bindings: WeakMap<HTMLElement, Set<Binding>>
 
-// 添加绑定
-addBinding(el: HTMLElement, binding: Binding) {
-  if (!this.bindings.has(el)) {
-    this.bindings.set(el, new Set())
+  // 添加绑定
+  add(el: HTMLElement, binding: Binding): void {
+    if (!this.bindings.has(el)) {
+      this.bindings.set(el, new Set())
+    }
+    this.bindings.get(el)!.add(binding)
   }
-  this.bindings.get(el)!.add(binding)
-}
 
-// 按元素清理
-cleanupElement(el: HTMLElement) {
-  const bindings = this.bindings.get(el)
-  if (bindings) {
-    bindings.forEach(b => b.destroy())
-    this.bindings.delete(el)
+  // 按元素获取所有绑定
+  getByElement(el: HTMLElement): Set<Binding> | undefined {
+    return this.bindings.get(el)
+  }
+
+  // 按元素清理
+  cleanupElement(el: HTMLElement): void {
+    const bindings = this.bindings.get(el)
+    if (bindings) {
+      bindings.forEach(b => b.destroy())
+      this.bindings.delete(el)
+    }
+  }
+
+  // 清理所有绑定
+  destroyAll(): void {
+    this.bindings.forEach((bindings, el) => {
+      bindings.forEach(b => b.destroy())
+    })
+    this.bindings = new WeakMap()
+  }
+}
+```
+
+### AutoTemplate 集成
+
+```typescript
+class AutoTemplate {
+  private bindingManager: BindingManager
+
+  constructor() {
+    this.bindingManager = new BindingManager()
+  }
+
+  // 访问绑定管理器
+  get bindings() {
+    return this.bindingManager.bindings
+  }
+
+  // 清理资源
+  destroy() {
+    this.bindingManager.destroyAll()
   }
 }
 ```
