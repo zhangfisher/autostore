@@ -53,6 +53,7 @@
       "version": "1.0.0",
       "dependencies": {
         "autostore": "workspace:*",
+        "autostore-legacy": "npm:autostore@4.2.2",
         "helux": "^4.4.0",
         "mobx": "^6.13.2",
         "tinybench": "^6.0.0",
@@ -112,12 +113,11 @@
         "pretty-print-json": "^3.0.7",
       },
       "devDependencies": {
-        "@types/react": "^19.2.14",
-        "react": "^19.2.4",
         "tsup": "^8.5.0",
         "typescript": "^6.0.2",
       },
       "peerDependencies": {
+        "@types/react": "^19.2.14",
         "react": "^19.2.4",
       },
     },
@@ -125,6 +125,7 @@
       "name": "autostore",
       "version": "4.2.2",
       "dependencies": {
+        "alien-signals": "^3.2.1",
         "fastevent": "^2.5.0",
         "flex-tools": "^1.6.3",
       },
@@ -160,14 +161,13 @@
       "devDependencies": {
         "@swc/core": "^1.15.11",
         "@types/node": "^24.12.0",
-        "@types/react": "^19.2.14",
-        "react": "^19.2.4",
         "terser": "^5.46.1",
         "tsup": "^8.5.1",
         "type-fest": "^5.4.3",
         "typescript": "^6.0.2",
       },
       "peerDependencies": {
+        "@types/react": "^19.2.14",
         "react": "^19.2.4",
       },
     },
@@ -949,7 +949,7 @@
 
     "algoliasearch": ["algoliasearch@5.46.2", "https://registry.npmmirror.com/algoliasearch/-/algoliasearch-5.46.2.tgz", { "dependencies": { "@algolia/abtesting": "1.12.2", "@algolia/client-abtesting": "5.46.2", "@algolia/client-analytics": "5.46.2", "@algolia/client-common": "5.46.2", "@algolia/client-insights": "5.46.2", "@algolia/client-personalization": "5.46.2", "@algolia/client-query-suggestions": "5.46.2", "@algolia/client-search": "5.46.2", "@algolia/ingestion": "1.46.2", "@algolia/monitoring": "1.46.2", "@algolia/recommend": "5.46.2", "@algolia/requester-browser-xhr": "5.46.2", "@algolia/requester-fetch": "5.46.2", "@algolia/requester-node-http": "5.46.2" } }, "sha512-qqAXW9QvKf2tTyhpDA4qXv1IfBwD2eduSW6tUEBFIfCeE9gn9HQ9I5+MaKoenRuHrzk5sQoNh1/iof8mY7uD6Q=="],
 
-    "alien-signals": ["alien-signals@3.1.2", "https://registry.npmmirror.com/alien-signals/-/alien-signals-3.1.2.tgz", {}, "sha512-d9dYqZTS90WLiU0I5c6DHj/HcKkF8ZyGN3G5x8wSbslulz70KOxaqCT0hQCo9KOyhVqzqGojvNdJXoTumZOtcw=="],
+    "alien-signals": ["alien-signals@3.2.1", "https://registry.npmmirror.com/alien-signals/-/alien-signals-3.2.1.tgz", {}, "sha512-I8FjmltrfnDFoZedi5CG8DghVYNhzb/Ijluz7tCSJH0xpd0484Kowhbb1XDYOxfJpU1p5wnM2X54dA+IfGyD1g=="],
 
     "ansi-colors": ["ansi-colors@4.1.3", "https://registry.npmmirror.com/ansi-colors/-/ansi-colors-4.1.3.tgz", {}, "sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw=="],
 
@@ -980,6 +980,8 @@
     "autostore": ["autostore@workspace:packages/core"],
 
     "autostore-docs": ["autostore-docs@workspace:docs"],
+
+    "autostore-legacy": ["autostore@workspace:packages/core"],
 
     "available-typed-arrays": ["available-typed-arrays@1.0.7", "https://registry.npmmirror.com/available-typed-arrays/-/available-typed-arrays-1.0.7.tgz", { "dependencies": { "possible-typed-array-names": "^1.0.0" } }, "sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ=="],
 
@@ -2204,6 +2206,8 @@
     "@vue/language-core/@vue/compiler-dom": ["@vue/compiler-dom@3.5.27", "https://registry.npmmirror.com/@vue/compiler-dom/-/compiler-dom-3.5.27.tgz", { "dependencies": { "@vue/compiler-core": "3.5.27", "@vue/shared": "3.5.27" } }, "sha512-oAFea8dZgCtVVVTEC7fv3T5CbZW9BxpFzGGxC79xakTr6ooeEqmRuvQydIiDAkglZEAd09LgVf1RoDnL54fu5w=="],
 
     "@vue/language-core/@vue/shared": ["@vue/shared@3.5.27", "https://registry.npmmirror.com/@vue/shared/-/shared-3.5.27.tgz", {}, "sha512-dXr/3CgqXsJkZ0n9F3I4elY8wM9jMJpP3pvRG52r6m0tu/MsAFIe6JpXVGeNMd/D9F4hQynWT8Rfuj0bdm9kFQ=="],
+
+    "@vue/language-core/alien-signals": ["alien-signals@3.1.2", "https://registry.npmmirror.com/alien-signals/-/alien-signals-3.1.2.tgz", {}, "sha512-d9dYqZTS90WLiU0I5c6DHj/HcKkF8ZyGN3G5x8wSbslulz70KOxaqCT0hQCo9KOyhVqzqGojvNdJXoTumZOtcw=="],
 
     "@vue/reactivity/@vue/shared": ["@vue/shared@3.5.31", "https://registry.npmmirror.com/@vue/shared/-/shared-3.5.31.tgz", {}, "sha512-nBxuiuS9Lj5bPkPbWogPUnjxxWpkRniX7e5UBQDWl6Fsf4roq9wwV+cR7ezQ4zXswNvPIlsdj1slcLB7XCsRAw=="],
 

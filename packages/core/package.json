@@ -48,6 +48,7 @@
 		"zlib": "^1.0.5"
 	},
 	"dependencies": {
+		"alien-signals": "^3.2.1",
 		"fastevent": "^2.5.0",
 		"flex-tools": "^1.6.3"
 	}

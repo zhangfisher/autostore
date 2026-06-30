@@ -8,7 +8,6 @@ import { isNumber } from "../utils/isNumber";
 import { markRaw } from "../utils/markRaw";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
-import { SignalManager } from "./signalManager";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 
@@ -26,7 +25,6 @@ export type ReactiveNotifyParams<T = any> = {
 type CreateReactiveObjectOptions = {
     notify: (params: ReactiveNotifyParams) => void;
     createObserverObject: (path: string[], value: any, parentPath: string[], parent: any) => any;
-    signalManager?: SignalManager;
 };
 
 /**
@@ -153,31 +151,11 @@ function createProxy(
     if (proxyCache.has(target)) {
         return proxyCache.get(target);
     }
-
-    // 获取或创建 Signal 管理器
-    const signalManager = options.signalManager || new SignalManager(this, {
-        delimiter: this.options.delimiter,
-        debug: this.options.debug
-    });
     const proxyObj = new Proxy(target, {
         get: (obj, key, receiver) => {
             const value = Reflect.get(obj, key, receiver);
             if (typeof key !== "string") return value;
             const path = [...parentPath, String(key)];
-
-            // 在 Signal 上下文中追踪依赖（混合架构核心）
-            if (signalManager && signalManager.hasSignal(path)) {
-                // 触发 Signal 的依赖追踪，但不影响原有逻辑
-                const signalValue = signalManager.getSignalValue(path);
-                if (signalValue !== undefined && signalValue !== value) {
-                    // 如果 Signal 有不同的值，优先使用 Signal 的值
-                    // 这允许 alien-signals 的细粒度更新机制生效
-                    if (false && this.options.debug) { // 暂时关闭详细日志
-                        this.log(`[Hybrid] Using signal value for path: ${path.join('.')}`, 'info');
-                    }
-                }
-            }
-
             if (typeof value === "function" || !Object.hasOwn(obj, key)) {
                 if (typeof value === "function") {
                     if (Array.isArray(obj) && !isNumber(key)) {
@@ -258,14 +236,6 @@ function createProxy(
             const [val, schema] = getSchemaValue(value);
             const isValid = isValidPass.call(this, proxyObj, path, val, oldValue, schema);
             if (isValid) {
-                // 更新 Signal（混合架构核心）
-                if (signalManager) {
-                    signalManager.setSignalValue(path, val);
-                    if (false && this.options.debug) { // 暂时关闭详细日志
-                        this.log(`[Hybrid] Updated signal for path: ${path.join('.')}`, 'info');
-                    }
-                }
-
                 const success = Reflect.set(obj, key, val, receiver);
                 if (key === __NOTIFY__) return true;
 
@@ -305,15 +275,6 @@ function createProxy(
         deleteProperty: (obj, prop) => {
             const value = obj[prop];
             const path = [...parentPath, String(prop)];
-
-            // 删除 Signal（混合架构核心）
-            if (signalManager) {
-                signalManager.deleteSignal(path);
-                if (false && this.options.debug) { // 暂时关闭详细日志
-                    this.log(`[Hybrid] Deleted signal for path: ${path.join('.')}`, 'info');
-                }
-            }
-
             const success = Reflect.deleteProperty(obj, prop);
             if (success && prop !== __NOTIFY__) {
                 options.notify({
@@ -350,24 +311,12 @@ export function createReactiveObject<State extends Dict>(
 ): ComputedState<State> {
     const isComputedCreating = new Map();
     const proxyCache = new WeakMap();
-
-    // 创建 Signal 管理器（混合架构核心）
-    const signalManager = new SignalManager(this, {
-        delimiter: this.options.delimiter,
-        debug: this.options.debug
-    });
-
     return createProxy.call(
         this,
         state,
         [],
         proxyCache,
         isComputedCreating,
-        {
-            ...options,
-            notify: options!.notify,
-            createObserverObject: options!.createObserverObject,
-            signalManager // 传递 Signal 管理器到 Proxy 拦截器
-        },
+        options!,
     ) as ComputedState<State>;
 }
