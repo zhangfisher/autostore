@@ -1,5 +1,5 @@
 import { getVal } from "autostore";
-import { TemplateDirectiveBase } from "../directive";
+import { TemplateDirectiveBase } from "../base";
 
 export class TextDirective extends TemplateDirectiveBase {
     override created(): void {

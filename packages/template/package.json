@@ -3,8 +3,10 @@
     "type": "module",
     "module": "src/index.ts",
     "devDependencies": {
+        "@happy-dom/global-registrator": "^20.10.6",
         "@types/bun": "latest",
-        "autostore": "workspace:*"
+        "autostore": "workspace:*",
+        "happy-dom": "^20.10.6"
     },
     "peerDependencies": {
         "autostore": "workspace:*",

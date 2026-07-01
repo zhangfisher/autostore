@@ -1,0 +1,3 @@
+[test]
+# 测试前注册全局 DOM 环境（happy-dom），供基于 HTMLElement 的用例使用
+preload = ["./src/__tests__/setup.ts"]

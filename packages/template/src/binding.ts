@@ -1,5 +1,5 @@
 import type { AutoTemplateEngine } from "./engine";
-import { TemplateDirectiveBase } from "./directive";
+import { TemplateDirectiveBase } from "./directives/base";
 
 export type AutoTemplateBindingOptions = {
     /**
@@ -31,11 +31,11 @@ export class AutoTemplateBinding {
      * 引用实际渲染的元素
      */
     private _el: WeakRef<HTMLElement>;
-    directives: TemplateDirectiveBase[];
-    constructor(el: HTMLElement, template: HTMLElement, directives: TemplateDirectiveBase[]) {
+    directives: TemplateDirectiveBase[] = [];
+    constructor(el: HTMLElement, template: HTMLElement, directives?: TemplateDirectiveBase[]) {
         this._template = new WeakRef(template);
         this._el = new WeakRef(el);
-        this.directives = directives;
+        this.directives = directives || [];
     }
     get el() {
         return this._el.deref();

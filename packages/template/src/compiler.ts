@@ -1,8 +1,12 @@
 /**
  * 负责模板编译
  */
-import type { DirectiveInfo } from "./directive";
+import { AutoTemplateBinding } from "./binding";
+import type { DirectiveInfo } from "./directives/types";
+import type { TemplateDirectiveBase } from "./directives/base";
 import type { AutoTemplateEngine } from "./engine";
+import { getDirectives } from "./directives/utils/getDirectives";
+import { removeDirectives } from "./directives/utils/removeDirectives";
 
 /**
  * 模板译上下文
@@ -101,8 +105,54 @@ export class AutoTemplateCompiler {
         );
     }
 
-    compileElement(template: HTMLElement, parent: HTMLElement | undefined) {
-        const el = template.cloneNode();
+    compileElement(
+        template: HTMLElement,
+        parent: HTMLElement | undefined,
+        contexts?: TemplateCompileContext,
+    ) {
+        const el = template.cloneNode() as HTMLElement;
+        const directives = getDirectives(el);
+        if (directives.length > 0) {
+            removeDirectives(el); // 移除指令
+            const binding = new AutoTemplateBinding(el, template, []);
+            binding.directives = this._createDirectives(directives, binding);
+        } else {
+            return el;
+        }
+    }
+    /**
+     *
+     * 将读取的指令进行优化处理，转换为指令对象
+     *
+     * 处理逻辑如下：
+     *
+     * - 同名指令且单例的指令只有最后一个有效
+     *
+     * const directiveClass = this.engine.directives.get(name)
+     *
+     * - 按指令的优先级进行排列，directiveClass.priority越大排在前面
+     *
+     * 然后创建指令实例
+     *
+     *
+     *
+     * @param directives 返回指令实例对象
+     */
+    private _createDirectives(
+        directives: DirectiveInfo[],
+        binding: AutoTemplateBinding,
+    ): TemplateDirectiveBase[] {
+        return [];
+    }
+
+    private _createBinding(
+        el: HTMLElement,
+        template: HTMLElement,
+        parent: HTMLElement | undefined,
+        contexts?: TemplateCompileContext,
+    ) {
+        const binding = new AutoTemplateBinding(el, template);
+        return binding;
     }
 
     /**

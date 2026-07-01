@@ -1,19 +1,18 @@
-import type { AutoTemplateBinding } from "./binding";
-import type { AutoTemplateEngine } from "./engine";
-import type { Directive } from "./types";
-import { getVal, type Watcher, type WatchListener, type WatchListenerOptions } from "autostore";
-
-export type DirectiveInfo = {
-    name: string;
-    value?: string;
-    attr?: string;
-    modifiers?: string[];
-    options?: Record<string, any>;
-};
+import type { Watcher, WatchListener, WatchListenerOptions } from "autostore";
+import type { AutoTemplateBinding } from "../binding";
+import type { AutoTemplateEngine } from "../engine";
 
 export class TemplateDirectiveBase {
-    name: string = "";
-    priority?: number;
+    /**
+     * 用于指定在一个元素上使用多个同名指令的处理策略
+     *
+     * - true: 只允许一个，最后一个生效<span x-text="a" x-text="b"/> 只经x-text="b"有效
+     * - false: 允许存在多个，<span x-class="a" x-class="b"/>
+     *
+     */
+    static singleton: boolean = true;
+    static name: string = "";
+    static priority: number = 0;
     modifiers?: string[];
     options?: Record<string, any>;
     value?: any;
@@ -81,30 +80,4 @@ export class TemplateDirectiveBase {
      *
      */
     compile(_parent: HTMLElement): HTMLElement | undefined | void {}
-}
-
-/**
- * 指令注册表类
- *
- * 负责管理指令的注册、查询和排序。
- * 使用 Map 存储指令，支持自定义指令覆盖内置指令。
- */
-export class DirectiveManager extends Map<string, TemplateDirectiveBase> {
-    readonly engine: AutoTemplateEngine;
-    constructor(engine: AutoTemplateEngine) {
-        super();
-        this.engine = engine;
-    }
-
-    /**
-     * 注册指令
-     *
-     * 如果同名指令已存在，记录 info 日志并覆盖（D-12：后注册覆盖先注册）。
-     *
-     * @param name - 指令名称，不能为空
-     * @param directive - 指令对象，必须包含 init 方法
-     * @throws {Error} 如果指令名称为空
-     * @throws {Error} 如果指令对象缺少 init 方法
-     */
-    register(directive: Directive): void {}
 }

@@ -1,4 +1,4 @@
-import { TemplateDirectiveBase } from "../directive";
+import { TemplateDirectiveBase } from "../base";
 
 /**
  *
@@ -13,6 +13,6 @@ import { TemplateDirectiveBase } from "../directive";
  * </table>
  *
  */
-export class TreeDirective extends TemplateDirectiveBase {
+export class TableDirective extends TemplateDirectiveBase {
     render() {}
 }

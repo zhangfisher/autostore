@@ -1,4 +1,4 @@
-import { TemplateDirectiveBase } from "../directive";
+import { TemplateDirectiveBase } from "../base";
 
 /**
  * 转场动画指定

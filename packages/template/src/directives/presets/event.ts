@@ -1,4 +1,4 @@
-import { TemplateDirectiveBase } from "../directive";
+import { TemplateDirectiveBase } from "../base";
 
 /**
  *

@@ -1,4 +1,4 @@
-import { TemplateDirectiveBase } from "../directive";
+import { TemplateDirectiveBase } from "../base";
 
 /**
  *
@@ -9,7 +9,7 @@ import { TemplateDirectiveBase } from "../directive";
  *
  *
  */
-export class TextDirective extends TemplateDirectiveBase {
+export class ForDirective extends TemplateDirectiveBase {
     render(el: HTMLElement, value: any, _modifiers: any[], template: HTMLElement) {
         const itemTmpl = template.innerHTML;
         const [item, items] = value.split("of");

@@ -1,6 +1,6 @@
 import type { DirectiveBinding, AnyAutoStore, AutoTemplateEngineOptions } from "./types";
 import type { Watcher } from "autostore";
-import { DirectiveManager } from "./directive";
+import { DirectiveManager } from "./directives/manager";
 import { TemplateScanner } from "./TemplateScanner";
 import { AutoTemplateCompiler } from "./compiler";
 
