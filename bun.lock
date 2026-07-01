@@ -189,6 +189,9 @@
     },
     "packages/template": {
       "name": "@autostorejs/template",
+      "dependencies": {
+        "really-relaxed-json": "^0.3.2",
+      },
       "devDependencies": {
         "@types/bun": "latest",
         "autostore": "workspace:*",
@@ -1735,6 +1738,8 @@
     "read-yaml-file": ["read-yaml-file@1.1.0", "https://registry.npmmirror.com/read-yaml-file/-/read-yaml-file-1.1.0.tgz", { "dependencies": { "graceful-fs": "^4.1.5", "js-yaml": "^3.6.1", "pify": "^4.0.1", "strip-bom": "^3.0.0" } }, "sha512-VIMnQi/Z4HT2Fxuwg5KrY174U1VdUIASQVWXXyqtNRtxSr9IYkn1rsI6Tb6HsrHCmB7gVpNwX6JxPTHcH6IoTA=="],
 
     "readdirp": ["readdirp@4.1.2", "https://registry.npmmirror.com/readdirp/-/readdirp-4.1.2.tgz", {}, "sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg=="],
+
+    "really-relaxed-json": ["really-relaxed-json@0.3.2", "https://registry.npmmirror.com/really-relaxed-json/-/really-relaxed-json-0.3.2.tgz", {}, "sha512-dWDnjzCnOyjfY26IHMEomqE5D3btCs5D7I8iSAeqPs+Jxm1m6W/jwn0cxlXW8u24RD29bi5llLOEVN87JUrqag=="],
 
     "recast": ["recast@0.23.11", "https://registry.npmmirror.com/recast/-/recast-0.23.11.tgz", { "dependencies": { "ast-types": "^0.16.1", "esprima": "~4.0.0", "source-map": "~0.6.1", "tiny-invariant": "^1.3.3", "tslib": "^2.0.1" } }, "sha512-YTUo+Flmw4ZXiWfQKGcwwc11KnoRAYgzAE2E7mXKCjSviTKShtxBsN6YUUBB2gtaBzKzeKunxhUwNHQuRryhWA=="],
 

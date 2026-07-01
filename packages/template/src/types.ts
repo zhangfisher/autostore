@@ -81,10 +81,6 @@ export interface DirectiveBinding {
 
     /**
      * 表达式字符串
-     *
-     * 从 HTML 属性值中提取的原始表达式。
-     *
-     * @example 'user.name', 'isActive', 'item of items'
      */
     expression: string;
 
@@ -92,38 +88,6 @@ export interface DirectiveBinding {
      * 绑定的 DOM 元素
      */
     element: HTMLElement;
-
-    /**
-     * 解析后的表达式
-     *
-     * 初始为 null，在 Phase 2 表达式系统实现后会被填充。
-     * 包含依赖路径和求值函数。
-     */
-    parsed: ParsedExpression | null;
-}
-
-/**
- * 解析后的表达式
- *
- * 在 Phase 2 实现，此处预留接口。
- */
-export interface ParsedExpression {
-    /**
-     * 依赖的状态路径列表
-     *
-     * @example ['user', 'name'], ['items']
-     */
-    dependencies: string[];
-
-    /**
-     * 求值函数
-     *
-     * 根据给定的作用域求值表达式。
-     *
-     * @param scope - 包含状态值的作用域对象
-     * @returns 表达式的求值结果
-     */
-    evaluate(scope: any): any;
 }
 
 /**
@@ -131,11 +95,9 @@ export interface ParsedExpression {
  *
  * 传递给 AutoTemplate 构造函数的配置选项。
  */
-export interface RenderOptions {
+export interface AutoTemplateEngineOptions {
     /**
      * 是否启用调试模式
-     *
-     * 启用后会通过 AutoStore 的 log 方法输出详细的日志信息。
      *
      * @default false
      */
