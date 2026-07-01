@@ -3,15 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: milestone_complete
-last_updated: 2026-06-30T12:30:00.000Z
+last_updated: "2026-07-01T02:30:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 0
+  total_phases: 2
+  completed_phases: 1
+  total_plans: 3
   completed_plans: 1
-  percent: 17
-current_phase: "02-expression-system"
-current_phase_status: "context_gathered"
-stopped_at: Phase 02 context gathered
+  percent: 33
 ---
 
 # 项目状态 - AutoStore Template
@@ -33,6 +31,7 @@ stopped_at: Phase 02 context gathered
 ### 已完成的阶段
 
 **Phase 01: 核心基础设施** ✅ 完成
+
 - 状态：完成
 - 完成日期：2026-06-30
 - 计划数：1/1 完成
@@ -42,10 +41,15 @@ stopped_at: Phase 02 context gathered
 
 ### 上下文已捕获
 
-**Phase 02: 表达式系统** 📋 上下文已捕获
+**Phase 02: 表达式系统** 📋 上下文已更新
+
 - 上下文捕获日期：2026-06-30
+- 上下文更新日期：2026-07-01
 - CONTEXT: `.planning/phases/02-expression-system/02-CONTEXT.md`
-- 核心决策：表达式 = AutoStore 计算属性、Binding 类、按元素分组存储
+- 核心决策：
+  - 表达式 = AutoStore 计算属性、Binding 类、按元素分组存储
+  - **新增：** BindingManager 同名指令去重 + 指令优先级排序
+  - **新增：** 指令 computed 函数机制（支持 x-for 等特殊指令）
 
 ### 下一步
 
@@ -171,6 +175,7 @@ stopped_at: Phase 02 context gathered
 3. **内存泄漏** - 监听器未清理（Phase 01 已缓解 - WeakMap + destroy）
 
 **缓解措施：**
+
 - ✅ Phase 01: WeakMap 追踪已扫描元素
 - ✅ Phase 01: destroy() 方法清理监听器
 - 🔜 Phase 02: 表达式依赖追踪
