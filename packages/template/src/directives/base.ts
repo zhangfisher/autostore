@@ -1,6 +1,7 @@
 import type { Watcher, WatchListener, WatchListenerOptions } from "autostore";
 import type { AutoTemplateBinding } from "../binding";
 import type { AutoTemplateEngine } from "../engine";
+import type { DirectiveInfo } from "./types";
 
 export class TemplateDirectiveBase {
     /**
@@ -13,6 +14,14 @@ export class TemplateDirectiveBase {
     static singleton: boolean = true;
     static name: string = "";
     static priority: number = 0;
+    /**
+     * 原始指令信息（完整保留，含 name/attr 等）
+     */
+    info: DirectiveInfo;
+    /**
+     * 属性参数，如 @click 的 click、x-bind:title 的 title
+     */
+    attr?: string;
     modifiers?: string[];
     options?: Record<string, any>;
     value?: any;
@@ -20,23 +29,19 @@ export class TemplateDirectiveBase {
     watchers: Watcher[] = [];
     binding: AutoTemplateBinding;
     /**
-     *
-     * @param value  指令值，如x-text="a"，则value="a"
-     * @param modifiers
-     * @param options
+     * @param engine   引擎实例
+     * @param binding  所属绑定对象
+     * @param info     原始指令信息（来自 getDirectives），完整保留；
+     *                 value/modifiers/options/attr 同时提取为便捷字段
      */
-    constructor(
-        engine: AutoTemplateEngine,
-        binding: AutoTemplateBinding,
-        value: any,
-        modifiers: string[],
-        options?: Record<string, any>,
-    ) {
+    constructor(engine: AutoTemplateEngine, binding: AutoTemplateBinding, info: DirectiveInfo) {
         this.engine = engine;
-        this.modifiers = modifiers;
-        this.options = options;
-        this.value = value;
         this.binding = binding;
+        this.info = info;
+        this.value = info.value;
+        this.attr = info.attr;
+        this.modifiers = info.modifiers;
+        this.options = info.options;
     }
     get el() {
         return this.binding.el;

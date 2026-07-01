@@ -32,10 +32,9 @@ export class AutoTemplateBinding {
      */
     private _el: WeakRef<HTMLElement>;
     directives: TemplateDirectiveBase[] = [];
-    constructor(el: HTMLElement, template: HTMLElement, directives?: TemplateDirectiveBase[]) {
+    constructor(el: HTMLElement, template: HTMLElement, context?: Record<string, any>[]) {
         this._template = new WeakRef(template);
         this._el = new WeakRef(el);
-        this.directives = directives || [];
     }
     get el() {
         return this._el.deref();
@@ -43,7 +42,7 @@ export class AutoTemplateBinding {
     get template() {
         return this._template.deref();
     }
-    compile(ctx: any) {}
+    compile(context?: Record<string, any>[]) {}
 }
 
 export class AutoTemplateBindingManager extends Map<WeakRef<HTMLElement>, AutoTemplateBinding> {
