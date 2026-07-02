@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { AutoStore } from "autostore";
-import { AutoTemplateEngine } from "../engine";
 import { AutoTemplateBinding } from "../binding";
+import { createDirectives } from "../directives/utils/createDirectives";
 import { TemplateDirectiveBase } from "../directives/base";
 import type { DirectiveInfo } from "../directives/types";
+import { AutoTemplateEngine } from "../engine";
 
 /**
  * 测试用指令类
@@ -50,20 +51,17 @@ function makeBinding(): AutoTemplateBinding {
     return new AutoTemplateBinding(document.createElement("div"), document.createElement("div"));
 }
 
-/** 调用 private _createDirectives（用类型断言绕过 private 访问限制） */
-function createDirectives(
+/** 包装独立函数 createDirectives，自动注入测试用 binding，简化用例 */
+function buildDirectives(
     engine: AutoTemplateEngine,
     infos: DirectiveInfo[],
 ): TemplateDirectiveBase[] {
-    const compiler = engine.compiler as unknown as {
-        _createDirectives(i: DirectiveInfo[], b: AutoTemplateBinding): TemplateDirectiveBase[];
-    };
-    return compiler._createDirectives(infos, makeBinding());
+    return createDirectives(engine, infos, makeBinding());
 }
 
-describe("_createDirectives - 未注册指令", () => {
+describe("createDirectives - 未注册指令", () => {
     test("未注册指令被静默跳过，不抛错", () => {
-        const result = createDirectives(makeEngine(), [
+        const result = buildDirectives(makeEngine(), [
             { name: "unknown" },
             { name: "high", value: "a" },
         ]);
@@ -72,13 +70,13 @@ describe("_createDirectives - 未注册指令", () => {
     });
 
     test("全部未注册时返回空数组", () => {
-        expect(createDirectives(makeEngine(), [{ name: "x" }, { name: "y" }])).toEqual([]);
+        expect(buildDirectives(makeEngine(), [{ name: "x" }, { name: "y" }])).toEqual([]);
     });
 });
 
-describe("_createDirectives - 单例去重", () => {
+describe("createDirectives - 单例去重", () => {
     test("单例同名指令只保留最后声明的", () => {
-        const result = createDirectives(makeEngine(), [
+        const result = buildDirectives(makeEngine(), [
             { name: "high", value: "1" },
             { name: "high", value: "2" },
             { name: "high", value: "3" },
@@ -88,9 +86,9 @@ describe("_createDirectives - 单例去重", () => {
     });
 });
 
-describe("_createDirectives - 非单例", () => {
+describe("createDirectives - 非单例", () => {
     test("非单例同名指令全部保留，且保持声明顺序", () => {
-        const result = createDirectives(makeEngine(), [
+        const result = buildDirectives(makeEngine(), [
             { name: "multi", value: "1" },
             { name: "multi", value: "2" },
         ]);
@@ -100,22 +98,22 @@ describe("_createDirectives - 非单例", () => {
     });
 });
 
-describe("_createDirectives - 优先级排序", () => {
+describe("createDirectives - 优先级排序", () => {
     test("按 priority 降序排列（大的在前）", () => {
         // 声明顺序 low(10) -> high(100)，期望结果 high 在前
-        const result = createDirectives(makeEngine(), [{ name: "low" }, { name: "high" }]);
+        const result = buildDirectives(makeEngine(), [{ name: "low" }, { name: "high" }]);
         expect(result[0]).toBeInstanceOf(HighPrioSingleton);
         expect(result[1]).toBeInstanceOf(LowPrioSingleton);
     });
 
     test("priority 相同时保持声明顺序（稳定排序）", () => {
-        const result = createDirectives(makeEngine(), [{ name: "spa" }, { name: "spb" }]);
+        const result = buildDirectives(makeEngine(), [{ name: "spa" }, { name: "spb" }]);
         expect(result[0]).toBeInstanceOf(SamePrioA);
         expect(result[1]).toBeInstanceOf(SamePrioB);
     });
 });
 
-describe("_createDirectives - 实例字段注入", () => {
+describe("createDirectives - 实例字段注入", () => {
     test("DirectiveInfo 完整注入实例（value/attr/modifiers/options/info）", () => {
         const info: DirectiveInfo = {
             name: "high",
@@ -124,7 +122,7 @@ describe("_createDirectives - 实例字段注入", () => {
             modifiers: ["once", "debounce"],
             options: { delay: 100 },
         };
-        const result = createDirectives(makeEngine(), [info]);
+        const result = buildDirectives(makeEngine(), [info]);
         expect(result).toHaveLength(1);
         const inst = result[0]!;
         expect(inst.value).toBe("user.name");
@@ -135,7 +133,7 @@ describe("_createDirectives - 实例字段注入", () => {
     });
 
     test("可选字段缺失时正常实例化", () => {
-        const inst = createDirectives(makeEngine(), [{ name: "high" }])[0]!;
+        const inst = buildDirectives(makeEngine(), [{ name: "high" }])[0]!;
         expect(inst.value).toBeUndefined();
         expect(inst.attr).toBeUndefined();
         expect(inst.modifiers).toBeUndefined();
@@ -143,9 +141,9 @@ describe("_createDirectives - 实例字段注入", () => {
     });
 });
 
-describe("_createDirectives - 综合场景", () => {
+describe("createDirectives - 综合场景", () => {
     test("混合：单例去重 + 非单例多实例 + 优先级排序", () => {
-        const result = createDirectives(makeEngine(), [
+        const result = buildDirectives(makeEngine(), [
             { name: "multi", value: "m1" }, // prio 50
             { name: "high", value: "h1" }, // prio 100, singleton
             { name: "low", value: "l1" }, // prio 10

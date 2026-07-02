@@ -2,11 +2,10 @@
  * 负责模板编译
  */
 import { AutoTemplateBinding } from "./binding";
-import type { DirectiveInfo } from "./directives/types";
-import type { TemplateDirectiveBase } from "./directives/base";
-import type { AutoTemplateEngine } from "./engine";
+import { createDirectives } from "./directives/utils/createDirectives";
 import { getDirectives } from "./directives/utils/getDirectives";
 import { removeDirectives } from "./directives/utils/removeDirectives";
+import type { AutoTemplateEngine } from "./engine";
 
 /**
  * 模板译上下文
@@ -108,76 +107,19 @@ export class AutoTemplateCompiler {
     compileElement(
         template: HTMLElement,
         parent: HTMLElement | undefined,
-        contexts?: TemplateCompileContext,
+        context?: TemplateCompileContext,
     ) {
         const el = template.cloneNode() as HTMLElement;
         const directives = getDirectives(el);
         if (directives.length > 0) {
             removeDirectives(el); // 移除指令
-            const binding = new AutoTemplateBinding(el, template, []);
-            binding.directives = this._createDirectives(directives, binding);
+            const binding = this._createBinding(el, template);
+            binding.directives = createDirectives(this.engine, directives, binding);
         } else {
             return el;
         }
     }
-    /**
-     *
-     * 将读取的指令进行优化处理，转换为指令对象
-     *
-     * 处理逻辑如下：
-     *
-     * - 同名指令且单例的指令只有最后一个有效
-     *
-     * const directiveClass = this.engine.directives.get(name)
-     *
-     * - 按指令的优先级进行排列，directiveClass.priority越大排在前面
-     *
-     * 然后创建指令实例
-     *
-     *
-     *
-     * @param directives 返回指令实例对象
-     */
-    private _createDirectives(
-        directives: DirectiveInfo[],
-        binding: AutoTemplateBinding,
-    ): TemplateDirectiveBase[] {
-        // 解析每个指令对应的类，并处理同名单例去重（取最后声明的）
-        const resolved: Array<{ info: DirectiveInfo; cls: typeof TemplateDirectiveBase }> = [];
-        // 单例指令 name -> resolved 中的索引，用于覆盖为最后声明
-        const singletonPos = new Map<string, number>();
-        for (const info of directives) {
-            const cls = this.engine.directives.get(info.name);
-            if (!cls) continue; // 未注册指令静默跳过
-
-            if (cls.singleton) {
-                const pos = singletonPos.get(info.name);
-                if (pos !== undefined) {
-                    // 单例同名：后声明覆盖先声明
-                    resolved[pos] = { info, cls };
-                } else {
-                    singletonPos.set(info.name, resolved.length);
-                    resolved.push({ info, cls });
-                }
-            } else {
-                // 非单例：允许同名多实例，直接追加
-                resolved.push({ info, cls });
-            }
-        }
-
-        // 按 priority 降序排列（大的排前、先执行）；相同时保持声明顺序（Array.sort 稳定）
-        resolved.sort((a, b) => b.cls.priority - a.cls.priority);
-
-        // 实例化：将 DirectiveInfo 整体传入指令构造函数
-        return resolved.map(({ info, cls }) => new cls(this.engine, binding, info));
-    }
-
-    private _createBinding(
-        el: HTMLElement,
-        template: HTMLElement,
-        parent: HTMLElement | undefined,
-        contexts?: TemplateCompileContext,
-    ) {
+    private _createBinding(el: HTMLElement, template: HTMLElement) {
         const binding = new AutoTemplateBinding(el, template);
         return binding;
     }

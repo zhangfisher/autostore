@@ -1,5 +1,7 @@
 import type { AutoTemplateEngine } from "./engine";
 import { TemplateDirectiveBase } from "./directives/base";
+import { runDirectives } from "./directives/utils/runDirectives";
+import type { TemplateCompileContext } from "./compiler";
 
 export type AutoTemplateBindingOptions = {
     /**
@@ -32,7 +34,7 @@ export class AutoTemplateBinding {
      */
     private _el: WeakRef<HTMLElement>;
     directives: TemplateDirectiveBase[] = [];
-    constructor(el: HTMLElement, template: HTMLElement, context?: Record<string, any>[]) {
+    constructor(el: HTMLElement, template: HTMLElement) {
         this._template = new WeakRef(template);
         this._el = new WeakRef(el);
     }
@@ -42,7 +44,9 @@ export class AutoTemplateBinding {
     get template() {
         return this._template.deref();
     }
-    compile(context?: Record<string, any>[]) {}
+    compile(context: TemplateCompileContext) {
+        runDirectives(this.directives, context, parent);
+    }
 }
 
 export class AutoTemplateBindingManager extends Map<WeakRef<HTMLElement>, AutoTemplateBinding> {

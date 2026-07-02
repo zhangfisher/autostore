@@ -2,6 +2,7 @@ import type { Watcher, WatchListener, WatchListenerOptions } from "autostore";
 import type { AutoTemplateBinding } from "../binding";
 import type { AutoTemplateEngine } from "../engine";
 import type { DirectiveInfo } from "./types";
+import type { TemplateCompileContext } from "../compiler";
 
 export class TemplateDirectiveBase {
     /**
@@ -84,5 +85,8 @@ export class TemplateDirectiveBase {
      *
      *
      */
-    compile(_parent: HTMLElement): HTMLElement | undefined | void {}
+    compile(
+        _context: TemplateCompileContext,
+        _parent: HTMLElement,
+    ): HTMLElement | undefined | void {}
 }

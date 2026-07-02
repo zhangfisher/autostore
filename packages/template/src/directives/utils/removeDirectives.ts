@@ -1,25 +1,4 @@
-/** 事件绑定快捷前缀 */
-const EVENT_PREFIX = "@";
-/** 属性绑定快捷前缀 */
-const BIND_PREFIX = ":";
-
-/**
- * 判断属性名是否为指令属性
- *
- * 识别规则与 getDirectives 保持一致：
- * - `@` 事件快捷前缀（如 @click）
- * - `:` 属性绑定快捷前缀（如 :title）
- * - prefix 长前缀（默认 x-，含 x-xxx-options 形式也归属此类）
- *
- * `@` 与 `:` 为固定快捷前缀，不受 prefix 参数影响。
- */
-function isDirectiveAttrName(rawName: string, prefix: string): boolean {
-    return (
-        rawName.startsWith(EVENT_PREFIX) ||
-        rawName.startsWith(BIND_PREFIX) ||
-        rawName.startsWith(prefix)
-    );
-}
+import { isDirectiveAttr } from "./isDirectiveAttr";
 
 /**
  * 移除元素上的所有指令属性
@@ -42,7 +21,7 @@ export function removeDirectives(el: HTMLElement, prefix = "x-"): void {
     const namesToRemove: string[] = [];
     for (let i = 0; i < attributes.length; i++) {
         const attr = attributes[i];
-        if (attr && isDirectiveAttrName(attr.name, prefix)) {
+        if (attr && isDirectiveAttr(attr.name, prefix)) {
             namesToRemove.push(attr.name);
         }
     }
