@@ -45,7 +45,7 @@ export class AutoTemplateBinding {
         return this._template.deref();
     }
     compile(context: TemplateCompileContext) {
-        runDirectives(this.directives, context, parent);
+        return runDirectives(this.directives, context);
     }
 }
 
