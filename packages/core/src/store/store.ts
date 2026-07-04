@@ -935,6 +935,9 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
         this._operates.offAll();
         this.watchObjects.clear();
         this.computedObjects.clear();
+        // 通知 ConfigManager 注销当前 store 注册的配置项，
+        // 打破 schema 对本 store 的强引用，使其可被 GC
+        this._configManager?.remove?.(this);
         this.emit("unload", this);
     }
     /**

@@ -194,6 +194,24 @@ export class ConfigManager extends AutoStore<
             });
         }
     }
+    /**
+     * 注销由指定 store 注册的全部配置项
+     * 由 store.destroy() 调用：由于 schema.value 通过闭包强引用 store，
+     * 这里需要主动从 state 中删除对应 schema，才能打破引用、允许 store 被 GC。
+     */
+    remove(store: AutoStore<any>) {
+        const delimiter = store.options.delimiter;
+        store.configurabled.forEach((strPath) => {
+            const pathKey = strPath.split(delimiter);
+            const configKey = [...pathKey];
+            if (store.options.configKey) configKey.splice(0, 0, store.options.configKey);
+            const fullKey = configKey.join(PATH_DELIMITER);
+            // @ts-ignore - 动态删除 state 中的 schema
+            delete this.state[fullKey];
+            // 清理可能残留的脏数据
+            delete this.dirtyValues[fullKey];
+        });
+    }
     add(
         store: AutoStore<any>,
         path: string | string[],
@@ -302,27 +320,28 @@ export class ConfigManager extends AutoStore<
         // oxlint-disable-next-line typescript/no-this-alias
         const self = this;
 
-        // 由于ConfigManager是全局对象，而Store可能是动态，可能会被销毁，因此应采用弱引用
-        const storeRef = new WeakRef(store);
+        // 注意：这里必须使用强引用（闭包持有 store），不能用 WeakRef。
+        // ConfigManager 作为全局对象生命周期较长，而配置项的 value 读写必须可靠。
+        // 此前使用 WeakRef，但在 async/await 场景下，创建 store 的局部变量可能被
+        // JS 引擎提前 GC（即使它在逻辑上仍被使用），导致 storeRef.deref() 返回 undefined，
+        // 进而使 schema.value 的 getter/setter 静默失效（save/getConfigValue 返回 undefined）。
+        // 只要配置项注册在 ConfigManager 中，就应保证 store 可达；store.destroy() 时
+        // 会通过 remove() 注销配置项以打破引用、允许 GC。
         return Object.defineProperty(
             finalDescriptor.schema,
             "value",
             markRaw({
                 get() {
-                    const store = storeRef.deref();
-                    if (store) {
-                        const value = getVal(store.state, path);
-                        self._notify({
-                            type: "get",
-                            path: [...path, "value"],
-                            value,
-                        });
-                        return value;
-                    }
+                    const value = getVal(store.state, path);
+                    self._notify({
+                        type: "get",
+                        path: [...path, "value"],
+                        value,
+                    });
+                    return value;
                 },
                 set(value) {
-                    const store = storeRef.deref();
-                    store?.update((state: any) => {
+                    store.update((state: any) => {
                         setVal(state, path, value);
                     });
                     self._notify({

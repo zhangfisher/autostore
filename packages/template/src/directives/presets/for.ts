@@ -11,7 +11,7 @@ import { TemplateDirectiveBase } from "../base";
  */
 export class ForDirective extends TemplateDirectiveBase {
     render(el: HTMLElement, value: any, _modifiers: any[], template: HTMLElement) {
-        const itemTmpl = template.innerHTML;
-        const [item, items] = value.split("of");
+        // const itemTmpl = template.innerHTML;
+        // const [item, items] = value.split("of");
     }
 }

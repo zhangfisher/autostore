@@ -32,6 +32,8 @@ AutoStore 是一个基于 Proxy 的响应式状态管理库，支持细粒度更
 
 - **`packages/components`** - UI 组件库
 
+- **`packages/template`** - 响应式模板渲染引擎 (`@autostorejs/template`)
+
 ### 文档站点
 
 - **`docs`** - VitePress 文档站点
@@ -56,6 +58,8 @@ cd packages/form && bun run build
 ```
 
 ### 测试
+
+使用Bun Test API
 
 ```bash
 # 运行核心包测试

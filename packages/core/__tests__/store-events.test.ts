@@ -363,18 +363,19 @@ describe("Store Events", () => {
                 },
             );
 
-            // 访问异步计算属性（初始化，不会触发 error 事件）
+            // 访问异步计算属性（first run 抛错会触发 error 事件，经由 setTimeout 异步派发）
             const asyncValue = store.state.asyncError;
 
-            await delay(20);
+            // delay 需足够长，确保 emitStoreEvent 的 setTimeout(0) 派发完成
+            await delay(50);
 
-            // 初始化完成，有错误但不会触发 error 事件
+            // first run 完成，error 已生成并通过事件派发
             expect(asyncValue.error).toBeDefined();
-            expect(errorEvents.length).toBe(0);
+            expect(errorEvents.length).toBe(1);
 
-            // 修改 count 来触发重新计算（这时会触发 error 事件）
+            // 修改 count 来触发重新计算（再次触发 error 事件）
             store.state.count = 2;
-            await delay(20);
+            await delay(50);
 
             expect(asyncValue.error).toBeTruthy();
             expect(errorEvents.length).toBe(2);
@@ -431,7 +432,8 @@ describe("Store Events", () => {
             // 手动取消计算
             value.cancel();
 
-            await delay(20);
+            // delay 需足够长，确保 emitStoreEvent 的 setTimeout(0) 派发完成
+            await delay(50);
 
             // 钩子和事件都应该被触发
             // @ts-ignore

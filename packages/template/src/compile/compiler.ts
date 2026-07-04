@@ -1,16 +1,15 @@
 /**
  * 负责模板编译
  */
-import { AutoTemplateBinding } from "./binding";
-import { createDirectives } from "./directives/utils/createDirectives";
-import { getDirectives } from "./directives/utils/getDirectives";
-import { removeDirectives } from "./directives/utils/removeDirectives";
-import type { AutoTemplateEngine } from "./engine";
-
-/**
- * 模板译上下文
- */
-export type TemplateCompileContext = Record<string, any>[];
+import { AutoTemplateScope } from "../scope";
+import { createTemplateContext } from "../context";
+import { createDirectives } from "../directives/utils/createDirectives";
+import { getDirectives } from "../directives/utils/getDirectives";
+import { removeDirectives } from "../directives/utils/removeDirectives";
+import type { AutoTemplateEngine } from "../engine";
+import { createTemplateCompileContext } from "./context";
+import type { TemplateCompileContext } from "./types";
+import { transformElement, type NodeTransformer } from "./utils/transformElement";
 
 export class AutoTemplateCompiler {
     readonly engine: AutoTemplateEngine;
@@ -96,12 +95,16 @@ export class AutoTemplateCompiler {
 
     */
     compile() {
-        this._walkTemplate(
-            this.engine.template,
+        const htmlTransformer = [
+            (node: Node) => {
+                return node instanceof HTMLElement;
+            },
             (current: HTMLElement, parent: HTMLElement | undefined) => {
                 return this.compileElement(current, parent);
             },
-        );
+        ] as NodeTransformer<HTMLElement>;
+        const compileContext = createTemplateCompileContext();
+        return transformElement(this.engine.template, [htmlTransformer]);
     }
 
     compileElement(
@@ -112,99 +115,16 @@ export class AutoTemplateCompiler {
         const el = template.cloneNode() as HTMLElement;
         const directives = getDirectives(el);
         if (directives.length > 0) {
-            removeDirectives(el); // 移除指令
+            removeDirectives(el); // 移除指令,目标元素
             const binding = this._createBinding(el, template);
             binding.directives = createDirectives(this.engine, directives, binding);
         } else {
+            // 普通元素，没有指令时，原路返回
             return el;
         }
     }
     private _createBinding(el: HTMLElement, template: HTMLElement) {
-        const binding = new AutoTemplateBinding(el, template);
+        const binding = new AutoTemplateScope(el, template);
         return binding;
-    }
-
-    /**
-     * 遍历 DOM 树
-     *
-     *
-     * @param el - 根元素
-     */
-    private _walkTemplate(
-        el: HTMLElement,
-        callback: (
-            el: HTMLElement,
-            parent: HTMLElement | undefined,
-        ) => HTMLElement | undefined | null | void,
-    ): HTMLElement {
-        const queue: Array<{
-            originalNode: Node;
-            parentNewNode: Node | null;
-            parentOriginalNode: Node | null;
-        }> = [{ originalNode: el, parentNewNode: null, parentOriginalNode: null }];
-
-        let rootNewNode: HTMLElement | null = null;
-
-        while (queue.length > 0) {
-            const item = queue.shift();
-            if (!item) continue;
-
-            const { originalNode, parentNewNode, parentOriginalNode } = item;
-
-            // 只处理元素节点
-            if (originalNode.nodeType !== Node.ELEMENT_NODE) {
-                // 非元素节点：直接克隆并添加到父节点
-                const newNode = originalNode.cloneNode(false);
-                if (parentNewNode) {
-                    parentNewNode.appendChild(newNode);
-                }
-                continue;
-            }
-
-            const elementNode = originalNode as HTMLElement;
-            const parentElement = parentOriginalNode as HTMLElement | undefined;
-
-            // 调用 callback，传入当前元素和父元素
-            const callbackResult = callback(elementNode, parentElement);
-
-            // 如果 callback 返回 undefined 或 null，跳过该节点及其子树
-            if (callbackResult === undefined || callbackResult === null) {
-                continue;
-            }
-
-            // 创建新节点
-            const newNode = callbackResult;
-
-            // 如果是根节点，保存引用
-            if (originalNode === el) {
-                rootNewNode = newNode;
-            }
-
-            // 添加到父节点
-            if (parentNewNode) {
-                parentNewNode.appendChild(newNode);
-            }
-
-            // 遍历子节点（继续深入）
-            if (originalNode.childNodes) {
-                const children = originalNode.childNodes;
-                for (let i = 0; i < children.length; i++) {
-                    const child = children[i];
-                    if (child) {
-                        queue.push({
-                            originalNode: child,
-                            parentNewNode: newNode,
-                            parentOriginalNode: elementNode,
-                        });
-                    }
-                }
-            }
-        }
-
-        if (!rootNewNode) {
-            throw new Error("Failed to create root element");
-        }
-
-        return rootNewNode;
     }
 }

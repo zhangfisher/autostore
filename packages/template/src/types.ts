@@ -102,4 +102,12 @@ export interface AutoTemplateEngineOptions {
      * @default false
      */
     debug?: boolean;
+    /**
+     *
+     * 初始化时马上是否开始编译模板并生效
+     *
+     * true: 马上编译模板并生效
+     * false: 需要后续调用compile方法进行编译
+     */
+    autostart?: boolean;
 }

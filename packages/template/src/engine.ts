@@ -1,6 +1,6 @@
 import type { AnyAutoStore, AutoTemplateEngineOptions } from "./types";
 import { DirectiveManager } from "./directives/manager";
-import { AutoTemplateCompiler } from "./compiler";
+import { AutoTemplateCompiler } from "./compile/compiler";
 
 /**
  * AutoStore Template 渲染引擎核心类
@@ -17,8 +17,8 @@ import { AutoTemplateCompiler } from "./compiler";
  *
  * ```typescript
  * const store = createStore({ user: { name: 'John' } });
- * const app = new AutoTemplate(document.getElementById('app'), store);
- * app.start();
+ * const app = new AutoTemplateEngine(document.getElementById('app'), store);
+ 
  * ```
  */
 export class AutoTemplateEngine {
@@ -50,6 +50,11 @@ export class AutoTemplateEngine {
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
     }
-
+    /**
+     * 开始编译模板并应用
+     */
+    compile() {
+        const result = this.compiler.compile();
+    }
     destroy(): void {}
 }

@@ -1,8 +1,8 @@
 import type { Watcher, WatchListener, WatchListenerOptions } from "autostore";
-import type { AutoTemplateBinding } from "../binding";
+import type { AutoTemplateScope } from "../scope";
 import type { AutoTemplateEngine } from "../engine";
 import type { DirectiveInfo } from "./types";
-import type { TemplateCompileContext } from "../compiler";
+import type { TemplateCompileContext } from "../compile/types";
 
 export class TemplateDirectiveBase {
     /**
@@ -28,14 +28,14 @@ export class TemplateDirectiveBase {
     value?: any;
     engine: AutoTemplateEngine;
     watchers: Watcher[] = [];
-    binding: AutoTemplateBinding;
+    binding: AutoTemplateScope;
     /**
      * @param engine   引擎实例
      * @param binding  所属绑定对象
      * @param info     原始指令信息（来自 getDirectives），完整保留；
      *                 value/modifiers/options/attr 同时提取为便捷字段
      */
-    constructor(engine: AutoTemplateEngine, binding: AutoTemplateBinding, info: DirectiveInfo) {
+    constructor(engine: AutoTemplateEngine, binding: AutoTemplateScope, info: DirectiveInfo) {
         this.engine = engine;
         this.binding = binding;
         this.info = info;
@@ -49,13 +49,6 @@ export class TemplateDirectiveBase {
     }
     get template() {
         return this.binding.template;
-    }
-    watch(
-        paths: "*" | string | (string | string[])[],
-        listener: WatchListener,
-        options?: WatchListenerOptions,
-    ) {
-        this.watchers.push(this.engine.store.watch(paths, listener, options));
     }
 
     /**

@@ -1,4 +1,4 @@
-import type { AutoTemplateBinding } from "../../binding";
+import type { AutoTemplateScope } from "../../scope";
 import type { AutoTemplateEngine } from "../../engine";
 import type { TemplateDirectiveBase } from "../base";
 import type { DirectiveInfo } from "../types";
@@ -27,7 +27,7 @@ import type { DirectiveInfo } from "../types";
 export function createDirectives(
     engine: AutoTemplateEngine,
     directives: DirectiveInfo[],
-    binding: AutoTemplateBinding,
+    binding: AutoTemplateScope,
 ): TemplateDirectiveBase[] {
     // 解析每个指令对应的类，并处理同名单例去重（取最后声明的）
     const resolved: Array<{ info: DirectiveInfo; cls: typeof TemplateDirectiveBase }> = [];

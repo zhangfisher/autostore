@@ -1,4 +1,4 @@
-import type { TemplateCompileContext } from "../../compiler";
+import type { TemplateCompileContext } from "../../compile/types";
 import type { TemplateDirectiveBase } from "../base";
 
 /**

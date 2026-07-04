@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { AutoStore } from "autostore";
-import { AutoTemplateBinding } from "../binding";
+import { AutoTemplateScope } from "../scope";
 import { createDirectives } from "../directives/utils/createDirectives";
 import { TemplateDirectiveBase } from "../directives/base";
 import type { DirectiveInfo } from "../directives/types";
@@ -47,8 +47,8 @@ function makeEngine(): AutoTemplateEngine {
     return engine;
 }
 
-function makeBinding(): AutoTemplateBinding {
-    return new AutoTemplateBinding(document.createElement("div"), document.createElement("div"));
+function makeBinding(): AutoTemplateScope {
+    return new AutoTemplateScope(document.createElement("div"), document.createElement("div"));
 }
 
 /** 包装独立函数 createDirectives，自动注入测试用 binding，简化用例 */
