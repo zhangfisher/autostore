@@ -2,7 +2,8 @@ import type { AutoTemplateEngine } from "./engine";
 import { TemplateDirectiveBase } from "./directives/base";
 import { runDirectives } from "./directives/utils/runDirectives";
 import type { TemplateCompileContext } from "./compile/types";
-import type { Watcher, WatchListener, WatchListenerOptions } from "autostore";
+import type { ComputedGetter, Watcher, WatchListener, WatchListenerOptions } from "autostore";
+import { isStatePath } from "./utils/isStatePath";
 
 export type AutoTemplateBindingOptions = {
     /**
@@ -36,6 +37,7 @@ export class AutoTemplateScope {
     readonly _el: WeakRef<Node>;
     readonly engine: AutoTemplateEngine;
     directives: TemplateDirectiveBase[] = [];
+    computedObjects: any[] = [];
 
     watchers: Watcher[] = [];
     constructor(engine: AutoTemplateEngine, el: Node, template: Node) {
@@ -51,24 +53,28 @@ export class AutoTemplateScope {
     }
     /**
      * 侦听
-     * @param paths
+     * @param value  可以是路径，也可以是表达式
      * @param listener
      * @param options
      */
-    watch(
-        paths: "*" | string | (string | string[])[],
-        listener: WatchListener,
-        options?: WatchListenerOptions,
-    ) {
-        this.watchers.push(this.engine.store.watch(paths, listener, options));
+    watch(value: string, listener: WatchListener, options?: WatchListenerOptions) {
+        if (isStatePath(value)) {
+            this.watchers.push(this.engine.store.watch(value, listener, options));
+        } else {
+            // 如果不是状态路径，则需要创建计算属性
+            const obj = this.createComputed(value);
+            this.watchers.push(obj.watch(listener));
+        }
     }
     /**
      * 创建计算属性
      * @param value
      */
     createComputed(value: string) {
-        const getter = new Function(value);
+        const getter = new Function("scope", "args", value) as ComputedGetter<any>;
         const computedObj = this.engine.store.computedObjects.create(getter);
+        this.computedObjects.push(computedObj.id);
+        return computedObj;
     }
     compile(context: TemplateCompileContext, parent: HTMLElement) {
         const ctx: Record<string, any> = {};
@@ -79,6 +85,14 @@ export class AutoTemplateScope {
             if (Object.keys(ctx).length === 0) {
                 context.pop();
             }
+        }
+    }
+    destory() {
+        try {
+            this.watchers.forEach((watcher) => watcher.off());
+            this.computedObjects.forEach((id) => this.engine.store.computedObjects.delete(id));
+        } catch (e: any) {
+            this.engine.store.log(e.message, "error");
         }
     }
 }

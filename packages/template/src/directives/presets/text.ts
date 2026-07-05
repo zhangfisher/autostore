@@ -1,8 +1,9 @@
-import { getVal } from "autostore";
+import { getVal, type WatchListener } from "autostore";
 import { TemplateDirectiveBase } from "../base";
 import type { TemplateCompileContext } from "../../compile/types";
 import type { AutoTemplateScope } from "../../scope";
 import { isStatePath } from "../../utils/isStatePath";
+import { watch } from "../../../../core/src/watch/watch";
 
 /**
  *
@@ -29,20 +30,20 @@ import { isStatePath } from "../../utils/isStatePath";
  *
  */
 
-export class TextDirective extends TemplateDirectiveBase {
-    override created(): void {
-        const value = this.value;
+// export class TextDirective extends TemplateDirectiveBase {
+//     override created(): void {
+//         const value = this.value;
 
-        this.watch(this.value, ({ value }) => {
-            if (this.el) this.el.innerText = value;
-        });
-    }
-    override compile(_context: TemplateCompileContext, _parent: HTMLElement) {
-        if (this.el) {
-            this.el.innerText = getVal(this.engine.store.state, this.value);
-        }
-    }
-}
+//         this.watch(this.value, ({ value }) => {
+//             if (this.el) this.el.innerText = value;
+//         });
+//     }
+//     override compile(_context: TemplateCompileContext, _parent: HTMLElement) {
+//         if (this.el) {
+//             this.el.innerText = getVal(this.engine.store.state, this.value);
+//         }
+//     }
+// }
 
 export type DirectiveContext = {
     attr?: string;
@@ -55,16 +56,12 @@ export const TextDirective1 = {
     name: "text",
     singleton: true,
     priority: 0,
+
     created: function (this: AutoTemplateScope, ctx: DirectiveContext) {
         const value = ctx.value;
-        if (isStatePath(value)) {
-            this.watch(ctx.value, ({ value }) => {
-                this.el!.textContent = value;
-            });
-        } else {
-            // 如果不是状态路径，则需要创建计算属性
-            const cc = this.createComputed(value);
-        }
+        this.watch(value, ({ value }) => {
+            this.el!.textContent = value;
+        });
     },
     compile: function (this: AutoTemplateScope, ctx: DirectiveContext) {},
 };

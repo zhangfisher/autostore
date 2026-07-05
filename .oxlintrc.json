@@ -4,7 +4,8 @@
     "categories": {},
     "rules": {
         "typescript/no-floating-promises": "off",
-        "typescript/no-redundant-type-constituents": "off"
+        "typescript/no-redundant-type-constituents": "off",
+        "typescript/no-implied-eval": "off"
     },
     "settings": {
         "jsx-a11y": {
@@ -18,7 +19,6 @@
         "react": {
             "formComponents": [],
             "linkComponents": [],
-            "version": null,
             "componentWrapperFunctions": []
         },
         "jsdoc": {

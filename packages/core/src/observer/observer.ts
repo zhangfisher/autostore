@@ -14,7 +14,7 @@ import { getId } from "../utils/getId";
 import type { ObserverDescriptor, ObserverOptions } from "./types";
 import type { ComputedContext } from "../computed/types";
 import type { StateOperate, AutoStoreEvents, UpdateOptions } from "../store/types";
-import type { Watcher, WatchListenerOptions } from "../watch/types";
+import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
 import { createRefState, RefStateContext } from "../store/refState";
@@ -279,7 +279,7 @@ export class ObserverObject<
      * 
      * @returns 
      */
-    watch(listener: (operate: StateOperate) => void, options?: WatchListenerOptions) {
+    watch(listener: WatchListener, options?: WatchListenerOptions) {
         const watcher = this.store.watch(
             this.getValueWatchPath(),
             (operate) => {
