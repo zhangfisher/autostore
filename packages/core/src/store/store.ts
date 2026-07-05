@@ -103,7 +103,10 @@ import type {
 import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 
-export class AutoStore<State extends Dict, Options = unknown> extends FastLiteEvent<AutoStoreEvents> {
+export class AutoStore<
+    State extends Dict,
+    Options = unknown,
+> extends FastLiteEvent<AutoStoreEvents> {
     declare types: FastEvent<AutoStoreEvents>["types"] & {
         rawState: State;
         state: ComputedState<State>;
@@ -114,7 +117,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastLiteEv
     public watchObjects: WatchObjects<State>;
     protected _operates = new FastLiteEvent<StateChangeEvents>({
         delimiter: ".",
-        transform: (message) => {
+        transform: (message: any) => {
             return message.payload;
         },
     }); // 依赖变更事件触发器
@@ -182,6 +185,9 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastLiteEv
             globalThis.__AUTOSTORE_DEVTOOLS__.add(this);
         }
         this.emit("load", this);
+    }
+    get id() {
+        return this.options.id;
     }
     get state() {
         return this._data;

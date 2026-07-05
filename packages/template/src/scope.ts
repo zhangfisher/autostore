@@ -67,9 +67,8 @@ export class AutoTemplateScope {
      * @param value
      */
     createComputed(value: string) {
-        const computedObj = this.engine.store.computedObjects.create(() => {
-            return value;
-        });
+        const getter = new Function(value);
+        const computedObj = this.engine.store.computedObjects.create(getter);
     }
     compile(context: TemplateCompileContext, parent: HTMLElement) {
         const ctx: Record<string, any> = {};

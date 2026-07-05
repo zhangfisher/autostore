@@ -1,8 +1,8 @@
 import { getVal } from "autostore";
 import { TemplateDirectiveBase } from "../base";
 import type { TemplateCompileContext } from "../../compile/types";
-import type { AutoTemplateEngine } from "../../engine";
 import type { AutoTemplateScope } from "../../scope";
+import { isStatePath } from "../../utils/isStatePath";
 
 /**
  *
@@ -32,6 +32,7 @@ import type { AutoTemplateScope } from "../../scope";
 export class TextDirective extends TemplateDirectiveBase {
     override created(): void {
         const value = this.value;
+
         this.watch(this.value, ({ value }) => {
             if (this.el) this.el.innerText = value;
         });
@@ -56,9 +57,14 @@ export const TextDirective1 = {
     priority: 0,
     created: function (this: AutoTemplateScope, ctx: DirectiveContext) {
         const value = ctx.value;
-        this.watch(ctx.value, ({ value }) => {
-            this.el.innerText = value;
-        });
+        if (isStatePath(value)) {
+            this.watch(ctx.value, ({ value }) => {
+                this.el!.textContent = value;
+            });
+        } else {
+            // 如果不是状态路径，则需要创建计算属性
+            const cc = this.createComputed(value);
+        }
     },
     compile: function (this: AutoTemplateScope, ctx: DirectiveContext) {},
 };
