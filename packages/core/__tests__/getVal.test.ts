@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test";
 
 import { getVal } from '../src/utils/getVal';
+import { setVal } from '../src/utils/setVal';
 
 describe('getVal', () => {
     const obj = {
@@ -67,5 +68,25 @@ describe('getVal', () => {
         const map = new Map([['key', { value: 42 }]]);
         expect(getVal(map, 'key.value')).toBe(42);
         expect(getVal({ m: map }, ['m', 'key', 'value'])).toBe(42);
+    });
+
+    test('key 含点号时支持字符串转义路径访问', () => {
+        const o: any = { 'a.b': { c: 1 } };
+        // 'a\.b.c' 经 splitPath 拆为 ['a.b','c']
+        expect(getVal(o, 'a\\.b.c')).toBe(1);
+    });
+
+    test('key 含点号时字符串转义路径与数组路径结果一致', () => {
+        const o: any = { 'a.b': { c: 1 } };
+        expect(getVal(o, 'a\\.b.c')).toBe(getVal(o, ['a.b', 'c']));
+    });
+});
+
+describe('getVal/setVal 含点号 key 的读写对称', () => {
+    test('setVal 写入后，getVal 用转义路径可读到', () => {
+        const state: any = {};
+        setVal(state, ['a.b', 'c'], 9);
+        expect(state['a.b'].c).toBe(9);
+        expect(getVal(state, 'a\\.b.c')).toBe(9);
     });
 });

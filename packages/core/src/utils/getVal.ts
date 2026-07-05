@@ -1,6 +1,6 @@
-import { PATH_DELIMITER } from "../consts";
 import { getMapVal } from "./getMapVal";
 import { isMap } from "./isMap";
+import { splitPath } from "./splitPath";
 
 /**
  * 根据路径从对象中安全地读取深层属性值。
@@ -11,6 +11,9 @@ import { isMap } from "./isMap";
  *
  * 路径中遇到 `Map` 实例时，会自动通过 `getMapVal` 按 key 读取；
  * 数组同样按索引（数字字符串）访问。
+ *
+ * 字符串路径支持 `\.` 转义，使对象 key 可以包含点号分隔符（通过 `splitPath` 解析）：
+ * 反斜杠本身用 `\\` 表示。数组路径每个元素即完整 key，无需转义。
  *
  * @param obj - 待读取的目标对象。
  * @param keyPath - 属性路径，支持点号分隔字符串、路径段数组或空值；
@@ -26,12 +29,15 @@ import { isMap } from "./isMap";
  * getVal(obj, 'a.list.0');         // 10（数组成员访问）
  * getVal(obj, 'a.list.5', '默认'); // '默认'（越界返回默认值）
  * getVal(obj, 'a.x', '默认');      // '默认'
+ * // key 含点号：字符串路径用 \. 转义，或直接用数组路径
+ * getVal({ 'a.b': 1 }, 'a\.b');    // 1
+ * getVal({ 'a.b': 1 }, ['a.b']);   // 1
  * ```
  */
 export function getVal(obj: any, keyPath: string | string[] | undefined, defaultValue?: any): any {
 	if (!keyPath) return obj;
 	if (keyPath.length === 0) return obj;
-	const paths: string[] = Array.isArray(keyPath) ? keyPath : keyPath.split(PATH_DELIMITER);
+	const paths: string[] = Array.isArray(keyPath) ? keyPath : splitPath(keyPath);
 	// biome-ignore lint/suspicious/noImplicitAnyLet: <noImplicitAnyLet>
 	let val;
 	let parent = obj;

@@ -1,7 +1,7 @@
 import type { AsyncComputedValue } from "../computed";
-import { PATH_DELIMITER } from "../consts";
 import { getVal } from "./getVal";
 import { isAsyncComputedValue } from "./isAsyncComputedValue";
+import { splitPath } from "./splitPath";
 
 /**
  * 
@@ -9,7 +9,7 @@ import { isAsyncComputedValue } from "./isAsyncComputedValue";
  * 
  */
 export function getAsyncVal<Value>(obj: any, keyPath: string | string[] | undefined,defaultValue?:any):AsyncComputedValue<Value>{
-    const val = getVal(obj,typeof(keyPath)==='string' ?  keyPath.split(PATH_DELIMITER) : keyPath,defaultValue)
+    const val = getVal(obj,typeof(keyPath)==='string' ? splitPath(keyPath) : keyPath,defaultValue)
     if(isAsyncComputedValue(val)){
         return val
     }else{

@@ -3,6 +3,9 @@ import { isAsyncComputedValue } from "./isAsyncComputedValue";
 /**
  * 设置对象中指定路径的值。
  *
+ * `path` 为已拆分的路径段数组，每个元素即完整的 key（含点号等特殊字符的 key
+ * 无需转义，直接作为数组元素传入；字符串路径的 `\.` 转义由调用方通过 `splitPath` 处理）。
+ *
  * toAsyncValue的作用是
  * 当keyPath指向的是一个AsyncComputedValue时，
  *  将val更新.value属性上

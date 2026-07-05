@@ -17,6 +17,7 @@ export * from "./getMapVal";
 export * from "./markRaw";
 export * from "./setVal";
 export * from "./joinValuePath";
+export * from "./splitPath";
 export * from "./normalizeDeps";
 export * from "./getId";
 export * from "./calcDependPaths";

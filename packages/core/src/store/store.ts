@@ -90,6 +90,7 @@ import {
     isPathEq,
     isSchemaBuilder,
     setVal,
+    splitPath,
 } from "../utils";
 import type {
     AutoStoreOptions,
@@ -282,7 +283,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                     const prefix = entry ? `${entry}${this.delimiter}` : "";
                     Object.entries(this._updatedState!).forEach(([key, value]) => {
                         if (key.startsWith(prefix)) {
-                            setVal(state, key.split(this.delimiter), value);
+                            setVal(state, splitPath(key, this.delimiter), value);
                         }
                     });
                 });
@@ -791,7 +792,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
                           this.state,
                           Array.isArray(arguments[0])
                               ? arguments[0]
-                              : arguments[0].split(this.delimiter),
+                              : splitPath(arguments[0], this.delimiter),
                       );
         this._peeping = true;
         try {
@@ -992,7 +993,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
             expandAsync = false,
             waitAsyncDone = false,
         } = Object.assign({}, options);
-        const keyPath = Array.isArray(path) ? path : path.split(this.delimiter);
+        const keyPath = Array.isArray(path) ? path : splitPath(path, this.delimiter);
         const val = getVal(this.state, keyPath, defaultValue);
         if (isAsyncComputedValue(val)) {
             if (val.loading && waitAsyncDone) {

@@ -38,17 +38,17 @@
 	"author": "zhangfisher",
 	"license": "MIT",
 	"devDependencies": {
-		"@swc/core": "^1.15.21",
+		"@swc/core": "^1.15.43",
 		"@type-challenges/utils": "^0.1.1",
 		"@types/bun": "^1.3.11",
-		"@types/node": "^25.5.0",
+		"@types/node": "^25.9.4",
 		"tsup": "^8.5.1",
-		"type-fest": "^5.5.0",
-		"typescript": "^6.0.2",
+		"type-fest": "^5.8.0",
+		"typescript": "^6.0.3",
 		"zlib": "^1.0.5"
 	},
 	"dependencies": {
-		"fastevent": "^2.5.0",
-		"flex-tools": "^1.6.3"
+		"fastevent": "^2.6.0",
+		"flex-tools": "^1.6.4"
 	}
 }
