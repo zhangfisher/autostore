@@ -74,7 +74,8 @@ import { isMatchOperates } from "../utils/isMatchOperates";
 import type { GetTypeByPath } from "../types";
 import { TimeoutError } from "../errors";
 import type { ObserverDescriptor } from "../observer/types";
-import { FastEvent, type FastEventSubscriber, type FastEventOptions } from "fastevent";
+import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent";
+import { FastLiteEvent } from "fastevent/lite";
 import { createSandbox } from "../utils/createSandbox";
 import { computed } from "../computed/computed";
 import { watch } from "../watch/watch";
@@ -102,7 +103,7 @@ import type {
 import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 
-export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<AutoStoreEvents> {
+export class AutoStore<State extends Dict, Options = unknown> extends FastLiteEvent<AutoStoreEvents> {
     declare types: FastEvent<AutoStoreEvents>["types"] & {
         rawState: State;
         state: ComputedState<State>;
@@ -111,7 +112,7 @@ export class AutoStore<State extends Dict, Options = unknown> extends FastEvent<
     private _errors?: Record<string, string>;
     public computedObjects: ComputedObjects<State>;
     public watchObjects: WatchObjects<State>;
-    protected _operates = new FastEvent<StateChangeEvents>({
+    protected _operates = new FastLiteEvent<StateChangeEvents>({
         delimiter: ".",
         transform: (message) => {
             return message.payload;
