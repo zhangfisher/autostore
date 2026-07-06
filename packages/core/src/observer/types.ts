@@ -156,6 +156,11 @@ export type ObserverOptions<Value = any, Schema extends Dict = Dict> = {
      */
     throwError?: boolean;
     /**
+     * 当该观察对象的依赖项或自身挂载路径被删除时，是否级联销毁（cascade destroy）。
+     * 默认 undefined → 继承 AutoStoreOptions.cascadeDestroy（默认 true）。
+     */
+    cascadeDestroy?: boolean;
+    /**
      * 提供额外的元数据用于标识该属性
      * 比如配置元数据等
      */

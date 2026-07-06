@@ -10,7 +10,7 @@ import * as presets from "./presets";
  */
 export class DirectiveManager extends Map<string, typeof TemplateDirectiveBase> {
     readonly engine: AutoTemplateEngine;
-    constructor(engine: AutoTemplateEngine) {
+    constructor(engine: AutoTemplateEngine<any>) {
         super();
         this.engine = engine;
         Object.values(presets).forEach((directive) => {

@@ -81,6 +81,14 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             }
         }, 0);
     }
+    /**
+     * 销毁时取消正在进行的异步计算（复用 AbortController）
+     */
+    protected onDestroy() {
+        try {
+            if (this._isRunning) this.getAbortController().abort();
+        } catch {}
+    }
 
     private createAsyncComputedValue() {
         return Object.assign({

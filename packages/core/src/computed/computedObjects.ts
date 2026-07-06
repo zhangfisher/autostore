@@ -205,12 +205,18 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
      *
      * 注意：如果该计算对象是state的某个属性创建的，只会删除计算对象，不会删除state属性
      *
+     * 路由到 observer.destroy()：解除订阅 + 取消 inflight + 触发 observer:destroyed 事件。
+     *
      * @param id
      * @returns
      */
     delete(id: string) {
-        this.get(id)?.detach();
-        return super.delete(id);
+        const obj = this.get(id);
+        if (obj) {
+            obj.destroy();
+            return true;
+        }
+        return Map.prototype.delete.call(this, id);
     }
     /**
      * 返回指定路径的计算对象

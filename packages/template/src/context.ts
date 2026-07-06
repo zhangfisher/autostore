@@ -1,5 +1,6 @@
 import { AutoStore } from "autostore";
 import type { AutoStoreOptions, Dict } from "autostore";
+import type { AnyAutoStore } from "./types";
 
 /**
  * 模板渲染上下文聚合视图的类型。
@@ -60,10 +61,9 @@ const STORE_REF = "$store";
  * @returns 只读的 `AutoTemplateContext` 聚合视图
  */
 export function createTemplateContext<State extends Dict>(
-    state: State,
+    store: AutoStore<State>,
     options?: AutoStoreOptions<any>,
 ): AutoTemplateContext<State> {
-    const store = new AutoStore<State>(state, options);
     const context: Record<string, any>[] = [
         {
             $state: store.state,

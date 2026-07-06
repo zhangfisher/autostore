@@ -37,6 +37,7 @@ export class ObserverObject<
     private _value: Value | undefined;
     private _associated: boolean = false; // 是否已经关联到状态对象
     private _attached: boolean = false;
+    private _destroyed: boolean = false; // 是否已经销毁
     private _getter: any;
     private _depends: string[][] = [];
     private _options: Required<Options>;
@@ -120,6 +121,9 @@ export class ObserverObject<
     }
     get attached() {
         return this._attached;
+    }
+    get destroyed() {
+        return this._destroyed;
     }
     get hooks() {
         if (!this._hooks) {
@@ -348,6 +352,28 @@ export class ObserverObject<
         this._subscribers = [];
         this.store.watchObjects.delete(this.id);
     }
+    /**
+     * 销毁当前观察对象：解除依赖订阅、从所属集合移除并触发生命周期事件。
+     *
+     * - 自动销毁（依赖/自身路径被删除）、手动 destroy()、集合 delete(id) 均走此路径。
+     * - 幂等：重复调用安全。
+     * - 触发 observer:destroyed 事件（onObserverDestroyed 通过该事件感知，绑定于 subscribeCallbacks）。
+     */
+    destroy() {
+        if (this._destroyed) return;
+        this._destroyed = true;
+        this.onDestroy(); // 1. 子类清理（如异步计算取消 inflight）
+        this.detach(); // 2. 解除依赖订阅
+        // 3. 从两个集合移除：用原生 Map.delete，避免与集合 delete（已路由到 destroy）互相递归
+        Map.prototype.delete.call(this.store.computedObjects, this.id);
+        Map.prototype.delete.call(this.store.watchObjects, this.id);
+        // 4. 生命周期事件（同步触发，与 observer:created 一致）
+        this.store.emit("observer:destroyed", this);
+    }
+    /**
+     * 供子类重写，在销毁时执行清理（如取消 inflight 请求）
+     */
+    protected onDestroy() {}
     get shadowStore() {
         if (!this._shadowStore) {
             this._shadowStore = isFunction(this.store.options.getShadowStore)

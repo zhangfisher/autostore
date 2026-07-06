@@ -2,7 +2,13 @@ import type { AutoTemplateEngine } from "./engine";
 import { TemplateDirectiveBase } from "./directives/base";
 import { runDirectives } from "./directives/utils/runDirectives";
 import type { TemplateCompileContext } from "./compile/types";
-import type { ComputedGetter, Watcher, WatchListener, WatchListenerOptions } from "autostore";
+import {
+    getVal,
+    type ComputedGetter,
+    type Watcher,
+    type WatchListener,
+    type WatchListenerOptions,
+} from "autostore";
 import { isStatePath } from "./utils/isStatePath";
 
 export type AutoTemplateBindingOptions = {
@@ -60,10 +66,12 @@ export class AutoTemplateScope {
     watch(value: string, listener: WatchListener, options?: WatchListenerOptions) {
         if (isStatePath(value)) {
             this.watchers.push(this.engine.store.watch(value, listener, options));
+            return getVal(this.engine.store.state, value);
         } else {
             // 如果不是状态路径，则需要创建计算属性
             const obj = this.createComputed(value);
             this.watchers.push(obj.watch(listener));
+            return obj.value;
         }
     }
     /**
@@ -76,6 +84,7 @@ export class AutoTemplateScope {
         this.computedObjects.push(computedObj.id);
         return computedObj;
     }
+
     compile(context: TemplateCompileContext, parent: HTMLElement) {
         const ctx: Record<string, any> = {};
         try {

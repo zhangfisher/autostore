@@ -1,6 +1,8 @@
 import type { AnyAutoStore, AutoTemplateEngineOptions } from "./types";
 import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
+import { createTemplateContext, type AutoTemplateContext } from "./context";
+import { AutoStore } from "autostore";
 
 /**
  * AutoStore Template 渲染引擎核心类
@@ -21,13 +23,14 @@ import { AutoTemplateCompiler } from "./compile/compiler";
  
  * ```
  */
-export class AutoTemplateEngine {
+export class AutoTemplateEngine<State extends Record<string, any> = Record<string, any>> {
     readonly el: HTMLElement;
-    readonly store: AnyAutoStore;
+    readonly store: AutoStore<State>;
     readonly options: Required<AutoTemplateEngineOptions>;
     readonly compiler: AutoTemplateCompiler;
     readonly directives: DirectiveManager;
     readonly template: HTMLElement;
+    readonly context: AutoTemplateContext<State>;
 
     /**
      * 构造函数
@@ -38,17 +41,18 @@ export class AutoTemplateEngine {
      * @throws {Error} 如果 el 不是 HTMLElement
      * @throws {Error} 如果 store 无效
      */
-    constructor(el: HTMLElement, store: AnyAutoStore, options?: AutoTemplateEngineOptions) {
+    constructor(el: HTMLElement, state: State, options?: AutoTemplateEngineOptions) {
         // 验证 el 必须是 HTMLElement
         if (!(el instanceof HTMLElement)) {
             throw new Error("Root element must be an HTMLElement");
         }
         this.template = el.cloneNode(true) as HTMLElement;
         this.el = el;
-        this.store = store;
+        this.store = new AutoStore(state);
         this.options = Object.assign({}, options) as Required<AutoTemplateEngineOptions>;
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
+        this.context = createTemplateContext<State>(this.store);
     }
     /**
      * 开始编译模板并应用

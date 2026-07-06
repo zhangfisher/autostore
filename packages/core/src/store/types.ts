@@ -236,6 +236,14 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     onObserverCreated?: (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void;
+    /**
+     * 当观察对象被（自动）销毁时调用，与 onObserverCreated 对称。
+     */
+    onObserverDestroyed?: (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void;
+    /**
+     * 当观察对象的依赖项或自身挂载路径被删除时是否级联销毁（cascade destroy），默认 true。
+     */
+    cascadeDestroy?: boolean;
 
     /**
      *
@@ -461,6 +469,7 @@ export type AutoStoreEvents = TransformedEvents<{
     //
     "observer:beforeCreate": ComputedDescriptor;
     "observer:created": ObserverObject<any, any>;
+    "observer:destroyed": ObserverObject<any, any>;
     "observer:done": ObserverDescriptor<any, any, any>;
     // 当验证器验证失败时触发
     validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };

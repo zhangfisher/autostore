@@ -31,6 +31,20 @@ export class WatchObjects<State extends Dict> extends Map<string, WatchObject> {
         return super.set(key, value);
     }
     /**
+     * 移除指定的侦听对象
+     *
+     * 路由到 observer.destroy()，与 ComputedObjects.delete 一致：
+     * 解除订阅 + 触发 observer:destroyed 事件。
+     */
+    delete(id: string) {
+        const obj = this.get(id);
+        if (obj) {
+            obj.destroy();
+            return true;
+        }
+        return Map.prototype.delete.call(this, id);
+    }
+    /**
      * 创建全局侦听器,
      * 此侦听器会侦听根对象，当对象所有的状态变化,会执行所有监听过滤函数，如果返回true，则执行对应的监听函数
      * 负责处理动态侦听

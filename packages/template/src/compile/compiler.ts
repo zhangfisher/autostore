@@ -13,7 +13,7 @@ import { transformElement, type NodeTransformer } from "./utils/transformElement
 
 export class AutoTemplateCompiler {
     readonly engine: AutoTemplateEngine;
-    constructor(engine: AutoTemplateEngine) {
+    constructor(engine: AutoTemplateEngine<any>) {
         this.engine = engine;
     }
     /**
@@ -104,6 +104,7 @@ export class AutoTemplateCompiler {
             },
         ] as NodeTransformer<HTMLElement>;
         const compileContext = createTemplateCompileContext();
+        const runContext = createTemplateCompileContext();
         return transformElement(this.engine.template, [htmlTransformer]);
     }
 
@@ -116,15 +117,16 @@ export class AutoTemplateCompiler {
         const directives = getDirectives(el);
         if (directives.length > 0) {
             removeDirectives(el); // 移除指令,目标元素
-            const binding = this._createBinding(el, template);
-            binding.directives = createDirectives(this.engine, directives, binding);
+            const scope = this._createScope(el, template);
+            scope.directives = createDirectives(this.engine, directives, scope);
+
+            scope.compile();
         } else {
             // 普通元素，没有指令时，原路返回
             return el;
         }
     }
-    private _createBinding(el: HTMLElement, template: HTMLElement) {
-        const binding = new AutoTemplateScope(el, template);
-        return binding;
+    private _createScope(el: HTMLElement, template: HTMLElement) {
+        return new AutoTemplateScope(this.engine, el, template);
     }
 }
