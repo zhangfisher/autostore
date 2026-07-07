@@ -10,6 +10,7 @@ import {
     type WatchListenerOptions,
 } from "autostore";
 import { isStatePath } from "./utils/isStatePath";
+import { createStackedContext } from "./context";
 
 export type AutoTemplateBindingOptions = {
     /**
@@ -44,12 +45,13 @@ export class AutoTemplateScope {
     readonly engine: AutoTemplateEngine;
     directives: TemplateDirectiveBase[] = [];
     computedObjects: any[] = [];
-
     watchers: Watcher[] = [];
+
     constructor(engine: AutoTemplateEngine, el: Node, template: Node) {
         this._template = new WeakRef(template);
         this._el = new WeakRef(el);
         this.engine = engine;
+        this.context = createStackedContext();
     }
     get el() {
         return this._el.deref();

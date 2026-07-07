@@ -1,8 +1,9 @@
 import type { AnyAutoStore, AutoTemplateEngineOptions } from "./types";
 import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
-import { createTemplateContext, type AutoTemplateContext } from "./context";
+import { createStackedContext, type AutoTemplateContext } from "./context";
 import { AutoStore } from "autostore";
+import { createTemplateCompileContext } from "./compile/context";
 
 /**
  * AutoStore Template 渲染引擎核心类
@@ -30,8 +31,7 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
     readonly compiler: AutoTemplateCompiler;
     readonly directives: DirectiveManager;
     readonly template: HTMLElement;
-    readonly context: AutoTemplateContext<State>;
-
+    readonly context: AutoTemplateContext<State>; // 运行上下文
     /**
      * 构造函数
      *
@@ -52,13 +52,13 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
         this.options = Object.assign({}, options) as Required<AutoTemplateEngineOptions>;
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
-        this.context = createTemplateContext<State>(this.store);
+        this.context = createStackedContext<State>(this.store);
     }
     /**
      * 开始编译模板并应用
      */
     compile() {
-        const result = this.compiler.compile();
+        this.compiler.compile();
     }
     destroy(): void {}
 }

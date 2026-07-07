@@ -16,9 +16,9 @@ export const TextDirective: TemplateDirective = {
         }
     },
     compile: (context: TemplateCompileContext) => {
-        const value = context.args;
-        if (value) {
-            context.el.textContent = value;
+        const args = context.args;
+        if (args.value) {
+            context.el.textContent = args.value;
         }
     },
 };

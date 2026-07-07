@@ -1,6 +1,4 @@
-import { AutoStore } from "autostore";
-import type { AutoStoreOptions, Dict } from "autostore";
-import type { AnyAutoStore } from "./types";
+import { AutoStore, type Dict } from "autostore";
 
 /**
  * 模板渲染上下文聚合视图的类型。
@@ -60,16 +58,25 @@ const STORE_REF = "$store";
  * @param options 透传给 AutoStore 的选项
  * @returns 只读的 `AutoTemplateContext` 聚合视图
  */
-export function createTemplateContext<State extends Dict>(
-    store: AutoStore<State>,
-    options?: AutoStoreOptions<any>,
+
+export function createStackedContext<State extends Dict>(
+    store?: AutoStore<State>,
 ): AutoTemplateContext<State> {
-    const context: Record<string, any>[] = [
-        {
+    const context: Record<string, any>[] = [];
+    if (store) {
+        context.push({
             $state: store.state,
-        },
-        store.state,
-    ];
+        });
+        context.push(store.state);
+    }
+    context[0]!.$push = (data: Record<string, any>) => {
+        if (typeof data === "object") {
+            context.push(data);
+        }
+    };
+    context[0]!.$pop = () => {
+        if (context.length > (store ? 2 : 0)) context.pop();
+    };
 
     /**
      * 元属性注册表：登记所有只读、不可枚举的元属性键值。
@@ -82,6 +89,7 @@ export function createTemplateContext<State extends Dict>(
         [CONTEXT_REF, context],
         [STORE_REF, store],
     ]);
+
     /** 元属性统一的只读描述符模板（value 由调用处补充） */
     const metaDescriptor = (value: any) => ({
         value,

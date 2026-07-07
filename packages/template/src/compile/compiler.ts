@@ -2,7 +2,7 @@
  * 负责模板编译
  */
 import { AutoTemplateScope } from "../scope";
-import { createTemplateContext } from "../context";
+import { createStackedContext } from "../context";
 import { createDirectives } from "../directives/utils/createDirectives";
 import { getDirectives } from "../directives/utils/getDirectives";
 import { removeDirectives } from "../directives/utils/removeDirectives";
@@ -13,10 +13,47 @@ import { transformElement, type NodeTransformer } from "./utils/transformElement
 
 export class AutoTemplateCompiler {
     readonly engine: AutoTemplateEngine;
+    readonly context = createTemplateCompileContext();
+
     constructor(engine: AutoTemplateEngine<any>) {
         this.engine = engine;
     }
-    /**
+
+    compile() {
+        const htmlTransformer = [
+            (node: Node) => {
+                return node instanceof HTMLElement;
+            },
+            (current: HTMLElement, parent: HTMLElement | undefined) => {
+                return this.compileElement(current, parent);
+            },
+        ] as NodeTransformer<HTMLElement>;
+        return transformElement(this.engine.template, [htmlTransformer]);
+    }
+
+    compileElement(
+        template: HTMLElement,
+        parent: HTMLElement | undefined,
+        context?: TemplateCompileContext,
+    ) {
+        const el = template.cloneNode() as HTMLElement;
+        const directives = getDirectives(el);
+        if (directives.length > 0) {
+            removeDirectives(el); // 移除指令,目标元素
+            const scope = this._createScope(el, template);
+            scope.directives = createDirectives(this.engine, directives, scope);
+
+            scope.compile(context, parent);
+        } else {
+            // 普通元素，没有指令时，原路返回
+            return el;
+        }
+    }
+    private _createScope(el: HTMLElement, template: HTMLElement) {
+        return new AutoTemplateScope(this.engine, el, template);
+    }
+}
+/**
      * 开始编译模板
      *
      * 编译步骤如下：
@@ -94,39 +131,3 @@ export class AutoTemplateCompiler {
 
 
     */
-    compile() {
-        const htmlTransformer = [
-            (node: Node) => {
-                return node instanceof HTMLElement;
-            },
-            (current: HTMLElement, parent: HTMLElement | undefined) => {
-                return this.compileElement(current, parent);
-            },
-        ] as NodeTransformer<HTMLElement>;
-        const compileContext = createTemplateCompileContext();
-        const runContext = createTemplateCompileContext();
-        return transformElement(this.engine.template, [htmlTransformer]);
-    }
-
-    compileElement(
-        template: HTMLElement,
-        parent: HTMLElement | undefined,
-        context?: TemplateCompileContext,
-    ) {
-        const el = template.cloneNode() as HTMLElement;
-        const directives = getDirectives(el);
-        if (directives.length > 0) {
-            removeDirectives(el); // 移除指令,目标元素
-            const scope = this._createScope(el, template);
-            scope.directives = createDirectives(this.engine, directives, scope);
-
-            scope.compile();
-        } else {
-            // 普通元素，没有指令时，原路返回
-            return el;
-        }
-    }
-    private _createScope(el: HTMLElement, template: HTMLElement) {
-        return new AutoTemplateScope(this.engine, el, template);
-    }
-}
