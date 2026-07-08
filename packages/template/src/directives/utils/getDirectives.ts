@@ -1,5 +1,5 @@
 import { toJson } from "really-relaxed-json";
-import type { DirectiveInfo } from "../types";
+import type { KylinDirectiveInfo } from "../types";
 
 /** 事件绑定快捷前缀 */
 const EVENT_PREFIX = "@";
@@ -58,9 +58,9 @@ function parseOptions(rawValue: string): Record<string, any> {
  * parsePrefixedDirective("bind:title", "xxx")     // { name:"bind", attr:"title", value:"xxx" }
  * parsePrefixedDirective("if.once.y", "xxx")      // { name:"if", value:"xxx", modifiers:["once","y"] }
  */
-function parsePrefixedDirective(rest: string, rawValue: string): DirectiveInfo {
+function parsePrefixedDirective(rest: string, rawValue: string): KylinDirectiveInfo {
     const { head, modifiers } = splitHeadAndModifiers(rest);
-    const info: DirectiveInfo = { name: head };
+    const info: KylinDirectiveInfo = { name: head };
 
     // head 可能形如 "name:attr"
     const colonIndex = head.indexOf(":");
@@ -107,9 +107,9 @@ function parsePrefixedDirective(rest: string, rawValue: string): DirectiveInfo {
  *
  * @param el
  */
-export function getDirectives(el: HTMLElement, prefix = "x-"): DirectiveInfo[] {
+export function getDirectives(el: HTMLElement, prefix = "x-"): KylinDirectiveInfo[] {
     if (!(el instanceof HTMLElement)) return [];
-    const results: DirectiveInfo[] = [];
+    const results: KylinDirectiveInfo[] = [];
     // 暂存 options 补充参数，待主指令收集完毕后合并
     const pendingOptions: Array<{ name: string; value: Record<string, any> }> = [];
 
@@ -123,7 +123,7 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): DirectiveInfo[] {
         // 1. @ 事件快捷前缀：@click / @click.debounce -> { name:"event", attr:"click"[, modifiers] }
         if (rawName.startsWith(EVENT_PREFIX)) {
             const { head, modifiers } = splitHeadAndModifiers(rawName.slice(EVENT_PREFIX.length));
-            const info: DirectiveInfo = { name: EVENT_DIRECTIVE_NAME, attr: head };
+            const info: KylinDirectiveInfo = { name: EVENT_DIRECTIVE_NAME, attr: head };
             if (rawValue !== "") info.value = rawValue;
             if (modifiers.length > 0) info.modifiers = modifiers;
             results.push(info);
@@ -133,7 +133,7 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): DirectiveInfo[] {
         // 2. : 属性绑定快捷前缀：:title / :title.mod -> { name:"bind", attr:"title"[, modifiers] }
         if (rawName.startsWith(BIND_PREFIX)) {
             const { head, modifiers } = splitHeadAndModifiers(rawName.slice(BIND_PREFIX.length));
-            const info: DirectiveInfo = { name: BIND_DIRECTIVE_NAME, attr: head };
+            const info: KylinDirectiveInfo = { name: BIND_DIRECTIVE_NAME, attr: head };
             if (rawValue !== "") info.value = rawValue;
             if (modifiers.length > 0) info.modifiers = modifiers;
             results.push(info);
@@ -163,7 +163,7 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): DirectiveInfo[] {
 
     // 4. 将 options 合并到已解析的同名指令；同名取最后一个（与"后声明生效"一致）
     for (const opt of pendingOptions) {
-        let target: DirectiveInfo | undefined;
+        let target: KylinDirectiveInfo | undefined;
         for (const info of results) {
             if (info.name === opt.name) target = info;
         }

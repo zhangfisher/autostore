@@ -1,4 +1,4 @@
-import { TemplateDirectiveBase } from "../base";
+import { KylinTemplateDirectiveBase } from "../base";
 
 /**
  * 元素类名
@@ -17,7 +17,7 @@ import { TemplateDirectiveBase } from "../base";
  *  
 
  */
-export class ClassDirective extends TemplateDirectiveBase {
+export class ClassDirective extends KylinTemplateDirectiveBase {
     override name = "class";
     override compile() {}
 }

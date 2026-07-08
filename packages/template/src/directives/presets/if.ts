@@ -1,4 +1,4 @@
-import type { AutoTemplateScope } from "../../scope";
+import type { KylinTemplateScope } from "../../scope";
 import type { TemplateDirectiveArgs, TemplateDirective } from "../types";
 
 /**
@@ -17,7 +17,7 @@ export const TextDirective: TemplateDirective<['inner']> = {
     singleton: true,
     priority: 0,
 
-    created: function (this: AutoTemplateScope, args) {
+    created: function (this: KylinTemplateScope, args) {
         const value = args.value;
         if (value) {
             this.watch(value, ({ value }) => {
@@ -26,5 +26,5 @@ export const TextDirective: TemplateDirective<['inner']> = {
         }
         
     },
-    compile: (this: AutoTemplateScope, ctx: TemplateDirectiveArgs) {},
+    compile: (this: KylinTemplateScope, ctx: TemplateDirectiveArgs) {},
 };

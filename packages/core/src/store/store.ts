@@ -103,6 +103,7 @@ import type {
 import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 import { setupCascadeDestroy } from "../features/cascadeDestroy";
+import { ILogger } from "../utils/logger";
 
 export class AutoStore<
     State extends Dict,
@@ -135,6 +136,8 @@ export class AutoStore<
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _unloadCascadeDestroy?: () => void; // 级联销毁特性的卸载函数
+    private _logger?: ILogger;
+
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
             Object.assign(
@@ -254,6 +257,16 @@ export class AutoStore<
             this._updatedState = {};
         }
         this.options.resetable = value;
+    }
+    get logger() {
+        if (!this._logger) {
+            if (this.options.logger) {
+                this._logger = this.options.logger;
+            } else {
+                this._logger = createLogger(this.options);
+            }
+        }
+        return this._logger!;
     }
     private _createSandbox() {
         if (this.options.enableValueExpr) {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { getDirectives } from "../directives/utils/getDirectives";
-import type { DirectiveInfo } from "../directives/types";
+import type { KylinDirectiveInfo } from "../directives/types";
 
 /**
  * 构造一个带指定属性的 div 元素。
@@ -17,7 +17,7 @@ function elWith(attrs: Record<string, string>): HTMLElement {
 }
 
 /** 解析单个元素的全部指令，便于只关心唯一结果的用例 */
-function parseOne(attrs: Record<string, string>, prefix?: string): DirectiveInfo {
+function parseOne(attrs: Record<string, string>, prefix?: string): KylinDirectiveInfo {
     const list = getDirectives(elWith(attrs), prefix);
     expect(list).toHaveLength(1);
     return list[0]!;

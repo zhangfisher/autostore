@@ -1,4 +1,4 @@
-import { TemplateDirectiveBase } from "../base";
+import { KylinTemplateDirectiveBase } from "../base";
 
 /**
  * 转场动画指定
@@ -11,6 +11,6 @@ import { TemplateDirectiveBase } from "../base";
  *
  */
 
-export class TransitionDirective extends TemplateDirectiveBase {
+export class TransitionDirective extends KylinTemplateDirectiveBase {
     render() {}
 }

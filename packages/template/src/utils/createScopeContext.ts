@@ -1,36 +1,3 @@
-import { AutoStore, type Dict } from "autostore";
-
-/**
- * 模板渲染上下文聚合视图的类型。
- *
- * 除聚合后的数据键外，还包含两个特殊的只读成员：
- *
- * - `$context`：原始作用域栈引用，便于调用方直接操作栈
- *   （例如 `x-for` 写入新作用域）。
- * - `$store`：内部创建的 AutoStore 实例，便于指令/外部调用其 API
- *   （如 `watch`、`state` 等）。
- *
- * 两者均为只读、不可枚举的元属性，不污染 `Object.keys` / `for...in` /
- * 扩展运算符等数据遍历。`$context` / `$store` 是框架保留键，调用方应避免
- * 在作用域对象中使用同名字段。
- */
-export type KylinTemplateData<State extends Dict> = Record<string, any> & {
-    /**
-     * 原始作用域栈引用（只读、不可枚举的元属性）。
-     * 不参与 `Object.keys` / `for...in` / 扩展运算符等数据遍历。
-     */
-    readonly $context: Record<string, any>[];
-    /**
-     * AutoStore 实例引用（只读、不可枚举的元属性）。
-     * 供指令/外部读取使用 store 的 watch/state 等 API。
-     */
-    readonly $store: AutoStore<State>;
-};
-
-/** 元属性保留键 */
-const CONTEXT_REF = "$context";
-const STORE_REF = "$store";
-
 /**
  * 创建一个**只读**的模板渲染上下文聚合视图。
  *
@@ -59,24 +26,19 @@ const STORE_REF = "$store";
  * @returns 只读的 `AutoTemplateContext` 聚合视图
  */
 
-export function createStackedContext<State extends Dict>(
-    store?: AutoStore<State>,
-): KylinTemplateData<State> {
+export type ScopeContextOptions = {
+    initial?: (ctx: any[]) => void;
+    keyProps?: Record<string, any>;
+};
+
+export function createScopeContext<T extends Record<string, any> = Record<string, any>>(
+    options?: ScopeContextOptions,
+): T {
+    const { initial, keyProps } = options || {};
     const context: Record<string, any>[] = [];
-    if (store) {
-        context.push({
-            $state: store.state,
-        });
-        context.push(store.state);
+    if (typeof initial === "function") {
+        initial(context);
     }
-    context[0]!.$push = (data: Record<string, any>) => {
-        if (typeof data === "object") {
-            context.push(data);
-        }
-    };
-    context[0]!.$pop = () => {
-        if (context.length > (store ? 2 : 0)) context.pop();
-    };
 
     /**
      * 元属性注册表：登记所有只读、不可枚举的元属性键值。
@@ -85,10 +47,7 @@ export function createStackedContext<State extends Dict>(
      * （如 `toString`）干扰。新增元属性只需在此处登记一行，四个陷阱
      * 即可统一处理（DRY + 开闭原则）。
      */
-    const metaProps = new Map<string, any>([
-        [CONTEXT_REF, context],
-        [STORE_REF, store],
-    ]);
+    const metaProps = new Map<string, any>(keyProps ? Object.entries(keyProps) : []);
 
     /** 元属性统一的只读描述符模板（value 由调用处补充） */
     const metaDescriptor = (value: any) => ({
@@ -98,15 +57,12 @@ export function createStackedContext<State extends Dict>(
         writable: false,
     });
 
-    return new Proxy({} as KylinTemplateData<State>, {
+    return new Proxy({} as T, {
         get(_target, key) {
             // 元属性：暴露原始引用
             if (typeof key === "string") {
                 if (metaProps.has(key)) {
                     return metaProps.get(key);
-                }
-                if (key === "$state") {
-                    return context[0]!.$state;
                 }
             }
 

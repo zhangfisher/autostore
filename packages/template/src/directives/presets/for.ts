@@ -1,4 +1,4 @@
-import { TemplateDirectiveBase } from "../base";
+import { KylinTemplateDirectiveBase } from "../base";
 
 /**
  *
@@ -9,7 +9,7 @@ import { TemplateDirectiveBase } from "../base";
  *
  *
  */
-export class ForDirective extends TemplateDirectiveBase {
+export class ForDirective extends KylinTemplateDirectiveBase {
     render(el: HTMLElement, value: any, _modifiers: any[], template: HTMLElement) {
         // const itemTmpl = template.innerHTML;
         // const [item, items] = value.split("of");

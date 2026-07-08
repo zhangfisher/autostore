@@ -3,13 +3,14 @@
  */
 
 import type { TemplateDirectiveArgs } from "../directives/types";
-import type { AutoTemplateEngine } from "../engine";
-import type { AutoTemplateScope } from "../scope";
+import type { KylinTemplateEngine } from "../engine";
+import type { KylinTemplateScope } from "../scope";
 
-export type TemplateCompileContext = {
+export type KylinTemplateCompileContext = {
+    data: Record<string, any>;
     template: HTMLElement;
     el: Node;
-    scope: AutoTemplateScope;
-    engine: AutoTemplateEngine;
+    scope: KylinTemplateScope;
+    engine: KylinTemplateEngine;
     args: TemplateDirectiveArgs;
 };

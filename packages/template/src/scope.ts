@@ -1,7 +1,7 @@
-import type { AutoTemplateEngine } from "./engine";
-import { TemplateDirectiveBase } from "./directives/base";
+import type { KylinTemplateEngine } from "./engine";
+import { KylinTemplateDirectiveBase } from "./directives/base";
 import { runDirectives } from "./directives/utils/runDirectives";
-import type { TemplateCompileContext } from "./compile/types";
+import type { KylinTemplateCompileContext } from "./compile/types";
 import {
     getVal,
     type ComputedGetter,
@@ -11,6 +11,8 @@ import {
 } from "autostore";
 import { isStatePath } from "./utils/isStatePath";
 import { createStackedContext } from "./context";
+import { getDirectives } from "./directives/utils/getDirectives";
+import { createDirectives } from "./directives/utils/createDirectives";
 
 export type AutoTemplateBindingOptions = {
     /**
@@ -24,7 +26,7 @@ export type AutoTemplateBindingOptions = {
     /**
      * 指令
      */
-    directives: TemplateDirectiveBase[];
+    directives: KylinTemplateDirectiveBase[];
 };
 
 /**
@@ -33,7 +35,7 @@ export type AutoTemplateBindingOptions = {
  * 并在DOM元素更新/销毁时进行集中操作，比如注销事件订阅等。
  *
  */
-export class AutoTemplateScope {
+export class KylinTemplateScope {
     /**
      * 引用模板元素
      */
@@ -42,22 +44,26 @@ export class AutoTemplateScope {
      * 引用实际渲染的元素
      */
     readonly _el: WeakRef<Node>;
-    readonly engine: AutoTemplateEngine;
-    directives: TemplateDirectiveBase[] = [];
+    readonly engine: KylinTemplateEngine;
+    directives: KylinTemplateDirectiveBase[] = [];
     computedObjects: any[] = [];
     watchers: Watcher[] = [];
-
-    constructor(engine: AutoTemplateEngine, el: Node, template: Node) {
+    constructor(engine: KylinTemplateEngine, el: HTMLElement, template: HTMLElement) {
         this._template = new WeakRef(template);
         this._el = new WeakRef(el);
         this.engine = engine;
-        this.context = createStackedContext();
+        this._createDirectives();
     }
     get el() {
         return this._el.deref();
     }
     get template() {
         return this._template.deref();
+    }
+    private _createDirectives() {
+        const directiveDefine = getDirectives(this.template as HTMLElement);
+        // 创建指令实例
+        this.directives.push(...createDirectives(this.engine, directiveDefine, this));
     }
     /**
      * 侦听
@@ -87,7 +93,7 @@ export class AutoTemplateScope {
         return computedObj;
     }
 
-    compile(context: TemplateCompileContext, parent: HTMLElement) {
+    compile(context: KylinTemplateCompileContext, parent: HTMLElement | undefined) {
         const ctx: Record<string, any> = {};
         try {
             context.push(ctx);
@@ -108,9 +114,9 @@ export class AutoTemplateScope {
     }
 }
 
-export class AutoTemplateBindingManager extends Map<WeakRef<HTMLElement>, AutoTemplateScope> {
-    readonly engine: AutoTemplateEngine;
-    constructor(engine: AutoTemplateEngine) {
+export class AutoTemplateBindingManager extends Map<WeakRef<HTMLElement>, KylinTemplateScope> {
+    readonly engine: KylinTemplateEngine;
+    constructor(engine: KylinTemplateEngine) {
         super();
         this.engine = engine;
     }

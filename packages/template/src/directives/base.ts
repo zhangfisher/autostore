@@ -1,10 +1,10 @@
-import type { Watcher, WatchListener, WatchListenerOptions } from "autostore";
-import type { AutoTemplateScope } from "../scope";
-import type { AutoTemplateEngine } from "../engine";
-import type { DirectiveInfo } from "./types";
-import type { TemplateCompileContext } from "../compile/types";
+import type { Watcher } from "autostore";
+import type { KylinTemplateScope } from "../scope";
+import type { KylinTemplateEngine } from "../engine";
+import type { KylinDirectiveInfo } from "./types";
+import type { KylinTemplateCompileContext } from "../compile/types";
 
-export class TemplateDirectiveBase {
+export class KylinTemplateDirectiveBase {
     /**
      * 用于指定在一个元素上使用多个同名指令的处理策略
      *
@@ -18,7 +18,7 @@ export class TemplateDirectiveBase {
     /**
      * 原始指令信息（完整保留，含 name/attr 等）
      */
-    info: DirectiveInfo;
+    info: KylinDirectiveInfo;
     /**
      * 属性参数，如 @click 的 click、x-bind:title 的 title
      */
@@ -26,16 +26,20 @@ export class TemplateDirectiveBase {
     modifiers?: string[];
     options?: Record<string, any>;
     value?: any;
-    engine: AutoTemplateEngine;
+    engine: KylinTemplateEngine;
     watchers: Watcher[] = [];
-    binding: AutoTemplateScope;
+    binding: KylinTemplateScope;
     /**
      * @param engine   引擎实例
      * @param binding  所属绑定对象
      * @param info     原始指令信息（来自 getDirectives），完整保留；
      *                 value/modifiers/options/attr 同时提取为便捷字段
      */
-    constructor(engine: AutoTemplateEngine, binding: AutoTemplateScope, info: DirectiveInfo) {
+    constructor(
+        engine: KylinTemplateEngine,
+        binding: KylinTemplateScope,
+        info: KylinDirectiveInfo,
+    ) {
         this.engine = engine;
         this.binding = binding;
         this.info = info;
@@ -79,7 +83,7 @@ export class TemplateDirectiveBase {
      *
      */
     compile(
-        _context: TemplateCompileContext,
+        _context: KylinTemplateCompileContext,
         _parent: HTMLElement,
     ): HTMLElement | undefined | void {}
 }

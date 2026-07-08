@@ -1,5 +1,5 @@
-import { TemplateDirectiveBase } from "../base";
+import { KylinTemplateDirectiveBase } from "../base";
 
-export class ShowDirective extends TemplateDirectiveBase {
+export class ShowDirective extends KylinTemplateDirectiveBase {
     render() {}
 }

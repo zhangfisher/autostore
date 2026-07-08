@@ -1,7 +1,7 @@
-import type { AutoTemplateScope } from "../../scope";
-import type { AutoTemplateEngine } from "../../engine";
-import type { TemplateDirectiveBase } from "../base";
-import type { DirectiveInfo } from "../types";
+import type { KylinTemplateScope } from "../../scope";
+import type { KylinTemplateEngine } from "../../engine";
+import type { KylinTemplateDirectiveBase } from "../base";
+import type { KylinDirectiveInfo } from "../types";
 
 /**
  * 将读取的指令信息转换为指令实例对象
@@ -21,16 +21,17 @@ import type { DirectiveInfo } from "../types";
  *
  * @param engine     引擎实例（提供指令注册表，并注入到每个指令实例）
  * @param directives 待解析的指令信息列表
- * @param binding    所属绑定对象
+ * @param scope    所属绑定对象
  * @returns 按优先级排序后的指令实例列表
  */
 export function createDirectives(
-    engine: AutoTemplateEngine,
-    directives: DirectiveInfo[],
-    binding: AutoTemplateScope,
-): TemplateDirectiveBase[] {
+    engine: KylinTemplateEngine,
+    directives: KylinDirectiveInfo[],
+    scope: KylinTemplateScope,
+): KylinTemplateDirectiveBase[] {
     // 解析每个指令对应的类，并处理同名单例去重（取最后声明的）
-    const resolved: Array<{ info: DirectiveInfo; cls: typeof TemplateDirectiveBase }> = [];
+    const resolved: Array<{ info: KylinDirectiveInfo; cls: typeof KylinTemplateDirectiveBase }> =
+        [];
     // 单例指令 name -> resolved 中的索引，用于覆盖为最后声明
     const singletonPos = new Map<string, number>();
     for (const info of directives) {
@@ -56,5 +57,5 @@ export function createDirectives(
     resolved.sort((a, b) => b.cls.priority - a.cls.priority);
 
     // 实例化：将 DirectiveInfo 整体传入指令构造函数
-    return resolved.map(({ info, cls }) => new cls(engine, binding, info));
+    return resolved.map(({ info, cls }) => new cls(engine, scope, info));
 }

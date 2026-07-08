@@ -1,9 +1,8 @@
-import type { AnyAutoStore, AutoTemplateEngineOptions } from "./types";
+import type { AutoTemplateEngineOptions } from "./types";
 import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
-import { createStackedContext, type AutoTemplateContext } from "./context";
 import { AutoStore } from "autostore";
-import { createTemplateCompileContext } from "./compile/context";
+import type { KylinTemplateScope } from "./scope";
 
 /**
  * AutoStore Template 渲染引擎核心类
@@ -18,20 +17,19 @@ import { createTemplateCompileContext } from "./compile/context";
  * </div>
  * ```
  *
- * ```typescript
- * const store = createStore({ user: { name: 'John' } });
- * const app = new AutoTemplateEngine(document.getElementById('app'), store);
+ * ```typescript 
+ * const app = new KylinTemplateEngine(document.getElementById('app'), { user: { name: 'John' } });
  
  * ```
  */
-export class AutoTemplateEngine<State extends Record<string, any> = Record<string, any>> {
+export class KylinTemplateEngine<State extends Record<string, any> = Record<string, any>> {
     readonly el: HTMLElement;
     readonly store: AutoStore<State>;
     readonly options: Required<AutoTemplateEngineOptions>;
     readonly compiler: AutoTemplateCompiler;
     readonly directives: DirectiveManager;
     readonly template: HTMLElement;
-    readonly context: AutoTemplateContext<State>; // 运行上下文
+    readonly scopes = new Map<WeakRef<Node>, KylinTemplateScope>();
     /**
      * 构造函数
      *
@@ -41,7 +39,7 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
      * @throws {Error} 如果 el 不是 HTMLElement
      * @throws {Error} 如果 store 无效
      */
-    constructor(el: HTMLElement, state: State, options?: AutoTemplateEngineOptions) {
+    constructor(el: HTMLElement, state?: State, options?: AutoTemplateEngineOptions) {
         // 验证 el 必须是 HTMLElement
         if (!(el instanceof HTMLElement)) {
             throw new Error("Root element must be an HTMLElement");
@@ -52,7 +50,9 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
         this.options = Object.assign({}, options) as Required<AutoTemplateEngineOptions>;
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
-        this.context = createStackedContext<State>(this.store);
+    }
+    get log() {
+        return this.store.log.bind(this);
     }
     /**
      * 开始编译模板并应用

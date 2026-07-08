@@ -1,4 +1,4 @@
-import { TemplateDirectiveBase } from "../base";
+import { KylinTemplateDirectiveBase } from "../base";
 
 /**
  * 元素类名
@@ -24,6 +24,6 @@ import { TemplateDirectiveBase } from "../base";
  *  
 
  */
-export class SwitchDirective extends TemplateDirectiveBase {
+export class SwitchDirective extends KylinTemplateDirectiveBase {
     render() {}
 }

@@ -1,5 +1,5 @@
-import type { TemplateCompileContext } from "../../compile/types";
-import type { TemplateDirectiveBase } from "../base";
+import type { KylinTemplateCompileContext } from "../../compile/types";
+import type { KylinTemplateDirectiveBase } from "../base";
 
 /**
  * 串行执行指令列表中每个指令的 compile
@@ -13,8 +13,8 @@ import type { TemplateDirectiveBase } from "../base";
  * @param parent     透传给每个 directive.compile(parent) 的父元素
  */
 export function runDirectives(
-    directives: TemplateDirectiveBase[],
-    context: TemplateCompileContext,
+    directives: KylinTemplateDirectiveBase[],
+    context: KylinTemplateCompileContext,
     parent: HTMLElement,
 ): void {
     for (const directive of directives) {

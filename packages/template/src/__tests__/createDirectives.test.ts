@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { AutoStore } from "autostore";
-import { AutoTemplateScope } from "../scope";
+import { KylinTemplateScope } from "../scope";
 import { createDirectives } from "../directives/utils/createDirectives";
-import { TemplateDirectiveBase } from "../directives/base";
-import type { DirectiveInfo } from "../directives/types";
-import { AutoTemplateEngine } from "../engine";
+import { KylinTemplateDirectiveBase } from "../directives/base";
+import type { KylinDirectiveInfo } from "../directives/types";
+import { KylinTemplateEngine } from "../engine";
 
 /**
  * 测试用指令类
@@ -12,33 +12,33 @@ import { AutoTemplateEngine } from "../engine";
  * 通过 static name/priority/singleton 显式声明行为，避免依赖 preset 注册的完整性
  * （当前多数 preset 未定义 static name，无法真实注册）。
  */
-class HighPrioSingleton extends TemplateDirectiveBase {
+class HighPrioSingleton extends KylinTemplateDirectiveBase {
     static override name = "high";
     static override priority = 100;
     // singleton 继承默认值 true
 }
-class LowPrioSingleton extends TemplateDirectiveBase {
+class LowPrioSingleton extends KylinTemplateDirectiveBase {
     static override name = "low";
     static override priority = 10;
 }
-class MultiInstance extends TemplateDirectiveBase {
+class MultiInstance extends KylinTemplateDirectiveBase {
     static override name = "multi";
     static override priority = 50;
     static override singleton = false;
 }
-class SamePrioA extends TemplateDirectiveBase {
+class SamePrioA extends KylinTemplateDirectiveBase {
     static override name = "spa";
     static override priority = 30;
 }
-class SamePrioB extends TemplateDirectiveBase {
+class SamePrioB extends KylinTemplateDirectiveBase {
     static override name = "spb";
     static override priority = 30;
 }
 
 /** 构造最小可用 engine，并注册测试指令类 */
-function makeEngine(): AutoTemplateEngine {
+function makeEngine(): KylinTemplateEngine {
     const store = new AutoStore({ count: 0 });
-    const engine = new AutoTemplateEngine(document.createElement("div"), store);
+    const engine = new KylinTemplateEngine(document.createElement("div"), store);
     engine.directives.set("high", HighPrioSingleton);
     engine.directives.set("low", LowPrioSingleton);
     engine.directives.set("multi", MultiInstance);
@@ -47,15 +47,15 @@ function makeEngine(): AutoTemplateEngine {
     return engine;
 }
 
-function makeBinding(): AutoTemplateScope {
-    return new AutoTemplateScope(document.createElement("div"), document.createElement("div"));
+function makeBinding(): KylinTemplateScope {
+    return new KylinTemplateScope(document.createElement("div"), document.createElement("div"));
 }
 
 /** 包装独立函数 createDirectives，自动注入测试用 binding，简化用例 */
 function buildDirectives(
-    engine: AutoTemplateEngine,
-    infos: DirectiveInfo[],
-): TemplateDirectiveBase[] {
+    engine: KylinTemplateEngine,
+    infos: KylinDirectiveInfo[],
+): KylinTemplateDirectiveBase[] {
     return createDirectives(engine, infos, makeBinding());
 }
 
@@ -115,7 +115,7 @@ describe("createDirectives - 优先级排序", () => {
 
 describe("createDirectives - 实例字段注入", () => {
     test("DirectiveInfo 完整注入实例（value/attr/modifiers/options/info）", () => {
-        const info: DirectiveInfo = {
+        const info: KylinDirectiveInfo = {
             name: "high",
             value: "user.name",
             attr: "title",

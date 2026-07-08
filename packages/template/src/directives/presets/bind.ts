@@ -1,6 +1,6 @@
-import { TemplateDirectiveBase } from "../base";
+import { KylinTemplateDirectiveBase } from "../base";
 
-export class BindDirective extends TemplateDirectiveBase {
+export class BindDirective extends KylinTemplateDirectiveBase {
     override name = "bind";
     render() {}
 }
