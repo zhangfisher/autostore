@@ -51,7 +51,6 @@
  */
 
 import { ComputedObjects } from "../computed/computedObjects";
-import { GLOBAL_CONFIG_MANAGER } from "../consts";
 import type { Dict, ObjectKeyPaths, StatePath } from "../types";
 import { log, type LogLevel, type LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";
@@ -74,8 +73,6 @@ import { TimeoutError } from "../errors";
 import type { ObserverDescriptor } from "../observer/types";
 import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent";
 import { FastLiteEvent } from "fastevent/lite";
-import { computed } from "../computed/computed";
-import { watch } from "../watch/watch";
 import {
     forEachObject,
     getSnapshot,
@@ -83,7 +80,6 @@ import {
     isAsyncComputedValue,
     isFunction,
     isPathEq,
-    isSchemaBuilder,
     setVal,
     splitPath,
 } from "../utils";
@@ -141,7 +137,6 @@ export class AutoStore<
                     lazy: false,
                     enableValueExpr: false, // 禁用沙箱执行
                     log,
-                    shadow: false, // 禁用影子 Store
                     cascadeDestroy: true,
                 },
                 options,
@@ -213,9 +208,6 @@ export class AutoStore<
     }
     get resetable() {
         return this.options.resetable!;
-    }
-    get configManager() {
-        return this._configManager;
     }
     set resetable(value: boolean) {
         if (value) {
@@ -326,20 +318,6 @@ export class AutoStore<
         }
     }
     private subscribeCallbacks() {
-        if (this.options.onComputedCreated)
-            this.on("computed:created", this.options.onComputedCreated.bind(this));
-        if (this.options.onComputedDone)
-            this.on("computed:done", this.options.onComputedDone.bind(this));
-        if (this.options.onComputedError)
-            this.on("computed:error", this.options.onComputedError.bind(this));
-        if (this.options.onComputedCancel)
-            this.on("computed:cancel", this.options.onComputedCancel.bind(this));
-        if (this.options.onObserverBeforeCreate)
-            this.on("observer:beforeCreate", this.options.onObserverBeforeCreate.bind(this));
-        if (this.options.onObserverCreated)
-            this.on("observer:created", this.options.onObserverCreated.bind(this));
-        if (this.options.onObserverDestroyed)
-            this.on("observer:destroyed", this.options.onObserverDestroyed.bind(this));
         // 装配「自动销毁观察对象」特性（全局唯一 delete 侦听器）
         this._unloadCascadeDestroy = setupCascadeDestroy(this);
     }
@@ -653,11 +631,11 @@ export class AutoStore<
      *   })
      *
      * @param {function(ComputedState<State>): void} fn - 用于更新状态的函数,只能是同步函数
-     * @param {Object} [schema] - 可选参数
-     * @param {boolean} [schema.batch=true] -  是否批量更新，=false 不批量更新，=true 批量更新，批量更新事件名称为__batch_update__，=<批量更新事件名称> 指定一个字符串
-     * @param {boolean} [schema.silent=false] - 是否静默更新不触发事件，默认为 false
-     * @param {boolean} [schema.peep=false] - 是否偷看，即读取状态值但不触发事件，默认为 false
-     * @param {boolean} [schema.reply=false] - 当更新完成回放所有依赖的变化事件，默认为true，即回放所有依赖的变化事件，=false 不回放依赖的变化事件
+     * @param {Object} [options] - 可选参数
+     * @param {boolean} [options.batch=true] -  是否批量更新，=false 不批量更新，=true 批量更新，批量更新事件名称为__batch_update__，=<批量更新事件名称> 指定一个字符串
+     * @param {boolean} [options.silent=false] - 是否静默更新不触发事件，默认为 false
+     * @param {boolean} [options.peep=false] - 是否偷看，即读取状态值但不触发事件，默认为 false
+     * @param {boolean} [options.reply=false] - 当更新完成回放所有依赖的变化事件，默认为true，即回放所有依赖的变化事件，=false 不回放依赖的变化事件
      *  比如update(state=>{
      *
      *  })

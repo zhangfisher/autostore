@@ -45,7 +45,6 @@ export class ObserverObject<
     private _strPath?: string;
     private _error?: Error; // 记录最后一次运行时的错误
     store: AutoStore<any>;
-    _shadowStore!: AutoStore<any>;
     _refStateCtx?: RefStateContext;
     private _hooks?: ObserverObjectHooks;
 
@@ -80,7 +79,6 @@ export class ObserverObject<
         this.onInitOptions(this._options);
         this._createRefStateCtx(context?.value);
         this._depends = calcDependPaths(this._path, this._options.depends);
-        this._onObserverCreated();
         this._onInitial();
     }
     get type() {
@@ -184,11 +182,6 @@ export class ObserverObject<
         }
     }
 
-    private _onObserverCreated() {
-        if (typeof this.store.options.onObserverCreated === "function") {
-            this.store.options.onObserverCreated.call(this.store, this);
-        }
-    }
     private _onInitial() {
         if (this._options.initial !== undefined) {
             this.update(this._options.initial, { silent: true });
@@ -357,7 +350,7 @@ export class ObserverObject<
      *
      * - 自动销毁（依赖/自身路径被删除）、手动 destroy()、集合 delete(id) 均走此路径。
      * - 幂等：重复调用安全。
-     * - 触发 observer:destroyed 事件（onObserverDestroyed 通过该事件感知，绑定于 subscribeCallbacks）。
+     * - 触发 observer:destroyed 事件。
      */
     destroy() {
         if (this._destroyed) return;
@@ -374,14 +367,6 @@ export class ObserverObject<
      * 供子类重写，在销毁时执行清理（如取消 inflight 请求）
      */
     protected onDestroy() {}
-    get shadowStore() {
-        if (!this._shadowStore) {
-            this._shadowStore = isFunction(this.store.options.getShadowStore)
-                ? this.store.options.getShadowStore() || this.store
-                : this.store;
-        }
-        return this._shadowStore;
-    }
     /**
      * 供子类重写
      *

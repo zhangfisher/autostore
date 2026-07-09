@@ -5,7 +5,6 @@ import { CyleDependError, ValidateError } from "../errors";
 import type { ComputedState, Dict } from "../types";
 import type { AutoStore } from "./store";
 import { isNumber } from "../utils/isNumber";
-import { markRaw } from "../utils/markRaw";
 import { isPathMatched } from "../utils/isPathMatched";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
@@ -62,7 +61,6 @@ function isValidPass(
     path: string[],
     newValue: any,
     oldValue: any,
-    schema: undefined,
 ) {
     //@ts-expect-error
     const behavior = this._updateValidateBehavior;
@@ -153,22 +151,6 @@ function createProxy(
                     }
                     if (!isRaw(value) && Object.hasOwn(obj, key)) {
                         // 拦截
-                        if (typeof this.options.onObserverInitial === "function") {
-                            try {
-                                const isCreated = this.options.onObserverInitial.call(
-                                    this,
-                                    path,
-                                    value,
-                                    obj,
-                                );
-                                if (isCreated === false) {
-                                    markRaw(value);
-                                    return value;
-                                }
-                            } catch (e: any) {
-                                this.log(`onObserverBeforeCreate error: ${e.message}`, "error");
-                            }
-                        }
                         const pathKey = path.join(".");
                         try {
                             if (isComputedCreating.has(pathKey)) {
@@ -188,7 +170,7 @@ function createProxy(
                                 parentPath,
                                 obj,
                             ); // 如果值是一个函数，则创建一个计算属性或Watch对象
-                            // 如果返回的不是函数（比如是 schema builder 返回的 initialValue），则将其设置到对象中
+                            // 如果返回的不是函数，则将其设置到对象中
                             if (typeof result !== "function") {
                                 Reflect.set(obj, key, result, receiver);
                             }
@@ -217,7 +199,7 @@ function createProxy(
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
             const path = [...parentPath, String(key)];
-            const isValid = isValidPass.call(this, proxyObj, path, value, oldValue, undefined);
+            const isValid = isValidPass.call(this, proxyObj, path, value, oldValue);
             if (isValid) {
                 const success = Reflect.set(obj, key, value, receiver);
                 if (key === __NOTIFY__) return true;
@@ -228,10 +210,6 @@ function createProxy(
                         path,
                         indexs: [],
                         value: value,
-                        type: Array.isArray(obj) ? "update" : "set",
-                        path,
-                        indexs: [],
-                        value: val,
                         oldValue,
                         parentPath,
                         parent: obj,

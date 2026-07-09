@@ -38,7 +38,7 @@ type ObserverPathIndex = Map<string, Set<string>>;
 export function setupCascadeDestroy(store: AutoStore<any>): (() => void) | undefined {
     if (store.options.cascadeDestroy === false) return;
     const delimiter = store.options.delimiter;
-    // 两张 id 索引（精确 path/dep -> id 集合），按 observer.type 分流；schema 不入索引
+    // 两张 id 索引（精确 path/dep -> id 集合），按 observer.type 分流
     const computedIndex: ObserverPathIndex = new Map();
     const watchIndex: ObserverPathIndex = new Map();
     const pickIndex = (obj: ObserverObject) =>

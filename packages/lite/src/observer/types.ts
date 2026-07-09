@@ -8,7 +8,7 @@ import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
 import type { WatchDescriptorBuilder } from "../watch/types";
 
-export type ObserverType = "watch" | "computed" | "schema";
+export type ObserverType = "watch" | "computed";
 
 export enum ObserverScopeRef {
     Root = "ROOT",
@@ -56,7 +56,7 @@ export interface ObserverDescriptorBuilder<
     [OBSERVER_DESCRIPTOR_BUILDER_FLAG]: true;
 }
 
-export type ObserverOptions<Value = any, Schema extends Dict = Dict> = {
+export type ObserverOptions<Value = any> = {
     /**
      * 计算函数的唯一标识，如果未指定，则自动生成一个唯一标识
      */
@@ -160,11 +160,6 @@ export type ObserverOptions<Value = any, Schema extends Dict = Dict> = {
      * 默认 undefined → 继承 AutoStoreOptions.cascadeDestroy（默认 true）。
      */
     cascadeDestroy?: boolean;
-    /**
-     * 提供额外的元数据用于标识该属性
-     * 比如配置元数据等
-     */
-    schema?: Schema;
     /**
      * 提供额外的引用store，可以在computed或watch中使用ref引用其他store状态值
      * 并且在引用状态值变化时自动重新执行observerObject.run

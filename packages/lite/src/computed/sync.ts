@@ -139,7 +139,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
      */
     private collectDependencies() {
         const dependencies: string[][] = [];
-        const watcher = this.shadowStore.watch(
+        const watcher = this.store.watch(
             (event) => {
                 dependencies.push(event.path);
             },

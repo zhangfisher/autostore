@@ -184,8 +184,7 @@ export type ComputedDepends = ComputedDepend[];
 export interface ComputedOptions<
     Value = any,
     Scope = any,
-    Schema extends Dict = Dict,
-> extends ObserverOptions<Value, Schema> {
+> extends ObserverOptions<Value> {
     /**
      *
      * 计算函数的执行超时时间
@@ -325,10 +324,9 @@ export interface ComputedOptions<
 export type LiteComputedOptions<
     Value = any,
     Scope = any,
-    Schema extends Dict = Dict,
-> = ObserverOptions<Value, Schema> &
+> = ObserverOptions<Value> &
     Pick<
-        ComputedOptions<Value, Scope, Schema>,
+        ComputedOptions<Value, Scope>,
         "reports" | "onDone" | "onError" | "extras" | "immediate" | "reentry"
     >;
 

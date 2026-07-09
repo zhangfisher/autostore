@@ -4,12 +4,9 @@ import type { ObserverObject } from "../observer/observer";
 import type { ObserverType } from "../observer/types";
 import type { Dict, ObjectKeyPaths } from "../types";
 import { AutoStore } from "./store";
-import type { AutoStoreStateSchema } from "../schema/types";
-import type { ConfigManager, ConfigSource } from "../schema/manager";
 import type { TransformedEvents } from "fastevent";
 import type { ObserverDescriptor } from "../observer/types";
 import type { WatchObject } from "../watch/watchObject";
-import type { CreateSandboxOptions } from "../utils/createSandbox";
 
 export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
@@ -46,10 +43,6 @@ export interface StateOperate<Value = any, Parent = any> {
     reply?: boolean;
     flags?: number;
     /**
-     * 该操作是否来自shadow转发
-     */
-    shadow?: boolean;
-    /**
      * 当getter执行出错时携带此错误
      */
     error?: Error;
@@ -68,10 +61,6 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     debug?: boolean;
-    /**
-     * 声明是否shadow,默认false
-     */
-    shadow?: boolean;
     /**
      *  是否马上创建动态对象
      *
@@ -161,118 +150,9 @@ export interface AutoStoreOptions<State extends Dict> {
      */
     reentry?: boolean;
     /**
-     *
-     * 当创建计算属性时调用
-     *
-     * @description
-     *
-     * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
-     *
-     * @example
-     *
-     * createStore({...},{
-     *  onCreateComputed(computedObject){
-     *      const oldGetter = computedObject.getter
-     *      computedObject.getter = function(){
-     *          do something
-     *          return oldGetter.call(this,...arguments)
-     *      }
-     *  }
-     * })
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedCreated?: (this: AutoStore<State>, computedObject: ComputedObject) => void;
-
-    /**
-     * 当每一次计算完成后调用
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedDone?: (
-        this: AutoStore<State>,
-        args: { id: string; path: string[]; value: any; computedObject: ComputedObject },
-    ) => void;
-
-    /**
-     * 当计算出错时调用
-     * @param this
-     * @param error
-     * @param computedObject
-     * @returns
-     */
-    onComputedError?: (
-        this: AutoStore<State>,
-        args: { id: string; path: string[]; error: Error; computedObject: ComputedObject },
-    ) => void;
-    /**
-     * 当每一次计算对象被取消时调用
-     * 仅在异步计算时有效
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedCancel?: (
-        this: AutoStore<State>,
-        args: {
-            id: string;
-            path: string[];
-            reason: "timeout" | "abort" | "reentry" | "error";
-            computedObject: ComputedObject<any>;
-        },
-    ) => void;
-    onObserverBeforeCreate?: (
-        this: AutoStore<State>,
-        descriptor: ObserverDescriptor<any, any, any>,
-    ) => void;
-    /**
-     *
-     * 当创建观察对象实例化时调用
-     *
-     * 一般可以在此对ObserverObject进行一些处理
-     * 比如重新封装run函数等
-     *
-     */
-    onObserverCreated?: (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void;
-    /**
-     * 当观察对象被（自动）销毁时调用，与 onObserverCreated 对称。
-     */
-    onObserverDestroyed?: (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void;
-    /**
      * 当观察对象的依赖项或自身挂载路径被删除时是否级联销毁（cascade destroy），默认 true。
      */
     cascadeDestroy?: boolean;
-
-    /**
-     *
-     *
-     *
-     * 当状态值是一个函数时，创建对应的可观察对象前调用
-     *
-     * 即第一次读取时调用，
-     *
-     * 返回false则不创建对应的可观察对象，将函数标志为raw
-     *
-     */
-    onObserverInitial?: (
-        this: AutoStore<State>,
-        path: string[],
-        value: any,
-        parent: any,
-    ) => boolean | undefined;
-    /**
-     *
-     * 获取影子store
-     * 为所有observer对象提供store对象
-     *
-     */
-    getShadowStore?: () => AutoStore<any>;
-    /**
-     * 默认的値模式
-     */
-    defaultSchema?: Partial<AutoStoreStateSchema<any>>;
     /**
      *
      * 校验失败时的默认行为
@@ -315,14 +195,6 @@ export interface AutoStoreOptions<State extends Dict> {
      */
     validators?: Record<string, StateValidator<State>>;
     /**
-     * 提供一个配置管理器对象
-     */
-    configManager?: ConfigManager | ConfigSource;
-    /**
-     * 为当前Store的所有配置项均指定一个统一的前缀
-     */
-    configKey?: string;
-    /**
      *
      * 当启用时，如果值是一个字符串，并且以```xxx```形式，代表这是一个表达式
      * 则会创建一个代码执行沙箱运行并返回值
@@ -336,30 +208,6 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     enableValueExpr?: boolean;
-    /**
-     * 沙箱配置选项
-     *
-     * @description
-     *
-     * 当 enableValueExpr=true 时，用于配置代码执行沙箱的行为
-     */
-    sandbox?: {
-        /**
-         * 用于创建一个代码执行沙箱
-         *
-         * 可选的，如果没有提供时，会提供一个简单的基于new Function的沙箱
-         *
-         * @returns
-         */
-        create?: (
-            context: Record<string, any>,
-            options?: CreateSandboxOptions,
-        ) => (code: string) => any;
-        /**
-         * 为代码执行沙箱中的代码提供额外的上下文
-         */
-        context?: Record<string, any>;
-    };
     /**
      * 提供额外的引用store，可以在computed或watch中使用ref引用其他store状态值
      * 并且在引用状态值变化时自动重新执行observerObject.run

@@ -6,7 +6,6 @@ import type {
     ComputedGetter,
     SyncComputedDescriptorBuilder,
 } from "../computed";
-import type { SchemaDescriptorBuilder } from "../schema";
 import type { AutoStore } from "../store";
 import type { RawObject } from "../utils";
 import type { WatchDescriptorBuilder } from "../watch/types";
@@ -96,7 +95,6 @@ export type PickValues<T extends Record<string, any>> = Union<UnionToIntersectio
  * 提取计算属性的返回值类型
  *
  * 从各种计算属性描述符或函数中提取最终的值类型。支持：
- * - Schema 描述符构建器
  * - 同步计算属性描述符
  * - 异步计算属性描述符（返回 AsyncComputedValue）
  * - Watch 描述符
@@ -114,23 +112,21 @@ export type PickValues<T extends Record<string, any>> = Union<UnionToIntersectio
  * ```
  */
 export type PickComputedResult<T> =
-    T extends SchemaDescriptorBuilder<infer X>
+    T extends SyncComputedDescriptorBuilder<infer X, any>
         ? X
-        : T extends SyncComputedDescriptorBuilder<infer X, any>
+        : T extends AsyncLiteComputedDescriptorBuilder<infer X, any>
           ? X
-          : T extends AsyncLiteComputedDescriptorBuilder<infer X, any>
-            ? X
-            : T extends AsyncComputedDescriptorBuilder<infer X, any>
-              ? AsyncComputedValue<X>
-              : T extends WatchDescriptorBuilder<infer X, any>
+          : T extends AsyncComputedDescriptorBuilder<infer X, any>
+            ? AsyncComputedValue<X>
+            : T extends WatchDescriptorBuilder<infer X, any>
+              ? X
+              : T extends ComputedGetter<infer X, any>
                 ? X
-                : T extends ComputedGetter<infer X, any>
-                  ? X
-                  : // 同步函数
-                    T extends AsyncComputedGetter<infer X, any>
-                    ? AsyncComputedValue<X>
-                    : // 异步函数
-                      T;
+                : // 同步函数
+                  T extends AsyncComputedGetter<infer X, any>
+                  ? AsyncComputedValue<X>
+                  : // 异步函数
+                    T;
 
 /**
  * 转换状态中的计算属性函数为返回值类型
