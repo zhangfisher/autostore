@@ -206,11 +206,6 @@ export interface AutoStoreOptions<State extends Dict> {
      *
      */
     enableValueExpr?: boolean;
-    /**
-     * 提供额外的引用store，可以在computed或watch中使用ref引用其他store状态值
-     * 并且在引用状态值变化时自动重新执行observerObject.run
-     */
-    refStore?: AutoStore<any> | AutoStore<any>[];
 }
 
 export type UpdateOptions = {

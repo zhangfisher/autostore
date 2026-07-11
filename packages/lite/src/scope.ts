@@ -120,6 +120,11 @@ export function getValueScope<
     } catch (e: any) {
         computedObject.store.logger.error(
             `Error while getting computed scope ${computedObject.toString()}: ${e.message}`,
+<<<<<<< .mine
+
+=======
+            "error",
+>>>>>>> .theirs
         );
     }
     return scope;
