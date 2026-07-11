@@ -4,12 +4,11 @@
  *
  *
  */
-import { PATH_DELIMITER } from './consts';
-import type { ComputedContext, ComputedOptions, ComputedScope } from './computed/types';
-import { getValueByPath } from './utils/getValueByPath';
-import type { ComputedObject } from './computed/computedObject';
-import { getFullValuePath } from './utils/getFullValuePath';
-import { ObserverScopeRef, type ObserverType } from './observer/types';
+import type { ComputedContext, ComputedOptions, ComputedScope } from "./computed/types";
+import { getValueByPath } from "./utils/getValueByPath";
+import type { ComputedObject } from "./computed/computedObject";
+import { getFullValuePath } from "./utils/getFullValuePath";
+import { ObserverScopeRef, type ObserverType } from "./observer/types";
 
 /**
  * 获取Scope参数的值
@@ -25,7 +24,7 @@ function getScopeOptions(
     storeScope?: ComputedScope,
 ) {
     let scope = computedScope === undefined ? storeScope : computedScope;
-    if (typeof scope === 'function') {
+    if (typeof scope === "function") {
         try {
             scope = scope.call(valueObject.store, valueObject);
         } catch {}
@@ -58,7 +57,7 @@ export function getValueScope<
     let rootDraft = computedObject.store.state;
     const storeOptions = computedObject.store.options;
     // 1. 获取计算函数的根scope
-    if (typeof storeOptions.getRootScope === 'function') {
+    if (typeof storeOptions.getRootScope === "function") {
         const newDraft = storeOptions.getRootScope(computedObject, {
             observerType,
             valuePath: valueContext?.path,
@@ -88,9 +87,9 @@ export function getValueScope<
         } else if (scopeOption === ObserverScopeRef.Depends) {
             scope = computedObject.depends?.map((dep: any) => getValueByPath(rootDraft, dep));
         } else {
-            if (typeof scopeOption === 'string') {
+            if (typeof scopeOption === "string") {
                 // 当scope是以@开头的字符串时，代表是一个路径指向，如：@./user，代表其scope是由user属性值指向的对象路径
-                if (scopeOption.startsWith('@')) {
+                if (scopeOption.startsWith("@")) {
                     //
                     scope = getValueScope(computedObject, observerType, valueContext, {
                         ...computedOptions,
@@ -119,9 +118,8 @@ export function getValueScope<
             }
         }
     } catch (e: any) {
-        storeOptions.log!(
+        computedObject.store.logger.error(
             `Error while getting computed scope ${computedObject.toString()}: ${e.message}`,
-            'error',
         );
     }
     return scope;

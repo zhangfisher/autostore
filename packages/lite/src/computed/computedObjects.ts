@@ -17,7 +17,7 @@ import { isAbsolutePath } from "../utils/isAbsolutePath";
 import { isObserverDescriptor } from "../utils/isObserverDescriptor";
 import { PATH_DELIMITER } from "../consts";
 import { isPathEq } from "../utils";
-import { AsyncComputedObject } from "./liteAsync";
+import { AsyncComputedObject } from "./async";
 
 export class ComputedObjects<State extends Dict = Dict> extends Map<string, ComputedObject<Dict>> {
     constructor(public store: AutoStore<State>) {

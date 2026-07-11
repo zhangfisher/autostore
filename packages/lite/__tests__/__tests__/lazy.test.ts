@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { asyncComputed, AutoStore, computed, watch } from "../";
+import { asyncComputed, AutoStore, computed, watch } from "..";
 
 /**
  * lazy 选项测试

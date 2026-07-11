@@ -58,7 +58,7 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
     run(watchPath: string[], watchValue: any) {
         // 1. 检查是否启用
         if (!this.enable) {
-            this.store.log(`WatchObject <${this.toString()}> is disabled`);
+            this.store.logger.warn(`WatchObject <${this.toString()}> is disabled`);
             return;
         }
         let hasError: any;

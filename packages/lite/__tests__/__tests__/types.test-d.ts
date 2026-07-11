@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/noUnusedVariables: <noUnusedVariables> */
 import type { Equal, Expect } from "@type-challenges/utils";
-import type { ComputedState, Dict, GetTypeByPath, StatePath } from "../src/types/";
+import type { ComputedState, Dict, GetTypeByPath, StatePath } from "../src/types";
 import { configurable, s, schema, type ConfigurableKeyPaths } from "../src/schema";
 import { AutoStore } from "../src/store";
 import { computed } from "../src";

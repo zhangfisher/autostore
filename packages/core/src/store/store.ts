@@ -53,7 +53,6 @@
 import { ComputedObjects } from "../computed/computedObjects";
 import { GLOBAL_CONFIG_MANAGER } from "../consts";
 import type { Dict, ObjectKeyPaths, StatePath } from "../types";
-import { log, type LogLevel, type LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";
 import type { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
@@ -103,7 +102,7 @@ import type {
 import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 import { setupCascadeDestroy } from "../features/cascadeDestroy";
-import { ILogger } from "../utils/logger";
+import { createLogger, ILogger } from "flex-tools/misc/logger";
 
 export class AutoStore<
     State extends Dict,
@@ -150,7 +149,6 @@ export class AutoStore<
                     delimiter: ".",
                     lazy: false,
                     enableValueExpr: true,
-                    log,
                     shadow: false,
                     cascadeDestroy: true,
                 },
@@ -260,11 +258,7 @@ export class AutoStore<
     }
     get logger() {
         if (!this._logger) {
-            if (this.options.logger) {
-                this._logger = this.options.logger;
-            } else {
-                this._logger = createLogger(this.options);
-            }
+            this._logger = this.options.logger || createLogger({ debug: this.options.debug });
         }
         return this._logger!;
     }
@@ -284,7 +278,7 @@ export class AutoStore<
                 },
                 {
                     onError: (e: Error, code: string) => {
-                        this.log(e);
+                        this.logger.error(e);
                         return code;
                     },
                 },
@@ -314,8 +308,6 @@ export class AutoStore<
                 this.emit("reset", entry);
                 this.watchObjects.reset();
             }
-        } else {
-            this.log("resetable option is not enabled", "warn");
         }
     }
     private _createConfigManager() {
@@ -362,11 +354,6 @@ export class AutoStore<
             }
         }
     }
-    log(message: LogMessageArgs, level?: LogLevel) {
-        if (this.options.debug) {
-            this.options.log?.call(this, message, level);
-        }
-    }
     shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>) {
         return createShadow(this, state, options);
     }
@@ -378,7 +365,7 @@ export class AutoStore<
                     try {
                         ext(this);
                     } catch (e: any) {
-                        this.log(e.message, "warn");
+                        this.logger.error(e.message, "warn");
                     }
                 }
             });

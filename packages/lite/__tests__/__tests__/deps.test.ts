@@ -9,7 +9,7 @@ import {
     beforeEach,
     afterEach,
 } from "bun:test";
-import { AutoStore, computed, delay, StateOperate } from "../";
+import { AutoStore, computed, delay, StateOperate } from "..";
 
 describe("依赖关系管理", () => {
     test("异步依赖关系链计算", () => {

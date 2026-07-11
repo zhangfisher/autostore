@@ -1,11 +1,10 @@
 import { isRaw } from "../utils/isRaw";
 import { hookArrayMethods } from "./hookArray";
-import type { StateOperateType, StateValidator } from "./types";
-import { CyleDependError, ValidateError } from "../errors";
+import type { StateOperateType } from "./types";
+import { CyleDependError } from "../errors";
 import type { ComputedState, Dict } from "../types";
 import type { AutoStore } from "./store";
 import { isNumber } from "../utils/isNumber";
-import { isPathMatched } from "../utils/isPathMatched";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 
@@ -24,99 +23,6 @@ type CreateReactiveObjectOptions = {
     notify: (params: ReactiveNotifyParams) => void;
     createObserverObject: (path: string[], value: any, parentPath: string[], parent: any) => any;
 };
-
-/**
- * 获取指定路径的验证函数
- *
- * @param this - AutoStore 实例
- * @param path - 状态路径
- * @returns 验证函数，如果没有找到则返回 undefined
- */
-function getValidate(this: AutoStore<any>, path: string[]): StateValidator<any> | undefined {
-    // 优先在 validators 中查找匹配的验证函数
-    if (this.options.validators) {
-        const pathString = path.join(this.options.delimiter || ".");
-
-        // 查找完全匹配的验证器
-        if (this.options.validators[pathString]) {
-            return this.options.validators[pathString];
-        }
-
-        // 使用通配符匹配查找验证器
-        const validatorKeys = Object.keys(this.options.validators);
-        for (const key of validatorKeys) {
-            if (isPathMatched(path, key)) {
-                return this.options.validators[key];
-            }
-        }
-    }
-
-    // 如果在 validators 中没有找到，则返回 validate
-    return this.options.validate;
-}
-
-function isValidPass(
-    this: AutoStore<any>,
-    _: any,
-    path: string[],
-    newValue: any,
-    oldValue: any,
-) {
-    //@ts-expect-error
-    const behavior = this._updateValidateBehavior;
-    if (behavior === "none") return true;
-
-    const validate = getValidate.call(this, path);
-    if (typeof validate !== "function") return true;
-
-    let isPass: boolean | Error = true;
-    let error: any;
-    const pathKey = path.join(this.options.delimiter || ".");
-    const configKey =
-        this.options.configKey && this.options.configKey.trim().length > 0
-            ? `${this.options.configKey.trim()}.${pathKey}`
-            : pathKey;
-    try {
-        const isValid = validate!.call(this, newValue, oldValue, path);
-        if (isValid === false) {
-            // 返回 false 时，代表校验出错，因此应抛出一个错误
-            // 但是无法提供更精确的错误信息
-            throw new ValidateError();
-        }
-        // 校验成功，删除该路径的错误记录
-        if (this.errors) {
-            delete this.errors[pathKey];
-        }
-    } catch (e: any) {
-        error = e;
-        // 读取错误信息
-        const errMsg = validate.getErrorMessage?.(e) || e.message || e.stack;
-        this.errors[pathKey] = errMsg;
-        // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid
-        // 这样可以确保 configurable 中配置的 onInvalid 优先生效
-        const finalBehavior =
-            behavior || e.onInvalid || validate.onInvalid || this.options.onInvalid || "throw";
-
-        if (finalBehavior === "pass") {
-            isPass = true;
-        } else if (finalBehavior === "ignore") {
-            isPass = false;
-        } else if (finalBehavior === "throw-pass") {
-            isPass = e;
-        } else {
-            isPass = false;
-            throw e;
-        }
-    } finally {
-        this.emit("validate", {
-            path,
-            newValue,
-            oldValue,
-            error,
-        });
-    }
-    return isPass;
-}
 
 function createProxy(
     this: AutoStore<any>,
@@ -199,29 +105,21 @@ function createProxy(
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
             const path = [...parentPath, String(key)];
-            const isValid = isValidPass.call(this, proxyObj, path, value, oldValue);
-            if (isValid) {
-                const success = Reflect.set(obj, key, value, receiver);
-                if (key === __NOTIFY__) return true;
+            const success = Reflect.set(obj, key, value, receiver);
+            if (key === __NOTIFY__) return true;
 
-                if (success && key !== __NOTIFY__ && value !== oldValue) {
-                    options.notify({
-                        type: Array.isArray(obj) ? "update" : "set",
-                        path,
-                        indexs: [],
-                        value: value,
-                        oldValue,
-                        parentPath,
-                        parent: obj,
-                    });
-                }
-                if (isValid instanceof Error) {
-                    throw isValid;
-                }
-                return success;
-            } else {
-                return true;
+            if (success && key !== __NOTIFY__ && value !== oldValue) {
+                options.notify({
+                    type: Array.isArray(obj) ? "update" : "set",
+                    path,
+                    indexs: [],
+                    value: value,
+                    oldValue,
+                    parentPath,
+                    parent: obj,
+                });
             }
+            return success;
         },
         deleteProperty: (obj, prop) => {
             const value = obj[prop];

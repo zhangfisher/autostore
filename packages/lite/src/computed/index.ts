@@ -3,4 +3,4 @@ export * from "./computed";
 export * from "./computedObject";
 export * from "./computedObjects";
 export * from "./sync";
-export * from "./liteAsync";
+export * from "./async";

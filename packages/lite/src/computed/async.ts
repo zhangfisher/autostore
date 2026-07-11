@@ -56,13 +56,13 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         const { first } = options ?? {};
 
         if (this.isDisable(options?.enable)) {
-            this.store.log(() => `Async computed <${this.toString()}> is disabled`, "warn");
+            this.store.logger.warn(`Async computed <${this.toString()}> is disabled`);
             return;
         }
         this.error = undefined;
         this._firstRun = true;
         if (!first) {
-            this.store.log(() => `Run async computed for : ${this.toString()}`);
+            this.store.logger.info(`Run async computed for : ${this.toString()}`);
         }
 
         // 2. 合成最终的配置参数
@@ -80,9 +80,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         // 4. 检查是否有重入
         const { reentry } = finalComputedOptions;
         if (this._isRunning && !reentry) {
-            this.store.log(
+            this.store.logger.info(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
-                "warn",
             );
             this.emitStoreEvent("computed:cancel", {
                 path: this.path,
@@ -184,7 +183,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         });
     }
     protected onDependsChange(params: StateOperate) {
-        this.store.log(
+        this.store.logger.info(
             () =>
                 `AsyncComputed<${this.id}> is running by depends ${params.type}/${params.path.join(
                     ".",

@@ -10,6 +10,7 @@ import type { TransformedEvents } from "fastevent";
 import type { ObserverDescriptor } from "../observer/types";
 import type { WatchObject } from "../watch/watchObject";
 import type { CreateSandboxOptions } from "../utils/createSandbox";
+import type { ILogger } from "flex-tools";
 
 export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
@@ -146,7 +147,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param level
      * @returns
      */
-    log?: (message: any, level?: "info" | "error" | "warn") => void;
+    logger?: ILogger;
     /**
      * 启用重置功能
      *
@@ -239,7 +240,10 @@ export interface AutoStoreOptions<State extends Dict> {
     /**
      * 当观察对象被（自动）销毁时调用，与 onObserverCreated 对称。
      */
-    onObserverDestroyed?: (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void;
+    onObserverDestroyed?: (
+        this: AutoStore<State>,
+        observerObject: ObserverObject<any, any>,
+    ) => void;
     /**
      * 当观察对象的依赖项或自身挂载路径被删除时是否级联销毁（cascade destroy），默认 true。
      */

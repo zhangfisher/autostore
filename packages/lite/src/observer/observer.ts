@@ -326,7 +326,7 @@ export class ObserverObject<
                     operates: "write",
                 }),
             );
-            this.store.log(
+            this.store.logger.debug(
                 () =>
                     `${this.toString()} subscribed to ${this.depends!.map((depends) =>
                         depends.join(this.store.options.delimiter),

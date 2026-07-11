@@ -22,61 +22,69 @@ import { WeakObjectMap } from "./utils";
 const initialState = {};
 
 export class AutoStoreDevTools {
-	private reduxStore: any;
-	private _installed: boolean = false;
-	stores = new WeakObjectMap();
-	constructor() {
-		this.install();
-	}
-	add(store: any) {
-		this.stores.set(store.id, store);
-		store.operates.onAny((payload: any, type: any) => {
-			if (payload.type === "get") return;
-			this.reduxStore.dispatch({
-				type: `${payload.type}@${type}`,
-				store,
-				payload,
-			});
-		});
-		this.reduxStore.dispatch({
-			type: "__ADD_STORE__",
-			store,
-		});
-	}
-	remove(store: any) {
-		if (this.stores.has(store.id)) {
-			this.stores.delete(store.id);
-		}
-	}
-	private reducer(state: object = initialState, action: any) {
-		if (action.type.startsWith("@@")) return state;
-		if (action.type === "__ADD_STORE__") {
-			return {
-				...state,
-				[`AutoStore<${action.store.id}>`]: { ...action.store.getSnap() },
-			};
-		} else {
-			return {
-				...state,
-				[`AutoStore<${action.store.id}>`]: { ...action.store.getSnap() },
-			};
-		}
-	}
-	private install() {
-		if (this._installed) return;
-		// @ts-ignore
-		this.reduxStore = createStore(this.reducer, window.__REDUX_DEVTOOLS_EXTENSION__?.());
-		this._installed = true;
-		console.info("%c AutoStoreDevTools installed. Please open <Redux devtools> to view. %c", "color:red;", "");
-	}
+    private reduxStore: any;
+    private _installed: boolean = false;
+    stores = new WeakObjectMap();
+    constructor() {
+        this.install();
+    }
+    add(store: any) {
+        this.stores.set(store.id, store);
+        store.operates.onAny((payload: any, type: any) => {
+            if (payload.type === "get") return;
+            this.reduxStore.dispatch({
+                type: `${payload.type}@${type}`,
+                store,
+                payload,
+            });
+        });
+        this.reduxStore.dispatch({
+            type: "__ADD_STORE__",
+            store,
+        });
+    }
+    remove(store: any) {
+        if (this.stores.has(store.id)) {
+            this.stores.delete(store.id);
+        }
+    }
+    private reducer(state: object = initialState, action: any) {
+        if (action.type.startsWith("@@")) return state;
+        if (action.type === "__ADD_STORE__") {
+            return {
+                ...state,
+                [`AutoStore<${action.store.id}>`]: { ...action.store.getSnap() },
+            };
+        } else {
+            return {
+                ...state,
+                [`AutoStore<${action.store.id}>`]: { ...action.store.getSnap() },
+            };
+        }
+    }
+    private install() {
+        if (this._installed) return;
+        // @ts-ignore
+        this.reduxStore = createStore(this.reducer, window.__REDUX_DEVTOOLS_EXTENSION__?.());
+        this._installed = true;
+        console.info(
+            "%c AutoStoreDevTools installed. Please open <Redux devtools> to view. %c",
+            "color:red;",
+            "",
+        );
+    }
 }
 
 export function install() {
-	if (!globalThis.__AUTOSTORE_DEVTOOLS__) globalThis.__AUTOSTORE_DEVTOOLS__ = new AutoStoreDevTools();
+    // @ts-ignore
+    if (!globalThis.__AUTOSTORE_DEVTOOLS__)
+        // @ts-ignore
+        globalThis.__AUTOSTORE_DEVTOOLS__ = new AutoStoreDevTools();
 }
 
 declare global {
-	var __AUTOSTORE_DEVTOOLS__: AutoStoreDevTools;
+    // @ts-ignore
+    var __AUTOSTORE_DEVTOOLS__: AutoStoreDevTools;
 }
 
 install();

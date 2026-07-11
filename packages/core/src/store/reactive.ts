@@ -182,7 +182,7 @@ function createProxy(
                                     return value;
                                 }
                             } catch (e: any) {
-                                this.log(`onObserverBeforeCreate error: ${e.message}`, "error");
+                                this.logger.error(`onObserverBeforeCreate error: ${e.message}`);
                             }
                         }
                         const pathKey = path.join(".");

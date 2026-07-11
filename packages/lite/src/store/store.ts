@@ -52,7 +52,6 @@
 
 import { ComputedObjects } from "../computed/computedObjects";
 import type { Dict, ObjectKeyPaths, StatePath } from "../types";
-import { log, type LogLevel, type LogMessageArgs } from "../utils/log";
 import { getId } from "../utils/getId";
 import type { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
@@ -69,30 +68,15 @@ import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor";
 import { isMatchOperates } from "../utils/isMatchOperates";
 import type { GetTypeByPath } from "../types";
-import { TimeoutError } from "../errors";
 import type { ObserverDescriptor } from "../observer/types";
 import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent";
 import { FastLiteEvent } from "fastevent/lite";
-import {
-    forEachObject,
-    getSnapshot,
-    getVal,
-    isAsyncComputedValue,
-    isFunction,
-    isPathEq,
-    setVal,
-    splitPath,
-} from "../utils";
-import type {
-    AutoStoreOptions,
-    StateChangeEvents,
-    StateOperate,
-    StateTracker,
-    UpdateOptions,
-} from "./types";
-import { AsyncComputedObject } from "../computed/liteAsync";
+import { forEachObject, getSnapshot, getVal, isFunction, setVal, splitPath } from "../utils";
+import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
+import { AsyncComputedObject } from "../computed/async";
 import { setupCascadeDestroy } from "../features/cascadeDestroy";
-import { ILogger } from "../utils/logger";
+import { createLogger } from "flex-tools/misc/logger";
+import { ILogger } from "flex-tools/misc/logger";
 
 export class AutoStore<
     State extends Dict,
@@ -104,6 +88,7 @@ export class AutoStore<
     };
     private _data: ComputedState<State>;
     private _errors?: Record<string, string>;
+    private _safeEval?: (code: string) => any;
     public computedObjects: ComputedObjects<State>;
     public watchObjects: WatchObjects<State>;
     protected _operates = new FastLiteEvent<StateChangeEvents>({
@@ -136,7 +121,6 @@ export class AutoStore<
                     delimiter: ".",
                     lazy: false,
                     enableValueExpr: false, // 禁用沙箱执行
-                    log,
                     cascadeDestroy: true,
                 },
                 options,
@@ -163,7 +147,6 @@ export class AutoStore<
         this.peep = this.peep.bind(this);
         this.silentUpdate = this.silentUpdate.bind(this);
         this.batchUpdate = this.batchUpdate.bind(this);
-        this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
         this.installExtends();
         if (!this.options.lazy) forEachObject(this._data as any, this._onFirstEachState.bind(this));
@@ -235,9 +218,9 @@ export class AutoStore<
     get logger() {
         if (!this._logger) {
             if (this.options.logger) {
-                this._logger = this.options.logger;
+                this._logger = this.options.logger!;
             } else {
-                this._logger = createLogger(this.options);
+                this._logger = createLogger({ debug: this.options.debug });
             }
         }
         return this._logger!;
@@ -265,8 +248,6 @@ export class AutoStore<
                 this.emit("reset", entry);
                 this.watchObjects.reset();
             }
-        } else {
-            this.log("resetable option is not enabled", "warn");
         }
     }
     private _onFirstEachState({
@@ -298,11 +279,6 @@ export class AutoStore<
             }
         }
     }
-    log(message: LogMessageArgs, level?: LogLevel) {
-        if (this.options.debug) {
-            this.options.log?.call(this, message, level);
-        }
-    }
     private installExtends() {
         const exts = globalThis.__AUTOSTORE_EXTENDS__;
         if (Array.isArray(exts)) {
@@ -311,7 +287,7 @@ export class AutoStore<
                     try {
                         ext(this);
                     } catch (e: any) {
-                        this.log(e.message, "warn");
+                        this.logger.error(e);
                     }
                 }
             });
@@ -777,92 +753,6 @@ export class AutoStore<
         return noRepeat(dependencies);
     }
     /**
-     *  跟踪函数内部的操作
-     *
-     * 主要用于调试，跟踪函数内部的操作
-     *
-     * 比如我们想要知道执行一个state.xxx=1时，会触发哪些操作，可以通过此方法来跟踪
-     *
-     * 注意： 本方法主要用于调试，不要在生产环境中使用
-     *
-     * @example
-     *
-     * - 跟踪同步函数内部的操作
-     *   trace((state)=>{
-     *      state.xxx.xxx = 1
-     *   },(operate)=>{
-     *      console.log(operate)
-     *   })
-     *
-     * - 跟踪异步函数内部的操作???
-     *
-     *  注意：
-     *  由于无法控制异步上下文，特别是在同时运行多个异步trace函数时，不同的trace函数可能会相互干扰，无法区分。
-     *  因此，异步函数的跟踪难以实现，只能用在调试时且只运行单个异步trace函数时使用
-     *
-     *  const store= new AutoStore({
-     *      price:10,
-     *      count:2,
-     *      total: async (state)=>{
-     *          await delay(1000)
-     *          return state.price * state.count
-     *      }
-     *  })
-     *
-     *
-     *
-     *  const fn = async ()=>{
-     *     await fetch('xxxx')
-     *     store.state.price = 20
-     *     store.state.count= 3
-     * }
-     * 我们想要知道fn执行时会触发哪些操作，可以通过trace来跟踪
-     * const ops = await trace(fn).start()
-     *
-     *
-     *  我们可以看到，fn执行时，只有显式的对price和count，但是由于total是异步计算属性，所以也会触发total的变化。
-     *  因此也应该被跟踪，但是由于其是异步计算属性，所以不会被跟踪。
-     * 因此需要显式的提供一个abort参数来结束包括异步的跟踪过程
-     *
-     *
-     * stateTracker.stop()  // 取消跟踪
-     * const operates = await stateTracker.start((operate)=>{
-     *       return operate.type=='set' && path[0]==='total'
-     * })  // 开始跟踪
-     *
-     *
-     * @param fn
-     * @param operates
-     * @returns
-     */
-    trace(fn: () => any, operates: WatchListenerOptions["operates"] = "*"): StateTracker {
-        let watcher: Watcher;
-        return {
-            stop: () => watcher?.off(),
-            start: async (isStop?: (operate: StateOperate) => boolean) => {
-                const ops: StateOperate[] = [];
-                return new Promise((resolve) => {
-                    watcher = this.watch(
-                        (operate) => {
-                            ops.push(operate);
-                            if (isStop?.(operate)) {
-                                watcher.off();
-                                resolve(ops);
-                            }
-                        },
-                        { operates },
-                    );
-                    Promise.resolve(fn()).finally(() => {
-                        if (typeof isStop !== "function") {
-                            watcher.off();
-                            resolve(ops);
-                        }
-                    });
-                });
-            },
-        };
-    }
-    /**
      *
      * 当store销毁时调用，用来取消一些订阅
      *
@@ -912,47 +802,8 @@ export class AutoStore<
      *
      *
      */
-    get<T extends ObjectKeyPaths<State>>(
-        path: T,
-        options?: {
-            defaultValue?: any;
-            waitAsyncDone?: boolean;
-            timeout?: number;
-            expandAsync?: boolean;
-        },
-    ) {
-        const {
-            defaultValue,
-            timeout = 0,
-            expandAsync = false,
-            waitAsyncDone = false,
-        } = Object.assign({}, options);
-        const keyPath = Array.isArray(path) ? path : splitPath(path, this.delimiter);
-        const val = getVal(this.state, keyPath, defaultValue);
-        if (isAsyncComputedValue(val)) {
-            if (val.loading && waitAsyncDone) {
-                return new Promise((resolve, reject) => {
-                    let tmId: any, subscriber: any;
-                    if (timeout > 0) {
-                        tmId = setTimeout(() => {
-                            subscriber?.off();
-                            reject(new TimeoutError());
-                        }, timeout);
-                    }
-                    subscriber = this.on("computed:done", ({ path: spath }) => {
-                        if (isPathEq(keyPath, spath)) {
-                            clearTimeout(tmId);
-                            subscriber?.off();
-                            resolve(expandAsync ? val.value : val);
-                        }
-                    });
-                });
-            } else {
-                return expandAsync ? val.value : val;
-            }
-        } else {
-            return val;
-        }
+    get<T extends ObjectKeyPaths<State>>(path: T, defaultValue?: any) {
+        return getVal(this.state, path, defaultValue);
     }
     toString() {
         return `AutoStore<${this.id}>`;

@@ -7,6 +7,7 @@ import { AutoStore } from "./store";
 import type { TransformedEvents } from "fastevent";
 import type { ObserverDescriptor } from "../observer/types";
 import type { WatchObject } from "../watch/watchObject";
+import type { ILogger } from "flex-tools";
 
 export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
@@ -89,9 +90,6 @@ export interface AutoStoreOptions<State extends Dict> {
      * 可以通过enableComputed方法启用
      *
      * 相当于全局计算总开关
-     *
-     *
-     *
      */
     enableComputed?: boolean;
 
@@ -135,7 +133,7 @@ export interface AutoStoreOptions<State extends Dict> {
      * @param level
      * @returns
      */
-    log?: (message: any, level?: "info" | "error" | "warn") => void;
+    logger?: ILogger;
     /**
      * 启用重置功能
      *

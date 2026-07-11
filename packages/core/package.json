@@ -44,11 +44,11 @@
 		"@types/node": "^26.1.1",
 		"tsup": "^8.5.1",
 		"type-fest": "^5.8.0",
-		"typescript": "^7.0.2",
+		"typescript": "^6.0.2",
 		"zlib": "^1.0.5"
 	},
 	"dependencies": {
-		"fastevent": "^2.6.0",
+		"fastevent": "^2.6.1",
 		"flex-tools": "^1.6.4"
 	}
 }
