@@ -11,6 +11,7 @@ import type { ObserverDescriptor } from "../observer/types";
 import type { WatchObject } from "../watch/watchObject";
 import type { CreateSandboxOptions } from "../utils/createSandbox";
 import type { ILogger } from "flex-tools";
+import { IAutoStorePlugin } from "../plugin";
 
 export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
@@ -148,6 +149,11 @@ export interface AutoStoreOptions<State extends Dict> {
      * @returns
      */
     logger?: ILogger;
+
+    /**
+     * 功能插件
+     */
+    plugins?: IAutoStorePlugin[];
     /**
      * 启用重置功能
      *

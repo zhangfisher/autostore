@@ -101,8 +101,8 @@ import type {
 } from "./types";
 import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
-import { setupCascadeDestroy } from "../features/cascadeDestroy";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
+import { cascadeDestroy } from "../plugins/cascadeDestroy";
 
 export class AutoStore<
     State extends Dict,
@@ -134,7 +134,6 @@ export class AutoStore<
     private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
     private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
-    private _unloadCascadeDestroy?: () => void; // 级联销毁特性的卸载函数
     private _logger?: ILogger;
 
     constructor(state?: State, options?: AutoStoreOptions<State>) {
@@ -151,6 +150,7 @@ export class AutoStore<
                     enableValueExpr: true,
                     shadow: false,
                     cascadeDestroy: true,
+                    plugins: [],
                 },
                 options,
                 {
@@ -171,7 +171,6 @@ export class AutoStore<
             notify: this._notify.bind(this),
             createObserverObject: this.createObserverObject.bind(this),
         }) as ComputedState<State>;
-
         this.getSnap = this.getSnap.bind(this);
         this.watch = this.watch.bind(this);
         this.update = this.update.bind(this);
@@ -180,7 +179,6 @@ export class AutoStore<
         this.batchUpdate = this.batchUpdate.bind(this);
         this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
-        this.installExtends();
         if (!this.options.lazy) forEachObject(this._data as any, this._onFirstEachState.bind(this));
         if (this.options.resetable) this.resetable = true;
         // @ts-expect-error
@@ -188,6 +186,7 @@ export class AutoStore<
             // @ts-expect-error
             globalThis.__AUTOSTORE_DEVTOOLS__.add(this);
         }
+        this._installPlugins();
         this.emit("load", this);
     }
     get id() {
@@ -196,7 +195,9 @@ export class AutoStore<
     get state() {
         return this._data;
     }
-
+    get plugins() {
+        return this.options.plugins;
+    }
     get operates() {
         return this._operates;
     }
@@ -285,6 +286,25 @@ export class AutoStore<
             );
         }
     }
+    private _installPlugins() {
+        const plugins = this.options.plugins!;
+        // 内置插件
+        plugins.push(cascadeDestroy);
+        const exts = globalThis.__AUTOSTORE_PLUGINS__;
+        if (Array.isArray(exts)) {
+            plugins.push(...exts);
+        }
+        plugins.forEach((plugin) => {
+            try {
+                if (typeof plugin === "function") plugin(this);
+            } catch (e: any) {
+                this.logger.error(
+                    `Error while installing the plugin<${plugin.name}>:{}`,
+                    e.message,
+                );
+            }
+        });
+    }
     /**
      * 重置store恢复到状态的原始状态
      *
@@ -357,20 +377,6 @@ export class AutoStore<
     shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>) {
         return createShadow(this, state, options);
     }
-    private installExtends() {
-        const exts = globalThis.__AUTOSTORE_EXTENDS__;
-        if (Array.isArray(exts)) {
-            exts.forEach((ext) => {
-                if (typeof ext === "function") {
-                    try {
-                        ext(this);
-                    } catch (e: any) {
-                        this.logger.error(e.message, "warn");
-                    }
-                }
-            });
-        }
-    }
     private subscribeCallbacks() {
         if (this.options.onComputedCreated)
             this.on("computed:created", this.options.onComputedCreated.bind(this));
@@ -386,8 +392,6 @@ export class AutoStore<
             this.on("observer:created", this.options.onObserverCreated.bind(this));
         if (this.options.onObserverDestroyed)
             this.on("observer:destroyed", this.options.onObserverDestroyed.bind(this));
-        // 装配「自动销毁观察对象」特性（全局唯一 delete 侦听器）
-        this._unloadCascadeDestroy = setupCascadeDestroy(this);
     }
     /**
      *
@@ -948,7 +952,6 @@ export class AutoStore<
     destroy() {
         this.offAll();
         this._operates.offAll();
-        this._unloadCascadeDestroy?.();
         this.watchObjects.clear();
         this.computedObjects.clear();
         // 通知 ConfigManager 注销当前 store 注册的配置项，

@@ -1,2 +1,2 @@
-export * from "./cycleDetectExtend"
-export * from "./devTools"
+export * from "./cycleDetect";
+export * from "./devTools";

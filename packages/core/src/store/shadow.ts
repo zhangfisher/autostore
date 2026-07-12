@@ -45,9 +45,10 @@ export function createShadow<T extends Dict>(
     ) as AutoStore<T>;
 
     // 将操作转到到shadowStore
-    store.watch((operate) => {
+    const watcher = store.watch((operate) => {
         operate.shadow = true;
         shadowStore.operates.emit(operate.path.join(PATH_DELIMITER), operate);
     });
+    shadowStore.once("unload", () => watcher.off());
     return shadowStore;
 }

@@ -58,9 +58,9 @@ function createSyncerPlugin() {
 }
 
 export function installSyncerPlugin() {
-    if (!globalThis.__AUTOSTORE_EXTENDS__) {
-        globalThis.__AUTOSTORE_EXTENDS__ = [];
+    if (!globalThis.__AUTOSTORE_PLUGINS__) {
+        globalThis.__AUTOSTORE_PLUGINS__ = [];
     }
-    globalThis.__AUTOSTORE_EXTENDS__.push(createSyncerPlugin());
+    globalThis.__AUTOSTORE_PLUGINS__.push(createSyncerPlugin());
 }
 installSyncerPlugin();

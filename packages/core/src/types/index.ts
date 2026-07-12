@@ -28,6 +28,8 @@ import type { Get, Paths, UnionToIntersection } from "type-fest";
  */
 export type Union<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
+export type AnyAutoStore = AutoStore<any>;
+
 /**
  * 可变记录类型 - 用于构建类型安全的联合记录
  *
@@ -241,14 +243,14 @@ export type RequiredComputedState<T extends Record<string, any>> = {
  * @example
  * ```ts
  * // 在插件中注册扩展
- * globalThis.__AUTOSTORE_EXTENDS__ ||= [];
- * globalThis.__AUTOSTORE_EXTENDS__.push((store) => {
+ * globalThis.__AUTOSTORE_PLUGINS__ ||= [];
+ * globalThis.__AUTOSTORE_PLUGINS__.push((store) => {
  *   store.pluginMethod = () => { ... };
  * });
  * ```
  */
 declare global {
-    var __AUTOSTORE_EXTENDS__: (<S extends AutoStore<any>>(store: S) => void)[];
+    var __AUTOSTORE_PLUGINS__: (<S extends AnyAutoStore>(store: S) => void)[];
 }
 
 // ***************** 一些工具类型 *****************

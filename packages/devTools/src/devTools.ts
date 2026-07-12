@@ -65,6 +65,7 @@ export class AutoStoreDevTools {
     private install() {
         if (this._installed) return;
         // @ts-ignore
+        // oxlint-disable-next-line typescript/unbound-method
         this.reduxStore = createStore(this.reducer, window.__REDUX_DEVTOOLS_EXTENSION__?.());
         this._installed = true;
         console.info(
