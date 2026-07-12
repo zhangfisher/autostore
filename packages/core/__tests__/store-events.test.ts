@@ -47,54 +47,6 @@ describe("Store Events", () => {
             // 这是当前实现的限制
             expect(unloadEventFired).toBe(false);
         });
-
-        test("reset 事件在重置状态时触发", () => {
-            let resetEventFired = false;
-            let resetPath: string | undefined;
-
-            const store = new AutoStore(
-                {
-                    user: {
-                        name: "John",
-                        age: 30,
-                    },
-                    count: 1,
-                },
-                {
-                    resetable: true,
-                },
-            );
-
-            store.on("reset", (path) => {
-                resetEventFired = true;
-                resetPath = path;
-            });
-
-            // 修改状态
-            store.state.user.name = "Jane";
-            store.state.count = 10;
-
-            // 重置整个状态
-            store.reset();
-
-            expect(resetEventFired).toBe(true);
-            expect(resetPath).toBeUndefined();
-            expect(store.state.user.name).toBe("John");
-            expect(store.state.count).toBe(1); // count 重置为初始值
-
-            // 修改状态
-            store.state.user.name = "Bob";
-            store.state.count = 20;
-            resetEventFired = false;
-
-            // 重置特定路径
-            store.reset("user");
-
-            expect(resetEventFired).toBe(true);
-            expect(resetPath).toBe("user");
-            expect(store.state.user.name).toBe("John");
-            expect(store.state.count).toBe(20); // count 未被重置
-        });
     });
 
     describe("computed 生命周期事件", () => {

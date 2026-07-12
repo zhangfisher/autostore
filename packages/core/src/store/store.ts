@@ -80,7 +80,6 @@ import { computed } from "../computed/computed";
 import { watch } from "../watch/watch";
 import { configurable, schema } from "../schema/schema";
 import type { ConfigManager } from "../schema/manager";
-import { createShadow } from "./shadow";
 import {
     forEachObject,
     getSnapshot,
@@ -91,14 +90,9 @@ import {
     isSchemaBuilder,
     setVal,
     splitPath,
+    makeHook,
 } from "../utils";
-import type {
-    AutoStoreOptions,
-    StateChangeEvents,
-    StateOperate,
-    StateTracker,
-    UpdateOptions,
-} from "./types";
+import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
 import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
@@ -131,8 +125,6 @@ export class AutoStore<
     // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <noUnusedPrivateClassMembers>
     private _updateValidateBehavior: UpdateOptions["onInvalid"]; // 更新时的校验行为
     private _configManager?: ConfigManager; // 保存 ConfigManager 实例
-    private _updatedState?: Dict; // 脏状态数据，当启用resetable时用来保存上一次的状态数据
-    private _updatedWatcher: Watcher | undefined; // 脏状态侦听器
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _logger?: ILogger;
 
@@ -144,7 +136,6 @@ export class AutoStore<
                     debug: false,
                     enableComputed: true,
                     reentry: true,
-                    resetable: false,
                     delimiter: ".",
                     lazy: false,
                     enableValueExpr: true,
@@ -177,10 +168,8 @@ export class AutoStore<
         this.peep = this.peep.bind(this);
         this.silentUpdate = this.silentUpdate.bind(this);
         this.batchUpdate = this.batchUpdate.bind(this);
-        this.trace = this.trace.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
         if (!this.options.lazy) forEachObject(this._data as any, this._onFirstEachState.bind(this));
-        if (this.options.resetable) this.resetable = true;
         // @ts-expect-error
         if (this._options.debug && typeof globalThis.__AUTOSTORE_DEVTOOLS__ === "object") {
             // @ts-expect-error
@@ -228,34 +217,8 @@ export class AutoStore<
     get peeping() {
         return this._peeping;
     }
-    get resetable() {
-        return this.options.resetable!;
-    }
     get configManager() {
         return this._configManager;
-    }
-    set resetable(value: boolean) {
-        if (value) {
-            if (this._updatedWatcher) return;
-            this._updatedState = {};
-            this._updatedWatcher = this.watch(
-                ({ path, oldValue }) => {
-                    if (path.length === 0) return;
-                    const pathKey = path.join(this.delimiter);
-                    if (!pathKey.startsWith("#") && !(pathKey in this._updatedState!)) {
-                        this._updatedState![pathKey] = oldValue;
-                    }
-                },
-                { operates: "write" },
-            );
-        } else {
-            if (this._updatedWatcher) {
-                this._updatedWatcher.off();
-                this._updatedWatcher = undefined;
-            }
-            this._updatedState = {};
-        }
-        this.options.resetable = value;
     }
     get logger() {
         if (!this._logger) {
@@ -305,31 +268,6 @@ export class AutoStore<
             }
         });
     }
-    /**
-     * 重置store恢复到状态的原始状态
-     *
-     * @description
-     *
-     * 当启用resetable=true选项时，可以调用此方法将store恢复到初始状态
-     *
-     */
-    reset(entry?: string) {
-        if (this.options.resetable && this._updatedState) {
-            try {
-                this.batchUpdate((state) => {
-                    const prefix = entry ? `${entry}${this.delimiter}` : "";
-                    Object.entries(this._updatedState!).forEach(([key, value]) => {
-                        if (key.startsWith(prefix)) {
-                            setVal(state, splitPath(key, this.delimiter), value);
-                        }
-                    });
-                });
-            } finally {
-                this.emit("reset", entry);
-                this.watchObjects.reset();
-            }
-        }
-    }
     private _createConfigManager() {
         const configManager = this.options.configManager;
         // 只在 configKey 为 undefined 时设置为 store.id
@@ -374,24 +312,21 @@ export class AutoStore<
             }
         }
     }
-    shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>) {
-        return createShadow(this, state, options);
-    }
     private subscribeCallbacks() {
         if (this.options.onComputedCreated)
-            this.on("computed:created", this.options.onComputedCreated.bind(this));
+            this.on("computed:created", makeHook(this, "onComputedCreated"));
         if (this.options.onComputedDone)
-            this.on("computed:done", this.options.onComputedDone.bind(this));
+            this.on("computed:done", makeHook(this, "onComputedDone"));
         if (this.options.onComputedError)
-            this.on("computed:error", this.options.onComputedError.bind(this));
+            this.on("computed:error", makeHook(this, "onComputedError"));
         if (this.options.onComputedCancel)
-            this.on("computed:cancel", this.options.onComputedCancel.bind(this));
+            this.on("computed:cancel", makeHook(this, "onComputedCancel"));
         if (this.options.onObserverBeforeCreate)
-            this.on("observer:beforeCreate", this.options.onObserverBeforeCreate.bind(this));
+            this.on("observer:beforeCreate", makeHook(this, "onObserverBeforeCreate"));
         if (this.options.onObserverCreated)
-            this.on("observer:created", this.options.onObserverCreated.bind(this));
+            this.on("observer:created", makeHook(this, "onObserverCreated"));
         if (this.options.onObserverDestroyed)
-            this.on("observer:destroyed", this.options.onObserverDestroyed.bind(this));
+            this.on("observer:destroyed", makeHook(this, "onObserverDestroyed"));
     }
     /**
      *
@@ -857,92 +792,6 @@ export class AutoStore<
             watcher.off();
         }
         return noRepeat(dependencies);
-    }
-    /**
-     *  跟踪函数内部的操作
-     *
-     * 主要用于调试，跟踪函数内部的操作
-     *
-     * 比如我们想要知道执行一个state.xxx=1时，会触发哪些操作，可以通过此方法来跟踪
-     *
-     * 注意： 本方法主要用于调试，不要在生产环境中使用
-     *
-     * @example
-     *
-     * - 跟踪同步函数内部的操作
-     *   trace((state)=>{
-     *      state.xxx.xxx = 1
-     *   },(operate)=>{
-     *      console.log(operate)
-     *   })
-     *
-     * - 跟踪异步函数内部的操作???
-     *
-     *  注意：
-     *  由于无法控制异步上下文，特别是在同时运行多个异步trace函数时，不同的trace函数可能会相互干扰，无法区分。
-     *  因此，异步函数的跟踪难以实现，只能用在调试时且只运行单个异步trace函数时使用
-     *
-     *  const store= new AutoStore({
-     *      price:10,
-     *      count:2,
-     *      total: async (state)=>{
-     *          await delay(1000)
-     *          return state.price * state.count
-     *      }
-     *  })
-     *
-     *
-     *
-     *  const fn = async ()=>{
-     *     await fetch('xxxx')
-     *     store.state.price = 20
-     *     store.state.count= 3
-     * }
-     * 我们想要知道fn执行时会触发哪些操作，可以通过trace来跟踪
-     * const ops = await trace(fn).start()
-     *
-     *
-     *  我们可以看到，fn执行时，只有显式的对price和count，但是由于total是异步计算属性，所以也会触发total的变化。
-     *  因此也应该被跟踪，但是由于其是异步计算属性，所以不会被跟踪。
-     * 因此需要显式的提供一个abort参数来结束包括异步的跟踪过程
-     *
-     *
-     * stateTracker.stop()  // 取消跟踪
-     * const operates = await stateTracker.start((operate)=>{
-     *       return operate.type=='set' && path[0]==='total'
-     * })  // 开始跟踪
-     *
-     *
-     * @param fn
-     * @param operates
-     * @returns
-     */
-    trace(fn: () => any, operates: WatchListenerOptions["operates"] = "*"): StateTracker {
-        let watcher: Watcher;
-        return {
-            stop: () => watcher?.off(),
-            start: async (isStop?: (operate: StateOperate) => boolean) => {
-                const ops: StateOperate[] = [];
-                return new Promise((resolve) => {
-                    watcher = this.watch(
-                        (operate) => {
-                            ops.push(operate);
-                            if (isStop?.(operate)) {
-                                watcher.off();
-                                resolve(ops);
-                            }
-                        },
-                        { operates },
-                    );
-                    Promise.resolve(fn()).finally(() => {
-                        if (typeof isStop !== "function") {
-                            watcher.off();
-                            resolve(ops);
-                        }
-                    });
-                });
-            },
-        };
     }
     /**
      *

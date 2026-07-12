@@ -115,7 +115,6 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
         try {
             //
             this._reportComputedStatus("loading", true);
-            this._runHook("before", [getterArgs, options]);
             // 执行计算函数
             computedResult = await this.getter.call(this, scope, getterArgs);
             if (options.raw) markRaw(computedResult);
@@ -128,7 +127,6 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             this._reportComputedStatus("error", e.message);
         } finally {
             this._reportComputedStatus("loading", false);
-            this._runHook("after", [computedResult, hasError]);
         }
         // 计算完成后触发事件
         if (hasError) {

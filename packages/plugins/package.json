@@ -1,0 +1,14 @@
+{
+    "name": "@autostorejs/plugins",
+    "type": "module",
+    "module": "src/index.ts",
+    "scripts": {},
+    "devDependencies": {
+        "@types/bun": "latest",
+        "tsup": "^8.5.1"
+    },
+    "peerDependencies": {
+        "autostore": "workspace:*",
+        "typescript": "^5"
+    }
+}

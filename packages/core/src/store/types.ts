@@ -56,7 +56,119 @@ export interface StateOperate<Value = any, Parent = any> {
      */
     error?: Error;
 }
-export interface AutoStoreOptions<State extends Dict> {
+
+type ToArray<T> = T & T[];
+
+export interface AutoStoreHooks<State extends Dict> {
+    /**
+     *
+     * 当创建计算属性时调用
+     *
+     * @description
+     *
+     * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
+     *
+     * @example
+     *
+     * createStore({...},{
+     *  onCreateComputed(computedObject){
+     *      const oldGetter = computedObject.getter
+     *      computedObject.getter = function(){
+     *          do something
+     *          return oldGetter.call(this,...arguments)
+     *      }
+     *  }
+     * })
+     * @param this
+     * @param computedObject
+     * @returns
+     */
+    onComputedCreated?: ToArray<(this: AutoStore<State>, computedObject: ComputedObject) => void>;
+    /**
+     * 当每一次计算完成后调用
+     * @param this
+     * @param computedObject
+     * @returns
+     */
+    onComputedDone?: ToArray<
+        (
+            this: AutoStore<State>,
+            args: { id: string; path: string[]; value: any; computedObject: ComputedObject },
+        ) => void
+    >;
+
+    /**
+     * 当计算出错时调用
+     * @param this
+     * @param error
+     * @param computedObject
+     * @returns
+     */
+    onComputedError?: ToArray<
+        (
+            this: AutoStore<State>,
+            args: { id: string; path: string[]; error: Error; computedObject: ComputedObject },
+        ) => void
+    >;
+    /**
+     * 当每一次计算对象被取消时调用
+     * 仅在异步计算时有效
+     * @param this
+     * @param computedObject
+     * @returns
+     */
+    onComputedCancel?: ToArray<
+        (
+            this: AutoStore<State>,
+            args: {
+                id: string;
+                path: string[];
+                reason: "timeout" | "abort" | "reentry" | "error";
+                computedObject: ComputedObject<any>;
+            },
+        ) => void
+    >;
+
+    onObserverBeforeCreate?: ToArray<
+        (this: AutoStore<State>, descriptor: ObserverDescriptor<any, any, any>) => void
+    >;
+    /**
+     *
+     * 当创建观察对象实例化时调用
+     *
+     * 一般可以在此对ObserverObject进行一些处理
+     * 比如重新封装run函数等
+     *
+     */
+    onObserverCreated?: ToArray<
+        (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void
+    >;
+    /**
+     * 当观察对象被（自动）销毁时调用，与 onObserverCreated 对称。
+     */
+    onObserverDestroyed?: ToArray<
+        (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void
+    >;
+    /**
+     *
+     *
+     *
+     * 当状态值是一个函数时，创建对应的可观察对象前调用
+     *
+     * 即第一次读取时调用，
+     *
+     * 返回false则不创建对应的可观察对象，将函数标志为raw
+     *
+     * 如果提供多个则所有Hook均需要返回true
+     *
+     *
+     */
+    onObserverInitial?: ToArray<
+        (this: AutoStore<State>, path: string[], value: any, parent: any) => boolean | undefined
+    >;
+}
+
+export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<State> {
     /**
      * 提供一个id，用于标识当前store
      */
@@ -168,110 +280,10 @@ export interface AutoStoreOptions<State extends Dict> {
      */
     reentry?: boolean;
     /**
-     *
-     * 当创建计算属性时调用
-     *
-     * @description
-     *
-     * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
-     *
-     * @example
-     *
-     * createStore({...},{
-     *  onCreateComputed(computedObject){
-     *      const oldGetter = computedObject.getter
-     *      computedObject.getter = function(){
-     *          do something
-     *          return oldGetter.call(this,...arguments)
-     *      }
-     *  }
-     * })
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedCreated?: (this: AutoStore<State>, computedObject: ComputedObject) => void;
-
-    /**
-     * 当每一次计算完成后调用
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedDone?: (
-        this: AutoStore<State>,
-        args: { id: string; path: string[]; value: any; computedObject: ComputedObject },
-    ) => void;
-
-    /**
-     * 当计算出错时调用
-     * @param this
-     * @param error
-     * @param computedObject
-     * @returns
-     */
-    onComputedError?: (
-        this: AutoStore<State>,
-        args: { id: string; path: string[]; error: Error; computedObject: ComputedObject },
-    ) => void;
-    /**
-     * 当每一次计算对象被取消时调用
-     * 仅在异步计算时有效
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedCancel?: (
-        this: AutoStore<State>,
-        args: {
-            id: string;
-            path: string[];
-            reason: "timeout" | "abort" | "reentry" | "error";
-            computedObject: ComputedObject<any>;
-        },
-    ) => void;
-    onObserverBeforeCreate?: (
-        this: AutoStore<State>,
-        descriptor: ObserverDescriptor<any, any, any>,
-    ) => void;
-    /**
-     *
-     * 当创建观察对象实例化时调用
-     *
-     * 一般可以在此对ObserverObject进行一些处理
-     * 比如重新封装run函数等
-     *
-     */
-    onObserverCreated?: (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void;
-    /**
-     * 当观察对象被（自动）销毁时调用，与 onObserverCreated 对称。
-     */
-    onObserverDestroyed?: (
-        this: AutoStore<State>,
-        observerObject: ObserverObject<any, any>,
-    ) => void;
-    /**
      * 当观察对象的依赖项或自身挂载路径被删除时是否级联销毁（cascade destroy），默认 true。
      */
     cascadeDestroy?: boolean;
 
-    /**
-     *
-     *
-     *
-     * 当状态值是一个函数时，创建对应的可观察对象前调用
-     *
-     * 即第一次读取时调用，
-     *
-     * 返回false则不创建对应的可观察对象，将函数标志为raw
-     *
-     */
-    onObserverInitial?: (
-        this: AutoStore<State>,
-        path: string[],
-        value: any,
-        parent: any,
-    ) => boolean | undefined;
     /**
      *
      * 获取影子store
@@ -440,33 +452,20 @@ export type UpdateOptions = {
     flags?: number;
 };
 
-export type StateTracker = {
-    stop: () => void;
-    start(isStop?: (operate: StateOperate) => boolean): Promise<StateOperate[]>;
-};
-
-export type StoreSyncer = { on: () => void; off: () => void };
-
-export type StoreSyncOptions = {
-    from?: string;
-    to?: string;
-    filter?: (this: AutoStore<any>, operate: StateOperate) => boolean;
-    immediate?: boolean; // 初始化时立刻同步一次
-    direction?: "both" | "forward" | "backward"; // 0:双向同步, 1: from->to,  2: to->from
-    // 同步时，是否路径进行映射处理，比如将['order','price']映射成['order.price']等
-    pathMap?: {
-        from: (path: string[], value: any) => string[] | undefined;
-        to: (path: string[], value: any) => string[] | undefined;
-    };
-};
-
 export type AutoStoreEvents = TransformedEvents<{
-    load: AutoStore<any>; // 响应对象创建后
-    unload: AutoStore<any>; // 响应对象销毁后
-    reset: string | undefined; // 对象重置时触发，入参为重置的路径字符串
+    // 响应对象创建后
+    load: AutoStore<any>;
+    // 响应对象销毁后
+    unload: AutoStore<any>;
+    // 对象重置时触发，入参为重置的路径字符串
+    reset: string | undefined;
     "computed:created": ComputedObject; // 当计算对象创建时
-    "computed:done": { id: string; path: string[]; value: any; computedObject: ComputedObject }; // 当计算函数执行成功后
-    "computed:error": { id: string; path: string[]; error: any; computedObject: ComputedObject }; // 当计算函数执行出错时
+    // 当计算属性准备运行前
+    "computed:before": { computedObject: ComputedObject };
+    // 当计算函数执行成功后
+    "computed:done": { id: string; path: string[]; value: any; computedObject: ComputedObject };
+    // 当计算函数执行出错时
+    "computed:error": { id: string; path: string[]; error: any; computedObject: ComputedObject };
     "computed:cancel": {
         id: string;
         path: string[];

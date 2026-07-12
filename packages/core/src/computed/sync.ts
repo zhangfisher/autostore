@@ -75,7 +75,6 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
                 first,
                 ref: this._refStateCtx?.ref,
             };
-            this._runHook("before", [getterArgs, finalComputedOptions]);
             computedResult = this.getter.call(this, scope, getterArgs);
             if (finalComputedOptions.raw) markRaw(computedResult);
         } catch (e: any) {
@@ -120,7 +119,6 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
                 });
             }
         }
-        this._runHook("after", [computedResult, this.error]);
     }
     /**
      * 自动收集同步依赖

@@ -57,18 +57,19 @@
  * @param operates
  * @returns
  */
-import { StateOperate, StateTracker } from "../store/types";
-import { AnyAutoStore } from "../types";
-import { Watcher, WatchListenerOptions } from "../watch/types";
 
-interface AutoStore {
-    trace(fn: () => any, operates: WatchListenerOptions["operates"]): StateTracker;
-}
+import type { StateOperate, Watcher, WatchListenerOptions, AnyAutoStore, Dict } from "autostore";
+import { installPlugin } from "./utils/installPlugin";
+
+export type StateTracker = {
+    stop: () => void;
+    start(isStop?: (operate: StateOperate) => boolean): Promise<StateOperate[]>;
+};
 
 export function trace(store: AnyAutoStore) {
     store.trace = function (
         fn: () => any,
-        operates: WatchListenerOptions["operates"] = "*",
+        operates?: WatchListenerOptions["operates"],
     ): StateTracker {
         let watcher: Watcher;
         return {
@@ -97,3 +98,9 @@ export function trace(store: AnyAutoStore) {
         };
     };
 }
+declare module "autostore" {
+    export interface AutoStore<State extends Dict, Options = unknown> {
+        trace(fn: () => any, operates?: WatchListenerOptions["operates"]): StateTracker;
+    }
+}
+installPlugin(trace);

@@ -47,7 +47,6 @@ export class ObserverObject<
     store: AutoStore<any>;
     _shadowStore!: AutoStore<any>;
     _refStateCtx?: RefStateContext;
-    private _hooks?: ObserverObjectHooks;
 
     /**
      *  构造函数。
@@ -80,7 +79,6 @@ export class ObserverObject<
         this.onInitOptions(this._options);
         this._createRefStateCtx(context?.value);
         this._depends = calcDependPaths(this._path, this._options.depends);
-        this._onObserverCreated();
         this._onInitial();
     }
     get type() {
@@ -124,12 +122,6 @@ export class ObserverObject<
     }
     get destroyed() {
         return this._destroyed;
-    }
-    get hooks() {
-        if (!this._hooks) {
-            this._hooks = { before: [], after: [] };
-        }
-        return this._hooks!;
     }
     get depends() {
         return this._depends;
@@ -184,11 +176,6 @@ export class ObserverObject<
         }
     }
 
-    private _onObserverCreated() {
-        if (typeof this.store.options.onObserverCreated === "function") {
-            this.store.options.onObserverCreated.call(this.store, this);
-        }
-    }
     private _onInitial() {
         if (this._options.initial !== undefined) {
             this.update(this._options.initial, { silent: true });
@@ -374,6 +361,7 @@ export class ObserverObject<
      * 供子类重写，在销毁时执行清理（如取消 inflight 请求）
      */
     protected onDestroy() {}
+
     get shadowStore() {
         if (!this._shadowStore) {
             this._shadowStore = isFunction(this.store.options.getShadowStore)
@@ -388,16 +376,6 @@ export class ObserverObject<
      */ //  eslint-disable-next-line @typescript-eslint/no-unused-vars
     run(..._args: any[]): any {}
     protected getGetterArgs() {}
-
-    protected _runHook(name: keyof ObserverObjectHooks, args: any[]) {
-        try {
-            this._hooks?.[name]?.forEach((hook) => {
-                try {
-                    return hook.apply(this, args as any);
-                } catch {}
-            });
-        } catch {}
-    }
     /**
      * 当执行store.reset时调用
      */

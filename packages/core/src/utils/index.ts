@@ -45,3 +45,6 @@ export * from "./getAbsolutePath";
 export * from "./getComputedType";
 export * from "./isAsyncComputed";
 export * from "./isLiteAsyncComputed";
+export * from "./safeExecHooks";
+export * from "./makeHook";
+export * from "./execObserverInitial";

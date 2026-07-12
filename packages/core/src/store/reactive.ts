@@ -6,6 +6,7 @@ import type { ComputedState, Dict } from "../types";
 import type { AutoStore } from "./store";
 import { isNumber } from "../utils/isNumber";
 import { markRaw } from "../utils/markRaw";
+import { execObserverInitial } from "../utils/execObserverInitial";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
 
@@ -169,21 +170,10 @@ function createProxy(
                     }
                     if (!isRaw(value) && Object.hasOwn(obj, key)) {
                         // 拦截
-                        if (typeof this.options.onObserverInitial === "function") {
-                            try {
-                                const isCreated = this.options.onObserverInitial.call(
-                                    this,
-                                    path,
-                                    value,
-                                    obj,
-                                );
-                                if (isCreated === false) {
-                                    markRaw(value);
-                                    return value;
-                                }
-                            } catch (e: any) {
-                                this.logger.error(`onObserverBeforeCreate error: ${e.message}`);
-                            }
+                        const isCreated = execObserverInitial(this, path, value, obj);
+                        if (isCreated === false) {
+                            markRaw(value);
+                            return value;
                         }
                         const pathKey = path.join(".");
                         try {

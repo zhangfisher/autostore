@@ -63,7 +63,7 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
         }
         let hasError: any;
         try {
-            this._runHook("before", [this, this.options]);
+            // this._runHook("before", [this, this.options]);
             // 2.  执行监听函数
             const result = this.getter?.call(
                 this,
@@ -82,7 +82,7 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
             hasError = e;
             this.emitStoreEvent("watch:error", { error: e, watchObject: this });
         } finally {
-            this._runHook("after", [this.value, hasError]);
+            // this._runHook("after", [this.value, hasError]);
         }
     }
 }
