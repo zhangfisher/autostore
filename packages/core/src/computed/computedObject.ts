@@ -34,6 +34,7 @@ export class ComputedObject<
     ) {
         super(store, descriptor, context);
         descriptor.options.depends = calcDependPaths(this.path, this.options.depends);
+        this.silentUpdate(this.initial!);
     }
     toString() {
         return `ComputedObject<${joinValuePath(this.path)}>`;

@@ -64,7 +64,7 @@ export function computed<Value = any, Scope = any>(): any {
 
     const descriptorBuilder = () => {
         const descriptor = {
-            type: "computed",
+            type: opts.async ? "asyncComputed" : "computed",
             getter,
             options: opts,
             [OBSERVER_DESCRIPTOR_FLAG]: true,

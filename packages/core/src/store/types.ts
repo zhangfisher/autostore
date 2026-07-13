@@ -1,5 +1,5 @@
 import type { ComputedObject } from "../computed/computedObject";
-import type { ComputedDescriptor, ComputedGetterArgs, ComputedScope } from "../computed/types";
+import type { ComputedGetterArgs, ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
 import type { ObserverType } from "../observer/types";
 import type { Dict, ObjectKeyPaths } from "../types";
@@ -12,7 +12,6 @@ import type { WatchObject } from "../watch/watchObject";
 import type { CreateSandboxOptions } from "../utils/createSandbox";
 import type { ILogger } from "flex-tools";
 import { IAutoStorePlugin } from "../plugin";
-import { ComputedScope } from "../computed/types";
 
 export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
@@ -58,7 +57,7 @@ export interface StateOperate<Value = any, Parent = any> {
     error?: Error;
 }
 
-type ToArray<T> = T & T[];
+type ToArray<T> = T | T[];
 
 export interface AutoStoreHooks<State extends Dict> {
     /**
@@ -388,6 +387,10 @@ export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<Sta
      * 并且在引用状态值变化时自动重新执行observerObject.run
      */
     refStore?: AutoStore<any> | AutoStore<any>[];
+    /**
+     * 注册Observer构建器
+     */
+    observerBuilders?: Record<string, ObserverDescriptor<any, any, any>>;
 }
 
 export type UpdateOptions = {
@@ -486,7 +489,7 @@ export type AutoStoreEvents = TransformedEvents<{
     "watch:done": { value: any; watchObject: WatchObject };
     "watch:error": { error: any; watchObject: WatchObject };
     //
-    "observer:beforeCreate": ComputedDescriptor;
+    "observer:beforeCreate": ObserverDescriptor<any, any, any>;
     "observer:created": ObserverObject<any, any>;
     "observer:destroyed": ObserverObject<any, any>;
     "observer:done": ObserverDescriptor<any, any, any>;

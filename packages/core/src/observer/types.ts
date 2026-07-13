@@ -8,7 +8,7 @@ import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
 import type { WatchDescriptorBuilder } from "../watch/types";
 
-export type ObserverType = "watch" | "computed" | "schema";
+export type ObserverType = "watch" | "schema" | "computed" | "asyncComputed" | "turboAsyncComputed";
 
 export enum ObserverScopeRef {
     Root = "ROOT",

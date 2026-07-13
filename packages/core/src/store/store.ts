@@ -72,7 +72,7 @@ import { getObserverDescriptor } from "../utils/getObserverDescriptor";
 import { isMatchOperates } from "../utils/isMatchOperates";
 import type { GetTypeByPath } from "../types";
 import { TimeoutError } from "../errors";
-import type { ObserverDescriptor } from "../observer/types";
+import type { AnyObserverDescriptor, ObserverDescriptor } from "../observer/types";
 import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent";
 import { FastLiteEvent } from "fastevent/lite";
 import { createSandbox } from "../utils/createSandbox";
@@ -128,6 +128,8 @@ export class AutoStore<
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _logger?: ILogger;
 
+    observerBuilders!: Record<string, any>;
+
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
             Object.assign(
@@ -157,6 +159,7 @@ export class AutoStore<
         this._createConfigManager();
         this.computedObjects = new ComputedObjects<State>(this);
         this.watchObjects = new WatchObjects<State>(this);
+        this._initObserverBuilders();
         this.subscribeCallbacks();
         this._data = createReactiveObject.call(this as any, state || {}, {
             notify: this._notify.bind(this),
@@ -225,6 +228,53 @@ export class AutoStore<
             this._logger = this.options.logger || createLogger({ debug: this.options.debug });
         }
         return this._logger!;
+    }
+
+    private _initObserverBuilders() {
+        // const initComputed = (computedObj: ComputedObject) => {
+        //     computedObj.silentUpdate(computedObj.initial);
+        //     this.computedObjects.set(computedObj.id, computedObj);
+        //     this.emit("computed:created", computedObj);
+        // };
+
+        this.observerBuilders = {
+            computed: (descriptor: AnyObserverDescriptor, context: any) => {
+                const computedObj = new SyncComputedObject(
+                    this,
+                    descriptor,
+                    context,
+                ) as unknown as ComputedObject;
+
+                this.computedObjects.set(computedObj.id, computedObj);
+                this.emit("computed:created", computedObj);
+                return computedObj;
+            },
+            asyncComputed: (descriptor: AnyObserverDescriptor, context: any) => {
+                const computedObj = new AsyncLiteComputedObject(
+                    this,
+                    descriptor,
+                    context,
+                ) as unknown as ComputedObject;
+                this.computedObjects.set(computedObj.id, computedObj);
+                this.emit("computed:created", computedObj);
+                return computedObj;
+            },
+            turboAsyncComputed: (descriptor: AnyObserverDescriptor, context: any) => {
+                const computedObj = new AsyncComputedObject(
+                    this,
+                    descriptor as ComputedDescriptor,
+                    context,
+                ) as unknown as ComputedObject;
+                this.computedObjects.set(computedObj.id, computedObj);
+                return computedObj;
+            },
+            watch: (descriptor: AnyObserverDescriptor, context: any) => {
+                const watchObj = new WatchObject(this, descriptor, context);
+                this.watchObjects.set(watchObj.id, watchObj);
+                return watchObj;
+            },
+            ...this.options.observerBuilders,
+        };
     }
     private _createSandbox() {
         if (this.options.enableValueExpr) {
@@ -315,8 +365,7 @@ export class AutoStore<
     private subscribeCallbacks() {
         if (this.options.onComputedCreated)
             this.on("computed:created", makeHook(this, "onComputedCreated"));
-        if (this.options.onComputedDone)
-            this.on("computed:done", makeHook(this, "onComputedDone"));
+        if (this.options.onComputedDone) this.on("computed:done", makeHook(this, "onComputedDone"));
         if (this.options.onComputedError)
             this.on("computed:error", makeHook(this, "onComputedError"));
         if (this.options.onComputedCancel)
@@ -490,14 +539,14 @@ export class AutoStore<
             return descriptor.value;
         } else {
             const descriptor = getObserverDescriptor(value);
-            const computedCtx = { path, value, parentPath, parent };
+            const context = { path, value, parentPath, parent };
             if (descriptor) {
-                if (descriptor.type === "computed") {
-                    const computedObj = this._createComputed(descriptor, computedCtx);
-                    return computedObj?.initial;
-                } else if (descriptor.type === "watch") {
-                    const watchObj = this._createWatch(descriptor, computedCtx);
-                    return watchObj?.initial;
+                const builder = this.observerBuilders[descriptor.type];
+                if (builder) {
+                    const observerObj = builder(descriptor, context);
+                    return observerObj.initial;
+                } else {
+                    return value;
                 }
             } else {
                 return value;
@@ -508,60 +557,69 @@ export class AutoStore<
      * @description 创建计算属性对象
      *
      */
-    _createComputed(descriptor: ComputedDescriptor, computedContext?: ComputedContext) {
-        let computedObj: ComputedObject | undefined;
-        this.emit("observer:beforeCreate", descriptor as ComputedDescriptor);
-        if (descriptor.options.async) {
-            //@ts-ignore 异步计算
-            if (descriptor.liteAsync) {
-                // 简单异步计算
-                computedObj = new AsyncLiteComputedObject(
-                    this,
-                    descriptor as ComputedDescriptor,
-                    computedContext,
-                ) as unknown as ComputedObject;
-            } else {
-                // 全功能异步计算
-                computedObj = new AsyncComputedObject(
-                    this,
-                    descriptor as ComputedDescriptor,
-                    computedContext,
-                ) as unknown as ComputedObject;
-            }
-        } else {
-            // 同步计算
-            computedObj = new SyncComputedObject(
-                this,
-                descriptor as ComputedDescriptor,
-                computedContext,
-            ) as unknown as ComputedObject;
-        }
-        if (computedObj) {
-            // 更新不会触发事件
+    _createComputed(descriptor: ComputedDescriptor, context?: ComputedContext) {
+        const builder = this.observerBuilders[descriptor.type];
+        if (builder) {
+            const computedObj = builder(descriptor, context);
             computedObj.silentUpdate(computedObj.initial);
             if (computedObj.options.objectify) {
                 this.computedObjects.set(computedObj.id, computedObj);
             }
             this.emit("computed:created", computedObj);
-            this.emit("observer:created", computedObj);
+            return computedObj;
         }
-        return computedObj;
+        // if (descriptor.options.async) {
+        //     //@ts-ignore 异步计算
+        //     if (descriptor.liteAsync) {
+        //         // 简单异步计算
+        //         computedObj = new AsyncLiteComputedObject(
+        //             this,
+        //             descriptor as ComputedDescriptor,
+        //             context,
+        //         ) as unknown as ComputedObject;
+        //     } else {
+        //         // 全功能异步计算
+        //         computedObj = new AsyncComputedObject(
+        //             this,
+        //             descriptor as ComputedDescriptor,
+        //             context,
+        //         ) as unknown as ComputedObject;
+        //     }
+        // } else {
+        //     // 同步计算
+        //     computedObj = new SyncComputedObject(
+        //         this,
+        //         descriptor as ComputedDescriptor,
+        //         context,
+        //     ) as unknown as ComputedObject;
+        // }
+        // if (computedObj) {
+        //     // 更新不会触发事件
+        //     computedObj.silentUpdate(computedObj.initial);
+        //     if (computedObj.options.objectify) {
+        //         this.computedObjects.set(computedObj.id, computedObj);
+        //     }
+        //     this.emit("computed:created", computedObj);
+        // }
+        // return computedObj;
     }
     /**
      * 创建侦听对象
-     * @param computedContext
+     * @param context
      * @param descriptor
      */
-    _createWatch(descriptor: WatchDescriptor, computedContext?: ComputedContext) {
-        this.emit(
-            "observer:beforeCreate",
-            descriptor as ObserverDescriptor<any, any, any, any, any>,
-        );
-        const watchObj = new WatchObject(this, descriptor, computedContext);
-        this.watchObjects.set(watchObj.id, watchObj);
-        this.emit("watch:created", watchObj);
-        this.emit("observer:created", watchObj);
-        return watchObj;
+    _createWatch(descriptor: WatchDescriptor, context?: ComputedContext) {
+        const builder = this.observerBuilders[descriptor.type];
+        if (builder) {
+            const watchObj = new WatchObject(this, descriptor, context);
+            this.watchObjects.set(watchObj.id, watchObj);
+            this.emit("watch:created", watchObj);
+            return watchObj;
+        }
+        // this.emit(
+        //     "observer:beforeCreate",
+        //     descriptor as ObserverDescriptor<any, any, any, any, any>,
+        // );
     }
     // **************** 普通方法 ***********
 

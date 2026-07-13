@@ -313,7 +313,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      *
      */
     private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
-        const { retry } = options;
+        const { retry = [0, 0] } = options;
 
         const [retryCount, retryInterval] = Array.isArray(retry) ? retry : [Number(retry), 0];
 

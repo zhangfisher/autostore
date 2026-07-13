@@ -812,7 +812,7 @@ describe("Store Events", () => {
                     ),
                 },
                 {
-                    onComputedCancel(args) {
+                    onComputedCancel: (args) => {
                         cancelArgs.push({
                             fromHook: true,
                             reason: args.reason,

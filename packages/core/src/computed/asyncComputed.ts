@@ -33,11 +33,11 @@ export function asyncComputed<Value = any, Scope = any>(
 
     const descriptorBuilder = () => {
         return {
-            type: "computed",
+            type: "turboAsyncComputed",
             getter,
             options: opts,
             [OBSERVER_DESCRIPTOR_FLAG]: true,
-        } as AsyncComputedDescriptor<Value, Scope>;
+        } as unknown as AsyncComputedDescriptor<Value, Scope>;
     };
     descriptorBuilder[OBSERVER_DESCRIPTOR_BUILDER_FLAG] = true as const;
 
