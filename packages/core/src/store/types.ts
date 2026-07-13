@@ -1,5 +1,5 @@
 import type { ComputedObject } from "../computed/computedObject";
-import type { ComputedDescriptor, ComputedScope } from "../computed/types";
+import type { ComputedDescriptor, ComputedGetterArgs, ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
 import type { ObserverType } from "../observer/types";
 import type { Dict, ObjectKeyPaths } from "../types";
@@ -12,6 +12,7 @@ import type { WatchObject } from "../watch/watchObject";
 import type { CreateSandboxOptions } from "../utils/createSandbox";
 import type { ILogger } from "flex-tools";
 import { IAutoStorePlugin } from "../plugin";
+import { ComputedScope } from "../computed/types";
 
 export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
@@ -461,7 +462,11 @@ export type AutoStoreEvents = TransformedEvents<{
     reset: string | undefined;
     "computed:created": ComputedObject; // 当计算对象创建时
     // 当计算属性准备运行前
-    "computed:before": { computedObject: ComputedObject };
+    "computed:before": {
+        computedObject: ComputedObject;
+        scope: any;
+        args: ComputedGetterArgs;
+    };
     // 当计算函数执行成功后
     "computed:done": { id: string; path: string[]; value: any; computedObject: ComputedObject };
     // 当计算函数执行出错时
@@ -473,6 +478,11 @@ export type AutoStoreEvents = TransformedEvents<{
         computedObject: ComputedObject;
     }; // 当计算函数被取消时
     "watch:created": WatchObject;
+    // 当计算属性准备运行前
+    "watch:before": {
+        watchObject: WatchObject;
+        scope: any;
+    };
     "watch:done": { value: any; watchObject: WatchObject };
     "watch:error": { error: any; watchObject: WatchObject };
     //

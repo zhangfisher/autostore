@@ -370,6 +370,7 @@ export class ObserverObject<
         }
         return this._shadowStore;
     }
+    protected _runGetter(scope: any, args: any) {}
     /**
      * 供子类重写
      *

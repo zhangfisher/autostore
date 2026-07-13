@@ -85,4 +85,5 @@ declare module "autostore" {
         shadow<T extends Dict>(state: T, options?: AutoStoreOptions<T>): AutoStore<T>;
     }
 }
+
 installPlugin(shadow);

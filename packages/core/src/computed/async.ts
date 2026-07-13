@@ -268,7 +268,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         options: Required<RuntimeComputedOptions>,
     ) {
         const { timeout } = options;
-        let [timeoutValue = 0, countdown = 0] = Array.isArray(timeout) ? timeout : [timeout, 0];
+        let [timeoutValue, countdown] = Array.isArray(timeout) ? timeout : [timeout, 0];
 
         let countdownId: any;
         let tmId: any;
@@ -313,7 +313,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      *
      */
     private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
-        const { retry = [0, 0] } = options;
+        const { retry } = options;
 
         const [retryCount, retryInterval] = Array.isArray(retry) ? retry : [Number(retry), 0];
 
