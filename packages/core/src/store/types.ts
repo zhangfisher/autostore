@@ -1,7 +1,7 @@
 import type { ComputedObject } from "../computed/computedObject";
 import type { ComputedGetterArgs, ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
-import type { ObserverType } from "../observer/types";
+import type { AnyObserverDescriptor, ObserverType } from "../observer/types";
 import type { Dict, ObjectKeyPaths } from "../types";
 import { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
@@ -130,7 +130,13 @@ export interface AutoStoreHooks<State extends Dict> {
     >;
 
     onObserverBeforeCreate?: ToArray<
-        (this: AutoStore<State>, descriptor: ObserverDescriptor<any, any, any>) => void
+        (
+            this: AutoStore<State>,
+            args: {
+                context: { path: string[]; value: any; parentPath: string[]; parent: any };
+                descriptor: AnyObserverDescriptor;
+            },
+        ) => void
     >;
     /**
      *
@@ -142,6 +148,24 @@ export interface AutoStoreHooks<State extends Dict> {
      */
     onObserverCreated?: ToArray<
         (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void
+    >;
+    /**
+     * 当Observer对象触发运行
+     */
+    onObserverDone?: ToArray<
+        (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void
+    >;
+    /**
+     * 当Observer对象触发运行
+     */
+    onObserverError?: ToArray<
+        (
+            this: AutoStore<State>,
+            args: {
+                error: Error;
+                observerObject: ObserverObject<any, any>;
+            },
+        ) => void
     >;
     /**
      * 当观察对象被（自动）销毁时调用，与 onObserverCreated 对称。
@@ -488,15 +512,24 @@ export type AutoStoreEvents = TransformedEvents<{
     };
     "watch:done": { value: any; watchObject: WatchObject };
     "watch:error": { error: any; watchObject: WatchObject };
-    //
-    "observer:beforeCreate": ObserverDescriptor<any, any, any>;
+    /**
+     *
+     * 创建observer实例前
+     *
+     */
+    "observer:beforeCreate": {
+        context: { path: string[]; value: any; parentPath: string[]; parent: any };
+        descriptor: AnyObserverDescriptor;
+    };
     "observer:created": ObserverObject<any, any>;
-    "observer:destroyed": ObserverObject<any, any>;
-    "observer:done": ObserverDescriptor<any, any, any>;
+    "observer:done": { value: any; ObserverObject: ObserverObject };
+    "observer:cancel": { reason: string; observerObject: ObserverObject };
+    "observer:error": { error: Error; observerObject: ObserverObject };
+    "observer:destroyed": ObserverObject;
+
     // 当验证器验证失败时触发
     validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
 }>;
-
 export type StoreRawStateType<Store extends AutoStore<any>> = Store["types"]["rawState"];
 
 /**

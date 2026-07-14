@@ -16,7 +16,7 @@ describe("动态创建异步计算属性", () => {
                 },
                 ["price", "count"],
             );
-            store.on("computed:done", () => {
+            store.on("observer:done", () => {
                 expect(obj.value).toBe(6);
                 resolve();
             });
@@ -30,7 +30,7 @@ describe("动态创建异步计算属性", () => {
                     count: 3,
                 },
                 {
-                    onComputedCreated: () => {
+                    onObserverCreated: () => {
                         expect(store.computedObjects.size).toBe(1);
                         expect(store.computedObjects.has("x")).toBe(true);
                         resolve();
@@ -54,7 +54,7 @@ describe("动态创建异步计算属性", () => {
                     count: 3,
                 },
                 {
-                    onComputedCreated: () => {
+                    onObserverCreated: () => {
                         expect(store.computedObjects.size).toBe(0);
                         expect(store.computedObjects.has("x")).toBe(false);
                         resolve();
@@ -66,7 +66,10 @@ describe("动态创建异步计算属性", () => {
                     return scope.price * scope.count;
                 },
                 ["price", "count"],
-                { id: "x", objectify: false },
+                {
+                    id: "x",
+                    objectify: false,
+                },
             );
         });
     });
@@ -79,7 +82,7 @@ describe("动态创建异步计算属性", () => {
                     count: 3,
                 },
                 {
-                    onComputedDone: ({ value }) => {
+                    onObserverDone: ({ value }) => {
                         expect(value).toBe(6);
                         expect(obj.value).toBe(6);
                         resolve();
@@ -106,7 +109,7 @@ describe("动态创建异步计算属性", () => {
                     count: 3,
                 },
                 {
-                    onComputedDone: ({ value }) => {
+                    onObserverDone: ({ value }) => {
                         results.push(value);
                         if (results.length === 2) {
                             expect(results).toEqual([6, 8]);

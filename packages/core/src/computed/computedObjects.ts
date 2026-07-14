@@ -90,7 +90,7 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
             );
         }
 
-        return this.store._createComputed(descrioptor);
+        return this.store.createObserverObject(descrioptor);
     }
     /**
      * 运行指定组的计算函数

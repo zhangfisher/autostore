@@ -81,11 +81,9 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             this.store.logger.warn(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
             );
-            this.emitStoreEvent("computed:cancel", {
-                path: this.path,
-                id: this.id,
+            this.emitStoreEvent("observer:cancel", {
                 reason: "reentry",
-                computedObject: this,
+                observerObject: this,
             });
             return;
         }
@@ -131,18 +129,14 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
         // 计算完成后触发事件
         if (hasError) {
             this.error = hasError;
-            this.emitStoreEvent("computed:error", {
-                path: this.path,
-                id: this.id,
+            this.emitStoreEvent("observer:error", {
                 error: hasError,
-                computedObject: this,
+                observerObject: this,
             });
         } else {
-            this.emitStoreEvent("computed:done", {
-                path: this.path,
-                id: this.id,
+            this.emitStoreEvent("observer:done", {
                 value: computedResult,
-                computedObject: this,
+                observerObject: this,
             });
         }
         this.onDoneCallback(options, computedResult, scope, computedResult);

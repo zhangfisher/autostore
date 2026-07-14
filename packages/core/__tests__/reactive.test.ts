@@ -1,15 +1,17 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from "bun:test";
 
-import { AutoStore, isRaw, markRaw } from '../src';
+import { AutoStore, isRaw, markRaw } from "../src";
 
 // 测试 isEventMatched 函数
-describe('reactive', () => {
-    test('use markRaw for object', () => {
+describe("reactive", () => {
+    test("use markRaw for object", () => {
         const store = new AutoStore({
             a: 1,
             b: 2,
             c: 3,
-            total: async () => store.state.a + store.state.b + store.state.c,
+            total: async () => {
+                return store.state.a + store.state.b + store.state.c;
+            },
             x: markRaw({
                 total: async () => store.state.a + store.state.b + store.state.c,
                 x1: 1,
@@ -25,7 +27,7 @@ describe('reactive', () => {
             ({ path }) => {
                 path; // ['a']
             },
-            { operates: 'read' },
+            { operates: "read" },
         );
         expect(isRaw(store.state.a)).toBe(false);
         expect(isRaw(store.state.x)).toBe(true);
@@ -36,28 +38,28 @@ describe('reactive', () => {
         store.state.x.total;
         store.state.total;
     });
-    test('onObserverInitial', () => {
+    test("onObserverInitial", () => {
         const store = new AutoStore(
             {
                 user: {
                     items: [
                         {
-                            icon: 'settings',
-                            label: '设置',
+                            icon: "settings",
+                            label: "设置",
                             onClick: () => {
-                                console.log('settings');
+                                console.log("settings");
                             },
                         },
-                        { icon: 'home', label: '首页', divider: true },
-                        { label: '仪表盘', badge: '1', divider: true },
+                        { icon: "home", label: "首页", divider: true },
+                        { label: "仪表盘", badge: "1", divider: true },
                     ],
                 },
             },
             {
                 onObserverInitial(path, value) {
                     const name = path[path.length - 1];
-                    if (name && typeof value === 'function') {
-                        if (name.startsWith('render') || name.startsWith('on')) {
+                    if (name && typeof value === "function") {
+                        if (name.startsWith("render") || name.startsWith("on")) {
                             return false;
                         }
                     }

@@ -1,16 +1,16 @@
-import { describe, test } from 'bun:test';
-import type { Equal, Expect } from '@type-challenges/utils';
-import { AutoStore, computed } from '../../src';
+import { describe, test } from "bun:test";
+import type { Equal, Expect } from "@type-challenges/utils";
+import { AutoStore, computed } from "../../src";
 
 /**
  * Store 基础类型测试
  * 测试 AutoStore 类的类型推断
  */
-describe('Store 基础类型', () => {
-    test('基础状态类型推断', () => {
+describe("Store 基础类型", () => {
+    test("基础状态类型推断", () => {
         const store = new AutoStore({
             user: {
-                name: '张三',
+                name: "张三",
                 age: 18,
                 admin: true,
             },
@@ -29,14 +29,14 @@ describe('Store 基础类型', () => {
 
         const check: Expect<Equal<StateType, Expected>> = true;
     });
-    test('嵌套对象类型推断', () => {
+    test("嵌套对象类型推断", () => {
         const store = new AutoStore({
             data: {
                 users: [
                     {
                         id: 1,
-                        name: '张三',
-                        tags: ['a', 'b'],
+                        name: "张三",
+                        tags: ["a", "b"],
                     },
                 ],
                 meta: {
@@ -64,9 +64,9 @@ describe('Store 基础类型', () => {
         const check: Expect<Equal<StateType, Expected>> = true;
     });
 
-    test('可选状态属性', () => {
+    test("可选状态属性", () => {
         const store = new AutoStore({
-            required: '必须值',
+            required: "必须值",
             optional: undefined as string | undefined,
         });
 
@@ -83,18 +83,18 @@ describe('Store 基础类型', () => {
 /**
  * Store 选项类型测试
  */
-describe('Store 选项类型', () => {
-    test('基础选项类型', () => {
+describe("Store 选项类型", () => {
+    test("基础选项类型", () => {
         const store = new AutoStore(
             {
                 count: 0,
             },
             {
-                id: 'test-store',
+                id: "test-store",
                 debug: true,
                 lazy: false,
                 enableComputed: true,
-                delimiter: '.',
+                delimiter: ".",
             },
         );
 
@@ -102,7 +102,7 @@ describe('Store 选项类型', () => {
         const check1: Expect<Equal<OptionsType, OptionsType>> = true as any;
     });
 
-    test('计算回调选项', () => {
+    test("计算回调选项", () => {
         const store = new AutoStore(
             {
                 value: computed(async () => 1, []),
@@ -130,7 +130,7 @@ describe('Store 选项类型', () => {
                     const check1: Expect<Equal<typeof args.id, string>> = true;
                     const check2: Expect<Equal<typeof args.path, string[]>> = true;
                     const check3: Expect<
-                        Equal<typeof args.reason, 'reentry' | 'timeout' | 'abort' | 'error'>
+                        Equal<typeof args.reason, "reentry" | "timeout" | "abort" | "error">
                     > = true;
                     // computedObject 是 any 类型,跳过断言
                     args.computedObject;
@@ -139,13 +139,13 @@ describe('Store 选项类型', () => {
         );
     });
 
-    test('观察者回调选项', () => {
+    test("观察者回调选项", () => {
         const store = new AutoStore(
             {
                 count: 0,
             },
             {
-                onObserverBeforeCreate: (descriptor) => {
+                onObserverInitial: (descriptor) => {
                     // type, getter, options 的类型检查
                     descriptor.type;
                     descriptor.getter;

@@ -184,9 +184,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             this.store.logger.warn(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
             );
-            this.emitStoreEvent("computed:cancel", {
-                path: this.path,
-                id: this.id,
+            this.emitStoreEvent("observer:cancel", {
                 reason: "reentry",
                 computedObject: this,
             });
@@ -313,9 +311,12 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      *
      */
     private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
-        const { retry = [0, 0] } = options;
-
-        const [retryCount, retryInterval] = Array.isArray(retry) ? retry : [Number(retry), 0];
+        const { retry } = options;
+        const [retryCount, retryInterval] = retry
+            ? Array.isArray(retry)
+                ? retry
+                : [Number(retry), 0]
+            : [0, 0];
 
         let timeoutCallback: (() => void) | undefined; // 异步计算函数可以在超时时执行的回调函数
 
@@ -415,26 +416,20 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             }
             // 计算完成后触发事件
             if (ctx.hasAbort) {
-                this.emitStoreEvent("computed:cancel", {
-                    path: this.path,
-                    id: this.id,
+                this.emitStoreEvent("observer:cancel", {
                     reason: "abort",
-                    computedObject: this,
+                    observerObject: this,
                 });
             } else if (ctx.hasError || ctx.hasTimeout) {
                 this.error = ctx.error;
-                this.emitStoreEvent("computed:error", {
-                    path: this.path,
-                    id: this.id,
+                this.emitStoreEvent("observer:error", {
                     error: ctx.error,
-                    computedObject: this,
+                    observerObject: this,
                 });
             } else {
-                this.emitStoreEvent("computed:done", {
-                    path: this.path,
-                    id: this.id,
+                this.emitStoreEvent("observer:done", {
                     value: computedResult,
-                    computedObject: this,
+                    observerObject: this,
                 });
             }
             this.onDoneCallback(

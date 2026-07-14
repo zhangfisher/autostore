@@ -103,19 +103,15 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
 
         if (!first) {
             if (this.error) {
-                this.emitStoreEvent("computed:error", {
-                    id: this.id,
-                    path: this.path,
+                this.emitStoreEvent("observer:error", {
                     error: this.error,
-                    computedObject: this as unknown as ComputedObject,
+                    observerObject: this,
                 });
                 if (this.options.throwError) throw this.error as any;
             } else {
-                this.emitStoreEvent("computed:done", {
-                    id: this.id,
-                    path: this.path,
+                this.emitStoreEvent("observer:done", {
                     value: computedResult,
-                    computedObject: this as unknown as ComputedObject,
+                    observerObject: this,
                 });
             }
         }
