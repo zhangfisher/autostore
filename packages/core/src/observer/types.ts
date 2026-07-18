@@ -7,6 +7,7 @@ import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
 import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
 import type { WatchDescriptorBuilder } from "../watch/types";
+import type { ObserverObject } from "./observer";
 
 export type ObserverType = "watch" | "schema" | "computed" | "asyncComputed" | "turboAsyncComputed";
 
@@ -177,3 +178,12 @@ export type ObserverBuilder<Value = any, Scope = any> =
     | ComputedGetter<Value, Scope>
     | AsyncComputedGetter<Value, Scope>
     | WatchDescriptorBuilder<Value>;
+
+/**
+ *用于在计算之前和之后执行的回调
+ */
+export type ObserverObjectHooks = {
+    before: ((args: any, options: any) => void)[];
+    after: ((value: any, error?: Error) => void)[];
+};
+export type AnyObserverObject = ObserverObject<any, any>;

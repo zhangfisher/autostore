@@ -1,7 +1,20 @@
-import type { ObserverObject, GetTypeByPath, Watcher, AnyAutoStore } from "autostore";
+import type {
+    ObserverObject,
+    ObjectKeyPaths,
+    GetTypeByPath,
+    Watcher,
+    AnyAutoStore,
+} from "autostore";
 import { getVal, AutoStore } from "autostore";
-import { RefStorePaths, RefStores } from "./types";
 import { installPlugin } from "./utils/installPlugin";
+
+export interface RefStores {}
+
+export type RefStorePaths = {
+    [K in keyof RefStores]:
+        | `@${K & string}`
+        | `@${K & string}/${ObjectKeyPaths<RefStores[K]["state"]>}`;
+}[keyof RefStores];
 
 export type RefStateOptions = {
     /** 当状态值变化时是否自动重新运行计算函数，默认true */

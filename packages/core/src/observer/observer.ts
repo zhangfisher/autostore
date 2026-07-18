@@ -18,14 +18,7 @@ import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/type
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
 import { createRefState, RefStateContext } from "../store/refState";
-
-/**
- *用于在计算之前和之后执行的回调
- */
-export type ObserverObjectHooks = {
-    before: ((args: any, options: any) => void)[];
-    after: ((value: any, error?: Error) => void)[];
-};
+import { emitStoreEvent } from "../utils/emitStoreEvent";
 
 export class ObserverObject<
     Value = any,
@@ -355,7 +348,7 @@ export class ObserverObject<
         Map.prototype.delete.call(this.store.computedObjects, this.id);
         Map.prototype.delete.call(this.store.watchObjects, this.id);
         // 4. 生命周期事件（同步触发，与 observer:created 一致）
-        this.store.emit("observer:destroyed", this);
+        emitStoreEvent(this.store, "observer:destroyed", this, true);
     }
     /**
      * 供子类重写，在销毁时执行清理（如取消 inflight 请求）

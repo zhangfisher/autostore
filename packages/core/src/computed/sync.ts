@@ -9,6 +9,7 @@ import { noRepeat } from "../utils/noRepeat";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "../utils/isFunction";
 import { markRaw } from "../utils/markRaw";
+import { emitStoreEvent } from "../utils/emitStoreEvent";
 
 /**
  *
@@ -75,6 +76,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
                 first,
                 ref: this._refStateCtx?.ref,
             };
+            emitStoreEvent(this.store, "observer:prepare", { args: getterArgs, observer: this });
             computedResult = this.getter.call(this, scope, getterArgs);
             if (finalComputedOptions.raw) markRaw(computedResult);
         } catch (e: any) {
@@ -103,15 +105,15 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
 
         if (!first) {
             if (this.error) {
-                this.emitStoreEvent("observer:error", {
+                emitStoreEvent(this.store, "observer:error", {
                     error: this.error,
-                    observerObject: this,
+                    observer: this,
                 });
                 if (this.options.throwError) throw this.error as any;
             } else {
-                this.emitStoreEvent("observer:done", {
+                emitStoreEvent(this.store, "observer:done", {
                     value: computedResult,
-                    observerObject: this,
+                    observer: this,
                 });
             }
         }

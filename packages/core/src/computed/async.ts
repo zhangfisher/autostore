@@ -20,6 +20,7 @@ import type { StateOperate } from "../store/types";
 import { updateObjectVal } from "../utils/updateObjectVal";
 import { ASYNC_COMPUTED_VALUE } from "../consts";
 import { AbortError } from "../errors";
+import { emitStoreEvent } from "../utils/emitStoreEvent";
 
 type GetterRunContext = {
     error: any;
@@ -184,9 +185,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             this.store.logger.warn(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
             );
-            this.emitStoreEvent("observer:cancel", {
+            emitStoreEvent(this.store, "observer:cancel", {
                 reason: "reentry",
-                computedObject: this,
+                observer: this,
             });
             return;
         }
@@ -380,6 +381,11 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
                     // 如果有中止信号，则取消计算
                     if (ctx.hasAbort) throw new AbortError();
+                    // 执行回调
+                    emitStoreEvent(this.store, "observer:prepare", {
+                        args: getterArgs,
+                        observer: this,
+                    });
                     // 执行计算函数
                     computedResult = await this.getter.call(this, scope, getterArgs);
 
@@ -416,20 +422,20 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             }
             // 计算完成后触发事件
             if (ctx.hasAbort) {
-                this.emitStoreEvent("observer:cancel", {
+                emitStoreEvent(this.store, "observer:cancel", {
                     reason: "abort",
-                    observerObject: this,
+                    observer: this,
                 });
             } else if (ctx.hasError || ctx.hasTimeout) {
                 this.error = ctx.error;
-                this.emitStoreEvent("observer:error", {
+                emitStoreEvent(this.store, "observer:error", {
                     error: ctx.error,
-                    observerObject: this,
+                    observer: this,
                 });
             } else {
-                this.emitStoreEvent("observer:done", {
+                emitStoreEvent(this.store, "observer:done", {
                     value: computedResult,
-                    observerObject: this,
+                    observer: this,
                 });
             }
             this.onDoneCallback(

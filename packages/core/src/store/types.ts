@@ -1,7 +1,7 @@
 import type { ComputedObject } from "../computed/computedObject";
 import type { ComputedGetterArgs, ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
-import type { AnyObserverDescriptor, ObserverType } from "../observer/types";
+import type { AnyObserverObject, AnyObserverDescriptor, ObserverType } from "../observer/types";
 import type { Dict, ObjectKeyPaths } from "../types";
 import { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
@@ -517,19 +517,21 @@ export type AutoStoreEvents = TransformedEvents<{
      * 创建observer实例前
      *
      */
-    "observer:beforeCreate": {
+    "observer:initial": {
         context: { path: string[]; value: any; parentPath: string[]; parent: any };
         descriptor: AnyObserverDescriptor;
     };
-    "observer:created": ObserverObject<any, any>;
-    "observer:done": { value: any; ObserverObject: ObserverObject };
-    "observer:cancel": { reason: string; observerObject: ObserverObject };
-    "observer:error": { error: Error; observerObject: ObserverObject };
-    "observer:destroyed": ObserverObject;
+    "observer:created": AnyObserverObject;
+    "observer:prepare": { args: Record<string, any>; observer: AnyObserverObject };
+    "observer:done": { value: any; observer: AnyObserverObject };
+    "observer:cancel": { reason: string; observer: AnyObserverObject };
+    "observer:error": { error: Error; observer: AnyObserverObject };
+    "observer:destroyed": AnyObserverObject;
 
     // 当验证器验证失败时触发
     validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
 }>;
+
 export type StoreRawStateType<Store extends AutoStore<any>> = Store["types"]["rawState"];
 
 /**
