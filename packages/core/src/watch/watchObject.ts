@@ -5,6 +5,7 @@ import type { AutoStore } from "../store/store";
 import type { ComputedContext } from "../computed/types";
 import { ObserverObject } from "../observer/observer";
 import { markRaw } from "../utils";
+import { emitStoreEvent } from "../utils/emitStoreEvent";
 
 export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions<Value>> {
     private _cache?: Dict;
@@ -61,28 +62,25 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
             this.store.logger.debug(`WatchObject <${this.toString()}> is disabled`);
             return;
         }
-        let hasError: any;
         try {
-            // this._runHook("before", [this, this.options]);
+            const getterArgs = {
+                path: watchPath,
+                value: watchValue,
+            };
+            emitStoreEvent(this.store, "observer:run", {
+                args: getterArgs,
+                observer: this,
+                scope: undefined,
+            });
             // 2.  执行监听函数
-            const result = this.getter?.call(
-                this,
-                {
-                    path: watchPath,
-                    value: watchValue,
-                },
-                this,
-            );
+            const result = this.getter?.call(this, getterArgs, this);
             if (this.options.raw) {
                 markRaw(result);
             }
             this.value = result as Value;
-            this.emitStoreEvent("watch:done", { value: result, watchObject: this });
-        } catch (e) {
-            hasError = e;
-            this.emitStoreEvent("watch:error", { error: e, watchObject: this });
-        } finally {
-            // this._runHook("after", [this.value, hasError]);
+            emitStoreEvent(this.store, "observer:done", { value: result, observer: this });
+        } catch (e: any) {
+            emitStoreEvent(this.store, "observer:error", { error: e, observer: this });
         }
     }
 }

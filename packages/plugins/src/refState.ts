@@ -4,10 +4,22 @@ import type {
     GetTypeByPath,
     Watcher,
     AnyAutoStore,
+    Dict,
+    AnyObserverObject,
+    AutoStoreSubscriber,
 } from "autostore";
-import { getVal, AutoStore } from "autostore";
+import { getVal } from "autostore";
 import { installPlugin } from "./utils/installPlugin";
 
+/**
+ * 用于扩展声明可扩展
+ *declare module "@autostorejs/plugins" {
+    interface ConfigueableStores{
+       <store.id>: Store
+    }
+ }
+ *
+*/
 export interface RefStores {}
 
 export type RefStorePaths = {
@@ -49,7 +61,24 @@ export type RefStateContext = {
     off: () => void;
     ref: RefState;
 };
-export function refState(store: AnyAutoStore) {}
+
+function createRefStateCtx(store: AnyAutoStore, observer: AnyObserverObject, value: any) {
+    const _getRefStore =
+        value?._getRefStore ||
+        (() => {
+            const refStore = observer.options.refStore || store.options.refStore;
+            if (refStore) {
+                return new WeakRef(refStore);
+            }
+        });
+    if (typeof _getRefStore === "function") {
+        const storeRef = _getRefStore();
+        if (storeRef) {
+            observer.refStateContext = createRefState(storeRef, observer as ObserverObject);
+        }
+    }
+}
+
 /**
  *
  * ref("xxx.xx")
@@ -62,7 +91,7 @@ export function refState(store: AnyAutoStore) {}
  * @returns
  */
 export function createRefState(
-    storeRef: WeakRef<AutoStore<any>>,
+    storeRef: WeakRef<AnyAutoStore | AnyAutoStore[]>,
     observerObj: ObserverObject,
 ): RefStateContext {
     let watchers: Map<string, Watcher> | null = null; // 懒加载，只在需要时创建
@@ -86,12 +115,13 @@ export function createRefState(
         const pathKey = (refPath?.startsWith("@") ? refPath : `@/${refPath || ""}`).substring(1);
 
         const [storeId, path] = pathKey.split("/");
+
         const store =
             stores.length === 1 && storeId === ""
                 ? stores[0]
-                : stores.find((v) => v.id === storeId);
+                : stores.find((v) => v && v.id === storeId);
 
-        if (stores.length > 0) {
+        if (store && stores.length > 0) {
             const { runArgs, reactive = true } = options || {};
             if (reactive) {
                 // 懒加载：只在第一次需要时创建 Map
@@ -125,9 +155,43 @@ export function createRefState(
     };
 }
 
+export function refState(store: AnyAutoStore) {
+    const subscribers: AutoStoreSubscriber[] = [];
+    subscribers.push(
+        store.on("observer:created", ({ observer, context }) => {
+            createRefStateCtx(store, observer, context?.value);
+        }),
+    );
+    subscribers.push(
+        store.on("observer:destroyed", (observer) => {
+            observer.refStateContext?.off();
+        }),
+    );
+    subscribers.push(
+        store.on("observer:run", ({ observer, args }) => {
+            if (!args.ref) {
+                args.ref = observer.refStateContext.ref;
+            }
+        }),
+    );
+    store.once("unload", () => {
+        try {
+            subscribers.forEach((subscriber) => subscriber.off());
+        } finally {
+            subscribers.splice(0, subscribers.length);
+        }
+    });
+}
+
 declare module "autostore" {
     export interface AutoStore<State extends Dict, Options = unknown> {}
+    export interface ObserverObject {
+        refStateContext: RefStateContext;
+    }
     export interface ComputedGetterArgs {
+        ref: RefState;
+    }
+    export interface AsyncComputedGetterArgs {
         ref: RefState;
     }
 }

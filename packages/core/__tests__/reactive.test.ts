@@ -56,7 +56,8 @@ describe("reactive", () => {
                 },
             },
             {
-                onObserverInitial(path, value) {
+                onObserverInitial({ context, descriptor }) {
+                    const { path, value } = context;
                     const name = path[path.length - 1];
                     if (name && typeof value === "function") {
                         if (name.startsWith("render") || name.startsWith("on")) {

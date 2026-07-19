@@ -47,14 +47,14 @@ describe("异步计算高级控制功能", () => {
                     ),
                 },
                 {
-                    onComputedCancel: () => {
+                    onObserverCancel: () => {
                         cancelCount++;
                         if (cancelCount === 9) {
                             expect(calcCount).toBe(1);
                             resolve();
                         }
                     },
-                    onComputedCreated: () => {
+                    onObserverCreated: () => {
                         // 连接执行多次依赖更新,但是由于reentry=false,所以只会执行一次，其它的会被忽略
                         setTimeout(() => {
                             for (let i = 0; i < 10; i++) {
@@ -94,11 +94,11 @@ describe("异步计算高级控制功能", () => {
                     ),
                 },
                 {
-                    onComputedCancel: () => {
+                    onObserverCancel: () => {
                         expect(fn).toHaveBeenCalled();
                         resolve();
                     },
-                    onComputedCreated: () => {
+                    onObserverCreated: () => {
                         setTimeout(() => {
                             (store.computedObjects.get("x") as AsyncComputedObject)!.value.cancel();
                         }, 10);
@@ -181,7 +181,7 @@ describe("异步计算高级控制功能", () => {
                     ),
                 },
                 {
-                    onComputedError: () => {
+                    onObserverError: () => {
                         expect(store.state.total.retry).toBe(0);
                         resolve();
                     },
@@ -217,7 +217,7 @@ describe("异步计算属性的超时功能", () => {
                     ),
                 },
                 {
-                    onComputedError: ({ error }) => {
+                    onObserverError: ({ error }) => {
                         //@ts-ignore
                         expect(error).toBe("TIMEOUT");
                         expect(store.state.total.loading).toBe(false);
@@ -249,7 +249,7 @@ describe("异步计算属性的超时功能", () => {
                 },
                 {
                     lazy: false,
-                    onComputedError: ({ error }) => {
+                    onObserverError: ({ error }) => {
                         //@ts-ignore
                         expect(error).toBe("TIMEOUT");
                         expect(store.state.total.loading).toBe(false);
@@ -301,7 +301,7 @@ describe("异步计算进度条功能", () => {
                     ),
                 },
                 {
-                    onComputedDone: () => {
+                    onObserverDone: () => {
                         // 验证进度值从0到100递增
                         expect(progresses.length).toBeGreaterThan(0);
                         expect(progresses[0]).toBe(0);
@@ -345,7 +345,7 @@ describe("异步计算进度条功能", () => {
                     ),
                 },
                 {
-                    onComputedDone: () => {
+                    onObserverDone: () => {
                         resolve();
                     },
                 },
@@ -375,7 +375,7 @@ describe("异步计算进度条功能", () => {
                     ),
                 },
                 {
-                    onComputedDone: () => {
+                    onObserverDone: () => {
                         // 验证最后一个是100（max值）
                         expect(progresses[progresses.length - 1]).toBe(100);
                         resolve();
@@ -409,7 +409,7 @@ describe("异步计算进度条功能", () => {
                     ),
                 },
                 {
-                    onComputedDone: () => {
+                    onObserverDone: () => {
                         // 验证初始值
                         expect(store.state.data.progress).toBe(30);
                         resolve();
@@ -441,7 +441,7 @@ describe("异步计算进度条功能", () => {
                     ),
                 },
                 {
-                    onComputedDone: () => {
+                    onObserverDone: () => {
                         // 验证默认范围是0-100
                         expect(progresses).toContain(0); // 初始值
                         expect(progresses).toContain(50);
@@ -480,7 +480,7 @@ describe("异步计算进度条功能", () => {
                     ),
                 },
                 {
-                    onComputedDone: () => {
+                    onObserverDone: () => {
                         // 验证最终状态
                         expect(store.state.task.progress).toBe(5);
                         expect(store.state.task.loading).toBe(false);
@@ -521,7 +521,7 @@ describe("异步计算进度条功能", () => {
                     ),
                 },
                 {
-                    onComputedError: () => {
+                    onObserverError: () => {
                         // 验证进度值在错误前已更新
                         expect(progresses.length).toBeGreaterThan(0);
                         expect(progresses).toContain(30);
@@ -564,7 +564,7 @@ describe("异步计算进度条功能", () => {
                     ),
                 },
                 {
-                    onComputedDone: () => {
+                    onObserverDone: () => {
                         runCount++;
                         if (runCount === 1) {
                             // 第一次运行完成

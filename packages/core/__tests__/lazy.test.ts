@@ -201,7 +201,7 @@ describe("lazy 选项", () => {
             },
             {
                 lazy: true,
-                onComputedCreated(computedObject) {
+                onObserverCreated({ observer: computedObject }) {
                     createdEventFired = true;
                     createdPaths.push(computedObject.path.join("."));
                 },
@@ -349,7 +349,7 @@ describe("lazy 选项", () => {
             },
             {
                 lazy: true,
-                onObserverCreated(observerObject) {
+                onObserverCreated({ observer: observerObject }) {
                     if (observerObject.type === "watch") {
                         createdEventFired = true;
                         createdPaths.push(observerObject.path.join("."));

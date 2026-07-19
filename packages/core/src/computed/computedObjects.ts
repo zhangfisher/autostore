@@ -136,7 +136,11 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
     ): Promise<any>;
     async run(): Promise<any> {
         if (arguments.length === 0) {
-            return Promise.all([...this.values()].map((computedObject) => computedObject.run()));
+            return Promise.all(
+                [...this.values()].map((computedObject) => {
+                    return computedObject.run() as any;
+                }) as Promise<any>[],
+            );
         }
         let filter: (computedObject: ComputedObject) => boolean;
         if (typeof arguments[0] === "function") {
@@ -182,7 +186,7 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
                         return false;
                     })
                     .map((computedObject) => {
-                        return computedObject.run(computedRunArgs);
+                        return computedObject.run(computedRunArgs) as any;
                     }),
             );
             if (!options.wait) {

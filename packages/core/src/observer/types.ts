@@ -1,3 +1,4 @@
+import type { AsyncLiteComputedObject, SyncComputedObject, AsyncComputedObject } from "../computed";
 import type {
     AsyncComputedGetter,
     ComputedDescriptorBuilder,
@@ -6,10 +7,19 @@ import type {
 import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
 import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
+import { WatchObject } from "../watch";
 import type { WatchDescriptorBuilder } from "../watch/types";
 import type { ObserverObject } from "./observer";
 
-export type ObserverType = "watch" | "schema" | "computed" | "asyncComputed" | "turboAsyncComputed";
+export interface ObserverObjects {
+    watch: WatchObject;
+    schema: any;
+    sync: SyncComputedObject;
+    async: AsyncLiteComputedObject;
+    asyncpro: AsyncComputedObject;
+}
+
+export type ObserverType = keyof ObserverObjects;
 
 export enum ObserverScopeRef {
     Root = "ROOT",
@@ -25,6 +35,15 @@ export type ObserverDependMatcher<Value = any> = (path: string[], value: Value) 
 export type ObserverDepends = (string | string[])[];
 
 export type ObserverScope = string | string[] | "SELF" | "CURRENT" | "ROOT" | "PARENT";
+/**
+ * 计算属性所在的位置
+ */
+export type ObserverContext<Value = any> = {
+    path: string[];
+    value: Value;
+    parentPath: string[];
+    parent: any;
+};
 
 export type ObserverDescriptorGetter<Value, Scope> =
     | ((scope: Scope, args: any) => Value)
@@ -139,17 +158,6 @@ export type ObserverOptions<Value = any, Schema extends Dict = Dict> = {
      *
      */
     group?: string;
-    /**
-     *
-     * 是否保存创建的computedObject对象
-     *
-     * @description
-     * 默认情况下，每一个计算属性均会创建一个computedObject对象实便并且保存到store.computedObjects中
-     *
-     * 默认=true,=false则不会保存
-     *
-     */
-    objectify?: boolean;
     /**
      * 当执行计算函数时，如果出错时，是否抛出错误，
      * 默认为true，即抛出错误

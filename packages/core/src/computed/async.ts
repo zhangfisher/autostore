@@ -175,7 +175,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         // 3. 根据配置参数获取计算函数的上下文对象
         const scope = getValueScope<AsyncComputedValue<Value>, Scope>(
             this as any,
-            "computed",
+            "sync",
             this.context,
             finalComputedOptions,
         );
@@ -334,7 +334,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             operate: options.operate,
             first: options.first,
             abortSignal: abortController.signal,
-            ref: this._refStateCtx?.off as any,
         };
 
         const ctx: GetterRunContext = {
@@ -382,9 +381,10 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
                     // 如果有中止信号，则取消计算
                     if (ctx.hasAbort) throw new AbortError();
                     // 执行回调
-                    emitStoreEvent(this.store, "observer:prepare", {
+                    emitStoreEvent(this.store, "observer:run", {
                         args: getterArgs,
                         observer: this,
+                        scope,
                     });
                     // 执行计算函数
                     computedResult = await this.getter.call(this, scope, getterArgs);

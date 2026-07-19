@@ -56,8 +56,8 @@ import type { Dict, ObjectKeyPaths, StatePath } from "../types";
 import { getId } from "../utils/getId";
 import type { ComputedObject } from "../computed/computedObject";
 import { SyncComputedObject } from "../computed/sync";
-import type { ComputedContext, ComputedDescriptor } from "../computed/types";
-import type { WatchDescriptor, Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
+import type { ComputedDescriptor } from "../computed/types";
+import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import type { AutoStoreEvents } from "./types";
 import { BATCH_UPDATE_EVENT } from "../consts";
 import { createReactiveObject } from "./reactive";
@@ -97,6 +97,7 @@ import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
 import { cascadeDestroy } from "../plugins/cascadeDestroy";
+import { emitStoreEventWithResult } from "../utils/emitStoreEventWithResult";
 
 export class AutoStore<
     State extends Dict,
@@ -154,13 +155,13 @@ export class AutoStore<
                 },
             ),
         );
-        this.operates.options.delimiter = this.options.delimiter;
         this._createSandbox();
         this._createConfigManager();
         this.computedObjects = new ComputedObjects<State>(this);
         this.watchObjects = new WatchObjects<State>(this);
         this._initObserverBuilders();
-        this.subscribeCallbacks();
+        this._subscribeHooks();
+        this._installPlugins();
         this._data = createReactiveObject.call(this as any, state || {}, {
             notify: this._notify.bind(this),
             createObserverObject: this.handleReactiveObject.bind(this),
@@ -178,7 +179,6 @@ export class AutoStore<
             // @ts-expect-error
             globalThis.__AUTOSTORE_DEVTOOLS__.add(this);
         }
-        this._installPlugins();
         this.emit("load", this);
     }
     get id() {
@@ -232,15 +232,10 @@ export class AutoStore<
 
     private _initObserverBuilders() {
         const onComputedCreated = (computedObj: ComputedObject) => {
-            computedObj.silentUpdate(computedObj.initial);
-            if (computedObj.options.objectify) {
-                this.computedObjects.set(computedObj.id, computedObj);
-            }
-            this.emit("computed:created", computedObj);
+            this.computedObjects.set(computedObj.id, computedObj);
         };
-
         this.observerBuilders = {
-            computed: (descriptor: AnyObserverDescriptor, context: any) => {
+            sync: (descriptor: AnyObserverDescriptor, context: any) => {
                 const computedObj = new SyncComputedObject(
                     this,
                     descriptor,
@@ -249,7 +244,7 @@ export class AutoStore<
                 onComputedCreated(computedObj);
                 return computedObj;
             },
-            asyncComputed: (descriptor: AnyObserverDescriptor, context: any) => {
+            async: (descriptor: AnyObserverDescriptor, context: any) => {
                 const computedObj = new AsyncLiteComputedObject(
                     this,
                     descriptor,
@@ -258,7 +253,7 @@ export class AutoStore<
                 onComputedCreated(computedObj);
                 return computedObj;
             },
-            turboAsyncComputed: (descriptor: AnyObserverDescriptor, context: any) => {
+            asyncpro: (descriptor: AnyObserverDescriptor, context: any) => {
                 const computedObj = new AsyncComputedObject(
                     this,
                     descriptor as ComputedDescriptor,
@@ -270,7 +265,6 @@ export class AutoStore<
             watch: (descriptor: AnyObserverDescriptor, context: any) => {
                 const watchObj = new WatchObject(this, descriptor, context);
                 this.watchObjects.set(watchObj.id, watchObj);
-                this.emit("watch:created", watchObj);
                 return watchObj;
             },
             ...this.options.observerBuilders,
@@ -362,10 +356,11 @@ export class AutoStore<
             }
         }
     }
-    private subscribeCallbacks() {
+    private _subscribeHooks() {
         const hookNames = {
-            "observer:beforeCreate": "onObserverBeforeCreate",
+            "observer:initial": "onObserverInitial",
             "observer:created": "onObserverCreated",
+            "observer:run": "onObserverRun",
             "observer:done": "onObserverDone",
             "observer:cancel": "onObserverCancel",
             "observer:error": "onObserverError",
@@ -549,25 +544,18 @@ export class AutoStore<
         if (descriptor) {
             const builder = this.observerBuilders[descriptor.type];
             if (builder) {
-                this.emit("observer:beforeCreate", { descriptor, context } as any);
-                const observerObj = builder(descriptor, context);
-                this.emit("observer:created", observerObj);
-                return observerObj;
+                const isBuild = emitStoreEventWithResult(
+                    this,
+                    "observer:initial",
+                    { descriptor, context } as any,
+                    (results) => {
+                        return results.every((r) => r);
+                    },
+                );
+                if (isBuild) {
+                    return builder(descriptor, context);
+                }
             }
-        }
-    }
-    /**
-     * 创建侦听对象
-     * @param context
-     * @param descriptor
-     */
-    _createWatch(descriptor: WatchDescriptor, context?: ComputedContext) {
-        const builder = this.observerBuilders[descriptor.type];
-        if (builder) {
-            const watchObj = new WatchObject(this, descriptor, context);
-            this.watchObjects.set(watchObj.id, watchObj);
-            this.emit("watch:created", watchObj);
-            return watchObj;
         }
     }
     // **************** 普通方法 ***********
@@ -879,11 +867,14 @@ export class AutoStore<
                             reject(new TimeoutError());
                         }, timeout);
                     }
-                    subscriber = this.on("computed:done", ({ path: spath }) => {
-                        if (isPathEq(keyPath, spath)) {
-                            clearTimeout(tmId);
-                            subscriber?.off();
-                            resolve(expandAsync ? val.value : val);
+                    subscriber = this.on("observer:done", ({ observer }) => {
+                        if (observer.type === "async" || observer.type === "asyncpro") {
+                            const path = observer.path;
+                            if (isPathEq(keyPath, path)) {
+                                clearTimeout(tmId);
+                                subscriber?.off();
+                                resolve(expandAsync ? val.value : val);
+                            }
                         }
                     });
                 });

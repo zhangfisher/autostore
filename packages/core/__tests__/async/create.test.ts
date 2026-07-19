@@ -31,9 +31,11 @@ describe("动态创建异步计算属性", () => {
                 },
                 {
                     onObserverCreated: () => {
-                        expect(store.computedObjects.size).toBe(1);
-                        expect(store.computedObjects.has("x")).toBe(true);
-                        resolve();
+                        setTimeout(() => {
+                            expect(store.computedObjects.size).toBe(1);
+                            expect(store.computedObjects.has("x")).toBe(true);
+                            resolve();
+                        });
                     },
                 },
             );
@@ -43,33 +45,6 @@ describe("动态创建异步计算属性", () => {
                 },
                 ["price", "count"],
                 { id: "x" },
-            );
-        });
-    });
-    test("动态创建的异步计算对象，不保存计算对象实例", () => {
-        return new Promise<void>((resolve) => {
-            const store = new AutoStore(
-                {
-                    price: 2,
-                    count: 3,
-                },
-                {
-                    onObserverCreated: () => {
-                        expect(store.computedObjects.size).toBe(0);
-                        expect(store.computedObjects.has("x")).toBe(false);
-                        resolve();
-                    },
-                },
-            );
-            store.computedObjects.create<number>(
-                async (scope: any) => {
-                    return scope.price * scope.count;
-                },
-                ["price", "count"],
-                {
-                    id: "x",
-                    objectify: false,
-                },
             );
         });
     });

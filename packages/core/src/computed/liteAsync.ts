@@ -13,6 +13,7 @@ import { getSnap } from "../utils/getSnap";
 import type { StateOperate } from "../store/types";
 import { AsyncLiteComputedGetterArgs, ComputedOptions, RuntimeComputedOptions } from "./types";
 import { markRaw } from "../utils";
+import { emitStoreEvent } from "../utils/emitStoreEvent";
 
 export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedObject<
     Value,
@@ -71,7 +72,7 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
         // 3. 根据配置参数获取计算函数的上下文对象
         const scope = getValueScope<Value, Scope>(
             this as any,
-            "computed",
+            "sync",
             this.context,
             finalComputedOptions,
         );
@@ -104,7 +105,6 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             extras: options.extras,
             operate: options.operate,
             first: options.first,
-            ref: this._refStateCtx?.ref as any,
         };
         this.error = undefined;
         let hasError: any = undefined;
@@ -113,6 +113,12 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
         try {
             //
             this._reportComputedStatus("loading", true);
+
+            emitStoreEvent(this.store, "observer:run", {
+                args: getterArgs,
+                scope,
+                observer: this,
+            });
             // 执行计算函数
             computedResult = await this.getter.call(this, scope, getterArgs);
             if (options.raw) markRaw(computedResult);
@@ -131,12 +137,12 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
             this.error = hasError;
             this.emitStoreEvent("observer:error", {
                 error: hasError,
-                observerObject: this,
+                observer: this,
             });
         } else {
             this.emitStoreEvent("observer:done", {
                 value: computedResult,
-                observerObject: this,
+                observer: this,
             });
         }
         this.onDoneCallback(options, computedResult, scope, computedResult);

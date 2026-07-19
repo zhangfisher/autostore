@@ -81,8 +81,9 @@ describe("依赖关系管理", () => {
                 ),
             });
             (async () => {
-                store.on("computed:done", (event) => {
-                    if (event.path.join(".") === "a9") {
+                store.on("observer:done", ({ observer }) => {
+                    const path = observer.path;
+                    if (path.join(".") === "a9") {
                         resolve();
                     }
                 });

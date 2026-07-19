@@ -21,7 +21,7 @@ describe("所有异步计算基础功能", () => {
                     },
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             // 计算完成时触发
                             expect(store.state.total.value).toEqual(6);
                             resolve();
@@ -50,7 +50,7 @@ describe("所有异步计算基础功能", () => {
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
 
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             // 计算完成时触发
                             results.push(store.state.total.value);
                             if (results.length === 2) {
@@ -80,7 +80,7 @@ describe("所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             const cobj = store.computedObjects.get("x")!;
                             expect(cobj.value.value).toBe(6);
                             resolve();
@@ -136,7 +136,7 @@ describe("所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             const cobj = store.computedObjects.get("x")!;
                             expect(cobj.value.value).toBe(6);
                             expect(count).toBe(1); // 提供转让
@@ -162,7 +162,7 @@ describe("所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedCreated: () => {
+                        onObserverCreated: () => {
                             setTimeout(() => {
                                 expect("value" in store.state.total).toBe(true);
                                 expect("error" in store.state.total).toBe(true);
@@ -195,7 +195,7 @@ describe("所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedCreated: (computedObject) => {
+                        onObserverCreated: ({ observer: computedObject }) => {
                             setTimeout(() => {
                                 expect(store.computedObjects.has("x")).toBe(true);
                                 expect(computedObject.id).toBe("x");
@@ -234,7 +234,7 @@ describe("所有异步计算基础功能", () => {
                     {
                         enableComputed: false,
 
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(count).toBe(1);
                             resolve();
                         },
@@ -270,8 +270,8 @@ describe("所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: ({ path }) => {
-                            expect(path).toStrictEqual(["total2"]);
+                        onObserverDone: ({ observer }) => {
+                            expect(observer.path).toStrictEqual(["total2"]);
                             expect(store.state.total1.value).toBe(100);
                             expect(store.state.total2.value).toBe(8);
                             resolve();
@@ -298,7 +298,7 @@ describe("所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             count++;
                             if (count === 2) {
                                 // 第一次是创建时执行，第二次是手动执行
@@ -325,7 +325,7 @@ describe("所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             resolve();
                         },
                     },
@@ -403,7 +403,7 @@ describe("所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total.value).toBe(6);
                                 resolve();
@@ -434,7 +434,7 @@ describe("所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total.value).toBe(6);
                                 resolve();
@@ -493,7 +493,7 @@ describe("所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total.value).toBe(8);
                                 resolve();
@@ -528,7 +528,7 @@ describe("所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total.value).toBe(6);
                                 resolve();
@@ -587,7 +587,7 @@ describe("所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total.value).toBe(8);
                                 resolve();
@@ -621,7 +621,7 @@ describe("所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total.value).toBe(6);
                                 resolve();
@@ -714,7 +714,7 @@ describe("所有异步计算基础功能", () => {
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
 
-                        onComputedDone: ({ computedObject }) => {
+                        onObserverDone: ({ observer: computedObject }) => {
                             results.push(computedObject.path!.join(","));
                             if (results.length === 12) {
                                 expect(results).toStrictEqual([
@@ -795,7 +795,7 @@ describe("所有异步计算基础功能", () => {
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
 
-                        onComputedDone: ({ computedObject }) => {
+                        onObserverDone: ({ observer: computedObject }) => {
                             results.push(computedObject.path!.join(","));
                             if (results.length === 3) {
                                 expect(results).toStrictEqual(["total1", "total3", "total5"]);

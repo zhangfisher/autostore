@@ -91,7 +91,7 @@ describe("同步计算属性的基本特性", () => {
                     ),
                 },
                 {
-                    onComputedCreated: () => {
+                    onObserverCreated: () => {
                         setTimeout(() => {
                             store.computedObjects.get("x")!.run();
                             expect(store.state.total).toBe(6);
@@ -125,7 +125,7 @@ describe("同步计算属性的基本特性", () => {
                     ),
                 },
                 {
-                    onComputedCreated: () => {
+                    onObserverCreated: () => {
                         setTimeout(() => {
                             store.computedObjects.get("x")!.run({ scope: "price" });
                         });

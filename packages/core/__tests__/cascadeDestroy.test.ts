@@ -137,7 +137,11 @@ describe("cascadeDestroy 级联销毁观察对象", () => {
     test("WatchObject 自身路径删除时销毁", async () => {
         const store = new AutoStore({
             a: 1,
-            w: watch(() => 1, () => true, { initial: 0 }),
+            w: watch(
+                () => 1,
+                () => true,
+                { initial: 0 },
+            ),
         });
         void store.state.w; // 触发 watch 创建
         expect(store.watchObjects.size).toBe(1);
@@ -154,10 +158,13 @@ describe("cascadeDestroy 级联销毁观察对象", () => {
         });
         void store.state.c;
         expect(store.computedObjects.find(["c"])).toBeDefined();
-        store.update((s: any) => {
-            delete s.a;
-            delete s.b;
-        }, { batch: true });
+        store.update(
+            (s: any) => {
+                delete s.a;
+                delete s.b;
+            },
+            { batch: true },
+        );
         await flush();
         expect(store.computedObjects.find(["c"])).toBeUndefined();
     });
@@ -179,7 +186,7 @@ describe("cascadeDestroy 级联销毁观察对象", () => {
         store.on("observer:destroyed", () => evtCount++);
         void store.state.c;
         const c = store.computedObjects.find(["c"]);
-        expect(c).toBeDefined();
+        expect(c!).toBeDefined();
         store.computedObjects.delete(c!.id);
         expect(store.computedObjects.find(["c"])).toBeUndefined();
         expect(c!.destroyed).toBe(true);

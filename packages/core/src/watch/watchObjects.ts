@@ -96,7 +96,7 @@ export class WatchObjects<State extends Dict> extends Map<string, WatchObject> {
         const descrioptor: WatchDescriptor = isObserverDescriptor(arguments[0])
             ? arguments[0] // @ts-ignore
             : watch(...arguments)();
-        return this.store._createWatch(descrioptor) as WatchObject<Value>;
+        return this.store.createObserverObject(descrioptor) as WatchObject<Value>;
     }
     /**
      * 控制某个组的侦听器是否启用

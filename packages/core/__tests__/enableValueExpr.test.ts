@@ -376,7 +376,7 @@ describe("enableValueExpr 和 createSandbox 组合测试", () => {
             },
             {
                 debug: true,
-                onComputedCreated() {
+                onObserverCreated() {
                     createdEventFired = true;
                 },
             },
@@ -818,10 +818,10 @@ describe("异步计算属性测试", () => {
                 value: '```asyncComputed(async (scope)=>{await new Promise(r=>setTimeout(r,1));return "success"},[])```',
             },
             {
-                onComputedDone() {
+                onObserverDone() {
                     doneEventFired = true;
                 },
-                onComputedError() {
+                onObserverError() {
                     errorEventFired = true;
                 },
             },
@@ -846,7 +846,7 @@ describe("异步计算属性测试", () => {
                 value: '```asyncComputed(async (scope)=>{throw new Error("test error")},[])```',
             },
             {
-                onComputedError(args) {
+                onObserverError(args) {
                     errorEventFired = true;
                     capturedError = args.error;
                 },
@@ -872,7 +872,7 @@ describe("异步计算属性测试", () => {
                 value: '```asyncComputed(async (scope)=>{await new Promise(r=>setTimeout(r,100));return "done"},[],{timeout:[50,5]})```',
             },
             {
-                onComputedError(args) {
+                onObserverError(args) {
                     errorEventFired = true;
                     capturedError = args.error;
                 },

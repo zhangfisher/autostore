@@ -33,7 +33,7 @@ describe("异步依赖参数的各种配置形式", () => {
                     },
                 },
                 {
-                    onComputedDone: ({ value }) => {
+                    onObserverDone: ({ value }) => {
                         expect(value).toEqual("zhang fisher");
                         resolve();
                     },
@@ -65,7 +65,7 @@ describe("异步依赖参数的各种配置形式", () => {
                     },
                 },
                 {
-                    onComputedDone: ({ value }) => {
+                    onObserverDone: ({ value }) => {
                         expect(value).toEqual("zhang fisher");
                         resolve();
                     },
@@ -95,7 +95,7 @@ describe("异步依赖参数的各种配置形式", () => {
                     },
                 },
                 {
-                    onComputedDone: ({ value }) => {
+                    onObserverDone: ({ value }) => {
                         expect(value).toEqual("zhang fisher");
                         resolve();
                     },
@@ -133,7 +133,7 @@ describe("异步依赖参数的各种配置形式", () => {
                     },
                 },
                 {
-                    onComputedDone: ({ value }) => {
+                    onObserverDone: ({ value }) => {
                         expect(value).toEqual("zhang fisher");
                         resolve();
                     },

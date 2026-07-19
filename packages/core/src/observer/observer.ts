@@ -11,13 +11,11 @@ import { getVal } from "../utils/getVal";
 import { joinValuePath } from "../utils/joinValuePath";
 import { setVal } from "../utils/setVal";
 import { getId } from "../utils/getId";
-import type { ObserverDescriptor, ObserverOptions } from "./types";
-import type { ComputedContext } from "../computed/types";
+import type { ObserverContext, ObserverDescriptor, ObserverOptions } from "./types";
 import type { StateOperate, AutoStoreEvents, UpdateOptions } from "../store/types";
 import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
-import { createRefState, RefStateContext } from "../store/refState";
 import { emitStoreEvent } from "../utils/emitStoreEvent";
 
 export class ObserverObject<
@@ -39,19 +37,19 @@ export class ObserverObject<
     private _error?: Error; // 记录最后一次运行时的错误
     store: AutoStore<any>;
     _shadowStore!: AutoStore<any>;
-    _refStateCtx?: RefStateContext;
+    // _refStateCtx?: RefStateContext;
 
     /**
      *  构造函数。
      *
      * @param {AutoStore<any>} store
-     * @param {ComputedContext} context - 动态值上下文，指该动态值所有的路径、值、父路径和父对象引用。
-     * @param {ComputedDescriptor<Options>} descriptor - 动态值描述符，包含了动态值的元数据。
+     * @param {ObserverContext} context - 动态值上下文，指该动态值所有的路径、值、父路径和父对象引用。
+     * @param {ObserverDescriptor<Options>} descriptor - 动态值描述符，包含了动态值的元数据。
      */
     constructor(
         store: AutoStore<any>,
         public descriptor: ObserverDescriptor<any, any, any>,
-        public context?: ComputedContext<Value>,
+        public context?: ObserverContext<Value>,
     ) {
         this.store = store;
         this._associated = context !== undefined;
@@ -70,8 +68,9 @@ export class ObserverObject<
         if (!this._path) this._path = [`#${this._id}`];
         this._initial = this._options.initial;
         this.onInitOptions(this._options);
-        this._createRefStateCtx(context?.value);
+        // this._createRefStateCtx(context?.value);
         this._depends = calcDependPaths(this._path, this._options.depends);
+        emitStoreEvent(this.store, "observer:created", { context, observer: this });
         this._onInitial();
     }
     get type() {
@@ -176,22 +175,19 @@ export class ObserverObject<
         this.onInitial();
     }
 
-    private _createRefStateCtx(value: any) {
-        const _getRefStore =
-            value?._getRefStore ||
-            (() => {
-                const refStore = this.options.refStore || this.store.options.refStore;
-                if (refStore) {
-                    return new WeakRef(refStore);
-                }
-            });
-        if (isFunction(_getRefStore)) {
-            const storeRef = _getRefStore() as WeakRef<AutoStore<any>>;
-            if (storeRef) {
-                this._refStateCtx = createRefState(storeRef, this as ObserverObject);
-            }
-        }
-    }
+    // private _createRefStateCtx(value: any) {
+    //     const _getRefStore =
+    //         value?._getRefStore ||
+    //         (() => {
+    //             return this.options.refStore || this.store.options.refStore;
+    //         });
+    //     if (isFunction(_getRefStore)) {
+    //         const storeRef = _getRefStore() as WeakRef<AutoStore<any>>;
+    //         if (storeRef) {
+    //             this._refStateCtx = createRefState(storeRef, this as ObserverObject);
+    //         }
+    //     }
+    // }
     /**
      * 供子类继承进行初始化
      */
@@ -327,7 +323,7 @@ export class ObserverObject<
         this._subscribers.forEach((subscriber) => {
             subscriber.off();
         });
-        this._refStateCtx?.off();
+        // this._refStateCtx?.off();
         this._attached = false;
         this._subscribers = [];
         this.store.watchObjects.delete(this.id);
@@ -347,8 +343,7 @@ export class ObserverObject<
         // 3. 从两个集合移除：用原生 Map.delete，避免与集合 delete（已路由到 destroy）互相递归
         Map.prototype.delete.call(this.store.computedObjects, this.id);
         Map.prototype.delete.call(this.store.watchObjects, this.id);
-        // 4. 生命周期事件（同步触发，与 observer:created 一致）
-        emitStoreEvent(this.store, "observer:destroyed", this, true);
+        emitStoreEvent(this.store, "observer:destroyed", this);
     }
     /**
      * 供子类重写，在销毁时执行清理（如取消 inflight 请求）
@@ -363,13 +358,11 @@ export class ObserverObject<
         }
         return this._shadowStore;
     }
-    protected _runGetter(scope: any, args: any) {}
     /**
      * 供子类重写
      *
      */ //  eslint-disable-next-line @typescript-eslint/no-unused-vars
     run(..._args: any[]): any {}
-    protected getGetterArgs() {}
     /**
      * 当执行store.reset时调用
      */

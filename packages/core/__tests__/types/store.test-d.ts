@@ -108,25 +108,25 @@ describe("Store 选项类型", () => {
                 value: computed(async () => 1, []),
             },
             {
-                onComputedCreated: (computedObject) => {
+                onObserverCreated: (computedObject) => {
                     const check1: Expect<Equal<typeof computedObject.id, string>> = true;
                     const check2: Expect<Equal<typeof computedObject.path, string[]>> = true;
                 },
-                onComputedDone: (args) => {
+                onObserverDone: (args) => {
                     const check1: Expect<Equal<typeof args.id, string>> = true;
                     const check2: Expect<Equal<typeof args.path, string[]>> = true;
                     // value 和 computedObject 是 any 类型,跳过断言
                     args.value;
                     args.computedObject;
                 },
-                onComputedError: (args) => {
+                onObserverError: (args) => {
                     const check1: Expect<Equal<typeof args.id, string>> = true;
                     const check2: Expect<Equal<typeof args.path, string[]>> = true;
                     // error 和 computedObject 是 any 类型,跳过断言
                     args.error;
                     args.computedObject;
                 },
-                onComputedCancel: (args) => {
+                onObserverCancel: (args) => {
                     const check1: Expect<Equal<typeof args.id, string>> = true;
                     const check2: Expect<Equal<typeof args.path, string[]>> = true;
                     const check3: Expect<

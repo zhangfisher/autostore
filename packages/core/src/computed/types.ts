@@ -25,7 +25,6 @@ import type {
 import type { StateOperate } from "../store/types";
 import type { ComputedObject } from "./computedObject";
 import type { Dict } from "../types";
-import { RefState } from "../store/refState";
 
 /**
  * 同步计算属性配置参数
@@ -41,7 +40,6 @@ export interface ComputedGetterArgs {
      *
      */
     operate?: StateOperate;
-    ref: RefState;
 }
 
 export type ComputedGetter<Value, Scope = any> = (
@@ -97,11 +95,6 @@ export interface AsyncComputedGetterArgs {
      * 是否是第一次运行
      */
     first?: boolean;
-    /**
-     * 引用关联Store状态值，并在状态值变更重新执行计算函数
-     * 仅在confiturable中生效
-     */
-    ref: RefState;
 }
 
 export type AsyncComputedGetter<Value, Scope = any> = (
@@ -351,7 +344,6 @@ export type SyncComputedOptions<Value = any, Scope = any> = Pick<
     | "onDone"
     | "depends"
     | "initial"
-    | "objectify"
     | "group"
     | "scope"
     | "extras"
@@ -384,14 +376,14 @@ export type AsyncReturnType<T extends (...args: any) => any> = T extends (
       : any;
 
 export type SyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
-    "computed",
+    "sync",
     Value,
     Scope,
     ComputedGetter<Value, Scope>,
     ComputedOptions<Value, Scope>
 >;
 export type SyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDescriptorBuilder<
-    "computed",
+    "sync",
     Value,
     Scope,
     SyncComputedDescriptor<Value, Scope>
@@ -417,11 +409,6 @@ export interface AsyncLiteComputedGetterArgs {
      * 是否是第一次运行
      */
     first?: boolean;
-    /**
-     * 引用关联Store状态值，并在状态值变更重新执行计算函数
-     * 仅在confiturable中生效
-     */
-    ref: RefState;
 }
 
 export type AsyncLiteComputedGetter<Value, Scope = any> = (
@@ -430,7 +417,7 @@ export type AsyncLiteComputedGetter<Value, Scope = any> = (
 ) => Promise<Value>;
 
 export type AsyncLiteComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
-    "computed",
+    "async",
     Value,
     Scope,
     AsyncLiteComputedGetter<Value, Scope>,
@@ -442,11 +429,11 @@ export type AsyncLiteComputedDescriptor<Value = any, Scope = any> = ObserverDesc
 export type AsyncLiteComputedDescriptorBuilder<
     Value = any,
     Scope = any,
-> = ObserverDescriptorBuilder<"computed", Value, Scope, AsyncLiteComputedDescriptor<Value, Scope>>;
+> = ObserverDescriptorBuilder<"async", Value, Scope, AsyncLiteComputedDescriptor<Value, Scope>>;
 
 // 全功能异步计算
 export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
-    "computed",
+    "asyncpro",
     Value,
     Scope,
     AsyncComputedGetter<Value, Scope>,
@@ -454,7 +441,7 @@ export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescript
 >;
 
 export type AsyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDescriptorBuilder<
-    "computed",
+    "asyncpro",
     Value,
     Scope,
     AsyncComputedDescriptor<Value, Scope>

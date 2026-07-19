@@ -1713,7 +1713,7 @@ describe("ConfigManager 和 configurable 集成测试", () => {
             netStore.state.dhcp = false;
             expect(configState["network.dhcp"].value).toBeFalsy();
             await delay(0);
-            expect(configState["network.ip"].enable).toBeFalsy();
+            expect(configState["network.ip"].enable!).toBeFalsy();
         });
     });
 });

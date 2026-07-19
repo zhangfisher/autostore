@@ -63,7 +63,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
         // 3. 根据配置参数获取计算函数的上下文对象
         const scope = getValueScope<Value, Scope>(
             this as any,
-            "computed",
+            "sync",
             this.context,
             finalComputedOptions,
         );
@@ -76,7 +76,11 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
                 first,
                 ref: this._refStateCtx?.ref,
             };
-            emitStoreEvent(this.store, "observer:prepare", { args: getterArgs, observer: this });
+            emitStoreEvent(this.store, "observer:run", {
+                args: getterArgs,
+                scope,
+                observer: this,
+            });
             computedResult = this.getter.call(this, scope, getterArgs);
             if (finalComputedOptions.raw) markRaw(computedResult);
         } catch (e: any) {

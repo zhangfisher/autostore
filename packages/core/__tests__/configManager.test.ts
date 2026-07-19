@@ -33,7 +33,7 @@ function assertConfigRegistered(
     for (const path of paths) {
         const fullPath = prefix + path;
         expect(fullPath in configManager.state).toBe(true);
-        // @ig
+        // @ts-ignore
         expect(configManager.state[fullPath]).toBeDefined();
     }
 }

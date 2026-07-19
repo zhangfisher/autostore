@@ -1,14 +1,18 @@
 import type { ComputedObject } from "../computed/computedObject";
-import type { ComputedGetterArgs, ComputedScope } from "../computed/types";
+import type { ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
-import type { AnyObserverObject, AnyObserverDescriptor, ObserverType } from "../observer/types";
+import type {
+    AnyObserverObject,
+    AnyObserverDescriptor,
+    ObserverType,
+    ObserverContext,
+} from "../observer/types";
 import type { Dict, ObjectKeyPaths } from "../types";
 import { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
 import type { ConfigManager, ConfigSource } from "../schema/manager";
-import type { TransformedEvents } from "fastevent";
+import type { FastEventSubscriber, TransformedEvents } from "fastevent";
 import type { ObserverDescriptor } from "../observer/types";
-import type { WatchObject } from "../watch/watchObject";
 import type { CreateSandboxOptions } from "../utils/createSandbox";
 import type { ILogger } from "flex-tools";
 import { IAutoStorePlugin } from "../plugin";
@@ -59,137 +63,39 @@ export interface StateOperate<Value = any, Parent = any> {
 
 type ToArray<T> = T | T[];
 
+export type AutoStoreHookArgs<State extends Dict, T> = ToArray<
+    (this: AutoStore<State>, args: T) => void
+>;
+
 export interface AutoStoreHooks<State extends Dict> {
-    /**
-     *
-     * 当创建计算属性时调用
-     *
-     * @description
-     *
-     * 允许在此对计算对象进行一些处理，比如重新封装getter函数，或者直接修改ComputedOptions
-     *
-     * @example
-     *
-     * createStore({...},{
-     *  onCreateComputed(computedObject){
-     *      const oldGetter = computedObject.getter
-     *      computedObject.getter = function(){
-     *          do something
-     *          return oldGetter.call(this,...arguments)
-     *      }
-     *  }
-     * })
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedCreated?: ToArray<(this: AutoStore<State>, computedObject: ComputedObject) => void>;
-    /**
-     * 当每一次计算完成后调用
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedDone?: ToArray<
-        (
-            this: AutoStore<State>,
-            args: { id: string; path: string[]; value: any; computedObject: ComputedObject },
-        ) => void
+    onObserverInitial?: AutoStoreHookArgs<
+        State,
+        {
+            context: ObserverContext;
+            descriptor: AnyObserverDescriptor;
+        }
     >;
-
-    /**
-     * 当计算出错时调用
-     * @param this
-     * @param error
-     * @param computedObject
-     * @returns
-     */
-    onComputedError?: ToArray<
-        (
-            this: AutoStore<State>,
-            args: { id: string; path: string[]; error: Error; computedObject: ComputedObject },
-        ) => void
+    onObserverCreated?: AutoStoreHookArgs<
+        State,
+        {
+            context: ObserverContext;
+            observer: AnyObserverObject;
+        }
     >;
-    /**
-     * 当每一次计算对象被取消时调用
-     * 仅在异步计算时有效
-     * @param this
-     * @param computedObject
-     * @returns
-     */
-    onComputedCancel?: ToArray<
-        (
-            this: AutoStore<State>,
-            args: {
-                id: string;
-                path: string[];
-                reason: "timeout" | "abort" | "reentry" | "error";
-                computedObject: ComputedObject<any>;
-            },
-        ) => void
+    onObserverRun?: AutoStoreHookArgs<
+        State,
+        { args: Record<string, any>; scope: any; observer: AnyObserverObject }
     >;
-
-    onObserverBeforeCreate?: ToArray<
-        (
-            this: AutoStore<State>,
-            args: {
-                context: { path: string[]; value: any; parentPath: string[]; parent: any };
-                descriptor: AnyObserverDescriptor;
-            },
-        ) => void
+    onObserverDone?: AutoStoreHookArgs<State, { value: any; observer: AnyObserverObject }>;
+    onObserverError?: AutoStoreHookArgs<
+        State,
+        {
+            error: Error;
+            observerObject: ObserverObject<any, any>;
+        }
     >;
-    /**
-     *
-     * 当创建观察对象实例化时调用
-     *
-     * 一般可以在此对ObserverObject进行一些处理
-     * 比如重新封装run函数等
-     *
-     */
-    onObserverCreated?: ToArray<
-        (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void
-    >;
-    /**
-     * 当Observer对象触发运行
-     */
-    onObserverDone?: ToArray<
-        (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void
-    >;
-    /**
-     * 当Observer对象触发运行
-     */
-    onObserverError?: ToArray<
-        (
-            this: AutoStore<State>,
-            args: {
-                error: Error;
-                observerObject: ObserverObject<any, any>;
-            },
-        ) => void
-    >;
-    /**
-     * 当观察对象被（自动）销毁时调用，与 onObserverCreated 对称。
-     */
-    onObserverDestroyed?: ToArray<
-        (this: AutoStore<State>, observerObject: ObserverObject<any, any>) => void
-    >;
-    /**
-     *
-     *
-     *
-     * 当状态值是一个函数时，创建对应的可观察对象前调用
-     *
-     * 即第一次读取时调用，
-     *
-     * 返回false则不创建对应的可观察对象，将函数标志为raw
-     *
-     * 如果提供多个则所有Hook均需要返回true
-     *
-     *
-     */
-    onObserverInitial?: ToArray<
-        (this: AutoStore<State>, path: string[], value: any, parent: any) => boolean | undefined
-    >;
+    onObserverCancel?: AutoStoreHookArgs<State, { reason: string; observer: AnyObserverObject }>;
+    onObserverDestroyed?: AutoStoreHookArgs<State, ObserverObject<any, any>>;
 }
 
 export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<State> {
@@ -244,10 +150,6 @@ export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<Sta
      */
     enableComputed?: boolean;
 
-    /**
-     * 路径分隔符,默认是`.`
-     */
-    delimiter?: string;
     /**
      * 获取计算函数的根scope
      *
@@ -363,7 +265,7 @@ export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<Sta
     /**
      * 提供一个配置管理器对象
      */
-    configManager?: ConfigManager | ConfigSource;
+    configManager?: ConfigManager | ConfigSource | false;
     /**
      * 为当前Store的所有配置项均指定一个统一的前缀
      */
@@ -487,42 +389,17 @@ export type AutoStoreEvents = TransformedEvents<{
     unload: AutoStore<any>;
     // 对象重置时触发，入参为重置的路径字符串
     reset: string | undefined;
-    "computed:created": ComputedObject; // 当计算对象创建时
-    // 当计算属性准备运行前
-    "computed:before": {
-        computedObject: ComputedObject;
-        scope: any;
-        args: ComputedGetterArgs;
-    };
-    // 当计算函数执行成功后
-    "computed:done": { id: string; path: string[]; value: any; computedObject: ComputedObject };
-    // 当计算函数执行出错时
-    "computed:error": { id: string; path: string[]; error: any; computedObject: ComputedObject };
-    "computed:cancel": {
-        id: string;
-        path: string[];
-        reason: "timeout" | "abort" | "reentry" | "error";
-        computedObject: ComputedObject;
-    }; // 当计算函数被取消时
-    "watch:created": WatchObject;
-    // 当计算属性准备运行前
-    "watch:before": {
-        watchObject: WatchObject;
-        scope: any;
-    };
-    "watch:done": { value: any; watchObject: WatchObject };
-    "watch:error": { error: any; watchObject: WatchObject };
     /**
      *
      * 创建observer实例前
      *
      */
     "observer:initial": {
-        context: { path: string[]; value: any; parentPath: string[]; parent: any };
+        context?: ObserverContext;
         descriptor: AnyObserverDescriptor;
     };
-    "observer:created": AnyObserverObject;
-    "observer:prepare": { args: Record<string, any>; observer: AnyObserverObject };
+    "observer:created": { observer: AnyObserverObject; context?: ObserverContext };
+    "observer:run": { args: Record<string, any>; scope: any; observer: AnyObserverObject };
     "observer:done": { value: any; observer: AnyObserverObject };
     "observer:cancel": { reason: string; observer: AnyObserverObject };
     "observer:error": { error: Error; observer: AnyObserverObject };
@@ -534,22 +411,4 @@ export type AutoStoreEvents = TransformedEvents<{
 
 export type StoreRawStateType<Store extends AutoStore<any>> = Store["types"]["rawState"];
 
-/**
- * 用于扩展声明可扩展
- *declare module "autostore" {
-    interface ConfigueableStores{
-       <store.id>: Store
-    }
- }
- *
- */
-
-export interface RefStores {}
-
-export type RefStorePaths = {
-    [K in keyof RefStores]:
-        | `@${K & string}`
-        | `@${K & string}/${ObjectKeyPaths<RefStores[K]["state"]>}`;
-}[keyof RefStores];
-
-export type { RefState, RefStateOptions } from "./refState";
+export type AutoStoreSubscriber = FastEventSubscriber;

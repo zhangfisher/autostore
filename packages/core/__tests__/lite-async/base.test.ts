@@ -21,7 +21,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     },
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             // 计算完成时触发
                             expect(store.state.total).toEqual(6);
                             resolve();
@@ -49,7 +49,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     },
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             // 计算完成时触发
                             results.push(store.state.total);
                             if (results.length === 2) {
@@ -79,7 +79,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             const cobj = store.computedObjects.get("x")! as any;
                             expect(cobj.value).toBe(6);
                             resolve();
@@ -135,7 +135,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             const cobj = store.computedObjects.get("x")! as any;
                             expect(cobj.value).toBe(6);
                             expect(count).toBe(1); // 提供转让
@@ -162,7 +162,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedCreated: (computedObject) => {
+                        onObserverCreated: ({ observer: computedObject }) => {
                             setTimeout(() => {
                                 expect(store.computedObjects.has("x")).toBe(true);
                                 expect(computedObject.id).toBe("x");
@@ -201,7 +201,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     {
                         enableComputed: false,
 
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(count).toBe(1);
                             resolve();
                         },
@@ -237,8 +237,8 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: ({ path }) => {
-                            expect(path).toStrictEqual(["total2"]);
+                        onObserverDone: ({ observer }) => {
+                            expect(observer.path).toStrictEqual(["total2"]);
                             expect(store.state.total1).toBe(100);
                             expect(store.state.total2).toBe(8);
                             resolve();
@@ -265,7 +265,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             count++;
                             if (count === 2) {
                                 // 第一次是创建时执行，第二次是手动执行
@@ -292,7 +292,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             resolve();
                         },
                     },
@@ -370,7 +370,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total).toBe(6);
                                 resolve();
@@ -401,7 +401,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total).toBe(6);
                                 resolve();
@@ -460,7 +460,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total).toBe(8);
                                 resolve();
@@ -495,7 +495,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total).toBe(6);
                                 resolve();
@@ -554,7 +554,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total).toBe(8);
                                 resolve();
@@ -588,7 +588,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                             ),
                         },
                         {
-                            onComputedDone: () => {
+                            onObserverDone: () => {
                                 expect(count).toBe(1);
                                 expect(store.state.total).toBe(6);
                                 resolve();
@@ -681,7 +681,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
 
-                        onComputedDone: ({ computedObject }) => {
+                        onObserverDone: ({ observer: computedObject }) => {
                             results.push(computedObject.path!.join(","));
                             if (results.length === 12) {
                                 expect(results).toStrictEqual([
@@ -762,7 +762,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建，注意是创建而不是执行
 
-                        onComputedDone: ({ computedObject }) => {
+                        onObserverDone: ({ observer: computedObject }) => {
                             results.push(computedObject.path!.join(","));
                             if (results.length === 3) {
                                 expect(results).toStrictEqual(["total1", "total3", "total5"]);
@@ -870,7 +870,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                     },
                     {
                         // 遍历对象，从而导致计算属性被读取而立刻创建
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             // 计算完成时触发
                             expect(store.state.total).toEqual(8);
                             expect(store.state.loading).toBeFalsy();
@@ -907,7 +907,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(store.state.total).toEqual(8);
                             expect(store.state.ui.loading).toBeFalsy();
                             resolve();
@@ -943,7 +943,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(store.state.total).toEqual(8);
                             expect(store.state.ui.loading).toBeFalsy();
                             resolve();
@@ -979,7 +979,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         },
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(store.state.data.total).toEqual(8);
                             expect(store.state.data.loading).toBeFalsy();
                             resolve();
@@ -1015,7 +1015,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         },
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(store.state.data.total).toEqual(8);
                             expect(store.state.loading).toBeFalsy();
                             resolve();
@@ -1051,7 +1051,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedError: () => {
+                        onObserverError: () => {
                             expect(store.state.loading).toBeFalsy();
                             expect(store.state.total).toEqual(5); // 保持初始值
                             expect(store.state.error).toBe("计算错误");
@@ -1087,7 +1087,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             if (store.state.count === 5) {
                                 // 第一次计算: loadingStates = [true]
                                 // 第二次计算: loadingStates = [true, true]
@@ -1128,7 +1128,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(store.state.total).toEqual(8);
                             expect(store.state.loading).toBeFalsy();
                             resolve();
@@ -1164,7 +1164,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(store.state.total).toEqual(8);
                             expect(store.state.status.loading).toBeFalsy();
                             resolve();
@@ -1199,7 +1199,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedError: ({ error }) => {
+                        onObserverError: ({ error }) => {
                             expect(error.message).toBe("计算错误");
                             expect(store.state.error).toBe("计算错误");
                             expect(store.state.total).toEqual(5); // 保持初始值
@@ -1235,7 +1235,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedError: () => {
+                        onObserverError: () => {
                             expect(store.state.ui.error).toBe("计算失败");
                             expect(store.state.total).toEqual(5);
                             resolve();
@@ -1270,7 +1270,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedError: () => {
+                        onObserverError: () => {
                             expect(store.state.ui.error).toBe("数组路径错误");
                             expect(store.state.total).toEqual(5);
                             resolve();
@@ -1305,7 +1305,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         },
                     },
                     {
-                        onComputedError: () => {
+                        onObserverError: () => {
                             expect(store.state.data.error).toBe("嵌套对象错误");
                             expect(store.state.data.total).toEqual(5);
                             resolve();
@@ -1340,7 +1340,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         },
                     },
                     {
-                        onComputedError: () => {
+                        onObserverError: () => {
                             expect(store.state.error).toBe("父级路径错误");
                             expect(store.state.data.total).toEqual(5);
                             resolve();
@@ -1373,7 +1373,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             expect(store.state.total).toEqual(8);
                             expect(store.state.error).toBeUndefined();
                             resolve();
@@ -1411,14 +1411,14 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedDone: () => {
+                        onObserverDone: () => {
                             // 第二次计算成功
                             expect(store.state.error).toBeUndefined();
                             expect(store.state.total).toEqual(10);
                             expect(errorStates).toEqual(["计算错误", undefined]);
                             resolve();
                         },
-                        onComputedError: () => {
+                        onObserverError: () => {
                             // 第一次计算失败
                             errorStates.push(store.state.error);
                             shouldThrow = false;
@@ -1453,7 +1453,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedError: () => {
+                        onObserverError: () => {
                             expect(store.state.error).toBeUndefined(); // 保持原值
                             expect(store.state.total).toEqual(5);
                             resolve();
@@ -1488,7 +1488,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedError: () => {
+                        onObserverError: () => {
                             expect(store.state.status.error).toBe("嵌套状态错误");
                             expect(store.state.total).toEqual(5);
                             resolve();
@@ -1525,7 +1525,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         ),
                     },
                     {
-                        onComputedError: () => {
+                        onObserverError: () => {
                             expect(store.state.loading).toBeFalsy();
                             expect(store.state.error).toBe("计算错误");
                             expect(store.state.total).toEqual(5);
