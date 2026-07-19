@@ -188,6 +188,9 @@ declare module "autostore" {
     export interface ObserverObject {
         refStateContext: RefStateContext;
     }
+    export interface ObserverOptions<Value = any, Schema extends Dict = Dict> {
+        refStore?: AnyAutoStore;
+    }
     export interface ComputedGetterArgs {
         ref: RefState;
     }

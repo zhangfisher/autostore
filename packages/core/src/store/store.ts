@@ -54,17 +54,12 @@ import { ComputedObjects } from "../computed/computedObjects";
 import { GLOBAL_CONFIG_MANAGER } from "../consts";
 import type { Dict, ObjectKeyPaths, StatePath } from "../types";
 import { getId } from "../utils/getId";
-import type { ComputedObject } from "../computed/computedObject";
-import { SyncComputedObject } from "../computed/sync";
-import type { ComputedDescriptor } from "../computed/types";
 import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import type { AutoStoreEvents } from "./types";
 import { BATCH_UPDATE_EVENT } from "../consts";
 import { createReactiveObject } from "./reactive";
 import type { SchemaDescriptor } from "../schema/types";
-import { AsyncComputedObject } from "../computed/async";
 import { WatchObjects } from "../watch/watchObjects";
-import { WatchObject } from "../watch/watchObject";
 import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
 import { isPromise } from "../utils/isPromise";
@@ -93,11 +88,11 @@ import {
     makeHook,
 } from "../utils";
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
-import { AsyncLiteComputedObject } from "../computed/liteAsync";
 import { asyncComputed } from "../computed";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
 import { cascadeDestroy } from "../plugins/cascadeDestroy";
 import { emitStoreEventWithResult } from "../utils/emitStoreEventWithResult";
+import { observers } from "./observers";
 
 export class AutoStore<
     State extends Dict,
@@ -129,7 +124,7 @@ export class AutoStore<
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _logger?: ILogger;
 
-    observerBuilders!: Record<string, any>;
+    static observers: Record<string, any> = observers;
 
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
@@ -159,7 +154,6 @@ export class AutoStore<
         this._createConfigManager();
         this.computedObjects = new ComputedObjects<State>(this);
         this.watchObjects = new WatchObjects<State>(this);
-        this._initObserverBuilders();
         this._subscribeHooks();
         this._installPlugins();
         this._data = createReactiveObject.call(this as any, state || {}, {
@@ -230,46 +224,43 @@ export class AutoStore<
         return this._logger!;
     }
 
-    private _initObserverBuilders() {
-        const onComputedCreated = (computedObj: ComputedObject) => {
-            this.computedObjects.set(computedObj.id, computedObj);
-        };
-        this.observerBuilders = {
-            sync: (descriptor: AnyObserverDescriptor, context: any) => {
-                const computedObj = new SyncComputedObject(
-                    this,
-                    descriptor,
-                    context,
-                ) as unknown as ComputedObject;
-                onComputedCreated(computedObj);
-                return computedObj;
-            },
-            async: (descriptor: AnyObserverDescriptor, context: any) => {
-                const computedObj = new AsyncLiteComputedObject(
-                    this,
-                    descriptor,
-                    context,
-                ) as unknown as ComputedObject;
-                onComputedCreated(computedObj);
-                return computedObj;
-            },
-            asyncpro: (descriptor: AnyObserverDescriptor, context: any) => {
-                const computedObj = new AsyncComputedObject(
-                    this,
-                    descriptor as ComputedDescriptor,
-                    context,
-                ) as unknown as ComputedObject;
-                onComputedCreated(computedObj);
-                return computedObj;
-            },
-            watch: (descriptor: AnyObserverDescriptor, context: any) => {
-                const watchObj = new WatchObject(this, descriptor, context);
-                this.watchObjects.set(watchObj.id, watchObj);
-                return watchObj;
-            },
-            ...this.options.observerBuilders,
-        };
-    }
+    // private _initObserverBuilders() {
+    //     this.observerBuilders = {
+    //         sync: (descriptor: AnyObserverDescriptor, context: any) => {
+    //             const computedObj = new SyncComputedObject(
+    //                 this,
+    //                 descriptor,
+    //                 context,
+    //             ) as unknown as ComputedObject;
+    //             this.computedObjects.set(computedObj.id, computedObj);
+    //             return computedObj;
+    //         },
+    //         async: (descriptor: AnyObserverDescriptor, context: any) => {
+    //             const computedObj = new AsyncLiteComputedObject(
+    //                 this,
+    //                 descriptor,
+    //                 context,
+    //             ) as unknown as ComputedObject;
+    //             this.computedObjects.set(computedObj.id, computedObj);
+    //             return computedObj;
+    //         },
+    //         asyncpro: (descriptor: AnyObserverDescriptor, context: any) => {
+    //             const computedObj = new AsyncComputedObject(
+    //                 this,
+    //                 descriptor as ComputedDescriptor,
+    //                 context,
+    //             ) as unknown as ComputedObject;
+    //             this.computedObjects.set(computedObj.id, computedObj);
+    //             return computedObj;
+    //         },
+    //         watch: (descriptor: AnyObserverDescriptor, context: any) => {
+    //             const watchObj = new WatchObject(this, descriptor, context);
+    //             this.watchObjects.set(watchObj.id, watchObj);
+    //             return watchObj;
+    //         },
+    //         ...this.options.observerBuilders,
+    //     };
+    // }
     private _createSandbox() {
         if (this.options.enableValueExpr) {
             const sandbox = isFunction(this.options.sandbox?.create)
@@ -542,7 +533,7 @@ export class AutoStore<
 
     createObserverObject(descriptor: AnyObserverDescriptor, context?: Record<string, any>) {
         if (descriptor) {
-            const builder = this.observerBuilders[descriptor.type];
+            const builder = AutoStore.observers[descriptor.type];
             if (builder) {
                 const isBuild = emitStoreEventWithResult(
                     this,
@@ -553,7 +544,7 @@ export class AutoStore<
                     },
                 );
                 if (isBuild) {
-                    return builder(descriptor, context);
+                    return builder(this, descriptor, context);
                 }
             }
         }

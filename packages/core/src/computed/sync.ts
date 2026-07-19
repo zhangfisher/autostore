@@ -52,7 +52,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
         }
 
         if (!first) {
-            this.store.logger.info(`Run sync computed for : ${this.toString()}`);
+            this.store.logger.debug(`Run sync computed for : ${this.toString()}`);
         }
 
         // 2. 合成最终的配置参数
@@ -74,7 +74,6 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
             const getterArgs = {
                 operate,
                 first,
-                ref: this._refStateCtx?.ref,
             };
             emitStoreEvent(this.store, "observer:run", {
                 args: getterArgs,

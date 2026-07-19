@@ -76,7 +76,7 @@ export interface ObserverDescriptorBuilder<
     [OBSERVER_DESCRIPTOR_BUILDER_FLAG]: true;
 }
 
-export type ObserverOptions<Value = any, Schema extends Dict = Dict> = {
+export interface ObserverOptions<Value = any, Schema extends Dict = Dict> {
     /**
      * 计算函数的唯一标识，如果未指定，则自动生成一个唯一标识
      */
@@ -174,12 +174,7 @@ export type ObserverOptions<Value = any, Schema extends Dict = Dict> = {
      * 比如配置元数据等
      */
     schema?: Schema;
-    /**
-     * 提供额外的引用store，可以在computed或watch中使用ref引用其他store状态值
-     * 并且在引用状态值变化时自动重新执行observerObject.run
-     */
-    refStore?: AutoStore<any>;
-};
+}
 
 export type ObserverBuilder<Value = any, Scope = any> =
     | ComputedDescriptorBuilder<Value, Scope>
@@ -187,11 +182,4 @@ export type ObserverBuilder<Value = any, Scope = any> =
     | AsyncComputedGetter<Value, Scope>
     | WatchDescriptorBuilder<Value>;
 
-/**
- *用于在计算之前和之后执行的回调
- */
-export type ObserverObjectHooks = {
-    before: ((args: any, options: any) => void)[];
-    after: ((value: any, error?: Error) => void)[];
-};
 export type AnyObserverObject = ObserverObject<any, any>;

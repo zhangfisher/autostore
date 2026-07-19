@@ -25,9 +25,6 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
         if (!this._cache) this._cache = {};
         return this._cache!;
     }
-    get ref() {
-        return this._refStateCtx!.ref;
-    }
     toString() {
         return `WatchObject<${this.id}>`;
     }
