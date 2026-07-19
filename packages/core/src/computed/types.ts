@@ -25,6 +25,11 @@ import type {
 import type { StateOperate } from "../store/types";
 import type { ComputedObject } from "./computedObject";
 import type { Dict } from "../types";
+import { SyncComputedObject } from "./sync";
+
+export interface AsyncComputedObjects {
+    async: SyncComputedObject;
+}
 
 /**
  * 同步计算属性配置参数
@@ -47,35 +52,14 @@ export type ComputedGetter<Value, Scope = any> = (
     args: Required<ComputedGetterArgs>,
 ) => Exclude<Value, Promise<any>>;
 
-export interface ComputedProgressbar {
-    value: (num: number) => void;
-    end: () => void;
-}
 // 异步计算
 export interface AsyncComputedGetterArgs {
-    /**
-     *  获取一个进度条，用来显示异步计算的进度
-     * @param opts
-     * @returns
-     */
-    getProgressbar?: (opts?: { max?: number; min?: number; value?: number }) => ComputedProgressbar;
-    /**
-     * 当计算函数启用超时时，可以指定一个cb，在超时后会调用此函数
-     * @param cb
-     * @returns
-     */
-    onTimeout?: (cb: () => void) => void;
     /**
      *
      * 提供一个函数用来获取当前Scope的快照
      * 传入的scope是一个经过Proxy处理的响应式对象，此方法可以对scope进行转换为普通对象
      */
     getSnap?: <T = Dict>(scope: any) => T;
-    /**
-     * 在执行计算函数时，如果传入AbortController.signal可以用来传递给异步计算函数，用来取消异步计算
-     * 例如：fetch(url,{signal:signal})
-     */
-    abortSignal: AbortSignal;
     /**
      * 用来取消操作正在执行的异步计算函数
      * 异步函数可以通过此方法来取消异步计算
@@ -430,31 +414,14 @@ export type AsyncLiteComputedDescriptorBuilder<
     Scope = any,
 > = ObserverDescriptorBuilder<"async", Value, Scope, AsyncLiteComputedDescriptor<Value, Scope>>;
 
-// 全功能异步计算
-export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
-    "asyncpro",
-    Value,
-    Scope,
-    AsyncComputedGetter<Value, Scope>,
-    ComputedOptions<Value, Scope>
->;
-
-export type AsyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDescriptorBuilder<
-    "asyncpro",
-    Value,
-    Scope,
-    AsyncComputedDescriptor<Value, Scope>
->;
-
+// 全功能异步计
 export type ComputedDescriptor<Value = any, Scope = any> =
     | SyncComputedDescriptor<Value, Scope>
-    | AsyncLiteComputedDescriptor<Value, Scope>
-    | AsyncComputedDescriptor<Value, Scope>;
+    | AsyncLiteComputedDescriptor<Value, Scope>;
 
 export type ComputedDescriptorBuilder<Value = any, Scope = any> =
     | SyncComputedDescriptorBuilder<Value, Scope>
-    | AsyncLiteComputedDescriptorBuilder<Value, Scope>
-    | AsyncComputedDescriptorBuilder<Value, Scope>;
+    | AsyncLiteComputedDescriptorBuilder<Value, Scope>;
 
 export type ComputedDescriptorParameter<Value = any, Scope = any> =
     | ComputedDescriptorBuilder<Value, Scope>

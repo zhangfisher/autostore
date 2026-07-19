@@ -1,5 +1,4 @@
 import type {
-    AsyncComputedDescriptorBuilder,
     AsyncComputedGetter,
     AsyncComputedValue,
     AsyncLiteComputedDescriptorBuilder,
@@ -389,3 +388,16 @@ export type ToRawType<T> = T extends string
             ? T
             : boolean
         : T;
+/**
+ * 提取类型的可选键
+ */
+export type OptionalKeys<T> = {
+    [K in keyof T]-?: {} extends Pick<T, K> ? K : never;
+}[keyof T];
+
+/**
+ * 提取类型的必需键
+ */
+export type RequiredKeys<T> = {
+    [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
+}[keyof T];

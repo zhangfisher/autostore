@@ -1,14 +1,5 @@
-import {
-    describe,
-    test,
-    it,
-    expect,
-    mock,
-    beforeAll,
-    afterAll,
-    beforeEach,
-    afterEach,
-} from "bun:test";
+// oxlint-disable no-unused-expressions no-unused-vars
+import { describe, test, expect, mock } from "bun:test";
 /**
  *
  * 测试计算属性的getter的第二个参数的各项功能
@@ -20,9 +11,11 @@ import {
  *
  */
 
-import { AutoStore, asyncComputed } from "../..";
+import { AutoStore } from "autostore";
+import "../../asyncpro";
+import { asyncComputed } from "../../asyncpro/asyncComputed";
 import { delay } from "flex-tools/async/delay";
-import type { AsyncComputedObject } from "../../src/computed/async";
+import { AsyncComputedObject } from "../../asyncpro/async";
 
 describe("异步计算高级控制功能", () => {
     // 注意：重入时仅会被忽略而不是产生错误

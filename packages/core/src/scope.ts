@@ -4,7 +4,6 @@
  *
  *
  */
-import { PATH_DELIMITER } from "./consts";
 import type { ComputedContext, ComputedOptions, ComputedScope } from "./computed/types";
 import { getValueByPath } from "./utils/getValueByPath";
 import type { ComputedObject } from "./computed/computedObject";
@@ -119,7 +118,7 @@ export function getValueScope<
             }
         }
     } catch (e: any) {
-        storeOptions.logger!(
+        computedObject.store.logger.error(
             `Error while getting computed scope ${computedObject.toString()}: ${e.message}`,
             "error",
         );

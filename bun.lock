@@ -151,6 +151,9 @@
     },
     "packages/plugins": {
       "name": "@autostorejs/plugins",
+      "dependencies": {
+        "flex-tools": "^1.6.6",
+      },
       "devDependencies": {
         "@types/bun": "latest",
         "tsup": "^8.5.1",

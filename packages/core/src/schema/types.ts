@@ -1,8 +1,9 @@
 import type { ComputedBuilder } from "../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
+import { ObserverDescriptor } from "../observer";
 import { AutoStore } from "../store/store";
 import { StoreRawStateType } from "../store/types";
-import { ComputedState, GetTypeByPath, StatePath } from "../types";
+import { ComputedState, GetTypeByPath, OptionalKeys, RequiredKeys, StatePath } from "../types";
 import type { AutoStoreWidgets } from "./widget-types";
 
 // 重新导出 AutoStoreWidgets 供外部使用
@@ -203,20 +204,6 @@ export interface AutoStateSchemaBase<Value = any> {
 }
 
 /**
- * 提取类型的可选键
- */
-type OptionalKeys<T> = {
-    [K in keyof T]-?: {} extends Pick<T, K> ? K : never;
-}[keyof T];
-
-/**
- * 提取类型的必需键
- */
-type RequiredKeys<T> = {
-    [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
-}[keyof T];
-
-/**
  * 创建精确的 Widget 配置类型：
  * - 必需属性保持必需
  * - 可选属性保持可选
@@ -260,11 +247,10 @@ export type ComputedableStateSchema<
     Widget extends keyof AutoStoreWidgets = never,
 > = Computedable<AutoStoreStateSchema<Value, Widget>, Value>;
 
-export type SchemaDescriptor<Value = any, Widget extends keyof AutoStoreWidgets = never> = {
-    path?: string[];
-    value: Value;
-    schema: AutoStoreStateSchema<Value, Widget>;
-};
+export type SchemaDescriptor<
+    Value = any,
+    Widget extends keyof AutoStoreWidgets = never,
+> = ObserverDescriptor<"schema", Value, any, () => Value, AutoStoreStateSchema<Value, Widget>>;
 
 export interface SchemaDescriptorBuilder<
     Value = any,

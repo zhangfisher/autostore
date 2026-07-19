@@ -1,6 +1,10 @@
-import { OBSERVER_DESCRIPTOR_BUILDER_FLAG, OBSERVER_DESCRIPTOR_FLAG } from "../consts";
-import { normalizeDeps } from "../utils/normalizeDeps";
-import { getDefaultComputedOptions } from "../utils/getDefaultComputedOptions";
+import {
+    OBSERVER_DESCRIPTOR_BUILDER_FLAG,
+    OBSERVER_DESCRIPTOR_FLAG,
+    OBSERVER_TYPE_FLAG,
+    normalizeDeps,
+    getDefaultComputedOptions,
+} from "autostore";
 import type {
     AsyncComputedGetter,
     ComputedDepends,
@@ -40,6 +44,6 @@ export function asyncComputed<Value = any, Scope = any>(
         } as unknown as AsyncComputedDescriptor<Value, Scope>;
     };
     descriptorBuilder[OBSERVER_DESCRIPTOR_BUILDER_FLAG] = true as const;
-
+    descriptorBuilder[OBSERVER_TYPE_FLAG] = "asyncpro";
     return descriptorBuilder;
 }

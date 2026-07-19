@@ -1,5 +1,5 @@
-import { PATH_DELIMITER } from "../consts"
-import { escapePath } from "./splitPath"
+import { PATH_DELIMITER } from "../consts";
+import { escapePath } from "./splitPath";
 
 /**
  * 将路径数组合并成字符串，使用 PATH_DELIMITER 作为连接符。
@@ -11,11 +11,13 @@ import { escapePath } from "./splitPath"
  * @param paths 路径段数组，元素可以是字符串或字符串数组（嵌套段会先按分隔符拼接）
  * @returns 拼接后的字符串路径
  */
-export function joinValuePath(paths?:(string | string[])[]):string{
-    return (paths || ['ROOT']).map((p)=>{
-        if(Array.isArray(p)){
-            return p.map((s)=>escapePath(s)).join(PATH_DELIMITER)
-        }
-        return escapePath(p)
-    }).join(PATH_DELIMITER)
+export function joinPath(paths?: (string | string[])[]): string {
+    return (paths || ["ROOT"])
+        .map((p) => {
+            if (Array.isArray(p)) {
+                return p.map((s) => escapePath(s)).join(PATH_DELIMITER);
+            }
+            return escapePath(p);
+        })
+        .join(PATH_DELIMITER);
 }

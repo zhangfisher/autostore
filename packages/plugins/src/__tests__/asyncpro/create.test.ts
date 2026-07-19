@@ -1,7 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import type { AsyncComputedObject } from "../../src/computed/async";
-import { asyncComputed, AutoStore, computed } from "../../src";
-import { AsyncLiteComputedObject } from "../../src/computed/liteAsync";
+import { AutoStore, AsyncLiteComputedObject } from "autostore";
+import "../../asyncpro";
 
 describe("动态创建异步计算属性", () => {
     test("创建异步计算属性提供默认值", () => {

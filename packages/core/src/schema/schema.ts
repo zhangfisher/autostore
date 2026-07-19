@@ -25,7 +25,7 @@
  *
  */
 
-import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
+import { VALUE_SCHEMA_BUILDER_FLAG, OBSERVER_TYPE_FLAG } from "../consts";
 import { forEachObject, isFunction, isPlainObject } from "../utils";
 import { markRaw } from "../utils/markRaw";
 
@@ -40,8 +40,8 @@ import type {
 } from "./types";
 
 type SchemaArgs = {
-    value: any;
-    schema: AutoStoreStateSchema;
+    getter: any;
+    options: AutoStoreStateSchema;
 };
 
 /**
@@ -75,15 +75,15 @@ function markRawSchema(schema: any) {
  */
 function parseSchemaArgs(args: any[]): SchemaArgs {
     const finalArgs: any = {
-        value: args[0],
-        schema: Object.assign(
+        getter: args[0],
+        options: Object.assign(
             {
                 onInvalid: undefined, // 不在这里设置默认值，而是在 ConfigManager.add 中设置
             },
             args[1],
         ),
     };
-    markRawSchema(finalArgs.schema);
+    markRawSchema(finalArgs.options);
     return finalArgs as SchemaArgs;
 }
 
@@ -108,15 +108,17 @@ export function schema<Value>(
     if (typeof value === "object") {
         markRaw(value);
     }
-    args.schema.datatype = Array.isArray(value) ? "array" : typeof value;
-    if (!args.schema.errorMessage) {
-        args.schema.errorMessage = "{error}";
+    args.options.datatype = Array.isArray(value) ? "array" : typeof value;
+    if (!args.options.errorMessage) {
+        args.options.errorMessage = "{error}";
     }
     const builder = () => ({
-        value,
-        schema: args.schema,
+        type: "schema",
+        getter: () => value,
+        options: args.options,
     });
     builder[VALUE_SCHEMA_BUILDER_FLAG] = true;
+    builder[OBSERVER_TYPE_FLAG] = "schema";
     return builder as any;
 }
 

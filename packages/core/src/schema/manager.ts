@@ -6,6 +6,7 @@ import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } f
 import { isFunction } from "../utils/isFunction";
 import type { AutoStoreOptions } from "../store/types";
 import type { Dict } from "../types";
+import { joinPath } from "../utils/joinPath";
 
 /**
  *
@@ -105,7 +106,7 @@ export class ConfigManager extends AutoStore<
                     const schema = state[key];
                     if (schema) {
                         // schema 存在，通过 setter 更新原始 Store
-                        schema.value = value;
+                        schema.getter = () => value;
                     } else {
                         // schema 不存在，创建新的 schema 对象
                         // @ts-ignore
@@ -156,10 +157,11 @@ export class ConfigManager extends AutoStore<
                     // 避免触发校验、事件通知、onUpdate 和 save
                     const defaultValue = schema.default;
                     if (defaultValue !== undefined) {
-                        schema.value = withSchema(markRaw(defaultValue), {
-                            slient: true,
-                            onInvalid: "none",
-                        });
+                        schema.getter = () =>
+                            withSchema(markRaw(defaultValue), {
+                                slient: true,
+                                onInvalid: "none",
+                            });
                     }
                 } catch {
                     // 忽略校验错误
@@ -221,34 +223,34 @@ export class ConfigManager extends AutoStore<
 
         const descriptor: SchemaDescriptor = isSchemaBuilder(schema) ? schema() : schema;
 
-        const pathKey = Array.isArray(path) ? path : path.split(store.options.delimiter);
+        const pathKey = Array.isArray(path) ? path : path.split(".");
         const strPath = pathKey.join(store.options.delimiter);
         // 创建配置键路径（需要复制数组，避免修改原数组）
         const configKey = [...pathKey];
         if (store.options.configKey) configKey.splice(0, 0, store.options.configKey);
 
         // 保存初始值，用于返回
-        const initialValue = descriptor.value;
-        if (descriptor.schema.default === undefined) {
-            descriptor.schema.default = initialValue;
+        const initialValue = descriptor.getter();
+        if (descriptor.options.default === undefined) {
+            descriptor.options.default = initialValue;
         }
-        descriptor.schema.value = initialValue;
+        descriptor.options.value = initialValue;
 
         // defaultSchema 只作为默认值，不会覆盖 descriptor.schema 中已有的属性
         if (store.options.defaultSchema) {
             Object.keys(store.options.defaultSchema).forEach((key) => {
                 const defaultValue = (store.options.defaultSchema as any)[key];
-                const currentValue = (descriptor.schema as any)[key];
+                const currentValue = (descriptor.options as any)[key];
                 // 只有当当前值未定义时，才使用 defaultSchema 的值
                 if (currentValue === undefined) {
-                    (descriptor.schema as any)[key] = defaultValue;
+                    (descriptor.options as any)[key] = defaultValue;
                 }
             });
         }
 
         // 如果没有设置 onInvalid，则使用默认值 'throw'
-        if ((descriptor.schema as any).onInvalid === undefined) {
-            (descriptor.schema as any).onInvalid = "throw";
+        if ((descriptor.options as any).onInvalid === undefined) {
+            (descriptor.options as any).onInvalid = "throw";
         }
         // 安装校验器
         this._installValidator(strPath, descriptor, store);
@@ -257,12 +259,12 @@ export class ConfigManager extends AutoStore<
             getVal(state, [configKey.join(PATH_DELIMITER), "value"]),
         );
         // 用于为schema中的observerObject提供refStore，以便能访问
-        this._handleRefState(descriptor.schema, store);
+        this._handleRefState(descriptor.options, store);
         // 动态添加
         // @ts-ignore
-        this.state[configKey.join(PATH_DELIMITER)] = descriptor.schema;
+        this.state[joinPath(configKey)] = descriptor.options;
         if (loadedValue !== undefined) {
-            descriptor.schema.value = loadedValue;
+            descriptor.options.value = loadedValue;
         }
         // 创建代理用于从原始的Store值读写状态值
         this._createValueProxy(descriptor, store, pathKey);
@@ -278,16 +280,16 @@ export class ConfigManager extends AutoStore<
         });
     }
     private _installValidator(path: string, descriptor: SchemaDescriptor, store: AutoStore<any>) {
-        if (isFunction(descriptor.schema.validate)) {
+        if (isFunction(descriptor.options.validate)) {
             // 错误信息模板
-            const template = descriptor.schema.errorMessage;
+            const template = descriptor.options.errorMessage;
             // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
             // @ts-expect-error
-            descriptor.schema.validate.getErrorMessage = (error: Error) => {
+            descriptor.options.validate.getErrorMessage = (error: Error) => {
                 if (typeof template === "string") {
                     // 合并所有变量到同一个对象中，一次性完成插值
                     return template.params({
-                        ...descriptor.schema,
+                        ...descriptor.options,
                         error: error.message,
                         errorStack: error.stack,
                         path,
@@ -296,16 +298,16 @@ export class ConfigManager extends AutoStore<
                 return error.message;
             };
             // 获取 validationBehavior，用于指定校验失败时的默认行为
-            const onInvalid = descriptor.schema.onInvalid;
+            const onInvalid = descriptor.options.onInvalid;
             // 只有当 onInvalid 显式指定时才设置它
             if (onInvalid !== undefined) {
-                (descriptor.schema.validate as any).onInvalid = onInvalid;
+                (descriptor.options.validate as any).onInvalid = onInvalid;
             }
             // 注册验证函数，用于写入状态值时调用进行验证
             if (!store.options.validators) {
                 store.options.validators = {};
             }
-            store.options.validators[path] = descriptor.schema.validate;
+            store.options.validators[path] = descriptor.options.validate;
         } else {
             if (store.options.validators) {
                 delete store.options.validators[path];
@@ -328,7 +330,7 @@ export class ConfigManager extends AutoStore<
         // 只要配置项注册在 ConfigManager 中，就应保证 store 可达；store.destroy() 时
         // 会通过 remove() 注销配置项以打破引用、允许 GC。
         return Object.defineProperty(
-            finalDescriptor.schema,
+            finalDescriptor.options,
             "value",
             markRaw({
                 get() {

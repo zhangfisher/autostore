@@ -1,72 +1,36 @@
 /**
  *
- * 异步计算
+ * 轻量异步计算
  *
+ * 计算结果直接写入到原地
  *
- *
- *
+ * 没有进度条、超时、可中止、倒计时、重试等高级功能
  *
  */
-import { isFunction, isPathEq, markRaw } from "../utils";
-import { delay } from "flex-tools/async/delay";
 import { getValueScope } from "../scope";
-import type { ComputedProgressbar } from "./types";
-import type { AsyncComputedGetterArgs, AsyncComputedValue, RuntimeComputedOptions } from "./types";
 import { ComputedObject } from "./computedObject";
-import type { Dict } from "../types";
 import { getSnap } from "../utils/getSnap";
-import { getError } from "../utils/getError";
 import type { StateOperate } from "../store/types";
-import { updateObjectVal } from "../utils/updateObjectVal";
-import { ASYNC_COMPUTED_VALUE } from "../consts";
-import { AbortError } from "../errors";
+import { AsyncLiteComputedGetterArgs, ComputedOptions, RuntimeComputedOptions } from "./types";
+import { markRaw } from "../utils";
 import { emitStoreEvent } from "../utils/emitStoreEvent";
 
-type GetterRunContext = {
-    error: any;
-    hasError: boolean;
-    hasTimeout: boolean;
-    hasAbort: boolean;
-    timeoutCallback: (() => void) | undefined;
-};
-
-export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
-    AsyncComputedValue<Value>
+export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedObject<
+    Value,
+    ComputedOptions
 > {
     private _isRunning: boolean = false;
-    private _defaultAbortController: AbortController | null = null;
-    private _userAbortController?: AbortController;
     private _firstRun: boolean = false; // 是否已经第一次运行过
-    /**
-     * 用于标识这是一个简单计算对象
-     *
-     * 不同于全功能异步计算对象
-     *
-     */
-    lite: boolean = false;
+    lite: boolean = true; // 标识这是一个简单计算对象
     get async() {
         return true;
-    }
-    get value() {
-        return super.value as AsyncComputedValue<Value>;
-    }
-    set value(value: AsyncComputedValue<Value>) {
-        super.value = value;
     }
     get running() {
         return this._isRunning;
     }
-    /**
-     * 本方法用来处理配置参数
-     * 主要
-     * @param options
-     */
-    protected onInitOptions(options: Required<RuntimeComputedOptions>) {
-        if (options.reentry === undefined) options.reentry = this.store.options.reentry!;
-    }
 
     protected onInitial() {
-        this.initial = this.createAsyncComputedValue();
+        this.initial = this.options.initial;
         this.attach();
         // 为什么要延迟执行？
         // 因为onInitial函数是在第一次读取时执行的同步操作，此时的依赖项还没有收集完毕，原始的计算函数还没有初始化
@@ -83,72 +47,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         }, 0);
     }
     /**
-     * 销毁时取消正在进行的异步计算（复用 AbortController）
-     */
-    protected onDestroy() {
-        try {
-            if (this._isRunning) this.getAbortController().abort();
-        } catch {}
-    }
-
-    private createAsyncComputedValue() {
-        return Object.assign({
-            [ASYNC_COMPUTED_VALUE]: true,
-            loading: false,
-            timeout: 0,
-            retry: 0,
-            error: null,
-            value: this.options.initial,
-            progress: 0,
-            run: markRaw((args: Dict) => {
-                return this.store.computedObjects.run(this.id, Object.assign({}, args));
-            }),
-            cancel: markRaw(() => {
-                this.getAbortController().abort();
-            }),
-        });
-    }
-
-    /**
-     *
-     * 局部更新计算属性的值
-     *
-     */
-    private updateComputedValue(values: Partial<AsyncComputedValue>) {
-        const batchEvent = this.strPath;
-        const updatedCount = Object.keys(values).length;
-        if (this.associated) {
-            this.store.update(
-                (state) => {
-                    updateObjectVal(state, this.path!, values);
-                },
-                { batch: updatedCount > 1 ? batchEvent : false },
-            );
-        } else {
-            Object.assign(this.value as object, values);
-            const isBatch = updatedCount > 1;
-            const ops: StateOperate[] = [];
-            Object.entries(values).forEach(([key, value]) => {
-                const op: StateOperate = {
-                    type: "set",
-                    path: [...this.path, key],
-                    value: value,
-                    parent: this.value,
-                };
-                if (isBatch) op.reply = true;
-                this.store.operates.emit(`${this.strPath}.${key}`, op);
-                ops.push(op);
-            });
-            if (isBatch) {
-                this.store.operates.emit(this.strPath, {
-                    type: "batch",
-                    path: this.path,
-                    value: ops,
-                });
-            }
-        }
-    }
-    /**
      *
      * 运行计算函数
      *
@@ -156,7 +54,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
     async run(options?: RuntimeComputedOptions) {
         const { first } = options ?? {};
 
-        // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
         if (this.isDisable(options?.enable)) {
             this.store.logger.warn(() => `Async computed <${this.toString()}> is disabled`);
             return;
@@ -164,16 +61,16 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         this.error = undefined;
         this._firstRun = true;
         if (!first) {
-            this.store.logger.info(() => `Run async computed for : ${this.toString()}`);
+            this.store.logger.debug(() => `Run async computed for : ${this.toString()}`);
         }
 
         // 2. 合成最终的配置参数
-        const finalComputedOptions = (
-            options ? Object.assign({ first }, this.options, options) : this.options
-        ) as Required<RuntimeComputedOptions>;
+        const finalComputedOptions = (options
+            ? Object.assign({ first }, this.options, options)
+            : this.options) as unknown as Required<RuntimeComputedOptions>;
 
         // 3. 根据配置参数获取计算函数的上下文对象
-        const scope = getValueScope<AsyncComputedValue<Value>, Scope>(
+        const scope = getValueScope<Value, Scope>(
             this as any,
             "sync",
             this.context,
@@ -185,9 +82,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             this.store.logger.warn(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
             );
-            emitStoreEvent(this.store, "observer:cancel", {
+            this.emitStoreEvent("observer:cancel", {
                 reason: "reentry",
-                observer: this,
+                observerObject: this,
             });
             return;
         }
@@ -198,258 +95,57 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             this._isRunning = false;
         }
     }
-
-    /**
-     * computed(async (scope,{getProgressbar})=>{
-     *    const pbar = getProgressbar({max:100,min:0}) // 初始值
-     *    pbar.value(12)      // 修改进度值
-     *    pbar.end()          // 结束进度条
-     * })
-     *
-     * @param init
-     * @returns
-     */
-    private createComputeProgressbar(opts?: {
-        max?: number;
-        min?: number;
-        value?: number;
-    }): ComputedProgressbar {
-        const { max = 100, min = 0, value = 0 } = Object.assign({}, opts);
-        this.updateComputedValue({ progress: value });
-        return {
-            value: (num: number) => {
-                if (num > max) num = max;
-                if (num < min) num = min;
-                this.updateComputedValue({ progress: num });
-            },
-            end() {
-                this.value(max);
-            },
-        };
-    }
-    /**
-     *
-     * AbortController是一个用于控制一个或多个请求的AbortSignal对象的生命周期的对象
-     *
-     *
-     * - 整个异步对象只有一个默认的AbortController对象，仅当用户调用cancel方法时才会使用
-     *
-     * ，当用户指定了abortController选项时，会使用用户指定的AbortController对象
-     *
-     *
-     *
-     * @param options
-     * @returns
-     */
-    private getAbortController(options?: Required<RuntimeComputedOptions>) {
-        if (options && typeof options.abortController === "function") {
-            const abortController = options.abortController();
-            if (abortController && abortController instanceof AbortController) {
-                this._userAbortController = abortController;
-            }
-        }
-        if (this._userAbortController) return this._userAbortController;
-        if (!this._defaultAbortController) this._defaultAbortController = new AbortController();
-        if (this._defaultAbortController.signal.aborted)
-            this._defaultAbortController = new AbortController();
-        return this._defaultAbortController;
-    }
-
-    /**
-     * 处理超时
-     * @param timeoutCallback
-     * @param options
-     * @returns
-     */
-    private setTimeoutControl(
-        ctx: GetterRunContext,
-        initValue: Partial<AsyncComputedValue>,
-        options: Required<RuntimeComputedOptions>,
-    ) {
-        const { timeout } = options;
-        let [timeoutValue, countdown] = Array.isArray(timeout) ? timeout : [timeout, 0];
-
-        let countdownId: any;
-        let tmId: any;
-        if (timeoutValue > 0) {
-            initValue.timeout = countdown > 1 ? countdown : timeoutValue;
-            tmId = setTimeout(() => {
-                ctx.hasTimeout = true;
-                ctx.hasError = true;
-                ctx.error = "TIMEOUT";
-                if (typeof ctx.timeoutCallback === "function") ctx.timeoutCallback();
-                clearInterval(countdownId);
-                this.updateComputedValue({
-                    loading: false,
-                    error: "TIMEOUT",
-                    timeout: 0,
-                });
-            }, timeoutValue);
-            // 启用设置倒计时:  比如timeout= 6*1000, countdown= 6
-            if (countdown > 1) {
-                countdownId = setInterval(
-                    () => {
-                        this.updateComputedValue({
-                            timeout: countdown--,
-                        });
-                        if (countdown === 0) clearInterval(countdownId);
-                    },
-                    timeoutValue / (countdown + 1),
-                );
-            }
-        }
-
-        return {
-            clear: () => {
-                clearTimeout(tmId);
-                clearInterval(countdownId);
-            },
-            enable: timeoutValue > 0,
-        };
-    }
     /**
      * 执行计算函数
      *
      */
     private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
-        const { retry } = options;
-        const [retryCount, retryInterval] = retry
-            ? Array.isArray(retry)
-                ? retry
-                : [Number(retry), 0]
-            : [0, 0];
-
-        let timeoutCallback: (() => void) | undefined; // 异步计算函数可以在超时时执行的回调函数
-
-        const abortController = this.getAbortController(options);
-
-        const getterArgs: Required<AsyncComputedGetterArgs> = {
-            onTimeout: (cb: () => void) => {
-                timeoutCallback = cb;
-            },
-            getProgressbar: this.createComputeProgressbar.bind(this),
+        const getterArgs: Required<AsyncLiteComputedGetterArgs> = {
             getSnap: (scope: any) => getSnap(scope),
-            cancel: abortController.abort.bind(abortController),
             extras: options.extras,
             operate: options.operate,
             first: options.first,
-            abortSignal: abortController.signal,
         };
-
-        const ctx: GetterRunContext = {
-            error: null,
-            hasError: false,
-            hasTimeout: false,
-            hasAbort: false,
-            timeoutCallback,
-        };
-
-        // 侦听中止信号，以便在中止时能停止
-        const abortHandler = () => {
-            ctx.hasAbort = true;
-        };
-        abortController.signal.addEventListener("abort", abortHandler);
         this.error = undefined;
-        let timeout = { clear: () => {}, enable: false };
+        let hasError: any = undefined;
         let computedResult: any;
 
         try {
-            const updateCtx = (values: Partial<GetterRunContext>) => Object.assign(ctx, values);
-            for (let i = 0; i < retryCount + 1; i++) {
-                const afterUpdated: Partial<AsyncComputedValue> = {}; // 保存执行完成后需要更新的内容，以便在最后一次执行后更新状态
-                try {
-                    // 1. 初始化数据
-                    const initValue: Partial<AsyncComputedValue> = {
-                        loading: true,
-                    };
-                    if (ctx.hasError) initValue.error = null;
+            //
+            this._reportComputedStatus("loading", true);
 
-                    if (retryCount > 0) initValue.retry = i > 0 ? retryCount - i + 1 : 0;
-
-                    if (i > 0) {
-                        updateCtx({
-                            error: null,
-                            hasError: false,
-                            hasTimeout: false,
-                        });
-                    }
-
-                    timeout = this.setTimeoutControl(ctx, initValue, options);
-
-                    this.updateComputedValue(initValue);
-
-                    // 如果有中止信号，则取消计算
-                    if (ctx.hasAbort) throw new AbortError();
-                    // 执行回调
-                    emitStoreEvent(this.store, "observer:run", {
-                        args: getterArgs,
-                        observer: this,
-                        scope,
-                    });
-                    // 执行计算函数
-                    computedResult = await this.getter.call(this, scope, getterArgs);
-
-                    if (ctx.hasAbort) throw new AbortError();
-                    if (!ctx.hasTimeout) {
-                        if (options.raw) markRaw(computedResult);
-                        afterUpdated.value = computedResult;
-                        if (timeout.enable) afterUpdated.timeout = 0;
-                    }
-                } catch (e: any) {
-                    ctx.hasError = true;
-                    ctx.error = e;
-                    if (!ctx.hasTimeout) afterUpdated.error = getError(e).message;
-                    if (isFunction(options.onError)) {
-                        const errValue = options.onError(e);
-                        if (errValue !== undefined) afterUpdated.value = errValue;
-                    }
-                } finally {
-                    timeout.clear();
-                    if (i === retryCount) {
-                        // 最后一次执行时
-                        if (ctx.hasTimeout) afterUpdated.error = ctx.error;
-                        if (retryCount > 0) afterUpdated.retry = 0;
-                    }
-                    afterUpdated.loading = false;
-                    this.updateComputedValue(afterUpdated);
-                }
-                // 出错时重试延迟, 最后一次不延迟
-                if (ctx.hasError) {
-                    if (retryCount > 0 && retryInterval > 0 && i < retryCount) {
-                        await delay(retryInterval);
-                    }
-                }
-            }
-            // 计算完成后触发事件
-            if (ctx.hasAbort) {
-                emitStoreEvent(this.store, "observer:cancel", {
-                    reason: "abort",
-                    observer: this,
-                });
-            } else if (ctx.hasError || ctx.hasTimeout) {
-                this.error = ctx.error;
-                emitStoreEvent(this.store, "observer:error", {
-                    error: ctx.error,
-                    observer: this,
-                });
-            } else {
-                emitStoreEvent(this.store, "observer:done", {
-                    value: computedResult,
-                    observer: this,
-                });
-            }
-            this.onDoneCallback(
-                options,
-                ctx.error,
-                ctx.hasAbort,
-                ctx.hasTimeout,
+            emitStoreEvent(this.store, "observer:run", {
+                args: getterArgs,
                 scope,
-                computedResult,
-            );
+                observer: this,
+            });
+            // 执行计算函数
+            computedResult = await this.getter.call(this, scope, getterArgs);
+            if (options.raw) markRaw(computedResult);
+            this.store.peep(() => {
+                this.value = computedResult; // 将结果回写入store,且不触发get事件
+            });
+            this._reportComputedStatus("error", undefined);
+        } catch (e: any) {
+            hasError = e;
+            this._reportComputedStatus("error", e.message);
         } finally {
-            // 清理 abort 事件监听器，防止内存泄漏
-            abortController.signal.removeEventListener("abort", abortHandler);
+            this._reportComputedStatus("loading", false);
         }
+        // 计算完成后触发事件
+        if (hasError) {
+            this.error = hasError;
+            this.emitStoreEvent("observer:error", {
+                error: hasError,
+                observer: this,
+            });
+        } else {
+            this.emitStoreEvent("observer:done", {
+                value: computedResult,
+                observer: this,
+            });
+        }
+        this.onDoneCallback(options, computedResult, scope, computedResult);
     }
 
     /**
@@ -468,8 +164,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
     private onDoneCallback(
         options: Required<RuntimeComputedOptions>,
         error: Error,
-        abort: boolean,
-        timeout: boolean,
         scope: any,
         value: any,
     ) {
@@ -477,10 +171,10 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         options.onDone.call(this, {
             id: this.id,
             path: this.path,
+            timeout: false,
+            abort: false,
             value,
             error,
-            abort,
-            timeout,
             scope,
         });
     }
@@ -496,58 +190,8 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             first: !this._firstRun,
         });
     }
-    /**
-     *
-     * 由于异步计算是一个对象，所以我们需要侦听的是对象的变化，而不仅是对象的值
-     *
-     */
     protected getValueWatchPath() {
         const spath = this.path!.join(this.store.options.delimiter);
         return [`${spath}.*`, spath];
-    }
-    /**
-     * 由于所有异步计算属性均会被转换为一个AsyncComputedValue<{value,timeout,....}>的形式
-     * 这样，当我们在指定一个依赖是异步属性时，就需要指定为xxxx.value才可以个侦听到变化
-     *
-     * @example
-     * const store = new AutoStore({
-     *            a0: 1,
-     *            a1: computed(async (scope:any)=>{
-     *              return scope.a0 + 1
-     *            },["a0"],{initial:2}),
-     *            a2: computed(async (scope:any)=>{
-     *              return scope.a1.value + 1
-     *            },["a1.value"],{initial:3})
-     *        });
-     *
-     *  以上a2依赖于a1，由于a1是一个异步对象，所以在写依赖时就必须写上["a1.value"]
-     *  这就有点反直觉了。
-     *
-     * 本函数在异步计算对象订阅变更事件时调用，用来返回字符串形式的依赖数组
-     *
-     * 本函数的功能就是对所有依赖进行判断如果其是一个异步计算依赖，则自动添加.value，这样就可以如下方式来写依赖了
-     *
-     * 	const store = new AutoStore({
-     *            a0: 1,
-     *            a1: computed(async (scope:any)=>{
-     *              return scope.a0 + 1
-     *            },["a0"],{initial:2}),
-     *            a2: computed(async (scope:any)=>{
-     *              return scope.a1.value + 1
-     *            },["a1"],{initial:3})
-     *        });
-     *
-     */
-    protected getDepends() {
-        const depends = super.getDepends();
-        return depends.map((dep) => {
-            if (dep.length === 0) return dep;
-            for (const obj of this.store.computedObjects.values()) {
-                if (isPathEq(obj.path, dep) && obj.async) {
-                    return [`${dep.join(this.store.options.delimiter)}.value`];
-                }
-            }
-            return dep;
-        }) as unknown as string[][];
     }
 }

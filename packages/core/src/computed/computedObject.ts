@@ -5,7 +5,7 @@
  */
 import type { AutoStore } from "../store/store";
 import { calcDependPaths } from "../utils/calcDependPaths";
-import { joinValuePath } from "../utils/joinValuePath";
+import { joinPath } from "../utils/joinPath";
 import { setVal } from "../utils/setVal";
 import { getAbsolutePath } from "../utils/getAbsolutePath";
 import type {
@@ -37,7 +37,7 @@ export class ComputedObject<
         this.silentUpdate(this.initial!);
     }
     toString() {
-        return `ComputedObject<${joinValuePath(this.path)}>`;
+        return `ComputedObject<${joinPath(this.path)}>`;
     }
 
     /**

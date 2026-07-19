@@ -1,11 +1,10 @@
-import type { AsyncLiteComputedObject, SyncComputedObject, AsyncComputedObject } from "../computed";
+import type { AsyncLiteComputedObject, SyncComputedObject } from "../computed";
 import type {
     AsyncComputedGetter,
     ComputedDescriptorBuilder,
     ComputedGetter,
 } from "../computed/types";
 import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
-import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
 import { WatchObject } from "../watch";
 import type { WatchDescriptorBuilder } from "../watch/types";
@@ -16,7 +15,7 @@ export interface ObserverObjects {
     schema: any;
     sync: SyncComputedObject;
     async: AsyncLiteComputedObject;
-    asyncpro: AsyncComputedObject;
+    // asyncpro: AsyncComputedObject;
 }
 
 export type ObserverType = keyof ObserverObjects;
@@ -74,6 +73,7 @@ export interface ObserverDescriptorBuilder<
 > {
     (): descriptor;
     [OBSERVER_DESCRIPTOR_BUILDER_FLAG]: true;
+    __OBSERVER_TYPE__: string;
 }
 
 export interface ObserverOptions<Value = any, Schema extends Dict = Dict> {

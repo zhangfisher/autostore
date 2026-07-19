@@ -9,3 +9,4 @@ export * from "./errors";
 export * from "./consts";
 export * from "./schema";
 export * from "./plugin";
+export * from "./scope";

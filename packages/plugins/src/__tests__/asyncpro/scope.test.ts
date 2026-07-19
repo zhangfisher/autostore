@@ -1,17 +1,10 @@
+// oxlint-disable no-unused-expressions
 /// <reference types="bun" />
-import {
-    describe,
-    test,
-    it,
-    expect,
-    mock,
-    beforeAll,
-    afterAll,
-    beforeEach,
-    afterEach,
-} from "bun:test";
-import { AutoStore, asyncComputed } from "../..";
-import { ObserverScopeRef } from "../../src/observer/types";
+import { describe, test, expect } from "bun:test";
+
+import { AutoStore, ObserverScopeRef } from "autostore";
+import "../../asyncpro";
+import { asyncComputed } from "../../asyncpro/asyncComputed";
 
 describe("异步计算函数的Scope指向", () => {
     test("异步计算默认Scope指向Current=order", () => {

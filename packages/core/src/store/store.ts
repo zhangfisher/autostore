@@ -58,7 +58,6 @@ import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/type
 import type { AutoStoreEvents } from "./types";
 import { BATCH_UPDATE_EVENT } from "../consts";
 import { createReactiveObject } from "./reactive";
-import type { SchemaDescriptor } from "../schema/types";
 import { WatchObjects } from "../watch/watchObjects";
 import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
@@ -67,7 +66,7 @@ import { getObserverDescriptor } from "../utils/getObserverDescriptor";
 import { isMatchOperates } from "../utils/isMatchOperates";
 import type { GetTypeByPath } from "../types";
 import { TimeoutError } from "../errors";
-import type { AnyObserverDescriptor } from "../observer/types";
+import type { AnyObserverDescriptor, ObserverContext } from "../observer/types";
 import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent";
 import { FastLiteEvent } from "fastevent/lite";
 import { createSandbox } from "../utils/createSandbox";
@@ -82,17 +81,15 @@ import {
     isAsyncComputedValue,
     isFunction,
     isPathEq,
-    isSchemaBuilder,
     setVal,
     splitPath,
     makeHook,
 } from "../utils";
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
-import { asyncComputed } from "../computed";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
 import { cascadeDestroy } from "../plugins/cascadeDestroy";
 import { emitStoreEventWithResult } from "../utils/emitStoreEventWithResult";
-import { observers } from "./observers";
+import { ObserverObjectBuilder, observers } from "./observers";
 
 export class AutoStore<
     State extends Dict,
@@ -124,7 +121,7 @@ export class AutoStore<
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _logger?: ILogger;
 
-    static observers: Record<string, any> = observers;
+    static observers: Record<string, ObserverObjectBuilder> = observers;
 
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
@@ -215,7 +212,7 @@ export class AutoStore<
         return this._peeping;
     }
     get configManager() {
-        return this._configManager;
+        return this._configManager!;
     }
     get logger() {
         if (!this._logger) {
@@ -223,44 +220,6 @@ export class AutoStore<
         }
         return this._logger!;
     }
-
-    // private _initObserverBuilders() {
-    //     this.observerBuilders = {
-    //         sync: (descriptor: AnyObserverDescriptor, context: any) => {
-    //             const computedObj = new SyncComputedObject(
-    //                 this,
-    //                 descriptor,
-    //                 context,
-    //             ) as unknown as ComputedObject;
-    //             this.computedObjects.set(computedObj.id, computedObj);
-    //             return computedObj;
-    //         },
-    //         async: (descriptor: AnyObserverDescriptor, context: any) => {
-    //             const computedObj = new AsyncLiteComputedObject(
-    //                 this,
-    //                 descriptor,
-    //                 context,
-    //             ) as unknown as ComputedObject;
-    //             this.computedObjects.set(computedObj.id, computedObj);
-    //             return computedObj;
-    //         },
-    //         asyncpro: (descriptor: AnyObserverDescriptor, context: any) => {
-    //             const computedObj = new AsyncComputedObject(
-    //                 this,
-    //                 descriptor as ComputedDescriptor,
-    //                 context,
-    //             ) as unknown as ComputedObject;
-    //             this.computedObjects.set(computedObj.id, computedObj);
-    //             return computedObj;
-    //         },
-    //         watch: (descriptor: AnyObserverDescriptor, context: any) => {
-    //             const watchObj = new WatchObject(this, descriptor, context);
-    //             this.watchObjects.set(watchObj.id, watchObj);
-    //             return watchObj;
-    //         },
-    //         ...this.options.observerBuilders,
-    //     };
-    // }
     private _createSandbox() {
         if (this.options.enableValueExpr) {
             const sandbox = isFunction(this.options.sandbox?.create)
@@ -270,7 +229,6 @@ export class AutoStore<
                 {
                     ...this.options.sandbox?.context,
                     computed,
-                    asyncComputed,
                     watch,
                     configurable,
                     schema,
@@ -511,27 +469,17 @@ export class AutoStore<
      */
 
     private handleReactiveObject(path: string[], value: any, parentPath: string[], parent: any) {
-        if (this._configManager && isSchemaBuilder(value)) {
-            const val = this._configManager.add(this, path, value);
-            this.configurabled.add(path.join(this.options.delimiter));
-            return val;
-        } else if (isSchemaBuilder(value)) {
-            // 当 configManager 为 false 时，直接返回 schema 的值
-            const descriptor: SchemaDescriptor = value();
-            return descriptor.value;
+        const descriptor = getObserverDescriptor(value) as AnyObserverDescriptor;
+        const context = { path, value, parentPath, parent };
+        const observerObj = this.createObserverObject(descriptor, context);
+        if (observerObj) {
+            return observerObj.initial;
         } else {
-            const descriptor = getObserverDescriptor(value) as AnyObserverDescriptor;
-            const context = { path, value, parentPath, parent };
-            const observerObj = this.createObserverObject(descriptor, context);
-            if (observerObj) {
-                return observerObj.initial;
-            } else {
-                return value;
-            }
+            return value;
         }
     }
 
-    createObserverObject(descriptor: AnyObserverDescriptor, context?: Record<string, any>) {
+    createObserverObject(descriptor: AnyObserverDescriptor, context?: ObserverContext) {
         if (descriptor) {
             const builder = AutoStore.observers[descriptor.type];
             if (builder) {
@@ -540,7 +488,7 @@ export class AutoStore<
                     "observer:initial",
                     { descriptor, context } as any,
                     (results) => {
-                        return results.every((r) => r);
+                        return results.length == 0 ? true : !results.some((r) => r === false);
                     },
                 );
                 if (isBuild) {

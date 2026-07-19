@@ -1,7 +1,6 @@
 import { InvalidDependsError, InvalidScopeError, TimeoutError } from "../errors";
 import type { AutoStore } from "../store/store";
 import type { Dict } from "../types";
-import type { AsyncComputedObject } from "./async";
 import type { ComputedObject } from "./computedObject";
 import type { SyncComputedObject } from "./sync";
 import type {
@@ -18,7 +17,7 @@ import { isAbsolutePath } from "../utils/isAbsolutePath";
 import { isObserverDescriptor } from "../utils/isObserverDescriptor";
 import { PATH_DELIMITER } from "../consts";
 import { isPathEq } from "../utils";
-import { AsyncLiteComputedObject } from "./liteAsync";
+import { AsyncLiteComputedObject } from "./async";
 
 export class ComputedObjects<State extends Dict = Dict> extends Map<string, ComputedObject<Dict>> {
     constructor(public store: AutoStore<State>) {
@@ -53,8 +52,6 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
      * })
      *
      * - 动态创建的计算对象的scope只能是根状态对象或者指定绝对路径,不能是相对路径
-     *
-     *
      *
      */
     create<Value = any, Scope = any>(

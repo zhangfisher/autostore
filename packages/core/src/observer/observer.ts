@@ -8,7 +8,7 @@
  */
 import type { AutoStore } from "../store/store";
 import { getVal } from "../utils/getVal";
-import { joinValuePath } from "../utils/joinValuePath";
+import { joinPath } from "../utils/joinPath";
 import { setVal } from "../utils/setVal";
 import { getId } from "../utils/getId";
 import type { ObserverContext, ObserverDescriptor, ObserverOptions } from "./types";
@@ -37,8 +37,6 @@ export class ObserverObject<
     private _error?: Error; // 记录最后一次运行时的错误
     store: AutoStore<any>;
     _shadowStore!: AutoStore<any>;
-    // _refStateCtx?: RefStateContext;
-
     /**
      *  构造函数。
      *
@@ -63,7 +61,7 @@ export class ObserverObject<
             },
             descriptor.options,
         ) as unknown as Required<Options>;
-        this._id = this._options.id || (this._associated ? joinValuePath(context?.path) : getId());
+        this._id = this._options.id || (this._associated ? joinPath(context?.path) : getId());
         this._path = context?.path || [`#${this._id}`];
         if (!this._path) this._path = [`#${this._id}`];
         this._initial = this._options.initial;

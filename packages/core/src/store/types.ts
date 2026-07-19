@@ -1,4 +1,3 @@
-import type { ComputedObject } from "../computed/computedObject";
 import type { ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
 import type {
@@ -7,7 +6,7 @@ import type {
     ObserverType,
     ObserverContext,
 } from "../observer/types";
-import type { Dict, ObjectKeyPaths } from "../types";
+import type { Dict } from "../types";
 import { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
 import type { ConfigManager, ConfigSource } from "../schema/manager";

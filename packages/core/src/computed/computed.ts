@@ -1,4 +1,8 @@
-import { OBSERVER_DESCRIPTOR_BUILDER_FLAG, OBSERVER_DESCRIPTOR_FLAG } from "../consts";
+import {
+    OBSERVER_DESCRIPTOR_BUILDER_FLAG,
+    OBSERVER_DESCRIPTOR_FLAG,
+    OBSERVER_TYPE_FLAG,
+} from "../consts";
 import { InvalidComputedArgumentsError } from "../errors";
 import { isAsyncFunction } from "../utils/isAsyncFunction";
 import { normalizeDeps } from "../utils/normalizeDeps";
@@ -74,6 +78,6 @@ export function computed<Value = any, Scope = any>(): any {
         return descriptor;
     };
     descriptorBuilder[OBSERVER_DESCRIPTOR_BUILDER_FLAG] = true;
-
+    descriptorBuilder[OBSERVER_TYPE_FLAG] = opts.async ? "async" : "sync";
     return descriptorBuilder;
 }

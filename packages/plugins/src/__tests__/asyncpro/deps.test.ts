@@ -1,16 +1,9 @@
-import {
-    describe,
-    test,
-    it,
-    expect,
-    mock,
-    beforeAll,
-    afterAll,
-    beforeEach,
-    afterEach,
-} from "bun:test";
+// oxlint-disable no-unused-expressions
+import { describe, test, expect } from "bun:test";
 
-import { AutoStore, ObserverScopeRef, asyncComputed } from "../..";
+import { AutoStore, ObserverScopeRef } from "autostore";
+import "../../asyncpro";
+import { asyncComputed } from "../../asyncpro/asyncComputed";
 
 describe("异步依赖参数的各种配置形式", () => {
     test("使用字符串绝对路径参数依赖", () => {
