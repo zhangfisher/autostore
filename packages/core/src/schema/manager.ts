@@ -1,6 +1,6 @@
 import { PATH_DELIMITER, GLOBAL_CONFIG_MANAGER } from "../consts";
 import { AutoStore } from "../store/store";
-import { isRaw, isSchemaBuilder, markRaw, setVal, withSchema } from "../utils";
+import { isRaw, isSchemaDescriptorBuilder, markRaw, setVal, withSchema } from "../utils";
 import { getVal } from "../utils/getVal";
 import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from "./types";
 import { isFunction } from "../utils/isFunction";
@@ -221,7 +221,7 @@ export class ConfigManager extends AutoStore<
     ) {
         this.operates.options.delimiter = store.options.delimiter;
 
-        const descriptor: SchemaDescriptor = isSchemaBuilder(schema) ? schema() : schema;
+        const descriptor: SchemaDescriptor = isSchemaDescriptorBuilder(schema) ? schema() : schema;
 
         const pathKey = Array.isArray(path) ? path : path.split(".");
         const strPath = pathKey.join(store.options.delimiter);
@@ -272,6 +272,7 @@ export class ConfigManager extends AutoStore<
         // 返回初始值，避免读取代理导致循环依赖
         return loadedValue || initialValue;
     }
+
     private _handleRefState(schema: object, store: AutoStore<any>) {
         Object.values(schema).forEach((v) => {
             if (isFunction(v) && !isRaw(v)) {

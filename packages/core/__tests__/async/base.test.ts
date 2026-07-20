@@ -313,7 +313,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         { id: "x", immediate: false },
                     ),
                 });
-                const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject;
+                const asyncObj = store.computedObjects.get("x")!;
                 asyncObj.run().then(() => {
                     expect(store.state.total).toBe(6);
                     resolve();
@@ -334,7 +334,7 @@ describe("[简单异步计算] 所有异步计算基础功能", () => {
                         { id: "x", immediate: false },
                     ),
                 });
-                const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject;
+                const asyncObj = store.computedObjects.get("x")!;
                 asyncObj.run({ scope: "price" }).then(() => {
                     //// 运行时修改的scope仅在本次运行中有效，不会影响到下次运行
                     // 默认的scope没有配置是undefined,指向的是当前对象,

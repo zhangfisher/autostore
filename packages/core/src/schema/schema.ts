@@ -34,7 +34,6 @@ import type {
     AutoStateSchemaBase,
     AutoStoreWidgets,
     SchemaDescriptorBuilder,
-    SchemaBuilder,
     ComputedableStateSchema,
     WidgetConfigPrecise,
 } from "./types";
@@ -138,7 +137,7 @@ export function createTypeSchemaBuilder<Value = any>(
         }
         return schema(initial, opts);
     };
-    return typeSchema as SchemaBuilder<Value>;
+    return typeSchema as unknown as SchemaDescriptorBuilder<Value>;
 }
 
 export const schemas = {

@@ -65,7 +65,7 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
     ): AsyncLiteComputedObject<Value, Scope>;
     create<Value = any, Scope = any>(
         descriptor: ComputedDescriptor<Value, Scope>,
-    ): AsyncComputedObject<Value, Scope> | SyncComputedObject<Value, Scope>;
+    ): ComputedObject<Value, Scope>;
     create(): any {
         const descrioptor: ComputedDescriptor = isObserverDescriptor(arguments[0])
             ? arguments[0] // @ts-expect-error

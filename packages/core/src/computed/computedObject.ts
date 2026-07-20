@@ -87,7 +87,7 @@ export class ComputedObject<
      * @description
      *
      */ //eslint-disable-next-line @typescript-eslint/no-unused-vars
-    run(_?: RuntimeComputedOptions) {
+    run(_?: RuntimeComputedOptions): any {
         throw new Error("Method not implemented.");
     }
 }

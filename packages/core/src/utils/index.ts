@@ -38,7 +38,7 @@ export * from "./isComputedDescriptorParameter";
 export * from "./getAsyncVal";
 export * from "./createAsyncComptuedValue";
 export * from "./isRelPath";
-export * from "./isSchemaBuilder";
+export * from "./isSchemaDescriptorBuilder";
 export * from "./withSchema";
 export * from "./getAbsolutePath";
 export * from "./getComputedType";

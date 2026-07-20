@@ -1,6 +1,6 @@
 import type { ComputedBuilder } from "../computed/types";
 import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
-import { ObserverDescriptor } from "../observer";
+import { ObserverDescriptor, ObserverDescriptorBuilder } from "../observer";
 import { AutoStore } from "../store/store";
 import { StoreRawStateType } from "../store/types";
 import { ComputedState, GetTypeByPath, OptionalKeys, RequiredKeys, StatePath } from "../types";
@@ -252,13 +252,18 @@ export type SchemaDescriptor<
     Widget extends keyof AutoStoreWidgets = never,
 > = ObserverDescriptor<"schema", Value, any, () => Value, AutoStoreStateSchema<Value, Widget>>;
 
-export interface SchemaDescriptorBuilder<
+// export interface SchemaDescriptorBuilder<
+//     Value = any,
+//     Widget extends keyof AutoStoreWidgets = never,
+// > {
+//     [VALUE_SCHEMA_BUILDER_FLAG]: true;
+//     (): SchemaDescriptor<Value, Widget>;
+// }
+
+export type SchemaDescriptorBuilder<
     Value = any,
     Widget extends keyof AutoStoreWidgets = never,
-> {
-    [VALUE_SCHEMA_BUILDER_FLAG]: true;
-    (): SchemaDescriptor<Value, Widget>;
-}
+> = ObserverDescriptorBuilder<"schema", Value, Widget, SchemaDescriptor<Value, Widget>>;
 
 /**
  * 从 SchemaDescriptorBuilder 中提取 Widget 类型
@@ -266,11 +271,6 @@ export interface SchemaDescriptorBuilder<
  */
 export type ExtractWidgetFromBuilder<T> =
     T extends SchemaDescriptorBuilder<any, infer W> ? W : never;
-
-export type SchemaBuilder<Value = any> = <T = Value, W extends keyof AutoStoreWidgets = never>(
-    value: T,
-    schema?: ComputedableStateSchema<Value, W>,
-) => SchemaDescriptorBuilder<T, W>;
 
 export type ConfigurableKeyPaths<State> = Exclude<
     keyof {

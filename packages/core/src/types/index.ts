@@ -1,14 +1,7 @@
-import type {
-    AsyncComputedGetter,
-    AsyncComputedValue,
-    AsyncLiteComputedDescriptorBuilder,
-    ComputedGetter,
-    SyncComputedDescriptorBuilder,
-} from "../computed";
-import type { SchemaDescriptorBuilder } from "../schema";
+import type { AsyncComputedGetter, ComputedGetter } from "../computed";
+import type { ObserverDescriptorBuilder } from "../observer/types";
 import type { AutoStore } from "../store";
 import type { RawObject } from "../utils";
-import type { WatchDescriptorBuilder } from "../watch/types";
 import type { Get, Paths, UnionToIntersection } from "type-fest";
 
 /**
@@ -97,42 +90,45 @@ export type PickValues<T extends Record<string, any>> = Union<UnionToIntersectio
  * 提取计算属性的返回值类型
  *
  * 从各种计算属性描述符或函数中提取最终的值类型。支持：
- * - Schema 描述符构建器
- * - 同步计算属性描述符
- * - 异步计算属性描述符（返回 AsyncComputedValue）
- * - Watch 描述符
- * - 普通计算函数（同步和异步）
+ * - 所有基于 ObserverDescriptorBuilder 的描述符构建器（schema/sync/async-lite/watch）
+ * - 普通计算函数（同步和异步均返回值类型 Value）
  *
  * @template T - 计算属性描述符或函数类型
  * @example
  * ```ts
- * // 同步计算
+ * // 同步计算函数
  * type SyncResult = PickComputedResult<(scope: any) => string>; // string
  *
- * // 异步计算
- * type AsyncResult = PickComputedResult<computed<(scope: any) => Promise<number>>>;
- * // AsyncComputedValue<number>
+ * // 异步计算函数
+ * type AsyncResult = PickComputedResult<(scope: any) => Promise<number>>; // number
  * ```
  */
 export type PickComputedResult<T> =
-    T extends SchemaDescriptorBuilder<infer X>
+    T extends ObserverDescriptorBuilder<any, infer X, any, any>
         ? X
-        : T extends SyncComputedDescriptorBuilder<infer X, any>
+        : T extends ComputedGetter<infer X, any>
           ? X
-          : T extends AsyncLiteComputedDescriptorBuilder<infer X, any>
+          : T extends AsyncComputedGetter<infer X, any>
             ? X
-            : T extends AsyncComputedDescriptorBuilder<infer X, any>
-              ? AsyncComputedValue<X>
-              : T extends WatchDescriptorBuilder<infer X, any>
-                ? X
-                : T extends ComputedGetter<infer X, any>
-                  ? X
-                  : // 同步函数
-                    T extends AsyncComputedGetter<infer X, any>
-                    ? AsyncComputedValue<X>
-                    : // 异步函数
-                      T;
-
+            : T;
+// export type PickComputedResult<T> =
+//     T extends SchemaDescriptorBuilder<infer X>
+//         ? X
+//         : T extends SyncComputedDescriptorBuilder<infer X, any>
+//           ? X
+//           : T extends AsyncLiteComputedDescriptorBuilder<infer X, any>
+//             ? X
+//             : T extends AsyncComputedDescriptorBuilder<infer X, any>
+//               ? AsyncComputedValue<X>
+//               : T extends WatchDescriptorBuilder<infer X, any>
+//                 ? X
+//                 : T extends ComputedGetter<infer X, any>
+//                   ? X
+//                   : // 同步函数
+//                     T extends AsyncComputedGetter<infer X, any>
+//                     ? AsyncComputedValue<X>
+//                     : // 异步函数
+//                       T;
 /**
  * 转换状态中的计算属性函数为返回值类型
  *
@@ -141,7 +137,7 @@ export type PickComputedResult<T> =
  *
  * 支持以下转换：
  * - 同步计算函数: `(scope) => T` → `T`
- * - 异步计算函数: `computed((scope) => Promise<T>)` → `AsyncComputedValue<T>`
+ * - 异步计算函数: `(scope) => Promise<T>` → `T`
  * - 数组类型: 递归处理数组元素
  * - 嵌套对象: 递归处理对象属性
  *
