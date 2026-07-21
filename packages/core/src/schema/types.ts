@@ -266,6 +266,19 @@ export type SchemaDescriptorBuilder<
 > = ObserverDescriptorBuilder<"schema", Value, Widget, SchemaDescriptor<Value, Widget>>;
 
 /**
+ * Schema 构建器工厂类型
+ *
+ * createTypeSchemaBuilder 返回的工厂函数类型：接受初始值与可选 schema 选项，
+ * 返回对应的 SchemaDescriptorBuilder。
+ * 泛型 V（约束于 Value）允许在调用时进一步收窄值类型，
+ * 例如 s.array<number[]>([1,2]) 会得到 SchemaDescriptorBuilder<number[]>。
+ */
+export type SchemaBuilderFactory<Value = any> = <V extends Value>(
+    initial: V,
+    options?: Omit<AutoStoreStateSchema<V>, "value" | "widget">,
+) => SchemaDescriptorBuilder<V>;
+
+/**
  * 从 SchemaDescriptorBuilder 中提取 Widget 类型
  * 用于在 ConfigurableState 中恢复 widget 特定配置的类型信息
  */

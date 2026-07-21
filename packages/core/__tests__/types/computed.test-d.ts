@@ -1,7 +1,6 @@
-import { describe, test, it, expect } from "bun:test";
+import { describe, test } from "bun:test";
 import type { Equal, Expect } from "@type-challenges/utils";
-import { AutoStore, computed, RuntimeComputedOptions } from "../../src";
-import { asyncComputed } from "../../src/computed/asyncComputed";
+import { AutoStore, computed } from "../../src";
 
 /**
  * Computed 基础类型测试
@@ -43,7 +42,7 @@ describe("Computed 基础类型", () => {
 
     test("异步计算返回类型推断", () => {
         const store = new AutoStore({
-            // 异步计算返回 AsyncComputedValue
+            // 异步计算直接返回值类型（轻量异步，不再包装成 AsyncComputedValue）
             value: computed(async () => {
                 return 1;
             }, []),
@@ -60,7 +59,7 @@ describe("Computed 基础类型", () => {
                     name: "张三",
                 };
             }, []),
-            age: asyncComputed(async () => {
+            age: computed(async () => {
                 return 18;
             }, []),
         });
@@ -84,21 +83,8 @@ describe("Computed 基础类型", () => {
                 }
             >
         >;
-        type Case4 = Expect<
-            Equal<
-                AgeType,
-                {
-                    loading: boolean;
-                    progress: number;
-                    timeout: number;
-                    error: any;
-                    retry: number;
-                    value: number;
-                    run: (options?: RuntimeComputedOptions) => void;
-                    cancel: () => void;
-                }
-            >
-        >;
+        // 异步计算直接返回 Value，不再包装成 AsyncComputedValue
+        type Case4 = Expect<Equal<AgeType, number>>;
     });
 
     test("嵌套计算属性类型", () => {
@@ -129,12 +115,15 @@ describe("Computed 基础类型", () => {
 });
 
 /**
- * AsyncComputedValue 类型测试
+ * 异步计算属性类型测试
+ *
+ * 重构后异步计算采用轻量异步（AsyncLiteComputed），直接返回值类型，
+ * 不再包装成 AsyncComputedValue（loading/progress/timeout/error/retry/run/cancel）。
  */
-describe("AsyncComputedValue 类型", () => {
-    test("基础 AsyncComputedValue 类型", () => {
+describe("异步计算属性类型", () => {
+    test("异步计算直接返回值类型", () => {
         const store = new AutoStore({
-            data: asyncComputed(async () => {
+            data: computed(async () => {
                 return {
                     id: 1,
                     name: "张三",
@@ -142,31 +131,10 @@ describe("AsyncComputedValue 类型", () => {
             }, []),
         });
 
-        const asyncValue = store.state.data;
-        type AsyncValue = typeof asyncValue;
+        const data = store.state.data;
+        type DataType = typeof data;
 
-        // AsyncComputedValue 应该包含这些属性
-        type Case = Expect<
-            Equal<
-                keyof AsyncValue,
-                "loading" | "progress" | "timeout" | "error" | "retry" | "value" | "run" | "cancel"
-            >
-        >;
-
-        // value 属性应该是原始类型
-        type ValueType = AsyncValue["value"];
-        type Case2 = Expect<Equal<ValueType, { id: number; name: string }>>;
-
-        // loading 应该是 boolean
-        type LoadingType = AsyncValue["loading"];
-        type Case3 = Expect<Equal<LoadingType, boolean>>;
-
-        // run 方法签名
-        type RunType = AsyncValue["run"];
-        type Case4 = Expect<Equal<RunType, (options?: RuntimeComputedOptions) => void>>;
-
-        // cancel 方法签名
-        type CancelType = AsyncValue["cancel"];
-        type Case5 = Expect<Equal<CancelType, () => void>>;
+        // 异步计算属性直接得到值类型
+        type Case1 = Expect<Equal<DataType, { id: number; name: string }>>;
     });
 });

@@ -398,7 +398,7 @@ describe("watch events", () => {
 
     describe("watch for keypaths", () => {
         let state: AutoStore<typeof data>;
-        let watcher: Watcher | null;
+        let watcher!: Watcher;
         beforeEach(() => {
             state = new AutoStore(deepClone(data));
         });

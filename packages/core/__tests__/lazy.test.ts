@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { asyncComputed, AutoStore, computed, watch } from "../";
+import { AutoStore, computed, watch } from "../";
 
 /**
  * lazy 选项测试
@@ -110,7 +110,7 @@ describe("lazy 选项", () => {
         const store = new AutoStore(
             {
                 count: 1,
-                doubled: asyncComputed(
+                doubled: computed(
                     async (scope: any) => {
                         computeCount++;
                         return scope.count * 2;
@@ -127,7 +127,7 @@ describe("lazy 选项", () => {
         expect(computeCount).toBe(0);
 
         // 读取异步计算属性
-        const doubled = await store.state.doubled.value;
+        const doubled = await (store.state.doubled as any).value;
         expect(doubled).toBe(2);
         expect(store.computedObjects.size).toBe(1);
         expect(store.computedObjects.get("doubled")?.id).toBe("doubled");
@@ -142,7 +142,7 @@ describe("lazy 选项", () => {
         const store = new AutoStore(
             {
                 count: 1,
-                doubled: asyncComputed(
+                doubled: computed(
                     async (scope: any) => {
                         computeCount++;
                         await new Promise((resolve) => setTimeout(resolve, 10));
@@ -159,7 +159,7 @@ describe("lazy 选项", () => {
         expect(computeCount).toBe(0);
 
         // 读取异步计算属性
-        const promise = store.state.doubled.value;
+        const promise = (store.state.doubled as any).value;
         expect(store.computedObjects.size).toBe(1);
         const doubled = await promise;
         expect(store.computedObjects.get("doubled")?.id).toBe("doubled");

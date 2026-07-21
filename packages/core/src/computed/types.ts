@@ -332,6 +332,7 @@ export type SyncComputedOptions<Value = any, Scope = any> = Pick<
     | "scope"
     | "extras"
     | "cascadeDestroy"
+    | "refStore"
 >;
 
 /**

@@ -30,11 +30,13 @@ import { forEachObject, isFunction, isPlainObject } from "../utils";
 import { markRaw } from "../utils/markRaw";
 
 import type {
-    AutoStoreStateSchema,
     AutoStateSchemaBase,
+    AutoStoreStateSchema,
     AutoStoreWidgets,
-    SchemaDescriptorBuilder,
+    Computedable,
     ComputedableStateSchema,
+    SchemaBuilderFactory,
+    SchemaDescriptorBuilder,
     WidgetConfigPrecise,
 } from "./types";
 
@@ -91,7 +93,9 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
 export function schema<Value>(initial: Value): SchemaDescriptorBuilder<Value>;
 export function schema<Value, W extends keyof AutoStoreWidgets>(
     initial: Value,
-    schema: Omit<AutoStateSchemaBase<Value>, "value"> & { widget: W } & WidgetConfigPrecise<W>,
+    schema: Omit<Computedable<AutoStateSchemaBase<Value>, Value>, "value" | "widget"> &
+        { widget: W } &
+        WidgetConfigPrecise<W>,
 ): SchemaDescriptorBuilder<Value, W>;
 // 不包含 widget 的配置，或者 widget 不匹配已知类型时的回退重载
 export function schema<Value>(
@@ -126,7 +130,7 @@ export const configurable = schema;
 export function createTypeSchemaBuilder<Value = any>(
     isValid: (val: any) => boolean,
     defaultTips: string,
-) {
+): SchemaBuilderFactory<Value> {
     const typeSchema = function (initial: Value, options?: any) {
         const opts = Object.assign({}, options);
         if (typeof opts.validate !== "function") {
@@ -137,7 +141,7 @@ export function createTypeSchemaBuilder<Value = any>(
         }
         return schema(initial, opts);
     };
-    return typeSchema as unknown as SchemaDescriptorBuilder<Value>;
+    return typeSchema as unknown as SchemaBuilderFactory<Value>;
 }
 
 export const schemas = {

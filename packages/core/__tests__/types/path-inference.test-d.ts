@@ -4,6 +4,12 @@ import { AutoStore, computed } from "../../src";
 import type { StatePath, GetTypeByPath } from "../../src";
 
 /**
+ * 验证路径 P 是路径联合类型 T 的成员
+ * （PathType 是多个路径的联合，单路径用 Equal 比较必然失败，故用成员判定）
+ */
+type IsPath<P, T> = P extends T ? true : false;
+
+/**
  * 路径类型推断基础测试
  */
 describe("路径类型推断 - 基础", () => {
@@ -28,9 +34,9 @@ describe("路径类型推断 - 基础", () => {
 
 		type PathType = StatePath<typeof store.state>;
 		// 应该包含完整路径
-		const check1: Expect<Equal<"user", PathType>> = true as any;
-		const check2: Expect<Equal<"user.name", PathType>> = true as any;
-		const check3: Expect<Equal<"user.age", PathType>> = true as any;
+		const check1: Expect<IsPath<"user", PathType>> = true as any;
+		const check2: Expect<IsPath<"user.name", PathType>> = true as any;
+		const check3: Expect<IsPath<"user.age", PathType>> = true as any;
 	});
 
 	test("深层嵌套路径", () => {
@@ -45,10 +51,10 @@ describe("路径类型推断 - 基础", () => {
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"level1", PathType>> = true as any;
-		const check2: Expect<Equal<"level1.level2", PathType>> = true as any;
-		const check3: Expect<Equal<"level1.level2.level3", PathType>> = true as any;
-		const check4: Expect<Equal<"level1.level2.level3.value", PathType>> = true as any;
+		const check1: Expect<IsPath<"level1", PathType>> = true as any;
+		const check2: Expect<IsPath<"level1.level2", PathType>> = true as any;
+		const check3: Expect<IsPath<"level1.level2.level3", PathType>> = true as any;
+		const check4: Expect<IsPath<"level1.level2.level3.value", PathType>> = true as any;
 	});
 });
 
@@ -62,8 +68,8 @@ describe("路径类型推断 - 特殊类型", () => {
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"items", PathType>> = true as any;
-		const check2: Expect<Equal<`items.${number}`, PathType>> = true as any;
+		const check1: Expect<IsPath<"items", PathType>> = true as any;
+		const check2: Expect<IsPath<`items.${number}`, PathType>> = true as any;
 	});
 
 	test("嵌套数组路径", () => {
@@ -75,8 +81,8 @@ describe("路径类型推断 - 特殊类型", () => {
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"matrix", PathType>> = true as any;
-		const check2: Expect<Equal<`matrix.${number}`, PathType>> = true as any;
+		const check1: Expect<IsPath<"matrix", PathType>> = true as any;
+		const check2: Expect<IsPath<`matrix.${number}`, PathType>> = true as any;
 	});
 
 	test("对象数组路径", () => {
@@ -90,10 +96,10 @@ describe("路径类型推断 - 特殊类型", () => {
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"users", PathType>> = true as any;
-		const check2: Expect<Equal<`users.${number}`, PathType>> = true as any;
-		const check3: Expect<Equal<`users.${number}.id`, PathType>> = true as any;
-		const check4: Expect<Equal<`users.${number}.name`, PathType>> = true as any;
+		const check1: Expect<IsPath<"users", PathType>> = true as any;
+		const check2: Expect<IsPath<`users.${number}`, PathType>> = true as any;
+		const check3: Expect<IsPath<`users.${number}.id`, PathType>> = true as any;
+		const check4: Expect<IsPath<`users.${number}.name`, PathType>> = true as any;
 	});
 });
 
@@ -104,7 +110,7 @@ describe("路径类型推断 - 计算属性", () => {
 	test("同步计算属性路径", () => {
 		const store = new AutoStore({
 			count: 0,
-			double: (scope) => scope.count * 2,
+			double: (scope: any) => scope.count * 2,
 		});
 
 		type PathType = StatePath<typeof store.state>;
@@ -116,15 +122,15 @@ describe("路径类型推断 - 计算属性", () => {
 			user: {
 				firstName: "张",
 				lastName: "三",
-				fullName: (scope) => scope.firstName + scope.lastName,
+				fullName: (scope: any) => scope.firstName + scope.lastName,
 			},
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"user", PathType>> = true as any;
-		const check2: Expect<Equal<"user.firstName", PathType>> = true as any;
-		const check3: Expect<Equal<"user.lastName", PathType>> = true as any;
-		const check4: Expect<Equal<"user.fullName", PathType>> = true as any;
+		const check1: Expect<IsPath<"user", PathType>> = true as any;
+		const check2: Expect<IsPath<"user.firstName", PathType>> = true as any;
+		const check3: Expect<IsPath<"user.lastName", PathType>> = true as any;
+		const check4: Expect<IsPath<"user.fullName", PathType>> = true as any;
 	});
 
 	test("异步计算属性路径", () => {
@@ -152,11 +158,11 @@ describe("路径类型推断 - 混合场景", () => {
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"data", PathType>> = true as any;
-		const check2: Expect<Equal<"data.items", PathType>> = true as any;
-		const check3: Expect<Equal<"data.items.${number}", PathType>> = true as any;
-		const check4: Expect<Equal<"data.meta", PathType>> = true as any;
-		const check5: Expect<Equal<"data.meta.count", PathType>> = true as any;
+		const check1: Expect<IsPath<"data", PathType>> = true as any;
+		const check2: Expect<IsPath<"data.items", PathType>> = true as any;
+		const check3: Expect<IsPath<`data.items.${number}`, PathType>> = true as any;
+		const check4: Expect<IsPath<"data.meta", PathType>> = true as any;
+		const check5: Expect<IsPath<"data.meta.count", PathType>> = true as any;
 	});
 
 	test("多层数组嵌套", () => {
@@ -170,25 +176,25 @@ describe("路径类型推断 - 混合场景", () => {
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"matrix", PathType>> = true as any;
-		const check2: Expect<Equal<`matrix.${number}`, PathType>> = true as any;
-		const check3: Expect<Equal<`matrix.${number}.${number}`, PathType>> = true as any;
+		const check1: Expect<IsPath<"matrix", PathType>> = true as any;
+		const check2: Expect<IsPath<`matrix.${number}`, PathType>> = true as any;
+		const check3: Expect<IsPath<`matrix.${number}.${number}`, PathType>> = true as any;
 	});
 
 	test("计算属性与普通属性混合", () => {
 		const store = new AutoStore({
 			count: 0,
-			double: (scope) => scope.count * 2,
+			double: (scope: any) => scope.count * 2,
 			items: [1, 2, 3],
 			sum: (scope: any) => scope.items.reduce((a: number, b: number) => a + b, 0),
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"count", PathType>> = true as any;
-		const check2: Expect<Equal<"double", PathType>> = true as any;
-		const check3: Expect<Equal<"items", PathType>> = true as any;
-		const check4: Expect<Equal<"items.${number}", PathType>> = true as any;
-		const check5: Expect<Equal<"sum", PathType>> = true as any;
+		const check1: Expect<IsPath<"count", PathType>> = true as any;
+		const check2: Expect<IsPath<"double", PathType>> = true as any;
+		const check3: Expect<IsPath<"items", PathType>> = true as any;
+		const check4: Expect<IsPath<`items.${number}`, PathType>> = true as any;
+		const check5: Expect<IsPath<"sum", PathType>> = true as any;
 	});
 });
 
@@ -215,9 +221,9 @@ describe("路径类型推断 - 可选属性", () => {
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"user", PathType>> = true as any;
-		const check2: Expect<Equal<"user.name", PathType>> = true as any;
-		const check3: Expect<Equal<"user.age", PathType>> = true as any;
+		const check1: Expect<IsPath<"user", PathType>> = true as any;
+		const check2: Expect<IsPath<"user.name", PathType>> = true as any;
+		const check3: Expect<IsPath<"user.age", PathType>> = true as any;
 	});
 });
 
@@ -240,8 +246,8 @@ describe("路径类型推断 - 联合类型", () => {
 		});
 
 		type PathType = StatePath<typeof store.state>;
-		const check1: Expect<Equal<"items", PathType>> = true as any;
-		const check2: Expect<Equal<`items.${number}`, PathType>> = true as any;
+		const check1: Expect<IsPath<"items", PathType>> = true as any;
+		const check2: Expect<IsPath<`items.${number}`, PathType>> = true as any;
 	});
 });
 
@@ -299,7 +305,7 @@ describe("GetTypeByPath 测试", () => {
 	test("获取计算属性类型", () => {
 		const store = new AutoStore({
 			count: 0,
-			double: (scope) => scope.count * 2,
+			double: (scope: any) => scope.count * 2,
 		});
 
 		type CountType = GetTypeByPath<typeof store.state, "count">;
@@ -315,12 +321,8 @@ describe("GetTypeByPath 测试", () => {
 		});
 
 		type ValueType = GetTypeByPath<typeof store.state, "value">;
-		const check: Expect<
-			Equal<
-				keyof ValueType,
-				"loading" | "progress" | "timeout" | "error" | "retry" | "value" | "run" | "cancel"
-			>
-		> = true as any;
+		// 异步计算（轻量异步）直接返回值类型
+		const check: Expect<Equal<ValueType, number>> = true as any;
 	});
 
 	test("获取对象数组元素类型", () => {

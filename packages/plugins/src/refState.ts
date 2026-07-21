@@ -189,7 +189,7 @@ declare module "autostore" {
         refStateContext: RefStateContext;
     }
     export interface ObserverOptions<Value = any, Schema extends Dict = Dict> {
-        refStore?: AnyAutoStore;
+        refStore?: AnyAutoStore | AnyAutoStore[];
     }
     export interface ComputedGetterArgs {
         ref: RefState;

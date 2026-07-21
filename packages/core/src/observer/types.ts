@@ -5,7 +5,7 @@ import type {
     ComputedGetter,
 } from "../computed/types";
 import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
-import type { Dict } from "../types";
+import type { AnyAutoStore, Dict } from "../types";
 import { WatchObject } from "../watch";
 import type { WatchDescriptorBuilder } from "../watch/types";
 import type { ObserverObject } from "./observer";
@@ -174,6 +174,8 @@ export interface ObserverOptions<Value = any, Schema extends Dict = Dict> {
      * 比如配置元数据等
      */
     schema?: Schema;
+
+    refStore?: AnyAutoStore | AnyAutoStore[];
 }
 
 export type ObserverBuilder<Value = any, Scope = any> =

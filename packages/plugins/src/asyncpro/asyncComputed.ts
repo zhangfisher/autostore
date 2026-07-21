@@ -5,12 +5,12 @@ import {
     normalizeDeps,
     getDefaultComputedOptions,
 } from "autostore";
+import type { AsyncComputedGetter, ComputedDepends } from "autostore";
 import type {
-    AsyncComputedGetter,
-    ComputedDepends,
     ComputedOptions,
     AsyncComputedDescriptorBuilder,
     AsyncComputedDescriptor,
+    AsyncComputedValue,
 } from "./types";
 
 /**
@@ -27,7 +27,7 @@ export function asyncComputed<Value = any, Scope = any>(
     getter: AsyncComputedGetter<Value, Scope>,
     depends: ComputedDepends,
     options?: ComputedOptions<Value, Scope>,
-): AsyncComputedDescriptorBuilder<Value, Scope> {
+): AsyncComputedDescriptorBuilder<AsyncComputedValue<Value>, Scope> {
     if (typeof getter !== "function") throw new Error("computed getter must be a function");
     // 解析参数：同时支持同步和异步计算函数两种方式声明
     const opts: ComputedOptions = Object.assign({}, getDefaultComputedOptions(), options, {
@@ -45,5 +45,5 @@ export function asyncComputed<Value = any, Scope = any>(
     };
     descriptorBuilder[OBSERVER_DESCRIPTOR_BUILDER_FLAG] = true as const;
     descriptorBuilder[OBSERVER_TYPE_FLAG] = "asyncpro";
-    return descriptorBuilder;
+    return descriptorBuilder as AsyncComputedDescriptorBuilder<AsyncComputedValue<Value>, Scope>;
 }

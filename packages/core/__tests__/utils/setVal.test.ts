@@ -221,7 +221,7 @@ describe('setVal', () => {
         expect(obj).toEqual({ arr: [0, 0, 0] });
 
         setVal(obj, ['arr','5'], 0);
-        expect(obj).toEqual({ arr: [0, 0, 0,undefined,undefined,0] });
+        expect(obj).toEqual({ arr: [0, 0, 0, undefined, undefined, 0] } as any);
 
     }); 
 

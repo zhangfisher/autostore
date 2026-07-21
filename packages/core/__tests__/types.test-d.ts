@@ -157,7 +157,7 @@ type WidgetTypeTest = AutoStoreWidgetTypes;
 const _widgetTypeCheck: WidgetTypeTest = "number"; // ✅
 
 // 测试 2: widget 可以是 "number"
-const _validWidget: AutoStoreStateSchema = {
+const _validWidget: AutoStoreStateSchema<number, "number"> = {
     widget: "number", // ✅ 应该通过类型检查
     min: 0,
     max: 100,

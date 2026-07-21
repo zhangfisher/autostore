@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { AutoStore, configurable, ConfigManager, computed } from "../src";
+import { AutoStore, configurable, ConfigManager, computed } from "autostore";
 import { delay } from "flex-tools/async/delay";
 
 /**

@@ -66,7 +66,7 @@ describe("动态创建同步择计算属性", () => {
             })
             const obj = store.computedObjects.create<number>((state: any) => {
                 return state.price * state.count
-            }, { id: "x", objectify: false })
+            }, { id: "x" })
             expect(obj.value).toBe(6)
             expect(store.computedObjects.size).toBe(0)
             expect(store.computedObjects.has(obj.id)).toBe(false)

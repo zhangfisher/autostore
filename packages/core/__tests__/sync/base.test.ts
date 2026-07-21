@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { asyncComputed, AutoStore, computed, type ComputedObject } from "../..";
+import { AutoStore, computed, type ComputedObject } from "../..";
 import { CyleDependError } from "../../src/errors";
 import { delay } from "flex-tools/async/delay";
 
@@ -515,7 +515,7 @@ describe("使用update方法对同步计算属性进行更新", () => {
             base: 10,
             rate: 1.5,
             amount: computed((scope) => scope.base * scope.rate),
-            total: asyncComputed(
+            total: computed(
                 async (scope) => {
                     await new Promise((r) => setTimeout(r, 10));
                     return scope.amount * 2;
@@ -528,7 +528,7 @@ describe("使用update方法对同步计算属性进行更新", () => {
         expect(store.state.amount).toBe(15);
         // 等待异步计算完成
         await delay(50);
-        expect(await store.state.total.value).toBe(30);
+        expect(await (store.state.total as any).value).toBe(30);
     });
     test("computed 返回对象时，可以通过 watch 监听对象成员", () => {
         return new Promise<void>((resolve) => {

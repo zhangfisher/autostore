@@ -11,7 +11,7 @@
  */
 
 import { describe, test, expect } from "bun:test";
-import { asyncComputed, AutoStore, computed, watch } from "../src";
+import { AutoStore, computed, watch } from "../src";
 import { delay } from "flex-tools/async/delay";
 
 describe("Store Events", () => {
@@ -208,7 +208,7 @@ describe("Store Events", () => {
             const store = new AutoStore(
                 {
                     count: 1,
-                    asyncDouble: asyncComputed(
+                    asyncDouble: computed(
                         async (scope: any) => {
                             await delay(1);
                             return scope.count * 2;
@@ -226,7 +226,7 @@ describe("Store Events", () => {
             );
 
             // 访问异步计算属性（初始化，不会触发 done 事件）
-            const asyncValue = store.state.asyncDouble;
+            const asyncValue = store.state.asyncDouble as any;
 
             // 等待异步计算完成
             await delay(50);
@@ -286,7 +286,7 @@ describe("Store Events", () => {
             const store = new AutoStore(
                 {
                     count: 1,
-                    asyncError: asyncComputed(
+                    asyncError: computed(
                         async (scope: any) => {
                             await delay(1);
                             throw new Error(`异步计算错误: ${scope.count}`);
@@ -304,7 +304,7 @@ describe("Store Events", () => {
             );
 
             // 访问异步计算属性（first run 抛错会触发 error 事件，经由 setTimeout 异步派发）
-            const asyncValue = store.state.asyncError;
+            const asyncValue = store.state.asyncError as any;
 
             // delay 需足够长，确保 emitStoreEvent 的 setTimeout(0) 派发完成
             await delay(50);
@@ -329,8 +329,8 @@ describe("Store Events", () => {
             const store = new AutoStore(
                 {
                     count: 1,
-                    slowComputed: asyncComputed(
-                        async (scope: any, { abortSignal }) => {
+                    slowComputed: computed(
+                        async (scope: any, { abortSignal }: any) => {
                             // 模拟一个长时间运行的操作，期间会检查 abortSignal
                             for (let i = 0; i < 10; i++) {
                                 if (abortSignal.aborted) {
@@ -360,7 +360,7 @@ describe("Store Events", () => {
             });
             await delay(1);
 
-            const value = store.state.slowComputed;
+            const value = store.state.slowComputed as any;
             expect(value.loading).toBe(true);
 
             await delay(15); // 等待一段时间，让异步计算开始执行
@@ -780,8 +780,8 @@ describe("Store Events", () => {
             const store = new AutoStore(
                 {
                     count: 1,
-                    slowComputed: asyncComputed(
-                        async (scope: any, { abortSignal }) => {
+                    slowComputed: computed(
+                        async (scope: any, { abortSignal }: any) => {
                             // 模拟一个长时间运行的操作，期间会检查 abortSignal
                             for (let i = 0; i < 10; i++) {
                                 if (abortSignal.aborted) {
@@ -811,7 +811,7 @@ describe("Store Events", () => {
                 });
             });
 
-            const value = store.state.slowComputed;
+            const value = store.state.slowComputed as any;
 
             await delay(50);
 

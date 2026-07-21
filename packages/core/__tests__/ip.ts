@@ -1,3 +1,6 @@
+// @ts-nocheck
+// 该脚本演示的 refstore（args.ref 跨 store 引用）功能已整体下线
+// （src/observer/observer.ts 的 _createRefStateCtx 已注释），保留脚本待功能回归
 import { AutoStore, computed, ConfigManager, configurable } from "../src";
 
 const configManager = new ConfigManager({

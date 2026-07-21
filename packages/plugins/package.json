@@ -4,6 +4,7 @@
     "module": "src/index.ts",
     "scripts": {},
     "devDependencies": {
+        "@type-challenges/utils": "^0.1.1",
         "@types/bun": "latest",
         "tsup": "^8.5.1"
     },

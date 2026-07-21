@@ -155,6 +155,7 @@
         "flex-tools": "^1.6.6",
       },
       "devDependencies": {
+        "@type-challenges/utils": "^0.1.1",
         "@types/bun": "latest",
         "tsup": "^8.5.1",
       },

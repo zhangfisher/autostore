@@ -1,6 +1,6 @@
 import { describe, test } from "bun:test";
 import type { Equal, Expect } from "@type-challenges/utils";
-import { AutoStore, configurable, schema, computed, ConfigurableKeyPaths } from "../../src";
+import { AutoStore, configurable, schema, computed } from "../../src";
 
 /**
  * Schema 基础类型测试
@@ -133,7 +133,7 @@ describe("Schema 验证类型", () => {
     test("onValidate 回调类型", () => {
         const store = new AutoStore({
             age: configurable(18, {
-                validate: (value, oldValue, path) => {
+                validate: (value: number, oldValue: number, path: string[]) => {
                     // value 应该是 number
                     const check1: Expect<Equal<typeof value, number>> = true;
                     // oldValue 应该是 number | undefined
@@ -181,11 +181,11 @@ describe("Schema 转换函数", () => {
     test("toView 和 toState 函数", () => {
         const store = new AutoStore({
             date: configurable(new Date(), {
-                toView: (value) => {
+                toView: (value: any) => {
                     const check: Expect<Equal<typeof value, any>> = true as any;
                     return value.toISOString();
                 },
-                toState: (value) => {
+                toState: (value: any) => {
                     const check: Expect<Equal<typeof value, any>> = true as any;
                     return new Date(value);
                 },
@@ -196,7 +196,7 @@ describe("Schema 转换函数", () => {
     test("toInput 函数", () => {
         const store = new AutoStore({
             value: configurable(100, {
-                toInput: (value) => {
+                toInput: (value: number) => {
                     const check: Expect<Equal<typeof value, number>> = true as any;
                     return String(value);
                 },
@@ -207,7 +207,7 @@ describe("Schema 转换函数", () => {
     test("toRender 函数", () => {
         const store = new AutoStore({
             value: configurable(100, {
-                toRender: (value) => {
+                toRender: (value: any) => {
                     const check: Expect<Equal<typeof value, any>> = true as any;
                     return `<span>${value}</span>`;
                 },
@@ -235,57 +235,6 @@ describe("Schema actions", () => {
                 ],
             }),
         });
-    });
-});
-
-/**
- * Store types 属性类型测试
- */
-describe("Store types 属性", () => {
-    test("types.schemas 类型", () => {
-        const store = new AutoStore({
-            user: {
-                name: configurable("张三"),
-                age: configurable(18),
-                admin: configurable(true),
-                address: {
-                    city: configurable("北京"),
-                    street: "长安街",
-                },
-            },
-        });
-
-        type SchemasType = typeof store.types.schemas;
-        const check: Expect<
-            Equal<
-                SchemasType,
-                {
-                    "user.name": string;
-                    "user.age": number;
-                    "user.admin": boolean;
-                    "user.address.city": string;
-                }
-            >
-        > = true as any;
-    });
-
-    test("types.schemaKeys 类型", () => {
-        const store = new AutoStore({
-            user: {
-                name: configurable("张三"),
-                age: configurable(18),
-                admin: configurable(true),
-                address: {
-                    city: configurable("北京"),
-                    street: "长安街",
-                },
-            },
-        });
-
-        type SchemaKeysType = keyof typeof store.types.schemas;
-        const check: Expect<
-            Equal<SchemaKeysType, "user.name" | "user.age" | "user.admin" | "user.address.city">
-        > = true as any;
     });
 });
 

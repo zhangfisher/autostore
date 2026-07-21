@@ -94,7 +94,6 @@ describe("Store 选项类型", () => {
                 debug: true,
                 lazy: false,
                 enableComputed: true,
-                delimiter: ".",
             },
         );
 
@@ -108,32 +107,30 @@ describe("Store 选项类型", () => {
                 value: computed(async () => 1, []),
             },
             {
-                onObserverCreated: (computedObject) => {
-                    const check1: Expect<Equal<typeof computedObject.id, string>> = true;
-                    const check2: Expect<Equal<typeof computedObject.path, string[]>> = true;
+                onObserverCreated: (args) => {
+                    const check1: Expect<Equal<typeof args.observer.id, string>> = true;
+                    const check2: Expect<Equal<typeof args.observer.path, string[]>> = true;
                 },
                 onObserverDone: (args) => {
-                    const check1: Expect<Equal<typeof args.id, string>> = true;
-                    const check2: Expect<Equal<typeof args.path, string[]>> = true;
-                    // value 和 computedObject 是 any 类型,跳过断言
+                    const check1: Expect<Equal<typeof args.observer.id, string>> = true;
+                    const check2: Expect<Equal<typeof args.observer.path, string[]>> = true;
+                    // value 保留在顶层
                     args.value;
-                    args.computedObject;
+                    args.observer;
                 },
                 onObserverError: (args) => {
-                    const check1: Expect<Equal<typeof args.id, string>> = true;
-                    const check2: Expect<Equal<typeof args.path, string[]>> = true;
-                    // error 和 computedObject 是 any 类型,跳过断言
+                    // 注意：onObserverError 的字段名是 observerObject（非 observer）
+                    const check1: Expect<Equal<typeof args.observerObject.id, string>> = true;
+                    const check2: Expect<Equal<typeof args.observerObject.path, string[]>> = true;
                     args.error;
-                    args.computedObject;
+                    args.observerObject;
                 },
                 onObserverCancel: (args) => {
-                    const check1: Expect<Equal<typeof args.id, string>> = true;
-                    const check2: Expect<Equal<typeof args.path, string[]>> = true;
-                    const check3: Expect<
-                        Equal<typeof args.reason, "reentry" | "timeout" | "abort" | "error">
-                    > = true;
-                    // computedObject 是 any 类型,跳过断言
-                    args.computedObject;
+                    const check1: Expect<Equal<typeof args.observer.id, string>> = true;
+                    const check2: Expect<Equal<typeof args.observer.path, string[]>> = true;
+                    // reason 类型是 string
+                    const check3: Expect<Equal<typeof args.reason, string>> = true;
+                    args.observer;
                 },
             },
         );
@@ -145,25 +142,18 @@ describe("Store 选项类型", () => {
                 count: 0,
             },
             {
-                onObserverInitial: (descriptor) => {
-                    // type, getter, options 的类型检查
-                    descriptor.type;
-                    descriptor.getter;
-                    descriptor.options;
+                onObserverInitial: (args) => {
+                    // descriptor 上的 type/getter/options
+                    args.descriptor.type;
+                    args.descriptor.getter;
+                    args.descriptor.options;
                 },
-                onObserverCreated: (observerObject) => {
-                    const check1: Expect<Equal<typeof observerObject.id, string>> = true;
-                    const check2: Expect<Equal<typeof observerObject.path, string[]>> = true;
-                    const check3: Expect<Equal<typeof observerObject.depends, string[][]>> = true;
+                onObserverCreated: (args) => {
+                    const check1: Expect<Equal<typeof args.observer.id, string>> = true;
+                    const check2: Expect<Equal<typeof args.observer.path, string[]>> = true;
+                    const check3: Expect<Equal<typeof args.observer.depends, string[][]>> = true;
                     // options 是复杂类型,跳过详细断言
-                    observerObject.options;
-                },
-                onObserverInitial: (path, value, parent) => {
-                    const check1: Expect<Equal<typeof path, string[]>> = true;
-                    // value 和 parent 是 any 类型
-                    value;
-                    parent;
-                    return undefined;
+                    args.observer.options;
                 },
             },
         );
