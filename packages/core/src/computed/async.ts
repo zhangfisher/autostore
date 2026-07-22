@@ -11,11 +11,11 @@ import { getValueScope } from "../scope";
 import { ComputedObject } from "./computedObject";
 import { getSnap } from "../utils/getSnap";
 import type { StateOperate } from "../store/types";
-import { AsyncLiteComputedGetterArgs, ComputedOptions, RuntimeComputedOptions } from "./types";
+import { AsyncComputedGetterArgs, ComputedOptions, RuntimeComputedOptions } from "./types";
 import { markRaw } from "../utils";
 import { emitStoreEvent } from "../utils/emitStoreEvent";
 
-export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedObject<
+export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
     Value,
     ComputedOptions
 > {
@@ -100,7 +100,7 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
      *
      */
     private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
-        const getterArgs: Required<AsyncLiteComputedGetterArgs> = {
+        const getterArgs: Required<AsyncComputedGetterArgs> = {
             getSnap: (scope: any) => getSnap(scope),
             extras: options.extras,
             operate: options.operate,
@@ -113,7 +113,6 @@ export class AsyncLiteComputedObject<Value = any, Scope = any> extends ComputedO
         try {
             //
             this._reportComputedStatus("loading", true);
-
             emitStoreEvent(this.store, "observer:run", {
                 args: getterArgs,
                 scope,

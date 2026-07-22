@@ -4,7 +4,7 @@ import type { Dict } from "../types";
 import type { ComputedObject } from "./computedObject";
 import type { SyncComputedObject } from "./sync";
 import type {
-    AsyncLiteComputedGetter,
+    AsyncComputedGetter,
     ComputedDepends,
     ComputedDescriptor,
     ComputedGetter,
@@ -17,7 +17,7 @@ import { isAbsolutePath } from "../utils/isAbsolutePath";
 import { isObserverDescriptor } from "../utils/isObserverDescriptor";
 import { PATH_DELIMITER } from "../consts";
 import { isPathEq } from "../utils";
-import { AsyncLiteComputedObject } from "./async";
+import { AsyncComputedObject } from "./async";
 
 export class ComputedObjects<State extends Dict = Dict> extends Map<string, ComputedObject<Dict>> {
     constructor(public store: AutoStore<State>) {
@@ -59,10 +59,10 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
         options?: SyncComputedOptions<Value, Scope>,
     ): SyncComputedObject<Value, Scope>;
     create<Value = any, Scope = any>(
-        getter: AsyncLiteComputedGetter<Value, Scope>,
+        getter: AsyncComputedGetter<Value, Scope>,
         depends: ComputedDepends,
         options?: ComputedOptions<Value, Scope>,
-    ): AsyncLiteComputedObject<Value, Scope>;
+    ): AsyncComputedObject<Value, Scope>;
     create<Value = any, Scope = any>(
         descriptor: ComputedDescriptor<Value, Scope>,
     ): ComputedObject<Value, Scope>;

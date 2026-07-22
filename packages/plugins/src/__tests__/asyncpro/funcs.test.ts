@@ -15,7 +15,7 @@ import { AutoStore } from "autostore";
 import "../../asyncpro";
 import { asyncComputed } from "../../asyncpro/asyncComputed";
 import { delay } from "flex-tools/async/delay";
-import { AsyncComputedObject } from "../../asyncpro/async";
+import { AsyncProComputedObject } from "../../asyncpro/async";
 
 describe("异步计算高级控制功能", () => {
     // 注意：重入时仅会被忽略而不是产生错误
@@ -93,7 +93,9 @@ describe("异步计算高级控制功能", () => {
                     },
                     onObserverCreated: () => {
                         setTimeout(() => {
-                            (store.computedObjects.get("x") as AsyncComputedObject)!.value.cancel();
+                            (store.computedObjects.get(
+                                "x",
+                            ) as AsyncProComputedObject)!.value.cancel();
                         }, 10);
                     },
                 },

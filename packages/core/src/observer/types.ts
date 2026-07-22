@@ -1,4 +1,4 @@
-import type { AsyncLiteComputedObject, SyncComputedObject } from "../computed";
+import type { AsyncComputedObject, SyncComputedObject } from "../computed";
 import type {
     AsyncComputedGetter,
     ComputedDescriptorBuilder,
@@ -14,7 +14,7 @@ export interface ObserverObjects {
     watch: WatchObject;
     schema: any;
     sync: SyncComputedObject;
-    async: AsyncLiteComputedObject;
+    async: AsyncComputedObject;
     // asyncpro: AsyncComputedObject;
 }
 

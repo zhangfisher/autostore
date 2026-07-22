@@ -66,7 +66,7 @@ export interface AsyncComputedGetterArgs {
      *
      * @returns
      */
-    cancel: () => void;
+    // cancel: () => void;
     /**
      * 额外的参数，用来传递给计算函数
      */
@@ -80,11 +80,6 @@ export interface AsyncComputedGetterArgs {
      */
     first?: boolean;
 }
-
-export type AsyncComputedGetter<Value, Scope = any> = (
-    scope: Scope,
-    args: Required<AsyncComputedGetterArgs>,
-) => Promise<Value>;
 
 export type RequiredComputedOptions<Value = any> = Required<ComputedOptions<Value>>;
 
@@ -165,20 +160,6 @@ export interface ComputedOptions<
 > extends ObserverOptions<Value, Schema> {
     /**
      *
-     * 计算函数的执行超时时间
-     *
-     * @description
-     * 指定超时时间，当计算函数执行超过指定时间后，会自动设置loading为false
-     * 如果timeout是一个数组，则第一个值表示超时时间，第二个值表示超时期的倒计时间隔
-     * 例如：[1000,10]表示1000ms代表1s后超时并置loading=false
-     * 10代表setInterval(1000/100), 每次执行时-1，直到为0时停止
-     * 这样就可以通过绑定timeout值来实现倒计时的效果
-     * 如果要实现60秒倒计时，可以这样写：[60*1000,60],这样value.timeout就会从60开始递减
-     */
-    timeout?: number | [number, number];
-
-    /**
-     *
      * 针对异步计算属性是否马上执行一次计算
      *
      * @description
@@ -198,29 +179,6 @@ export interface ComputedOptions<
      *
      */
     reentry?: boolean;
-    /**
-     * 提供一个异步信号，用来传递给异步计算函数以便可以取消异步计算
-     *
-     * @description
-     *
-     * 仅在异步计算函数中有效
-     *
-     */
-    abortController?: () => AbortController | undefined;
-    /**
-     * 当计算函数执行出错时的重试次数
-     *
-     * @description
-     *
-     * retry:3  表示最多重试3次,重试间隔为0，加上第1次执行，总共执行4次
-     * retry:[3,1000] 表示最多重试3次，重试间隔为1000ms，加上第1次执行，总共执行4次
-     *
-     * 重试数据可以通过AsyncComputedObject.retry获取
-     * 当首次执行失败时触发重试，此时AsyncComputedObject.retry=3，然后每次重试-1，直到为0时停止重试
-     * 可以在UI中通过AsyncComputedObject.retry来实时显示重试次数
-     *
-     */
-    retry?: number | [number, number];
     /**
      * 额外的参数
      */
@@ -375,7 +333,7 @@ export type SyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDe
 
 // 简单异步计算
 
-export interface AsyncLiteComputedGetterArgs {
+export interface AsyncComputedGetterArgs {
     /**
      * 提供一个函数用来获取当前Scope的快照
      * 传入的scope是一个经过Proxy处理的响应式对象，此方法可以对scope进行转换为普通对象
@@ -395,43 +353,43 @@ export interface AsyncLiteComputedGetterArgs {
     first?: boolean;
 }
 
-export type AsyncLiteComputedGetter<Value, Scope = any> = (
+export type AsyncComputedGetter<Value, Scope = any> = (
     scope: Scope,
-    args: Required<AsyncLiteComputedGetterArgs>,
+    args: Required<AsyncComputedGetterArgs>,
 ) => Promise<Value>;
 
-export type AsyncLiteComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
+export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
     "async",
     Value,
     Scope,
-    AsyncLiteComputedGetter<Value, Scope>,
+    AsyncComputedGetter<Value, Scope>,
     ComputedOptions<Value, Scope>
 > & {
     liteAsync: boolean; // 标识这是一个轻量异步计算
 };
 
-export type AsyncLiteComputedDescriptorBuilder<
-    Value = any,
-    Scope = any,
-> = ObserverDescriptorBuilder<"async", Value, Scope, AsyncLiteComputedDescriptor<Value, Scope>>;
+export type AsyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDescriptorBuilder<
+    "async",
+    Value,
+    Scope,
+    AsyncComputedDescriptor<Value, Scope>
+>;
 
 // 全功能异步计
 export type ComputedDescriptor<Value = any, Scope = any> =
     | SyncComputedDescriptor<Value, Scope>
-    | AsyncLiteComputedDescriptor<Value, Scope>;
+    | AsyncComputedDescriptor<Value, Scope>;
 
 export type ComputedDescriptorBuilder<Value = any, Scope = any> =
     | SyncComputedDescriptorBuilder<Value, Scope>
-    | AsyncLiteComputedDescriptorBuilder<Value, Scope>;
+    | AsyncComputedDescriptorBuilder<Value, Scope>;
 
 export type ComputedDescriptorParameter<Value = any, Scope = any> =
     | ComputedDescriptorBuilder<Value, Scope>
     | ComputedGetter<Value, Scope>
-    | AsyncComputedGetter<Value, Scope>
-    | AsyncLiteComputedGetter<Value, Scope>;
+    | AsyncComputedGetter<Value, Scope>;
 
 export type ComputedBuilder<Value, Scope> =
     | ComputedDescriptorBuilder<Value, Scope>
     | AsyncComputedGetter<Value, Scope>
-    | AsyncLiteComputedGetter<Value, Scope>
     | ComputedGetter<Value, Scope>;

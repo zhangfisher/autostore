@@ -23,14 +23,53 @@ import type {
     AsyncComputedGetter,
     Dict,
     RuntimeComputedOptions,
+    AsyncComputedGetterArgs,
+    StateOperate,
+    ComputedOptions,
 } from "autostore";
 
-export type AsyncComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
+export interface AsyncProComputedGetterArgs extends AsyncComputedGetterArgs {
+    /**
+     *  获取一个进度条，用来显示异步计算的进度
+     * @param opts
+     * @returns
+     */
+    getProgressbar?: (opts?: {
+        max?: number;
+        min?: number;
+        value?: number;
+    }) => AsyncComputedProgressbar;
+    /**
+     * 当计算函数启用超时时，可以指定一个cb，在超时后会调用此函数
+     * @param cb
+     * @returns
+     */
+    onTimeout?: (cb: () => void) => void;
+    /**
+     * 在执行计算函数时，如果传入AbortController.signal可以用来传递给异步计算函数，用来取消异步计算
+     * 例如：fetch(url,{signal:signal})
+     */
+    abortSignal: AbortSignal;
+    /**
+     * 用来取消操作正在执行的异步计算函数
+     * 异步函数可以通过此方法来取消异步计算
+     *
+     * @returns
+     */
+    cancel: () => void;
+}
+
+export type AsyncProComputedGetter<Value, Scope = any> = (
+    scope: Scope,
+    args: Required<AsyncProComputedGetterArgs>,
+) => Promise<Value>;
+
+export type AsyncProComputedDescriptor<Value = any, Scope = any> = ObserverDescriptor<
     "asyncpro",
     Value,
     Scope,
     AsyncComputedGetter<Value, Scope>,
-    ComputedOptions<Value, Scope>
+    AsyncProComputedOptions<Value, Scope>
 >;
 
 export interface AsyncComputedProgressbar {
@@ -38,22 +77,18 @@ export interface AsyncComputedProgressbar {
     end: () => void;
 }
 
-export type AsyncComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDescriptorBuilder<
+export type AsyncProComputedDescriptorBuilder<Value = any, Scope = any> = ObserverDescriptorBuilder<
     "asyncpro",
     Value,
     Scope,
-    AsyncComputedDescriptor<Value, Scope>
+    AsyncProComputedDescriptor<Value, Scope>
 >;
 
-export type RequiredComputedOptions<Value = any> = Required<ComputedOptions<Value>>;
-
-export type AsyncComputed<T = any> = (...args: any) => Promise<T>; // 异步计算函数
-
-export interface ComputedOptions<
+export interface AsyncProComputedOptions<
     Value = any,
     Scope = any,
     Schema extends Dict = Dict,
-> extends ObserverOptions<Value, Schema> {
+> extends ComputedOptions<Value, Scope, Schema> {
     /**
      *
      * 计算函数的执行超时时间
@@ -67,21 +102,6 @@ export interface ComputedOptions<
      * 如果要实现60秒倒计时，可以这样写：[60*1000,60],这样value.timeout就会从60开始递减
      */
     timeout?: number | [number, number];
-
-    /**
-     *
-     * 针对异步计算属性是否马上执行一次计算
-     *
-     * @description
-     * true: 在创建异步计算时马上执行一次
-     * false: 在创建异步计算时不马上执行一次，后续仅在依赖变化时执行
-     * auto: 当initial==undefined时会马上执行一次，initial!=undefined不会马上执行一次，因为该计算属性已经有初始化了
-     *
-     * 同步计算没有此问题
-     *
-     *
-     */
-    immediate?: "auto" | boolean;
     /**
      * 计算函数是否允许重入执行
      *
@@ -112,93 +132,7 @@ export interface ComputedOptions<
      *
      */
     retry?: number | [number, number];
-    /**
-     * 额外的参数
-     */
-    extras?: any;
-    /**
-     * 当执行计算getter函数出错时的回调，如果返回值==undefined，则返回值会作为出错时的计算结果
-     *
-     * @description
-     *
-     * 比如，有一个validate计算属性，其类型是true/false
-     * 当计算出错时抛出异常，此时就可以返回false, 这样就可以实现当计算出错时，validate返回false
-     *
-     */
-    onError?: (e: Error) => any;
-    /**
-     * 当计算完成后的回调函数
-     */
-    onDone?(args: {
-        id: string;
-        error: Error | undefined;
-        timeout: boolean;
-        abort: boolean;
-        path: string[] | undefined;
-        scope: Scope;
-        value: any;
-    }): void;
-    /**
-     * 在计算前后向指定路径的状态写入额外值
-     *
-     */
-    reports?: {
-        /**
-         * 在计算前后向loading指定状态写入true/false用于反馈
-         *
-         * 如loading=["./loading"]，则在开始计算前往当前计算属性所在的对象的loading=true
-         *  计算完成后置loading=false
-         *
-         */
-        loading?: string | string[];
-        /**
-         * 在计算出错时向指定路径写入错误信息
-         */
-        error?: string | string[];
-    };
-    /**
-     * 默认情况下，计算结果也会进行响应式处理
-     * 通过显式指定raw=true，可以标识为非响应式
-     *
-     * 例:
-     *
-     * const store = new AutoStore({
-     *    book:computed(()=>{
-     *        return {
-     *           name:"AutoStore",
-     *           price:100
-     *        }
-     *    })
-     * })
-     *
-     * book是一个响应式对象，即通过Proxy代理，允许通过store.watch("book.name")来监听变化
-     *
-     * 如果，指定raw=true，则会使用markRaw包裹book，book将不再Proxy，也就无法store.watch("book.name")来监听变化
-     *
-     * 此参数在计算结果是一个大型对象，且无需代理整个对象时能提高性能。
-     *
-     *  book:computed(()=>{
-     *        return {
-     *           name:"AutoStore",
-     *           price:100
-     *        }
-     *    },{ raw:true})
-     *
-     * 等效于 markRaw(store.state.book)
-     *
-     */
-    raw?: boolean;
 }
-
-export type LiteComputedOptions<
-    Value = any,
-    Scope = any,
-    Schema extends Dict = Dict,
-> = ObserverOptions<Value, Schema> &
-    Pick<
-        ComputedOptions<Value, Scope, Schema>,
-        "reports" | "onDone" | "onError" | "extras" | "immediate" | "reentry"
-    >;
 
 export type AsyncComputedValue<Value = any> = {
     loading: boolean;
@@ -210,15 +144,7 @@ export type AsyncComputedValue<Value = any> = {
     run: (options?: RuntimeComputedOptions) => void; // 重新执行任务
     cancel: () => void; // 中止正在执行的异步计算
 };
-
-/**
- * 计算属性所在的位置
- */
-export type ComputedContext<Value = any> = {
-    path: string[];
-    value: Value;
-    parentPath: string[];
-    parent: any;
+export type AsyncProRuntimeComputedOptions = AsyncProComputedOptions & {
+    first?: boolean; // 当第一次运行时为true
+    operate?: StateOperate; // 变化的依赖信息
 };
-
-export type ComputedSyncReturns<T = any> = (...args: any) => Exclude<T, Promise<any>>;

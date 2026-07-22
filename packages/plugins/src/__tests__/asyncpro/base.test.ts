@@ -4,7 +4,7 @@ import { describe, test, expect } from "bun:test";
 import { AutoStore, ComputedObject } from "autostore";
 import { delay } from "flex-tools/async/delay";
 import "../../asyncpro";
-import { AsyncComputedObject } from "../../asyncpro/async";
+import { AsyncProComputedObject } from "../../asyncpro/async";
 import { asyncComputed } from "../../asyncpro/asyncComputed";
 
 describe("所有异步计算基础功能", () => {
@@ -351,7 +351,7 @@ describe("所有异步计算基础功能", () => {
                     ),
                 });
                 //
-                const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject;
+                const asyncObj = store.computedObjects.get("x")! as AsyncProComputedObject;
                 asyncObj.run().then(() => {
                     expect(store.state.total.value).toBe(6);
                     resolve();
@@ -372,7 +372,7 @@ describe("所有异步计算基础功能", () => {
                         { id: "x", immediate: false },
                     ),
                 });
-                const asyncObj = store.computedObjects.get("x")! as AsyncComputedObject;
+                const asyncObj = store.computedObjects.get("x")! as AsyncProComputedObject;
                 asyncObj.run({ scope: "price" }).then(() => {
                     //// 运行时修改的scope仅在本次运行中有效，不会影响到下次运行
                     // 默认的scope没有配置是undefined,指向的是当前对象,

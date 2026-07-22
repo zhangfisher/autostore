@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { AutoStore, AsyncLiteComputedObject } from "autostore";
+import { AutoStore, AsyncComputedObject } from "autostore";
 import "../../asyncpro";
 
 describe("动态创建异步计算属性", () => {
@@ -49,7 +49,7 @@ describe("动态创建异步计算属性", () => {
     });
     test("动态异步计算属性初始化时自动执行一次", () => {
         return new Promise<void>((resolve) => {
-            let obj: AsyncLiteComputedObject;
+            let obj: AsyncComputedObject;
             const store = new AutoStore(
                 {
                     price: 2,

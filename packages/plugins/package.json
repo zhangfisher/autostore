@@ -2,8 +2,46 @@
     "name": "@autostorejs/plugins",
     "type": "module",
     "module": "src/index.ts",
-    "scripts": {},
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
+        "./asyncpro": {
+            "types": "./dist/asyncpro.d.ts",
+            "import": "./dist/asyncpro.js",
+            "require": "./dist/asyncpro.cjs"
+        },
+        "./resetable": {
+            "types": "./dist/resetable.d.ts",
+            "import": "./dist/resetable.js",
+            "require": "./dist/resetable.cjs"
+        },
+        "./shadow": {
+            "types": "./dist/shadow.d.ts",
+            "import": "./dist/shadow.js",
+            "require": "./dist/shadow.cjs"
+        },
+        "./trace": {
+            "types": "./dist/trace.d.ts",
+            "import": "./dist/trace.js",
+            "require": "./dist/trace.cjs"
+        },
+        "./refState": {
+            "types": "./dist/refState.d.ts",
+            "import": "./dist/refState.js",
+            "require": "./dist/refState.cjs"
+        }
+    },
+    "scripts": {
+        "build": "tsup"
+    },
+    "dependencies": {
+        "flex-tools": "^1.6.6"
+    },
     "devDependencies": {
+        "@swc/core": "^1.15.46",
         "@type-challenges/utils": "^0.1.1",
         "@types/bun": "latest",
         "tsup": "^8.5.1"
@@ -11,8 +49,5 @@
     "peerDependencies": {
         "autostore": "workspace:*",
         "typescript": "^5"
-    },
-    "dependencies": {
-        "flex-tools": "^1.6.6"
     }
 }

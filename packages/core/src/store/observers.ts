@@ -1,5 +1,5 @@
 import { ComputedObject } from "../computed/computedObject";
-import { AsyncLiteComputedObject } from "../computed/async";
+import { AsyncComputedObject } from "../computed/async";
 import { SyncComputedObject } from "../computed/sync";
 import { AnyObserverDescriptor, AnyObserverObject, ObserverContext } from "../observer/types";
 import { AnyAutoStore } from "../types";
@@ -25,7 +25,7 @@ export const observers: Record<string, any> = {
         return computedObj;
     },
     async: (store: AnyAutoStore, descriptor: AnyObserverDescriptor, context: ObserverContext) => {
-        const computedObj = new AsyncLiteComputedObject(
+        const computedObj = new AsyncComputedObject(
             store,
             descriptor,
             context,

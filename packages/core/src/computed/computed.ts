@@ -15,7 +15,7 @@ import type {
     ComputedOptions,
     SyncComputedOptions,
     SyncComputedDescriptorBuilder,
-    AsyncLiteComputedDescriptorBuilder,
+    AsyncComputedDescriptorBuilder,
 } from "./types";
 
 /**
@@ -32,7 +32,7 @@ export function computed<Value = any, Scope = any>(
     getter: AsyncComputedGetter<Value, Scope>,
     depends: ComputedDepends,
     options?: ComputedOptions<Value, Scope>,
-): AsyncLiteComputedDescriptorBuilder<Value, Scope>;
+): AsyncComputedDescriptorBuilder<Value, Scope>;
 export function computed<Value = any, Scope = any>(
     getter: ComputedGetter<Value, Scope>,
     options?: SyncComputedOptions<Value, Scope>,

@@ -1,28 +1,43 @@
-import { gzip } from "zlib";
-import { promisify } from "node:util";
-import { readFileSync } from "node:fs";
-import { defineConfig } from "tsup";
+import { defineConfig, Options } from "tsup";
 
-const gzipPromise = promisify(gzip);
 // import copy from "esbuild-copy-files-plugin";
 
-export default defineConfig({
-    entry: ["src/index.ts"],
+const commonConfig: Options = {
     format: ["esm", "cjs"],
-    dts: { resolve: true },
-    splitting: true,
+    dts: true,
+    splitting: false,
     sourcemap: true,
     clean: true,
     treeshake: true,
     minify: true,
     noExternal: ["flex-tools", "type-fest"],
-    onSuccess: async () => {
-        const cjsFile = readFileSync("dist/index.cjs");
-        const esmFile = readFileSync("dist/index.js");
-        const cjsCompressed = await gzipPromise(cjsFile);
-        const esmCompressed = await gzipPromise(esmFile);
-        console.log(`\x1b[33mGzipped size: \x1b[0m`);
-        console.log(`  - cjs: \x1b[32m${(cjsCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
-        console.log(`  - esm: \x1b[32m${(esmCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
+};
+
+export default defineConfig([
+    {
+        entry: ["src/index.ts"],
+        ...commonConfig,
     },
-});
+    {
+        // 对象形式 entry：key 作为输出 basename，
+        // esm -> asyncpro.js / cjs -> asyncpro.cjs / dts -> asyncpro.d.ts
+        entry: { asyncpro: "src/asyncpro/index.ts" },
+        ...commonConfig,
+    },
+    {
+        entry: ["src/refState.ts"],
+        ...commonConfig,
+    },
+    {
+        entry: ["src/shadow.ts"],
+        ...commonConfig,
+    },
+    {
+        entry: ["src/resetable.ts"],
+        ...commonConfig,
+    },
+    {
+        entry: ["src/trace.ts"],
+        ...commonConfig,
+    },
+]);

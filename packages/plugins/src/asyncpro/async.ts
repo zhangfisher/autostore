@@ -2,10 +2,6 @@
  *
  * 异步计算
  *
- *
- *
- *
- *
  */
 import {
     isFunction,
@@ -26,7 +22,12 @@ import type {
     StateOperate,
 } from "autostore";
 import { delay } from "flex-tools/async/delay";
-import type { AsyncComputedValue, AsyncComputedProgressbar } from "./types";
+import type {
+    AsyncComputedValue,
+    AsyncComputedProgressbar,
+    AsyncProComputedGetterArgs,
+    AsyncProRuntimeComputedOptions,
+} from "./types";
 import { updateObjectVal } from "../utils/updateObjectVal";
 
 type GetterRunContext = {
@@ -37,7 +38,7 @@ type GetterRunContext = {
     timeoutCallback: (() => void) | undefined;
 };
 
-export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObject<
+export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedObject<
     AsyncComputedValue<Value>
 > {
     private _isRunning: boolean = false;
@@ -160,7 +161,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      * 运行计算函数
      *
      */
-    async run(options?: RuntimeComputedOptions) {
+    async run(options?: AsyncProRuntimeComputedOptions) {
         const { first } = options ?? {};
 
         // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
@@ -177,7 +178,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         // 2. 合成最终的配置参数
         const finalComputedOptions = (
             options ? Object.assign({ first }, this.options, options) : this.options
-        ) as Required<RuntimeComputedOptions>;
+        ) as Required<AsyncProRuntimeComputedOptions>;
 
         // 3. 根据配置参数获取计算函数的上下文对象
         const scope = getValueScope<AsyncComputedValue<Value>, Scope>(
@@ -248,7 +249,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      * @param options
      * @returns
      */
-    private getAbortController(options?: Required<RuntimeComputedOptions>) {
+    private getAbortController(options?: Required<AsyncProRuntimeComputedOptions>) {
         if (options && typeof options.abortController === "function") {
             const abortController = options.abortController();
             if (abortController && abortController instanceof AbortController) {
@@ -271,7 +272,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
     private setTimeoutControl(
         ctx: GetterRunContext,
         initValue: Partial<AsyncComputedValue>,
-        options: Required<RuntimeComputedOptions>,
+        options: Required<AsyncProRuntimeComputedOptions>,
     ) {
         const { timeout } = options;
         let [timeoutValue, countdown] = Array.isArray(timeout) ? timeout : [timeout, 0];
@@ -318,7 +319,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
      * 执行计算函数
      *
      */
-    private async executeGetter(scope: any, options: Required<RuntimeComputedOptions>) {
+    private async executeGetter(scope: any, options: Required<AsyncProRuntimeComputedOptions>) {
         const { retry } = options;
         const [retryCount, retryInterval] = retry
             ? Array.isArray(retry)
@@ -330,7 +331,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
 
         const abortController = this.getAbortController(options);
 
-        const getterArgs: Required<AsyncComputedGetterArgs> = {
+        const getterArgs: Required<AsyncProComputedGetterArgs> = {
             onTimeout: (cb: () => void) => {
                 timeoutCallback = cb;
             },

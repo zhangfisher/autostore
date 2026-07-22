@@ -31,7 +31,7 @@
 import { AutoStore } from "autostore";
 import type { AnyAutoStore, Dict, AnyObserverDescriptor, ObserverContext } from "autostore";
 import { installPlugin } from "../utils/installPlugin";
-import { AsyncComputedObject } from "./async";
+import { AsyncProComputedObject } from "./async";
 import { AsyncComputedProgressbar } from "./types";
 
 /**
@@ -49,7 +49,7 @@ export function asyncpro(store: AnyAutoStore) {
         descriptor: AnyObserverDescriptor,
         context?: ObserverContext,
     ) => {
-        const computedObj = new AsyncComputedObject(store, descriptor, context);
+        const computedObj = new AsyncProComputedObject(store, descriptor, context);
         store.computedObjects.set(computedObj.id, computedObj);
         return computedObj;
     };
@@ -60,41 +60,13 @@ installPlugin(asyncpro);
 declare module "autostore" {
     export interface AutoStore<State extends Dict, Options = unknown> {}
     export interface ObserverObjects {
-        asyncpro: AsyncComputedObject;
+        asyncpro: AsyncProComputedObject;
     }
     export interface AsyncComputedObjects {
-        asyncpro: AsyncComputedObject;
-    }
-    // 异步计算
-    export interface AsyncComputedGetterArgs {
-        getProgressbar?: (opts?: {
-            max?: number;
-            min?: number;
-            value?: number;
-        }) => AsyncComputedProgressbar;
-        /**
-         * 当计算函数启用超时时，可以指定一个cb，在超时后会调用此函数
-         * @param cb
-         * @returns
-         */
-        onTimeout?: (cb: () => void) => void;
-        /**
-         *
-         * 提供一个函数用来获取当前Scope的快照
-         * 传入的scope是一个经过Proxy处理的响应式对象，此方法可以对scope进行转换为普通对象
-         */
-        getSnap?: <T = Dict>(scope: any) => T;
-        /**
-         * 在执行计算函数时，如果传入AbortController.signal可以用来传递给异步计算函数，用来取消异步计算
-         * 例如：fetch(url,{signal:signal})
-         */
-        abortSignal: AbortSignal;
-        /**
-         * 用来取消操作正在执行的异步计算函数
-         * 异步函数可以通过此方法来取消异步计算
-         *
-         * @returns
-         */
-        cancel: () => void;
+        asyncpro: AsyncProComputedObject;
     }
 }
+
+export * from "./asyncComputed";
+export * from "./async";
+export * from "./types";
