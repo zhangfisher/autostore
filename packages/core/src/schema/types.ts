@@ -1,6 +1,5 @@
 import type { ComputedBuilder } from "../computed/types";
-import { VALUE_SCHEMA_BUILDER_FLAG } from "../consts";
-import { ObserverDescriptor, ObserverDescriptorBuilder } from "../observer";
+import { IsDescriptorBuilder, ObserverDescriptor, ObserverDescriptorBuilder } from "../observer";
 import { AutoStore } from "../store/store";
 import { StoreRawStateType } from "../store/types";
 import { ComputedState, GetTypeByPath, OptionalKeys, RequiredKeys, StatePath } from "../types";
@@ -252,18 +251,12 @@ export type SchemaDescriptor<
     Widget extends keyof AutoStoreWidgets = never,
 > = ObserverDescriptor<"schema", Value, any, () => Value, AutoStoreStateSchema<Value, Widget>>;
 
-// export interface SchemaDescriptorBuilder<
-//     Value = any,
-//     Widget extends keyof AutoStoreWidgets = never,
-// > {
-//     [VALUE_SCHEMA_BUILDER_FLAG]: true;
-//     (): SchemaDescriptor<Value, Widget>;
-// }
-
 export type SchemaDescriptorBuilder<
     Value = any,
     Widget extends keyof AutoStoreWidgets = never,
 > = ObserverDescriptorBuilder<"schema", Value, Widget, SchemaDescriptor<Value, Widget>>;
+
+export type IsSchemaDescriptorBuilder<T> = IsDescriptorBuilder<T, "schema">;
 
 /**
  * Schema 构建器工厂类型
@@ -287,12 +280,10 @@ export type ExtractWidgetFromBuilder<T> =
 
 export type ConfigurableKeyPaths<State> = Exclude<
     keyof {
-        [K in StatePath<State> as GetTypeByPath<State, K> extends {
-            [VALUE_SCHEMA_BUILDER_FLAG]: true;
-        }
+        [K in StatePath<State> as IsSchemaDescriptorBuilder<GetTypeByPath<State, K>> extends true
             ? K
             : GetTypeByPath<State, K> extends Array<infer Item>
-              ? Item extends { [VALUE_SCHEMA_BUILDER_FLAG]: true }
+              ? IsSchemaDescriptorBuilder<Item> extends true
                   ? `${K}.${number}`
                   : never
               : never]: any;

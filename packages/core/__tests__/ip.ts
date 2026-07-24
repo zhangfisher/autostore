@@ -27,6 +27,9 @@ const netStore = new AutoStore(
     },
     { configManager, id: "network" },
 );
+
+type configState = typeof configManager.state;
+
 console.log("-----------");
 netStore.state.net.dhcp = true;
 console.log(configManager.state["network.ip"].enable);

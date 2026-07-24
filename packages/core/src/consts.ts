@@ -7,6 +7,5 @@ export const PATH_DELIMITER = ".";
 export const BATCH_UPDATE_EVENT = "__batch_update__";
 export const ASYNC_COMPUTED_VALUE = "__AS_ASYNC_COMPUTED_VALUE__";
 export const EMPTY = "__AS_EMPTY__";
-export const VALUE_SCHEMA_BUILDER_FLAG = "__AS_VALUE_SCHEMA__";
 export const DELETE_FLAG = "__AS_DELETE_FLAG__";
 export const GLOBAL_CONFIG_MANAGER = "AutoStoreConfigManager";

@@ -111,24 +111,6 @@ export type PickComputedResult<T> =
           : T extends AsyncComputedGetter<infer X, any>
             ? X
             : T;
-// export type PickComputedResult<T> =
-//     T extends SchemaDescriptorBuilder<infer X>
-//         ? X
-//         : T extends SyncComputedDescriptorBuilder<infer X, any>
-//           ? X
-//           : T extends AsyncLiteComputedDescriptorBuilder<infer X, any>
-//             ? X
-//             : T extends AsyncComputedDescriptorBuilder<infer X, any>
-//               ? AsyncComputedValue<X>
-//               : T extends WatchDescriptorBuilder<infer X, any>
-//                 ? X
-//                 : T extends ComputedGetter<infer X, any>
-//                   ? X
-//                   : // 同步函数
-//                     T extends AsyncComputedGetter<infer X, any>
-//                     ? AsyncComputedValue<X>
-//                     : // 异步函数
-//                       T;
 /**
  * 转换状态中的计算属性函数为返回值类型
  *

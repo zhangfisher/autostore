@@ -25,7 +25,7 @@
  *
  */
 
-import { VALUE_SCHEMA_BUILDER_FLAG, OBSERVER_TYPE_FLAG } from "../consts";
+import { OBSERVER_TYPE_FLAG } from "../consts";
 import { forEachObject, isFunction, isPlainObject } from "../utils";
 import { markRaw } from "../utils/markRaw";
 
@@ -93,9 +93,9 @@ function parseSchemaArgs(args: any[]): SchemaArgs {
 export function schema<Value>(initial: Value): SchemaDescriptorBuilder<Value>;
 export function schema<Value, W extends keyof AutoStoreWidgets>(
     initial: Value,
-    schema: Omit<Computedable<AutoStateSchemaBase<Value>, Value>, "value" | "widget"> &
-        { widget: W } &
-        WidgetConfigPrecise<W>,
+    schema: Omit<Computedable<AutoStateSchemaBase<Value>, Value>, "value" | "widget"> & {
+        widget: W;
+    } & WidgetConfigPrecise<W>,
 ): SchemaDescriptorBuilder<Value, W>;
 // 不包含 widget 的配置，或者 widget 不匹配已知类型时的回退重载
 export function schema<Value>(
@@ -120,7 +120,6 @@ export function schema<Value>(
         getter: () => value,
         options: args.options,
     });
-    builder[VALUE_SCHEMA_BUILDER_FLAG] = true;
     builder[OBSERVER_TYPE_FLAG] = "schema";
     return builder as any;
 }

@@ -90,6 +90,7 @@ import { createLogger, ILogger } from "flex-tools/misc/logger";
 import { cascadeDestroy } from "../plugins/cascadeDestroy";
 import { emitStoreEventWithResult } from "../utils/emitStoreEventWithResult";
 import { ObserverObjectBuilder, observers } from "./observers";
+import { isFuncDefine } from "../utils/isFuncDefine";
 
 export class AutoStore<
     State extends Dict,
@@ -288,10 +289,9 @@ export class AutoStore<
         if (typeof value === "string") {
             if (this.options.enableValueExpr === false || !isFunction(this._safeEval)) return;
             const val = value.trim();
-            if (val.startsWith("```") && val.endsWith("```")) {
+            if (isFuncDefine(val)) {
                 // 检查是否是不完整的表达式（只有 ``` 或 ```x``` 其中 x 太短）
                 if (val.length <= 6) return; // ``` 至少 3 个字符，最少需要 ```x``` (7个字符)
-
                 this.update((state) => {
                     const code = val.slice(3, val.length - 3).trim();
                     // 跳过空代码

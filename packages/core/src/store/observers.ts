@@ -5,8 +5,6 @@ import { AnyObserverDescriptor, AnyObserverObject, ObserverContext } from "../ob
 import { AnyAutoStore } from "../types";
 import { joinPath } from "../utils/joinPath";
 import { WatchObject } from "../watch/watchObject";
-// import { AsyncComputedObject } from "../computed/async";
-// import { ComputedDescriptor } from "../computed/types";
 
 export type ObserverObjectBuilder = (
     store: AnyAutoStore,

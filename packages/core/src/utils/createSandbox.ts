@@ -75,8 +75,8 @@ export function createSandbox(context: Record<string, any>, options?: CreateSand
         if (globalsToDisable.length > 0) {
             // 将禁用的全局变量名添加到参数列表
             keys.push(...globalsToDisable);
-            // 为每个禁用的变量添加 undefined 值
-            values.push(...new Array(globalsToDisable.length).fill(undefined));
+            // @ts-ignore 为每个禁用的变量添加 undefined 值
+            values.push(...Array.from({ length: globalsToDisable.length }).fill(undefined));
         }
     }
 

@@ -27,6 +27,12 @@ export enum ObserverScopeRef {
     Depends = "DEPENDS", // 指向依赖数组
     Self = "SELF", // 指向自身，默认值
 }
+export type IsDescriptorBuilder<V, T extends string> =
+    V extends ObserverDescriptorBuilder<infer S, any, any, any>
+        ? S extends T
+            ? true
+            : false
+        : false;
 
 // 动态依赖匹配
 export type ObserverDependMatcher<Value = any> = (path: string[], value: Value) => boolean;

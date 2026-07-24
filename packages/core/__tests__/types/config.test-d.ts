@@ -84,33 +84,11 @@
 // type userConfigurableState = ConfigurableState<typeof userStore, "app2">;
 // type ShopConfigurableState = ConfigurableState<typeof shopStore>;
 
-// declare module "autostore" {
+// declare module "../.." {
 //     interface AutoStoreConfigures
 //         extends orderStoreConfigurableState, userConfigurableState, ShopConfigurableState {}
-//     interface AutoStoreWidgets {
-//         number: {
-//             max: number;
-//             min: number;
-//             step?: number;
-//         };
-//         text: {
-//             maxLength?: number;
-//             minLength?: number;
-//             pattern?: RegExp | string;
-//             rows?: number;
-//             multiline?: boolean;
-//         };
-//         select: {
-//             options: Array<{ label: string; value: any; disabled?: boolean }>;
-//             multiple?: boolean;
-//         };
-//         checkbox: {
-//             trueValue?: any;
-//             falseValue?: any;
-//             indeterminate?: boolean;
-//         };
-//     }
 // }
+
 // AutoStoreConfigManager.state["app1.order.price"].value;
 
 // // ========== Widget 属性类型推断测试 ==========
@@ -119,14 +97,14 @@
 // type TestNumberWidget = ConfigurableState<typeof shopStore, "app3">;
 
 // // 验证 number widget 的属性类型存在且正确
-// type _Test1 = Expect<Equal<TestNumberWidget["app3.shop.tax"]["min"], number>>;
-// type _Test2 = Expect<Equal<TestNumberWidget["app3.shop.tax"]["max"], number>>;
+// type _Test1 = Expect<Equal<TestNumberWidget["app3.shop.tax"]["min"], number | undefined>>;
+// type _Test2 = Expect<Equal<TestNumberWidget["app3.shop.tax"]["max"], number | undefined>>;
 // type _Test3 = Expect<Equal<TestNumberWidget["app3.shop.tax"]["step"], number | undefined>>;
 
 // // 验证没有前缀的配置类型
 // type TestNumberWidgetNoPrefix = ConfigurableState<typeof shopStore, "">;
-// type _Test4 = Expect<Equal<TestNumberWidgetNoPrefix["shop.tax"]["min"], number>>;
-// type _Test5 = Expect<Equal<TestNumberWidgetNoPrefix["shop.tax"]["max"], number>>;
+// type _Test4 = Expect<Equal<TestNumberWidgetNoPrefix["shop.tax"]["min"], number | undefined>>;
+// type _Test5 = Expect<Equal<TestNumberWidgetNoPrefix["shop.tax"]["max"], number | undefined>>;
 
 // // 验证实际使用场景的类型推断 - 通过 AutoStoreConfigManager 访问
 // // 注意：需要在 AutoStoreConfigures 中包含对应的键才能正常访问
