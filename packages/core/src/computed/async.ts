@@ -19,14 +19,10 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
     Value,
     ComputedOptions
 > {
-    private _isRunning: boolean = false;
     private _firstRun: boolean = false; // 是否已经第一次运行过
     lite: boolean = true; // 标识这是一个简单计算对象
     get async() {
         return true;
-    }
-    get running() {
-        return this._isRunning;
     }
 
     protected onInitial() {
@@ -78,7 +74,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         );
         // 4. 检查是否有重入
         const { reentry } = finalComputedOptions;
-        if (this._isRunning && !reentry) {
+        if (this._running && !reentry) {
             this.store.logger.warn(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
             );
@@ -88,11 +84,11 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             });
             return;
         }
-        this._isRunning = true; // 即所依赖项的值
+        this._running = true; // 即所依赖项的值
         try {
             return await this.executeGetter(scope, finalComputedOptions);
         } finally {
-            this._isRunning = false;
+            this._running = false;
         }
     }
     /**

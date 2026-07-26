@@ -84,6 +84,7 @@ import {
     setVal,
     splitPath,
     makeHook,
+    isAsyncComputed,
 } from "../utils";
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
@@ -91,6 +92,7 @@ import { cascadeDestroy } from "../plugins/cascadeDestroy";
 import { emitStoreEventWithResult } from "../utils/emitStoreEventWithResult";
 import { ObserverObjectBuilder, observers } from "./observers";
 import { isFuncDefine } from "../utils/isFuncDefine";
+import { getComputedObject } from "../utils/getComputedObject";
 
 export class AutoStore<
     State extends Dict,
@@ -775,7 +777,6 @@ export class AutoStore<
      * @param options.defaultValue - 默认值，如果指定则当指定路径不存在时返回默认值
      * @param options.waitAsyncDone - 如果异步计算正在进行中，则等待异步计算结束再返回
      * @param options.timeout - 当等待异步计算时的超时时间
-     * @param options.expandAsync - 如果是异步计算则返回异步计算对象的value,=false时则返回异步计算对象而不是值
      *
      *
      */
@@ -785,19 +786,14 @@ export class AutoStore<
             defaultValue?: any;
             waitAsyncDone?: boolean;
             timeout?: number;
-            expandAsync?: boolean;
         },
     ) {
-        const {
-            defaultValue,
-            timeout = 0,
-            expandAsync = false,
-            waitAsyncDone = false,
-        } = Object.assign({}, options);
+        const { defaultValue, timeout = 0, waitAsyncDone = false } = Object.assign({}, options);
         const keyPath = Array.isArray(path) ? path : splitPath(path, this.delimiter);
         const val = getVal(this.state, keyPath, defaultValue);
-        if (isAsyncComputedValue(val)) {
-            if (val.loading && waitAsyncDone) {
+        const computedObject = getComputedObject(this, path);
+        if (computedObject) {
+            if (computedObject.async && computedObject.running && waitAsyncDone) {
                 return new Promise((resolve, reject) => {
                     let tmId: any, subscriber: any;
                     if (timeout > 0) {
@@ -812,13 +808,13 @@ export class AutoStore<
                             if (isPathEq(keyPath, path)) {
                                 clearTimeout(tmId);
                                 subscriber?.off();
-                                resolve(expandAsync ? val.value : val);
+                                resolve(computedObject.getValue());
                             }
                         }
                     });
                 });
             } else {
-                return expandAsync ? val.value : val;
+                return computedObject.getValue();
             }
         } else {
             return val;

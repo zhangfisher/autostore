@@ -23,24 +23,29 @@
 
 import { PATH_DELIMITER } from "../consts";
 import { isPathEq } from "./isPathEq";
+import { normalizePath } from "./normalizePath";
 
 export function isPathMatched(path: string | string[], pattern: string | string[]): boolean {
-	const arrayPath = Array.isArray(path) ? path : path.split(PATH_DELIMITER);
-	const arrayPattern = Array.isArray(pattern) ? pattern : pattern === "" ? [] : pattern.split(PATH_DELIMITER);
-	if (arrayPattern.length === 0) return true;
-	const isMatched = isPathEq(arrayPath, arrayPattern);
-	if (isMatched) return true;
-	if (arrayPattern[arrayPattern.length - 1] === "**") {
-		arrayPattern[arrayPattern.length - 1] = "*";
-		arrayPattern.splice(
-			arrayPattern.length - 1,
-			0,
-			...Array.from<string>({ length: arrayPath.length - arrayPattern.length }).fill("*"),
-		);
-	}
-	if (arrayPath.length !== arrayPattern.length) return false;
-	return arrayPattern.every((item, index) => {
-		if (item === "*" || item === "**") return true;
-		return item === arrayPath[index];
-	});
+    const arrayPath = normalizePath(path);
+    const arrayPattern = Array.isArray(pattern)
+        ? pattern
+        : pattern === ""
+          ? []
+          : pattern.split(PATH_DELIMITER);
+    if (arrayPattern.length === 0) return true;
+    const isMatched = isPathEq(arrayPath, arrayPattern);
+    if (isMatched) return true;
+    if (arrayPattern[arrayPattern.length - 1] === "**") {
+        arrayPattern[arrayPattern.length - 1] = "*";
+        arrayPattern.splice(
+            arrayPattern.length - 1,
+            0,
+            ...Array.from<string>({ length: arrayPath.length - arrayPattern.length }).fill("*"),
+        );
+    }
+    if (arrayPath.length !== arrayPattern.length) return false;
+    return arrayPattern.every((item, index) => {
+        if (item === "*" || item === "**") return true;
+        return item === arrayPath[index];
+    });
 }

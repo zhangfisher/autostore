@@ -27,7 +27,7 @@ export class ObserverObject<
     private _initial: Value | undefined;
     private _value: Value | undefined;
     private _associated: boolean = false; // 是否已经关联到状态对象
-    private _attached: boolean = false;
+    private _attached: boolean = false; // 是否开始监听状态依赖变化
     private _destroyed: boolean = false; // 是否已经销毁
     private _getter: any;
     private _depends: string[][] = [];
@@ -35,8 +35,10 @@ export class ObserverObject<
     private _subscribers: Watcher[] = []; // 保存订阅者的ID
     private _strPath?: string;
     private _error?: Error; // 记录最后一次运行时的错误
+    protected _running: boolean = false; // 开始运行时为true
     store: AutoStore<any>;
     _shadowStore!: AutoStore<any>;
+
     /**
      *  构造函数。
      *
@@ -85,6 +87,9 @@ export class ObserverObject<
     }
     get async() {
         return this._options.async;
+    }
+    get running() {
+        return this._running;
     }
     get enable() {
         return this._options.enable!;

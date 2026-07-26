@@ -15,12 +15,7 @@ import {
     getValueScope,
     getError,
 } from "autostore";
-import type {
-    AsyncComputedGetterArgs,
-    Dict,
-    RuntimeComputedOptions,
-    StateOperate,
-} from "autostore";
+import type { Dict, RuntimeComputedOptions, StateOperate } from "autostore";
 import { delay } from "flex-tools/async/delay";
 import type {
     AsyncComputedValue,
@@ -206,7 +201,9 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
             this._isRunning = false;
         }
     }
-
+    getValue() {
+        return this.value.value as any;
+    }
     /**
      * computed(async (scope,{getProgressbar})=>{
      *    const pbar = getProgressbar({max:100,min:0}) // 初始值

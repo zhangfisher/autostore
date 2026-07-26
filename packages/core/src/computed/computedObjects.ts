@@ -18,6 +18,7 @@ import { isObserverDescriptor } from "../utils/isObserverDescriptor";
 import { PATH_DELIMITER } from "../consts";
 import { isPathEq } from "../utils";
 import { AsyncComputedObject } from "./async";
+import { normalizePath } from "../utils/normalizePath";
 
 export class ComputedObjects<State extends Dict = Dict> extends Map<string, ComputedObject<Dict>> {
     constructor(public store: AutoStore<State>) {
@@ -231,7 +232,7 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
      */
     find(path: string | string[] | undefined): ComputedObject | undefined {
         if (!path) return;
-        const spath = Array.isArray(path) ? path : path.split(PATH_DELIMITER);
+        const spath = normalizePath(path);
         for (const obj of this.values()) {
             if (isPathEq(obj.path, spath)) {
                 return obj;

@@ -40,12 +40,10 @@ export class ComputedObject<
         return `ComputedObject<${joinPath(this.path)}>`;
     }
 
-    /**
-     * 返回计算属性的值,如果是异步计算属性，则返回value.value
-     */
-    get val(): Value {
-        return this.async ? (this.value as any).value : this.value;
+    getValue() {
+        return this.value;
     }
+
     /**
      * 报告计算状态
      * @param name
