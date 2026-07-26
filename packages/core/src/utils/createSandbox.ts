@@ -82,12 +82,14 @@ export function createSandbox(context: Record<string, any>, options?: CreateSand
 
     // 使用 new Function 创建沙箱函数
     // 参数名为 context 的键 + 禁用的全局变量名（不在 context 中的），函数体为用户提供的 code
-    return (code: string) => {
+    return (code: string, ctx?: Record<string, any>) => {
         try {
+            const fKeys = [...keys, ...Object.keys(ctx || {})];
+            const fValues = [...values, ...Object.values(ctx || {})];
             // 创建函数: new Function('a', 'b', 'window', 'document', 'return a+b')
-            const fn = new Function(...keys, `return ${code}`);
+            const fn = new Function(...fKeys, `return ${code}`);
             // 传入 context 的值 + undefined（用于禁用的全局变量）
-            return fn(...values);
+            return fn(...fValues);
         } catch (error) {
             // 如果有 onError 回调，调用它
             if (options?.onError) {

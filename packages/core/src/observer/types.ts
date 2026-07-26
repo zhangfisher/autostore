@@ -78,7 +78,6 @@ export interface ObserverDescriptorBuilder<
     >,
 > {
     (): descriptor;
-    [OBSERVER_DESCRIPTOR_BUILDER_FLAG]: true;
     __OBSERVER_TYPE__: string;
 }
 

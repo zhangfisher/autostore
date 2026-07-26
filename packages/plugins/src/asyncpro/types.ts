@@ -19,7 +19,6 @@
 import type {
     ObserverDescriptor,
     ObserverDescriptorBuilder,
-    ObserverOptions,
     AsyncComputedGetter,
     Dict,
     RuntimeComputedOptions,

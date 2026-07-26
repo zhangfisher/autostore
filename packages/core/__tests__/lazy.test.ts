@@ -364,6 +364,7 @@ describe("lazy 选项", () => {
 
         // 读取第一个 watch 对象
         store.state.watcher1;
+
         expect(createdEventFired).toBe(true);
         expect(createdPaths).toContain("watcher1");
 

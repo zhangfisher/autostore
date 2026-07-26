@@ -32,7 +32,7 @@ import { AutoStore } from "autostore";
 import type { AnyAutoStore, Dict, AnyObserverDescriptor, ObserverContext } from "autostore";
 import { installPlugin } from "../utils/installPlugin";
 import { AsyncProComputedObject } from "./async";
-import { AsyncComputedProgressbar } from "./types";
+import { asyncComputed } from "./asyncComputed";
 
 /**
  * shadow 插件入口
@@ -53,16 +53,22 @@ export function asyncpro(store: AnyAutoStore) {
         store.computedObjects.set(computedObj.id, computedObj);
         return computedObj;
     };
+
+    if (!store.options.sandbox) store.options.sandbox = {};
+    if (!store.options.sandbox.context) store.options.sandbox.context = {};
+    // 注意：必须追加而非整体覆盖 context
+    // 否则会丢失用户在 sandbox.context 中自定义注入的变量（如测试中的 data 等）
+    store.options.sandbox.context.asyncComputed = asyncComputed;
 }
 
 installPlugin(asyncpro);
 
 declare module "autostore" {
-    export interface AutoStore<State extends Dict, Options = unknown> {}
-    export interface ObserverObjects {
+    interface AutoStore<State extends Dict, Options = unknown> {}
+    interface ObserverObjects {
         asyncpro: AsyncProComputedObject;
     }
-    export interface AsyncComputedObjects {
+    interface AsyncComputedObjects {
         asyncpro: AsyncProComputedObject;
     }
 }

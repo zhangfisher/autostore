@@ -78,9 +78,9 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             this.store.logger.warn(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
             );
-            this.emitStoreEvent("observer:cancel", {
+            emitStoreEvent(this.store, "observer:cancel", {
                 reason: "reentry",
-                observerObject: this,
+                observer: this,
             });
             return;
         }
@@ -130,12 +130,12 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         // 计算完成后触发事件
         if (hasError) {
             this.error = hasError;
-            this.emitStoreEvent("observer:error", {
+            emitStoreEvent(this.store, "observer:error", {
                 error: hasError,
                 observer: this,
             });
         } else {
-            this.emitStoreEvent("observer:done", {
+            emitStoreEvent(this.store, "observer:done", {
                 value: computedResult,
                 observer: this,
             });
@@ -184,9 +184,5 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             operate: params,
             first: !this._firstRun,
         });
-    }
-    protected getValueWatchPath() {
-        const spath = this.path!.join(this.store.options.delimiter);
-        return [`${spath}.*`, spath];
     }
 }

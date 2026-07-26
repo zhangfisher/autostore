@@ -9,6 +9,7 @@ import { markRaw } from "../utils/markRaw";
 import { execObserverInitial } from "../utils/execObserverInitial";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
+import { PATH_DELIMITER } from "../consts";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 
@@ -231,7 +232,7 @@ function createProxy(
 
                 // 写入成功后，检查是否是配置项，如果是则调用 ConfigManager.onUpdate通知配置系统进行更新
                 // 配置系统不使用订阅方式是因为直接调用onUpdate更高效
-                const pathKey = path.join(this.options.delimiter || ".");
+                const pathKey = path.join(PATH_DELIMITER || ".");
                 const configKeyArg = this.options.configKey;
                 const configKey =
                     configKeyArg && configKeyArg.length > 0

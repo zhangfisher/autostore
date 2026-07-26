@@ -280,12 +280,6 @@ export class ObserverObject<
     protected getValueWatchPath(): string | (string | string[])[] {
         return this.path!.join(this.store.options.delimiter);
     }
-
-    protected emitStoreEvent(event: keyof AutoStoreEvents, args: any) {
-        setTimeout(() => {
-            this.store.emit(event, args);
-        }, 0);
-    }
     /**
      * 获取当前对象的依赖路径
      *

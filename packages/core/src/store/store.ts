@@ -78,13 +78,10 @@ import {
     forEachObject,
     getSnapshot,
     getVal,
-    isAsyncComputedValue,
     isFunction,
-    isPathEq,
     setVal,
     splitPath,
     makeHook,
-    isAsyncComputed,
 } from "../utils";
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
@@ -117,7 +114,7 @@ export class AutoStore<
     private _batchOperates: StateOperate[] = []; // 暂存批量操作
     private _updateFlags: number = 0; // 额外的更新标识
     private _peeping: boolean = false;
-    private _safeEval?: (code: string) => any;
+    private _safeEval?: (code: string, context: Record<string, any>) => any;
     // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <noUnusedPrivateClassMembers>
     private _updateValidateBehavior: UpdateOptions["onInvalid"]; // 更新时的校验行为
     private _configManager?: ConfigManager; // 保存 ConfigManager 实例
@@ -228,9 +225,9 @@ export class AutoStore<
             const sandbox = isFunction(this.options.sandbox?.create)
                 ? this.options.sandbox.create
                 : createSandbox;
+
             this._safeEval = sandbox(
                 {
-                    ...this.options.sandbox?.context,
                     computed,
                     watch,
                     configurable,
@@ -298,8 +295,7 @@ export class AutoStore<
                     const code = val.slice(3, val.length - 3).trim();
                     // 跳过空代码
                     if (!code) return;
-
-                    const result = this._safeEval?.(code);
+                    const result = this._safeEval?.(code, this.options.sandbox?.context || {});
                     // 设置结果，即使结果是 undefined 也要设置
                     // 因为 undefined 可能是 watch 等函数的合法返回值
                     setVal(state, path, result);
@@ -802,16 +798,14 @@ export class AutoStore<
                             reject(new TimeoutError());
                         }, timeout);
                     }
-                    subscriber = this.on("observer:done", ({ observer }) => {
-                        if (observer.type === "async" || observer.type === "asyncpro") {
-                            const path = observer.path;
-                            if (isPathEq(keyPath, path)) {
-                                clearTimeout(tmId);
-                                subscriber?.off();
-                                resolve(computedObject.getValue());
-                            }
-                        }
-                    });
+                    subscriber = computedObject.watch(
+                        () => {
+                            clearTimeout(tmId);
+                            subscriber?.off();
+                            resolve(computedObject.getValue());
+                        },
+                        { once: true },
+                    );
                 });
             } else {
                 return computedObject.getValue();

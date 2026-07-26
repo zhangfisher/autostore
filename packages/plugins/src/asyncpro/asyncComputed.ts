@@ -44,7 +44,9 @@ export function asyncComputed<Value = any, Scope = any>(
             [OBSERVER_DESCRIPTOR_FLAG]: true,
         } as unknown as AsyncProComputedDescriptor<Value, Scope>;
     };
-    descriptorBuilder[OBSERVER_DESCRIPTOR_BUILDER_FLAG] = true as const;
     descriptorBuilder[OBSERVER_TYPE_FLAG] = "asyncpro";
-    return descriptorBuilder as AsyncProComputedDescriptorBuilder<AsyncComputedValue<Value>, Scope>;
+    return descriptorBuilder as unknown as AsyncProComputedDescriptorBuilder<
+        AsyncComputedValue<Value>,
+        Scope
+    >;
 }

@@ -90,7 +90,7 @@ export interface AutoStoreHooks<State extends Dict> {
         State,
         {
             error: Error;
-            observerObject: ObserverObject<any, any>;
+            observer: ObserverObject<any, any>;
         }
     >;
     onObserverCancel?: AutoStoreHookArgs<State, { reason: string; observer: AnyObserverObject }>;

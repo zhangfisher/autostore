@@ -68,6 +68,7 @@ describe("reactive", () => {
             },
         );
         const onClick = store.state.user.items[0].onClick;
+        // @ts-ignore
         expect(onClick).toBeInstanceOf(Function);
     });
 });

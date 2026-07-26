@@ -1136,6 +1136,7 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
 
             // 多次 reset
             configManager.reset();
+            // @ts-ignore
             expect(orderStore.state.order.price).toBe(99.9);
 
             configManager.reset();
