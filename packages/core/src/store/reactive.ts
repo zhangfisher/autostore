@@ -10,6 +10,7 @@ import { execObserverInitial } from "../utils/execObserverInitial";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
 import { PATH_DELIMITER } from "../consts";
+import { emitStoreEventWithResult } from "../utils/emitStoreEventWithResult";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 

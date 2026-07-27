@@ -127,7 +127,7 @@ describe("lazy 选项", () => {
         expect(computeCount).toBe(0);
 
         // 读取异步计算属性
-        const doubled = await (store.state.doubled as any).value;
+        const doubled = await store.get("doubled");
         expect(doubled).toBe(2);
         expect(store.computedObjects.size).toBe(1);
         expect(store.computedObjects.get("doubled")?.id).toBe("doubled");
@@ -159,7 +159,7 @@ describe("lazy 选项", () => {
         expect(computeCount).toBe(0);
 
         // 读取异步计算属性
-        const promise = (store.state.doubled as any).value;
+        const promise = store.get("doubled");
         expect(store.computedObjects.size).toBe(1);
         const doubled = await promise;
         expect(store.computedObjects.get("doubled")?.id).toBe("doubled");

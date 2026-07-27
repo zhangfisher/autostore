@@ -33,7 +33,7 @@ export function safeExecHooks(
             this.logger.error(e);
         }
     };
-    // 并行执行所有 hooks
+    // 并行执行所有 hooks,不考虑返回值
     return Promise.all(hookArray.map(executeHook))
         .then(() => undefined)
         .catch(() => {});

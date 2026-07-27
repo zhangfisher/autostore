@@ -55,6 +55,14 @@ export class ConfigManager extends AutoStore<
 > {
     dirtyValues: Record<string, any> = {};
     private _reseting: boolean = false;
+    /**
+     * load 进行中计数器（支持并发 load）
+     * load 主动写入配置值期间 >0，此时 onUpdate 应抑制 save，
+     * 避免刚从外部存储加载的值又立即触发 save（load↔save 循环）。
+     * 仅当本次 load 实际写入了已注册 schema 时才持有计数并 await 一个宏任务，
+     * 否则（如构造期 autoload 且 store 尚未创建）立即释放，避免误抑制并发的用户修改。
+     */
+    private _loadingCount: number = 0;
     constructor(
         public source: ConfigSource,
         options?: ConfigManagerOptions<AutoStoreConfigures>,
@@ -98,26 +106,47 @@ export class ConfigManager extends AutoStore<
      */
     async load() {
         const values = await this.source.load();
-        this.update(
-            (state) => {
-                Object.entries(values).forEach(([key, value]) => {
-                    // 直接使用扁平键访问 schema
-                    // @ts-ignore
-                    const schema = state[key];
-                    if (schema) {
-                        // schema 存在，通过 setter 更新原始 Store
-                        schema.getter = () => value;
-                    } else {
-                        // schema 不存在，创建新的 schema 对象
+        this._loadingCount++;
+        let hasSchemaWrite = false;
+        try {
+            this.update(
+                (state) => {
+                    Object.entries(values).forEach(([key, value]) => {
+                        // 直接使用扁平键访问 schema
                         // @ts-ignore
-                        state[key] = { value };
-                    }
-                });
-            },
-            {
-                silent: true,
-            },
-        );
+                        const schema = state[key];
+                        if (schema) {
+                            // schema 存在，通过 value 的 setter 写入原始 Store
+                            // 注意：必须走 schema.value（由 _createValueProxy 定义的代理），
+                            // 才能把值真正写入原始 Store 的对应路径。此前误用 schema.getter
+                            // 赋值，而 getter 不参与值读取链路，导致 load 静默失效。
+                            // @ts-ignore
+                            schema.value = value;
+                            hasSchemaWrite = true;
+                        } else {
+                            // schema 不存在，创建新的 schema 对象
+                            // @ts-ignore
+                            state[key] = { value };
+                        }
+                    });
+                },
+                {
+                    silent: true,
+                },
+            );
+            // 原始 Store 的 set 陷阱通过 setTimeout(0) 异步回调 onUpdate。
+            // 仅当本次实际写入了已注册 schema 时，才等待一个宏任务周期，
+            // 确保派发的 onUpdate 在 _loadingCount>0 时执行完毕（被 onUpdate 抑制 save）。
+            // 构造期 autoload 等无 schema 写入的场景则跳过等待，避免其生命周期跨越
+            // 不相关的用户修改而误抑制 save。
+            if (hasSchemaWrite) {
+                await new Promise<void>((resolve) => setTimeout(resolve, 0));
+            }
+        } finally {
+            this._loadingCount--;
+            // 加载的值与外部存储一致，不应残留为脏数据触发后续 save
+            this.dirtyValues = {};
+        }
     }
     /**
      * 手工调用保存配置数据到数据源
@@ -143,35 +172,39 @@ export class ConfigManager extends AutoStore<
     /**
      * 恢复默认值
      */
-    reset() {
+    async reset() {
         if (this._reseting) return;
+        this._reseting = true;
         try {
-            this._reseting = true;
             this.dirtyValues = {};
             // 将状态值恢复为默认值
             // this.state 中的每个值是一个 SchemaDescriptor，包含 value 和 schema 属性
             Object.values(this.state).forEach((schema: any) => {
-                // 此操作会导致写入时的校验操作，
                 try {
-                    // 使用 withSchema 包裹默认值，实现静默更新
-                    // 避免触发校验、事件通知、onUpdate 和 save
                     const defaultValue = schema.default;
                     if (defaultValue !== undefined) {
-                        schema.getter = () =>
-                            withSchema(markRaw(defaultValue), {
-                                slient: true,
-                                onInvalid: "none",
-                            });
+                        // 通过 value 的 setter 写回默认值，实现静默更新
+                        // 注意：必须走 schema.value（由 _createValueProxy 定义的代理），
+                        // 此前误用 schema.getter 赋值导致 reset 静默失效。
+                        // withSchema + slient 避免触发校验报错与事件通知；
+                        // _reseting 标志抑制 onUpdate 的 save（见 onUpdate）。
+                        schema.value = withSchema(markRaw(defaultValue), {
+                            slient: true,
+                            onInvalid: "none",
+                        });
                     }
                 } catch {
                     // 忽略校验错误
                 }
             });
+            // 等待 set 陷阱派发的 onUpdate 在 _reseting=true 时执行完毕
+            await new Promise<void>((resolve) => setTimeout(resolve, 0));
         } finally {
             if (typeof this.source.reset === "function") {
                 this.source.reset.call(this);
             }
             this._reseting = false;
+            this.dirtyValues = {};
         }
     }
     /**
@@ -181,6 +214,8 @@ export class ConfigManager extends AutoStore<
      * @param value
      */
     onUpdate(_store: AutoStore<any>, configKey: string, value: any) {
+        // load/reset 期间由其主动写入，此时值来自外部存储或默认值，无需再 save 或记录脏数据
+        if (this._loadingCount > 0 || this._reseting) return;
         try {
             this.dirtyValues[configKey] = value;
             if (this.options.autosave) {

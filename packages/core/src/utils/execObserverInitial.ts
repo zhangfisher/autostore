@@ -24,7 +24,7 @@ export function execObserverInitial(
     // every 在首个 false 自动短路；hook.call(store, ...) 保证 this 指向 store
     const allPassed = arr.every((hook: any) => {
         try {
-            return hook.call(store, path, value, parent) !== false;
+            return hook.call(store, { path, value, parent }) !== false;
         } catch (e: any) {
             store.logger.error(`onObserverInitial error: ${e.message}`);
             return true;

@@ -67,13 +67,7 @@ export type AutoStoreHookArgs<State extends Dict, T> = ToArray<
 >;
 
 export interface AutoStoreHooks<State extends Dict> {
-    onObserverInitial?: AutoStoreHookArgs<
-        State,
-        {
-            context: ObserverContext;
-            descriptor: AnyObserverDescriptor;
-        }
-    >;
+    onObserverInitial?: AutoStoreHookArgs<State, ObserverContext>;
     onObserverCreated?: AutoStoreHookArgs<
         State,
         {

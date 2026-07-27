@@ -481,17 +481,18 @@ export class AutoStore<
         if (descriptor) {
             const builder = AutoStore.observers[descriptor.type];
             if (builder) {
-                const isBuild = emitStoreEventWithResult(
-                    this,
-                    "observer:initial",
-                    { descriptor, context } as any,
-                    (results) => {
-                        return results.length == 0 ? true : !results.some((r) => r === false);
-                    },
-                );
-                if (isBuild) {
-                    return builder(this, descriptor, context);
-                }
+                return builder(this, descriptor, context);
+                // const isBuild = emitStoreEventWithResult(
+                //     this,
+                //     "observer:initial",
+                //     { descriptor, context } as any,
+                //     (results) => {
+                //         return results.length == 0 ? true : !results.some((r) => r === false);
+                //     },
+                // );
+                // if (isBuild) {
+                //     return builder(this, descriptor, context);
+                // }
             }
         }
     }

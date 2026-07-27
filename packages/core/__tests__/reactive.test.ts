@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 
-import { AutoStore, isRaw, markRaw } from "../src";
+import { AutoStore, computed, isRaw, markRaw } from "../src";
 
 // 测试 isEventMatched 函数
 describe("reactive", () => {
@@ -9,11 +9,14 @@ describe("reactive", () => {
             a: 1,
             b: 2,
             c: 3,
-            total: async () => {
-                return store.state.a + store.state.b + store.state.c;
-            },
+            total: computed(
+                async (scope: any) => {
+                    return (scope.a + scope.b + scope.c) as number;
+                },
+                ["a", "b", "c"],
+            ),
             x: markRaw({
-                total: async () => store.state.a + store.state.b + store.state.c,
+                total: async (scope: any) => scope.a + scope.b + scope.c,
                 x1: 1,
                 x2: 2,
                 x3: {
@@ -56,7 +59,7 @@ describe("reactive", () => {
                 },
             },
             {
-                onObserverInitial({ context, descriptor }) {
+                onObserverInitial(context) {
                     const { path, value } = context;
                     const name = path[path.length - 1];
                     if (name && typeof value === "function") {
