@@ -39,7 +39,7 @@ export * from "./getComputedType";
 export * from "./isAsyncComputed";
 export * from "./safeExecHooks";
 export * from "./makeHook";
-export * from "./execObserverInitial";
+export * from "./isAllowCreatedObserver";
 export * from "./emitStoreEvent";
 export * from "./getError";
 export * from "./getDefaultComputedOptions";

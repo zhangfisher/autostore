@@ -6,7 +6,7 @@ import type { ComputedState, Dict } from "../types";
 import type { AutoStore } from "./store";
 import { isNumber } from "../utils/isNumber";
 import { markRaw } from "../utils/markRaw";
-import { execObserverInitial } from "../utils/execObserverInitial";
+import { isAllowCreatedObserver } from "../utils/isAllowCreatedObserver";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
 import { PATH_DELIMITER } from "../consts";
@@ -172,8 +172,14 @@ function createProxy(
                     }
                     if (!isRaw(value) && Object.hasOwn(obj, key)) {
                         // 拦截
-                        const isCreated = execObserverInitial(this, path, value, obj);
-                        if (isCreated === false) {
+                        const isCreated = isAllowCreatedObserver(
+                            this,
+                            path,
+                            value,
+                            parentPath,
+                            obj,
+                        );
+                        if (!isCreated) {
                             markRaw(value);
                             return value;
                         }

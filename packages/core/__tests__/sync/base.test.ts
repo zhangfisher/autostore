@@ -528,7 +528,7 @@ describe("使用update方法对同步计算属性进行更新", () => {
         expect(store.state.amount).toBe(15);
         // 等待异步计算完成
         await delay(50);
-        expect(await (store.state.total as any).value).toBe(30);
+        expect(store.state.total).toBe(30);
     });
     test("computed 返回对象时，可以通过 watch 监听对象成员", () => {
         return new Promise<void>((resolve) => {

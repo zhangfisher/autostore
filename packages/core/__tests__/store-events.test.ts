@@ -498,11 +498,8 @@ describe("Store Events", () => {
                 count: 1,
             });
 
-            store.on("observer:initial", ({ descriptor }) => {
-                beforeCreateEvents.push({
-                    type: descriptor.type,
-                    async: descriptor.options.async,
-                });
+            store.on("observer:initial", (context) => {
+                beforeCreateEvents.push(context);
             });
 
             // 动态添加计算属性
@@ -515,8 +512,7 @@ describe("Store Events", () => {
             store.state.double;
 
             expect(beforeCreateEvents.length).toBe(1);
-            expect(beforeCreateEvents[0].type).toBe("sync");
-            expect(beforeCreateEvents[0].async).toBe(false);
+            expect(beforeCreateEvents[0].path).toEqual(["double"]);
         });
 
         test("observer:created 事件在观察者创建后触发", () => {
@@ -555,7 +551,7 @@ describe("Store Events", () => {
             });
 
             store.on("observer:initial", () => {
-                events.push("beforeCreate");
+                events.push("initial");
             });
 
             store.on("observer:created", () => {
@@ -569,7 +565,7 @@ describe("Store Events", () => {
             // @ts-expect-error
             store.state.double;
 
-            expect(events).toEqual(["beforeCreate", "created"]);
+            expect(events).toEqual(["initial", "created"]);
         });
     });
 

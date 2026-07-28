@@ -1,4 +1,5 @@
 import type { AnyAutoStore } from "../types";
+import { emitStoreEventWithResult } from "./emitStoreEventWithResult";
 
 /**
  * 执行 onObserverInitial hook（自动适配单函数或数组）。
@@ -12,7 +13,23 @@ import type { AnyAutoStore } from "../types";
  *
  * @returns 全部通过返回 undefined；任一返回 false 则返回 false。
  */
-export function execObserverInitial(
+export function isAllowCreatedObserver(
+    store: AnyAutoStore,
+    path: string[],
+    value: any,
+    parentPath: string[],
+    parent: any,
+): boolean {
+    return emitStoreEventWithResult<boolean>(
+        store,
+        "observer:initial",
+        { path, value, parentPath, parent },
+        (results: any[]) => {
+            return !results.some((r) => r === false);
+        },
+    );
+}
+export function execObserverInitial2(
     store: AnyAutoStore,
     path: string[],
     value: any,

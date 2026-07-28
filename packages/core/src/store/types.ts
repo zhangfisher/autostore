@@ -387,10 +387,7 @@ export type AutoStoreEvents = TransformedEvents<{
      * 创建observer实例前
      *
      */
-    "observer:initial": {
-        context?: ObserverContext;
-        descriptor: AnyObserverDescriptor;
-    };
+    "observer:initial": ObserverContext;
     "observer:created": { observer: AnyObserverObject; context?: ObserverContext };
     "observer:run": { args: Record<string, any>; scope: any; observer: AnyObserverObject };
     "observer:done": { value: any; observer: AnyObserverObject };

@@ -74,22 +74,14 @@ import { computed } from "../computed/computed";
 import { watch } from "../watch/watch";
 import { configurable, schema } from "../schema/schema";
 import type { ConfigManager } from "../schema/manager";
-import {
-    forEachObject,
-    getSnapshot,
-    getVal,
-    isFunction,
-    setVal,
-    splitPath,
-    makeHook,
-} from "../utils";
+import { forEachObject, getSnapshot, getVal, isFunction, setVal, splitPath } from "../utils";
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
 import { cascadeDestroy } from "../plugins/cascadeDestroy";
-import { emitStoreEventWithResult } from "../utils/emitStoreEventWithResult";
 import { ObserverObjectBuilder, observers } from "./observers";
 import { isFuncDefine } from "../utils/isFuncDefine";
 import { getComputedObject } from "../utils/getComputedObject";
+import { silence } from "../utils/silence";
 
 export class AutoStore<
     State extends Dict,
@@ -120,7 +112,7 @@ export class AutoStore<
     private _configManager?: ConfigManager; // 保存 ConfigManager 实例
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _logger?: ILogger;
-
+    private _subscribers: FastEventSubscriber[] = [];
     static observers: Record<string, ObserverObjectBuilder> = observers;
 
     constructor(state?: State, options?: AutoStoreOptions<State>) {
@@ -314,7 +306,16 @@ export class AutoStore<
             "observer:destroyed": "onObserverDestroyed",
         };
         Object.entries(hookNames).forEach(([event, name]) => {
-            this.on(event, makeHook(this, name as any));
+            const hooks = (this.options as unknown as Record<string, unknown>)?.[name];
+            if (hooks == null) return;
+            const hookArray = (Array.isArray(hooks) ? hooks : [hooks]).filter(
+                (hook) => typeof hook === "function",
+            );
+            this._subscribers.push(
+                ...hookArray.map((hook) => {
+                    return this.on(event, silence.call(this, hook));
+                }),
+            );
         });
     }
     /**
@@ -482,17 +483,6 @@ export class AutoStore<
             const builder = AutoStore.observers[descriptor.type];
             if (builder) {
                 return builder(this, descriptor, context);
-                // const isBuild = emitStoreEventWithResult(
-                //     this,
-                //     "observer:initial",
-                //     { descriptor, context } as any,
-                //     (results) => {
-                //         return results.length == 0 ? true : !results.some((r) => r === false);
-                //     },
-                // );
-                // if (isBuild) {
-                //     return builder(this, descriptor, context);
-                // }
             }
         }
     }
@@ -736,6 +726,7 @@ export class AutoStore<
         this._operates.offAll();
         this.watchObjects.clear();
         this.computedObjects.clear();
+        this._subscribers.forEach((subscriber) => subscriber.off());
         // 通知 ConfigManager 注销当前 store 注册的配置项，
         // 打破 schema 对本 store 的强引用，使其可被 GC
         this._configManager?.remove?.(this);

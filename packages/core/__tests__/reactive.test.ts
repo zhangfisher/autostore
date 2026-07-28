@@ -70,6 +70,7 @@ describe("reactive", () => {
                 },
             },
         );
+        expect(store.computedObjects.size).toBe(0);
         const onClick = store.state.user.items[0].onClick;
         // @ts-ignore
         expect(onClick).toBeInstanceOf(Function);
