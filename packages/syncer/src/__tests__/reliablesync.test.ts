@@ -53,7 +53,7 @@ class DropEventEmitter extends MockEventEmitter {
      * 设置要丢弃的消息版本号
      */
     dropVersionsAt(versions: number[]) {
-        versions.forEach(v => this.dropVersions.add(v));
+        versions.forEach((v) => this.dropVersions.add(v));
     }
 
     /**
@@ -104,7 +104,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: true,
             });
 
             // 创建 store B
@@ -118,7 +117,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: true,
             });
 
             await wait(100);
@@ -148,7 +146,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: true,
             });
 
             const storeB = new AutoStore({
@@ -161,7 +158,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: true,
             });
 
             await wait(100);
@@ -196,7 +192,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: true,
             });
 
             const storeB = new AutoStore({
@@ -209,7 +204,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: true,
             });
 
             await wait(100);
@@ -218,13 +212,13 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             emitter.dropVersionsAt([2]);
 
             // 发送操作
-            storeA.state.count = 1;  // v1 - 正常
+            storeA.state.count = 1; // v1 - 正常
             await wait(20);
 
-            storeA.state.count = 2;  // v2 - 丢失
+            storeA.state.count = 2; // v2 - 丢失
             await wait(20);
 
-            storeA.state.count = 3;  // v3 - 触发同步请求
+            storeA.state.count = 3; // v3 - 触发同步请求
             await wait(100);
 
             // 验证：最终应该收到所有更新
@@ -249,7 +243,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: true,
             });
 
             const storeB = new AutoStore({
@@ -262,7 +255,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: true,
             });
 
             await wait(100);
@@ -270,19 +262,19 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             // 设置丢失版本 2, 3, 4
             emitter.dropVersionsAt([2, 3, 4]);
 
-            storeA.state.count = 1;  // v1 - 正常
+            storeA.state.count = 1; // v1 - 正常
             await wait(20);
 
-            storeA.state.count = 2;  // v2 - 丢失
+            storeA.state.count = 2; // v2 - 丢失
             await wait(20);
 
-            storeA.state.count = 3;  // v3 - 丢失
+            storeA.state.count = 3; // v3 - 丢失
             await wait(20);
 
-            storeA.state.count = 4;  // v4 - 丢失
+            storeA.state.count = 4; // v4 - 丢失
             await wait(20);
 
-            storeA.state.count = 5;  // v5 - 触发同步请求
+            storeA.state.count = 5; // v5 - 触发同步请求
             await wait(150);
 
             // 验证：最终应该收到所有更新
@@ -307,7 +299,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: true,
             });
 
             const storeB = new AutoStore({
@@ -320,7 +311,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: true,
             });
 
             await wait(100);
@@ -365,7 +355,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: true,
             });
 
             const storeB = new AutoStore({
@@ -378,7 +367,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: true,
             });
 
             await wait(100);
@@ -416,7 +404,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: false,  // 禁用
             });
 
             const storeB = new AutoStore({
@@ -429,7 +416,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: false,  // 禁用
             });
 
             await wait(100);
@@ -457,7 +443,7 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: true,  // 启用
+                // 启用
             });
 
             const storeB = new AutoStore({
@@ -470,7 +456,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: false,  // 禁用（不发送版本号）
             });
 
             await wait(100);
@@ -500,8 +485,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerA = new AutoStoreSyncer(storeA, {
                 transport: transportA,
-                enableReliableSync: true,
-                maxHistory: 5,  // 只保留最近 5 条
             });
 
             const storeB = new AutoStore({
@@ -514,7 +497,6 @@ describe("AutoStoreSyncer 可靠同步测试", () => {
             });
             const syncerB = new AutoStoreSyncer(storeB, {
                 transport: transportB,
-                enableReliableSync: true,
             });
 
             await wait(100);

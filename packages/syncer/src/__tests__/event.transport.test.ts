@@ -1,3 +1,4 @@
+// oxlint-disable no-unused-vars
 import { describe, expect, test, vi } from "vitest";
 import { computed, AutoStore } from "../../../core/src";
 import { AutoStoreSyncer } from "../syncers/syncer";
@@ -721,7 +722,7 @@ describe("EventEmitterTransport AutoStore 同步集成测试", () => {
 
             await wait(10);
 
-            syncer1.push({ initial: true });
+            syncer1.push();
             await wait(50);
 
             expect(store2.state).toEqual(store1.state);
@@ -771,7 +772,7 @@ describe("EventEmitterTransport AutoStore 同步集成测试", () => {
             });
 
             await wait(10);
-            syncer1.push({ initial: true });
+            syncer1.push();
             await wait(50);
 
             expect(store2.state.count).toBe(0);
@@ -822,8 +823,8 @@ describe("EventEmitterTransport AutoStore 同步集成测试", () => {
             });
 
             await wait(10);
-            syncer1.push({ initial: true });
-            syncer2.push({ initial: true });
+            syncer1.push();
+            syncer2.push();
             await wait(50);
 
             expect(sharedEmitter.listenerCount("store1-channel")).toBe(1);
@@ -1002,8 +1003,8 @@ describe("EventEmitterTransport AutoStore 同步集成测试", () => {
             });
 
             await wait(10);
-            syncer1.push({ initial: true });
-            syncer2.push({ initial: true });
+            syncer1.push();
+            syncer2.push();
             await wait(50);
 
             store1.state.newProp = "value";
@@ -1046,8 +1047,8 @@ describe("EventEmitterTransport AutoStore 同步集成测试", () => {
             });
 
             await wait(10);
-            syncer1.push({ initial: true });
-            syncer2.push({ initial: true });
+            syncer1.push();
+            syncer2.push();
             await wait(50);
 
             store1.state.value = null;
