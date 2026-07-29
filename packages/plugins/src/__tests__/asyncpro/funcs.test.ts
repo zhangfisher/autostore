@@ -268,12 +268,11 @@ describe("异步计算属性的超时功能", () => {
                     expect(store.state.total.loading).toBe(false);
                     expect(store.state.total.error).toBe("TIMEOUT");
                     resolve();
-                    console.log("Restore mocks not implemented in Bun yet");
                 }
                 resolve();
             });
         });
-    }, 500000);
+    });
 });
 
 describe("异步计算进度条功能", () => {

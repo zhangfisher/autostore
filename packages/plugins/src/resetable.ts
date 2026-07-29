@@ -46,8 +46,9 @@ Object.defineProperty(AutoStore.prototype, "resetable", {
 
             // 创建侦听器并保存到实例
             self._updatedWatcher = this.watch(
-                ({ path, oldValue }) => {
+                ({ path, oldValue, type }) => {
                     if (path.length === 0) return;
+                    if (type === "batch") return;
 
                     const pathKey = path.join(this.delimiter || ".");
 
@@ -57,7 +58,6 @@ Object.defineProperty(AutoStore.prototype, "resetable", {
                         this.updatedState &&
                         !(pathKey in this.updatedState)
                     ) {
-                        console.log(pathKey, "=", oldValue);
                         this.updatedState[pathKey] = oldValue;
                     }
                 },
@@ -103,6 +103,7 @@ AutoStore.prototype.reset = function (this: AutoStore<Dict, any>, entry?: string
             setVal(state, splitPath(pathKey, delimiter), oldValue);
         }
     });
+    this.updatedState = {};
     this.emit("reset", entry);
 };
 

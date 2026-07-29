@@ -877,7 +877,6 @@ describe("所有异步计算基础功能", () => {
                     )
                     .catch((e) => {
                         expect(e).toBeInstanceOf(Error);
-                        console.log("Restore mocks not implemented in Bun yet");
                         resolve();
                     });
             });
