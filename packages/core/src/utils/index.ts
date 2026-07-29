@@ -37,8 +37,6 @@ export * from "./isSchemaDescriptorBuilder";
 export * from "./withSchema";
 export * from "./getComputedType";
 export * from "./isAsyncComputed";
-export * from "./safeExecHooks";
-export * from "./makeHook";
 export * from "./isAllowCreatedObserver";
 export * from "./emitStoreEvent";
 export * from "./getError";
