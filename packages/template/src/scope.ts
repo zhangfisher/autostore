@@ -10,7 +10,6 @@ import {
     type WatchListenerOptions,
 } from "autostore";
 import { isStatePath } from "./utils/isStatePath";
-import { createStackedContext } from "./context";
 import { getDirectives } from "./directives/utils/getDirectives";
 import { createDirectives } from "./directives/utils/createDirectives";
 
@@ -30,15 +29,12 @@ export type AutoTemplateBindingOptions = {
 };
 
 /**
- * Q: 为什么要引入Binding？
+ * Q: 为什么要引入Scope？
  * A: DOM元素上可能具有多个指令，方便统一管理。
  * 并在DOM元素更新/销毁时进行集中操作，比如注销事件订阅等。
  *
  */
 export class KylinTemplateScope {
-    /**
-     * 引用模板元素
-     */
     private _template: WeakRef<Node>;
     /**
      * 引用实际渲染的元素
@@ -109,7 +105,7 @@ export class KylinTemplateScope {
             this.watchers.forEach((watcher) => watcher.off());
             this.computedObjects.forEach((id) => this.engine.store.computedObjects.delete(id));
         } catch (e: any) {
-            this.engine.store.log(e.message, "error");
+            this.engine.logger.error(e);
         }
     }
 }

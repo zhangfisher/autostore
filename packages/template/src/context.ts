@@ -14,7 +14,7 @@ import { AutoStore, type Dict } from "autostore";
  * 扩展运算符等数据遍历。`$context` / `$store` 是框架保留键，调用方应避免
  * 在作用域对象中使用同名字段。
  */
-export type KylinTemplateData<State extends Dict> = Record<string, any> & {
+export type KylinTemplateStackedContext<State extends Dict> = Record<string, any> & {
     /**
      * 原始作用域栈引用（只读、不可枚举的元属性）。
      * 不参与 `Object.keys` / `for...in` / 扩展运算符等数据遍历。
@@ -25,6 +25,8 @@ export type KylinTemplateData<State extends Dict> = Record<string, any> & {
      * 供指令/外部读取使用 store 的 watch/state 等 API。
      */
     readonly $store: AutoStore<State>;
+    readonly $push: (obj: Record<string, any>) => number;
+    readonly $pop: () => Record<string, any>;
 };
 
 /** 元属性保留键 */
@@ -61,18 +63,20 @@ const STORE_REF = "$store";
 
 export function createStackedContext<State extends Dict>(
     store?: AutoStore<State>,
-): KylinTemplateData<State> {
+): KylinTemplateStackedContext<State> {
     const context: Record<string, any>[] = [];
     if (store) {
         context.push({
             $state: store.state,
+            $store: store,
         });
         context.push(store.state);
     }
     context[0]!.$push = (data: Record<string, any>) => {
         if (typeof data === "object") {
-            context.push(data);
+            return context.push(data);
         }
+        return context.length;
     };
     context[0]!.$pop = () => {
         if (context.length > (store ? 2 : 0)) context.pop();
@@ -98,7 +102,7 @@ export function createStackedContext<State extends Dict>(
         writable: false,
     });
 
-    return new Proxy({} as KylinTemplateData<State>, {
+    return new Proxy({} as KylinTemplateStackedContext<State>, {
         get(_target, key) {
             // 元属性：暴露原始引用
             if (typeof key === "string") {

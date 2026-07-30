@@ -3,6 +3,7 @@ import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
 import { AutoStore } from "autostore";
 import type { KylinTemplateScope } from "./scope";
+import { createStackedContext } from "./context";
 
 /**
  * AutoStore Template 渲染引擎核心类
@@ -30,6 +31,7 @@ export class KylinTemplateEngine<State extends Record<string, any> = Record<stri
     readonly directives: DirectiveManager;
     readonly template: HTMLElement;
     readonly scopes = new Map<WeakRef<Node>, KylinTemplateScope>();
+    readonly context;
     /**
      * 构造函数
      *
@@ -50,9 +52,10 @@ export class KylinTemplateEngine<State extends Record<string, any> = Record<stri
         this.options = Object.assign({}, options) as Required<AutoTemplateEngineOptions>;
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
+        this.context = createStackedContext(this.store);
     }
-    get log() {
-        return this.store.log.bind(this);
+    get logger() {
+        return this.store.logger;
     }
     /**
      * 开始编译模板并应用

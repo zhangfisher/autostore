@@ -9,42 +9,43 @@ import { transformElement, type NodeTransformer } from "./utils/transformElement
 import { createCompileContext } from "./context";
 import { hasDirectives } from "../directives/utils/hasDirectives";
 import { createScopeContext } from "../utils/createScopeContext";
-import { log } from "../../../core/src/utils/log";
 
 export class AutoTemplateCompiler {
     readonly engine: KylinTemplateEngine;
     readonly context;
     constructor(engine: KylinTemplateEngine<any>) {
         this.engine = engine;
-        this._createCompileContext();
+        this.context = this._createCompileContext();
     }
-
+    private _getTransformers() {
+        return [
+            [
+                (node: Node) => {
+                    return node instanceof HTMLElement;
+                },
+                (current: HTMLElement, parent: HTMLElement | undefined) => {
+                    return this.compileElement(current, parent);
+                },
+            ],
+        ] as unknown as NodeTransformer<HTMLElement>[];
+    }
     compile() {
-        const htmlTransformer = [
-            (node: Node) => {
-                return node instanceof HTMLElement;
-            },
-            (current: HTMLElement, parent: HTMLElement | undefined) => {
-                return this.compileElement(current, this.context, parent);
-            },
-        ] as NodeTransformer<HTMLElement>;
         // 从根元素开始编译
-        return transformElement(this.engine.template, [htmlTransformer]);
-    }
-    private _createCompileContext() {
-        const ctx = createScopeContext({
-            keyProps: {
-                $store: this.engine.store,
-                $state: this.engine.store.state,
-            },
-        });
+        return transformElement(this.engine.template, this._getTransformers());
     }
 
-    compileElement(
-        template: HTMLElement,
-        context: KylinTemplateCompileContext,
-        parent: HTMLElement | undefined,
-    ) {
+    private _createCompileContext() {
+        return {
+            data: createScopeContext({
+                keyProps: {
+                    $store: this.engine.store,
+                    $state: this.engine.store.state,
+                },
+            }),
+        };
+    }
+
+    compileElement(template: HTMLElement, parent: HTMLElement | undefined) {
         if (hasDirectives(template)) {
             const el = template.cloneNode() as HTMLElement;
             removeDirectives(el); // 移除指令,目标元素
@@ -52,10 +53,25 @@ export class AutoTemplateCompiler {
                 // 每个元素绑定一个Scope
                 const scope = new KylinTemplateScope(this.engine, el, template);
                 this.engine.scopes.set(new WeakRef(template), scope);
-                scope.compile(context, parent);
+                return scope.compile(
+                    {
+                        data: createScopeContext({
+                            keyProps: {
+                                $store: this.engine.store,
+                                $state: this.engine.store.state,
+                            },
+                        }),
+                        scope,
+                        template,
+                        el,
+                        engine: this.engine,
+                        args: {},
+                    },
+                    parent,
+                );
             } catch (e: any) {
-                this.engine.log(e, "error");
-                return template;
+                this.engine.logger.error(e);
+                return el;
             }
         } else {
             // 普通元素，没有指令时，原路返回

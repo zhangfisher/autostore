@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { transformElement } from "../compile/utils/transformElement";
 import type { NodeTransformer } from "../compile/utils/transformElement";
-
+import "./setup";
 /**
  * 从 HTML 字符串创建单个根元素，使输入 DOM 结构一眼可见。
  * 输入与断言均用 HTML 字符串，保持对称、直观。
@@ -47,9 +47,14 @@ describe("transformElement - 未命中默认克隆", () => {
 
 describe("transformElement - 命中策略", () => {
     test("首个命中的 filter 生效（first-match-wins）", () => {
-        const root = createElement("<div></div>");
+        const root = createElement(`<div a="x"></div>`);
         const result = transformElement(root, [
-            [() => true, () => document.createElement("i")],
+            [
+                () => true,
+                () => {
+                    return document.createElement("i");
+                },
+            ],
             [() => true, () => document.createElement("b")],
         ]);
 
@@ -80,11 +85,14 @@ describe("transformElement - parent 语义", () => {
     test("嵌套元素中各节点的 parent 为各自的父元素", () => {
         const root = createElement("<div><section><span></span></section></div>");
         const result = transformElement(root, [
-            [(n) => n.nodeType === Node.ELEMENT_NODE, (node, parent) => {
-                const cloned = node.cloneNode(false) as HTMLElement;
-                cloned.setAttribute("data-parent", parent?.tagName ?? "NONE");
-                return cloned;
-            }],
+            [
+                (n) => n.nodeType === Node.ELEMENT_NODE,
+                (node, parent) => {
+                    const cloned = node.cloneNode(false) as HTMLElement;
+                    cloned.setAttribute("data-parent", parent?.tagName ?? "NONE");
+                    return cloned;
+                },
+            ],
         ]);
 
         expect(result.outerHTML).toBe(
@@ -105,18 +113,14 @@ describe("transformElement - parent 语义", () => {
 describe("transformElement - 剪枝", () => {
     test("transform 返回 null 丢弃该节点及其整个子树", () => {
         const root = createElement("<div><span>keep</span><p><em>drop</em></p></div>");
-        const result = transformElement(root, [
-            [(n) => n.nodeName === "P", () => null],
-        ]);
+        const result = transformElement(root, [[(n) => n.nodeName === "P", () => null]]);
 
         expect(result.outerHTML).toBe("<div><span>keep</span></div>");
     });
 
     test("transform 返回 undefined 同样剪枝（与 null 等价）", () => {
         const root = createElement("<div><span>keep</span><p><em>drop</em></p></div>");
-        const result = transformElement(root, [
-            [(n) => n.nodeName === "P", () => undefined],
-        ]);
+        const result = transformElement(root, [[(n) => n.nodeName === "P", () => undefined]]);
 
         expect(result.outerHTML).toBe("<div><span>keep</span></div>");
     });
@@ -131,9 +135,7 @@ describe("transformElement - 原树只读", () => {
     test("转换过程不修改原树", () => {
         const root = createElement("<div><span>hi</span></div>");
         const original = root.outerHTML;
-        transformElement(root, [
-            [(n) => n.nodeName === "SPAN", () => document.createElement("b")],
-        ]);
+        transformElement(root, [[(n) => n.nodeName === "SPAN", () => document.createElement("b")]]);
 
         expect(root.outerHTML).toBe(original);
     });
@@ -181,18 +183,14 @@ describe("transformElement - 字符串返回", () => {
 
     test("字符串替换时原节点的子内容被丢弃", () => {
         const root = createElement("<div><span>old</span></div>");
-        const result = transformElement(root, [
-            [(n) => n.nodeName === "SPAN", () => "<i>new</i>"],
-        ]);
+        const result = transformElement(root, [[(n) => n.nodeName === "SPAN", () => "<i>new</i>"]]);
 
         expect(result.outerHTML).toBe("<div><i>new</i></div>");
     });
 
     test("返回空字符串视为剪枝", () => {
         const root = createElement("<div><span>keep</span><p>drop</p></div>");
-        const result = transformElement(root, [
-            [(n) => n.nodeName === "P", () => ""],
-        ]);
+        const result = transformElement(root, [[(n) => n.nodeName === "P", () => ""]]);
 
         expect(result.outerHTML).toBe("<div><span>keep</span></div>");
     });
@@ -201,11 +199,14 @@ describe("transformElement - 字符串返回", () => {
         const root = createElement("<div><span></span></div>");
         let count = 0;
         const result = transformElement(root, [
-            [(n) => n.nodeType === Node.ELEMENT_NODE, (node) => {
-                count += 1;
-                // span 返回字符串生成 <b>；其他元素返回克隆保留结构
-                return node.nodeName === "SPAN" ? "<b></b>" : node.cloneNode(false);
-            }],
+            [
+                (n) => n.nodeType === Node.ELEMENT_NODE,
+                (node) => {
+                    count += 1;
+                    // span 返回字符串生成 <b>；其他元素返回克隆保留结构
+                    return node.nodeName === "SPAN" ? "<b></b>" : node.cloneNode(false);
+                },
+            ],
         ]);
 
         // 只有 div、span 被处理；span 生成的 b 不再被二次处理
@@ -215,17 +216,13 @@ describe("transformElement - 字符串返回", () => {
 
     test("根节点返回单节点字符串作为新根", () => {
         const root = createElement("<div></div>");
-        const result = transformElement(root, [
-            [() => true, () => "<main></main>"],
-        ]);
+        const result = transformElement(root, [[() => true, () => "<main></main>"]]);
 
         expect(result.outerHTML).toBe("<main></main>");
     });
 
     test("根节点返回多节点字符串抛异常", () => {
         const root = createElement("<div></div>");
-        expect(() =>
-            transformElement(root, [[() => true, () => "<a></a><b></b>"]]),
-        ).toThrow();
+        expect(() => transformElement(root, [[() => true, () => "<a></a><b></b>"]])).toThrow();
     });
 });
