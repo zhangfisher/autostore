@@ -6,5 +6,7 @@ import { KylinTemplateDirectiveBase } from "../base";
  *
  */
 export class DataDirective extends KylinTemplateDirectiveBase {
+    override name = "data";
+    override priority = 999;
     render() {}
 }

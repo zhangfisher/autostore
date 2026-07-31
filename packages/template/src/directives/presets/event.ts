@@ -6,6 +6,6 @@ import { KylinTemplateDirectiveBase } from "../base";
  *
  */
 export class EventDirective extends KylinTemplateDirectiveBase {
-    override name = "bind";
+    name = "bind";
     render() {}
 }

@@ -5,7 +5,7 @@ import { KylinTemplateScope } from "../scope";
 import { removeDirectives } from "../directives/utils/removeDirectives";
 import type { KylinTemplateEngine } from "../engine";
 import type { KylinTemplateCompileContext } from "./types";
-import { transformElement, type NodeTransformer } from "./utils/transformElement";
+import { transformElement, type NodeTransformer } from "../utils/transformElement";
 import { createCompileContext } from "./context";
 import { hasDirectives } from "../directives/utils/hasDirectives";
 import { createScopeContext } from "../utils/createScopeContext";
@@ -23,15 +23,15 @@ export class AutoTemplateCompiler {
                 (node: Node) => {
                     return node instanceof HTMLElement;
                 },
-                (current: HTMLElement, parent: HTMLElement | undefined) => {
-                    return this.compileElement(current, parent);
+                (current: HTMLElement) => {
+                    return this.compileElement(current);
                 },
             ],
         ] as unknown as NodeTransformer<HTMLElement>[];
     }
     compile() {
         // 从根元素开始编译
-        return transformElement(this.engine.template, this._getTransformers());
+        return transformElement(this.engine.template, this._getTransformers(), this.engine.context);
     }
 
     private _createCompileContext() {
@@ -45,30 +45,15 @@ export class AutoTemplateCompiler {
         };
     }
 
-    compileElement(template: HTMLElement, parent: HTMLElement | undefined) {
+    compileElement(template: HTMLElement) {
         if (hasDirectives(template)) {
             const el = template.cloneNode() as HTMLElement;
             removeDirectives(el); // 移除指令,目标元素
             try {
                 // 每个元素绑定一个Scope
                 const scope = new KylinTemplateScope(this.engine, el, template);
-                this.engine.scopes.set(new WeakRef(template), scope);
-                return scope.compile(
-                    {
-                        data: createScopeContext({
-                            keyProps: {
-                                $store: this.engine.store,
-                                $state: this.engine.store.state,
-                            },
-                        }),
-                        scope,
-                        template,
-                        el,
-                        engine: this.engine,
-                        args: {},
-                    },
-                    parent,
-                );
+                this.engine.scopes.set(new WeakRef(el), scope);
+                return scope.compile();
             } catch (e: any) {
                 this.engine.logger.error(e);
                 return el;

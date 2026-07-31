@@ -5,6 +5,11 @@ import type { KylinDirectiveInfo } from "./types";
 import type { KylinTemplateCompileContext } from "../compile/types";
 
 export class KylinTemplateDirectiveBase {
+    name: string = "";
+    /**
+     * 处理优先级,值越大越优先处理
+     */
+    priority: number = 0;
     /**
      * 用于指定在一个元素上使用多个同名指令的处理策略
      *
@@ -12,9 +17,7 @@ export class KylinTemplateDirectiveBase {
      * - false: 允许存在多个，<span x-class="a" x-class="b"/>
      *
      */
-    static singleton: boolean = true;
-    static name: string = "";
-    static priority: number = 0;
+    singleton: boolean = true;
     /**
      * 原始指令信息（完整保留，含 name/attr 等）
      */

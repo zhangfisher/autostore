@@ -6,7 +6,6 @@ export type NodeFilter = (node: Node) => boolean;
  *
  * @typeParam T - 当前节点的精确类型，默认 `Node`；可收窄为 `HTMLElement`/`Text` 等以获得更精确的类型推断。
  * @param node - 当前节点
- * @param parent - 始终为父元素（`HTMLElement`），根节点时为 `undefined`
  * @returns 新节点、HTML 字符串或空值：
  *   - 返回 `Node` → 用其替换原节点，并继续递归处理原子节点
  *   - 返回 `string` → 按 HTML 片段用 `<template>` 解析，所有顶层节点替代原节点（原内容丢弃、不递归）
@@ -14,7 +13,7 @@ export type NodeFilter = (node: Node) => boolean;
  */
 export type NodeTransform<T extends Node = Node> = (
     node: T,
-    parent: HTMLElement | undefined,
+    context: Record<string, any>,
 ) => Node | string | null | undefined;
 
 /** 转换器对：`[filter, transform]`，按数组顺序首个命中即生效 */
@@ -59,8 +58,6 @@ function parseHtmlFragment(html: string): DocumentFragment | null {
  * - `transform` 的 `node` 支持所有节点类型；通过泛型 `T` 可收窄到具体类型（如 `HTMLElement`/`Text`）
  *   以获得精确的属性推断。默认 `T = Node`。工具内部对 `node` 做 `as T` 断言，
  *   类型安全性由调用方 `filter` 保证（约定：`filter` 返回 `true` ⇔ `node` 是 `T`）。
- * - `transform` 的 `parent` **始终为父元素**（`HTMLElement`），即使 `node` 是文本/注释等非元素节点；
- *   根节点时为 `undefined`。
  *
  * @typeParam T - `transform` 处理的目标节点类型，默认 `Node`
  * @param el - 原始根元素（保持只读）
@@ -71,19 +68,16 @@ function parseHtmlFragment(html: string): DocumentFragment | null {
 export function transformElement<T extends Node = Node>(
     el: HTMLElement,
     transformers: NodeTransformer<T>[],
+    context: Record<string, any>,
 ): HTMLElement {
     let newRoot: HTMLElement | null = null;
 
     /**
      * 递归转换单个节点，返回新节点；返回 `null` 表示该节点被丢弃。
+     *
+     * @param parent - 新树中该节点的父元素（仅供内部 appendChild 挂接使用，不传入转换器回调）；根节点为 `null`
      */
-    const walk = (
-        node: Node,
-        newParent: Node | null,
-        parentElement: HTMLElement | null,
-    ): Node | null => {
-        const parent = parentElement ?? undefined;
-
+    const walk = (node: Node, parent: HTMLElement | null): Node | null => {
         // 按序查找首个命中的 transformer（first-match-wins）
         let matched = false;
         let result: Node | string | null | undefined = undefined;
@@ -91,7 +85,7 @@ export function transformElement<T extends Node = Node>(
             if (filter(node)) {
                 // node 断言为 T：类型安全性由调用方 filter 保证（filter 返回 true ⇔ node 是 T）
                 matched = true;
-                result = transform(node as T, parent);
+                result = transform(node as T, context);
                 break;
             }
         }
@@ -122,9 +116,7 @@ export function transformElement<T extends Node = Node>(
                 newRoot = frag.firstChild as HTMLElement;
             }
             // 非根：fragment 自动展开挂入新父
-            if (newParent) {
-                newParent.appendChild(frag);
-            }
+            parent?.appendChild(frag);
             return null; // 字符串路径完成（walk 返回值未被外部使用）
         }
 
@@ -132,21 +124,21 @@ export function transformElement<T extends Node = Node>(
         if (node === el) {
             newRoot = result as HTMLElement;
         }
-        newParent?.appendChild(result);
+        parent?.appendChild(result);
 
         // 递归子节点：索引遍历 live NodeList，零数组分配。
-        // 循环仅在有子节点时执行；有子节点的 node 必为元素（DOM 结构保证），
-        // 故可安全作为下一层节点的父元素传入。
+        // parent 传新树父（result）：使子节点 transform 回调中的 parent 始终是新树中它们的父元素。
+        // result 断言为元素：有子节点的 node 必为元素（DOM 结构保证），调用方 filter 约定其替换节点同为元素。
         const children = node.childNodes;
         for (let i = 0; i < children.length; i++) {
             // children[i] 非空：i < length 已保证索引存在（noUncheckedIndexedAccess 下需显式断言）
-            walk(children[i]!, result, node as HTMLElement);
+            walk(children[i]!, result as HTMLElement);
         }
 
         return result;
     };
 
-    walk(el, null, null);
+    walk(el, null);
 
     if (!newRoot) {
         throw new Error("transformElement: 根元素被转换器丢弃，无法生成新的根节点");

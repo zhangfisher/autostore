@@ -56,10 +56,19 @@ export class KylinTemplateScope {
     get template() {
         return this._template.deref();
     }
+    /**
+     * 创建指令实例
+     *
+     * 优先级越大的排越前面
+     *
+     */
     private _createDirectives() {
         const directiveDefine = getDirectives(this.template as HTMLElement);
         // 创建指令实例
-        this.directives.push(...createDirectives(this.engine, directiveDefine, this));
+        const directives = createDirectives(this.engine, directiveDefine, this);
+        this.directives = directives.sort((a, b) => {
+            return b.priority - a.priority;
+        });
     }
     /**
      * 侦听
@@ -88,16 +97,34 @@ export class KylinTemplateScope {
         this.computedObjects.push(computedObj.id);
         return computedObj;
     }
-
-    compile(context: KylinTemplateCompileContext, parent: HTMLElement | undefined) {
-        const ctx: Record<string, any> = {};
+    /**
+     * 运行所有指令
+     *
+     * 指令
+     *
+     * @returns
+     */
+    compile() {
         try {
-            context.push(ctx);
-            return runDirectives(this.directives, context, parent);
+            return this.runDirectives(this.directives, this);
         } finally {
-            if (Object.keys(ctx).length === 0) {
-                context.pop();
-            }
+        }
+    }
+
+    /**
+     * 串行执行指令列表中每个指令的 compile
+     *
+     * 按数组顺序依次调用 directive.compile()，仅执行副作用，忽略返回值。
+     * compile 返回 HTMLElement 表示该元素内部还有模板、需上层递归编译，该职责
+     * 不属于本函数（由 compiler 处理）。
+     *
+     * @param directives 已排序的指令实例列表（通常来自 createDirectives）
+     * @param binding    这些指令所属的绑定（语义上下文锚点；指令实例自身已持有 binding）
+     * @param parent     透传给每个 directive.compile(parent) 的父元素
+     */
+    runDirectives(directives: KylinTemplateDirectiveBase[], scope: KylinTemplateScope): void {
+        for (const directive of directives) {
+            directive.compile(scope);
         }
     }
     destory() {
