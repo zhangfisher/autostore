@@ -1,4 +1,4 @@
-import { KylinTemplateDirectiveBase } from "../base";
+import { AutoTemplateDirectiveBase } from "../base";
 
 /**
  * 
@@ -16,6 +16,6 @@ import { KylinTemplateDirectiveBase } from "../base";
  *  
 
  */
-export class TreeDirective extends KylinTemplateDirectiveBase {
+export class TreeDirective extends AutoTemplateDirectiveBase {
     render() {}
 }

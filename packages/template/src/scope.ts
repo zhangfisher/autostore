@@ -1,146 +1,246 @@
-import type { KylinTemplateEngine } from "./engine";
-import { KylinTemplateDirectiveBase } from "./directives/base";
-import { runDirectives } from "./directives/utils/runDirectives";
-import type { KylinTemplateCompileContext } from "./compile/types";
-import {
-    getVal,
-    type ComputedGetter,
-    type Watcher,
-    type WatchListener,
-    type WatchListenerOptions,
-} from "autostore";
-import { isStatePath } from "./utils/isStatePath";
+import type { AutoTemplateEngine } from "./engine";
+import type { AutoTemplateStackedContext } from "./context";
+import { AutoTemplateDirectiveBase } from "./directives/base";
+import { getVal, type Watcher } from "autostore";
 import { getDirectives } from "./directives/utils/getDirectives";
 import { createDirectives } from "./directives/utils/createDirectives";
 
+/**
+ * 简单状态路径：仅字母/数字/下划线/$ 组成的段，以点分隔。
+ * 用于 watch 双轨分流——只对纯标识符路径走精准 watch，含空格/运算符/符号的
+ * 一律走表达式支路（with 求值）。比 isStatePath（允许任意非点字符）更严格。
+ */
+const SIMPLE_PATH_RE = /^[\w$]+(?:\.[\w$]+)*$/;
+
 export type AutoTemplateBindingOptions = {
-    /**
-     * 引用模板元素
-     */
+    /** 引用模板元素（编译只读输入，保留指令属性） */
     template: HTMLElement;
-    /**
-     * 引用实际渲染的元素
-     */
+    /** 引用实际渲染的元素（已移除指令属性） */
     el: HTMLElement;
-    /**
-     * 指令
-     */
-    directives: KylinTemplateDirectiveBase[];
+    /** 该元素上的指令实例列表 */
+    directives: AutoTemplateDirectiveBase[];
 };
 
 /**
- * Q: 为什么要引入Scope？
- * A: DOM元素上可能具有多个指令，方便统一管理。
- * 并在DOM元素更新/销毁时进行集中操作，比如注销事件订阅等。
+ * 指令更新回调：接收当前最新值。
  *
+ * 注意：回调在 `scheduler` flush 时触发，传入的 `value` 是**重新求值后的当前值**，
+ * 反映本 tick 内所有变更的累积结果（而非某一次 operate 的值）。
  */
-export class KylinTemplateScope {
-    private _template: WeakRef<Node>;
-    /**
-     * 引用实际渲染的元素
-     */
-    readonly _el: WeakRef<Node>;
-    readonly engine: KylinTemplateEngine;
-    directives: KylinTemplateDirectiveBase[] = [];
-    computedObjects: any[] = [];
+export type ScopeWatchListener = (payload: { value: any }) => void;
+
+/**
+ * Q: 为什么要引入 Scope？
+ * A: 一个 DOM 元素上可能挂多个指令，Scope 统一管理它们的生命周期与订阅，
+ *    并在元素更新/销毁时集中清理（off watcher、递归销毁子作用域）。
+ */
+export class AutoTemplateScope {
+    private _template: WeakRef<HTMLElement>;
+    /** 引用实际渲染的元素 */
+    readonly _el: WeakRef<HTMLElement>;
+    readonly engine: AutoTemplateEngine;
+    directives: AutoTemplateDirectiveBase[] = [];
+    /** 本作用域持有的 watcher（destroy 时统一 off） */
     watchers: Watcher[] = [];
-    constructor(engine: KylinTemplateEngine, el: HTMLElement, template: HTMLElement) {
+    /** 子作用域集合（x-if 子树、x-for 各项），destroy 时递归清理 */
+    children = new Set<AutoTemplateScope>();
+    parent: AutoTemplateScope | null = null;
+
+    constructor(engine: AutoTemplateEngine, el: HTMLElement, template: HTMLElement) {
         this._template = new WeakRef(template);
         this._el = new WeakRef(el);
         this.engine = engine;
         this._createDirectives();
     }
+
     get el() {
         return this._el.deref();
     }
     get template() {
         return this._template.deref();
     }
+
     /**
-     * 创建指令实例
+     * 注册子作用域（x-if/x-for 编译子模板时调用）。
+     * 建立父子关系，使父作用域 destroy 时能递归清理子树全部 watcher。
+     */
+    addChild(child: AutoTemplateScope): AutoTemplateScope {
+        child.parent = this;
+        this.children.add(child);
+        return child;
+    }
+
+    /**
+     * 局部作用域数据（x-for 注入的 item/index 等）。
+     * 由 compiler 在编译期设置，子作用域继承父的 localScope。
+     */
+    localScope: Record<string, any> | null = null;
+    /** 缓存的聚合视图（localScope 优先于 engine.context） */
+    private _scopeView: any = null;
+
+    /**
+     * 当前作用域上下文：沿 parent 链逐层查找（自身 localScope 优先，命中不到查父级，直至根 engine.context）。
      *
-     * 优先级越大的排越前面
-     *
+     * 之所以用 parent 链而非共享栈：watchExpression 把返回的 scope 捕获进闭包，
+     * 在 scheduler flush 时跨 tick 异步复用——每层视图必须不可变且互相独立，
+     * 不能用 createStackedContext 那种共享可变 push/pop 栈（会在 pop / 兄弟项覆盖后丢值）。
+     * 这让嵌套 x-for 内层能解析外层注入的变量（如内层 `row.title` 取到外层 row）。
+     */
+    getScopeContext(): AutoTemplateStackedContext<any> {
+        if (this._scopeView) return this._scopeView;
+        // 父级视图：父作用域的聚合视图；无父则退化为根 context
+        const parentView = this.parent ? this.parent.getScopeContext() : this.engine.context;
+        const local = this.localScope;
+        if (!local) {
+            // 无自身局部变量：直接复用父级视图（缓存别名，零额外代理）
+            this._scopeView = parentView;
+            return parentView;
+        }
+        this._scopeView = new Proxy(parentView, {
+            get(_t, k: string | symbol) {
+                if (typeof k === "string" && Object.prototype.hasOwnProperty.call(local, k)) {
+                    return local[k];
+                }
+                return (parentView as any)[k];
+            },
+            has(_t, k: string | symbol) {
+                if (typeof k === "string" && Object.prototype.hasOwnProperty.call(local, k)) return true;
+                return k in parentView;
+            },
+        });
+        return this._scopeView;
+    }
+
+    /**
+     * 创建指令实例（按优先级降序排列，大的先执行）。
      */
     private _createDirectives() {
         const directiveDefine = getDirectives(this.template as HTMLElement);
-        // 创建指令实例
-        const directives = createDirectives(this.engine, directiveDefine, this);
-        this.directives = directives.sort((a, b) => {
-            return b.priority - a.priority;
-        });
+        // createDirectives 内部已按静态 priority 降序排列，无需在此再排序
+        this.directives = createDirectives(this.engine, directiveDefine, this);
     }
+
     /**
-     * 侦听
-     * @param value  可以是路径，也可以是表达式
-     * @param listener
-     * @param options
+     * 订阅状态变化。双轨：
+     *
+     * - **路径支路**（`isStatePath` 为真，如 `user.name`）→ `store.watch(path)` 精准订阅，最快；
+     * - **表达式支路**（如 `a + b`、x-for 内的 `item.name`）→ `collectDependencies` 自动收集读依赖后订阅。
+     *
+     * **为何表达式不走 `computedObjects.create`**：core 强制该 API 的 scope 只能是根/绝对路径，
+     * 无法注入 x-for 的局部 `item`（见 core `computed/computedObjects.ts`）。
+     * 故在此用 `store.collectDependencies` + `store.watch(deps)` 自建，与 core 的 `SyncComputedObject` 同构。
+     *
+     * 两条支路都把回调经 `engine.scheduler` 微任务合并：watcher 仅"标脏"，
+     * flush 时重新求值并 patch——同 tick 多次变更只更新一次。
+     *
+     * @returns 当前值（供指令 `compile` 初始渲染）
      */
-    watch(value: string, listener: WatchListener, options?: WatchListenerOptions) {
-        if (isStatePath(value)) {
-            this.watchers.push(this.engine.store.watch(value, listener, options));
-            return getVal(this.engine.store.state, value);
-        } else {
-            // 如果不是状态路径，则需要创建计算属性
-            const obj = this.createComputed(value);
-            this.watchers.push(obj.watch(listener));
-            return obj.value;
+    watch(value: string, listener: ScopeWatchListener): any {
+        // 有 localScope 时（x-for 子项），变量可能来自局部作用域（如 item），
+        // 不能按 state 路径直接订阅——统一走表达式支路（with 解析 localScope + state）。
+        if (!this.localScope && SIMPLE_PATH_RE.test(value)) {
+            return this.watchPath(value, listener);
         }
+        return this.watchExpression(value, listener);
     }
-    /**
-     * 创建计算属性
-     * @param value
-     */
-    createComputed(value: string) {
-        const getter = new Function("scope", "args", value) as ComputedGetter<any>;
-        const computedObj = this.engine.store.computedObjects.create(getter);
-        this.computedObjects.push(computedObj.id);
-        return computedObj;
+
+    /** 路径支路：精准订阅单一路径 */
+    private watchPath(path: string, listener: ScopeWatchListener): any {
+        const store = this.engine.store;
+        const read = () => getVal(store.state, path);
+        const update = () => listener({ value: read() });
+        this.watchers.push(store.watch(path, () => this.engine.scheduler.schedule(update)));
+        return read();
     }
+
     /**
-     * 运行所有指令
+     * 表达式支路：collectDependencies 自建。
      *
-     * 指令
-     *
-     * @returns
+     * 1. `new Function` 把表达式编译为带 `scope` 形参的 getter；
+     * 2. 在聚合作用域上求值一次，期间由 `collectDependencies` 收集读依赖；
+     * 3. 用收集到的依赖路径订阅，回调仅标脏，flush 时重新求值。
      */
-    compile() {
+    private watchExpression(expr: string, listener: ScopeWatchListener): any {
+        const store = this.engine.store;
+        const scope = this.getScopeContext();
+        // 用 with(scope) 把作用域属性暴露为表达式变量，使 `user.first` 能解析到 scope.user.first。
+        // new Function 默认松散模式支持 with；scope 是聚合 Proxy，has/get 陷阱联动 store.state。
+        const getter = new Function("scope", "args", `with(scope){ return (${expr}); }`) as (
+            scope: any,
+            args?: any,
+        ) => any;
+        const deps = store.collectDependencies(() => getter(scope), "read");
+        const update = () => listener({ value: getter(scope) });
+        this.watchers.push(store.watch(deps, () => this.engine.scheduler.schedule(update)));
+        return getter(scope);
+    }
+
+    /**
+     * 读取表达式/路径的当前值（不建立订阅）。
+     *
+     * 供 x-for 等"已在 `created` 自行订阅、仅需在回调中重读最新值"的指令使用。
+     * 求值方式与 `watch` 保持一致：纯路径走 `getVal`，否则走 `with(scope)` 表达式求值
+     * （使 `items.filter(x => x.active)` 这类表达式能取到经筛选/映射后的数组，
+     * 而非被 `getVal` 当作点分路径读成 undefined）。
+     *
+     * @returns 表达式当前值；求值异常时记录日志并返回 undefined（由调用方做数组化等兜底）
+     */
+    read(value: string): any {
+        if (!this.localScope && SIMPLE_PATH_RE.test(value)) {
+            return getVal(this.engine.store.state, value);
+        }
+        const scope = this.getScopeContext();
+        const getter = new Function("scope", `with(scope){ return (${value}); }`) as (scope: any) => any;
         try {
-            return this.runDirectives(this.directives, this);
-        } finally {
+            return getter(scope);
+        } catch (e: any) {
+            this.engine.logger.error(`scope.read: eval "${value}" failed: ${e?.message ?? e}`);
+            return undefined;
         }
     }
 
     /**
-     * 串行执行指令列表中每个指令的 compile
+     * 编译：依次执行指令的 `created`（建立订阅）→ `compile`（初始渲染）。
      *
-     * 按数组顺序依次调用 directive.compile()，仅执行副作用，忽略返回值。
-     * compile 返回 HTMLElement 表示该元素内部还有模板、需上层递归编译，该职责
-     * 不属于本函数（由 compiler 处理）。
-     *
-     * @param directives 已排序的指令实例列表（通常来自 createDirectives）
-     * @param binding    这些指令所属的绑定（语义上下文锚点；指令实例自身已持有 binding）
-     * @param parent     透传给每个 directive.compile(parent) 的父元素
+     * `created` 必须先于 `compile` 执行——`watch` 在 created 中建立，
+     * 随后 compile 用 `watch` 返回的当前值做首次 DOM 写入。
      */
-    runDirectives(directives: KylinTemplateDirectiveBase[], scope: KylinTemplateScope): void {
-        for (const directive of directives) {
-            directive.compile(scope);
+    compile() {
+        return this.runDirectives(this.directives);
+    }
+
+    /**
+     * 串行执行指令生命周期：先全部 created，再全部 compile。
+     * 同一阶段的指令按优先级顺序（已由 `_createDirectives` 排好）。
+     */
+    runDirectives(directives: AutoTemplateDirectiveBase[]): void {
+        for (const d of directives) {
+            if (typeof d.created === "function") d.created();
+        }
+        for (const d of directives) {
+            if (typeof d.compile === "function") d.compile(this.engine.context, this.el!);
         }
     }
-    destory() {
+
+    /**
+     * 销毁：先递归销毁子作用域（子树 watcher 批量 off），再 off 自身 watcher，
+     * 最后触发各指令的 destroy 钩子。
+     */
+    destroy() {
         try {
-            this.watchers.forEach((watcher) => watcher.off());
-            this.computedObjects.forEach((id) => this.engine.store.computedObjects.delete(id));
+            for (const child of this.children) {
+                child.destroy();
+            }
+            this.children.clear();
+            for (const watcher of this.watchers) {
+                watcher.off();
+            }
+            this.watchers.length = 0;
+            for (const d of this.directives) {
+                if (typeof d.destroy === "function") d.destroy(this.el!);
+            }
         } catch (e: any) {
             this.engine.logger.error(e);
         }
-    }
-}
-
-export class AutoTemplateBindingManager extends Map<WeakRef<HTMLElement>, KylinTemplateScope> {
-    readonly engine: KylinTemplateEngine;
-    constructor(engine: KylinTemplateEngine) {
-        super();
-        this.engine = engine;
     }
 }

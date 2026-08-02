@@ -1,12 +1,10 @@
-import { KylinTemplateDirectiveBase } from "../base";
+import { AutoTemplateDirectiveBase } from "../base";
 
 /**
  *
  *  <div x-data="{a:1}"></div>
  *
  */
-export class DataDirective extends KylinTemplateDirectiveBase {
-    override name = "data";
-    override priority = 999;
+export class DataDirective extends AutoTemplateDirectiveBase {
     render() {}
 }

@@ -1,11 +1,11 @@
-import { KylinTemplateDirectiveBase } from "../base";
+import { AutoTemplateDirectiveBase } from "../base";
 
 /**
  *
  * 侦听元素事件
  *
  */
-export class EventDirective extends KylinTemplateDirectiveBase {
+export class EventDirective extends AutoTemplateDirectiveBase {
     name = "bind";
     render() {}
 }

@@ -1,4 +1,4 @@
-import { KylinTemplateDirectiveBase } from "../base";
+import { AutoTemplateDirectiveBase } from "../base";
 
 /**
  *
@@ -20,6 +20,6 @@ import { KylinTemplateDirectiveBase } from "../base";
  * .. 代表父元素的父元素
  *
  */
-export class TeleportDirective extends KylinTemplateDirectiveBase {
+export class TeleportDirective extends AutoTemplateDirectiveBase {
     render() {}
 }

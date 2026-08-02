@@ -1,144 +1,171 @@
 /**
- * 负责模板编译
+ * 模板编译器
+ *
+ * 基于 transformElement 深度优先重建模板树：对每个含指令的元素，浅克隆（保留
+ * 普通属性）、移除指令属性、创建 AutoTemplateScope 并执行其指令生命周期。
+ *
+ * **浅克隆是安全的**：transformElement 命中 transformer 后会用返回的新元素替换原节点，
+ * 并继续递归**原节点的子节点**挂到新元素下——因此子树会被完整重建（等价深克隆，
+ * 但允许每个子节点各自走 transformer 处理）。
+ *
+ * 编译期通过 templateScopeMap 建立 scope 父子关系（向上查找最近指令祖先），
+ * 并让子作用域继承父的 localScope（供 x-for 注入的 item/index 向下传递到嵌套子元素）。
  */
-import { KylinTemplateScope } from "../scope";
+import { AutoTemplateScope } from "../scope";
 import { removeDirectives } from "../directives/utils/removeDirectives";
-import type { KylinTemplateEngine } from "../engine";
-import type { KylinTemplateCompileContext } from "./types";
-import { transformElement, type NodeTransformer } from "../utils/transformElement";
-import { createCompileContext } from "./context";
+import type { AutoTemplateEngine } from "../engine";
+import { transformElement, type NodeTransformer, type OwnsChildrenResult } from "../utils/transformElement";
 import { hasDirectives } from "../directives/utils/hasDirectives";
-import { createScopeContext } from "../utils/createScopeContext";
 
 export class AutoTemplateCompiler {
-    readonly engine: KylinTemplateEngine;
-    readonly context;
-    constructor(engine: KylinTemplateEngine<any>) {
+    readonly engine: AutoTemplateEngine;
+    /** 编译期：原树模板元素 → scope 映射，用于建立 scope 父子关系与 localScope 继承 */
+    private templateScopeMap = new WeakMap<HTMLElement, AutoTemplateScope>();
+
+    constructor(engine: AutoTemplateEngine<any>) {
         this.engine = engine;
-        this.context = this._createCompileContext();
     }
-    private _getTransformers() {
+
+    private _getTransformers(): NodeTransformer<HTMLElement>[] {
         return [
             [
-                (node: Node) => {
-                    return node instanceof HTMLElement;
-                },
-                (current: HTMLElement) => {
-                    return this.compileElement(current);
-                },
+                (node: Node) => node instanceof HTMLElement,
+                (current: HTMLElement) => this.compileElement(current),
             ],
-        ] as unknown as NodeTransformer<HTMLElement>[];
+        ];
     }
-    compile() {
-        // 从根元素开始编译
+
+    /**
+     * 编译整棵模板，返回重建后的根元素（已移除指令属性、各元素挂载 scope）。
+     * 每次 compile 重建 templateScopeMap（编译期临时结构）。
+     */
+    compile(): HTMLElement {
+        this.templateScopeMap = new WeakMap();
         return transformElement(this.engine.template, this._getTransformers(), this.engine.context);
     }
 
-    private _createCompileContext() {
-        return {
-            data: createScopeContext({
-                keyProps: {
-                    $store: this.engine.store,
-                    $state: this.engine.store.state,
-                },
-            }),
-        };
+    /**
+     * 编译单个模板元素（transformElement 回调）。
+     *
+     * - 无指令：原样返回，transformElement 会默认浅克隆并递归子节点；
+     * - 有指令：浅克隆 + 移除指令属性 + 建 scope + 建立 parent 关系 + 继承 localScope + 执行指令。
+     * - 含结构指令（ownsChildren，如 x-for / eager x-if）：返回 `ownsChildren` 信号，
+     *   让 transformElement 跳过该元素子节点的自动递归——子节点由指令自行编译，
+     *   避免"正常通道编译一次 + 指令克隆再编译"的双重冲突。
+     *
+     * 同元素出现多个结构指令（如 `x-for` + eager `x-if`）会在 `_resolveOwnership` 中抛错。
+     */
+    compileElement(template: HTMLElement): HTMLElement | OwnsChildrenResult {
+        if (!hasDirectives(template)) {
+            // 必须浅克隆：transformElement 用 live NodeList 遍历原节点子节点并挂到返回的新节点下，
+            // 若返回原节点，appendChild 会写回原节点自身、其 childNodes 持续增长，导致 live 遍历无限循环。
+            return template.cloneNode(false) as HTMLElement;
+        }
+        const el = template.cloneNode(false) as HTMLElement;
+        removeDirectives(el);
+        const scope = new AutoTemplateScope(this.engine, el, template);
+        this._linkParent(template, scope);
+        this.templateScopeMap.set(template, scope);
+        this.engine.scopes.set(new WeakRef(el), scope);
+        // 冲突检测先于 compile：让 x-for + eager x-if 同元素在跑任何指令生命周期前即失败
+        const ownsChildren = this._resolveOwnership(scope);
+        scope.compile();
+        // 结构指令占有子树：返回 ownsChildren 信号，跳过子节点自动递归（由指令自行编译）。
+        if (ownsChildren) {
+            return { node: el, ownsChildren: true };
+        }
+        return el;
     }
 
-    compileElement(template: HTMLElement) {
-        if (hasDirectives(template)) {
-            const el = template.cloneNode() as HTMLElement;
-            removeDirectives(el); // 移除指令,目标元素
-            try {
-                // 每个元素绑定一个Scope
-                const scope = new KylinTemplateScope(this.engine, el, template);
-                this.engine.scopes.set(new WeakRef(el), scope);
-                return scope.compile();
-            } catch (e: any) {
-                this.engine.logger.error(e);
-                return el;
+    /**
+     * 判定某 scope 是否被结构指令占有子树（ownsChildren），并检测冲突。
+     *
+     * 任意指令类的静态 `ownsChildren(info)` 返回 true 即视为占有。同元素出现多个占有者
+     * （当前仅 `x-for` + eager `x-if`）语义互斥——前者重复子树、后者条件销毁子树——直接抛错，
+     * 提示改用 `x-show`/`x-if.keep`（仅切 display，不占子树）或外层包裹。
+     */
+    private _resolveOwnership(scope: AutoTemplateScope): boolean {
+        const owners = scope.directives.filter((d) => {
+            const cls = this.engine.directives.get(d.info.name);
+            return !!cls?.ownsChildren?.(d.info);
+        });
+        if (owners.length > 1) {
+            throw new Error(
+                "[x-if/x-for 冲突] x-if 的条件销毁语义与 x-for 的列表渲染不能作用于同一元素。\n" +
+                    "若需控制整个列表显隐，请改用：\n" +
+                    '  • x-show="<expr>"     （= x-if.keep：保留子树与 watcher，仅切 display）\n' +
+                    '  • x-if.keep="<expr>"  （同上）\n' +
+                    '或用外层包裹：<div x-if="<expr>"><ul x-for="…">…</ul></div>',
+            );
+        }
+        return owners.length === 1;
+    }
+
+    /**
+     * 编译某模板的全部子节点并挂到指定父元素，返回已编译节点列表。
+     *
+     * 共享给结构指令（eager x-if 编译/重建子树）：元素子节点走完整 `compileElement` 管线
+     * （建 scope、`_linkParent` 链接到父作用域），文本/注释节点直接深克隆。
+     * 调用方负责在销毁时按返回的节点列表精确移除（避免误删兄弟指令如 x-text 写入的内容）。
+     */
+    compileSubtree(parentEl: HTMLElement, templateEl: HTMLElement): Node[] {
+        const nodes: Node[] = [];
+        for (const child of Array.from(templateEl.childNodes)) {
+            const compiled =
+                child instanceof HTMLElement
+                    ? transformElement(child, this._getTransformers(), this.engine.context)
+                    : child.cloneNode(true);
+            parentEl.appendChild(compiled);
+            nodes.push(compiled);
+        }
+        return nodes;
+    }
+
+    /**
+     * 供 x-for 编译单个列表项的模板。
+     *
+     * 手动建根 scope 并注入 localScope（item/index），再用 transformElement
+     * 递归编译其子节点（嵌套 scope 经 _linkParent 挂为本 scope 子代并继承 localScope）。
+     *
+     * @param itemTemplate 单个项的模板元素（x-for 子模板的克隆）
+     * @param parentScope  x-for 所在 scope，项 scope 挂为其子（删项时递归销毁）
+     * @param localScope   注入该项的局部变量（{ item, index }）
+     */
+    compileChild(
+        itemTemplate: HTMLElement,
+        parentScope: AutoTemplateScope,
+        localScope: Record<string, any>,
+    ): { el: HTMLElement; scope: AutoTemplateScope } {
+        const el = itemTemplate.cloneNode(false) as HTMLElement;
+        removeDirectives(el);
+        const scope = new AutoTemplateScope(this.engine, el, itemTemplate);
+        scope.localScope = localScope;
+        parentScope.addChild(scope);
+        this.templateScopeMap.set(itemTemplate, scope);
+        this.engine.scopes.set(new WeakRef(el), scope);
+        // 项根本身若是结构指令（嵌套 x-for，如 <ul x-for="row"><li x-for="cell">），
+        // 其子节点由该内层结构指令在 render 时自行克隆编译，此处跳过手动编译以免双重冲突。
+        if (!this._resolveOwnership(scope)) {
+            this.compileSubtree(el, itemTemplate);
+        }
+        scope.compile();
+        return { el, scope };
+    }
+
+    /**
+     * 向上查找最近的已注册指令祖先 scope，把 scope 挂为其子，
+     * 并继承祖先的 localScope（让 item/index 向嵌套子元素传递）。
+     */
+    private _linkParent(template: HTMLElement, scope: AutoTemplateScope): void {
+        let p: HTMLElement | null = template.parentElement;
+        while (p) {
+            const parentScope = this.templateScopeMap.get(p);
+            if (parentScope) {
+                parentScope.addChild(scope);
+                if (parentScope.localScope) scope.localScope = parentScope.localScope;
+                return;
             }
-        } else {
-            // 普通元素，没有指令时，原路返回
-            return template;
+            p = p.parentElement;
         }
     }
 }
-/**
-     * 开始编译模板
-     *
-     * 编译步骤如下：
-     *
-     * const resultEl:HTMLElement 用于保存编译后的根元素引用。模板一定要有一个根元素 
-     * 
-     * 1. 扫描遍历this.engine.template每一个元素
-     *     如果元素不包括指令：
-     *        - clone 该元素,
-     *     如果元素中包括指令，则需要处理:
-     *        - clone该元素，
-     *        - 处理元素指令 ，指令包括几种：
-     *            - DOM操作： 如x-text，x-html, x-for,x-if等
-     *            - 元素事件绑定，如<div @click="xxxx">等
-     *            - 属性双向绑定，如<div :title="xxx">等，:title中x-bind="xxx"的快捷方法，用于将元素属性绑定到具体响应式变量
-                  - 表单双向绑定，如<input x-model="ssss"/>,x-model是特殊指定，用于
-                
-            扫描元素上的指令，分别创建Binding对象，Binding对象用于记录模板元素、渲染元素，指令等的映射关系
-            
-            const binding = new AutoTemplateBinding(parentEl,{
-                template: <引用模板元素>，
-                el:<clone后的元素，会移除上面的指令>,
-                // 经过解析后的指令列表,处理逻辑包括同名，优选级等
-                directives:[
-                    new TemplateDirective(name,value,modifiers)
-                ....
-                ]
-            }
-            binding.render() // 执行渲染操作，内部会依次调用directives进行处理。
-
-            engine.bindings.add(binding)
-
-    2. 处理流程
-    
-        - 当扫描到此模板元素时，tmpEl=<div class="x" x-text="count" x-text:options="{}"></div>
-        - clone元素，resultEl=<div class="x"></div>  
-        - 扫描指令，[x-text]
-            const binding = new AutoTemplateBinding(parentEl,{
-                template: tmpEl，
-                el:resultEl, 
-                directives:[
-                    new TextDirective(.....),
-                    ....其他指令
-                ]
-            }
-        - 调用binding.compile() 进行编译
-             处理绑定值           
-            compile(){
- 
-            }
-
-             然后调用指令的compile
-             上例中调用 x-text指令的compile() 。
-        
-        - 
-
-             
-
-
-        
-   编译优化：
-   为了优化情况，需要进行优化，优化包括但不限于：
-   - 同名指令的处理： 有些指定在一个元素中只允许使用一个，
-    比如<div x-text="xx" x-text="y"></div> 只有一个可以生效，所以后声明指令生效。
-   - 并发编译
-     同一DOM元素下的子元素采用并发编译，比如
-      <div>
-         <span x-text="a"></span>
-         <span x-text="b"></span>
-         <span x-text="c"></span>
-         <span x-text="d"></span>
-      </div>
-    以上在遍历模板时，在div下的子元素可以并发进行编译
-
-
-
-    */

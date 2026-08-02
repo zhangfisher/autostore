@@ -2,19 +2,28 @@
 export type NodeFilter = (node: Node) => boolean;
 
 /**
+ * "占有子树"信号：挂接 `node` 到新树，但**跳过其子节点递归**。
+ *
+ * 供结构指令（如 x-for）使用：其子节点不由通用 walk 自动编译，而由指令自行编译，
+ * 避免"正常通道编译一次 + 指令克隆再编译"的双重编译冲突。
+ */
+export type OwnsChildrenResult = { node: Node; ownsChildren: true };
+
+/**
  * 节点转换器。
  *
  * @typeParam T - 当前节点的精确类型，默认 `Node`；可收窄为 `HTMLElement`/`Text` 等以获得更精确的类型推断。
  * @param node - 当前节点
- * @returns 新节点、HTML 字符串或空值：
+ * @returns 新节点、HTML 字符串、占有子树信号或空值：
  *   - 返回 `Node` → 用其替换原节点，并继续递归处理原子节点
  *   - 返回 `string` → 按 HTML 片段用 `<template>` 解析，所有顶层节点替代原节点（原内容丢弃、不递归）
+ *   - 返回 `{ node, ownsChildren: true }` → 挂接 `node`，但**不递归其子节点**（子节点由调用方自行处理）
  *   - 返回 `null`/`undefined`/空字符串 → 丢弃该节点及其整个子树（剪枝）
  */
 export type NodeTransform<T extends Node = Node> = (
     node: T,
     context: Record<string, any>,
-) => Node | string | null | undefined;
+) => Node | string | null | undefined | OwnsChildrenResult;
 
 /** 转换器对：`[filter, transform]`，按数组顺序首个命中即生效 */
 export type NodeTransformer<T extends Node = Node> = [
@@ -49,6 +58,7 @@ function parseHtmlFragment(html: string): DocumentFragment | null {
  *   - **首个** `filter` 返回 `true` 的转换器生效（first-match-wins）
  *   - 命中的 `transform` 返回 `Node` → 用其替换原节点，并继续递归处理原子节点
  *   - 命中的 `transform` 返回 `string` → 按 HTML 片段用 `<template>` 解析，所有顶层节点替代原节点（原内容丢弃、不递归；生成的节点视为成品，不再走 transformers）
+ *   - 命中的 `transform` 返回 `{ node, ownsChildren: true }` → 挂接 `node`，但**不递归其子节点**（结构指令占有子树，子节点由其自行编译）
  *   - 命中的 `transform` 返回 `null`/`undefined`/空字符串 → 丢弃该节点及其整个子树（剪枝）
  *   - **无任何 `filter` 命中** → 浅克隆原节点（`cloneNode(false)`），继续递归子节点
  * - `filter` 可按 `nodeType`/`nodeName` 等对节点类型分流
@@ -80,7 +90,7 @@ export function transformElement<T extends Node = Node>(
     const walk = (node: Node, parent: HTMLElement | null): Node | null => {
         // 按序查找首个命中的 transformer（first-match-wins）
         let matched = false;
-        let result: Node | string | null | undefined = undefined;
+        let result: Node | string | null | undefined | OwnsChildrenResult = undefined;
         for (const [filter, transform] of transformers) {
             if (filter(node)) {
                 // node 断言为 T：类型安全性由调用方 filter 保证（filter 返回 true ⇔ node 是 T）
@@ -93,6 +103,15 @@ export function transformElement<T extends Node = Node>(
         // 未命中任何 filter：默认浅克隆保留（走 Node 路径）
         if (!matched) {
             result = node.cloneNode(false);
+        }
+
+        // 解包"占有子树"信号（结构指令如 x-for）：取真实节点，并标记跳过其子节点递归——
+        // 子节点交由指令自行编译，避免"正常通道编译一次 + 指令克隆再编译"的双重编译冲突。
+        // 判定依据 "ownsChildren" in obj：普通 DOM Node 无该属性，不会误判。
+        let ownsChildren = false;
+        if (result != null && typeof result === "object" && "ownsChildren" in result) {
+            ownsChildren = true;
+            result = (result as OwnsChildrenResult).node;
         }
 
         // 命中但返回 null/undefined：剪枝，丢弃该节点及其子树
@@ -129,10 +148,13 @@ export function transformElement<T extends Node = Node>(
         // 递归子节点：索引遍历 live NodeList，零数组分配。
         // parent 传新树父（result）：使子节点 transform 回调中的 parent 始终是新树中它们的父元素。
         // result 断言为元素：有子节点的 node 必为元素（DOM 结构保证），调用方 filter 约定其替换节点同为元素。
-        const children = node.childNodes;
-        for (let i = 0; i < children.length; i++) {
-            // children[i] 非空：i < length 已保证索引存在（noUncheckedIndexedAccess 下需显式断言）
-            walk(children[i]!, result as HTMLElement);
+        // ownsChildren 时跳过：子节点由结构指令自行编译。
+        if (!ownsChildren) {
+            const children = node.childNodes;
+            for (let i = 0; i < children.length; i++) {
+                // children[i] 非空：i < length 已保证索引存在（noUncheckedIndexedAccess 下需显式断言）
+                walk(children[i]!, result as HTMLElement);
+            }
         }
 
         return result;

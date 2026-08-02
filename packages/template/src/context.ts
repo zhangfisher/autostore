@@ -14,7 +14,7 @@ import { AutoStore, type Dict } from "autostore";
  * 扩展运算符等数据遍历。`$context` / `$store` 是框架保留键，调用方应避免
  * 在作用域对象中使用同名字段。
  */
-export type KylinTemplateStackedContext<State extends Dict> = Record<string, any> & {
+export type AutoTemplateStackedContext<State extends Dict> = Record<string, any> & {
     /**
      * 原始作用域栈引用（只读、不可枚举的元属性）。
      * 不参与 `Object.keys` / `for...in` / 扩展运算符等数据遍历。
@@ -63,7 +63,7 @@ const STORE_REF = "$store";
 
 export function createStackedContext<State extends Dict>(
     store?: AutoStore<State>,
-): KylinTemplateStackedContext<State> {
+): AutoTemplateStackedContext<State> {
     const context: Record<string, any>[] = [];
     if (store) {
         context.push({
@@ -102,7 +102,7 @@ export function createStackedContext<State extends Dict>(
         writable: false,
     });
 
-    return new Proxy({} as KylinTemplateStackedContext<State>, {
+    return new Proxy({} as AutoTemplateStackedContext<State>, {
         get(_target, key) {
             // 元属性：暴露原始引用
             if (typeof key === "string") {

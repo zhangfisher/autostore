@@ -1,6 +1,6 @@
-import type { KylinTemplateCompileContext } from "../compile/types";
+import type { AutoTemplateCompileContext } from "../compile/types";
 
-export type KylinDirectiveInfo = {
+export type AutoDirectiveInfo = {
     name: string;
     value?: string;
     attr?: string;
@@ -70,5 +70,5 @@ export type TemplateDirective<
      * @param context
      * @returns
      */
-    compile?: (context: KylinTemplateCompileContext) => any;
+    compile?: (context: AutoTemplateCompileContext) => any;
 };

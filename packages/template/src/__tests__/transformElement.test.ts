@@ -21,7 +21,9 @@ describe("transformElement - 未命中默认克隆", () => {
         const root = createElement("<div><span>hi</span></div>");
         const result = transformElement(root, [], {});
 
-        expect(result.outerHTML).toBe("<div><span>hi</span></div>");
+        expect(result).toEqualHTML(`<div>
+  <span>hi</span>
+</div>`);
         expect(result).not.toBe(root);
     });
 
@@ -33,7 +35,10 @@ describe("transformElement - 未命中默认克隆", () => {
             {},
         );
 
-        expect(result.outerHTML).toBe("<div><b></b><p></p></div>");
+        expect(result).toEqualHTML(`<div>
+  <b></b>
+  <p></p>
+</div>`);
     });
 });
 
@@ -54,7 +59,7 @@ describe("transformElement - 命中策略", () => {
             {},
         );
 
-        expect(result.outerHTML).toBe("<i></i>");
+        expect(result).toEqualHTML(`<i></i>`);
     });
 
     test("filter 返回 false 的节点走默认克隆", () => {
@@ -65,7 +70,9 @@ describe("transformElement - 命中策略", () => {
             {},
         );
 
-        expect(result.outerHTML).toBe("<div><span></span></div>");
+        expect(result).toEqualHTML(`<div>
+  <span></span>
+</div>`);
     });
 });
 
@@ -74,14 +81,18 @@ describe("transformElement - 剪枝", () => {
         const root = createElement("<div><span>keep</span><p><em>drop</em></p></div>");
         const result = transformElement(root, [[(n) => n.nodeName === "P", () => null]], {});
 
-        expect(result.outerHTML).toBe("<div><span>keep</span></div>");
+        expect(result).toEqualHTML(`<div>
+  <span>keep</span>
+</div>`);
     });
 
     test("transform 返回 undefined 同样剪枝（与 null 等价）", () => {
         const root = createElement("<div><span>keep</span><p><em>drop</em></p></div>");
         const result = transformElement(root, [[(n) => n.nodeName === "P", () => undefined]], {});
 
-        expect(result.outerHTML).toBe("<div><span>keep</span></div>");
+        expect(result).toEqualHTML(`<div>
+  <span>keep</span>
+</div>`);
     });
 
     test("根节点被剪枝时抛异常", () => {
@@ -100,6 +111,7 @@ describe("transformElement - 原树只读", () => {
             {},
         );
 
+        // 严格字符相等：验证原树字节级未被改动（非结构断言，保留 .toBe）
         expect(root.outerHTML).toBe(original);
     });
 
@@ -108,7 +120,9 @@ describe("transformElement - 原树只读", () => {
         const result = transformElement(root, [], {});
         result.appendChild(document.createElement("br"));
 
-        expect(root.outerHTML).toBe("<div><span></span></div>");
+        expect(root).toEqualHTML(`<div>
+  <span></span>
+</div>`);
     });
 });
 
@@ -121,7 +135,7 @@ describe("transformElement - 泛型收窄", () => {
         const result = transformElement(root, transformers, {});
 
         // div 命中替换为 mark；文本节点被 filter 拒绝，默认克隆后挂入 mark
-        expect(result.outerHTML).toBe("<mark>hi</mark>");
+        expect(result).toEqualHTML(`<mark>hi</mark>`);
     });
 });
 
@@ -134,7 +148,9 @@ describe("transformElement - 字符串返回", () => {
             {},
         );
 
-        expect(result.outerHTML).toBe('<div><b class="x">hi</b></div>');
+        expect(result).toEqualHTML(`<div>
+  <b class="x">hi</b>
+</div>`);
     });
 
     test("返回多节点 HTML 字符串全部挂入新父", () => {
@@ -145,7 +161,10 @@ describe("transformElement - 字符串返回", () => {
             {},
         );
 
-        expect(result.outerHTML).toBe("<div><a>1</a><b>2</b></div>");
+        expect(result).toEqualHTML(`<div>
+  <a>1</a>
+  <b>2</b>
+</div>`);
     });
 
     test("字符串替换时原节点的子内容被丢弃", () => {
@@ -156,14 +175,18 @@ describe("transformElement - 字符串返回", () => {
             {},
         );
 
-        expect(result.outerHTML).toBe("<div><i>new</i></div>");
+        expect(result).toEqualHTML(`<div>
+  <i>new</i>
+</div>`);
     });
 
     test("返回空字符串视为剪枝", () => {
         const root = createElement("<div><span>keep</span><p>drop</p></div>");
         const result = transformElement(root, [[(n) => n.nodeName === "P", () => ""]], {});
 
-        expect(result.outerHTML).toBe("<div><span>keep</span></div>");
+        expect(result).toEqualHTML(`<div>
+  <span>keep</span>
+</div>`);
     });
 
     test("字符串生成的节点不再走 transformers", () => {
@@ -186,18 +209,48 @@ describe("transformElement - 字符串返回", () => {
 
         // 只有 div、span 被处理；span 生成的 b 不再被二次处理
         expect(count).toBe(2);
-        expect(result.outerHTML).toBe("<div><b></b></div>");
+        expect(result).toEqualHTML(`<div>
+  <b></b>
+</div>`);
     });
 
     test("根节点返回单节点字符串作为新根", () => {
         const root = createElement("<div></div>");
         const result = transformElement(root, [[() => true, () => "<main></main>"]], {});
 
-        expect(result.outerHTML).toBe("<main></main>");
+        expect(result).toEqualHTML(`<main></main>`);
     });
 
     test("根节点返回多节点字符串抛异常", () => {
         const root = createElement("<div></div>");
         expect(() => transformElement(root, [[() => true, () => "<a></a><b></b>"]], {})).toThrow();
+    });
+});
+
+describe("transformElement - ownsChildren 占有子树", () => {
+    test("返回 ownsChildren 信号：节点挂接但跳过其子节点递归", () => {
+        const root = createElement(
+            "<div><span>x</span><ul><li>a</li><li>b</li></ul><span>y</span></div>",
+        );
+        const result = transformElement(
+            root,
+            [
+                [
+                    (n) => n.nodeName === "UL",
+                    (node) => ({
+                        node: (node as HTMLElement).cloneNode(false) as Node,
+                        ownsChildren: true as const,
+                    }),
+                ],
+            ],
+            {},
+        );
+
+        // ul 浅克隆挂接、其 li 子节点未被递归；前后兄弟 span 正常克隆
+        expect(result).toEqualHTML(`<div>
+  <span>x</span>
+  <ul></ul>
+  <span>y</span>
+</div>`);
     });
 });

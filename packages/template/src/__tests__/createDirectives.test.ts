@@ -1,44 +1,38 @@
 import { describe, expect, test } from "bun:test";
 import { AutoStore } from "autostore";
-import { KylinTemplateScope } from "../scope";
+import { AutoTemplateScope } from "../scope";
 import { createDirectives } from "../directives/utils/createDirectives";
-import { KylinTemplateDirectiveBase } from "../directives/base";
-import type { KylinDirectiveInfo } from "../directives/types";
-import { KylinTemplateEngine } from "../engine";
+import { AutoTemplateDirectiveBase } from "../directives/base";
+import type { AutoDirectiveInfo } from "../directives/types";
+import { AutoTemplateEngine } from "../engine";
 
 /**
  * 测试用指令类
  *
- * 通过 static name/priority/singleton 显式声明行为，避免依赖 preset 注册的完整性
- * （当前多数 preset 未定义 static name，无法真实注册）。
+ * priority/singleton 经静态字段声明（createDirectives 实例化前据此排序/去重）。
+ * 指令名通过 `engine.directives.set(name, Cls)` 注册，不依赖 static name。
  */
-class HighPrioSingleton extends KylinTemplateDirectiveBase {
-    static override name = "high";
-    static override priority = 100;
-    // singleton 继承默认值 true
+class HighPrioSingleton extends AutoTemplateDirectiveBase {
+    static override readonly priority = 100;
 }
-class LowPrioSingleton extends KylinTemplateDirectiveBase {
-    static override name = "low";
-    static override priority = 10;
+class LowPrioSingleton extends AutoTemplateDirectiveBase {
+    static override readonly priority = 10;
 }
-class MultiInstance extends KylinTemplateDirectiveBase {
-    static override name = "multi";
-    static override priority = 50;
-    static override singleton = false;
+class MultiInstance extends AutoTemplateDirectiveBase {
+    static override readonly priority = 50;
+    static override readonly singleton = false;
 }
-class SamePrioA extends KylinTemplateDirectiveBase {
-    static override name = "spa";
-    static override priority = 30;
+class SamePrioA extends AutoTemplateDirectiveBase {
+    static override readonly priority = 30;
 }
-class SamePrioB extends KylinTemplateDirectiveBase {
-    static override name = "spb";
-    static override priority = 30;
+class SamePrioB extends AutoTemplateDirectiveBase {
+    static override readonly priority = 30;
 }
 
-/** 构造最小可用 engine，并注册测试指令类 */
-function makeEngine(): KylinTemplateEngine {
+/** 构造最小可用 engine（不自动编译），并注册测试指令类 */
+function makeEngine(): AutoTemplateEngine<any> {
     const store = new AutoStore({ count: 0 });
-    const engine = new KylinTemplateEngine(document.createElement("div"), store);
+    const engine = new AutoTemplateEngine(document.createElement("div"), store, { autostart: false });
     engine.directives.set("high", HighPrioSingleton);
     engine.directives.set("low", LowPrioSingleton);
     engine.directives.set("multi", MultiInstance);
@@ -47,24 +41,21 @@ function makeEngine(): KylinTemplateEngine {
     return engine;
 }
 
-function makeBinding(): KylinTemplateScope {
-    return new KylinTemplateScope(document.createElement("div"), document.createElement("div"));
+function makeBinding(engine: AutoTemplateEngine<any>): AutoTemplateScope {
+    return new AutoTemplateScope(engine, document.createElement("div"), document.createElement("div"));
 }
 
-/** 包装独立函数 createDirectives，自动注入测试用 binding，简化用例 */
+/** 包装 createDirectives，自动注入测试用 binding */
 function buildDirectives(
-    engine: KylinTemplateEngine,
-    infos: KylinDirectiveInfo[],
-): KylinTemplateDirectiveBase[] {
-    return createDirectives(engine, infos, makeBinding());
+    engine: AutoTemplateEngine<any>,
+    infos: AutoDirectiveInfo[],
+): AutoTemplateDirectiveBase[] {
+    return createDirectives(engine, infos, makeBinding(engine));
 }
 
 describe("createDirectives - 未注册指令", () => {
     test("未注册指令被静默跳过，不抛错", () => {
-        const result = buildDirectives(makeEngine(), [
-            { name: "unknown" },
-            { name: "high", value: "a" },
-        ]);
+        const result = buildDirectives(makeEngine(), [{ name: "unknown" }, { name: "high", value: "a" }]);
         expect(result).toHaveLength(1);
         expect(result[0]).toBeInstanceOf(HighPrioSingleton);
     });
@@ -100,7 +91,6 @@ describe("createDirectives - 非单例", () => {
 
 describe("createDirectives - 优先级排序", () => {
     test("按 priority 降序排列（大的在前）", () => {
-        // 声明顺序 low(10) -> high(100)，期望结果 high 在前
         const result = buildDirectives(makeEngine(), [{ name: "low" }, { name: "high" }]);
         expect(result[0]).toBeInstanceOf(HighPrioSingleton);
         expect(result[1]).toBeInstanceOf(LowPrioSingleton);
@@ -115,7 +105,7 @@ describe("createDirectives - 优先级排序", () => {
 
 describe("createDirectives - 实例字段注入", () => {
     test("DirectiveInfo 完整注入实例（value/attr/modifiers/options/info）", () => {
-        const info: KylinDirectiveInfo = {
+        const info: AutoDirectiveInfo = {
             name: "high",
             value: "user.name",
             attr: "title",
@@ -144,15 +134,12 @@ describe("createDirectives - 实例字段注入", () => {
 describe("createDirectives - 综合场景", () => {
     test("混合：单例去重 + 非单例多实例 + 优先级排序", () => {
         const result = buildDirectives(makeEngine(), [
-            { name: "multi", value: "m1" }, // prio 50
-            { name: "high", value: "h1" }, // prio 100, singleton
-            { name: "low", value: "l1" }, // prio 10
-            { name: "high", value: "h2" }, // 覆盖 h1
-            { name: "multi", value: "m2" }, // prio 50
+            { name: "multi", value: "m1" },
+            { name: "high", value: "h1" },
+            { name: "low", value: "l1" },
+            { name: "high", value: "h2" },
+            { name: "multi", value: "m2" },
         ]);
-        // 解析后：multi:m1, high:h2, low:l1, multi:m2
-        // 排序（priority 降序）：high(100) -> multi:m1(50) -> multi:m2(50) -> low(10)
-        // 两个 multi priority 相同，保持声明顺序 m1 在 m2 前
         expect(result.map((d) => d.value)).toEqual(["h2", "m1", "m2", "l1"]);
     });
 });

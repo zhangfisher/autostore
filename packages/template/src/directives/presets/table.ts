@@ -1,4 +1,4 @@
-import { KylinTemplateDirectiveBase } from "../base";
+import { AutoTemplateDirectiveBase } from "../base";
 
 /**
  *
@@ -13,6 +13,6 @@ import { KylinTemplateDirectiveBase } from "../base";
  * </table>
  *
  */
-export class TableDirective extends KylinTemplateDirectiveBase {
+export class TableDirective extends AutoTemplateDirectiveBase {
     render() {}
 }

@@ -1,7 +1,7 @@
-import type { KylinTemplateScope } from "../../scope";
-import type { KylinTemplateEngine } from "../../engine";
-import type { KylinTemplateDirectiveBase } from "../base";
-import type { KylinDirectiveInfo } from "../types";
+import type { AutoTemplateScope } from "../../scope";
+import type { AutoTemplateEngine } from "../../engine";
+import type { AutoTemplateDirectiveBase } from "../base";
+import type { AutoDirectiveInfo } from "../types";
 
 /**
  * 将读取的指令信息转换为指令实例对象
@@ -25,16 +25,22 @@ import type { KylinDirectiveInfo } from "../types";
  * @returns 按优先级排序后的指令实例列表
  */
 export function createDirectives(
-    engine: KylinTemplateEngine,
-    directives: KylinDirectiveInfo[],
-    scope: KylinTemplateScope,
-): KylinTemplateDirectiveBase[] {
+    engine: AutoTemplateEngine,
+    directives: AutoDirectiveInfo[],
+    scope: AutoTemplateScope,
+): AutoTemplateDirectiveBase[] {
+    // x-for 元素上的 :key 是 x-for 的项标识元数据，不应作为 bind:key 指令处理
+    // （否则会在容器上误绑 DOM key 属性）。仅在含 x-for 时剔除 bind:key。
+    const hasFor = directives.some((d) => d.name === "for");
+    const effective = hasFor
+        ? directives.filter((d) => !(d.name === "bind" && d.attr === "key"))
+        : directives;
     // 解析每个指令对应的类，并处理同名单例去重（取最后声明的）
-    const resolved: Array<{ info: KylinDirectiveInfo; cls: typeof KylinTemplateDirectiveBase }> =
+    const resolved: Array<{ info: AutoDirectiveInfo; cls: typeof AutoTemplateDirectiveBase }> =
         [];
     // 单例指令 name -> resolved 中的索引，用于覆盖为最后声明
     const singletonPos = new Map<string, number>();
-    for (const info of directives) {
+    for (const info of effective) {
         const cls = engine.directives.get(info.name);
         if (!cls) continue; // 未注册指令静默跳过
 

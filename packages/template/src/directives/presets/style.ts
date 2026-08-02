@@ -1,4 +1,4 @@
-import { KylinTemplateDirectiveBase } from "../base";
+import { AutoTemplateDirectiveBase } from "../base";
 
 /**
  * 元素类名
@@ -6,6 +6,6 @@ import { KylinTemplateDirectiveBase } from "../base";
  * <div x-style="a b {var} {表达式}"></div>
  *
  */
-export class StyleDirective extends KylinTemplateDirectiveBase {
+export class StyleDirective extends AutoTemplateDirectiveBase {
     render() {}
 }

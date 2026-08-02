@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { getDirectives } from "../directives/utils/getDirectives";
-import type { KylinDirectiveInfo } from "../directives/types";
+import type { AutoDirectiveInfo } from "../directives/types";
 import "./setup";
 /**
  * 构造一个带指定属性的 div 元素。
@@ -17,7 +17,7 @@ function elWith(attrs: Record<string, string>): HTMLElement {
 }
 
 /** 解析单个元素的全部指令，便于只关心唯一结果的用例 */
-function parseOne(attrs: Record<string, string>, prefix?: string): KylinDirectiveInfo {
+function parseOne(attrs: Record<string, string>, prefix?: string): AutoDirectiveInfo {
     const list = getDirectives(elWith(attrs), prefix);
     expect(list).toHaveLength(1);
     return list[0]!;
@@ -62,6 +62,23 @@ describe("findDirectives - 普通长前缀指令", () => {
             name: "event",
             attr: "click",
             value: "xxx",
+        });
+    });
+});
+
+describe("findDirectives - x-show 别名归一化（≡ x-if.keep）", () => {
+    test('x-show="a" 归一为 x-if + keep 修饰符', () => {
+        expect(parseOne({ "x-show": "a" })).toEqual({
+            name: "if",
+            value: "a",
+            modifiers: ["keep"],
+        });
+    });
+
+    test("x-show 无值时仍归一为 if + keep（不输出 value）", () => {
+        expect(parseOne({ "x-show": "" })).toEqual({
+            name: "if",
+            modifiers: ["keep"],
         });
     });
 });

@@ -1,5 +1,5 @@
 import { toJson } from "really-relaxed-json";
-import type { KylinDirectiveInfo } from "../types";
+import type { AutoDirectiveInfo } from "../types";
 
 /** 事件绑定快捷前缀 */
 const EVENT_PREFIX = "@";
@@ -11,6 +11,10 @@ const OPTIONS_SUFFIX = "-options";
 const EVENT_DIRECTIVE_NAME = "event";
 /** 属性绑定指令名称 */
 const BIND_DIRECTIVE_NAME = "bind";
+/** x-show 别名指向的指令名（x-show ≡ x-if.keep） */
+const SHOW_ALIAS_NAME = "show";
+/** x-show 归一化的目标指令名 */
+const IF_DIRECTIVE_NAME = "if";
 
 /**
  * 拆分名称主体与修饰符
@@ -58,9 +62,9 @@ function parseOptions(rawValue: string): Record<string, any> {
  * parsePrefixedDirective("bind:title", "xxx")     // { name:"bind", attr:"title", value:"xxx" }
  * parsePrefixedDirective("if.once.y", "xxx")      // { name:"if", value:"xxx", modifiers:["once","y"] }
  */
-function parsePrefixedDirective(rest: string, rawValue: string): KylinDirectiveInfo {
+function parsePrefixedDirective(rest: string, rawValue: string): AutoDirectiveInfo {
     const { head, modifiers } = splitHeadAndModifiers(rest);
-    const info: KylinDirectiveInfo = { name: head };
+    const info: AutoDirectiveInfo = { name: head };
 
     // head 可能形如 "name:attr"
     const colonIndex = head.indexOf(":");
@@ -107,9 +111,9 @@ function parsePrefixedDirective(rest: string, rawValue: string): KylinDirectiveI
  *
  * @param el
  */
-export function getDirectives(el: HTMLElement, prefix = "x-"): KylinDirectiveInfo[] {
+export function getDirectives(el: HTMLElement, prefix = "x-"): AutoDirectiveInfo[] {
     if (!(el instanceof HTMLElement)) return [];
-    const results: KylinDirectiveInfo[] = [];
+    const results: AutoDirectiveInfo[] = [];
     // 暂存 options 补充参数，待主指令收集完毕后合并
     const pendingOptions: Array<{ name: string; value: Record<string, any> }> = [];
 
@@ -123,7 +127,7 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): KylinDirectiveInf
         // 1. @ 事件快捷前缀：@click / @click.debounce -> { name:"event", attr:"click"[, modifiers] }
         if (rawName.startsWith(EVENT_PREFIX)) {
             const { head, modifiers } = splitHeadAndModifiers(rawName.slice(EVENT_PREFIX.length));
-            const info: KylinDirectiveInfo = { name: EVENT_DIRECTIVE_NAME, attr: head };
+            const info: AutoDirectiveInfo = { name: EVENT_DIRECTIVE_NAME, attr: head };
             if (rawValue !== "") info.value = rawValue;
             if (modifiers.length > 0) info.modifiers = modifiers;
             results.push(info);
@@ -133,7 +137,7 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): KylinDirectiveInf
         // 2. : 属性绑定快捷前缀：:title / :title.mod -> { name:"bind", attr:"title"[, modifiers] }
         if (rawName.startsWith(BIND_PREFIX)) {
             const { head, modifiers } = splitHeadAndModifiers(rawName.slice(BIND_PREFIX.length));
-            const info: KylinDirectiveInfo = { name: BIND_DIRECTIVE_NAME, attr: head };
+            const info: AutoDirectiveInfo = { name: BIND_DIRECTIVE_NAME, attr: head };
             if (rawValue !== "") info.value = rawValue;
             if (modifiers.length > 0) info.modifiers = modifiers;
             results.push(info);
@@ -146,15 +150,23 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): KylinDirectiveInf
 
             // 3a. -options 后缀：x-if-options="..." 视为对同名指令的额外选项补充
             if (rest.endsWith(OPTIONS_SUFFIX)) {
+                // x-show-options 同样归一为对 x-if 的选项补充
                 const directiveName = rest.slice(0, rest.length - OPTIONS_SUFFIX.length);
-                if (directiveName.length > 0) {
-                    pendingOptions.push({ name: directiveName, value: parseOptions(rawValue) });
+                const normalizedName = directiveName === SHOW_ALIAS_NAME ? IF_DIRECTIVE_NAME : directiveName;
+                if (normalizedName.length > 0) {
+                    pendingOptions.push({ name: normalizedName, value: parseOptions(rawValue) });
                 }
                 continue;
             }
 
             // 3b. 普通长前缀指令：rest 形如 name | name:attr | name.mod | name:attr.mod
-            results.push(parsePrefixedDirective(rest, rawValue));
+            const info = parsePrefixedDirective(rest, rawValue);
+            // x-show 作为 x-if.keep 的快捷方式归一化（解析期别名，零运行时实体）
+            if (info.name === SHOW_ALIAS_NAME) {
+                info.name = IF_DIRECTIVE_NAME;
+                info.modifiers = ["keep", ...(info.modifiers ?? [])];
+            }
+            results.push(info);
             continue;
         }
 
@@ -163,7 +175,7 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): KylinDirectiveInf
 
     // 4. 将 options 合并到已解析的同名指令；同名取最后一个（与"后声明生效"一致）
     for (const opt of pendingOptions) {
-        let target: KylinDirectiveInfo | undefined;
+        let target: AutoDirectiveInfo | undefined;
         for (const info of results) {
             if (info.name === opt.name) target = info;
         }
