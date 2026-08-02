@@ -42,6 +42,9 @@ export class AutoTemplateScope {
     directives: AutoTemplateDirectiveBase[] = [];
     /** 本作用域持有的 watcher（destroy 时统一 off） */
     watchers: Watcher[] = [];
+    /** 本作用域 watch 注册的 update 闭包（refresh 时同步重跑，destroy 时清空）。
+     *  用途见 refresh()：x-for 复用项 localScope 原地更新后，驱动项内绑定重新求值并 patch。 */
+    private _updates: Array<() => void> = [];
     /** 子作用域集合（x-if 子树、x-for 各项），destroy 时递归清理 */
     children = new Set<AutoTemplateScope>();
     parent: AutoTemplateScope | null = null;
@@ -149,6 +152,7 @@ export class AutoTemplateScope {
         const store = this.engine.store;
         const read = () => getVal(store.state, path);
         const update = () => listener({ value: read() });
+        this._updates.push(update);
         this.watchers.push(store.watch(path, () => this.engine.scheduler.schedule(update)));
         return read();
     }
@@ -171,8 +175,34 @@ export class AutoTemplateScope {
         ) => any;
         const deps = store.collectDependencies(() => getter(scope), "read");
         const update = () => listener({ value: getter(scope) });
+        this._updates.push(update);
         this.watchers.push(store.watch(deps, () => this.engine.scheduler.schedule(update)));
         return getter(scope);
+    }
+
+    /**
+     * 同步重跑本作用域注册的全部 update 闭包，并递归刷新所有子作用域。
+     *
+     * 用途：x-for 复用项时，项内 localScope 字段（item / $index / $end 等）已原地更新，
+     * 需让项内全部绑定（含 `$end` 这类订阅为空、store 不会自动触发的 watcher）重新求值并 patch DOM。
+     *
+     * 同步直跑、不进 scheduler：render 自身已在 scheduler flush 内执行，update 闭包内的 listener
+     * 直接 patch DOM，避免双重调度；同步也保证 render 返回时 DOM 已是最新。
+     *
+     * 递归 children 覆盖项内嵌套 x-for（触发其 render）、eager x-if 子树、x-text 等所有子绑定。
+     * 已 destroy 的子作用域已从 children 移除，自然跳过。
+     */
+    refresh(): void {
+        for (const update of this._updates) {
+            try {
+                update();
+            } catch (e: any) {
+                this.engine.logger.error(e);
+            }
+        }
+        for (const child of this.children) {
+            child.refresh();
+        }
     }
 
     /**
@@ -223,11 +253,15 @@ export class AutoTemplateScope {
     }
 
     /**
-     * 销毁：先递归销毁子作用域（子树 watcher 批量 off），再 off 自身 watcher，
-     * 最后触发各指令的 destroy 钩子。
+     * 销毁：先从父级脱离，再递归销毁子作用域（子树 watcher 批量 off），
+     * 然后 off 自身 watcher，最后触发各指令的 destroy 钩子。
      */
     destroy() {
         try {
+            // 从父级 children 移除自身：否则 x-for 全量重建 / x-if 子树切换时，旧项 scope 虽
+            // 已 destroy（watcher 已 off），却仍残留在父 children Set 中 → 僵尸 scope 永久驻留（内存泄漏）。
+            // Set 迭代中删除「当前元素」安全（既不跳过后续、也不重复访问）。
+            this.parent?.children.delete(this);
             for (const child of this.children) {
                 child.destroy();
             }
@@ -236,6 +270,7 @@ export class AutoTemplateScope {
                 watcher.off();
             }
             this.watchers.length = 0;
+            this._updates.length = 0;
             for (const d of this.directives) {
                 if (typeof d.destroy === "function") d.destroy(this.el!);
             }

@@ -2,6 +2,20 @@ import { AutoTemplateDirectiveBase } from "../base";
 import type { AutoDirectiveInfo } from "../types";
 import type { AutoTemplateScope } from "../../scope";
 
+/** x-for 单个列表项的运行时实体（v2 key-based 复用） */
+type ForItemEntry = {
+    /** 项数据对象（复用时若引用变，原地更新 localScope 后 refresh） */
+    item: any;
+    /** 项在当前列表中的位置序号（index 变 → 项内订阅路径含旧 index 失效 → 重建） */
+    index: number;
+    /** 该项各成员的 scope（复合项 >1，与 nodes 同序） */
+    scopes: AutoTemplateScope[];
+    /** 该项各成员的渲染节点（与 scopes 同构、同序） */
+    nodes: HTMLElement[];
+    /** 该项共享的局部作用域（复用时 Object.assign 原地更新，禁止替换引用） */
+    localScope: Record<string, any>;
+};
+
 /**
  * x-for：列表渲染（B 容器语义，直写普通元素）。
  *
@@ -23,9 +37,15 @@ import type { AutoTemplateScope } from "../../scope";
  * x-for 作为结构指令声明占有子树（compiler 对其返回 ownsChildren 信号），让通用 walk 跳过其子节点，
  * 由 x-for 在 `compileChild` 中逐项编译——避免"项模板被编译一次 + x-for 又克隆渲染"的重复冲突。
  *
- * v1 策略：监听 items（支持纯路径 `items` 或表达式 `items.filter(...)`），items 变化时**全量重建**——销毁旧项 scope、移除旧项 DOM、
- * 对新 items 每项克隆**全部**成员模板并 `compileChild` 编译插入。`:key` 提供时用于重复 key 检测；
- * 节点级复用/移动（保留 DOM 与输入焦点）留待 v2。
+ * **渲染策略（v2 key-based 复用）**：监听 items（支持纯路径 `items` 或表达式 `items.filter(...)`），
+ * 结构变化时按 `:key` 做 4-pass diff，**复用未变项**（保留 DOM/scope/订阅 → 焦点/输入态不丢），仅增删/重建差异项：
+ * - 同 key + index 不变 → 复用：原地 `Object.assign(localScope)` 更新 item + 全部 `$*`，再 `scope.refresh()` 重跑项内绑定。
+ *   （项内订阅路径含 index、index 不变则订阅仍有效；引用变的内容差异由 refresh patch。）
+ * - 同 key + index 变（移动）→ 重建：旧订阅路径含旧 index 已失效，销毁旧 scope 重新 `compileChild`。
+ * - 新 key → 新建；消失 key → 销毁。
+ * - DOM 重排：从后向前、组内正序 `insertBefore`（复合项整组连续、成员序正确）。
+ * push/pop 等末尾增删不改其他项 index → 旧项零成本复用；unshift/中间 splice 致后续项 index 变 → 那些项重建。
+ * `:key` 缺省时用 index；`:key` 提供时还用于重复 key 检测。
  *
  * 项内局部变量（item/index）经 `compileChild` 的 localScope 注入；同一项的多个成员**共享同一 localScope 引用**，
  * 各成员表达式 `item.name` 经各自 `scope.getScopeContext()` 解析（localScope 优先、parent 链回退到根 state）。
@@ -37,7 +57,7 @@ import type { AutoTemplateScope } from "../../scope";
  *
  * 注意：
  * - **嵌套遮蔽**——内层 `$index` 等命中自身 localScope、遮蔽外层同名变量；跨层引用外层序号请用自定义 index 名（如 `cell, cidx of ...` 后用 `cidx`）。
- * - **依赖全量重建**——`$end/$begin/$length` 随 items 增删而变，v1 每次 render 重算保证正确；v2 若引入节点复用/diff，需把派生变量纳入重求值。
+ * - **派生变量靠 refresh 重算**——`$end/$begin/$length` 随 items 增删而变，且这些 `$*` 是 localScope 普通字段、非响应式（store 不会自动触发订阅为空的 watcher）。v2 对复用项原地重算全部 `$*` 并经 `scope.refresh()` 重跑项内绑定 patch，保证派生变量始终正确。
  * - **x-if 默认 eager（销毁子树）**——`<div x-if="$end">` 为假时移除其子树并销毁 watcher；叶子元素（hr/线，无子树）退化为 `display:none`。
  *   若需"假时仅隐藏、保留子树 watcher"（如隐藏期间继续累积最新值），用 `x-if.keep` / `x-show`。
  */
@@ -55,10 +75,9 @@ export class ForDirective extends AutoTemplateDirectiveBase {
     private keyExpr: string | null = null;
     /** 复合项模板：容器下全部元素子节点（单子节点时长度为 1） */
     private itemTemplates: HTMLElement[] = [];
-    /** 每项每成员的 scope（外层=项、内层=该项的各成员），destroy 时按组递归清理 */
-    private itemScopes: AutoTemplateScope[][] = [];
-    /** 每项每成员的渲染节点，与 itemScopes 同构，用于精确移除 */
-    private itemNodes: HTMLElement[][] = [];
+    /** 列表项运行时实体索引：key → ForItemEntry。
+     *  v2 按 key 复用/增删/重建；无 :key 时 key=index（evalKey 回退）。 */
+    private itemMap = new Map<unknown, ForItemEntry>();
 
     override created() {
         this.parse();
@@ -109,48 +128,124 @@ export class ForDirective extends AutoTemplateDirectiveBase {
         return Array.isArray(items) ? items : [];
     }
 
+    /**
+     * v2 key-based 渲染：4-pass diff（复用未变项、仅增删/重建差异项）。
+     *
+     * Pass 1 决策：同 key + index 不变 → 复用（原地更新 localScope）；同 key + index 变 → 重建
+     *   （旧订阅路径含旧 index 已失效）；新 key → 新建。
+     * Pass 2 清理：新列表中消失的旧 key → 销毁。
+     * Pass 3 重排：从后向前、组内正序 insertBefore，保证项序与复合项成员序都正确。
+     * Pass 4 刷新：仅复用项 refresh（recreate/create 已在 compileChild 首次渲染）。
+     */
     private render() {
         const container = this.el;
-        const tpls = this.itemTemplates;
-        if (!container || tpls.length === 0) return;
-        // 1. 销毁旧项 scope + 移除旧项 DOM（按项分组，逐成员清理）
-        this.clearItems();
-        // 2. 对新 items 每项编译全部成员模板，按原顺序 append 到容器
+        if (!container || this.itemTemplates.length === 0) return;
         const items = this.readItems();
-        const seen = new Set<unknown>();
         const length = items.length;
-        items.forEach((item, index) => {
-            // 同一项的所有成员共享同一 localScope 引用（item/index/$* 相同）
-            const localScope: Record<string, any> = {
-                [this.itemName]: item,
-                [this.indexName]: index,
-                // 循环派生变量（$ 前缀固定可用，不占用户自定义命名空间）
-                $index: index,
-                $length: length,
-                $begin: index === 0,
-                $end: index === length - 1,
-                // 对齐 CSS :nth-child —— 第 1,3,5 行（$index 为偶数）为 $odd
-                $odd: index % 2 === 0,
-                $even: index % 2 === 1,
-            };
-            const scopeGroup: AutoTemplateScope[] = [];
-            const nodeGroup: HTMLElement[] = [];
-            for (const tpl of tpls) {
-                const { el, scope } = this.engine.compiler.compileChild(tpl, this.binding, localScope);
-                scopeGroup.push(scope);
-                nodeGroup.push(el);
-                container.appendChild(el);
+        const seen = new Set<unknown>();
+        // 本轮渲染的有序 entry 列表（含复用/重建/新建），供 Pass 3 重排
+        const ordered: ForItemEntry[] = [];
+        // 复用项集合，供 Pass 4 refresh
+        const reuseEntries: ForItemEntry[] = [];
+
+        // === Pass 1：对新 items 逐项决策 reuse / recreate / create ===
+        for (let index = 0; index < items.length; index++) {
+            const item = items[index];
+            const key = this.evalKey(item, index);
+            if (this.keyExpr && seen.has(key)) {
+                this.engine.logger.error(`x-for: duplicate key "${String(key)}"`);
             }
-            this.itemScopes.push(scopeGroup);
-            this.itemNodes.push(nodeGroup);
-            if (this.keyExpr) {
-                const key = this.evalKey(item, index);
-                if (seen.has(key)) {
-                    this.engine.logger.error(`x-for: duplicate key "${String(key)}"`);
+            seen.add(key);
+            const old = this.itemMap.get(key);
+            let entry: ForItemEntry;
+            if (old && old.index === index) {
+                // (A) 同 key + index 不变 → 复用 DOM/scope/订阅：原地更新 localScope（item + 全部 $*）。
+                //    订阅路径含 index、index 不变则订阅仍有效；引用变的内容差异由 Pass 4 refresh patch。
+                //    铁律：Object.assign 原地改，禁止换 localScope 对象（_scopeView Proxy 闭包绑定引用）。
+                entry = old;
+                entry.item = item;
+                Object.assign(entry.localScope, this.buildLocalScope(item, index, length));
+                reuseEntries.push(entry);
+            } else {
+                if (old) {
+                    // (B) 同 key + index 变（移动）→ 旧订阅路径含旧 index 已失效，销毁重建
+                    this.destroyItem(key);
                 }
-                seen.add(key);
+                // (C) 新 key / 重建 → compileChild 新建 scope+订阅+DOM（首次渲染取最新值）
+                entry = this.createItem(item, index, length);
+                this.itemMap.set(key, entry);
             }
-        });
+            ordered.push(entry);
+        }
+
+        // === Pass 2：消失的旧 key → 销毁 ===
+        for (const key of this.itemMap.keys()) {
+            if (!seen.has(key)) {
+                this.destroyItem(key);
+            }
+        }
+
+        // === Pass 3：DOM 重排（从后向前、组内正序 insertBefore）===
+        // insertBefore(node, anchor) 把 node 放到 anchor 之前；anchor=null 表示插到末尾。
+        // 从后向前：末项先落位（anchor=null 到尾部），anchor 推进到本组首节点，
+        // 前一项整组插到它之前。组内正序插入保证复合项成员文档顺序（0..n-1 自上而下）。
+        let anchor: Node | null = null;
+        for (let j = ordered.length - 1; j >= 0; j--) {
+            const nodes = ordered[j].nodes;
+            for (let k = 0; k < nodes.length; k++) {
+                container.insertBefore(nodes[k], anchor);
+            }
+            anchor = nodes[0];
+        }
+
+        // === Pass 4：复用项 refresh（localScope 已原地更新，驱动项内绑定重求值 patch）===
+        // 仅 reuse 项需要：recreate/create 已在 createItem/compileChild 首次渲染。
+        // refresh 重算 $length/$end/$begin 等依赖全局长度的派生变量 + 引用变化项的内容。
+        for (const entry of reuseEntries) {
+            for (const scope of entry.scopes) scope.refresh();
+        }
+    }
+
+    /** 构造项的 localScope（item/index + 全部循环派生变量 $*）。
+     *  v2 复用时通过 Object.assign 原地写回同一对象——禁止替换引用，因 watchExpression 的
+     *  _scopeView Proxy 闭包绑定了 localScope 对象引用，换对象会使 refresh 取不到新值。 */
+    private buildLocalScope(item: any, index: number, length: number): Record<string, any> {
+        return {
+            [this.itemName]: item,
+            [this.indexName]: index,
+            // 循环派生变量（$ 前缀固定可用，不占用户自定义命名空间）
+            $index: index,
+            $length: length,
+            $begin: index === 0,
+            $end: index === length - 1,
+            // 对齐 CSS :nth-child —— 第 1,3,5 行（$index 为偶数）为 $odd
+            $odd: index % 2 === 0,
+            $even: index % 2 === 1,
+        };
+    }
+
+    /** 新建单个列表项：编译全部成员模板，返回 entry。
+     *  不插入 DOM、不登记 itemMap、不做重复 key 检测（均由 render 负责）。 */
+    private createItem(item: any, index: number, length: number): ForItemEntry {
+        const localScope = this.buildLocalScope(item, index, length);
+        const scopes: AutoTemplateScope[] = [];
+        const nodes: HTMLElement[] = [];
+        for (const tpl of this.itemTemplates) {
+            const { el, scope } = this.engine.compiler.compileChild(tpl, this.binding, localScope);
+            scopes.push(scope);
+            nodes.push(el);
+        }
+        return { item, index, scopes, nodes, localScope };
+    }
+
+    /** 销毁单个列表项：destroy 全部成员 scope（递归清理子树 watcher + 自移除父级 children）+
+     *  remove 全部成员节点 + 从 itemMap 移除。 */
+    private destroyItem(key: unknown): void {
+        const entry = this.itemMap.get(key);
+        if (!entry) return;
+        for (const s of entry.scopes) s.destroy();
+        for (const n of entry.nodes) n.remove();
+        this.itemMap.delete(key);
     }
 
     /**
@@ -158,14 +253,10 @@ export class ForDirective extends AutoTemplateDirectiveBase {
      * render 全量重建前与 destroy 时共用（DRY）：按项分组逐成员清理，保证复合项的每个成员 scope/watcher 都被释放。
      */
     private clearItems() {
-        for (const group of this.itemScopes) {
-            for (const s of group) s.destroy();
+        for (const key of this.itemMap.keys()) {
+            this.destroyItem(key);
         }
-        this.itemScopes = [];
-        for (const group of this.itemNodes) {
-            for (const n of group) n.remove();
-        }
-        this.itemNodes = [];
+        this.itemMap.clear();
     }
 
     /** 求值 :key（如 item.id）。形参用项变量名，使嵌套场景自定义变量名（cell/row 等）的 :key 也能正确解析 */

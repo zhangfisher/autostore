@@ -875,3 +875,81 @@ describe("x-for 循环变量注入（$index/$length/$begin/$end/$odd/$even）", 
 </div>`);
     });
 });
+
+/** 从 engine.scopes 反查元素对应的 scope（结构指令泄漏回归测试用） */
+function scopeOf(engine: any, el: Element): any {
+    for (const [ref, scope] of engine.scopes) {
+        if (ref.deref() === el) return scope;
+    }
+    return undefined;
+}
+
+describe("x-for 结构变化无 children 泄漏（destroy 自移除父级）", () => {
+    test("push/pop/整体替换/多次累积：binding.children.size 恒等于存活项数", async () => {
+        const { root, store, engine } = mount(
+            `<ul x-for="item of items" :key="item.id"><li x-text="item.name"></li></ul>`,
+            { items: [{ id: 1, name: "a" }, { id: 2, name: "b" }] },
+        );
+        const ul = root.querySelector("ul")!;
+        const binding = scopeOf(engine, ul);
+        expect(binding).toBeDefined();
+        expect(binding.children.size).toBe(2);
+
+        // push：2→3，旧 2 项重建后其 scope 必须从父级 children 移除（修复前 size 会涨到 5）
+        store.state.items.push({ id: 3, name: "c" });
+        await nextTick();
+        expect(root.querySelectorAll("li").length).toBe(3);
+        expect(binding.children.size).toBe(3);
+
+        // pop：3→2
+        store.state.items.pop();
+        await nextTick();
+        expect(binding.children.size).toBe(2);
+
+        // 整体替换：旧项 scope 全清，新 3 项加入
+        store.state.items = [
+            { id: 4, name: "x" },
+            { id: 5, name: "y" },
+            { id: 6, name: "z" },
+        ];
+        await nextTick();
+        expect(binding.children.size).toBe(3);
+
+        // 多次 push 累积：size 必须始终 = 当前项数（修复前会线性增长 3→7→11→…）
+        for (let i = 0; i < 5; i++) {
+            store.state.items.push({ id: 100 + i, name: `n${i}` });
+            await nextTick();
+        }
+        expect(root.querySelectorAll("li").length).toBe(8);
+        expect(binding.children.size).toBe(8);
+    });
+
+    test("复合项（多项模板）：结构变化后各成员 scope 同步从父级脱离，无残留", async () => {
+        // 复合项 dt+dd：每个成员各自经 compileChild 建独立 scope 并 addChild 到容器 binding.children，
+        // 故 binding.children.size = 项数 × 成员模板数（此处 ×2）。
+        // 结构变化重建时，旧项的全部成员 scope 都应从父级脱离（修复前会按"项数×成员数"线性堆积）。
+        const { root, store, engine } = mount(
+            `<dl x-for="item of items"><dt x-text="item.k"></dt><dd x-text="item.v"></dd></dl>`,
+            { items: [{ k: "a", v: "1" }, { k: "b", v: "2" }] },
+        );
+        const dl = root.querySelector("dl")!;
+        const binding = scopeOf(engine, dl);
+        expect(binding).toBeDefined();
+        // 2 项 × 2 成员（dt+dd）= 4
+        expect(binding.children.size).toBe(4);
+
+        store.state.items.push({ k: "c", v: "3" });
+        await nextTick();
+        expect(root.querySelectorAll("dt").length).toBe(3);
+        // 3 项 × 2 成员 = 6
+        expect(binding.children.size).toBe(6);
+
+        // 反复整体替换为单项：成员 scope 不堆积，恒为 1×2=2
+        for (let i = 0; i < 4; i++) {
+            store.state.items = [{ k: `k${i}`, v: `${i}` }];
+            await nextTick();
+        }
+        expect(root.querySelectorAll("dt").length).toBe(1);
+        expect(binding.children.size).toBe(2);
+    });
+});
