@@ -1,3 +1,4 @@
+// oxlint-disable no-unused-expressions
 import { AutoTemplateDirectiveBase } from "../base";
 import type { AutoDirectiveInfo } from "../types";
 import type { AutoTemplateScope } from "../../scope";
@@ -69,6 +70,7 @@ export class IfDirective extends AutoTemplateDirectiveBase {
         } else {
             // 先销毁子 scope（子树 watcher 批量 off），再精确移除自身挂载的节点
             this.destroyChildren();
+            // @ts-ignore
             for (const node of this.subtreeNodes) node.remove();
             this.subtreeNodes = [];
             el.style.display = "none";

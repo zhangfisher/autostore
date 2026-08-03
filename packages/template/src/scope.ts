@@ -7,10 +7,16 @@ import { createDirectives } from "./directives/utils/createDirectives";
 
 /**
  * 简单状态路径：仅字母/数字/下划线/$ 组成的段，以点分隔。
- * 用于 watch 双轨分流——只对纯标识符路径走精准 watch，含空格/运算符/符号的
+ * 用于 watch/read 双轨分流——只对纯标识符路径走精准订阅，含空格/运算符/符号/通配符的
  * 一律走表达式支路（with 求值）。比 isStatePath（允许任意非点字符）更严格。
  */
 const SIMPLE_PATH_RE = /^[\w$]+(?:\.[\w$]+)*$/;
+
+/** 纯状态路径判定。导出供指令复用（x-for 据此判断 itemsPath 是否纯路径，
+ *  决定是否补 `items.*` 项级监听——表达式 itemsPath 已由 watchExpression 覆盖）。 */
+export function isSimpleStatePath(value: string): boolean {
+    return SIMPLE_PATH_RE.test(value);
+}
 
 export type AutoTemplateBindingOptions = {
     /** 引用模板元素（编译只读输入，保留指令属性） */
@@ -141,14 +147,23 @@ export class AutoTemplateScope {
     watch(value: string, listener: ScopeWatchListener): any {
         // 有 localScope 时（x-for 子项），变量可能来自局部作用域（如 item），
         // 不能按 state 路径直接订阅——统一走表达式支路（with 解析 localScope + state）。
-        if (!this.localScope && SIMPLE_PATH_RE.test(value)) {
+        if (!this.localScope && isSimpleStatePath(value)) {
             return this.watchPath(value, listener);
         }
         return this.watchExpression(value, listener);
     }
 
-    /** 路径支路：精准订阅单一路径 */
-    private watchPath(path: string, listener: ScopeWatchListener): any {
+    /**
+     * 路径支路：精准订阅指定路径（支持 core 通配符，如 `items.*` 单层、`items.**` 递归）。
+     *
+     * - 纯路径走 `store.watch(path)` 精准订阅，最快；
+     * - path 含通配符时，`read()` 返回值无意义（getVal 取不到通配段），调用方应忽略返回值、
+     *   仅依赖回调触发（如 x-for 监听 `items.*` 仅用于触发 render）。
+     *
+     * 公开供 x-for 等指令订阅通配路径——`scope.watch` 对含 `*` 的路径会误判为表达式走
+     * `with` 求值（`with(scope){return items.*}` 语法错），故通配须绕开表达式支路直连此处。
+     */
+    watchPath(path: string, listener: ScopeWatchListener): any {
         const store = this.engine.store;
         const read = () => getVal(store.state, path);
         const update = () => listener({ value: read() });
@@ -216,7 +231,7 @@ export class AutoTemplateScope {
      * @returns 表达式当前值；求值异常时记录日志并返回 undefined（由调用方做数组化等兜底）
      */
     read(value: string): any {
-        if (!this.localScope && SIMPLE_PATH_RE.test(value)) {
+        if (!this.localScope && isSimpleStatePath(value)) {
             return getVal(this.engine.store.state, value);
         }
         const scope = this.getScopeContext();

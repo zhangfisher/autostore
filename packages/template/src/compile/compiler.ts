@@ -130,14 +130,23 @@ export class AutoTemplateCompiler {
      * @param itemTemplate 单个项的模板元素（x-for 子模板的克隆）
      * @param parentScope  x-for 所在 scope，项 scope 挂为其子（删项时递归销毁）
      * @param localScope   注入该项的局部变量（{ item, index }）
+     * @param reuseEl      复用既有项根 DOM 节点（移动复用场景）；缺省则克隆模板。
+     *                     复用时保留项根节点身份（保住项根本身的焦点/属性），但其子树 DOM 会被
+     *                     清空重建（旧 scope 已销毁）→ 子节点焦点丢失，彻底保留需 core 对象身份订阅。
      */
     compileChild(
         itemTemplate: HTMLElement,
         parentScope: AutoTemplateScope,
         localScope: Record<string, any>,
+        reuseEl?: HTMLElement,
     ): { el: HTMLElement; scope: AutoTemplateScope } {
-        const el = itemTemplate.cloneNode(false) as HTMLElement;
-        removeDirectives(el);
+        const el = reuseEl ?? (itemTemplate.cloneNode(false) as HTMLElement);
+        if (!reuseEl) removeDirectives(el);
+        // reuseEl：旧 scope 已 destroy，其子树 DOM 残留在 el 上，须清空后重建，否则 compileSubtree
+        // 的 appendChild 会导致子节点重复。
+        if (reuseEl) {
+            while (el.firstChild) el.removeChild(el.firstChild);
+        }
         const scope = new AutoTemplateScope(this.engine, el, itemTemplate);
         scope.localScope = localScope;
         parentScope.addChild(scope);

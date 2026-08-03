@@ -3,7 +3,7 @@
  *
  * v2 复用规则（与 v1 全量重建对照）：
  * - 同 key + index 不变（如 push/pop 末尾增删）→ 复用 DOM/scope/订阅（焦点/输入态保留）。
- * - 同 key + index 变（如 unshift/中间 splice 致后续项移位）→ 重建（订阅路径含旧 index 已失效）。
+ * - 同 key + index 变（如 unshift/中间 splice 致后续项移位）→ 重订阅（P1：复用项根 DOM，仅重建子树；订阅路径含旧 index 已失效）。
  * - 同 key + index 不变 + item 引用变 → 复用 + refresh（DOM identity 保持，内容更新）。
  * - 循环变量 $length/$end/$begin 依赖全局长度：复用项经 refresh 重算（非响应式，store 不自动触发）。
  *
@@ -59,20 +59,53 @@ describe("x-for v2 key-based 节点复用", () => {
         expect(ul.children.length).toBe(2);
     });
 
-    test("unshift 加首项：旧项 index 变 → 重建（DOM 身份变化）", async () => {
-        // unshift 使旧项 index 全部 +1，订阅路径含旧 index 失效 → 按规则重建（非复用）
+    test("unshift 加首项：旧项 index 变 → 重订阅（项根 DOM 身份保持，P1）", async () => {
+        // unshift 使旧项 index 全部 +1，订阅路径含旧 index 失效 → P1 重订阅（复用项根 DOM，不重建）
         const { root, store } = mount(
             `<ul x-for="item of items" :key="item.id"><li x-text="item.id"></li></ul>`,
             { items: [{ id: 1 }, { id: 2 }] },
         );
         const ul = root.querySelector("ul")!;
-        const oldLi0 = ul.children[0];
+        const oldLi0 = ul.children[0]!; // id=1
         store.state.items.unshift({ id: 0 });
         await nextTick();
         expect(ul.children.length).toBe(3);
-        // id=1 的项现在位于 index 1（原 0），DOM 被重建（身份变化）
+        // id=1 的项现在位于 index 1（原 0），P1 重订阅复用项根 DOM → 身份保持
         const liId1 = Array.from(ul.children).find((li) => li.textContent === "1")!;
-        expect(liId1).not.toBe(oldLi0);
+        expect(liId1).toBe(oldLi0);
+    });
+
+    test("P0: items[i]={同id新对象} 整体替换单项 → 项内容更新（旧版静默失效已修复）", async () => {
+        // 旧版 BUG：core 对单项替换发 items.{i}(type=update)，watch("items") 收不到 → DOM 静默不更新。
+        // P0：纯路径 itemsPath 时补 items.* 监听，命中项级 update 触发 render，走复用 + refresh patch。
+        const { root, store } = mount(
+            `<ul x-for="item of items" :key="item.id"><li x-text="item.name"></li></ul>`,
+            { items: [{ id: 1, name: "a" }, { id: 2, name: "b" }] },
+        );
+        const ul = root.querySelector("ul")!;
+        const li0 = ul.children[0]!;
+        // 整体替换第一项为新对象（同 id、新 name）——旧版此处 DOM 仍为 "a"
+        store.state.items[0] = { id: 1, name: "REPLACED" };
+        await nextTick();
+        expect(li0.textContent).toBe("REPLACED");
+        // 同 id + index 不变 → 复用项根 DOM（refresh patch，不重建）
+        expect(ul.children[0]).toBe(li0);
+        // 第二项不受影响
+        expect(ul.children[1]!.textContent).toBe("b");
+    });
+
+    test("P0: items[i]={不同id} 整体替换 → 旧 key 销毁、新 key 新建", async () => {
+        const { root, store } = mount(
+            `<ul x-for="item of items" :key="item.id"><li x-text="item.id"></li></ul>`,
+            { items: [{ id: 1 }, { id: 2 }] },
+        );
+        const ul = root.querySelector("ul")!;
+        // 整体替换第一项为不同 id（新 key）——P0 项级监听触发 render，走新建分支
+        store.state.items[0] = { id: 99 };
+        await nextTick();
+        expect(ul.children[0]!.textContent).toBe("99");
+        expect(ul.children[1]!.textContent).toBe("2");
+        expect(ul.children.length).toBe(2);
     });
 
     test("中间 splice 插入：后续项 index 变 → 重建，新项就位", async () => {
@@ -294,5 +327,105 @@ describe("x-for v2 key-based 节点复用", () => {
         await nextTick();
         expect(ul.children.length).toBe(3);
         expect(Array.from(ul.children).map((li) => li.textContent)).toEqual(["0", "5", "6"]);
+    });
+
+    test("P1 边界：移动复用项根 DOM，但项内子节点重建（子节点焦点不保留）", async () => {
+        // P1 契约：rebindItem 复用项根 li，但 compileChild(reuseEl) 清空子树重建 → input 是新节点。
+        // 子节点焦点彻底保留需 core 对象身份订阅（v3 路线）；此处固化当前契约防回归。
+        const { root, store } = mount(
+            `<ul x-for="item of items" :key="item.id"><li><input value="x"></li></ul>`,
+            { items: [{ id: 1 }, { id: 2 }] },
+        );
+        const ul = root.querySelector("ul")!;
+        const oldLi0 = ul.children[0]!; // id=1 项根
+        const oldInput = oldLi0.querySelector("input")!;
+        store.state.items.unshift({ id: 0 });
+        await nextTick();
+        // id=1 移到 index 1：项根 li 复用（P1 重订阅）
+        expect(ul.children[1]).toBe(oldLi0);
+        // 项内子节点 input 被 compileChild(reuseEl) 清空重建 → 身份变化（子节点焦点不保留）
+        expect(oldLi0.querySelector("input")).not.toBe(oldInput);
+        // 最终结构：3 项各有 input（与身份断言互补——结构等价，但 input 节点已换）
+        expect(root).toEqualHTML(`<div>
+  <ul>
+    <li>
+      <input value="x">
+    </li>
+    <li>
+      <input value="x">
+    </li>
+    <li>
+      <input value="x">
+    </li>
+  </ul>
+</div>`);
+    });
+
+    test("P1 复合项移动：组内各成员项根 DOM 均复用（dt/dd 各自保持）", async () => {
+        const { root, store } = mount(
+            `<dl x-for="item of items" :key="item.id"><dt x-text="item.k"></dt><dd x-text="item.v"></dd></dl>`,
+            { items: [{ id: 1, k: "a", v: "1" }, { id: 2, k: "b", v: "2" }] },
+        );
+        const dl = root.querySelector("dl")!;
+        const dt0 = dl.children[0]!; // id=1 的 dt
+        const dd0 = dl.children[1]!; // id=1 的 dd
+        store.state.items.unshift({ id: 0, k: "z", v: "0" });
+        await nextTick();
+        // id=1 组移到 index 1（原 0）：rebindItem 按成员配对复用 old.nodes[0]=dt、[1]=dd
+        expect(dl.children[2]).toBe(dt0); // 项根 dt 复用
+        expect(dl.children[3]).toBe(dd0); // 项根 dd 复用
+        expect(dl.children[0]!.textContent).toBe("z"); // 新首组
+        // 最终结构：3 组 dt/dd，移动后顺序正确（z/a/b）
+        expect(root).toEqualHTML(`<div>
+  <dl>
+    <dt>z</dt>
+    <dd>0</dd>
+    <dt>a</dt>
+    <dd>1</dd>
+    <dt>b</dt>
+    <dd>2</dd>
+  </dl>
+</div>`);
+    });
+
+    test("P0 不误伤字段级：items[i].field= 走字段级精准 patch，DOM 不重建", async () => {
+        // P0 补了 items.* 监听（仅命中项级 items.{i} update）；字段级 items.{i}.field 仍由项内
+        // watcher 精准 patch（不进 render）→ DOM 身份保持。验证 P0 未让字段级退化为粗粒度。
+        const { root, store } = mount(
+            `<ul x-for="item of items" :key="item.id"><li x-text="item.name"></li></ul>`,
+            { items: [{ id: 1, name: "a" }, { id: 2, name: "b" }] },
+        );
+        const ul = root.querySelector("ul")!;
+        const li0 = ul.children[0]!;
+        const li1 = ul.children[1]!;
+        store.state.items[0].name = "A2"; // 原位改字段，不换对象
+        await nextTick();
+        expect(li0.textContent).toBe("A2"); // 值更新（项内 watcher patch）
+        expect(ul.children[0]).toBe(li0); // DOM 身份保持（未进 render）
+        expect(ul.children[1]).toBe(li1); // 兄弟项不动
+        // 最终结构：仅首项内容更新，兄弟项不动
+        expect(root).toEqualHTML(`<div>
+  <ul>
+    <li>A2</li>
+    <li>b</li>
+  </ul>
+</div>`);
+    });
+
+    test("清空列表：items=[] 全销毁、binding.children 清空（无泄漏）", async () => {
+        const { root, store, engine } = mount(
+            `<ul x-for="item of items" :key="item.id"><li x-text="item.id"></li></ul>`,
+            { items: [{ id: 1 }, { id: 2 }, { id: 3 }] },
+        );
+        const ul = root.querySelector("ul")!;
+        const binding = scopeOf(engine, ul);
+        expect(binding.children.size).toBe(3);
+        store.state.items = [];
+        await nextTick();
+        expect(ul.children.length).toBe(0);
+        expect(binding.children.size).toBe(0); // 全部 scope 销毁并从父级移除
+        expect(root).toEqualHTML(`<div>
+  <ul></ul>
+</div>`);
     });
 });
