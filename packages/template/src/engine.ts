@@ -7,6 +7,17 @@ import { createStackedContext } from "./context";
 import { UpdateScheduler } from "./scheduler";
 
 /**
+ * 框架保留键：x-data 默认模式的私有响应式数据域在 store.state 下的容器键。
+ *
+ * engine 初始化自动注入 store.state[SCOPES_KEY] = {}（不存在时）。每个 x-data scope 的
+ * 数据存于 store.state[SCOPES_KEY][scope.id]，借 store 响应式自动更新订阅者
+ * （collectDependencies 收集 `_scopes.<id>.<field>` 精准路径，实现字段级细粒度更新）。
+ *
+ * **保留键**：用户 state 树不得使用 "_scopes" 命名，否则将被 engine 覆盖/冲突。
+ */
+export const SCOPES_KEY = "_scopes";
+
+/**
  * AutoStore Template 渲染引擎核心类
  *
  * 以外部传入的 `AutoStore` 实例为响应式数据源，编译声明式模板并挂载到 DOM；
@@ -63,6 +74,8 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
         }
         this.el = el;
         this.store = store;
+        // 注入框架保留键 _scopes（x-data 私有响应式域容器）；1 engine 1 store 约定下由 engine 负责
+        this._ensureScopesState();
         this.template = el.cloneNode(true) as HTMLElement;
         this.options = Object.assign({ autostart: true, debug: false }, options) as Required<
             AutoTemplateEngineOptions
@@ -78,6 +91,20 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
 
     get logger() {
         return this.store.logger;
+    }
+
+    /**
+     * 确保 store.state[SCOPES_KEY] 存在（x-data 私有响应式域容器）。
+     *
+     * 1 engine 1 store 约定下由 engine 负责注入：不存在则建空对象（core 自动建响应式代理），
+     * 已存在（用户预设/复用）则沿用。仅赋值一次；后续 x-data scope 向其写入 [id] 条目，
+     * 永不整体替换该容器（DataDirective 同守"只 Object.assign 进 _scopes[id]、不整体替换"铁律）。
+     */
+    private _ensureScopesState() {
+        const state = this.store.state as Record<string, any>;
+        if (!Object.prototype.hasOwnProperty.call(state, SCOPES_KEY)) {
+            state[SCOPES_KEY] = {};
+        }
     }
 
     /**
@@ -117,6 +144,77 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
         this.el.replaceChildren();
         this.started = false;
         return this;
+    }
+
+    /**
+     * 运行时更新/创建数据（替代已废除的 x-data setAttribute 监听）。
+     *
+     * `data(el, data)` 合并进 el 对应 scope 的私有响应式域 `_scopes[scope.id]`：
+     * - **scope 已有 dataScope**（模板有 x-data）→ `Object.assign` 合并，路径订阅自动驱动更新
+     *   （主路径，不动 DOM、不重订阅）。
+     * - **scope 无 dataScope**（el 原无 x-data）→ 新建 dataScope + 失效本 scope 视图 + destroy 子树 +
+     *   重新编译子树（A 方案：子树 DOM 重建）。因 watcher 的 `collectDependencies` 仅 created 跑一次，
+     *   不覆盖新出现的 dataScope，只能重建让子树重新订阅。
+     *
+     * 不支持 global 模式（x-data.global 仍由模板属性驱动；运行时改全局请直接操作 `store.state`）。
+     *
+     * @param el   渲染后的元素（须为 engine 注册的 scope.el）
+     * @param data 要合并的普通对象（合并语义：只增改、不删已有键）
+     */
+    data(el: HTMLElement, data: Record<string, any>) {
+        const scope = this._findScopeByEl(el);
+        if (!scope) {
+            this.logger.warn(`engine.data: 元素未找到对应 scope，已忽略`);
+            return;
+        }
+        if (scope.dataScope) {
+            // 主路径：合并 → 路径订阅自动驱动
+            Object.assign(scope.dataScope as Record<string, any>, data);
+            return;
+        }
+        // 无 dataScope（el 原无 x-data）：新建 + 重建子树（A）
+        const scopes = (this.store.state as Record<string, any>)[SCOPES_KEY] as Record<string, any>;
+        if (!scopes[scope.id]) scopes[scope.id] = {};
+        scope.dataScope = scopes[scope.id];
+        Object.assign(scope.dataScope as Record<string, any>, data);
+        // 失效本 scope 缓存视图（含新 dataScope 层），子树重建后新子 scope 经 parent 链取到新视图
+        scope.invalidateScopeView();
+        this._recompileSubtree(scope, el);
+    }
+
+    /**
+     * 遍历 scopes 查找 `scope.el === el` 的 scope。
+     *
+     * engine.scopes 以 WeakRef 为 key，无法直接 get(el)，只能遍历 values 做 deref 比较（O(n)）。
+     * engine.data 是低频 API，O(n) 可接受。
+     */
+    private _findScopeByEl(el: HTMLElement): AutoTemplateScope | undefined {
+        for (const scope of this.scopes.values()) {
+            if (scope.el === el) return scope;
+        }
+        return undefined;
+    }
+
+    /**
+     * 重建 scope 的子树（A 方案：DOM 重建）。
+     *
+     * 销毁旧子 scope（off watcher + 递归）→ 清空 el 子 DOM → 用 `scope.template` 重新编译子节点
+     * （建新 scope + created 订阅 + compile 首渲）。用于 `engine.data` 在"dataScope 从无到有"后，
+     * 让子树 watcher 重新 `collectDependencies`（订阅新 dataScope 路径）。
+     */
+    private _recompileSubtree(scope: AutoTemplateScope, el: HTMLElement) {
+        // 1. 销毁旧子 scope（递归 off watcher；destroy 不删 DOM，下面统一清）
+        for (const child of scope.children) child.destroy();
+        scope.children.clear();
+        // 2. 清空 el 的子 DOM（旧渲染节点）
+        el.replaceChildren();
+        // 3. 用原始模板重新编译子节点挂到 el（建新 scope + created 订阅 + compile 首渲）
+        const template = scope.template;
+        if (template) {
+            this.compiler.compileSubtree(el, template);
+            // 消化编译期 schedule 的首次渲染（如嵌套 x-for）
+            this.scheduler.flushAll();
+        }
     }
 
     /**

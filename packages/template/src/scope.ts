@@ -41,6 +41,10 @@ export type ScopeWatchListener = (payload: { value: any }) => void;
  *    并在元素更新/销毁时集中清理（off watcher、递归销毁子作用域）。
  */
 export class AutoTemplateScope {
+    /** scope 自增 id 计数器：作为 store.state._scopes[id] 的索引键（x-data 私有响应式域，见 DataDirective） */
+    private static _seq = 0;
+    /** 本 scope 唯一标识；仅 x-data scope 会在 store.state._scopes[id] 创建对应条目，其余 scope 不占位 */
+    readonly id: number;
     private _template: WeakRef<HTMLElement>;
     /** 引用实际渲染的元素 */
     readonly _el: WeakRef<HTMLElement>;
@@ -56,6 +60,7 @@ export class AutoTemplateScope {
     parent: AutoTemplateScope | null = null;
 
     constructor(engine: AutoTemplateEngine, el: HTMLElement, template: HTMLElement) {
+        this.id = ++AutoTemplateScope._seq;
         this._template = new WeakRef(template);
         this._el = new WeakRef(el);
         this.engine = engine;
@@ -85,11 +90,14 @@ export class AutoTemplateScope {
      */
     localScope: Record<string, any> | null = null;
     /**
-     * x-data 注入的上下文数据（数据指令私有层）。
+     * x-data 注入的私有响应式数据域（指向 `store.state._scopes[scope.id]`）。
      *
-     * 由 `DataDirective` 在 `created()` 创建并**原地更新**（`Object.assign` / `delete`，
-     * **永不换引用**——`_scopeView` Proxy 闭包绑定该引用），与 `localScope` 同级叠加进
-     * `getScopeContext`。非响应式：值变更需经指令的 MutationObserver 触发 `refresh()` 全量重算。
+     * 由 `DataDirective` 在 `created()` 首次注入时令本字段指向 `store.state._scopes[id]`（core 自动
+     * 建响应式代理）。**永不换引用**——`_scopeView` Proxy 闭包绑定该引用；运行时更新只 `Object.assign`
+     * 原地改（见 `engine.data`），绝不整体替换。与 `localScope` 同级叠加进 `getScopeContext`。
+     *
+     * 读写经 store 响应式代理 → `collectDependencies` 收集 `_scopes.<id>.<field>` 精准路径，
+     * 字段级细粒度更新（**响应式**，无需 refresh——与 localScope 的 refresh 驱动不同）。
      *
      * 父子元素的 dataScope 经 parent 链层叠（子覆盖父同名键）；容器 x-data 经 parent 链
      * 自动透传进 x-for 各 item scope（item.parent = 容器 scope）。
@@ -135,6 +143,17 @@ export class AutoTemplateScope {
             },
         });
         return this._scopeView;
+    }
+
+    /**
+     * 失效缓存的 `_scopeView`，下次 `getScopeContext()` 重建。
+     *
+     * 供 `engine.data(el, data)` 在"dataScope 从无到有"（el 原无 x-data，新建私有数据域）后调用——
+     * `_scopeView` 是懒缓存（首次构建后冻结），dataScope 新建后旧缓存不含 dataScope 层，须失效重建，
+     * 否则子树经 parent 链读不到新数据。
+     */
+    invalidateScopeView() {
+        this._scopeView = null;
     }
 
     /**
@@ -283,7 +302,9 @@ export class AutoTemplateScope {
             return getVal(this.engine.store.state, value);
         }
         const scope = this.getScopeContext();
-        const getter = new Function("scope", `with(scope){ return (${value}); }`) as (scope: any) => any;
+        const getter = new Function("scope", `with(scope){ return (${value}); }`) as (
+            scope: any,
+        ) => any;
         try {
             return getter(scope);
         } catch (e: any) {
