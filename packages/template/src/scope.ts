@@ -84,7 +84,18 @@ export class AutoTemplateScope {
      * 由 compiler 在编译期设置，子作用域继承父的 localScope。
      */
     localScope: Record<string, any> | null = null;
-    /** 缓存的聚合视图（localScope 优先于 engine.context） */
+    /**
+     * x-data 注入的上下文数据（数据指令私有层）。
+     *
+     * 由 `DataDirective` 在 `created()` 创建并**原地更新**（`Object.assign` / `delete`，
+     * **永不换引用**——`_scopeView` Proxy 闭包绑定该引用），与 `localScope` 同级叠加进
+     * `getScopeContext`。非响应式：值变更需经指令的 MutationObserver 触发 `refresh()` 全量重算。
+     *
+     * 父子元素的 dataScope 经 parent 链层叠（子覆盖父同名键）；容器 x-data 经 parent 链
+     * 自动透传进 x-for 各 item scope（item.parent = 容器 scope）。
+     */
+    dataScope: Record<string, any> | null = null;
+    /** 缓存的聚合视图（命中优先级：localScope > dataScope > parent 链 > engine.context） */
     private _scopeView: any = null;
 
     /**
@@ -100,24 +111,48 @@ export class AutoTemplateScope {
         // 父级视图：父作用域的聚合视图；无父则退化为根 context
         const parentView = this.parent ? this.parent.getScopeContext() : this.engine.context;
         const local = this.localScope;
-        if (!local) {
-            // 无自身局部变量：直接复用父级视图（缓存别名，零额外代理）
+        const data = this.dataScope;
+        if (!local && !data) {
+            // 无自身局部变量与 x-data 数据：直接复用父级视图（缓存别名，零额外代理）
             this._scopeView = parentView;
             return parentView;
         }
         this._scopeView = new Proxy(parentView, {
             get(_t, k: string | symbol) {
-                if (typeof k === "string" && Object.prototype.hasOwnProperty.call(local, k)) {
-                    return local[k];
+                if (typeof k === "string") {
+                    // 命中优先级：localScope(x-for 的 item/index) > dataScope(x-data 注入)
+                    if (local && Object.prototype.hasOwnProperty.call(local, k)) return local[k];
+                    if (data && Object.prototype.hasOwnProperty.call(data, k)) return data[k];
                 }
                 return (parentView as any)[k];
             },
             has(_t, k: string | symbol) {
-                if (typeof k === "string" && Object.prototype.hasOwnProperty.call(local, k)) return true;
+                if (typeof k === "string") {
+                    if (local && Object.prototype.hasOwnProperty.call(local, k)) return true;
+                    if (data && Object.prototype.hasOwnProperty.call(data, k)) return true;
+                }
                 return k in parentView;
             },
         });
         return this._scopeView;
+    }
+
+    /**
+     * 本 scope 或任意祖先是否持有局部数据（`localScope` 或 `dataScope`）。
+     *
+     * 决定 `watch` / `read` 的支路选择：只要有任意一层局部数据，简单路径也可能解析到局部变量
+     * （如 x-data 注入的 `a`、x-for 的 `item`），**必须走表达式支路**经 `getScopeContext` 求值，
+     * 不能直读 `store.state`（否则 dataScope 中的键被绕过、读到 undefined）。
+     *
+     * 仅在订阅/读取时调用一次（非每次更新），沿 parent 链 O(深度) 扫描，开销可忽略。
+     */
+    private hasLocalContext(): boolean {
+        let s: AutoTemplateScope | null = this;
+        while (s) {
+            if (s.localScope || s.dataScope) return true;
+            s = s.parent;
+        }
+        return false;
     }
 
     /**
@@ -145,9 +180,10 @@ export class AutoTemplateScope {
      * @returns 当前值（供指令 `compile` 初始渲染）
      */
     watch(value: string, listener: ScopeWatchListener): any {
-        // 有 localScope 时（x-for 子项），变量可能来自局部作用域（如 item），
-        // 不能按 state 路径直接订阅——统一走表达式支路（with 解析 localScope + state）。
-        if (!this.localScope && isSimpleStatePath(value)) {
+        // 有局部数据（自身或祖先的 localScope/dataScope）时，变量可能来自局部作用域
+        // （如 x-data 的 a、x-for 的 item），不能按 state 路径直接订阅——统一走表达式支路
+        // （经 getScopeContext 聚合 localScope+dataScope+state 求值）。
+        if (!this.hasLocalContext() && isSimpleStatePath(value)) {
             return this.watchPath(value, listener);
         }
         return this.watchExpression(value, listener);
@@ -178,6 +214,10 @@ export class AutoTemplateScope {
      * 1. `new Function` 把表达式编译为带 `scope` 形参的 getter；
      * 2. 在聚合作用域上求值一次，期间由 `collectDependencies` 收集读依赖；
      * 3. 用收集到的依赖路径订阅，回调仅标脏，flush 时重新求值。
+     *
+     * **宽松求值**：getter 抛错（如引用了不存在的局部变量 `a`、x-data 键被运行时删除）时，
+     * 记日志并返回 `undefined`——与路径支路读不到键返回 `undefined` 行为一致，避免单个坏表达式
+     * 中断整个编译/刷新。`collectDependencies` 用同一安全包装：抛错前已读到的依赖仍被收集。
      */
     private watchExpression(expr: string, listener: ScopeWatchListener): any {
         const store = this.engine.store;
@@ -188,11 +228,19 @@ export class AutoTemplateScope {
             scope: any,
             args?: any,
         ) => any;
-        const deps = store.collectDependencies(() => getter(scope), "read");
-        const update = () => listener({ value: getter(scope) });
+        const safeEval = (): any => {
+            try {
+                return getter(scope);
+            } catch (e: any) {
+                this.engine.logger.error(`scope.watch: eval "${expr}" failed: ${e?.message ?? e}`);
+                return undefined;
+            }
+        };
+        const deps = store.collectDependencies(safeEval, "read");
+        const update = () => listener({ value: safeEval() });
         this._updates.push(update);
         this.watchers.push(store.watch(deps, () => this.engine.scheduler.schedule(update)));
-        return getter(scope);
+        return safeEval();
     }
 
     /**
@@ -231,7 +279,7 @@ export class AutoTemplateScope {
      * @returns 表达式当前值；求值异常时记录日志并返回 undefined（由调用方做数组化等兜底）
      */
     read(value: string): any {
-        if (!this.localScope && isSimpleStatePath(value)) {
+        if (!this.hasLocalContext() && isSimpleStatePath(value)) {
             return getVal(this.engine.store.state, value);
         }
         const scope = this.getScopeContext();

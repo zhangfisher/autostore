@@ -1,4 +1,5 @@
 export * from "./bind";
+export * from "./data";
 export * from "./class";
 export * from "./style";
 export * from "./event";
@@ -17,15 +18,17 @@ import type { AutoTemplateDirectiveBase } from "../base";
 import { TextDirective } from "./text";
 import { IfDirective } from "./if";
 import { ForDirective } from "./for";
+import { DataDirective } from "./data";
 
 /**
  * 预设指令映射：指令名 → 指令类。
  *
- * 显式映射，避免依赖类的 `Function.name`。当前注册核心闭环指令（text/if/for）；
+ * 显式映射，避免依赖类的 `Function.name`。当前注册核心闭环指令（text/if/for/data）；
  * 其余指令（bind/class/style/...）保持现状，后续按需补全到此处。
  */
 export const presetDirectives: Record<string, typeof AutoTemplateDirectiveBase> = {
     text: TextDirective,
     if: IfDirective,
     for: ForDirective,
+    data: DataDirective,
 };
