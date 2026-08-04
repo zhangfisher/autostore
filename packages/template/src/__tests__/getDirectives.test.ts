@@ -83,6 +83,20 @@ describe("findDirectives - x-show 别名归一化（≡ x-if.keep）", () => {
     });
 });
 
+describe("findDirectives - x-class/x-style 别名归一化（≡ x-bind）", () => {
+    test('x-class="a" 归一为 bind + class', () => {
+        expect(parseOne({ "x-class": "a" })).toEqual({ name: "bind", attr: "class", value: "a" });
+    });
+
+    test('x-style="a" 归一为 bind + style', () => {
+        expect(parseOne({ "x-style": "a" })).toEqual({ name: "bind", attr: "style", value: "a" });
+    });
+
+    test("x-class 与 :class 解析结果完全一致", () => {
+        expect(parseOne({ "x-class": "a" })).toEqual(parseOne({ ":class": "a" }));
+    });
+});
+
 describe("findDirectives - @ 事件快捷前缀", () => {
     test('@click="fn" 解析为 event 指令并输出事件名 attr', () => {
         expect(parseOne({ "@click": "fn" })).toEqual({

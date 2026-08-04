@@ -15,6 +15,9 @@ const BIND_DIRECTIVE_NAME = "bind";
 const SHOW_ALIAS_NAME = "show";
 /** x-show 归一化的目标指令名 */
 const IF_DIRECTIVE_NAME = "if";
+/** x-class / x-style 作为 x-bind 特化别名的指令名（解析期归一化为 bind+attr，零运行时实体） */
+const CLASS_ALIAS_NAME = "class";
+const STYLE_ALIAS_NAME = "style";
 
 /**
  * 拆分名称主体与修饰符
@@ -165,6 +168,15 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): AutoDirectiveInfo
             if (info.name === SHOW_ALIAS_NAME) {
                 info.name = IF_DIRECTIVE_NAME;
                 info.modifiers = ["keep", ...(info.modifiers ?? [])];
+            }
+            // x-class / x-style 作为 x-bind 的特化别名（解析期归一化，零运行时实体）。
+            // :class / x-bind:class 经短/长前缀分支已产出 bind+class，此处仅处理裸 x-class / x-style。
+            else if (info.name === CLASS_ALIAS_NAME) {
+                info.name = BIND_DIRECTIVE_NAME;
+                info.attr = "class";
+            } else if (info.name === STYLE_ALIAS_NAME) {
+                info.name = BIND_DIRECTIVE_NAME;
+                info.attr = "style";
             }
             results.push(info);
             continue;
