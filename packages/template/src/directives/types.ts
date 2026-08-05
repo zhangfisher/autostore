@@ -1,5 +1,3 @@
-import type { AutoTemplateCompileContext } from "../compile/types";
-
 export type AutoDirectiveInfo = {
     name: string;
     value?: string;
@@ -39,36 +37,9 @@ export type AutoDirectiveInfo = {
 //             if (this.el) this.el.innerText = value;
 //         });
 //     }
-//     override compile(_context: TemplateCompileContext, _parent: HTMLElement) {
+//     override compile(_context: Record<string, any>, _parent: HTMLElement) {
 //         if (this.el) {
 //             this.el.innerText = getVal(this.engine.store.state, this.value);
 //         }
 //     }
 // }
-
-export type TemplateDirectiveArgs<
-    M extends string[] = string[],
-    O extends Record<string, any> = Record<string, any>,
-> = {
-    attr?: string;
-    value?: string;
-    modifiers?: M;
-    options?: O;
-};
-
-export type TemplateDirective<
-    M extends string[] = string[],
-    O extends Record<string, any> = Record<string, any>,
-> = {
-    name: string;
-    singleton?: boolean;
-    priority?: number;
-
-    created?: (ctx: TemplateDirectiveArgs<M, O>) => void;
-    /**
-     * 执行编译
-     * @param context
-     * @returns
-     */
-    compile?: (context: AutoTemplateCompileContext) => any;
-};

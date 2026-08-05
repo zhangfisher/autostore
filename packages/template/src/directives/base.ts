@@ -2,7 +2,6 @@ import type { Watcher } from "autostore";
 import type { AutoTemplateScope } from "../scope";
 import type { AutoTemplateEngine } from "../engine";
 import type { AutoDirectiveInfo } from "./types";
-import type { AutoTemplateStackedContext } from "../context";
 
 /**
  * 指令基类
@@ -83,12 +82,12 @@ export class AutoTemplateDirectiveBase {
     /**
      * 编译期首次渲染。
      *
-     * @param context 运行时作用域（聚合视图，含 x-for 压栈的局部变量）
+     * @param context 响应式根状态（engine.state = store.state）
      * @param parent  父元素
      * @returns HTMLElement 表示内部还有模板需上层递归；undefined/void 表示无需
      */
     compile(
-        _context: AutoTemplateStackedContext<any>,
+        _context: Record<string, any>,
         _parent: HTMLElement,
     ): HTMLElement | undefined | void {}
 

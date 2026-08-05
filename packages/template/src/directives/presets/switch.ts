@@ -12,7 +12,7 @@ import { AutoTemplateDirectiveBase } from "../base";
  * 
  * 根据表达式的值，切换其中一个元素
  * 
- * <div x-switch="表达式">
+ * <div x-switch="表达式或状态">
  *  <div x-case="a"></div>
  *  <div x-case="b"></div>
  *  <div x-case="c"></div>

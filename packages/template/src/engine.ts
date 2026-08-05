@@ -3,7 +3,6 @@ import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
 import { AutoStore } from "autostore";
 import type { AutoTemplateScope } from "./scope";
-import { createStackedContext } from "./context";
 import { UpdateScheduler } from "./scheduler";
 
 /**
@@ -54,8 +53,13 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
     readonly template: HTMLElement;
     /** 每个渲染元素对应的 Scope（销毁时遍历清理其 watcher） */
     readonly scopes = new Map<WeakRef<Node>, AutoTemplateScope>();
-    /** 编译期作用域栈聚合视图（含 `$push/$pop` 供 x-for 注入局部作用域） */
-    readonly context;
+    /**
+     * 整个 engine 响应式数据驱动的核心：直接暴露 `store.state`（响应式根状态）。
+     * 作为 scope 聚合视图（getScopeContext）的根 fallback、模板表达式求值的最终数据源。
+     */
+    get state() {
+        return this.store.state;
+    }
     /** 是否已编译并挂载 */
     private started = false;
 
@@ -83,7 +87,6 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
         this.scheduler = new UpdateScheduler();
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
-        this.context = createStackedContext(this.store);
         if (this.options.autostart) {
             this.compile();
         }

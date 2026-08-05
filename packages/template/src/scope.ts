@@ -1,5 +1,4 @@
 import type { AutoTemplateEngine } from "./engine";
-import type { AutoTemplateStackedContext } from "./context";
 import { AutoTemplateDirectiveBase } from "./directives/base";
 import { getVal, type Watcher } from "autostore";
 import { getDirectives } from "./directives/utils/getDirectives";
@@ -110,21 +109,21 @@ export class AutoTemplateScope {
      * scope destroy 时随 scope 对象回收，无需手动清理。null 表示本层无局部 action。
      */
     actions: Record<string, (...args: any[]) => any> | null = null;
-    /** 缓存的聚合视图（命中优先级：localScope > dataScope > parent 链 > engine.context） */
+    /** 缓存的聚合视图（命中优先级：localScope > dataScope > parent 链 > engine.state） */
     private _scopeView: any = null;
 
     /**
-     * 当前作用域上下文：沿 parent 链逐层查找（自身 localScope 优先，命中不到查父级，直至根 engine.context）。
+     * 当前作用域上下文：沿 parent 链逐层查找（自身 localScope 优先，命中不到查父级，直至根 engine.state）。
      *
      * 之所以用 parent 链而非共享栈：watchExpression 把返回的 scope 捕获进闭包，
      * 在 scheduler flush 时跨 tick 异步复用——每层视图必须不可变且互相独立，
      * 不能用 createStackedContext 那种共享可变 push/pop 栈（会在 pop / 兄弟项覆盖后丢值）。
      * 这让嵌套 x-for 内层能解析外层注入的变量（如内层 `row.title` 取到外层 row）。
      */
-    getScopeContext(): AutoTemplateStackedContext<any> {
+    getScopeContext(): Record<string, any> {
         if (this._scopeView) return this._scopeView;
         // 父级视图：父作用域的聚合视图；无父则退化为根 context
-        const parentView = this.parent ? this.parent.getScopeContext() : this.engine.context;
+        const parentView = this.parent ? this.parent.getScopeContext() : this.engine.state;
         const local = this.localScope;
         const data = this.dataScope;
         if (!local && !data) {
@@ -399,7 +398,7 @@ export class AutoTemplateScope {
             if (typeof d.created === "function") d.created();
         }
         for (const d of directives) {
-            if (typeof d.compile === "function") d.compile(this.engine.context, this.el!);
+            if (typeof d.compile === "function") d.compile(this.engine.state, this.el!);
         }
     }
 

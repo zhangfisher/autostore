@@ -89,7 +89,7 @@ export class AutoTemplateCompiler {
      */
     compile(): HTMLElement {
         this.templateScopeMap = new WeakMap();
-        return transformElement(this.engine.template, this._getTransformers(), this.engine.context);
+        return transformElement(this.engine.template, this._getTransformers());
     }
 
     /**
@@ -161,7 +161,7 @@ export class AutoTemplateCompiler {
         for (const child of Array.from(templateEl.childNodes)) {
             const compiled =
                 child instanceof HTMLElement
-                    ? transformElement(child, this._getTransformers(), this.engine.context)
+                    ? transformElement(child, this._getTransformers())
                     : child.cloneNode(true);
             parentEl.appendChild(compiled);
             nodes.push(compiled);

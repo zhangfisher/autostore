@@ -26,12 +26,29 @@ type ForItemEntry = {
  * </ul>
  * ```
  *
- * **B 语义**：带 x-for 的元素渲染一次作容器，其**全部元素子节点**作为一个**复合项模板**被整体重复 N 次、
- * 按文档顺序插入到该容器下。单子节点即单元素项；多子节点（如 `<dl>` 下的 dt/dd、卡片头/体）作为一组一起循环。
- * `:key` 可选（缺省用 index），按"项"计——一个 key 对应一组 DOM 节点。
+ * **B 语义**：带 x-for 的元素渲染一次作容器，其元素子节点二分：
+ *  - 命中 special 描述符（当前 `x-empty`，见 SPECIAL_CHILDREN）的子节点 → **渲染一次的特例**（不随项重复）；
+ *  - 其余元素子节点 → 作为一个**复合项模板**被整体重复 N 次、按文档顺序插入到该容器下。
+ *  单子节点即单元素项；多子节点（如 `<dl>` 下的 dt/dd、卡片头/体）作为一组一起循环。
+ *  `:key` 可选（缺省用 index），按"项"计——一个 key 对应一组 DOM 节点。
  *
- * **契约：容器内不支持"只渲染一次"的静态内容**——容器下所有元素子节点都视为复合项的一部分随每项重复。
- * 若需静态内容（分隔线、表头、汇总行），请将其放到 x-for 容器之外（外层包裹元素的兄弟节点）。
+ * **x-empty 空状态子节点**：items 为空数组时，容器内带 `x-empty` 的子节点渲染一次（多个则全显、按文档序）；
+ * items 非空时拆除。空元素对**父作用域**求值（无 item/$index——空状态下它们无意义），与"把空元素挪到
+ * x-for 外当兄弟"语义一致，但省去兄弟方案所需的外层包裹——空 `<li>` 天然继承容器 `ul>li` 的共享 CSS：
+ * ```html
+ * <ul x-for="item of items">
+ *   <li x-text="item.name"></li>
+ *   <li x-empty>没有数据</li>      <!-- items 为空时渲染此项 -->
+ * </ul>
+ * ```
+ * **注意：空元素标签须匹配容器内容模型**（`<ul>→<li x-empty>`、`<select>→<option x-empty>`、
+ * `<tbody>→<tr x-empty>`），与项模板同标签为佳；否则（如 `<div x-empty>` 在 `<ul>` 内非法）浏览器解析期
+ * 可能挪动节点、破坏 CSS 共享。
+ *
+ * **契约变更**：原"容器内不支持只渲染一次的静态内容"现改为"命中 special 描述符的子节点是渲染一次的特例"。
+ * 仍需放在列表之外的静态内容（分隔线、表头、汇总行——这些**不论 items 空否都要显示**）依旧放到 x-for 容器之外。
+ * SPECIAL_CHILDREN 描述符表是类别的真接缝：未来 x-loading 等同类空状态只需加表项、按 priority 与 x-empty
+ * 互斥（when 收原始 items 值，x-empty 只认空数组、把 undefined 留给 x-loading），不碰 render()。
  *
  * **为何需要 ownsChildren**：普通元素的子节点属于 childNodes，transformElement 默认会递归编译；
  * x-for 作为结构指令声明占有子树（compiler 对其返回 ownsChildren 信号），让通用 walk 跳过其子节点，
@@ -80,12 +97,50 @@ export class ForDirective extends AutoTemplateDirectiveBase {
         return true;
     }
 
+    /**
+     * "容器内渲染一次的特例子节点"描述符表。
+     *
+     * 每条描述一个命名空状态：用 `match` 属性在容器子节点中识别其模板、用 `when(raw)` 判定
+     * 何时激活、多个同时激活时按 `priority` 取最高。**加新特例（如 x-loading）只改此表，不碰 render()。**
+     *
+     * `when` 收**原始** items 值（未经 Array.isArray 归一化），使 `undefined`（未加载）与 `[]`（真空）
+     * 可被不同描述符分别认领——例如未来 x-loading 以更高 priority 认领 `undefined`，x-empty 只认空数组。
+     */
+    private static readonly SPECIAL_CHILDREN: ReadonlyArray<{
+        name: string;
+        /** 子节点上用于识别该特例模板的属性名（如 "x-empty"） */
+        match: string;
+        /** 是否激活。入参为原始 items 值（未归一化） */
+        when: (rawItems: any) => boolean;
+        /** 多个特例同时激活时的优先级，大者胜出 */
+        priority: number;
+    }> = [
+        {
+            name: "empty",
+            match: "x-empty",
+            // 只认"真数组且长度为 0"——把 undefined/null/非数组留给未来 x-loading（priority 更高者认领），
+            // 避免"加载中（items 尚为 undefined）"被误判为"无数据"。
+            when: (raw) => Array.isArray(raw) && raw.length === 0,
+            priority: 10,
+        },
+    ];
+
     private itemName = "item";
     private indexName = "index";
     private itemsPath = "";
     private keyExpr: string | null = null;
-    /** 复合项模板：容器下全部元素子节点（单子节点时长度为 1） */
+    /** 复合项模板：容器下【非 special】的元素子节点（单子节点时长度为 1）。
+     *  命中 SPECIAL_CHILDREN.match（如 x-empty）的子节点已分入 specialTemplates，不在此列。 */
     private itemTemplates: HTMLElement[] = [];
+    /** special 子节点模板：name → 模板数组（文档序）。如 x-empty 子节点。
+     *  与 itemTemplates 同源（均取自 this.template.children，clone 重建已保证脱离 live DOM）。 */
+    private specialTemplates = new Map<string, HTMLElement[]>();
+    /** 当前激活的 special 名（null=无 special、显示 items）。作幂等锚点：同名则跳过重挂载。 */
+    private activeSpecial: string | null = null;
+    /** 已挂载 special 的 scope 与 DOM 节点——精确清理用。
+     *  ⚠️ 不能 clear 整个 binding.children：它与 item scope 共享同一 Set（compileChild 都 addChild 到 binding）。 */
+    private specialScopes: AutoTemplateScope[] = [];
+    private specialNodes: HTMLElement[] = [];
     /** 列表项运行时实体索引：key → ForItemEntry。
      *  v2 按 key 复用/增删/重建；无 :key 时 key=index（evalKey 回退）。 */
     private itemMap = new Map<unknown, ForItemEntry>();
@@ -95,7 +150,8 @@ export class ForDirective extends AutoTemplateDirectiveBase {
 
     override created() {
         this.parse();
-        if (!this.itemsPath || this.itemTemplates.length === 0) return;
+        // 既无项模板也无 special 模板才放弃：允许"仅有 x-empty、无项模板"的容器继续（仅渲染空状态）
+        if (!this.itemsPath || (this.itemTemplates.length === 0 && this.specialTemplates.size === 0)) return;
         // 监听 items 路径，变化时全量重建（回调经 scheduler 合并）
         this.binding.watch(this.itemsPath, () => this.render());
         // 项级监听（P0）：纯路径 itemsPath 时补 `items.*`，捕获 `items[i]={...}` 整体替换单项。
@@ -128,15 +184,25 @@ export class ForDirective extends AutoTemplateDirectiveBase {
         this.itemName = item;
         if (idx) this.indexName = idx;
         this.itemsPath = path.trim();
-        // B 语义：x-for 元素自身是容器，其全部元素子节点作为复合项模板（按文档顺序）。
+        // B 语义：x-for 元素自身是容器。其元素子节点二分为：
+        //  - 命中 SPECIAL_CHILDREN.match（如 x-empty）→ specialTemplates（渲染一次的特例，不随项重复）
+        //  - 其余 → itemTemplates（复合项模板，随每项重复）
         // tpl.children 仅含 Element 节点，空白/注释/文本节点天然排除。
         const tpl = this.template;
         if (tpl) {
-            this.itemTemplates = Array.from(tpl.children).filter(
-                (c): c is HTMLElement => c instanceof HTMLElement,
-            );
+            for (const child of Array.from(tpl.children)) {
+                if (!(child instanceof HTMLElement)) continue;
+                const matched = ForDirective.SPECIAL_CHILDREN.find((s) => child.hasAttribute(s.match));
+                if (matched) {
+                    const arr = this.specialTemplates.get(matched.name) ?? [];
+                    arr.push(child);
+                    this.specialTemplates.set(matched.name, arr);
+                } else {
+                    this.itemTemplates.push(child);
+                }
+            }
         }
-        if (this.itemTemplates.length === 0) {
+        if (this.itemTemplates.length === 0 && this.specialTemplates.size === 0) {
             this.engine.logger.error(`x-for: 缺少项模板（容器无元素子节点，path="${this.itemsPath}"）`);
         }
         // :key 可选：未提供时 evalKey 回退用 index
@@ -161,7 +227,36 @@ export class ForDirective extends AutoTemplateDirectiveBase {
      */
     private render() {
         const container = this.el;
-        if (!container || this.itemTemplates.length === 0) return;
+        if (!container || (this.itemTemplates.length === 0 && this.specialTemplates.size === 0)) return;
+
+        // === special 决策：取 priority 最高、且有模板、且 when(raw) 为真的描述符 ===
+        const raw = this.binding.read(this.itemsPath);
+        const activeSpecial = ForDirective.SPECIAL_CHILDREN.filter(
+            (s) => this.specialTemplates.has(s.name) && s.when(raw),
+        ).sort((a, b) => b.priority - a.priority)[0];
+
+        if (activeSpecial) {
+            // special 激活（如 x-empty：items 必为空数组）→ 挂载空状态、短路，跳过 4-pass diff。
+            if (this.activeSpecial !== activeSpecial.name) {
+                if (this.activeSpecial) {
+                    this.destroySpecial(); // empty(S)→empty(T)：拆旧 special（items 已空，无需 clearItems）
+                } else {
+                    this.clearItems(); // items→empty：拆项
+                }
+                this.mountSpecial(activeSpecial);
+                this.activeSpecial = activeSpecial.name;
+            }
+            // empty(S)→empty(S)：幂等 no-op（C2，避免 items.* 反复触发重编译空节点）
+            this._lastRenderLength = Array.isArray(raw) ? raw.length : 0;
+            return; // C1：special 节点只在此分支进 container，跳过比较 container.children 的 Pass 3
+        }
+
+        // 无 special 激活 → 显示 items。若此前挂着 special（empty→items），先拆除。
+        if (this.activeSpecial) {
+            this.destroySpecial();
+            this.activeSpecial = null;
+        }
+
         const items = this.readItems();
         const length = items.length;
         // P2 脏标记：length 变 → $length/$end/$begin 等派生变量变 → 复用项需 refresh
@@ -329,6 +424,39 @@ export class ForDirective extends AutoTemplateDirectiveBase {
         this.itemMap.clear();
     }
 
+    /**
+     * 挂载当前激活的 special（如 x-empty）：逐模板 compileChild 克隆编译后按文档序 append 进容器。
+     *
+     * localScope 传**空对象 {}**——不注入 item/$index（空状态下它们无意义），空元素上的绑定
+     * （x-text/:class 等）经 scope.getScopeContext() 回退到父作用域求值，与"把空元素挪到 x-for 外当兄弟"语义一致。
+     * compileChild 内部 removeDirectives 会剥离 x-empty 属性，输出 DOM 无 x-empty 残留。
+     * 多个 x-empty 全部渲染、按文档序占位。
+     */
+    private mountSpecial(desc: { name: string }) {
+        const container = this.el;
+        const templates = this.specialTemplates.get(desc.name);
+        if (!container || !templates) return;
+        for (const tpl of templates) {
+            const { el, scope } = this.engine.compiler.compileChild(tpl, this.binding, {});
+            container.appendChild(el);
+            this.specialNodes.push(el);
+            this.specialScopes.push(scope);
+        }
+    }
+
+    /**
+     * 拆除当前已挂载的 special：destroy 全部 scope（递归 off watcher + 移出 parent.children）+ remove 节点。
+     *
+     * ⚠️ 不能 clear 整个 binding.children——它与 item scope 共享同一 Set（compileChild 都 addChild 到 binding），
+     * 全清会误杀 item。故用显式 specialScopes/specialNodes 数组精确清理（与 if.ts 的 destroyChildren 区别所在）。
+     */
+    private destroySpecial() {
+        for (const s of this.specialScopes) s.destroy();
+        for (const n of this.specialNodes) n.remove();
+        this.specialScopes = [];
+        this.specialNodes = [];
+    }
+
     /** 求值 :key（如 item.id）。形参用项变量名，使嵌套场景自定义变量名（cell/row 等）的 :key 也能正确解析 */
     private evalKey(item: any, index: number): any {
         if (!this.keyExpr) return index;
@@ -345,5 +473,6 @@ export class ForDirective extends AutoTemplateDirectiveBase {
 
     override destroy() {
         this.clearItems();
+        if (this.activeSpecial) this.destroySpecial();
     }
 }

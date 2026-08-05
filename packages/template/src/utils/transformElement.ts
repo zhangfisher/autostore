@@ -22,7 +22,6 @@ export type OwnsChildrenResult = { node: Node; ownsChildren: true };
  */
 export type NodeTransform<T extends Node = Node> = (
     node: T,
-    context: Record<string, any>,
 ) => Node | string | null | undefined | OwnsChildrenResult;
 
 /** 转换器对：`[filter, transform]`，按数组顺序首个命中即生效 */
@@ -78,7 +77,6 @@ function parseHtmlFragment(html: string): DocumentFragment | null {
 export function transformElement<T extends Node = Node>(
     el: HTMLElement,
     transformers: NodeTransformer<T>[],
-    context: Record<string, any>,
 ): HTMLElement {
     let newRoot: HTMLElement | null = null;
 
@@ -95,7 +93,7 @@ export function transformElement<T extends Node = Node>(
             if (filter(node)) {
                 // node 断言为 T：类型安全性由调用方 filter 保证（filter 返回 true ⇔ node 是 T）
                 matched = true;
-                result = transform(node as T, context);
+                result = transform(node as T);
                 break;
             }
         }

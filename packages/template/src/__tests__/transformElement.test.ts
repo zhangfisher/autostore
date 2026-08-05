@@ -19,7 +19,7 @@ function createElement(html: string): HTMLElement {
 describe("transformElement - 未命中默认克隆", () => {
     test("无 transformer 时整树结构等价保留且为全新节点", () => {
         const root = createElement("<div><span>hi</span></div>");
-        const result = transformElement(root, [], {});
+        const result = transformElement(root, []);
 
         expect(result).toEqualHTML(`<div>
   <span>hi</span>
@@ -32,7 +32,6 @@ describe("transformElement - 未命中默认克隆", () => {
         const result = transformElement(
             root,
             [[(n) => n.nodeName === "SPAN", () => document.createElement("b")]],
-            {},
         );
 
         expect(result).toEqualHTML(`<div>
@@ -56,7 +55,6 @@ describe("transformElement - 命中策略", () => {
                 ],
                 [() => true, () => document.createElement("b")],
             ],
-            {},
         );
 
         expect(result).toEqualHTML(`<i></i>`);
@@ -67,7 +65,6 @@ describe("transformElement - 命中策略", () => {
         const result = transformElement(
             root,
             [[(n) => n.nodeName === "SECTION", () => document.createElement("b")]],
-            {},
         );
 
         expect(result).toEqualHTML(`<div>
@@ -79,7 +76,7 @@ describe("transformElement - 命中策略", () => {
 describe("transformElement - 剪枝", () => {
     test("transform 返回 null 丢弃该节点及其整个子树", () => {
         const root = createElement("<div><span>keep</span><p><em>drop</em></p></div>");
-        const result = transformElement(root, [[(n) => n.nodeName === "P", () => null]], {});
+        const result = transformElement(root, [[(n) => n.nodeName === "P", () => null]]);
 
         expect(result).toEqualHTML(`<div>
   <span>keep</span>
@@ -88,7 +85,7 @@ describe("transformElement - 剪枝", () => {
 
     test("transform 返回 undefined 同样剪枝（与 null 等价）", () => {
         const root = createElement("<div><span>keep</span><p><em>drop</em></p></div>");
-        const result = transformElement(root, [[(n) => n.nodeName === "P", () => undefined]], {});
+        const result = transformElement(root, [[(n) => n.nodeName === "P", () => undefined]]);
 
         expect(result).toEqualHTML(`<div>
   <span>keep</span>
@@ -97,7 +94,7 @@ describe("transformElement - 剪枝", () => {
 
     test("根节点被剪枝时抛异常", () => {
         const root = createElement("<div></div>");
-        expect(() => transformElement(root, [[() => true, () => null]], {})).toThrow();
+        expect(() => transformElement(root, [[() => true, () => null]])).toThrow();
     });
 });
 
@@ -108,7 +105,6 @@ describe("transformElement - 原树只读", () => {
         transformElement(
             root,
             [[(n) => n.nodeName === "SPAN", () => document.createElement("b")]],
-            {},
         );
 
         // 严格字符相等：验证原树字节级未被改动（非结构断言，保留 .toBe）
@@ -117,7 +113,7 @@ describe("transformElement - 原树只读", () => {
 
     test("新树节点独立于原树", () => {
         const root = createElement("<div><span></span></div>");
-        const result = transformElement(root, [], {});
+        const result = transformElement(root, []);
         result.appendChild(document.createElement("br"));
 
         expect(root).toEqualHTML(`<div>
@@ -132,7 +128,7 @@ describe("transformElement - 泛型收窄", () => {
         const transformers: NodeTransformer<HTMLElement>[] = [
             [(n) => n.nodeType === Node.ELEMENT_NODE, () => document.createElement("mark")],
         ];
-        const result = transformElement(root, transformers, {});
+        const result = transformElement(root, transformers);
 
         // div 命中替换为 mark；文本节点被 filter 拒绝，默认克隆后挂入 mark
         expect(result).toEqualHTML(`<mark>hi</mark>`);
@@ -145,7 +141,6 @@ describe("transformElement - 字符串返回", () => {
         const result = transformElement(
             root,
             [[(n) => n.nodeName === "SPAN", () => '<b class="x">hi</b>']],
-            {},
         );
 
         expect(result).toEqualHTML(`<div>
@@ -158,7 +153,6 @@ describe("transformElement - 字符串返回", () => {
         const result = transformElement(
             root,
             [[(n) => n.nodeName === "SPAN", () => "<a>1</a><b>2</b>"]],
-            {},
         );
 
         expect(result).toEqualHTML(`<div>
@@ -172,7 +166,6 @@ describe("transformElement - 字符串返回", () => {
         const result = transformElement(
             root,
             [[(n) => n.nodeName === "SPAN", () => "<i>new</i>"]],
-            {},
         );
 
         expect(result).toEqualHTML(`<div>
@@ -182,7 +175,7 @@ describe("transformElement - 字符串返回", () => {
 
     test("返回空字符串视为剪枝", () => {
         const root = createElement("<div><span>keep</span><p>drop</p></div>");
-        const result = transformElement(root, [[(n) => n.nodeName === "P", () => ""]], {});
+        const result = transformElement(root, [[(n) => n.nodeName === "P", () => ""]]);
 
         expect(result).toEqualHTML(`<div>
   <span>keep</span>
@@ -204,7 +197,6 @@ describe("transformElement - 字符串返回", () => {
                     },
                 ],
             ],
-            {},
         );
 
         // 只有 div、span 被处理；span 生成的 b 不再被二次处理
@@ -216,14 +208,14 @@ describe("transformElement - 字符串返回", () => {
 
     test("根节点返回单节点字符串作为新根", () => {
         const root = createElement("<div></div>");
-        const result = transformElement(root, [[() => true, () => "<main></main>"]], {});
+        const result = transformElement(root, [[() => true, () => "<main></main>"]]);
 
         expect(result).toEqualHTML(`<main></main>`);
     });
 
     test("根节点返回多节点字符串抛异常", () => {
         const root = createElement("<div></div>");
-        expect(() => transformElement(root, [[() => true, () => "<a></a><b></b>"]], {})).toThrow();
+        expect(() => transformElement(root, [[() => true, () => "<a></a><b></b>"]])).toThrow();
     });
 });
 
@@ -243,7 +235,6 @@ describe("transformElement - ownsChildren 占有子树", () => {
                     }),
                 ],
             ],
-            {},
         );
 
         // ul 浅克隆挂接、其 li 子节点未被递归；前后兄弟 span 正常克隆
