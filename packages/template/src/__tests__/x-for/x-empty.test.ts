@@ -7,8 +7,8 @@
  * 框架：bun:test。初始渲染同步（engine 构造期 flush），状态变更后需 await nextTick()。
  */
 import { describe, expect, test } from "bun:test";
-import "./setup";
-import { mount, nextTick } from "./helpers";
+import "../setup";
+import { mount, nextTick } from "../helpers";
 
 /** 从 engine.scopes 反查元素对应的 scope（与 x-for-v2.test.ts 同实现） */
 function scopeOf(engine: any, el: Element): any {

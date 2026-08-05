@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { getDirectives } from "../directives/utils/getDirectives";
-import type { AutoDirectiveInfo } from "../directives/types";
-import "./setup";
+import { getDirectives } from "../../directives/utils/getDirectives";
+import type { AutoDirectiveInfo } from "../../directives/types";
+import "../setup";
 /**
  * 构造一个带指定属性的 div 元素。
  *

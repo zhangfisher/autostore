@@ -11,8 +11,8 @@
  * 它是焦点/输入态/动画保留的充要证据（节点未被替换）。
  */
 import { describe, expect, test } from "bun:test";
-import "./setup";
-import { mount, nextTick } from "./helpers";
+import "../setup";
+import { mount, nextTick } from "../helpers";
 
 /** 从 engine.scopes 反查元素对应的 scope */
 function scopeOf(engine: any, el: Element): any {
@@ -80,7 +80,12 @@ describe("x-for v2 key-based 节点复用", () => {
         // P0：纯路径 itemsPath 时补 items.* 监听，命中项级 update 触发 render，走复用 + refresh patch。
         const { root, store } = mount(
             `<ul x-for="item of items" :key="item.id"><li x-text="item.name"></li></ul>`,
-            { items: [{ id: 1, name: "a" }, { id: 2, name: "b" }] },
+            {
+                items: [
+                    { id: 1, name: "a" },
+                    { id: 2, name: "b" },
+                ],
+            },
         );
         const ul = root.querySelector("ul")!;
         const li0 = ul.children[0]!;
@@ -180,7 +185,12 @@ describe("x-for v2 key-based 节点复用", () => {
     test("watcher/scope 无泄漏：10 次 push+pop 循环后 binding.children.size 回到初始", async () => {
         const { root, store, engine } = mount(
             `<ul x-for="item of items" :key="item.id"><li x-text="item.name"></li></ul>`,
-            { items: [{ id: 1, name: "a" }, { id: 2, name: "b" }] },
+            {
+                items: [
+                    { id: 1, name: "a" },
+                    { id: 2, name: "b" },
+                ],
+            },
         );
         const ul = root.querySelector("ul")!;
         const binding = scopeOf(engine, ul);
@@ -364,7 +374,12 @@ describe("x-for v2 key-based 节点复用", () => {
     test("P1 复合项移动：组内各成员项根 DOM 均复用（dt/dd 各自保持）", async () => {
         const { root, store } = mount(
             `<dl x-for="item of items" :key="item.id"><dt x-text="item.k"></dt><dd x-text="item.v"></dd></dl>`,
-            { items: [{ id: 1, k: "a", v: "1" }, { id: 2, k: "b", v: "2" }] },
+            {
+                items: [
+                    { id: 1, k: "a", v: "1" },
+                    { id: 2, k: "b", v: "2" },
+                ],
+            },
         );
         const dl = root.querySelector("dl")!;
         const dt0 = dl.children[0]!; // id=1 的 dt
@@ -393,7 +408,12 @@ describe("x-for v2 key-based 节点复用", () => {
         // watcher 精准 patch（不进 render）→ DOM 身份保持。验证 P0 未让字段级退化为粗粒度。
         const { root, store } = mount(
             `<ul x-for="item of items" :key="item.id"><li x-text="item.name"></li></ul>`,
-            { items: [{ id: 1, name: "a" }, { id: 2, name: "b" }] },
+            {
+                items: [
+                    { id: 1, name: "a" },
+                    { id: 2, name: "b" },
+                ],
+            },
         );
         const ul = root.querySelector("ul")!;
         const li0 = ul.children[0]!;

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { removeDirectives } from "../directives/utils/removeDirectives";
+import { removeDirectives } from "../../directives/utils/removeDirectives";
 
 /**
  * 构造一个带指定属性的 div 元素。

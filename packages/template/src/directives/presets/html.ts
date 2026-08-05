@@ -1,5 +1,3 @@
 import { AutoTemplateDirectiveBase } from "../base";
 
-export class HtmlDirective extends AutoTemplateDirectiveBase {
-    render() {}
-}
+export class HtmlDirective extends AutoTemplateDirectiveBase {}

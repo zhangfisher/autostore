@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { hasDirectives } from "../directives/utils/hasDirectives";
+import { hasDirectives } from "../../directives/utils/hasDirectives";
 
 /**
  * 构造一个带指定属性的 div 元素。
@@ -59,9 +59,7 @@ describe("hasDirectives - : 属性绑定快捷前缀", () => {
 describe("hasDirectives - 普通 HTML 属性", () => {
     test("普通属性 class/id/style/data-* 返回 false", () => {
         expect(
-            hasDirectives(
-                elWith({ class: "box", id: "app", style: "color:red", "data-x": "1" }),
-            ),
+            hasDirectives(elWith({ class: "box", id: "app", style: "color:red", "data-x": "1" })),
         ).toBe(false);
     });
 

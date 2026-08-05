@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import "./setup";
-import { mount, nextTick } from "./helpers";
+import "../setup";
+import { mount, nextTick } from "../helpers";
 
 describe("x-for 列表渲染（B 容器语义：直写普通元素）", () => {
     test("初始渲染 + 增项触发重建", async () => {
@@ -679,7 +679,14 @@ describe("x-for B 语义新增能力", () => {
             `<ul x-for="row of matrix" :key="row.id"><li x-text="row.title"></li><ol x-for="cell of row.cells" :key="cell.id"><li x-text="cell.v"></li></ol></ul>`,
             {
                 matrix: [
-                    { id: "r1", title: "R1", cells: [{ id: "c1", v: "a" }, { id: "c2", v: "b" }] },
+                    {
+                        id: "r1",
+                        title: "R1",
+                        cells: [
+                            { id: "c1", v: "a" },
+                            { id: "c2", v: "b" },
+                        ],
+                    },
                     { id: "r2", title: "R2", cells: [{ id: "c3", v: "c" }] },
                 ],
             },
@@ -839,10 +846,9 @@ describe("x-for 循环变量注入（$index/$length/$begin/$end/$odd/$even）", 
 
     test("自定义 index 名与 $index 共存", async () => {
         // 用户把序号命名为 i，$index 仍作为固定别名同时注入
-        const { root } = mount(
-            `<ul x-for="n,i of nums"><li x-text="i + '/' + $index"></li></ul>`,
-            { nums: ["a", "b"] },
-        );
+        const { root } = mount(`<ul x-for="n,i of nums"><li x-text="i + '/' + $index"></li></ul>`, {
+            nums: ["a", "b"],
+        });
         expect(root).toEqualHTML(`<div>
   <ul>
     <li>0/0</li>
@@ -856,10 +862,7 @@ describe("x-for 循环变量注入（$index/$length/$begin/$end/$odd/$even）", 
         const { root } = mount(
             `<ul x-for="row of matrix"><ol x-for="cell of row.cells"><li x-text="$index"></li></ol></ul>`,
             {
-                matrix: [
-                    { cells: ["a", "b"] },
-                    { cells: ["c"] },
-                ],
+                matrix: [{ cells: ["a", "b"] }, { cells: ["c"] }],
             },
         );
         expect(root).toEqualHTML(`<div>
@@ -888,7 +891,12 @@ describe("x-for 结构变化无 children 泄漏（destroy 自移除父级）", (
     test("push/pop/整体替换/多次累积：binding.children.size 恒等于存活项数", async () => {
         const { root, store, engine } = mount(
             `<ul x-for="item of items" :key="item.id"><li x-text="item.name"></li></ul>`,
-            { items: [{ id: 1, name: "a" }, { id: 2, name: "b" }] },
+            {
+                items: [
+                    { id: 1, name: "a" },
+                    { id: 2, name: "b" },
+                ],
+            },
         );
         const ul = root.querySelector("ul")!;
         const binding = scopeOf(engine, ul);
@@ -930,7 +938,12 @@ describe("x-for 结构变化无 children 泄漏（destroy 自移除父级）", (
         // 结构变化重建时，旧项的全部成员 scope 都应从父级脱离（修复前会按"项数×成员数"线性堆积）。
         const { root, store, engine } = mount(
             `<dl x-for="item of items"><dt x-text="item.k"></dt><dd x-text="item.v"></dd></dl>`,
-            { items: [{ k: "a", v: "1" }, { k: "b", v: "2" }] },
+            {
+                items: [
+                    { k: "a", v: "1" },
+                    { k: "b", v: "2" },
+                ],
+            },
         );
         const dl = root.querySelector("dl")!;
         const binding = scopeOf(engine, dl);

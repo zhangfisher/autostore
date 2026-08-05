@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { AutoStore } from "autostore";
-import { AutoTemplateScope } from "../scope";
-import { createDirectives } from "../directives/utils/createDirectives";
-import { AutoTemplateDirectiveBase } from "../directives/base";
-import type { AutoDirectiveInfo } from "../directives/types";
-import { AutoTemplateEngine } from "../engine";
+import { AutoTemplateScope } from "../../scope";
+import { createDirectives } from "../../directives/utils/createDirectives";
+import { AutoTemplateDirectiveBase } from "../../directives/base";
+import type { AutoDirectiveInfo } from "../../directives/types";
+import { AutoTemplateEngine } from "../../engine";
 
 /**
  * 测试用指令类
@@ -32,7 +32,9 @@ class SamePrioB extends AutoTemplateDirectiveBase {
 /** 构造最小可用 engine（不自动编译），并注册测试指令类 */
 function makeEngine(): AutoTemplateEngine<any> {
     const store = new AutoStore({ count: 0 });
-    const engine = new AutoTemplateEngine(document.createElement("div"), store, { autostart: false });
+    const engine = new AutoTemplateEngine(document.createElement("div"), store, {
+        autostart: false,
+    });
     engine.directives.set("high", HighPrioSingleton);
     engine.directives.set("low", LowPrioSingleton);
     engine.directives.set("multi", MultiInstance);
@@ -42,7 +44,11 @@ function makeEngine(): AutoTemplateEngine<any> {
 }
 
 function makeBinding(engine: AutoTemplateEngine<any>): AutoTemplateScope {
-    return new AutoTemplateScope(engine, document.createElement("div"), document.createElement("div"));
+    return new AutoTemplateScope(
+        engine,
+        document.createElement("div"),
+        document.createElement("div"),
+    );
 }
 
 /** 包装 createDirectives，自动注入测试用 binding */
@@ -55,7 +61,10 @@ function buildDirectives(
 
 describe("createDirectives - 未注册指令", () => {
     test("未注册指令被静默跳过，不抛错", () => {
-        const result = buildDirectives(makeEngine(), [{ name: "unknown" }, { name: "high", value: "a" }]);
+        const result = buildDirectives(makeEngine(), [
+            { name: "unknown" },
+            { name: "high", value: "a" },
+        ]);
         expect(result).toHaveLength(1);
         expect(result[0]).toBeInstanceOf(HighPrioSingleton);
     });
