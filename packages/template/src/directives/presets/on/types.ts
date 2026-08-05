@@ -1,0 +1,94 @@
+/**
+ * x-on 事件指令的类型契约。
+ *
+ * 修饰符统一为 descriptor：`{ name, type, apply }`，`type` 作判别字段区分三种本质不同的形状：
+ * - **option**: 合并进 `addEventListener` 第 3 参（once/capture/passive）
+ * - **guard**:  handler 内判断事件，返回 false 阻止业务（self/ctrl/按键/鼠标/exact）
+ * - **wrapper**: 包装 handler（debounce）
+ *
+ * OnDirective 主逻辑据 `type` 分派：option 合并 options、guard 组成 AND 链、wrapper 由外向内包裹。
+ */
+
+import type { AutoTemplateScope } from "../../../scope";
+
+/** addEventListener 第 3 参的子集（option 类修饰符可产出的字段） */
+export type EventListenerOptionsSubset = Pick<AddEventListenerOptions, "once" | "capture" | "passive">;
+
+/**
+ * 修饰符运行时上下文（apply 入参）。
+ */
+export interface ModifierRuntime {
+    /** 触发元素（供 self 等需元素引用的守卫） */
+    el: HTMLElement;
+    /** 本修饰符段名，如 "debounce" / "ctrl" */
+    name: string;
+    /** 紧随其后的数字段参数（如 ".500" → 500）；无则 undefined。当前仅 debounce 用 */
+    num?: number;
+    /** 本 x-on 的完整修饰符列表（供 exact 判断其他系统修饰符是否存在） */
+    modifiers: string[];
+    /** 事件名（attr，如 "click" / "keydown"），供 left/right 按事件类型分派 */
+    event: string;
+}
+
+/** wrapper 清理句柄：destroy 时调用 cancel 清理资源（如 debounce timer） */
+export interface CleanupHandle {
+    cancel?: () => void;
+}
+
+/** option 类修饰符：返回合并进 addEventListener 第 3 参的字段 */
+export type OptionModifierDesc = {
+    name: string;
+    type: "option";
+    apply: (rt: ModifierRuntime) => EventListenerOptionsSubset;
+};
+
+/** guard 类修饰符：返回 false 阻止业务 handler；true/undefined 放行 */
+export type GuardModifierDesc = {
+    name: string;
+    type: "guard";
+    apply: (event: Event, rt: ModifierRuntime) => boolean;
+};
+
+/** wrapper 类修饰符：包装 next 返回新 handler；可写 cleanup.cancel 注册清理 */
+export type WrapperModifierDesc = {
+    name: string;
+    type: "wrapper";
+    apply: (
+        next: (event: Event) => void,
+        rt: ModifierRuntime,
+        cleanup: CleanupHandle,
+    ) => (event: Event) => void;
+};
+
+/** 修饰符描述符判别联合（按 type 收窄 apply 形状） */
+export type ModifierDesc = OptionModifierDesc | GuardModifierDesc | WrapperModifierDesc;
+
+/**
+ * Action 求值上下文：作为 action 的 `this`，同时表达式内经 `with(scope)` 可见。
+ *
+ * 命中 engine.actions 或 scope 局部 action 时，以本对象为 `this` 调用；
+ * `$event` 亦作为表达式求值器的形参注入。
+ */
+export interface OnEvalContext {
+    /** 触发元素 */
+    el: HTMLElement;
+    /** 原生事件对象 */
+    $event: Event;
+    /**
+     * 数据聚合视图（scope.getScopeContext()）：localScope + dataScope + 全局 state 拍平的视图。
+     * **可读可写**：读 `this.data.xxx` 取所有可见数据；写 x-data 字段经 set 陷阱透传到响应式
+     * dataScope（= store.state._scopes[id]，触发细粒度更新）。localScope 为普通对象，写入不响应式。
+     */
+    data: any;
+    /**
+     * 当前 AutoTemplateScope 实例：提供 `dataScope` / `getDataScope()` / `engine` / `parent` 等，
+     * 供 action 做深层访问与写入（区别于只读的 `data` 聚合视图）。
+     */
+    scope: AutoTemplateScope;
+    /** AutoStore 实例 */
+    store: any;
+    /** 引擎实例 */
+    engine: any;
+    /** 当前 x-on 触发的修饰符集合（键=修饰符名，值 true），如 { left: true, ctrl: true } */
+    $modifiers: Record<string, true>;
+}

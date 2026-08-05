@@ -28,11 +28,59 @@ export class AutoTemplateCompiler {
 
     private _getTransformers(): NodeTransformer<HTMLElement>[] {
         return [
+            // 前置：<script type="js/actions"> 提取为局部 action 后剪枝（普通 script 原样保留）
+            [
+                (node: Node) => node instanceof HTMLScriptElement && node.type === "js/actions",
+                (script: HTMLElement) => this._extractScriptActions(script as HTMLScriptElement),
+            ],
             [
                 (node: Node) => node instanceof HTMLElement,
                 (current: HTMLElement) => this.compileElement(current),
             ],
         ];
+    }
+
+    /**
+     * 提取 `<script type="js/actions">` 内容为局部 action，注入最近祖先 scope.actions。
+     *
+     * 内容须为对象字面量（如 `{ pay(v){...}, submit(){...} }`），经 new Function 求值得对象。
+     * 求值失败或非对象记日志；找不到祖先 scope 则忽略。返回 null 表示剪枝——script 不进渲染 DOM。
+     * 普通 `<script>`（无 type 或其他 type）不匹配此 transformer，经 transformElement 默认路径原样保留。
+     */
+    private _extractScriptActions(script: HTMLScriptElement): null {
+        const text = script.textContent?.trim();
+        if (!text) return null;
+        let parsed: Record<string, (...args: any[]) => any>;
+        try {
+            const result = new Function(`return (${text})`)();
+            if (!result || typeof result !== "object") {
+                this.engine.logger.error(`<script type="js/actions"> 内容须为对象字面量`);
+                return null;
+            }
+            parsed = result;
+        } catch (e: any) {
+            this.engine.logger.error(`<script type="js/actions"> 解析失败: ${e?.message ?? e}`);
+            return null;
+        }
+        const scope = this._findNearestScope(script);
+        if (scope) {
+            scope.actions = { ...(scope.actions ?? {}), ...parsed };
+        }
+        return null;
+    }
+
+    /**
+     * 沿 parentElement 向上查找最近的已注册 scope（templateScopeMap）。
+     * 与 `_linkParent` 查找逻辑一致，用于把 script action 挂到最近祖先作用域。
+     */
+    private _findNearestScope(el: HTMLElement): AutoTemplateScope | undefined {
+        let p: HTMLElement | null = el.parentElement;
+        while (p) {
+            const scope = this.templateScopeMap.get(p);
+            if (scope) return scope;
+            p = p.parentElement;
+        }
+        return undefined;
     }
 
     /**

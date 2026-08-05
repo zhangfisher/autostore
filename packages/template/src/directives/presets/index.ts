@@ -1,6 +1,6 @@
 export * from "./bind";
 export * from "./data";
-export * from "./event";
+export * from "./on";
 export * from "./for";
 export * from "./html";
 export * from "./model";
@@ -18,6 +18,7 @@ import { IfDirective } from "./if";
 import { ForDirective } from "./for";
 import { DataDirective } from "./data";
 import { BindDirective } from "./bind";
+import { OnDirective } from "./on";
 
 /**
  * 预设指令映射：指令名 → 指令类。
@@ -31,4 +32,5 @@ export const presetDirectives: Record<string, typeof AutoTemplateDirectiveBase> 
     for: ForDirective,
     data: DataDirective,
     bind: BindDirective,
+    on: OnDirective,
 };

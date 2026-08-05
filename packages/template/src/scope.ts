@@ -103,6 +103,13 @@ export class AutoTemplateScope {
      * 自动透传进 x-for 各 item scope（item.parent = 容器 scope）。
      */
     dataScope: Record<string, any> | null = null;
+    /**
+     * 本作用域局部事件 action（由 `<script type="js/actions">` 在编译期注入）。
+     *
+     * 与 localScope/dataScope 同级参与 getAction 的 parent 链查找（子覆盖父，命中即止）；
+     * scope destroy 时随 scope 对象回收，无需手动清理。null 表示本层无局部 action。
+     */
+    actions: Record<string, (...args: any[]) => any> | null = null;
     /** 缓存的聚合视图（命中优先级：localScope > dataScope > parent 链 > engine.context） */
     private _scopeView: any = null;
 
@@ -141,6 +148,24 @@ export class AutoTemplateScope {
                 }
                 return k in parentView;
             },
+            set(_t, k: string | symbol, val: any): boolean {
+                // 写入透传（与 get 同序：localScope > dataScope）：命中即写对应容器。
+                // dataScope = store.state._scopes[id] 是响应式代理——写它触发细粒度更新，
+                // 故 `this.data.<x-data字段> = v` 与 `with(data){ <字段>++ }` 直接生效。
+                // localScope 为普通对象（x-for item），写入不响应式；未命中本层则委托父视图沿链。
+                // 视图结构（Proxy target 引用）不变，仅 set 透传底层容器，不破坏缓存复用语义。
+                if (typeof k === "string") {
+                    if (local && Object.prototype.hasOwnProperty.call(local, k)) {
+                        local[k] = val;
+                        return true;
+                    }
+                    if (data && Object.prototype.hasOwnProperty.call(data, k)) {
+                        data[k] = val;
+                        return true;
+                    }
+                }
+                return Reflect.set(parentView, k, val);
+            },
         });
         return this._scopeView;
     }
@@ -172,6 +197,42 @@ export class AutoTemplateScope {
             s = s.parent;
         }
         return false;
+    }
+
+    /**
+     * 沿 parent 链查找事件 action（局部 `<script type="js/actions">` → 全局 engine.actions）。
+     *
+     * 查找顺序：本 scope.actions → 各祖先 actions → engine.actions（终点）。
+     * 子 scope 同名 action 覆盖祖先（命中即止）。供 OnDirective 求值器（Action 优先策略）使用。
+     */
+    getAction(name: string): ((...args: any[]) => any) | undefined {
+        let s: AutoTemplateScope | null = this;
+        while (s) {
+            if (s.actions && Object.prototype.hasOwnProperty.call(s.actions, name)) {
+                return s.actions[name];
+            }
+            s = s.parent;
+        }
+        return this.engine.actions[name];
+    }
+
+    /**
+     * 沿 parent 链查找最近的 x-data 私有响应式域（`dataScope`）。
+     *
+     * 供 OnEvalContext 经 `this.scope.getDataScope()` 使用：action 无论挂在 x-data 元素本身
+     * 还是其后代，均可拿到"当前所在 x-data 块"的可读可写响应式代理——区别于 `getScopeContext`
+     * 返回的只读聚合视图（写已有键会抛 TypeError）。整条链均无 x-data 时返回 null。
+     *
+     * dataScope 引用恒定（DataDirective 铁律：永不整体替换 `_scopes[id]`），无需缓存；
+     * 每次调用沿链 O(深度) 查找，开销可忽略。
+     */
+    getDataScope(): Record<string, any> | null {
+        let s: AutoTemplateScope | null = this;
+        while (s) {
+            if (s.dataScope) return s.dataScope;
+            s = s.parent;
+        }
+        return null;
     }
 
     /**
@@ -251,15 +312,21 @@ export class AutoTemplateScope {
             try {
                 return getter(scope);
             } catch (e: any) {
-                this.engine.logger.error(`scope.watch: eval "${expr}" failed: ${e?.message ?? e}`);
+                this.engine.logger.warn(`scope.watch: eval "${expr}" failed: ${e?.message ?? e}`);
                 return undefined;
             }
         };
-        const deps = store.collectDependencies(safeEval, "read");
+        // 首次求值与依赖收集合并为一次：在 collectDependencies 的求值回调内缓存结果，
+        // 末尾直接返回缓存值——避免再 safeEval() 一次造成的重复求值与重复告警。
+        // （flush 时 update 闭包仍每次重新求值，那是必要的。）
+        let firstValue: any;
+        const deps = store.collectDependencies(() => {
+            firstValue = safeEval();
+        }, "read");
         const update = () => listener({ value: safeEval() });
         this._updates.push(update);
         this.watchers.push(store.watch(deps, () => this.engine.scheduler.schedule(update)));
-        return safeEval();
+        return firstValue;
     }
 
     /**
@@ -308,7 +375,7 @@ export class AutoTemplateScope {
         try {
             return getter(scope);
         } catch (e: any) {
-            this.engine.logger.error(`scope.read: eval "${value}" failed: ${e?.message ?? e}`);
+            this.engine.logger.warn(`scope.read: eval "${value}" failed: ${e?.message ?? e}`);
             return undefined;
         }
     }

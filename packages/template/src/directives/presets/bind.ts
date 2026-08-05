@@ -23,6 +23,37 @@ import { normalizeClass } from "../utils/normalizeClass";
  *
  * **多实例**：singleton=false，同元素多个 `:attr` 各自独立；多个 `:class` 各维护 `lastApplied`，
  * 同名类不做引用计数，destroy 可能误删共有类（接受，文档不保证）。
+ *
+ * @example 普通属性（`:title` 与 `x-bind:title` 完全等价，后者为缩写）
+ * <span :title="user.name"></span>
+ * // state: { user:{name:'a'} } → store.user.name='b' → <span title="b">
+ *
+ * @example class 三写法等价：`x-class` / `:class` / `x-bind:class`（解析期归一化为 bind+class）
+ * <div x-class="variant"></div>
+ * // state: { variant:'primary' } → class="primary"；variant='secondary' → class="secondary"
+ *
+ * @example class 全形态：字符串空格拆分 / 对象多条件开关 / 三元表达式
+ * <div x-class="v"></div>                                        // state:{v:'foo bar'} → class="foo bar"
+ * <div x-class="{active:isActive, disabled:isDisabled}"></div>
+ * // state:{isActive:true,isDisabled:false} → class="active"；isDisabled=true → class="active disabled"
+ * <div x-class="paid ? 'on' : 'off'"></div>                      // state:{paid:true} → class="on"；paid=false → "off"
+ *
+ * @example 原生 class 与 x-class 共存（静态 token 永不被碰、不被覆盖）
+ * <div class="btn" x-class="{primary:isPrimary}"></div>
+ * // state:{isPrimary:true} → class="btn primary"；isPrimary=false → class="btn"
+ *
+ * @example x-style：字符串走 `cssText` 整体替换 / 对象走 `Object.assign(el.style)` 合并
+ * <div x-style="styleStr"></div>                                 // state:{styleStr:'color:red'} → style="color:red"
+ * <div x-style="styleObj"></div>                                 // state:{styleObj:{color:'red',fontSize:'12px'}} → 合并到 el.style
+ * // 求值为 null/undefined/false/'' → 移除 style 属性
+ *
+ * @example `:value` / `:checked` 走 property，单向 state→DOM（非 x-model 双向，不监听 input 事件）
+ * <input :value="text">
+ * // state:{text:'a'} → store.text='b' → input.value='b'（回写 state 须另用 x-model）
+ *
+ * @example `:disabled` 等 boolean 型：truthy setAttribute / falsy removeAttribute
+ * <button :disabled="locked">提交</button>
+ * // state:{locked:true} → 禁用；locked=false → 解除（同此理：readonly / hidden / selected / multiple）
  */
 
 /** property 型属性：state→DOM 单向写入（`el[attr] = value`），不监听事件 = 不是 x-model */

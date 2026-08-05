@@ -77,7 +77,7 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
         // 注入框架保留键 _scopes（x-data 私有响应式域容器）；1 engine 1 store 约定下由 engine 负责
         this._ensureScopesState();
         this.template = el.cloneNode(true) as HTMLElement;
-        this.options = Object.assign({ autostart: true, debug: false }, options) as Required<
+        this.options = Object.assign({ autostart: true, debug: false, actions: {} }, options) as Required<
             AutoTemplateEngineOptions
         >;
         this.scheduler = new UpdateScheduler();
@@ -91,6 +91,13 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
 
     get logger() {
         return this.store.logger;
+    }
+
+    /**
+     * 全局事件 action 表（来自 options.actions），作为 scope.getAction 查找链的终点。
+     */
+    get actions(): Record<string, (...args: any[]) => any> {
+        return this.options.actions;
     }
 
     /**

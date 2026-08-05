@@ -28,7 +28,10 @@ describe("x-data 数据指令（编译期首次注入）", () => {
     });
 
     test("relaxed-json 宽松语法：无引号键 / 尾逗号 / 字符串值", () => {
-        const { root } = mount(`<div x-data="{a:1, b:'hi',}"><span x-text="a + b"></span></div>`, {});
+        const { root } = mount(
+            `<div x-data="{a:1, b:'hi',}"><span x-text="a + b"></span></div>`,
+            {},
+        );
         expect(root).toEqualHTML(`<div>
   <div>
     <span>1hi</span>
@@ -37,7 +40,7 @@ describe("x-data 数据指令（编译期首次注入）", () => {
     });
 
     test("嵌套覆盖：子 x-data 覆盖父同名键，互不污染", () => {
-        const { root } = mount(
+        const { root, engine } = mount(
             `<div id="a" x-data="{a:1}">
   <span x-text="a"></span>
   <div id="b" x-data="{a:2}">
@@ -90,7 +93,10 @@ describe("x-data 数据指令（编译期首次注入）", () => {
 
 describe("engine.data 运行时更新", () => {
     test("合并更新已有键：路径订阅自动驱动 DOM", async () => {
-        const { root, engine } = mount(`<div id="a" x-data="{a:1}"><span x-text="a"></span></div>`, {});
+        const { root, engine } = mount(
+            `<div id="a" x-data="{a:1}"><span x-text="a"></span></div>`,
+            {},
+        );
         engine.data(root.querySelector("#a")!, { a: 2 });
         await nextTick();
         expect(root).toEqualHTML(`<div>
@@ -199,7 +205,10 @@ describe("engine.data 运行时更新", () => {
     });
 
     test("给空 dataScope 注入数据：新增键被精准订阅", async () => {
-        const { root, engine } = mount(`<div id="a" x-data="{}"><span x-text="b"></span></div>`, {});
+        const { root, engine } = mount(
+            `<div id="a" x-data="{}"><span x-text="b"></span></div>`,
+            {},
+        );
         expect(root).toEqualHTML(`<div>
   <div id="a">
     <span></span>
@@ -230,7 +239,10 @@ describe("x-data.global 挂载全局 store", () => {
     });
 
     test("响应式：改 store.state 自动更新（global 运行时改用 store.state 直接操作）", async () => {
-        const { root, store } = mount(`<div x-data.global="{a:1}"><span x-text="a"></span></div>`, {});
+        const { root, store } = mount(
+            `<div x-data.global="{a:1}"><span x-text="a"></span></div>`,
+            {},
+        );
         store.state.a = 99;
         await nextTick();
         expect(root).toEqualHTML(`<div>

@@ -57,7 +57,7 @@ describe("findDirectives - 普通长前缀指令", () => {
         });
     });
 
-    test('x-event:click="xxx" 解析为 event 指令，事件名放入 attr', () => {
+    test('x-event:click="xxx" 过时写法仍解析为 event（未注册→静默失效）', () => {
         expect(parseOne({ "x-event:click": "xxx" })).toEqual({
             name: "event",
             attr: "click",
@@ -98,17 +98,17 @@ describe("findDirectives - x-class/x-style 别名归一化（≡ x-bind）", () 
 });
 
 describe("findDirectives - @ 事件快捷前缀", () => {
-    test('@click="fn" 解析为 event 指令并输出事件名 attr', () => {
+    test('@click="fn" 解析为 on 指令并输出事件名 attr', () => {
         expect(parseOne({ "@click": "fn" })).toEqual({
-            name: "event",
+            name: "on",
             attr: "click",
             value: "fn",
         });
     });
 
-    test('@click.debounce="fn" 修饰符放入 modifiers，name 仍为 event', () => {
+    test('@click.debounce="fn" 修饰符放入 modifiers，name 仍为 on', () => {
         expect(parseOne({ "@click.debounce": "fn" })).toEqual({
-            name: "event",
+            name: "on",
             attr: "click",
             value: "fn",
             modifiers: ["debounce"],
@@ -117,7 +117,7 @@ describe("findDirectives - @ 事件快捷前缀", () => {
 
     test("@keydown.a.b 支持多个修饰符", () => {
         expect(parseOne({ "@keydown.a.b": "onKey" })).toEqual({
-            name: "event",
+            name: "on",
             attr: "keydown",
             value: "onKey",
             modifiers: ["a", "b"],
@@ -125,7 +125,7 @@ describe("findDirectives - @ 事件快捷前缀", () => {
     });
 
     test("@click 无值时仍输出 attr，但不输出 value", () => {
-        expect(parseOne({ "@click": "" })).toEqual({ name: "event", attr: "click" });
+        expect(parseOne({ "@click": "" })).toEqual({ name: "on", attr: "click" });
     });
 });
 
@@ -211,7 +211,7 @@ describe("findDirectives - 顺序与忽略规则", () => {
         );
         expect(list).toEqual([
             { name: "if", value: "a" },
-            { name: "event", attr: "click", value: "b" },
+            { name: "on", attr: "click", value: "b" },
             { name: "bind", attr: "title", value: "c" },
             { name: "text", value: "d" },
         ]);
@@ -245,7 +245,7 @@ describe("findDirectives - 自定义 prefix", () => {
     test("prefix 不影响 @ 与 : 快捷前缀的识别", () => {
         const list = getDirectives(elWith({ "@click": "fn", ":title": "x" }), "data-x-");
         expect(list).toEqual([
-            { name: "event", attr: "click", value: "fn" },
+            { name: "on", attr: "click", value: "fn" },
             { name: "bind", attr: "title", value: "x" },
         ]);
     });

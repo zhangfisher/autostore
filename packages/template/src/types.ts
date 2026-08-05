@@ -110,4 +110,14 @@ export interface AutoTemplateEngineOptions {
      * false: 需要后续调用compile方法进行编译
      */
     autostart?: boolean;
+    /**
+     * 全局事件 action 函数表。
+     *
+     * `@click="name"` / `@click="name(args)"` 命中时，以 OnEvalContext 为 this 调用。
+     * 作为 scope.getAction 查找链的终点；模板内 `<script type="js/actions">` 注入的
+     * 局部 action 优先级更高（沿 scope parent 链先命中）。
+     *
+     * @default {}
+     */
+    actions?: Record<string, (...args: any[]) => any>;
 }

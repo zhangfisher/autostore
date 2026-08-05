@@ -115,6 +115,24 @@ describe("x-bind 属性绑定", () => {
 </div>`);
     });
 
+    test(":title 表达式拼接：多个依赖任一变化均触发重新求值", async () => {
+        const { root, store } = mount(
+            `<span :title="user.first + ' ' + user.last"></span>`,
+            { user: { first: "张", last: "三" } },
+        );
+        const span = root.querySelector("span")!;
+        // 首渲：整表达式经 watchExpression 求值 → "张 三"
+        expect(span.getAttribute("title")).toBe("张 三");
+        // 改 first：collectDependencies 已收集 user.first 与 user.last 两条依赖，任一变化都重新求值
+        store.state.user.first = "李";
+        await nextTick();
+        expect(span.getAttribute("title")).toBe("李 三");
+        // 改 last：同样触发整表达式重算
+        store.state.user.last = "四";
+        await nextTick();
+        expect(span.getAttribute("title")).toBe("李 四");
+    });
+
     test(":value 走 property 更新输入框当前值", async () => {
         const { root, store } = mount(`<input :value="text">`, { text: "a" });
         const input = root.querySelector("input")!;

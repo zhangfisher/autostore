@@ -7,8 +7,8 @@ const EVENT_PREFIX = "@";
 const BIND_PREFIX = ":";
 /** 指令 options 补充参数的后缀，如 x-if-options */
 const OPTIONS_SUFFIX = "-options";
-/** 事件绑定指令名称 */
-const EVENT_DIRECTIVE_NAME = "event";
+/** 事件绑定指令名称（x-event 已过时重命名为 x-on，@ 与 x-on 均产出此名） */
+const ON_DIRECTIVE_NAME = "on";
 /** 属性绑定指令名称 */
 const BIND_DIRECTIVE_NAME = "bind";
 /** x-show 别名指向的指令名（x-show ≡ x-if.keep） */
@@ -106,7 +106,7 @@ function parsePrefixedDirective(rest: string, rawValue: string): AutoDirectiveIn
  * 按顺序进行解析并返回结果
  *
  * 说明：
- * - 事件类指令（@event / x-event:name）统一解析为 name 为 "event"，事件名放入 attr，
+ * - 事件类指令（@event / x-on:name）统一解析为 name 为 "on"，事件名放入 attr，
  *   修饰符放入 modifiers；属性类指令（:attr / x-bind:name）统一解析为 name 为 "bind"。
  * - `@` 与 `:` 为固定快捷前缀，不受 prefix 参数影响；prefix 仅控制 x- 这类长前缀的识别。
  * - options 补充参数（x-{name}-options）不单独占位，而是合并到同元素上同名指令的 options 字段；
@@ -127,10 +127,10 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): AutoDirectiveInfo
         const rawName = attr.name;
         const rawValue = attr.value;
 
-        // 1. @ 事件快捷前缀：@click / @click.debounce -> { name:"event", attr:"click"[, modifiers] }
+        // 1. @ 事件快捷前缀：@click / @click.debounce -> { name:"on", attr:"click"[, modifiers] }
         if (rawName.startsWith(EVENT_PREFIX)) {
             const { head, modifiers } = splitHeadAndModifiers(rawName.slice(EVENT_PREFIX.length));
-            const info: AutoDirectiveInfo = { name: EVENT_DIRECTIVE_NAME, attr: head };
+            const info: AutoDirectiveInfo = { name: ON_DIRECTIVE_NAME, attr: head };
             if (rawValue !== "") info.value = rawValue;
             if (modifiers.length > 0) info.modifiers = modifiers;
             results.push(info);

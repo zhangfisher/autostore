@@ -83,12 +83,12 @@ export class DataDirective extends AutoTemplateDirectiveBase {
         try {
             const parsed: unknown = JSON.parse(toJson(trimmed));
             if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-                this.engine.logger.error(`x-data: 值必须解析为对象，实际得到 ${JSON.stringify(parsed)}`);
+                this.engine.logger.warn(`x-data: 值必须解析为对象，实际得到 ${JSON.stringify(parsed)}`);
                 return {};
             }
             return parsed as Record<string, any>;
         } catch (e: any) {
-            this.engine.logger.error(`x-data: 解析 "${raw}" 失败: ${e?.message ?? e}`);
+            this.engine.logger.warn(`x-data: 解析 "${raw}" 失败: ${e?.message ?? e}`);
             return {};
         }
     }
