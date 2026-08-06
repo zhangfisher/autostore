@@ -13,6 +13,7 @@
  */
 import { AutoTemplateScope } from "../scope";
 import { removeDirectives } from "../directives/utils/removeDirectives";
+import { DirectiveKind } from "../directives/base";
 import type { AutoTemplateEngine } from "../engine";
 import { transformElement, type NodeTransformer, type OwnsChildrenResult } from "../utils/transformElement";
 import { hasDirectives } from "../directives/utils/hasDirectives";
@@ -110,7 +111,7 @@ export class AutoTemplateCompiler {
             return template.cloneNode(false) as HTMLElement;
         }
         const el = template.cloneNode(false) as HTMLElement;
-        removeDirectives(el);
+        removeDirectives(el, "x-", this._runtimeKeepAttr());
         const scope = new AutoTemplateScope(this.engine, el, template);
         this._linkParent(template, scope);
         this.templateScopeMap.set(template, scope);
@@ -147,6 +148,27 @@ export class AutoTemplateCompiler {
             );
         }
         return owners.length === 1;
+    }
+
+    /**
+     * 构建 removeDirectives 的 keepAttr 谓词：保留 Runtime/Hybrid 指令属性。
+     *
+     * 这些指令的属性须留在结果 DOM 上（供 static initialize 建立的 MutationObserver 检测、
+     * 允许 DOM API 改值/删除），故编译期不剥除。Compile 指令属性照常剥除。
+     *
+     * 匹配规则：对每个 Runtime/Hybrid 指令名 `n`，保留 `x-${n}` 与 `x-${n}.*`（含修饰符形式，
+     * 如 `x-loading.screen`）。`.` 边界避免 `x-loading` 误匹配 `x-loading-state`。
+     * 仅考虑 `x-` 长前缀（Runtime 指令无 `@`/`:` 快捷形式）。
+     */
+    private _runtimeKeepAttr(): (attrName: string) => boolean {
+        const names: string[] = [];
+        for (const [name, cls] of this.engine.directives) {
+            if (cls.kind === DirectiveKind.Runtime || cls.kind === DirectiveKind.Hybrid) {
+                names.push(name);
+            }
+        }
+        return (attrName: string) =>
+            names.some((n) => attrName === `x-${n}` || attrName.startsWith(`x-${n}.`));
     }
 
     /**
@@ -189,7 +211,7 @@ export class AutoTemplateCompiler {
         reuseEl?: HTMLElement,
     ): { el: HTMLElement; scope: AutoTemplateScope } {
         const el = reuseEl ?? (itemTemplate.cloneNode(false) as HTMLElement);
-        if (!reuseEl) removeDirectives(el);
+        if (!reuseEl) removeDirectives(el, "x-", this._runtimeKeepAttr());
         // reuseEl：旧 scope 已 destroy，其子树 DOM 残留在 el 上，须清空后重建，否则 compileSubtree
         // 的 appendChild 会导致子节点重复。
         if (reuseEl) {

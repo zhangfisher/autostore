@@ -1,13 +1,25 @@
-import { AutoTemplateDirectiveBase } from "../base";
+import { AutoTemplateDirectiveBase, DirectiveKind, type RuntimeDirective } from "../base";
+import type { AutoTemplateEngine } from "../../engine";
+import { isSimpleStatePath } from "../../scope";
+import { getVal, type Watcher } from "autostore";
+import { getDirectives } from "../utils/getDirectives";
+import { rgba } from "../../utils/colors";
 import { toJson } from "really-relaxed-json";
 
 /**
- * x-loading：在宿主元素上覆盖一个「加载中」层。
+ * x-loading：在宿主元素上覆盖一个「加载中」层。（**运行时指令**，走 observer 通道）
+ *
+ * **运行时语义**（详见 docs/adr/0001-directive-kind-system.md）：
+ * - 编译器致盲——`x-loading` 属性**保留**在结果 DOM 上，允许通过 DOM API
+ *   （`setAttribute` / `removeAttribute`）改值或删除，运行时动态生效。
+ * - `static initialize` 在 engine.el 上建立 MutationObserver，监听 `x-loading` 元素的
+ *   增/删/属性变化：add→`mounted`、remove→`unmounted`、值变→`attrChanged`。
+ * - 反应式来源为 **`engine.store`（全局绝对路径/表达式）**——运行时无 scope，不支持
+ *   x-data 局部变量 / x-for item 等 scope 相对表达式。
  *
  * 两态绑定：
  * - **快速绑定** `x-loading="order.isSubmit"` / `x-loading="isLoading"`：整值即 visible 表达式，
- *   其余配置全默认。配合 x-data 的局部变量或 store 路径均可（`scope.watch` 自动识别路径/表达式，
- *   自动注入 localScope / dataScope）。
+ *   其余配置全默认。visible 经 `engine.store` 求值。
  * - **配置绑定** `x-loading="{ visible:'isLoading', message:'正在加载', bgColor:'white',
  *   color:'red', opacity:0.5, delay:300 }"`：字段化配置，visible 必填。
  *
@@ -31,7 +43,7 @@ import { toJson } from "really-relaxed-json";
  * <div x-loading.screen="{ visible:'pageLoading', message:'加载中…' }"></div>
  */
 
-/** 全局样式 <style> 的 id（首次实例化时注入一次，常驻不回收） */
+/** 全局样式 <style> 的 id（首次 initialize 时注入一次，常驻不回收） */
 const STYLES_ID = "x-loading-styles";
 /** 覆盖层根节点 class */
 const OVERLAY_CLASS = "x-loading-overlay";
@@ -45,6 +57,10 @@ const LOADER_CLASS = "x-loading-loader";
 const MESSAGE_CLASS = "x-loading-message";
 /** 旋转动画名（独立命名空间，避免与宿主页面 keyframes 冲突） */
 const SPIN_KEY = "x-loading-spin";
+/** 指令属性名前缀（observer 检测 / 初始扫描用） */
+const ATTR = "x-loading";
+/** 匹配 x-loading 及其修饰符形式（x-loading / x-loading.screen），`.` 边界避免误匹配 x-loading-state */
+const ATTR_RE = /^x-loading(\.|$)/;
 
 /** 默认配置（与 docs/x-loading.md 规格一致） */
 const DEFAULTS = {
@@ -57,20 +73,27 @@ const DEFAULTS = {
 
 /** 配置绑定字段（visible 必填，其余可选） */
 interface LoadingConfig {
-    /** visible 表达式（路径或表达式），配置绑定下必填，缺失则 warn 不生效 */
+    /** visible 表达式（全局路径或表达式），配置绑定下必填，缺失则 warn 不生效 */
     visible: string;
     message?: string;
     bgColor?: string;
     color?: string;
     opacity?: number;
     delay?: number;
+    /**
+     * 覆盖层挂载目标选择器（默认挂宿主）：
+     * - 普通值（如 `'#target'`）→ `宿主.querySelector(selector)`，在宿主后代上显示；
+     * - 以 `@` 开头（如 `'@#modal'`）→ `document.querySelector(去掉@的部分)`，在宿主外/全局元素上显示；
+     * - 选择器未命中或非法 → 回退到宿主元素显示。
+     */
+    selector?: string;
 }
 
 /** 模块级样式注入标志：进程内只注入一次 */
 let stylesInjected = false;
 
 /**
- * 注入全局样式（首次实例化调用，幂等）。
+ * 注入全局样式（initialize 首次调用，幂等）。
  *
  * loader 颜色用 `currentColor`（替换给定 CSS 里硬编码的 `#ffa516`），
  * 由 loader 元素的 `style.color` 注入；`-webkit-mask`/`mask` 不含色调，原样保留。
@@ -125,140 +148,225 @@ function injectStyles(): void {
     stylesInjected = true;
 }
 
-/**
- * 常用 CSS 颜色名表（CSS Level 1-3 常用子集）。
- *
- * 自包含、不依赖 getComputedStyle/canvas——happy-dom 颜色规范化与生产环境不一致，
- * 自建表保证测试与生产行为一致。生僻名走 hex/rgb/hsl 分支，仍不可识别则回退黑色。
- */
-const NAMED_COLORS: Record<string, readonly [number, number, number]> = {
-    black: [0, 0, 0],
-    white: [255, 255, 255],
-    red: [255, 0, 0],
-    green: [0, 128, 0],
-    blue: [0, 0, 255],
-    yellow: [255, 255, 0],
-    cyan: [0, 255, 255],
-    magenta: [255, 0, 255],
-    gray: [128, 128, 128],
-    grey: [128, 128, 128],
-    orange: [255, 165, 0],
-    pink: [255, 192, 203],
-    purple: [128, 0, 128],
-    brown: [165, 42, 42],
-    lime: [0, 255, 0],
-    navy: [0, 0, 128],
-    teal: [0, 128, 128],
-    gold: [255, 215, 0],
-    silver: [192, 192, 192],
-    maroon: [128, 0, 0],
-    olive: [128, 128, 0],
-    indigo: [75, 0, 130],
-    tomato: [255, 99, 71],
-    coral: [255, 127, 80],
-};
+/** per-engine 句柄：observer + 实例表（initialize 建立、dispose 回收） */
+interface LoadingHandle {
+    mo: MutationObserver;
+    instances: Map<HTMLElement, LoadingDirective>;
+}
 
-/** hex（#rgb / #rgba / #rrggbb / #rrggbbaa）→ [r,g,b]，丢弃 alpha 通道；非法返回 null */
-function hexToRgb(hex: string): [number, number, number] | null {
-    let h = hex.replace("#", "").trim();
-    // 短格式展开：#rgb → #rrggbb、#rgba → #rrggbbaa
-    if (h.length === 3 || h.length === 4) {
-        h = h
-            .split("")
-            .map((c) => c + c)
-            .join("");
+export class LoadingDirective extends AutoTemplateDirectiveBase implements RuntimeDirective {
+    /** 运行时指令：走 observer 通道 */
+    static override readonly kind = DirectiveKind.Runtime;
+
+    /** per-engine 句柄表（WeakMap：engine 回收时自动 GC，dispose 显式 delete） */
+    private static _handles = new WeakMap<AutoTemplateEngine, LoadingHandle>();
+
+    /**
+     * 类级初始化：注入全局样式 + 在 engine.el 上建 MutationObserver + 初始扫描静态元素。
+     *
+     * 顺序固定：injectStyles（首屏 FOUC 防御）→ 建 observer → 初始扫描（扫描会同步触发 mounted，
+     * mounted 构建覆盖层依赖样式已就绪）。幂等：同一 engine 仅生效一次。
+     */
+    static override initialize(engine: AutoTemplateEngine): void {
+        if (LoadingDirective._handles.has(engine)) return; // 幂等
+        injectStyles();
+
+        const instances = new Map<HTMLElement, LoadingDirective>();
+
+        /** 元素是否带 x-loading（含修饰符形式，如 x-loading.screen） */
+        const hasLoadingAttr = (el: Element): boolean =>
+            el.getAttributeNames().some((n) => ATTR_RE.test(n));
+
+        /** 收集 root（含自身）下所有带 x-loading 的元素——querySelectorAll 无法匹配任意修饰符前缀，遍历属性 */
+        const collectLoadingEls = (root: Element): HTMLElement[] => {
+            const out: HTMLElement[] = [];
+            const visit = (e: Element) => {
+                if (hasLoadingAttr(e)) out.push(e as HTMLElement);
+            };
+            visit(root);
+            root.querySelectorAll("*").forEach(visit);
+            return out;
+        };
+
+        /** 为单个元素挂载实例（已存在则跳过） */
+        const mountOne = (el: HTMLElement) => {
+            if (instances.has(el)) return;
+            const info = getDirectives(el).find((d) => d.name === "loading");
+            if (!info) return; // 属性被识别为 x-loading 但解析无 loading（理论上不会）
+            const inst = new LoadingDirective(engine, undefined, info);
+            inst.el = el;
+            instances.set(el, inst);
+            inst.mounted();
+        };
+
+        /** 卸载并移除实例（不存在则跳过） */
+        const unmountOne = (el: HTMLElement) => {
+            const inst = instances.get(el);
+            if (!inst) return;
+            instances.delete(el);
+            inst.unmounted();
+        };
+
+        const mo = new MutationObserver((muts) => {
+            for (const mut of muts) {
+                if (mut.type === "childList") {
+                    // 结构增删：扫描子树（含修饰符形式）统一挂载/卸载
+                    mut.addedNodes.forEach((n) => {
+                        if (n instanceof HTMLElement) collectLoadingEls(n).forEach(mountOne);
+                    });
+                    mut.removedNodes.forEach((n) => {
+                        if (n instanceof HTMLElement) collectLoadingEls(n).forEach((e) => instances.has(e) && unmountOne(e));
+                    });
+                } else if (mut.type === "attributes" && mut.attributeName === ATTR) {
+                    // 仅监听裸 x-loading 的值变化（修饰符形式 x-loading.screen 的运行时值变化为已知限制）
+                    const el = mut.target;
+                    if (!(el instanceof HTMLElement)) continue;
+                    const has = el.hasAttribute(ATTR);
+                    const existed = instances.has(el);
+                    if (has && !existed) {
+                        mountOne(el); // 新增属性 → 挂载
+                    } else if (!has && existed) {
+                        unmountOne(el); // 删除属性 → 卸载
+                    } else if (has && existed) {
+                        const oldV = mut.oldValue ?? "";
+                        const newV = el.getAttribute(ATTR) ?? "";
+                        if (newV !== oldV) instances.get(el)!.attrChanged?.(newV, oldV); // 值变 → 重绑
+                    }
+                }
+            }
+        });
+        mo.observe(engine.el, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: [ATTR],
+            attributeOldValue: true,
+        });
+
+        // 初始扫描：编译产物中已存在的静态 x-loading 元素（同步触发 mounted，首屏立即可见）
+        collectLoadingEls(engine.el).forEach(mountOne);
+
+        LoadingDirective._handles.set(engine, { mo, instances });
     }
-    if (h.length < 6) return null;
-    h = h.slice(0, 6); // #rrggbbaa 仅取前 6 位（丢弃 alpha）
-    const r = parseInt(h.slice(0, 2), 16);
-    const g = parseInt(h.slice(2, 4), 16);
-    const b = parseInt(h.slice(4, 6), 16);
-    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
-    return [r, g, b];
-}
 
-/** hsl(h,s%,l%) → [r,g,b]（入参 h 为 0~360，s/l 为 0~100，内部归一化） */
-function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-    const sat = s / 100;
-    const light = l / 100;
-    const k = (n: number): number => (n + h / 30) % 12;
-    const a = sat * Math.min(light, 1 - light);
-    const f = (n: number): number =>
-        light - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-    return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
-}
-
-/**
- * 解析任意合法 CSS 颜色为 [r,g,b]。
- *
- * 支持：hex（全形态）/ rgb() / rgba() / hsl() / hsla() / 常用颜色名。
- * 不可识别返回 null（调用方回退默认色）。
- *
- * 导出供测试直接验证解析正确性。
- */
-export function parseColor(input: string): [number, number, number] | null {
-    if (typeof input !== "string") return null;
-    const s = input.trim().toLowerCase();
-    if (!s) return null;
-    if (s.startsWith("#")) return hexToRgb(s);
-    // rgb()/rgba()：支持逗号或空格分隔（含现代 `/ alpha` 语法仅取前三通道）
-    const rgbMatch = s.match(/^rgba?\(\s*([\d.]+)\s*[, ]\s*([\d.]+)\s*[, ]\s*([\d.]+)/);
-    if (rgbMatch) {
-        const r = Number(rgbMatch[1]);
-        const g = Number(rgbMatch[2]);
-        const b = Number(rgbMatch[3]);
-        if ([r, g, b].some(Number.isNaN)) return null;
-        return [r, g, b];
+    /**
+     * 类级销毁：断开 observer + 卸载全部 live 实例。
+     *
+     * **不移除全局样式**——document 级共享、跨 engine 常驻、体量可忽略（违背 KISS）；
+     * 多 engine 场景下单 engine 无法判断是否最后一个，强行移除会误伤存活 engine。
+     */
+    static override dispose(engine: AutoTemplateEngine): void {
+        const handle = LoadingDirective._handles.get(engine);
+        if (!handle) return;
+        handle.mo.disconnect();
+        for (const inst of handle.instances.values()) inst.unmounted();
+        handle.instances.clear();
+        LoadingDirective._handles.delete(engine);
     }
-    // hsl()/hsla()
-    const hslMatch = s.match(/^hsla?\(\s*([\d.]+)\s*[, ]\s*([\d.]+)%\s*[, ]\s*([\d.]+)%/);
-    if (hslMatch) {
-        const h = Number(hslMatch[1]);
-        const sat = Number(hslMatch[2]);
-        const l = Number(hslMatch[3]);
-        if ([h, sat, l].some(Number.isNaN)) return null;
-        return hslToRgb(h, sat, l);
-    }
-    if (NAMED_COLORS[s]) return [...NAMED_COLORS[s]];
-    return null;
-}
-
-/**
- * 合成 `rgba(bgColor, alpha)`：bgColor 经 parseColor 解析为三通道，alpha 经 clamp 到 [0,1]。
- * parseColor 失败时回退黑色（与 DEFAULTS.bgColor 一致）。
- */
-function rgba(color: string, alpha: number): string {
-    const rgb = parseColor(color) ?? [0, 0, 0];
-    const a = Math.max(0, Math.min(1, alpha));
-    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`;
-}
-
-export class LoadingDirective extends AutoTemplateDirectiveBase {
-    static override readonly priority = 0;
-    static override readonly singleton = true;
 
     /** 当前已挂载的覆盖层（未挂载时为 null）；delay 窗口期内仍为 null */
     private overlay: HTMLElement | null = null;
     /** delay 定时器句柄（延迟挂载未触发时存在） */
     private delayTimer: ReturnType<typeof setTimeout> | null = null;
-    /** 解析后的配置（created 中赋值，definite assignment） */
+    /** 解析后的配置（mounted 中赋值，definite assignment） */
     private config!: LoadingConfig;
+    /** visible 当前值的读取函数（路径支路 getVal / 表达式支路 with(state) 求值） */
+    private _read!: () => any;
 
-    override created(): void {
-        injectStyles();
+    /** 元素挂载（observer 检测到 add / 初始扫描）：解析配置 + 字面量/反应式分流 + 首渲 */
+    override mounted(): void {
         this.config = this.parseConfig();
-        // 配置绑定缺 visible / 快速绑定为空值 → 不订阅、不生效（仅 warn）
-        if (!this.config.visible) {
-            this.engine.logger.warn(
-                `x-loading: 缺少 visible 表达式（值="${this.value}"），指令不生效`,
-            );
+        // 字面量模式：裸 x-loading ≡ "true"、显式 "true"/"false" 为特殊布尔值（非状态路径）→ 静态显隐，无订阅
+        const literal = this.resolveLiteral(this.config.visible);
+        if (literal !== null) {
+            this.toggle(literal);
             return;
         }
-        // watch 返回当前值做首渲；后续变化经 scheduler flush 回调 toggle
-        const initial = this.binding.watch(this.config.visible, ({ value }) => {
-            this.toggle(!!value);
-        });
-        this.toggle(!!initial);
+        // 反应式模式：visible 为全局 store 路径/表达式
+        this._bindVisible();
+        this.toggle(!!this._read());
+    }
+
+    /**
+     * 判定 visible 是否为字面量布尔。
+     *
+     * - 空（裸 `x-loading` / 未指定 visible）≡ `true`：符合"加了就显示"的直觉；
+     * - `true` / `false`（大小写不敏感）为特殊布尔字面量，**非**状态路径——便于静态快速控制显隐；
+     * - 其余返回 null → 走反应式（`engine.store` 全局路径/表达式）。
+     *
+     * @returns true/false 表示字面量静态显隐；null 表示走反应式订阅
+     */
+    private resolveLiteral(visible: string): boolean | null {
+        const v = (visible ?? "").trim();
+        if (v === "") return true; // 裸属性 / 缺省 ≡ true
+        const lv = v.toLowerCase();
+        if (lv === "true") return true;
+        if (lv === "false") return false;
+        return null;
+    }
+
+    /** 元素移除（observer 检测到 remove）：清理订阅 / 定时器 / 覆盖层 DOM */
+    override unmounted(): void {
+        this._teardown();
+    }
+
+    /** 属性值变化（observer 检测到 setAttribute）：拆旧绑定后重新挂载（保留 el / 修饰符） */
+    attrChanged(newVal: string, _oldVal?: string): void {
+        this._teardown();
+        this.value = newVal;
+        if (this.info) this.info.value = newVal;
+        this.mounted();
+    }
+
+    /**
+     * 建立 visible 订阅（engine.store 全局，无 scope）。
+     *
+     * - 路径支路（isSimpleStatePath）→ `store.watch(path)` 精准订阅，`getVal` 读当前值；
+     * - 表达式支路（如 `a && !b`）→ `collectDependencies` 收集读依赖后订阅（仅全局 state，
+     *   不支持 scope 局部变量）。回调经 toggle 显隐。
+     */
+    private _bindVisible(): void {
+        const store = this.engine.store;
+        const expr = this.config.visible;
+        const onChange = () => this.toggle(!!this._read());
+        if (isSimpleStatePath(expr)) {
+            this._read = () => getVal(store.state, expr);
+            this.watchers.push(store.watch(expr, onChange));
+        } else {
+            const getter = new Function("scope", `with(scope){ return (${expr}); }`) as (scope: any) => any;
+            this._read = () => {
+                try {
+                    return getter(store.state);
+                } catch (e: any) {
+                    this.engine.logger.warn(`x-loading: eval "${expr}" failed: ${e?.message ?? e}`);
+                    return undefined;
+                }
+            };
+            const deps = store.collectDependencies(() => {
+                this._read();
+            }, "read");
+            this.watchers.push(store.watch(deps, onChange));
+        }
+    }
+
+    /** 清理本实例全部资源：off watcher + 清 delay 定时器 + 移除覆盖层 DOM */
+    private _teardown(): void {
+        for (const w of this.watchers) {
+            try {
+                (w as Watcher).off?.();
+            } catch {
+                /* 忽略已 off 的 watcher */
+            }
+        }
+        this.watchers.length = 0;
+        if (this.delayTimer) {
+            clearTimeout(this.delayTimer);
+            this.delayTimer = null;
+        }
+        if (this.overlay) {
+            this.overlay.remove();
+            this.overlay = null;
+        }
     }
 
     /** 解析指令值：对象语法 → 配置绑定；否则 → 快速绑定（整值即 visible） */
@@ -284,6 +392,7 @@ export class LoadingDirective extends AutoTemplateDirectiveBase {
                 color: typeof obj.color === "string" ? obj.color : undefined,
                 opacity: typeof obj.opacity === "number" ? obj.opacity : undefined,
                 delay: typeof obj.delay === "number" ? obj.delay : undefined,
+                selector: typeof obj.selector === "string" ? obj.selector : undefined,
             };
         } catch (e: any) {
             this.engine.logger.warn(`x-loading: 对象配置解析失败: ${e?.message ?? e}`);
@@ -293,7 +402,8 @@ export class LoadingDirective extends AutoTemplateDirectiveBase {
 
     /** 显隐总入口 */
     private toggle(show: boolean): void {
-        show ? this.show() : this.hide();
+        if (show) this.show();
+        else this.hide();
     }
 
     /**
@@ -331,11 +441,11 @@ export class LoadingDirective extends AutoTemplateDirectiveBase {
         }
     }
 
-    /** 构建并挂载覆盖层到宿主；幂等（已挂载直接返回） */
+    /** 构建并挂载覆盖层到目标元素（selector 命中或宿主）；幂等（已挂载直接返回） */
     private mountOverlay(): void {
         if (this.overlay) return;
-        const el = this.el;
-        if (!el) return;
+        const target = this.resolveTarget();
+        if (!target) return;
 
         const bgColor = this.config.bgColor ?? DEFAULTS.bgColor;
         const opacity = this.config.opacity ?? DEFAULTS.opacity;
@@ -365,19 +475,34 @@ export class LoadingDirective extends AutoTemplateDirectiveBase {
         }
 
         overlay.appendChild(box);
-        el.appendChild(overlay);
+        target.appendChild(overlay);
         this.overlay = overlay;
     }
 
-    /** 销毁：清延迟定时器 + 移除覆盖层 DOM（watcher 由 scope 统一 off） */
-    override destroy(): void {
-        if (this.delayTimer) {
-            clearTimeout(this.delayTimer);
-            this.delayTimer = null;
-        }
-        if (this.overlay) {
-            this.overlay.remove();
-            this.overlay = null;
+    /**
+     * 解析覆盖层挂载目标元素。
+     *
+     * - 无 selector → 宿主元素 `this.el`；
+     * - selector 以 `@` 开头 → `document.querySelector(去@)`，支持挂到宿主外/全局元素；
+     * - 其余 → `宿主.querySelector(selector)`，挂到宿主后代；
+     * - 未命中 / 非法选择器 → 回退宿主（命中失败不抛错、记 warn）。
+     */
+    private resolveTarget(): HTMLElement | null {
+        const host = this.el;
+        if (!host) return null;
+        const sel = this.config.selector;
+        if (!sel) return host;
+        const isGlobal = sel.startsWith("@");
+        const query = isGlobal ? sel.slice(1) : sel;
+        if (!query) return host; // 空 selector（如裸 "@"）→ 宿主
+        try {
+            const root: ParentNode = isGlobal ? document : host;
+            const found = root.querySelector(query);
+            return found instanceof HTMLElement ? found : host; // 未命中 → 回退宿主
+        } catch (e: any) {
+            // 非法选择器（querySelector 抛 SyntaxError）→ 回退宿主，避免中断
+            this.engine.logger.warn(`x-loading: 非法 selector "${sel}"，回退到宿主元素: ${e?.message ?? e}`);
+            return host;
         }
     }
 }

@@ -10,3 +10,5 @@ export * from "./consts";
 export * from "./schema";
 export * from "./plugin";
 export * from "./scope";
+
+export * as FastEvent from "fastevent/lite";

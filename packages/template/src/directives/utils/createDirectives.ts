@@ -1,6 +1,6 @@
 import type { AutoTemplateScope } from "../../scope";
 import type { AutoTemplateEngine } from "../../engine";
-import type { AutoTemplateDirectiveBase } from "../base";
+import { DirectiveKind, type AutoTemplateDirectiveBase } from "../base";
 import type { AutoDirectiveInfo } from "../types";
 
 /**
@@ -43,6 +43,10 @@ export function createDirectives(
     for (const info of effective) {
         const cls = engine.directives.get(info.name);
         if (!cls) continue; // 未注册指令静默跳过
+        // Runtime 指令走 observer 通道（由 static initialize 建立的 MutationObserver 驱动
+        // mounted/unmounted），编译器致盲：scope 通道不实例化、不调 created/compile。
+        // Hybrid 仍需 scope 通道（拿 binding 做相对表达式反应性），故仅排除纯 Runtime。
+        if (cls.kind === DirectiveKind.Runtime) continue;
 
         if (cls.singleton) {
             const pos = singletonPos.get(info.name);

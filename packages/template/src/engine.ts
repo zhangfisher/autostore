@@ -1,7 +1,7 @@
-import type { AutoTemplateEngineOptions } from "./types";
+import type { AutoTemplateEngineFullOptions, AutoTemplateEngineOptions } from "./types";
 import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
-import { AutoStore } from "autostore";
+import { AutoStore, FastEvent } from "autostore";
 import type { AutoTemplateScope } from "./scope";
 import { UpdateScheduler } from "./scheduler";
 
@@ -39,12 +39,27 @@ export const SCOPES_KEY = "_scopes";
  * app.destroy();
  * ```
  */
-export class AutoTemplateEngine<State extends Record<string, any> = Record<string, any>> {
+export class AutoTemplateEngine<State extends Record<string, any> = Record<string, any>>
+    extends FastEvent.FastLiteEvent
+{
     /** 挂载容器（编译产物替换其子节点，容器本身保留） */
     readonly el: HTMLElement;
     /** 外部传入的响应式数据源（引擎不创建、销毁时也不碰） */
     readonly store: AutoStore<State>;
-    readonly options: Required<AutoTemplateEngineOptions>;
+    /**
+     * 合并后的完整配置：基类 FastLiteEvent.options（id/title/delimiter/ignoreErrors/...）
+     * + AutoTemplate 自有配置（debug/autostart/actions），构造时一次性合并写入。
+     */
+    private _fullOptions: AutoTemplateEngineFullOptions | undefined;
+
+    /**
+     * 重写基类 accessor：基类 options 是 getter，子类不得用实例属性遮蔽（TS2610），
+     * 故以 getter 重写，返回合并类型（协变兼容基类 FastLiteEventOptions）。
+     * 构造完成前 _fullOptions 未就绪时回退 super.options，规避基类构造期虚分派读到 undefined。
+     */
+    override get options(): AutoTemplateEngineFullOptions {
+        return this._fullOptions ?? (super.options as AutoTemplateEngineFullOptions);
+    }
     readonly compiler: AutoTemplateCompiler;
     readonly directives: DirectiveManager;
     /** 微任务更新调度器（同 tick 多次变更合并为一次 patch） */
@@ -70,6 +85,7 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
      * @throws {Error} el 非 HTMLElement / store 非 AutoStore 实例
      */
     constructor(el: HTMLElement, store: AutoStore<State>, options?: AutoTemplateEngineOptions) {
+        super();
         if (!(el instanceof HTMLElement)) {
             throw new Error("Root element must be an HTMLElement");
         }
@@ -81,15 +97,26 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
         // 注入框架保留键 _scopes（x-data 私有响应式域容器）；1 engine 1 store 约定下由 engine 负责
         this._ensureScopesState();
         this.template = el.cloneNode(true) as HTMLElement;
-        this.options = Object.assign({ autostart: true, debug: false, actions: {} }, options) as Required<
-            AutoTemplateEngineOptions
-        >;
+        // 一次性合并：基类默认 options（super.options = 基类 _options：id/title/delimiter/ignoreErrors 等）
+        // + AutoTemplate 默认值 + 用户传入覆盖，写入 _fullOptions；此后 this.options 经 getter 返回此值。
+        this._fullOptions = {
+            ...super.options,
+            autostart: true,
+            debug: false,
+            actions: {},
+            ...options,
+        } as AutoTemplateEngineFullOptions;
         this.scheduler = new UpdateScheduler();
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
         if (this.options.autostart) {
             this.compile();
         }
+        // 类级初始化：对所有注册指令类（不分 kind）调用 static initialize(engine)。
+        // 须在 autostart compile 之后——runtime 指令的 initialize 会扫描已挂载的编译产物建 observer、
+        // 注入全局样式等。autostart=false 时编译产物尚未挂载，observer 连接后由 start() 的
+        // replaceChildren 触发 add 回调，照样生效。
+        this.directives.initializeAll();
     }
 
     get logger() {
@@ -235,6 +262,9 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
      * 否则会解绑用户在别处挂的订阅、清空其 computed 对象。
      */
     destroy(): void {
+        // 类级销毁：对所有已 initialize 的指令类调用 static dispose(engine)——断开 runtime 指令的
+        // observer、销毁全部 live 实例。先于 scope/DOM 清理，避免 observer 在 DOM 拆除期间空转回调。
+        this.directives.disposeAll();
         this.scheduler.clear();
         for (const scope of this.scopes.values()) {
             scope.destroy();
