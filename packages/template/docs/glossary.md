@@ -62,5 +62,31 @@
 - 静态字段：`kind`（默认 `Compile`）、`priority`、`singleton`、`ownsChildren`、`initialize(engine)`、`dispose(engine)`；
 - 实例钩子：scope 通道 `created`/`compile`/`destroy`；observer 通道 `mounted`/`unmounted`/`attrChanged`（基类皆为空实现，调用总安全）。
 
+## 动态 patch（模板增量编译）
+
+### 事实源方向（Source-of-Truth Direction）
+`engine.template` 为**唯一事实源**（只读编译输入）；运行树为派生、一次性产物。动态编译**只经修改模板触发**，不提供"运行树 → 模板"反向桥。见 [ADR-0002](adr/0002-dynamic-patch.md) 决策 1。
+
+### 正向桥（Forward Bridge）
+"模板元素 → scope"的映射，编译期由 `WeakMap<模板el, scope>` 维护（scope 创建时登记）。`patch(templateEl)` 经正向桥定位 scope，再取 `scope.el`（运行元素）。**仅 scope 元素有正向桥**；裸元素无映射，不可直接 patch。
+
+### 补丁单元（Patch Unit）
+一次 `patch` 重建的最小范围 = **一个 scope 的子树**（destroy `scope.children` + `compileSubtree` 重挂，复用 `_recompileSubtree`）。scope 元素**自身**不在重建范围内。
+
+### 增量编译 vs 全量编译
+- **增量编译（`patch`）**：仅重建 patch 目标 scope 子树，保留其余子树运行态（焦点/滚动/未提交输入）。覆盖"在 scope 内插/删/改子节点"。
+- **全量编译（`compile`）**：重建整棵运行树（`replaceChildren`），丢弃全部运行态。用于初始化或"scope 自身指令变更"等 patch 不覆盖的场景。
+
+### 动态区域（Dynamic Region）/ 稳定子树（Stable Subtree）
+- **稳定子树**：非结构指令作用域内的静态子树，模板与运行树 1:1 同构，正向桥可靠，可 patch。
+- **动态区域**：`x-for` 项内 / `x-if` 分支内——运行侧结构由指令运行时生成，与模板非同构，正向桥不保证。patch 目标落在动态区域（祖先链含 `ownsChildren` 结构指令）时拒绝或升级重建。
+
+### Runtime 指令与 patch 的关系
+纯 Runtime 指令（`x-loading`）**不建 scope**，不在 patch 范围；但其 observer 通道（[ADR-0001](adr/0001-directive-kind-system.md)）**本就响应原生 DOM 变更**，无需 patch。故 patch 边界 = scope = scope 通道（Compile/Hybrid）指令，无遗漏。
+
+### x-patch（哨兵指令）
+零副作用 Compile 指令，唯一作用是让裸元素成为 scope（进正向桥）、从而可被 `engine.patch` 定位。`created`/`compile`/`destroy` 全 no-op，不建 `_scopes[id]` 数据域、不注入 `dataScope`。等效 `x-data="{}"` 但更轻、更语义化。用法：`<div id="x" x-patch></div>` → `engine.patch("#x", ...)`。
+
 ## 决策记录
 - ✅ [ADR-0001] 运行时指令走纯 observer 通道（方案 A）—— *待补全 Initialize/Dispose 契约后定稿*
+- ✅ [ADR-0002] 动态 patch 机制（模板增量编译）—— *待确认"scope 自身指令变更"处置*

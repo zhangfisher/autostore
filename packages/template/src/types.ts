@@ -95,7 +95,7 @@ export interface DirectiveBinding {
  *
  * 传递给 AutoTemplate 构造函数的配置选项。
  */
-export interface AutoTemplateEngineOptions {
+export interface AutoTemplateEngineOptions extends FastEvent.FastLiteEventOptions {
     /**
      * 是否启用调试模式
      *
@@ -122,13 +122,4 @@ export interface AutoTemplateEngineOptions {
     actions?: Record<string, (...args: any[]) => any>;
 }
 
-/**
- * engine 实际持有的完整 options 类型：
- * AutoTemplate 自有配置（必填化）与基类 FastLiteEvent.options（FastLiteEventOptions）的合并。
- *
- * - 输入端 AutoTemplateEngineOptions 仍全可选，用户无需提供基类字段；
- *   id/title/delimiter/ignoreErrors 等由 FastLiteEvent 构造时填充默认值，再经 engine 合并写入。
- * - 此类型协变兼容基类 get options(): FastLiteEventOptions，消除继承类型冲突。
- */
-export type AutoTemplateEngineFullOptions = Required<AutoTemplateEngineOptions> &
-    FastEvent.FastLiteEventOptions;
+export interface AutoTemplateEngineEvents {}

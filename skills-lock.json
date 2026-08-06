@@ -2,7 +2,7 @@
   "version": 1,
   "skills": {
     "grill-me": {
-      "source": "C:\\Users\\Administrator\\Desktop\\skills",
+      "source": "C:/Users/Administrator/Desktop/skills",
       "sourceType": "local",
       "computedHash": "67e31b63e6e9e454cc2f51cd85b9cf1396ee46379a87c07a1450f33c47c1276a"
     },
@@ -11,6 +11,12 @@
       "sourceType": "github",
       "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
       "computedHash": "96718e0a89e48c7d76cc9759c7094a82ff34eb89ddc46a30388063fa9812356f"
+    },
+    "to-spec": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/to-spec/SKILL.md",
+      "computedHash": "144cf30cf527faff7f9211ae81ad3de5aaa6390f639b87ca5a48f5e818a8d33e"
     }
   }
 }

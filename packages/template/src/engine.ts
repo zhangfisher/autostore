@@ -1,4 +1,4 @@
-import type { AutoTemplateEngineFullOptions, AutoTemplateEngineOptions } from "./types";
+import type { AutoTemplateEngineEvents, AutoTemplateEngineOptions } from "./types";
 import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
 import { AutoStore, FastEvent } from "autostore";
@@ -39,26 +39,21 @@ export const SCOPES_KEY = "_scopes";
  * app.destroy();
  * ```
  */
-export class AutoTemplateEngine<State extends Record<string, any> = Record<string, any>>
-    extends FastEvent.FastLiteEvent
-{
+export class AutoTemplateEngine<
+    State extends Record<string, any> = Record<string, any>,
+> extends FastEvent.FastLiteEvent<AutoTemplateEngineEvents> {
     /** 挂载容器（编译产物替换其子节点，容器本身保留） */
     readonly el: HTMLElement;
     /** 外部传入的响应式数据源（引擎不创建、销毁时也不碰） */
     readonly store: AutoStore<State>;
-    /**
-     * 合并后的完整配置：基类 FastLiteEvent.options（id/title/delimiter/ignoreErrors/...）
-     * + AutoTemplate 自有配置（debug/autostart/actions），构造时一次性合并写入。
-     */
-    private _fullOptions: AutoTemplateEngineFullOptions | undefined;
 
     /**
      * 重写基类 accessor：基类 options 是 getter，子类不得用实例属性遮蔽（TS2610），
      * 故以 getter 重写，返回合并类型（协变兼容基类 FastLiteEventOptions）。
      * 构造完成前 _fullOptions 未就绪时回退 super.options，规避基类构造期虚分派读到 undefined。
      */
-    override get options(): AutoTemplateEngineFullOptions {
-        return this._fullOptions ?? (super.options as AutoTemplateEngineFullOptions);
+    override get options(): AutoTemplateEngineOptions {
+        return super.options as AutoTemplateEngineOptions;
     }
     readonly compiler: AutoTemplateCompiler;
     readonly directives: DirectiveManager;
@@ -85,7 +80,7 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
      * @throws {Error} el 非 HTMLElement / store 非 AutoStore 实例
      */
     constructor(el: HTMLElement, store: AutoStore<State>, options?: AutoTemplateEngineOptions) {
-        super();
+        super({ autostart: true, debug: false, actions: {}, ...options });
         if (!(el instanceof HTMLElement)) {
             throw new Error("Root element must be an HTMLElement");
         }
@@ -97,15 +92,7 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
         // 注入框架保留键 _scopes（x-data 私有响应式域容器）；1 engine 1 store 约定下由 engine 负责
         this._ensureScopesState();
         this.template = el.cloneNode(true) as HTMLElement;
-        // 一次性合并：基类默认 options（super.options = 基类 _options：id/title/delimiter/ignoreErrors 等）
-        // + AutoTemplate 默认值 + 用户传入覆盖，写入 _fullOptions；此后 this.options 经 getter 返回此值。
-        this._fullOptions = {
-            ...super.options,
-            autostart: true,
-            debug: false,
-            actions: {},
-            ...options,
-        } as AutoTemplateEngineFullOptions;
+
         this.scheduler = new UpdateScheduler();
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
@@ -127,7 +114,7 @@ export class AutoTemplateEngine<State extends Record<string, any> = Record<strin
      * 全局事件 action 表（来自 options.actions），作为 scope.getAction 查找链的终点。
      */
     get actions(): Record<string, (...args: any[]) => any> {
-        return this.options.actions;
+        return this.options.actions!;
     }
 
     /**
