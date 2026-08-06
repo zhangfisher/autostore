@@ -264,7 +264,7 @@ export class AutoTemplateEngine<
         // 3. 用原始模板重新编译子节点挂到 el（建新 scope + created 订阅 + compile 首渲）
         const template = scope.template;
         if (template) {
-            this.compiler.compileSubtree(el, template);
+            this.compiler.compileSubtree(el, template, scope);
             // 消化编译期 schedule 的首次渲染（如嵌套 x-for）
             this.scheduler.flushAll();
         }

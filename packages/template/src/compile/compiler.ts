@@ -13,10 +13,33 @@
  */
 import { AutoTemplateScope } from "../scope";
 import { removeDirectives } from "../directives/utils/removeDirectives";
+import { isDirectiveAttr } from "../directives/utils/isDirectiveAttr";
 import { DirectiveKind } from "../directives/base";
+import type { AutoDirectiveInfo } from "../directives/types";
 import type { AutoTemplateEngine } from "../engine";
 import { transformElement, type NodeTransformer, type OwnsChildrenResult } from "../utils/transformElement";
 import { hasDirectives } from "../directives/utils/hasDirectives";
+import { hasMustache, isRawTextElement, parseInterpolation, synthAttrExpr } from "./mustache";
+
+/**
+ * 元素是否含插值（需建 scope 的判据之一）。
+ *
+ * 探测两处 `{{`：**直接文本子节点**（文本插值）与**自身非指令属性值**（属性插值）。
+ * 均非递归、O(直接子节点/属性数)，绝不退化成 O(n²)。raw-text 元素（SCRIPT/STYLE）
+ * 一律不插值（见 ADR-0004 决策 7）。
+ */
+function hasInterpolation(el: HTMLElement): boolean {
+    if (isRawTextElement(el)) return false;
+    for (let i = 0; i < el.childNodes.length; i++) {
+        const child = el.childNodes[i];
+        if (child && child.nodeType === Node.TEXT_NODE && hasMustache(child.nodeValue)) return true;
+    }
+    for (let i = 0; i < el.attributes.length; i++) {
+        const attr = el.attributes[i];
+        if (attr && !isDirectiveAttr(attr.name) && hasMustache(attr.value)) return true;
+    }
+    return false;
+}
 
 export class AutoTemplateCompiler {
     readonly engine: AutoTemplateEngine;
@@ -34,11 +57,100 @@ export class AutoTemplateCompiler {
                 (node: Node) => node instanceof HTMLScriptElement && node.type === "js/actions",
                 (script: HTMLElement) => this._extractScriptActions(script as HTMLScriptElement),
             ],
+            // 文本节点插值：含 {{}} 的文本节点拆分 + 注册。scope 经父元素查 templateScopeMap
+            // （父元素在自身 walk 前已建 scope，含插值的 directive-less 元素亦由 hasInterpolation
+            // 触发建 scope）。无 scope（raw-text 父等）则原样克隆。见 ADR-0004 决策 1/4。
+            [
+                (node: Node) => node.nodeType === Node.TEXT_NODE && hasMustache((node as Text).nodeValue),
+                (node: Node) => {
+                    const parent = node.parentElement;
+                    const scope = parent ? this.templateScopeMap.get(parent) : undefined;
+                    if (!scope) return node.cloneNode(true);
+                    return this.compileTextNode(node as Text, scope);
+                },
+            ],
             [
                 (node: Node) => node instanceof HTMLElement,
                 (current: HTMLElement) => this.compileElement(current),
             ],
         ];
+    }
+
+    /**
+     * 编译含 `{{}}` 的文本节点（文本插值，ADR-0004 决策 1/3）。
+     *
+     * 拆为「字面量段 + 表达式段」，每表达式段一个 text node + 一个 `scope.watch`；
+     * 返回由段 text node 组成的 `DocumentFragment`（调用方 appendChild 搬入父）。
+     *
+     * **x-text/x-html 在场 → 返回 null（剪枝）**：x-text 整体覆写 textContent，若插值已建段
+     * text node + watcher，首次 compile 后段 node 被清空成游离节点、watcher 仍订阅 → 孤儿
+     * watcher 泄漏。故编译期剪枝该文本节点（非「建了让 x-text 覆盖」）。见 ADR-0004 决策 5。
+     *
+     * @returns DocumentFragment（段 text node 集合）；x-text/x-html 在场返回 null（剪枝）
+     */
+    private compileTextNode(node: Text, scope: AutoTemplateScope): DocumentFragment | null {
+        if (scope.directives.some((d) => d.info.name === "text" || d.info.name === "html")) {
+            return null;
+        }
+        const segments = parseInterpolation(node.nodeValue ?? "");
+        const frag = document.createDocumentFragment();
+        if (!segments) {
+            // 无 {{}}（filter 已筛，兜底）：原样克隆
+            frag.appendChild(node.cloneNode(true));
+            return frag;
+        }
+        for (const seg of segments) {
+            if ("literal" in seg) {
+                frag.appendChild(document.createTextNode(seg.literal));
+            } else {
+                const segNode = document.createTextNode("");
+                const initial = scope.watch(seg.expr, ({ value }) => {
+                    segNode.nodeValue = value == null ? "" : String(value);
+                });
+                segNode.nodeValue = initial == null ? "" : String(initial);
+                frag.appendChild(segNode);
+            }
+        }
+        return frag;
+    }
+
+    /**
+     * 属性插值 desugar（ADR-0004 决策 9-12）。
+     *
+     * 扫描 `el` 的非指令属性，对值含 `{{}}` 者：① 同属性已有显式 bind → 抛错（互斥）；
+     * ② `removeAttribute` 移除原生平属性（防字面 `{{}}` 泄漏 DOM）；③ 合成表达式；
+     * ④ 实例化 `BindDirective` 复用其五路 patch 分派（class diff / style / property /
+     * boolean / 普通）。watcher 经 `scope.watch` 自动入 `scope.watchers`/`_updates`，
+     * destroy/refresh 自动，无需手动登记。
+     */
+    private _compileAttrInterpolation(el: HTMLElement, scope: AutoTemplateScope): void {
+        const targets: Array<{ name: string; value: string }> = [];
+        for (let i = 0; i < el.attributes.length; i++) {
+            const attr = el.attributes[i];
+            if (attr && !isDirectiveAttr(attr.name) && hasMustache(attr.value)) {
+                targets.push({ name: attr.name, value: attr.value });
+            }
+        }
+        for (const { name, value } of targets) {
+            // 冲突检测：同属性已有显式 bind（:name / x-bind:name / x-class 等）
+            const conflict = scope.directives.some((d) => d.info.name === "bind" && d.info.attr === name);
+            if (conflict) {
+                throw new Error(
+                    `[插值冲突] 属性 "${name}" 已有显式绑定（:${name}/x-bind:${name}），与插值 ${name}="${value}" 互斥。\n` +
+                        `请二选一：用插值 ${name}="${value}"，或显式 :${name}="<expr>"。`,
+                );
+            }
+            const synthExpr = synthAttrExpr(value);
+            el.removeAttribute(name);
+            const BindCls = this.engine.directives.get("bind");
+            if (!BindCls) {
+                this.engine.logger.warn(`属性插值：未注册 bind 指令，跳过 ${name}="${value}"`);
+                continue;
+            }
+            const info: AutoDirectiveInfo = { name: "bind", attr: name, value: synthExpr };
+            const bind = new BindCls(this.engine, scope, info);
+            bind.created();
+        }
     }
 
     /**
@@ -105,7 +217,8 @@ export class AutoTemplateCompiler {
      * 同元素出现多个结构指令（如 `x-for` + eager `x-if`）会在 `_resolveOwnership` 中抛错。
      */
     compileElement(template: HTMLElement): HTMLElement | OwnsChildrenResult {
-        if (!hasDirectives(template)) {
+        // 含插值（文本/属性）但无指令的元素也需建 scope（隐式指令，ADR-0004 决策 2）。
+        if (!hasDirectives(template) && !hasInterpolation(template)) {
             // 必须浅克隆：transformElement 用 live NodeList 遍历原节点子节点并挂到返回的新节点下，
             // 若返回原节点，appendChild 会写回原节点自身、其 childNodes 持续增长，导致 live 遍历无限循环。
             return template.cloneNode(false) as HTMLElement;
@@ -119,6 +232,8 @@ export class AutoTemplateCompiler {
         // 冲突检测先于 compile：让 x-for + eager x-if 同元素在跑任何指令生命周期前即失败
         const ownsChildren = this._resolveOwnership(scope);
         scope.compile();
+        // 属性插值 desugar（compile 后；合成 bind 独立注册，复用 BindDirective 五路分派）
+        this._compileAttrInterpolation(el, scope);
         // 结构指令占有子树：返回 ownsChildren 信号，跳过子节点自动递归（由指令自行编译）。
         if (ownsChildren) {
             return { node: el, ownsChildren: true };
@@ -174,19 +289,37 @@ export class AutoTemplateCompiler {
     /**
      * 编译某模板的全部子节点并挂到指定父元素，返回已编译节点列表。
      *
-     * 共享给结构指令（eager x-if 编译/重建子树）：元素子节点走完整 `compileElement` 管线
-     * （建 scope、`_linkParent` 链接到父作用域），文本/注释节点直接深克隆。
-     * 调用方负责在销毁时按返回的节点列表精确移除（避免误删兄弟指令如 x-text 写入的内容）。
+     * 共享给结构指令（eager x-if 编译/重建子树 / x-for 项 / engine.data 重建子树）：元素子节点
+     * 走完整 `compileElement` 管线（建 scope、`_linkParent` 链接到父作用域）；**含 `{{}}` 的文本
+     * 子节点走 `compileTextNode`**（插值），其余文本/注释节点直接深克隆。
+     *
+     * `compileTextNode` 可能返回 `DocumentFragment`（多段插值）或 `null`（x-text 在场剪枝）：
+     * fragment 搬入父后**展开成实际子节点**入 `nodes`（供 if.ts 精确移除，不可入空 fragment）；
+     * null 跳过（剪枝）。
+     *
+     * @param scope 子树根的 scope，供直接文本子节点插值注册（项 scope / x-if scope 等）
      */
-    compileSubtree(parentEl: HTMLElement, templateEl: HTMLElement): Node[] {
+    compileSubtree(parentEl: HTMLElement, templateEl: HTMLElement, scope: AutoTemplateScope): Node[] {
         const nodes: Node[] = [];
         for (const child of Array.from(templateEl.childNodes)) {
-            const compiled =
-                child instanceof HTMLElement
-                    ? transformElement(child, this._getTransformers())
-                    : child.cloneNode(true);
-            parentEl.appendChild(compiled);
-            nodes.push(compiled);
+            let compiled: Node | null;
+            if (child instanceof HTMLElement) {
+                compiled = transformElement(child, this._getTransformers());
+            } else if (child.nodeType === Node.TEXT_NODE && hasMustache((child as Text).nodeValue)) {
+                compiled = this.compileTextNode(child as Text, scope);
+            } else {
+                compiled = child.cloneNode(true);
+            }
+            if (compiled == null) continue; // 剪枝（如 x-text 在场的插值文本）
+            if (compiled instanceof DocumentFragment) {
+                // fragment：搬入父后展开成实际子节点入 nodes（供调用方精确移除）
+                const moved = Array.from(compiled.childNodes);
+                parentEl.appendChild(compiled);
+                nodes.push(...moved);
+            } else {
+                parentEl.appendChild(compiled);
+                nodes.push(compiled);
+            }
         }
         return nodes;
     }
@@ -225,9 +358,11 @@ export class AutoTemplateCompiler {
         // 项根本身若是结构指令（嵌套 x-for，如 <ul x-for="row"><li x-for="cell">），
         // 其子节点由该内层结构指令在 render 时自行克隆编译，此处跳过手动编译以免双重冲突。
         if (!this._resolveOwnership(scope)) {
-            this.compileSubtree(el, itemTemplate);
+            this.compileSubtree(el, itemTemplate, scope);
         }
         scope.compile();
+        // 项根属性插值 desugar（项根不走 compileElement，须在此补；复用 BindDirective）
+        this._compileAttrInterpolation(el, scope);
         return { el, scope };
     }
 

@@ -120,6 +120,18 @@ export interface AutoTemplateEngineOptions extends FastEvent.FastLiteEventOption
      * @default {}
      */
     actions?: Record<string, (...args: any[]) => any>;
+    /**
+     * 自定义 HTML 消毒器（x-html 默认消费，见 ADR-0005 决策 4）。
+     *
+     * 默认为内置极简 `sanitizeHtml`（剥 `<script>` / `on*` 事件属性 / 危险协议 URL，
+     * 非无懈可击——mutation XSS / foreign content 等边角向量不在覆盖范围）。
+     * 高安全场景注入 DOMPurify：
+     * `new AutoTemplateEngine(el, store, { sanitizer: DOMPurify.sanitize })`。
+     * x-html 的 `.raw` 修饰符会整体跳过此 sanitizer（原样写入 innerHTML）。
+     *
+     * @default 内置极简 sanitizeHtml（utils/sanitize.ts）
+     */
+    sanitizer?: (html: string) => string;
 }
 
 /**

@@ -64,7 +64,7 @@ export class IfDirective extends AutoTemplateDirectiveBase {
         if (show) {
             // 子树未挂载时才编译（防止重复 true 的二次编译）
             if (this.subtreeNodes.length === 0) {
-                this.subtreeNodes = this.engine.compiler.compileSubtree(el, tpl);
+                this.subtreeNodes = this.engine.compiler.compileSubtree(el, tpl, this.binding);
             }
             el.style.display = "";
         } else {
