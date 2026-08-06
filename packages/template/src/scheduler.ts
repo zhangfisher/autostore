@@ -17,11 +17,19 @@
  * 因此指令侧的约定是：watcher 回调忽略具体 `operate`，仅触发 schedule；
  * updateFn 内部重新读取状态并 patch。这保证了正确性（取最新累积值）与性能（去重）。
  */
+import type { AutoTemplateEngine } from "./engine";
+
 export class UpdateScheduler {
     /** 待执行的更新回调集合（Set 天然按引用去重） */
     private queue: Set<() => void> = new Set();
     /** 是否已排队等待 microtask flush */
     private pending = false;
+    /** 所属引擎：flush 时广播 render/flush 事件（门控于 listenerCount，无订阅≈零成本） */
+    readonly engine: AutoTemplateEngine<any>;
+
+    constructor(engine: AutoTemplateEngine<any>) {
+        this.engine = engine;
+    }
 
     /**
      * 调度一个更新回调。
@@ -43,6 +51,7 @@ export class UpdateScheduler {
      * 会进入新队列并重新排队下一次 microtask，从而正确处理级联更新。
      */
     flush(): void {
+        this.engine.broadcast("render/flush/before");
         this.pending = false;
         const pending = this.queue;
         this.queue = new Set();
@@ -54,6 +63,7 @@ export class UpdateScheduler {
                 console.error("[AutoTemplate] scheduler flush error:", e);
             }
         }
+        this.engine.broadcast("render/flush/after");
     }
 
     /**

@@ -1,5 +1,6 @@
 import type { AutoTemplateEngine } from "../engine";
 import type { AutoTemplateDirectiveBase } from "./base";
+import { DirectiveKind } from "./base";
 import { presetDirectives } from "./presets";
 
 /** 指令类的构造器类型（typeof 基类），用于访问静态成员 kind/initialize/dispose 等 */
@@ -47,7 +48,11 @@ export class DirectiveManager extends Map<string, DirectiveClass> {
      */
     override set(name: string, Cls: DirectiveClass): this {
         super.set(name, Cls);
-        if (this._ready) this._initOne(Cls);
+        if (this._ready) {
+            this._initOne(Cls);
+            // runtime 指令晚注册：通知 dispatcher 重建 observer attributeFilter + 重扫该属性
+            if (Cls.kind === DirectiveKind.Runtime) this.engine.dispatcher.onDirectiveRegistered(name, Cls);
+        }
         return this;
     }
 

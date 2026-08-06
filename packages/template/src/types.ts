@@ -122,4 +122,62 @@ export interface AutoTemplateEngineOptions extends FastEvent.FastLiteEventOption
     actions?: Record<string, (...args: any[]) => any>;
 }
 
-export interface AutoTemplateEngineEvents {}
+/**
+ * AutoTemplateEngine 事件契约（信号面，见 ADR-0003）。
+ *
+ * 分层命名（`/` 分隔）+ 通配符订阅：消费者可精确订阅，亦可经 `*`/`**` 订阅一批同类。
+ * 事件只承载**离散信号**——值留 `store.state`（数据面），控制流留命令调用（控制面）。
+ *
+ * emit 一律经 `engine.broadcast()`（listenerCount 短路，无订阅≈零成本）。
+ */
+export interface AutoTemplateEngineEvents {
+    // ── engine/** 引擎生命周期 ──────────────────────────────
+    /** 引擎初始化完成（retain：晚订阅者补拿） */
+    "engine/ready": { el: HTMLElement };
+    /** 编译前（payload.cancel 可被监听者置 true 否决） */
+    "engine/compile/before": { root: HTMLElement; cancel?: boolean };
+    /** 编译后 */
+    "engine/compile/after": { root: HTMLElement };
+    /** 销毁前 */
+    "engine/destroy/before": void;
+    /** 销毁后 */
+    "engine/destroy/after": void;
+
+    // ── scope/** scope 通道生命周期（id = scope.id，按 payload 过滤） ──
+    /** scope 创建 */
+    "scope/created": { id: number; el: HTMLElement; template: HTMLElement };
+    /** scope 编译完成（全部指令 created+compile 跑完） */
+    "scope/compiled": { id: number };
+    /** scope 销毁 */
+    "scope/destroyed": { id: number };
+    /** engine.data() 更新了某 scope 的数据 */
+    "scope/data-updated": { id: number; data: Record<string, any> };
+
+    // ── directive/** 指令生命周期（<name> 占位，跨主体通配） ──
+    // scope 通道（Compile/Hybrid）：带 scope.id
+    /** 指令 created（scope 通道） */
+    "directive/*/created": { name: string; id: number };
+    /** 指令 compile（scope 通道） */
+    "directive/*/compiled": { name: string; id: number };
+    /** 指令 destroy（scope 通道） */
+    "directive/*/destroyed": { name: string; id: number };
+    // observer 通道（Runtime/Hybrid）：带 el，无 scope.id
+    /** 指令 mounted（observer 通道） */
+    "directive/*/mounted": { name: string; el: HTMLElement };
+    /** 指令 unmounted（observer 通道） */
+    "directive/*/unmounted": { name: string; el: HTMLElement };
+    /** 指令属性值变化（observer 通道） */
+    "directive/*/attr-changed": { name: string; el: HTMLElement; newVal: string; oldVal?: string };
+
+    // ── patch/** 动态 patch（ADR-0002，本期占位） ──────────
+    /** patch 前 */
+    "patch/before": { id: number; templateEl: HTMLElement };
+    /** patch 后 */
+    "patch/after": { id: number };
+
+    // ── render/** 调度 flush（热路径，broadcast 门控） ──────
+    /** flush 前 */
+    "render/flush/before": void;
+    /** flush 后 */
+    "render/flush/after": void;
+}

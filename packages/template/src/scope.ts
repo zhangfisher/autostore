@@ -64,6 +64,7 @@ export class AutoTemplateScope {
         this._el = new WeakRef(el);
         this.engine = engine;
         this._createDirectives();
+        this.engine.broadcast("scope/created", { id: this.id, el, template });
     }
 
     get el() {
@@ -386,7 +387,8 @@ export class AutoTemplateScope {
      * 随后 compile 用 `watch` 返回的当前值做首次 DOM 写入。
      */
     compile() {
-        return this.runDirectives(this.directives);
+        this.runDirectives(this.directives);
+        this.engine.broadcast("scope/compiled", { id: this.id });
     }
 
     /**
@@ -396,9 +398,11 @@ export class AutoTemplateScope {
     runDirectives(directives: AutoTemplateDirectiveBase[]): void {
         for (const d of directives) {
             if (typeof d.created === "function") d.created();
+            this.engine.broadcast("directive/" + d.info.name + "/created", { name: d.info.name, id: this.id });
         }
         for (const d of directives) {
             if (typeof d.compile === "function") d.compile(this.engine.state, this.el!);
+            this.engine.broadcast("directive/" + d.info.name + "/compiled", { name: d.info.name, id: this.id });
         }
     }
 
@@ -423,9 +427,11 @@ export class AutoTemplateScope {
             this._updates.length = 0;
             for (const d of this.directives) {
                 if (typeof d.destroy === "function") d.destroy(this.el!);
+                this.engine.broadcast("directive/" + d.info.name + "/destroyed", { name: d.info.name, id: this.id });
             }
         } catch (e: any) {
             this.engine.logger.error(e);
         }
+        this.engine.broadcast("scope/destroyed", { id: this.id });
     }
 }

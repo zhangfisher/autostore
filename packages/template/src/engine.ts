@@ -4,6 +4,7 @@ import { AutoTemplateCompiler } from "./compile/compiler";
 import { AutoStore, FastEvent } from "autostore";
 import type { AutoTemplateScope } from "./scope";
 import { UpdateScheduler } from "./scheduler";
+import { RuntimeObserverDispatcher } from "./directives/runtime/dispatcher";
 
 /**
  * 框架保留键：x-data 默认模式的私有响应式数据域在 store.state 下的容器键。
@@ -59,6 +60,8 @@ export class AutoTemplateEngine<
     readonly directives: DirectiveManager;
     /** 微任务更新调度器（同 tick 多次变更合并为一次 patch） */
     readonly scheduler: UpdateScheduler;
+    /** runtime 指令共享 observer 分发器（ADR-0003 决策 7）：单一 MutationObserver + 事件广播 */
+    readonly dispatcher: RuntimeObserverDispatcher;
     /** 原始模板（深克隆根元素，保留指令属性作为编译只读输入） */
     readonly template: HTMLElement;
     /** 每个渲染元素对应的 Scope（销毁时遍历清理其 watcher） */
@@ -79,7 +82,7 @@ export class AutoTemplateEngine<
      * @param options  配置选项
      * @throws {Error} el 非 HTMLElement / store 非 AutoStore 实例
      */
-    constructor(el: HTMLElement, store: AutoStore<State>, options?: AutoTemplateEngineOptions) {
+    constructor(el: HTMLElement, store: AutoStore<State>, options?: Partial<AutoTemplateEngineOptions>) {
         super({ autostart: true, debug: false, actions: {}, ...options });
         if (!(el instanceof HTMLElement)) {
             throw new Error("Root element must be an HTMLElement");
@@ -93,9 +96,10 @@ export class AutoTemplateEngine<
         this._ensureScopesState();
         this.template = el.cloneNode(true) as HTMLElement;
 
-        this.scheduler = new UpdateScheduler();
+        this.scheduler = new UpdateScheduler(this);
         this.compiler = new AutoTemplateCompiler(this);
         this.directives = new DirectiveManager(this);
+        this.dispatcher = new RuntimeObserverDispatcher(this);
         if (this.options.autostart) {
             this.compile();
         }
@@ -104,6 +108,10 @@ export class AutoTemplateEngine<
         // 注入全局样式等。autostart=false 时编译产物尚未挂载，observer 连接后由 start() 的
         // replaceChildren 触发 add 回调，照样生效。
         this.directives.initializeAll();
+        // 启动 runtime 指令共享 observer 分发器：须在 initializeAll（含 injectStyles 等 FOUC 防御）
+        // 之后、engine/ready 之前——初始扫描会同步触发首次 mounted，依赖样式已注入。
+        this.dispatcher.start();
+        this.broadcast("engine/ready", { el: this.el }, true);
     }
 
     get logger() {
@@ -115,6 +123,23 @@ export class AutoTemplateEngine<
      */
     get actions(): Record<string, (...args: any[]) => any> {
         return this.options.actions!;
+    }
+
+    /**
+     * 守卫式事件广播：仅当存在任意监听者（`listenerCount > 0`）时才真正 emit，否则短路返回空数组。
+     *
+     * 生产环境无任何订阅时事件层近零成本（省去 emit 的监听树遍历）。所有生命周期事件走此方法；
+     * 高级用户仍可直接用继承自 FastLiteEvent 的 `on/once/onAny/emit`。
+     *
+     * @param type    事件类型（分层名，如 `scope/created`、`directive/x-loading/mounted`）
+     * @param payload 事件载荷（离散信号快照，非可变状态）
+     * @param retain  是否保留（态信号用 true，流信号用 false）
+     */
+    broadcast(type: string, payload?: any, retain?: boolean): any[] {
+        // retain 态信号（如 engine/ready）须始终 emit——要缓存以供晚订阅者补拿，不受门控影响；
+        // 流信号（plain）仅当存在任意监听者时 emit——生产无订阅≈零成本（热路径门控）。
+        if (retain || this.listenerCount > 0) return this.emit(type as any, payload, retain);
+        return [];
     }
 
     /**
@@ -139,6 +164,7 @@ export class AutoTemplateEngine<
      * watcher 才能作用在可见 DOM 上。
      */
     compile() {
+        this.broadcast("engine/compile/before", { root: this.template });
         const root = this.compiler.compile();
         // 挂载编译产物的子节点（而非 root 本身）：engine.template 是 el 的深克隆（含外层容器），
         // 编译后的 root 是该容器的重建；取其子节点挂回 el，避免容器内多套一层容器克隆。
@@ -148,6 +174,7 @@ export class AutoTemplateEngine<
         // 在 created 中只能 schedule 到 microtask；此处 el 已挂载，立即 flush 使初始 DOM 同步可见。
         // 用 flushAll 持续消化 x-for 嵌套带来的级联首次渲染，使 mount 返回时各层级 DOM 均已就绪。
         this.scheduler.flushAll();
+        this.broadcast("engine/compile/after", { root });
         return this;
     }
 
@@ -194,6 +221,7 @@ export class AutoTemplateEngine<
         if (scope.dataScope) {
             // 主路径：合并 → 路径订阅自动驱动
             Object.assign(scope.dataScope as Record<string, any>, data);
+            this.broadcast("scope/data-updated", { id: scope.id, data });
             return;
         }
         // 无 dataScope（el 原无 x-data）：新建 + 重建子树（A）
@@ -204,6 +232,7 @@ export class AutoTemplateEngine<
         // 失效本 scope 缓存视图（含新 dataScope 层），子树重建后新子 scope 经 parent 链取到新视图
         scope.invalidateScopeView();
         this._recompileSubtree(scope, el);
+        this.broadcast("scope/data-updated", { id: scope.id, data });
     }
 
     /**
@@ -249,9 +278,11 @@ export class AutoTemplateEngine<
      * 否则会解绑用户在别处挂的订阅、清空其 computed 对象。
      */
     destroy(): void {
-        // 类级销毁：对所有已 initialize 的指令类调用 static dispose(engine)——断开 runtime 指令的
-        // observer、销毁全部 live 实例。先于 scope/DOM 清理，避免 observer 在 DOM 拆除期间空转回调。
+        this.broadcast("engine/destroy/before");
+        // 类级销毁：对所有已 initialize 的指令类调用 static dispose(engine)。
         this.directives.disposeAll();
+        // 断开 runtime 共享 observer + 卸载全部 live 实例（先于 DOM 清理，避免拆 DOM 时空转回调）
+        this.dispatcher.dispose();
         this.scheduler.clear();
         for (const scope of this.scopes.values()) {
             scope.destroy();
@@ -259,5 +290,6 @@ export class AutoTemplateEngine<
         this.scopes.clear();
         this.el.replaceChildren();
         this.started = false;
+        this.broadcast("engine/destroy/after");
     }
 }

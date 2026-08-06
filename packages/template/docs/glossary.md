@@ -87,6 +87,38 @@
 ### x-patch（哨兵指令）
 零副作用 Compile 指令，唯一作用是让裸元素成为 scope（进正向桥）、从而可被 `engine.patch` 定位。`created`/`compile`/`destroy` 全 no-op，不建 `_scopes[id]` 数据域、不注入 `dataScope`。等效 `x-data="{}"` 但更轻、更语义化。用法：`<div id="x" x-patch></div>` → `engine.patch("#x", ...)`。
 
+## 事件总线（信号面）
+
+### 信号面（Signal Plane）
+与**数据面**（`store.state`，承载值）和**控制面**（直接命令调用，承载确定性控制流）正交的**第三通讯平面**。承载离散事件的通知/协调/可观测，机制为 `FastLiteEvent`。见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 1。
+
+### 事件分层（Event Hierarchy）
+事件名以 `/` 分段构成层级（如 `directive/loading/mounted`）。命名空间用指令**注册名**（`getDirectives` 的 `info.name` / `presetDirectives` 的 key，如 `loading`），非 DOM 属性名（`x-loading`）。配合通配符 `*`（恰好一段）/ `**`（仅末尾、零或多段）实现"精确订阅 + 通配订阅一批"。**注意**：此分层是**事件名层级**，不是已砍掉的 `FastEventScope` 命名空间隔离。四条不变量（动词固定深度 / 受控动词词表 / 主体固定槽 / 阶段后缀）保证通配可预测。见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 3。
+
+### 动词词表（Verb Vocabulary）
+跨指令/跨源共享的受控事件动词集合，镜像 [ADR-0001](adr/0001-directive-kind-system.md) 的两条通道：
+- **observer 通道**：`mounted` / `unmounted` / `attr-changed`
+- **scope 通道**：`created` / `compiled` / `destroyed`
+- **指令自定**（登记制扩词表）：x-for `rendered`/`item-added`/`item-removed`；x-data `ready`/`resolved`
+
+一律过去时/状态形容词，禁命令式。使 `directive/*/mounted`（任意指令挂载）、`task/*/started`（任意异步源开始）等"跨主体抓同动词"模式成立。
+
+### task 域（进行中的工作单元）
+事件总线中承载**有生命周期、进行中的工作**的域：`task/<source>/<verb>`——source 受控为 `x-data`/`x-on`/`computed`/`user`，verb 为 `started`/`ended`/`progressed`/`resolved`/`rejected`。使全局 loading / 错误 toast / 进度 / Suspense 等**跨源协调**成为可能（`task/*/started` = 任意任务开始）。实现上 `task/computed/**` **转发** store 的 `observer:*` 事件，模板原生源（x-data 异步初值 / x-on async action）需插桩。**命名沿革**：前身 `async/**`，因"async 描述机制而非领域、且与响应式 signal 概念撞名"改为 `task`（离散工作单元，语义贴切）。见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 3.2/3.5。
+
+### 通配契约（Wildcard Contract）
+分层命名承诺的可订阅模式。高价值模式：`<域>/<主体>/*`（一主体全动作）、`<域>/*/<动词>`（跨主体同动词，★ 核心）、`<域>/**`（一域全部）、`**`（全部= `onAny`）。详见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 3.4。
+
+### 态信号 vs 流信号（retain 纪律）
+- **态信号**（一次性、表"当前是否就绪"，如 `engine/ready`、`directive/x-data/ready`）→ **`retain=true`** emit：晚订阅者立即补拿，规避 priority 顺序竞态（A 先发、B 后订则 B 错过）。
+- **流信号**（可重复、表"发生了"，如 `task/*/started`、`directive/x-for/item-added`）→ **plain emit**：retain 只留最后一条，用于流信号反错。
+
+**铁律：态信号 retain，流信号 plain。** 见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 6。
+
+### RuntimeObserverDispatcher
+engine 级共享 MutationObserver 分发器（`engine.el` 上单一 observer，`attributeFilter` 覆盖所有 runtime 指令属性）。按变更属性名路由到对应指令类的 `mounted`/`unmounted`/`attrChanged`，并同步广播 `directive/<name>/**` 事件。替代此前 runtime 指令各自建 observer（如 `loading.ts`）的做法，顺带落地 [ADR-0001](adr/0001-directive-kind-system.md)【实现注记】的"单一共享 observer"。见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 7。
+
 ## 决策记录
 - ✅ [ADR-0001] 运行时指令走纯 observer 通道（方案 A）—— *待补全 Initialize/Dispose 契约后定稿*
 - ✅ [ADR-0002] 动态 patch 机制（模板增量编译）—— *待确认"scope 自身指令变更"处置*
+- ✅ [ADR-0003] 事件总线（信号面）与分层事件契约 —— *Accepted（Round 3）*

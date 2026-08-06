@@ -2,18 +2,19 @@ import { AutoTemplateDirectiveBase, DirectiveKind, type RuntimeDirective } from 
 import type { AutoTemplateEngine } from "../../engine";
 import { isSimpleStatePath } from "../../scope";
 import { getVal, type Watcher } from "autostore";
-import { getDirectives } from "../utils/getDirectives";
 import { rgba } from "../../utils/colors";
 import { toJson } from "really-relaxed-json";
 
 /**
  * x-loading：在宿主元素上覆盖一个「加载中」层。（**运行时指令**，走 observer 通道）
  *
- * **运行时语义**（详见 docs/adr/0001-directive-kind-system.md）：
+ * **运行时语义**（详见 docs/adr/0001-directive-kind-system.md、0003-engine-event-bus.md）：
  * - 编译器致盲——`x-loading` 属性**保留**在结果 DOM 上，允许通过 DOM API
  *   （`setAttribute` / `removeAttribute`）改值或删除，运行时动态生效。
- * - `static initialize` 在 engine.el 上建立 MutationObserver，监听 `x-loading` 元素的
- *   增/删/属性变化：add→`mounted`、remove→`unmounted`、值变→`attrChanged`。
+ * - observer 通道由 **engine 级 RuntimeObserverDispatcher** 统一管理（ADR-0003 决策 7）：
+ *   engine.el 上单一共享 MutationObserver 监听所有 runtime 指令的增/删/属性变化，
+ *   add→`mounted`、remove→`unmounted`、值变→`attrChanged`，并广播 `directive/loading/**`。
+ *   指令**不再自建 observer**——只实现三个生命周期钩子。
  * - 反应式来源为 **`engine.store`（全局绝对路径/表达式）**——运行时无 scope，不支持
  *   x-data 局部变量 / x-for item 等 scope 相对表达式。
  *
@@ -29,6 +30,9 @@ import { toJson } from "really-relaxed-json";
  * **显隐**：visible 求值为 truthy → 挂载覆盖层；falsy → 移除覆盖层 DOM（重建式，非 display 隐藏）。
  *
  * **修饰符**：`.screen` → 覆盖层 `position:fixed;inset:0` 撑满视口（留在宿主子树，不 teleport）。
+ *
+ * **已知限制**：修饰符形式 `x-loading.screen` 的运行时**值变化**不触发 attrChanged
+ * （共享 observer 的 attributeFilter 仅含裸 `x-loading`）；其增/删仍生效。
  *
  * 详见 `docs/x-loading.md`。
  *
@@ -57,10 +61,6 @@ const LOADER_CLASS = "x-loading-loader";
 const MESSAGE_CLASS = "x-loading-message";
 /** 旋转动画名（独立命名空间，避免与宿主页面 keyframes 冲突） */
 const SPIN_KEY = "x-loading-spin";
-/** 指令属性名前缀（observer 检测 / 初始扫描用） */
-const ATTR = "x-loading";
-/** 匹配 x-loading 及其修饰符形式（x-loading / x-loading.screen），`.` 边界避免误匹配 x-loading-state */
-const ATTR_RE = /^x-loading(\.|$)/;
 
 /** 默认配置（与 docs/x-loading.md 规格一致） */
 const DEFAULTS = {
@@ -148,120 +148,19 @@ function injectStyles(): void {
     stylesInjected = true;
 }
 
-/** per-engine 句柄：observer + 实例表（initialize 建立、dispose 回收） */
-interface LoadingHandle {
-    mo: MutationObserver;
-    instances: Map<HTMLElement, LoadingDirective>;
-}
-
 export class LoadingDirective extends AutoTemplateDirectiveBase implements RuntimeDirective {
-    /** 运行时指令：走 observer 通道 */
+    /** 运行时指令：走 observer 通道（由 engine 级 RuntimeObserverDispatcher 驱动，见 ADR-0003 决策 7） */
     static override readonly kind = DirectiveKind.Runtime;
 
-    /** per-engine 句柄表（WeakMap：engine 回收时自动 GC，dispose 显式 delete） */
-    private static _handles = new WeakMap<AutoTemplateEngine, LoadingHandle>();
-
     /**
-     * 类级初始化：注入全局样式 + 在 engine.el 上建 MutationObserver + 初始扫描静态元素。
+     * 类级初始化：注入全局样式。
      *
-     * 顺序固定：injectStyles（首屏 FOUC 防御）→ 建 observer → 初始扫描（扫描会同步触发 mounted，
-     * mounted 构建覆盖层依赖样式已就绪）。幂等：同一 engine 仅生效一次。
+     * observer 通道（observer + 实例表 + 初始扫描）已移交 engine 级 RuntimeObserverDispatcher，
+     * 指令不再自建。样式注入须在 dispatcher 初始扫描（触发首次 mounted → mountOverlay）**之前**完成
+     * ——FOUC 防御；initializeAll 在 dispatcher.start() 之前调用，顺序保证。幂等（stylesInjected）。
      */
-    static override initialize(engine: AutoTemplateEngine): void {
-        if (LoadingDirective._handles.has(engine)) return; // 幂等
+    static override initialize(_engine: AutoTemplateEngine): void {
         injectStyles();
-
-        const instances = new Map<HTMLElement, LoadingDirective>();
-
-        /** 元素是否带 x-loading（含修饰符形式，如 x-loading.screen） */
-        const hasLoadingAttr = (el: Element): boolean =>
-            el.getAttributeNames().some((n) => ATTR_RE.test(n));
-
-        /** 收集 root（含自身）下所有带 x-loading 的元素——querySelectorAll 无法匹配任意修饰符前缀，遍历属性 */
-        const collectLoadingEls = (root: Element): HTMLElement[] => {
-            const out: HTMLElement[] = [];
-            const visit = (e: Element) => {
-                if (hasLoadingAttr(e)) out.push(e as HTMLElement);
-            };
-            visit(root);
-            root.querySelectorAll("*").forEach(visit);
-            return out;
-        };
-
-        /** 为单个元素挂载实例（已存在则跳过） */
-        const mountOne = (el: HTMLElement) => {
-            if (instances.has(el)) return;
-            const info = getDirectives(el).find((d) => d.name === "loading");
-            if (!info) return; // 属性被识别为 x-loading 但解析无 loading（理论上不会）
-            const inst = new LoadingDirective(engine, undefined, info);
-            inst.el = el;
-            instances.set(el, inst);
-            inst.mounted();
-        };
-
-        /** 卸载并移除实例（不存在则跳过） */
-        const unmountOne = (el: HTMLElement) => {
-            const inst = instances.get(el);
-            if (!inst) return;
-            instances.delete(el);
-            inst.unmounted();
-        };
-
-        const mo = new MutationObserver((muts) => {
-            for (const mut of muts) {
-                if (mut.type === "childList") {
-                    // 结构增删：扫描子树（含修饰符形式）统一挂载/卸载
-                    mut.addedNodes.forEach((n) => {
-                        if (n instanceof HTMLElement) collectLoadingEls(n).forEach(mountOne);
-                    });
-                    mut.removedNodes.forEach((n) => {
-                        if (n instanceof HTMLElement) collectLoadingEls(n).forEach((e) => instances.has(e) && unmountOne(e));
-                    });
-                } else if (mut.type === "attributes" && mut.attributeName === ATTR) {
-                    // 仅监听裸 x-loading 的值变化（修饰符形式 x-loading.screen 的运行时值变化为已知限制）
-                    const el = mut.target;
-                    if (!(el instanceof HTMLElement)) continue;
-                    const has = el.hasAttribute(ATTR);
-                    const existed = instances.has(el);
-                    if (has && !existed) {
-                        mountOne(el); // 新增属性 → 挂载
-                    } else if (!has && existed) {
-                        unmountOne(el); // 删除属性 → 卸载
-                    } else if (has && existed) {
-                        const oldV = mut.oldValue ?? "";
-                        const newV = el.getAttribute(ATTR) ?? "";
-                        if (newV !== oldV) instances.get(el)!.attrChanged?.(newV, oldV); // 值变 → 重绑
-                    }
-                }
-            }
-        });
-        mo.observe(engine.el, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: [ATTR],
-            attributeOldValue: true,
-        });
-
-        // 初始扫描：编译产物中已存在的静态 x-loading 元素（同步触发 mounted，首屏立即可见）
-        collectLoadingEls(engine.el).forEach(mountOne);
-
-        LoadingDirective._handles.set(engine, { mo, instances });
-    }
-
-    /**
-     * 类级销毁：断开 observer + 卸载全部 live 实例。
-     *
-     * **不移除全局样式**——document 级共享、跨 engine 常驻、体量可忽略（违背 KISS）；
-     * 多 engine 场景下单 engine 无法判断是否最后一个，强行移除会误伤存活 engine。
-     */
-    static override dispose(engine: AutoTemplateEngine): void {
-        const handle = LoadingDirective._handles.get(engine);
-        if (!handle) return;
-        handle.mo.disconnect();
-        for (const inst of handle.instances.values()) inst.unmounted();
-        handle.instances.clear();
-        LoadingDirective._handles.delete(engine);
     }
 
     /** 当前已挂载的覆盖层（未挂载时为 null）；delay 窗口期内仍为 null */
@@ -273,7 +172,7 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
     /** visible 当前值的读取函数（路径支路 getVal / 表达式支路 with(state) 求值） */
     private _read!: () => any;
 
-    /** 元素挂载（observer 检测到 add / 初始扫描）：解析配置 + 字面量/反应式分流 + 首渲 */
+    /** 元素挂载（dispatcher 检测到 add / 初始扫描）：解析配置 + 字面量/反应式分流 + 首渲 */
     override mounted(): void {
         this.config = this.parseConfig();
         // 字面量模式：裸 x-loading ≡ "true"、显式 "true"/"false" 为特殊布尔值（非状态路径）→ 静态显隐，无订阅
@@ -305,12 +204,12 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
         return null;
     }
 
-    /** 元素移除（observer 检测到 remove）：清理订阅 / 定时器 / 覆盖层 DOM */
+    /** 元素移除（dispatcher 检测到 remove）：清理订阅 / 定时器 / 覆盖层 DOM */
     override unmounted(): void {
         this._teardown();
     }
 
-    /** 属性值变化（observer 检测到 setAttribute）：拆旧绑定后重新挂载（保留 el / 修饰符） */
+    /** 属性值变化（dispatcher 检测到 setAttribute）：拆旧绑定后重新挂载（保留 el / 修饰符） */
     attrChanged(newVal: string, _oldVal?: string): void {
         this._teardown();
         this.value = newVal;
