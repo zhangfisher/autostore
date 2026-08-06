@@ -34,6 +34,12 @@ export class RuntimeObserverDispatcher {
     /** name → (el → 实例)；一个元素可挂多个 runtime 指令 */
     private instances = new Map<string, Map<HTMLElement, AutoTemplateDirectiveBase>>();
     private mo: MutationObserver | undefined;
+    /**
+     * slot 盲区根集合（ADR-0006 决策 8）：x-slot 宿主登记于此。
+     * 盲区内子树的 runtime 指令（如 child engine 写入的 x-loading）由 child engine 自身 dispatcher
+     * 负责，父 dispatcher 对其**致盲**——避免父/子双 dispatcher 抢管同一节点、重复 mount。
+     */
+    private slotRoots = new Set<HTMLElement>();
 
     constructor(engine: AutoTemplateEngine<any>) {
         this.engine = engine;
@@ -71,6 +77,31 @@ export class RuntimeObserverDispatcher {
         this.registry.set(name, { Cls, attr, attrRe: new RegExp(`^x-${name}(\\.|$)`) });
     }
 
+    /**
+     * 登记 slot 盲区根（x-slot 宿主）。盲区内子树不参与本 dispatcher 的 mount/attr 派发。
+     * 由 SlotDirective.created() 调用；对称地在 destroy() 经 removeSlotRoot 注销。
+     */
+    addSlotRoot(el: HTMLElement): void {
+        this.slotRoots.add(el);
+    }
+
+    /** 注销 slot 盲区根（SlotDirective.destroy() 调用）。 */
+    removeSlotRoot(el: HTMLElement): void {
+        this.slotRoots.delete(el);
+    }
+
+    /**
+     * 元素是否落在任一 slot 盲区内（含盲区根本身）。
+     * 无盲区时短路返回 false（热路径零开销）。用于 collectEls / _handle 过滤掉 child engine 管辖的子树。
+     */
+    private _inSlotRoot(el: HTMLElement): boolean {
+        if (this.slotRoots.size === 0) return false;
+        for (const root of this.slotRoots) {
+            if (root === el || root.contains(el)) return true;
+        }
+        return false;
+    }
+
     /** （重建）共享 observer：attributeFilter 为全部 runtime 裸属性并集 */
     private _buildObserver(): void {
         this.mo?.disconnect();
@@ -97,6 +128,7 @@ export class RuntimeObserverDispatcher {
     collectEls(root: HTMLElement): Map<HTMLElement, string[]> {
         const out = new Map<HTMLElement, string[]>();
         const visit = (el: HTMLElement) => {
+            if (this._inSlotRoot(el)) return; // slot 盲区：child engine 管辖，本 dispatcher 致盲
             const names = new Set<string>();
             for (const attrName of el.getAttributeNames()) {
                 for (const [name, reg] of this.registry) {
@@ -167,6 +199,7 @@ export class RuntimeObserverDispatcher {
             } else if (mut.type === "attributes" && mut.attributeName) {
                 const el = mut.target;
                 if (!(el instanceof HTMLElement)) continue;
+                if (this._inSlotRoot(el)) continue; // slot 盲区：属性变化交 child engine dispatcher
                 // 定位该属性所属的 runtime 指令（attrRe 命中即止；属性名唯一归属一个指令）
                 for (const [name, reg] of this.registry) {
                     if (reg.attrRe.test(mut.attributeName)) {
