@@ -1,3 +1,4 @@
+import { PATH_DELIMITER } from "autostore";
 import { isRaw } from "../utils/isRaw";
 import { hookArrayMethods } from "./hookArray";
 import type { StateOperateType, StateValidator } from "./types";
@@ -9,8 +10,6 @@ import { markRaw } from "../utils/markRaw";
 import { isAllowCreatedObserver } from "../utils/isAllowCreatedObserver";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
-import { PATH_DELIMITER } from "../consts";
-import { emitStoreEventWithResult } from "../utils/emitStoreEventWithResult";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 
@@ -77,11 +76,12 @@ function isValidPass(
 
     let isPass: boolean | Error = true;
     let error: any;
-    const pathKey = path.join(this.options.delimiter || ".");
-    const configKey =
+    const pathKey = path.join(PATH_DELIMITER);
+    const configKey = (
         this.options.configKey && this.options.configKey.trim().length > 0
-            ? `${this.options.configKey.trim()}.${pathKey}`
-            : pathKey;
+            ? `${this.options.configKey.trim()}/${pathKey}`
+            : pathKey
+    ).replaceAll("/", ".");
     try {
         const isValid = validate!.call(this, newValue, oldValue, path);
         if (isValid === false) {

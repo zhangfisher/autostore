@@ -51,7 +51,7 @@
  */
 
 import { ComputedObjects } from "../computed/computedObjects";
-import { GLOBAL_CONFIG_MANAGER } from "../consts";
+import { GLOBAL_CONFIG_MANAGER, PATH_DELIMITER } from "../consts";
 import type { Dict, ObjectKeyPaths, StatePath } from "../types";
 import { getId } from "../utils/getId";
 import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
@@ -131,7 +131,7 @@ export class AutoStore<
                 },
                 options,
                 {
-                    delimiter: ".",
+                    delimiter: "/",
                     transform: (message: any) => {
                         return message.payload;
                     },
@@ -194,7 +194,7 @@ export class AutoStore<
         return this._silenting;
     }
     get delimiter() {
-        return this.options.delimiter;
+        return PATH_DELIMITER;
     }
     get batching() {
         return this._batching;
@@ -296,13 +296,13 @@ export class AutoStore<
     }
     private _subscribeHooks() {
         const hookNames = {
-            "observer:initial": "onObserverInitial",
-            "observer:created": "onObserverCreated",
-            "observer:run": "onObserverRun",
-            "observer:done": "onObserverDone",
-            "observer:cancel": "onObserverCancel",
-            "observer:error": "onObserverError",
-            "observer:destroyed": "onObserverDestroyed",
+            "observer/initial": "onObserverInitial",
+            "observer/*/created": "onObserverCreated",
+            "observer/*/run": "onObserverRun",
+            "observer/*/done": "onObserverDone",
+            "observer/*/cancel": "onObserverCancel",
+            "observer/*/error": "onObserverError",
+            "observer/*/destroyed": "onObserverDestroyed",
         };
         Object.entries(hookNames).forEach(([event, name]) => {
             const hooks = (this.options as unknown as Record<string, unknown>)?.[name];

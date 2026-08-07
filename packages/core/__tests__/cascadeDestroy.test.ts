@@ -126,7 +126,7 @@ describe("cascadeDestroy 级联销毁观察对象", () => {
             { a: 1, c: (scope: any) => scope.a },
             { onObserverDestroyed: () => cbCount++ },
         );
-        store.on("observer:destroyed", () => evtCount++);
+        store.on(`observer/*/destroyed`, () => evtCount++);
         void store.state.c;
         delete (store.state as any).a;
         await flush();
@@ -183,7 +183,7 @@ describe("cascadeDestroy 级联销毁观察对象", () => {
     test("手动 computedObjects.delete 触发 observer:destroyed 事件", () => {
         let evtCount = 0;
         const store = new AutoStore({ a: 1, c: (scope: any) => scope.a });
-        store.on("observer:destroyed", () => evtCount++);
+        store.on(`observer/*/destroyed`, () => evtCount++);
         void store.state.c;
         const c = store.computedObjects.find(["c"]);
         expect(c!).toBeDefined();

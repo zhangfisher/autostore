@@ -78,7 +78,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
             this.store.logger.warn(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
             );
-            emitStoreEvent(this.store, "observer:cancel", {
+            emitStoreEvent(this.store, `observer/${this.id}/cancel`, {
                 reason: "reentry",
                 observer: this,
             });
@@ -109,7 +109,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         try {
             //
             this._reportComputedStatus("loading", true);
-            emitStoreEvent(this.store, "observer:run", {
+            emitStoreEvent(this.store, `observer/${this.id}/run`, {
                 args: getterArgs,
                 scope,
                 observer: this,
@@ -130,12 +130,12 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         // 计算完成后触发事件
         if (hasError) {
             this.error = hasError;
-            emitStoreEvent(this.store, "observer:error", {
+            emitStoreEvent(this.store, `observer/${this.id}/error`, {
                 error: hasError,
                 observer: this,
             });
         } else {
-            emitStoreEvent(this.store, "observer:done", {
+            emitStoreEvent(this.store, `observer/${this.id}/done`, {
                 value: computedResult,
                 observer: this,
             });

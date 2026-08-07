@@ -87,7 +87,7 @@ describe("Store Events", () => {
             });
 
             // 使用 store.on 监听（但只对动态创建的计算属性生效）
-            store.on("observer:created", ({ observer }) => {
+            store.on("observer/*/created", ({ observer }) => {
                 createdEvents.push({
                     path: observer.path,
                     async: observer.async,
@@ -117,7 +117,7 @@ describe("Store Events", () => {
             expect(createdEvents[0].async).toBe(false);
         });
 
-        test("observer:done 事件在同步计算函数执行成功后触发", async () => {
+        test("observer/*/done 事件在同步计算函数执行成功后触发", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore(
@@ -172,7 +172,7 @@ describe("Store Events", () => {
             expect(doneEvents[2].path).toEqual(["double"]);
         });
 
-        test("observer:done 事件使用 store.on 监听", async () => {
+        test("observer/*/done 事件使用 store.on 监听", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore({
@@ -181,7 +181,7 @@ describe("Store Events", () => {
             });
 
             // 使用 store.on 监听事件
-            store.on("observer:done", (args) => {
+            store.on("observer/*/done", (args) => {
                 doneEvents.push({
                     path: args.observer.path,
                     value: args.value,
@@ -205,7 +205,7 @@ describe("Store Events", () => {
             expect(doneEvents[0].path).toEqual(["total"]);
         });
 
-        test("observer:done 事件在异步计算函数执行成功后触发", async () => {
+        test("observer/*/done 事件在异步计算函数执行成功后触发", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore(
@@ -352,7 +352,7 @@ describe("Store Events", () => {
         //         },
         //     );
 
-        //     store.on("observer:cancel", (args) => {
+        //     store.on("observer/*/cancel", (args) => {
         //         cancelEvents.push({
         //             fromEvent: true,
         //             reason: args.reason,
@@ -388,7 +388,7 @@ describe("Store Events", () => {
                 count: 1,
             });
 
-            store.on("observer:created", ({ observer }) => {
+            store.on("observer/*/created", ({ observer }) => {
                 createdEvents.push({
                     id: observer.id,
                     path: observer.path,
@@ -415,14 +415,14 @@ describe("Store Events", () => {
             expect(createdEvents[0].path).toEqual(["watchCount"]);
         });
 
-        test("observer:done 事件在 WatchObject 执行成功后触发", async () => {
+        test("observer/*/done 事件在 WatchObject 执行成功后触发", async () => {
             const doneEvents: any[] = [];
 
             const store = new AutoStore({
                 count: 1,
             });
 
-            store.on("observer:done", (args) => {
+            store.on("observer/*/done", (args) => {
                 doneEvents.push({
                     path: args.observer.path,
                     value: args.value,
@@ -459,7 +459,7 @@ describe("Store Events", () => {
                 count: 1,
             });
 
-            store.on("observer:error", (args) => {
+            store.on("observer/*/error", (args) => {
                 errorEvents.push({
                     path: args.observer.path,
                     error: args.error instanceof Error ? args.error.message : args.error,
@@ -498,7 +498,7 @@ describe("Store Events", () => {
                 count: 1,
             });
 
-            store.on("observer:initial", (context) => {
+            store.on("observer/initial", (context) => {
                 beforeCreateEvents.push(context);
             });
 
@@ -522,7 +522,7 @@ describe("Store Events", () => {
                 count: 1,
             });
 
-            store.on("observer:created", ({ observer }) => {
+            store.on("observer/*/created", ({ observer }) => {
                 createdEvents.push({
                     path: observer.path,
                     id: observer.id,
@@ -543,18 +543,18 @@ describe("Store Events", () => {
             expect(createdEvents[0].id).toBeTruthy();
         });
 
-        test("observer:initial -> observer:created 的触发顺序", () => {
+        test("observer initial created 的触发顺序", () => {
             const events: string[] = [];
 
             const store = new AutoStore({
                 count: 1,
             });
 
-            store.on("observer:initial", () => {
+            store.on("observer/initial", () => {
                 events.push("initial");
             });
 
-            store.on("observer:created", () => {
+            store.on("observer/*/created", () => {
                 events.push("created");
             });
 
@@ -802,7 +802,7 @@ describe("Store Events", () => {
         //         },
         //     );
 
-        //     store.on("observer:cancel", (args) => {
+        //     store.on("observer/*/cancel", (args) => {
         //         cancelArgs.push({
         //             fromEvent: true,
         //             reason: args.reason,
@@ -833,7 +833,7 @@ describe("Store Events", () => {
                 double: (scope: any) => scope.count * 2,
             });
 
-            store.on("observer:done", (args) => {
+            store.on("observer/*/done", (args) => {
                 doneEvents.push({
                     value: args.value,
                 });
@@ -865,7 +865,7 @@ describe("Store Events", () => {
                 total: (scope: any) => scope.price * scope.count,
             });
 
-            store.on("observer:done", (args) => {
+            store.on("observer/*/done", (args) => {
                 doneEvents.push({
                     value: args.value,
                     timestamp: Date.now(),
@@ -907,7 +907,7 @@ describe("Store Events", () => {
                 quadruple: (scope: any) => scope.base * 4,
             });
 
-            store.on("observer:done", (args) => {
+            store.on("observer/*/done", (args) => {
                 doneEvents.push(args);
             });
 

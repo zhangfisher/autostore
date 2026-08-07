@@ -22,7 +22,7 @@ export function isAllowCreatedObserver(
 ): boolean {
     return emitStoreEventWithResult<boolean>(
         store,
-        "observer:initial",
+        `observer/initial`,
         { path, value, parentPath, parent },
         (results: any[]) => {
             return !results.some((r) => r === false);

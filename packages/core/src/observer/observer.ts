@@ -75,7 +75,7 @@ export class ObserverObject<
         this._initial = this._options.initial;
         this.onInitOptions(this._options);
         this._depends = calcDependPaths(this._path, this._options.depends);
-        emitStoreEvent(this.store, "observer:created", { context: ctx, observer: this });
+        emitStoreEvent(this.store, `observer/${this.id}/created`, { context: ctx, observer: this });
         this._onInitial();
     }
     get type() {
@@ -175,7 +175,7 @@ export class ObserverObject<
             const oldValue = this._value;
             if (value !== oldValue) {
                 this._value = value;
-                this.store.emit(`observer:set:${this.id}`, {
+                this.store.emit(`observer/${this.id}/updated`, {
                     type: "set",
                     path: this.path,
                     value,
@@ -271,7 +271,7 @@ export class ObserverObject<
         } else {
             // 游离对象：值变更走 store 顶层总线 observer:set:<id>，不走 operates。
             // 仅监听 set 更新；options(once/operates/expand/filter) 在游离对象上不生效。
-            watcher = this.store.on(`observer:set:${this.id}`, (operate) => {
+            watcher = this.store.on(`observer/${this.id}/updated`, (operate) => {
                 // @ts-ignore
                 listener.call(this, operate);
             });
@@ -349,7 +349,7 @@ export class ObserverObject<
         // 4. 从两个集合移除：用原生 Map.delete，避免与集合 delete（已路由到 destroy）互相递归
         Map.prototype.delete.call(this.store.computedObjects, this.id);
         Map.prototype.delete.call(this.store.watchObjects, this.id);
-        emitStoreEvent(this.store, "observer:destroyed", this);
+        emitStoreEvent(this.store, `observer/${this.id}/destroyed`, this);
     }
     /**
      * 供子类重写，在销毁时执行清理（如取消 inflight 请求）

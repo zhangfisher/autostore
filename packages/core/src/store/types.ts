@@ -370,29 +370,51 @@ export type UpdateOptions = {
     flags?: number;
 };
 
-export type AutoStoreEvents = TransformedEvents<{
-    // 响应对象创建后
-    load: AutoStore<any>;
-    // 响应对象销毁后
-    unload: AutoStore<any>;
-    // 对象重置时触发，入参为重置的路径字符串
-    reset: string | undefined;
-    /**
-     *
-     * 创建observer实例前
-     *
-     */
-    "observer:initial": ObserverContext;
-    "observer:created": { observer: AnyObserverObject; context?: ObserverContext };
-    "observer:run": { args: Record<string, any>; scope: any; observer: AnyObserverObject };
-    "observer:done": { value: any; observer: AnyObserverObject };
-    "observer:cancel": { reason: string; observer: AnyObserverObject };
-    "observer:error": { error: Error; observer: AnyObserverObject };
-    "observer:destroyed": AnyObserverObject;
-
-    // 当验证器验证失败时触发
-    validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
-}>;
+export type AutoStoreEvents = TransformedEvents<
+    {
+        // 响应对象创建后
+        load: AutoStore<any>;
+        // 响应对象销毁后
+        unload: AutoStore<any>;
+        // 对象重置时触发，入参为重置的路径字符串
+        reset: string | undefined;
+        // 当验证器验证失败时触发
+        validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
+        /**
+         *
+         * 创建observer实例前
+         *
+         *  observer/${id}/initial
+         *  observer/${id}/initial
+         */
+        "observer/initial": ObserverContext;
+        // "observer:created": { observer: AnyObserverObject; context?: ObserverContext };
+        // "observer:run": { args: Record<string, any>; scope: any; observer: AnyObserverObject };
+        // "observer:done": { value: any; observer: AnyObserverObject };
+        // "observer:cancel": { reason: string; observer: AnyObserverObject };
+        // "observer:error": { error: Error; observer: AnyObserverObject };
+        // "observer:destroyed": AnyObserverObject;
+    } & {
+        [key: `observer/${string}/created`]: {
+            observer: AnyObserverObject;
+            context?: ObserverContext;
+        };
+    } & {
+        [key: `observer/${string}/run`]: {
+            args: Record<string, any>;
+            scope: any;
+            observer: AnyObserverObject;
+        };
+    } & {
+        [key: `observer/${string}/done`]: { value: any; observer: AnyObserverObject };
+    } & {
+        [key: `observer/${string}/cancel`]: { reason: string; observer: AnyObserverObject };
+    } & {
+        [key: `observer/${string}/error`]: { error: Error; observer: AnyObserverObject };
+    } & {
+        [key: `observer/${string}/destroyed`]: AnyObserverObject;
+    }
+>;
 
 export type StoreRawStateType<Store extends AutoStore<any>> = Store["types"]["rawState"];
 

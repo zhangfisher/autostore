@@ -75,7 +75,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
                 operate,
                 first,
             };
-            emitStoreEvent(this.store, "observer:run", {
+            emitStoreEvent(this.store, `observer/${this.id}/run`, {
                 args: getterArgs,
                 scope,
                 observer: this,
@@ -108,13 +108,13 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
 
         if (!first) {
             if (this.error) {
-                emitStoreEvent(this.store, "observer:error", {
+                emitStoreEvent(this.store, `observer/${this.id}/error`, {
                     error: this.error,
                     observer: this,
                 });
                 if (this.options.throwError) throw this.error as any;
             } else {
-                emitStoreEvent(this.store, "observer:done", {
+                emitStoreEvent(this.store, `observer/${this.id}/done`, {
                     value: computedResult,
                     observer: this,
                 });

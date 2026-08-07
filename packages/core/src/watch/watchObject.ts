@@ -64,7 +64,7 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
                 path: watchPath,
                 value: watchValue,
             };
-            emitStoreEvent(this.store, "observer:run", {
+            emitStoreEvent(this.store, `observer/${this.id}/run`, {
                 args: getterArgs,
                 observer: this,
                 scope: undefined,
@@ -75,9 +75,12 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
                 markRaw(result);
             }
             this.value = result as Value;
-            emitStoreEvent(this.store, "observer:done", { value: result, observer: this });
+            emitStoreEvent(this.store, `observer/${this.id}/done`, {
+                value: result,
+                observer: this,
+            });
         } catch (e: any) {
-            emitStoreEvent(this.store, "observer:error", { error: e, observer: this });
+            emitStoreEvent(this.store, `observer/${this.id}/error`, { error: e, observer: this });
         }
     }
 }

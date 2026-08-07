@@ -81,7 +81,7 @@ describe("依赖关系管理", () => {
                 ),
             });
             (async () => {
-                store.on("observer:done", ({ observer }) => {
+                store.on("observer/*/done", ({ observer }) => {
                     const path = observer.path;
                     if (path.join(".") === "a9") {
                         resolve();
