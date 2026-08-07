@@ -1,7 +1,7 @@
 import type { AutoTemplateEngine } from "./engine";
 import { AutoTemplateDirectiveBase } from "./directives/base";
 import { getVal, type Watcher } from "autostore";
-import { getDirectives } from "./directives/utils/getDirectives";
+import { getDirectives, getHostOptions } from "./directives/utils/getDirectives";
 import { createDirectives } from "./directives/utils/createDirectives";
 
 /**
@@ -49,6 +49,14 @@ export class AutoTemplateScope {
     readonly _el: WeakRef<HTMLElement>;
     readonly engine: AutoTemplateEngine;
     directives: AutoTemplateDirectiveBase[] = [];
+    /**
+     * 元素级宿主选项（`x-options` 解析产物，ADR-0007）。
+     *
+     * 供同元素所有指令经 `getOption` 回退读取（指令选项未命中时回退到此）。
+     * 是配置而非数据，**不参与 getScopeContext 聚合视图**（不污染表达式数据命名空间）。
+     * 无 x-options 时为 null。
+     */
+    hostOptions: Record<string, any> | null = null;
     /** 本作用域持有的 watcher（destroy 时统一 off） */
     watchers: Watcher[] = [];
     /** 本作用域 watch 注册的 update 闭包（refresh 时同步重跑，destroy 时清空）。
@@ -242,6 +250,8 @@ export class AutoTemplateScope {
         const directiveDefine = getDirectives(this.template as HTMLElement);
         // createDirectives 内部已按静态 priority 降序排列，无需在此再排序
         this.directives = createDirectives(this.engine, directiveDefine, this);
+        // 元素级宿主选项（x-options）：解析挂 scope，供同元素指令经 getOption 回退读取（ADR-0007）
+        this.hostOptions = getHostOptions(this.template as HTMLElement) ?? null;
     }
 
     /**

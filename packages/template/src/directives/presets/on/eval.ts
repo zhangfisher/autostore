@@ -1,6 +1,7 @@
 import type { AutoTemplateEngine } from "../../../engine";
 import type { AutoTemplateScope } from "../../../scope";
 import type { OnEvalContext } from "./types";
+import { createDirectiveOptions } from "../../utils/createDirectiveOptions";
 
 /**
  * 匹配"裸标识符"或"标识符(参数)"：^Identifier 可选 (args)
@@ -22,14 +23,15 @@ const ACTION_RE = /^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$/;
  *
  * 求值异常均记 `engine.logger.error` 不中断（复用 `scope.ts` watchExpression 宽松求值模式）。
  *
- * @returns `(event) => void` 闭包，捕获 engine/scope/el/$modifiers
+ * @returns `(event) => void` 闭包，捕获 engine/scope/el/$options
  */
 export function createEvalHandler(
     expr: string,
     engine: AutoTemplateEngine,
     scope: AutoTemplateScope,
     el: HTMLElement,
-    $modifiers: Record<string, true>,
+    directiveOptions: Record<string, any> | undefined,
+    hostOptions: Record<string, any> | null | undefined,
 ): (event: Event) => void {
     const trimmed = expr.trim();
     const match = trimmed.match(ACTION_RE);
@@ -52,6 +54,8 @@ export function createEvalHandler(
         data: any,
     ) => any;
 
+    // 指令配置聚合视图（ADR-0007）：created 时构造一次，闭包捕获，事件触发时复用
+    const $options = createDirectiveOptions(directiveOptions, hostOptions);
     return (event) => {
         // 聚合数据视图：localScope + dataScope + 全局 state，供表达式 with 求值与 ctx.data（写入透传 dataScope）
         const data = scope.getScopeContext();
@@ -66,7 +70,7 @@ export function createEvalHandler(
                     scope,
                     store: engine.store,
                     engine,
-                    $modifiers,
+                    $options,
                 };
                 try {
                     const args = argsFn ? argsFn(event, data) : [];

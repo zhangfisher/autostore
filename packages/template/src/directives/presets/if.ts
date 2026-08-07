@@ -24,16 +24,19 @@ export class IfDirective extends AutoTemplateDirectiveBase {
     static override readonly priority = 80;
     static override readonly singleton = true;
 
-    /** eager 模式才占有子树；`.keep`/`x-show` 不占有（仅切 display） */
+    /** eager 模式才占有子树；`.keep`/`x-show`/`x-if-options="{keep:true}"` 不占有（仅切 display） */
     static override ownsChildren(info: AutoDirectiveInfo): boolean {
-        return !info.modifiers?.includes("keep");
+        // keep 经解析期注入为 info.options.keep（modifier 与指令选项等价，ADR-0007）。
+        // 静态方法早于 scope 实例，仅读指令级 options，不支持 x-options 宿主回退（编译期局限）。
+        return info.options?.keep !== true;
     }
 
     /** eager 模式下本指令编译挂载的子树节点，false 时按此精确移除 */
     private subtreeNodes: Node[] = [];
 
     private get keepMode(): boolean {
-        return !!this.modifiers?.includes("keep");
+        // `.keep` modifier 与 x-if-options="{keep:true}" 经 getOption 等价（ADR-0007）
+        return !!this.getOption("keep");
     }
 
     override created() {

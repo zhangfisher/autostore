@@ -20,12 +20,13 @@ export type EventListenerOptionsSubset = Pick<AddEventListenerOptions, "once" | 
 export interface ModifierRuntime {
     /** 触发元素（供 self 等需元素引用的守卫） */
     el: HTMLElement;
-    /** 本修饰符段名，如 "debounce" / "ctrl" */
+    /** 本修饰符段名（对应 options 的键），如 "debounce" / "ctrl" */
     name: string;
-    /** 紧随其后的数字段参数（如 ".500" → 500）；无则 undefined。当前仅 debounce 用 */
-    num?: number;
-    /** 本 x-on 的完整修饰符列表（供 exact 判断其他系统修饰符是否存在） */
-    modifiers: string[];
+    /**
+     * 当前指令的完整选项（含解析期注入的 modifier 开关，ADR-0007）。
+     * 供 exact 判断"声明的系统键"（options 键集合）、debounce 取时长（options.debounce）等。
+     */
+    options: Record<string, any>;
     /** 事件名（attr，如 "click" / "keydown"），供 left/right 按事件类型分派 */
     event: string;
 }
@@ -89,6 +90,11 @@ export interface OnEvalContext {
     store: any;
     /** 引擎实例 */
     engine: any;
-    /** 当前 x-on 触发的修饰符集合（键=修饰符名，值 true），如 { left: true, ctrl: true } */
-    $modifiers: Record<string, true>;
+    /**
+     * 指令配置的只读聚合视图（createDirectiveOptions 代理，ADR-0007）。
+     *
+     * 读取时按两层 fallback：指令选项（含解析期注入的 modifier 开关）→ 宿主选项（x-options）。
+     * action 经 `this.$options.xxx` 读取配置；只读，写入静默失败（配置静态）。
+     */
+    $options: Record<string, any>;
 }

@@ -44,36 +44,38 @@ export class OnDirective extends AutoTemplateDirectiveBase {
         const value = this.value;
         if (!el || !event || value == null || value === "") return;
 
-        const mods = this.modifiers ?? [];
+        // 指令选项（含解析期注入的 modifier 开关，ADR-0007）：遍历其键查 MODIFIERS 注册表分派。
+        // modifier 在指令层已消失——`.ctrl`/`.debounce` 与 `x-on-options="{ctrl:true}"` 经此统一。
+        const opts = this.options;
 
-        // === 1. 分类修饰符 + 解析数字参数段（如 .debounce.500 的 500） ===
+        // === 1. 按 descriptor.type 分派 modifier（option 合并 / guard 收集 / wrapper 收集） ===
         const optionParts: EventListenerOptionsSubset = {};
         const guardRts: ModifierRuntime[] = [];
         const wrapperRts: ModifierRuntime[] = [];
-        // $modifiers：修饰符名（过滤数字段）作键，供 action 经 this.$modifiers 读取
-        const $modifiers: Record<string, true> = {};
-        for (let i = 0; i < mods.length; i++) {
-            const seg = mods[i]!;
-            // 纯数字段：归属前一个修饰符的 num 参数（仅 debounce 用），不计入 $modifiers
-            if (/^\d+$/.test(seg)) continue;
-            const desc = MODIFIERS[seg] as ModifierDesc | undefined;
-            if (!desc) continue; // 未注册修饰符静默跳过（便于未来扩展）
-            $modifiers[seg] = true;
-            // 探测下一段是否为数字参数
-            const next = mods[i + 1];
-            const num = next != null && /^\d+$/.test(next) ? Number(next) : undefined;
-            const rt: ModifierRuntime = { el, name: seg, num, modifiers: mods, event };
-            if (desc.type === "option") {
-                Object.assign(optionParts, (desc as OptionModifierDesc).apply(rt));
-            } else if (desc.type === "guard") {
-                guardRts.push(rt);
-            } else {
-                wrapperRts.push(rt);
+        if (opts) {
+            for (const key of Object.keys(opts)) {
+                const desc = MODIFIERS[key] as ModifierDesc | undefined;
+                if (!desc) continue; // 非 modifier 的 option 键（自定义配置）静默跳过，便于扩展
+                const rt: ModifierRuntime = { el, name: key, options: opts, event };
+                if (desc.type === "option") {
+                    Object.assign(optionParts, (desc as OptionModifierDesc).apply(rt));
+                } else if (desc.type === "guard") {
+                    guardRts.push(rt);
+                } else {
+                    wrapperRts.push(rt);
+                }
             }
         }
 
-        // === 2. 业务 handler（求值器：Action 优先 + 表达式兜底） ===
-        const business = createEvalHandler(String(value), this.engine, this.binding, el, $modifiers);
+        // === 2. 业务 handler（求值器：Action 优先 + 表达式兜底；$options 聚合视图注入 action） ===
+        const business = createEvalHandler(
+            String(value),
+            this.engine,
+            this.binding,
+            el,
+            this.options,
+            this.binding?.hostOptions,
+        );
 
         // === 3. guard 层（最内层，AND 组合，任一 false 短路不执行业务） ===
         const guardWrapped = (eventObj: Event) => {

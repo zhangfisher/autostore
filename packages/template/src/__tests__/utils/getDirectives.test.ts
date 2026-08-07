@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { getDirectives } from "../../directives/utils/getDirectives";
+import { getDirectives, getHostOptions } from "../../directives/utils/getDirectives";
 import type { AutoDirectiveInfo } from "../../directives/types";
 import "../setup";
 /**
@@ -37,6 +37,7 @@ describe("findDirectives - 普通长前缀指令", () => {
             name: "if",
             value: "xxx",
             modifiers: ["once", "y"],
+            options: { once: true, y: true },
         });
     });
 
@@ -54,6 +55,7 @@ describe("findDirectives - 普通长前缀指令", () => {
             attr: "title",
             value: "xxx",
             modifiers: ["once"],
+            options: { once: true },
         });
     });
 
@@ -72,6 +74,7 @@ describe("findDirectives - x-show 别名归一化（≡ x-if.keep）", () => {
             name: "if",
             value: "a",
             modifiers: ["keep"],
+            options: { keep: true },
         });
     });
 
@@ -79,6 +82,7 @@ describe("findDirectives - x-show 别名归一化（≡ x-if.keep）", () => {
         expect(parseOne({ "x-show": "" })).toEqual({
             name: "if",
             modifiers: ["keep"],
+            options: { keep: true },
         });
     });
 });
@@ -112,6 +116,7 @@ describe("findDirectives - @ 事件快捷前缀", () => {
             attr: "click",
             value: "fn",
             modifiers: ["debounce"],
+            options: { debounce: true },
         });
     });
 
@@ -121,6 +126,7 @@ describe("findDirectives - @ 事件快捷前缀", () => {
             attr: "keydown",
             value: "onKey",
             modifiers: ["a", "b"],
+            options: { a: true, b: true },
         });
     });
 
@@ -144,6 +150,7 @@ describe("findDirectives - : 属性绑定快捷前缀", () => {
             attr: "title",
             value: "x",
             modifiers: ["once"],
+            options: { once: true },
         });
     });
 
@@ -201,6 +208,44 @@ describe("findDirectives - options 补充参数", () => {
 
     test("options 值为空字符串时抛出错误", () => {
         expect(() => getDirectives(elWith({ "x-if": "a", "x-if-options": "" }))).toThrow();
+    });
+});
+
+describe("findDirectives - modifier 注入与宿主选项（ADR-0007）", () => {
+    test("modifier 注入为同名指令选项（options[name]=true）", () => {
+        // .once.y 经解析期注入：modifiers 保留，options 同步生成
+        expect(parseOne({ "x-if.once.y": "a" }).options).toEqual({ once: true, y: true });
+    });
+
+    test("显式 x-{name}-options 优先于 modifier 注入（含 false 生效）", () => {
+        // .debounce 注入 true，但 x-on-options 显式 500 优先
+        const info = parseOne({ "@click.debounce": "fn", "x-on-options": "{debounce:500}" });
+        expect(info.options?.debounce).toBe(500);
+        // 显式 false 阻断 modifier 注入（hasOwnProperty 判定命中）
+        const info2 = parseOne({ "@click.debounce": "fn", "x-on-options": "{debounce:false}" });
+        expect(info2.options?.debounce).toBe(false);
+    });
+
+    test("纯数字段（已废 .debounce.500）不注入 options", () => {
+        const info = parseOne({ "@click.debounce.500": "fn" });
+        expect(info.options).toEqual({ debounce: true }); // "500" 不注入
+        expect(info.modifiers).toEqual(["debounce", "500"]); // 原始 modifiers 保留
+    });
+
+    test("裸 x-options 不作为指令（由 getHostOptions 单独解析）", () => {
+        expect(getDirectives(elWith({ "x-options": "{a:1}" }))).toEqual([]);
+    });
+
+    test("getHostOptions 解析 x-options 为对象", () => {
+        expect(getHostOptions(elWith({ "x-options": "{a:1, b:'x'}" }))).toEqual({ a: 1, b: "x" });
+    });
+
+    test("getHostOptions 无 x-options 时返回 undefined", () => {
+        expect(getHostOptions(elWith({ "x-if": "a" }))).toBeUndefined();
+    });
+
+    test("getHostOptions 值非对象时抛出错误", () => {
+        expect(() => getHostOptions(elWith({ "x-options": "hello" }))).toThrow();
     });
 });
 

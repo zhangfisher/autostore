@@ -109,8 +109,11 @@ function parsePrefixedDirective(rest: string, rawValue: string): AutoDirectiveIn
  * - 事件类指令（@event / x-on:name）统一解析为 name 为 "on"，事件名放入 attr，
  *   修饰符放入 modifiers；属性类指令（:attr / x-bind:name）统一解析为 name 为 "bind"。
  * - `@` 与 `:` 为固定快捷前缀，不受 prefix 参数影响；prefix 仅控制 x- 这类长前缀的识别。
- * - options 补充参数（x-{name}-options）不单独占位，而是合并到同元素上同名指令的 options 字段；
+ * - 指令选项（x-{name}-options）不单独占位，而是合并到同元素上同名指令的 options 字段；
  *   若找不到同名主指令则忽略（补充参数无主指令则无意义）。
+ * - modifier（无参开关）在解析期注入为同名指令选项（options[name]=true，显式选项优先）；
+ *   故指令层统一只读 options，不再读 modifiers（ADR-0007）。
+ * - 元素级宿主选项（裸 x-options）不作为指令，由 getHostOptions 单独解析挂 scope。
  *
  * @param el
  */
@@ -150,6 +153,9 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): AutoDirectiveInfo
         // 3. x- 长前缀指令
         if (rawName.startsWith(prefix)) {
             const rest = rawName.slice(prefix.length);
+
+            // 裸 x-options（元素级宿主选项）：不作为指令，由 getHostOptions 单独解析挂 scope（ADR-0007）
+            if (rest === "options") continue;
 
             // 3a. -options 后缀：x-if-options="..." 视为对同名指令的额外选项补充
             if (rest.endsWith(OPTIONS_SUFFIX)) {
@@ -196,5 +202,39 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): AutoDirectiveInfo
         }
     }
 
+    // 5. modifier 注入为指令选项（显式优先，ADR-0007）：modifier 是无参开关，等价 options[name]=true。
+    //    纯数字段（已废 .debounce.500 的 "500"）不注入；显式 x-{name}-options 已写的键（含 false）不被覆盖。
+    for (const info of results) {
+        if (!info.modifiers || info.modifiers.length === 0) continue;
+        if (!info.options) info.options = {};
+        for (const m of info.modifiers) {
+            if (/^\d+$/.test(m)) continue;
+            if (!(m in info.options)) info.options[m] = true;
+        }
+    }
+
     return results;
+}
+
+/**
+ * 解析元素级宿主选项 `x-options`（ADR-0007）。
+ *
+ * x-options 声明元素级共享配置，挂载到 scope.hostOptions，供同元素所有指令经
+ * `getOption` 回退读取（指令选项未命中时回退到此）。值用宽松 JSON 解析，须为普通对象
+ * （否则抛错，与 x-{name}-options 一致）。
+ *
+ * 与 getDirectives 分离：x-options 不是指令，不进入指令流（getDirectives 显式跳过裸 x-options）。
+ *
+ * @param el
+ * @param prefix 指令前缀，默认 "x-"
+ * @returns 解析后的宿主选项对象；元素无 x-options 属性时返回 undefined
+ */
+export function getHostOptions(
+    el: HTMLElement,
+    prefix = "x-",
+): Record<string, any> | undefined {
+    if (!(el instanceof HTMLElement)) return undefined;
+    const raw = el.getAttribute(`${prefix}options`);
+    if (raw == null) return undefined;
+    return parseOptions(raw);
 }

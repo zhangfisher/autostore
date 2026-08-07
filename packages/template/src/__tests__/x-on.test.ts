@@ -101,7 +101,7 @@ describe("x-on 函数来源（Action 优先 + 表达式兜底）", () => {
 });
 
 describe("x-on this 上下文与 $event", () => {
-    test("action 的 this 含 el/$event/$modifiers", () => {
+    test("action 的 this 含 el/$event/$options（含 modifier 开关）", () => {
         let ctx: any;
         const { root, engine } = mount(`<button @click.left="save()">x</button>`, {});
         engine.actions.save = function () {
@@ -111,7 +111,8 @@ describe("x-on this 上下文与 $event", () => {
         btn.dispatchEvent(new MouseEvent("click", { button: 0 }));
         expect(ctx.el).toBe(btn);
         expect(ctx.$event.type).toBe("click");
-        expect(ctx.$modifiers.left).toBe(true);
+        // .left modifier 经解析期注入为 options.left=true，经 $options 聚合视图暴露（ADR-0007）
+        expect(ctx.$options.left).toBe(true);
     });
 
     test('$event 注入：@input="recv($event.target.value)"', () => {
@@ -315,9 +316,9 @@ describe("x-on wrapper debounce", () => {
         expect(n).toBe(1);
     });
 
-    test("@click.debounce.500 自定义时长", async () => {
+    test('x-on-options="{debounce:500}" 自定义时长（options 通道）', async () => {
         let n = 0;
-        const { root, engine } = mount(`<button @click.debounce.500="fn()">x</button>`, {});
+        const { root, engine } = mount(`<button @click="fn()" x-on-options="{debounce:500}">x</button>`, {});
         engine.actions.fn = () => {
             n++;
         };

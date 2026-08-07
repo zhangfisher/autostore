@@ -265,6 +265,30 @@ describe("x-data.global 挂载全局 store", () => {
     });
 });
 
+describe("x-data 配置等价性（ADR-0007：modifier ≡ 指令选项，宿主选项回退）", () => {
+    test('x-data.global ≡ x-data-options="{global:true}"：均写入 store 根键', () => {
+        const a = mount(`<div x-data.global="{eq:1}"></div>`, {});
+        const b = mount(`<div x-data-options="{global:true}" x-data="{eq:2}"></div>`, {});
+        expect(a.store.state.eq).toBe(1);
+        expect(b.store.state.eq).toBe(2);
+    });
+
+    test("宿主选项回退：x-data 无 global 配置时回退读取 x-options.global", () => {
+        // x-data 既无 .global 也无 x-data-options.global，经 getOption 回退到 x-options.global
+        const { store } = mount(`<div x-options="{global:true}" x-data="{host:1}"></div>`, {});
+        expect(store.state.host).toBe(1);
+    });
+
+    test("指令选项优先于宿主选项：x-data-options.global=false 显式关闭", () => {
+        // x-options.global=true，但 x-data-options.global=false 显式覆盖 → local 模式，不写根键
+        const { store } = mount(
+            `<div x-options="{global:true}" x-data-options="{global:false}" x-data="{x:1}"></div>`,
+            {},
+        );
+        expect(store.state.x).toBeUndefined();
+    });
+});
+
 describe("x-data 与 x-for 共存", () => {
     test("容器 x-data 经 parent 链透传进各 item；engine.data 更新透传", async () => {
         const { root, engine } = mount(

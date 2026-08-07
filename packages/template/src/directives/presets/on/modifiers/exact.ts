@@ -17,7 +17,8 @@ export default {
     apply: (e, rt) => {
         const ke = e as KeyboardEvent;
         const pressed = SYS_KEYS.filter((k) => ke[`${k}Key`]);
-        const declared = SYS_KEYS.filter((k) => rt.modifiers.includes(k));
+        // 声明的系统键 = options 键集合中属于系统键的（ADR-0007：modifier 已注入 options）
+        const declared = SYS_KEYS.filter((k) => k in rt.options);
         return pressed.length === declared.length && declared.every((k) => pressed.includes(k));
     },
 } as GuardModifierDesc;

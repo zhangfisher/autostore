@@ -168,6 +168,27 @@ export class AutoTemplateDirectiveBase {
         return this.binding?.template;
     }
 
+    /**
+     * 读取指令配置（两层 fallback，ADR-0007）。
+     *
+     * 查询顺序：指令选项（`this.options`，含解析期注入的 modifier 开关）→ 宿主选项
+     * （`this.binding.hostOptions`，即 `x-options`）。显式写值（含 `false`）即命中、阻断回退；
+     * 两层均无返回 undefined。
+     *
+     * modifier 与指令选项经此方法等价：`.global` 与 `x-{name}-options="{global:true}"` 统一可读。
+     * Runtime 指令（无 binding）仅查指令选项（无宿主选项回退）。
+     */
+    getOption(key: string): any {
+        if (this.options && Object.prototype.hasOwnProperty.call(this.options, key)) {
+            return this.options[key];
+        }
+        const host = this.binding?.hostOptions;
+        if (host && Object.prototype.hasOwnProperty.call(host, key)) {
+            return host[key];
+        }
+        return undefined;
+    }
+
     // ── scope 通道钩子（Compile / Hybrid）──────────────────────────────
     /** 初始化：建立订阅（watch）的时机 */
     created() {}

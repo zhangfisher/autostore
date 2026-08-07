@@ -49,7 +49,8 @@ export class DataDirective extends AutoTemplateDirectiveBase {
     private attachedKeys: Map<string, any> | null = null;
 
     private get globalMode(): boolean {
-        return !!this.modifiers?.includes("global");
+        // `.global` modifier 与 x-data-options="{global:true}" 经 getOption 等价（ADR-0007）
+        return !!this.getOption("global");
     }
 
     override created() {
