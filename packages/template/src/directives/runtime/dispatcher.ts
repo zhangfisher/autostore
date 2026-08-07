@@ -91,13 +91,16 @@ export class RuntimeObserverDispatcher {
     }
 
     /**
-     * 元素是否落在任一 slot 盲区内（含盲区根本身）。
+     * 元素是否落在任一 slot 盲区的**严格后代**子树内（不含盲区根本身）。
      * 无盲区时短路返回 false（热路径零开销）。用于 collectEls / _handle 过滤掉 child engine 管辖的子树。
+     *
+     * **不含盲区根本身**：slot 宿主自身的 runtime 指令（如 fetch 期间 x-slot 添加的 `x-loading`）
+     * 仍归本 dispatcher 管理与 mount；仅其**子树**（child engine 编译产物）致盲，避免双 dispatcher 抢管。
      */
     private _inSlotRoot(el: HTMLElement): boolean {
         if (this.slotRoots.size === 0) return false;
         for (const root of this.slotRoots) {
-            if (root === el || root.contains(el)) return true;
+            if (root !== el && root.contains(el)) return true;
         }
         return false;
     }
@@ -163,7 +166,7 @@ export class RuntimeObserverDispatcher {
         }
         byEl.set(el, inst);
         inst.mounted();
-        this.engine.broadcast(`directive/${name}/mounted`, { name, el });
+        this.engine.emit(`directive/${name}/mounted` as any, { name, el });
     }
 
     /** 卸载实例（不存在则跳过）：unmounted → 删 → 广播 */
@@ -173,7 +176,7 @@ export class RuntimeObserverDispatcher {
         if (!inst) return;
         byEl!.delete(el);
         inst.unmounted();
-        this.engine.broadcast(`directive/${name}/unmounted`, { name, el });
+        this.engine.emit(`directive/${name}/unmounted` as any, { name, el });
     }
 
     /** 属性值变化：attrChanged（保留实例状态如 delay 定时器）→ 广播 */
@@ -181,7 +184,7 @@ export class RuntimeObserverDispatcher {
         const inst = this.instances.get(name)?.get(el);
         if (!inst) return;
         (inst as RuntimeDirective).attrChanged?.(newVal, oldVal);
-        this.engine.broadcast(`directive/${name}/attr-changed`, { name, el, newVal, oldVal });
+        this.engine.emit(`directive/${name}/attr-changed` as any, { name, el, newVal, oldVal });
     }
 
     /** observer 回调：childList 增/删 → collectEls 逐指令 mount/unmount；attributes → 三态路由 */

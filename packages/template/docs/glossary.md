@@ -101,17 +101,19 @@
 - **scope 通道**：`created` / `compiled` / `destroyed`
 - **指令自定**（登记制扩词表）：x-for `rendered`/`item-added`/`item-removed`；x-data `ready`/`resolved`
 
-一律过去时/状态形容词，禁命令式。使 `directive/*/mounted`（任意指令挂载）、`task/*/started`（任意异步源开始）等"跨主体抓同动词"模式成立。
+一律过去时/状态形容词，禁命令式。使 `directive/*/mounted`（任意指令挂载）、`actions/*/pending`（任意 action 开始）等"跨主体抓同动词"模式成立。
 
-### task 域（进行中的工作单元）
-事件总线中承载**有生命周期、进行中的工作**的域：`task/<source>/<verb>`——source 受控为 `x-data`/`x-on`/`computed`/`user`，verb 为 `started`/`ended`/`progressed`/`resolved`/`rejected`。使全局 loading / 错误 toast / 进度 / Suspense 等**跨源协调**成为可能（`task/*/started` = 任意任务开始）。实现上 `task/computed/**` **转发** store 的 `observer:*` 事件，模板原生源（x-data 异步初值 / x-on async action）需插桩。**命名沿革**：前身 `async/**`，因"async 描述机制而非领域、且与响应式 signal 概念撞名"改为 `task`（离散工作单元，语义贴切）。见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 3.2/3.5。
+### actions 域（x-on async action 生命周期）
+事件总线中承载 **async action 生命周期**的域：`actions/<name>/<verb>`——`<name>` = action 函数名（**入路径**），verb = `pending`/`resolved`/`rejected`。由 `engine.buildAction` 在**注册时自动包装**触发——`engine.actions[name]=fn`（actions Proxy 的 set trap）、构造时 `options.actions`（构造函数扫描）、`<script type="actions">`（compiler 提取）三入口均自动包装；仅 async action（返回 thenable）广播，同步 action 透明（不广播）。reject 经内部 `then(_, onRejected)` 消费广播 `rejected`，消除 unhandled rejection。payload 亦带 `name`（方便 `actions/*/pending` 通配订阅者区分）。流信号 plain emit（不 retain）。见 `engine.buildAction` 实现。
+
+> **task 域已废弃（2026-08-07）**：ADR-0003 原设计的 `task/<source>/<verb>` 统一异步事件抽象未被采用——x-on async action 用 `actions/<name>/*`（per-action 精确订阅，name 入路径），x-slot remote 加载用 x-loading 指令自带覆盖层（不广播事件）。task 域零消费者，已移除。"一处订阅抓所有异步"的跨源诉求当前不存在，若未来出现再评估统一抽象。
 
 ### 通配契约（Wildcard Contract）
 分层命名承诺的可订阅模式。高价值模式：`<域>/<主体>/*`（一主体全动作）、`<域>/*/<动词>`（跨主体同动词，★ 核心）、`<域>/**`（一域全部）、`**`（全部= `onAny`）。详见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 3.4。
 
 ### 态信号 vs 流信号（retain 纪律）
 - **态信号**（一次性、表"当前是否就绪"，如 `engine/ready`、`directive/x-data/ready`）→ **`retain=true`** emit：晚订阅者立即补拿，规避 priority 顺序竞态（A 先发、B 后订则 B 错过）。
-- **流信号**（可重复、表"发生了"，如 `task/*/started`、`directive/x-for/item-added`）→ **plain emit**：retain 只留最后一条，用于流信号反错。
+- **流信号**（可重复、表"发生了"，如 `actions/*/pending`、`directive/x-for/item-added`）→ **plain emit**：retain 只留最后一条，用于流信号反错。
 
 **铁律：态信号 retain，流信号 plain。** 见 [ADR-0003](adr/0003-engine-event-bus.md) 决策 6。
 
@@ -195,10 +197,10 @@ remote 模式下 `x-slot="expr"` 的 `expr` 是**反应式表达式**，经 `sco
 remote 模式在 x-slot 宿主上创建的**完全独立** `AutoTemplateEngine` 实例：`new AutoTemplateEngine(host, new AutoStore({}))`——自带空 store（fetched HTML 用自身 x-data 自治声明，**不复用父 store**，与父状态零耦合），以宿主为挂载点（fetch 成功后 `host.innerHTML = html` 再构造，宿主身份不变、仅子节点被接管）。挂在指令实例 `this.childEngine`（非 scope 对象——指令 own 自己的资源、SRP）。**随 `scope.destroy()` 销毁**（指令 `destroy()` 调 `childEngine.destroy()` + abort 在途 fetch），零额外接线、无泄漏。见 [ADR-0006](adr/0006-x-slot-directive.md) 决策 4/5。
 
 ### slot 盲区（Slot Blind Zone）
-隔离父/子双 dispatcher 抢管的机制。父 `RuntimeObserverDispatcher` 以 `subtree:true` 观察 `engine.el`，child engine 写进宿主的运行时指令属性（如 x-loading）会被父 dispatcher 二次 mount。x-slot `created()` 调 `dispatcher.addSlotRoot(host)` 登记宿主为盲区；dispatcher 的 `collectEls`/`_handle` 对盲区内节点（`slotRoots.some(r => r===el || r.contains(el))`）跳过 mount/attr 派发；`destroy()` 注销。子树运行时指令完全由 child engine 自身 dispatcher 负责。见 [ADR-0006](adr/0006-x-slot-directive.md) 决策 8。
+隔离父/子双 dispatcher 抢管的机制。父 `RuntimeObserverDispatcher` 以 `subtree:true` 观察 `engine.el`，child engine 写进宿主**子树**的运行时指令属性（如 x-loading）会被父 dispatcher 二次 mount。x-slot `created()` 调 `dispatcher.addSlotRoot(host)` 登记宿主为盲区根；dispatcher 的 `collectEls`/`_handle` 对盲区**严格后代**（`slotRoots.some(r => r !== el && r.contains(el))`）跳过 mount/attr 派发；`destroy()` 注销。**盲区不含宿主自身**——宿主上的 runtime 指令（如 fetch 期间 x-slot 添加的 x-loading）仍归父 dispatcher，仅子树由 child engine 自身 dispatcher 负责。见 [ADR-0006](adr/0006-x-slot-directive.md) 决策 8。
 
-### task/slot 事件（远程加载信号）
-remote 模式经 [信号面](#信号面signal-plane) 广播的离散事件：`task/slot/started`（fetch 开始，流信号 plain emit）/ `task/slot/resolved`（成功）/ `task/slot/rejected`（失败）。使「用真正的 x-loading 统一全局加载态」成为 opt-in（用户放 x-loading 订阅 `task/slot/*`，经 task 域跨源协调）。与默认的自渲染 loading 占位互补。见 [ADR-0006](adr/0006-x-slot-directive.md) 决策 6/7、[ADR-0003](adr/0003-engine-event-bus.md) 决策 3.2。
+### ~~task/slot 事件（已移除）~~
+remote 模式**原计划**广播 `task/slot/{started,resolved,rejected}` 供全局加载协调，但 task 域抽象未被采用（见上文「task 域已废弃」）。x-slot remote 加载的加载态改由 **x-loading 指令自带覆盖层**（宿主 `setAttribute("x-loading")` toggle，dispatcher 自动 mount/unmount）表达，错误由占位 + `logger.error` 表达——**不广播任何事件**。
 
 ## 决策记录
 - ✅ [ADR-0001] 运行时指令走纯 observer 通道（方案 A）—— *待补全 Initialize/Dispose 契约后定稿*

@@ -113,7 +113,7 @@ describe("x-slot 远程子引擎", () => {
         expect(root.querySelector(".x-slot-error")).not.toBeNull();
     });
 
-    test("remote：fetch 期间显示 loading 占位，完成后替换为产物", async () => {
+    test("remote：fetch 期间经 x-loading 显示覆盖层，完成后移除并替换为产物", async () => {
         let resolveFetch: () => void = () => {};
         globalThis.fetch = (async () => {
             await new Promise<void>((r) => {
@@ -123,9 +123,12 @@ describe("x-slot 远程子引擎", () => {
         }) as any;
         const { root } = mount(`<div x-slot="url"></div>`, { url: "/slow" });
         await nextTick();
-        expect(root.querySelector(".x-slot-loading")).not.toBeNull();
+        // 复用 x-loading 运行时指令：宿主加属性 → dispatcher mount 覆盖层
+        expect(root.querySelector(".x-loading-overlay")).not.toBeNull();
         resolveFetch();
         await nextTick();
+        // 完成后移除属性 → 覆盖层消失、换上 child engine 产物
+        expect(root.querySelector(".x-loading-overlay")).toBeNull();
         expect(root.querySelector("span")?.textContent).toBe("OK");
     });
 

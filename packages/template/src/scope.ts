@@ -72,7 +72,7 @@ export class AutoTemplateScope {
         this._el = new WeakRef(el);
         this.engine = engine;
         this._createDirectives();
-        this.engine.broadcast("scope/created", { id: this.id, el, template });
+        this.engine.emit("scope/created", { id: this.id, el, template });
     }
 
     get el() {
@@ -112,7 +112,7 @@ export class AutoTemplateScope {
      */
     dataScope: Record<string, any> | null = null;
     /**
-     * 本作用域局部事件 action（由 `<script type="js/actions">` 在编译期注入）。
+     * 本作用域局部事件 action（由 `<script type="actions">` 在编译期注入）。
      *
      * 与 localScope/dataScope 同级参与 getAction 的 parent 链查找（子覆盖父，命中即止）；
      * scope destroy 时随 scope 对象回收，无需手动清理。null 表示本层无局部 action。
@@ -208,7 +208,7 @@ export class AutoTemplateScope {
     }
 
     /**
-     * 沿 parent 链查找事件 action（局部 `<script type="js/actions">` → 全局 engine.actions）。
+     * 沿 parent 链查找事件 action（局部 `<script type="actions">` → 全局 engine.actions）。
      *
      * 查找顺序：本 scope.actions → 各祖先 actions → engine.actions（终点）。
      * 子 scope 同名 action 覆盖祖先（命中即止）。供 OnDirective 求值器（Action 优先策略）使用。
@@ -398,7 +398,7 @@ export class AutoTemplateScope {
      */
     compile() {
         this.runDirectives(this.directives);
-        this.engine.broadcast("scope/compiled", { id: this.id });
+        this.engine.emit("scope/compiled", { id: this.id });
     }
 
     /**
@@ -408,11 +408,11 @@ export class AutoTemplateScope {
     runDirectives(directives: AutoTemplateDirectiveBase[]): void {
         for (const d of directives) {
             if (typeof d.created === "function") d.created();
-            this.engine.broadcast("directive/" + d.info.name + "/created", { name: d.info.name, id: this.id });
+            this.engine.emit(("directive/" + d.info.name + "/created") as any, { name: d.info.name, id: this.id });
         }
         for (const d of directives) {
             if (typeof d.compile === "function") d.compile(this.engine.state, this.el!);
-            this.engine.broadcast("directive/" + d.info.name + "/compiled", { name: d.info.name, id: this.id });
+            this.engine.emit(("directive/" + d.info.name + "/compiled") as any, { name: d.info.name, id: this.id });
         }
     }
 
@@ -437,11 +437,11 @@ export class AutoTemplateScope {
             this._updates.length = 0;
             for (const d of this.directives) {
                 if (typeof d.destroy === "function") d.destroy(this.el!);
-                this.engine.broadcast("directive/" + d.info.name + "/destroyed", { name: d.info.name, id: this.id });
+                this.engine.emit(("directive/" + d.info.name + "/destroyed") as any, { name: d.info.name, id: this.id });
             }
         } catch (e: any) {
             this.engine.logger.error(e);
         }
-        this.engine.broadcast("scope/destroyed", { id: this.id });
+        this.engine.emit("scope/destroyed", { id: this.id });
     }
 }

@@ -114,7 +114,7 @@ export interface AutoTemplateEngineOptions extends FastEvent.FastLiteEventOption
      * 全局事件 action 函数表。
      *
      * `@click="name"` / `@click="name(args)"` 命中时，以 OnEvalContext 为 this 调用。
-     * 作为 scope.getAction 查找链的终点；模板内 `<script type="js/actions">` 注入的
+     * 作为 scope.getAction 查找链的终点；模板内 `<script type="actions">` 注入的
      * 局部 action 优先级更高（沿 scope parent 链先命中）。
      *
      * @default {}
@@ -140,7 +140,7 @@ export interface AutoTemplateEngineOptions extends FastEvent.FastLiteEventOption
  * 分层命名（`/` 分隔）+ 通配符订阅：消费者可精确订阅，亦可经 `*`/`**` 订阅一批同类。
  * 事件只承载**离散信号**——值留 `store.state`（数据面），控制流留命令调用（控制面）。
  *
- * emit 一律经 `engine.broadcast()`（listenerCount 短路，无订阅≈零成本）。
+ * emit 一律直接调继承自 FastLiteEvent 的 `engine.emit()`（按 type 查监听器，无该 type 订阅≈零成本）。
  */
 export interface AutoTemplateEngineEvents {
     // ── engine/** 引擎生命周期 ──────────────────────────────
@@ -187,9 +187,20 @@ export interface AutoTemplateEngineEvents {
     /** patch 后 */
     "patch/after": { id: number };
 
-    // ── render/** 调度 flush（热路径，broadcast 门控） ──────
+    // ── render/** 调度 flush（热路径，emit 按 type 门控） ──────
     /** flush 前 */
     "render/flush/before": void;
     /** flush 后 */
     "render/flush/after": void;
+
+    // ── actions/** async action 生命周期（buildAction 注册时自动包装） ──
+    // <name> = action 函数名。通配：action 通配订阅抓任意 action 的开始/成功/失败（全局 loading / 错误 toast）。
+    // 仅 async action（返回 thenable）广播；同步 action 不广播。流信号 plain（不 retain，ADR-0003 决策 6）。
+    // payload name 与路径一致（方便通配订阅者）；不带 el/$event（避免持 DOM 引用泄漏）。
+    /** async action 开始（action 返回 thenable 后同步广播；pending = "进行中"状态形容词） */
+    "actions/*/pending": { name: string };
+    /** async action 成功；result 为 resolve 值 */
+    "actions/*/resolved": { name: string; result: any };
+    /** async action 失败（reject 经内部 then 消费广播，消除 unhandled rejection） */
+    "actions/*/rejected": { name: string; error: any };
 }

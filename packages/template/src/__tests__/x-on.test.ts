@@ -318,7 +318,10 @@ describe("x-on wrapper debounce", () => {
 
     test('x-on-options="{debounce:500}" 自定义时长（options 通道）', async () => {
         let n = 0;
-        const { root, engine } = mount(`<button @click="fn()" x-on-options="{debounce:500}">x</button>`, {});
+        const { root, engine } = mount(
+            `<button @click="fn()" x-on-options="{debounce:500}">x</button>`,
+            {},
+        );
         engine.actions.fn = () => {
             n++;
         };
@@ -389,10 +392,12 @@ describe("x-on destroy 解绑", () => {
     });
 });
 
-describe('x-on <script type="js/actions"> 局部 action', () => {
+describe('x-on <script type="actions"> 局部 action', () => {
     test("局部 action 经 scope 链查找到并执行", () => {
         const { root, store } = mount(
-            `<div x-data="{}"><button @click="localFn()">+</button><script type="js/actions">{ localFn(){ this.store.state.count++ } }</script></div>`,
+            `<div x-data="{}"><button @click="localFn()">+</button><script type="actions">{ 
+                localFn(){ this.store.state.count++ } 
+            }</script></div>`,
             { count: 0 },
         );
         root.querySelector("button")!.click();
@@ -401,7 +406,7 @@ describe('x-on <script type="js/actions"> 局部 action', () => {
 
     test("局部 action 覆盖同名全局 action", () => {
         const { root, store, engine } = mount(
-            `<div x-data="{}"><button @click="who()">x</button><script type="js/actions">{ who(){ this.store.state.who = "local" } }</script></div>`,
+            `<div x-data="{}"><button @click="who()">x</button><script type="actions">{ who(){ this.store.state.who = "local" } }</script></div>`,
             { who: "none", count: 0 },
         );
         engine.actions.who = function (this: any) {
@@ -418,9 +423,9 @@ describe('x-on <script type="js/actions"> 局部 action', () => {
         expect(s!.textContent).toContain("var a");
     });
 
-    test('<script type="js/actions"> 提取后从 DOM 移除', () => {
+    test('<script type="actions"> 提取后从 DOM 移除', () => {
         const { root } = mount(
-            `<div x-data="{}"><button @click="f()">x</button><script type="js/actions">{ f(){} }</script></div>`,
+            `<div x-data="{}"><button @click="f()">x</button><script type="actions">{ f(){} }</script></div>`,
             {},
         );
         expect(root.querySelector("script")).toBeNull();
@@ -453,9 +458,12 @@ describe("x-on 结合 x-data（含嵌套）", () => {
 
     test("this.data 聚合 x-data 与全局 state", () => {
         let received: any;
-        const { root, engine } = mount(`<div x-data="{local:1}"><button @click="read">?</button></div>`, {
-            global: 2,
-        });
+        const { root, engine } = mount(
+            `<div x-data="{local:1}"><button @click="read">?</button></div>`,
+            {
+                global: 2,
+            },
+        );
         engine.actions.read = function (this: any) {
             received = { local: this.data.local, global: this.data.global };
         };
@@ -584,9 +592,9 @@ describe("x-on 结合 x-data（含嵌套）", () => {
         expect(root.querySelector("span")!.textContent).toBe("6");
     });
 
-    test('局部 <script type="js/actions"> action 经 getDataScope() 写 x-data', async () => {
+    test('局部 <script type="actions"> action 经 getDataScope() 写 x-data', async () => {
         const { root } = mount(
-            `<div x-data="{count:0}"><button @click="incr">+</button><span x-text="count"></span><script type="js/actions">{ incr(){ this.scope.getDataScope().count++ } }</script></div>`,
+            `<div x-data="{count:0}"><button @click="incr">+</button><span x-text="count"></span><script type="actions">{ incr(){ this.scope.getDataScope().count++ } }</script></div>`,
             {},
         );
         root.querySelector("button")!.click();

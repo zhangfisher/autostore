@@ -82,7 +82,7 @@ describe("事件总线（信号面）", () => {
         expect(seq).toEqual(["before", "after"]);
     });
 
-    test("listenerCount 门控：无订阅=0、订阅>0、off 后归 0（broadcast 据此短路）", () => {
+    test("listenerCount：无订阅=0、订阅>0、off 后归 0", () => {
         const { engine } = mountDeferred(`<span x-text="a"></span>`, { a: 1 });
         expect(engine.listenerCount).toBe(0);
         const sub = engine.on("scope/created", () => {});

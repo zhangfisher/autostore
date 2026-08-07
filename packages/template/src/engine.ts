@@ -75,7 +75,7 @@ export class AutoTemplateEngine<
         return this.store.state;
     }
     /** 是否已编译并挂载 */
-    private started = false;
+    private pending = false;
 
     /**
      * @param el       挂载根元素（必须是 HTMLElement）
@@ -95,6 +95,15 @@ export class AutoTemplateEngine<
         this.store = store;
         // 注入框架保留键 _scopes（x-data 私有响应式域容器）；1 engine 1 store 约定下由 engine 负责
         this._ensureScopesState();
+        // 注册时自动包装：构造时传入的 options.actions 一次性包装
+        // （运行时 `engine.actions[name] = fn` 经 actions Proxy 的 set trap 包装、
+        // `<script type="actions">` 经 compiler 包装，三入口统一走 buildAction）
+        const _initActions = this.options.actions!;
+        for (const _k of Object.keys(_initActions)) {
+            if (typeof _initActions[_k] === "function") {
+                _initActions[_k] = this.buildAction(_k, _initActions[_k] as any) as any;
+            }
+        }
         this.template = el.cloneNode(true) as HTMLElement;
 
         this.scheduler = new UpdateScheduler(this);
@@ -112,35 +121,76 @@ export class AutoTemplateEngine<
         // 启动 runtime 指令共享 observer 分发器：须在 initializeAll（含 injectStyles 等 FOUC 防御）
         // 之后、engine/ready 之前——初始扫描会同步触发首次 mounted，依赖样式已注入。
         this.dispatcher.start();
-        this.broadcast("engine/ready", { el: this.el }, true);
+        this.emit("engine/ready", { el: this.el }, true);
     }
 
     get logger() {
         return this.store.logger;
     }
 
+    /** actions 代理（set 时自动 buildAction 包装，懒构造） */
+    private _actionsProxy: Record<string, (...args: any[]) => any> | null = null;
+
     /**
      * 全局事件 action 表（来自 options.actions），作为 scope.getAction 查找链的终点。
+     *
+     * 返回 Proxy：**赋值即自动包装**——`engine.actions.save = fn` 时 fn 经 buildAction 包装
+     * （获得 `actions/<name>/*` 生命周期广播）后写入底层 options.actions；读取、遍历、getAction
+     * 均透明（get 默认转发底层）。故 action 注册即追踪，无需手动包装。
      */
     get actions(): Record<string, (...args: any[]) => any> {
-        return this.options.actions!;
+        if (this._actionsProxy) return this._actionsProxy;
+        const target = this.options.actions!;
+        this._actionsProxy = new Proxy(target, {
+            set: (t, key: string, value: any) => {
+                t[key] = typeof value === "function" ? (this.buildAction(key, value) as any) : value;
+                return true;
+            },
+        });
+        return this._actionsProxy;
     }
 
     /**
-     * 守卫式事件广播：仅当存在任意监听者（`listenerCount > 0`）时才真正 emit，否则短路返回空数组。
+     * 把一个 action 包装为**广播生命周期事件**的版本。
      *
-     * 生产环境无任何订阅时事件层近零成本（省去 emit 的监听树遍历）。所有生命周期事件走此方法；
-     * 高级用户仍可直接用继承自 FastLiteEvent 的 `on/once/onAny/emit`。
+     * 仅当 action 返回 thenable（Promise）时广播 `actions/<name>/{pending,resolved,rejected}`；
+     * 同步 action（含同步抛错）行为完全不变（透传给 x-on 求值器的现有 try/catch）。
      *
-     * @param type    事件类型（分层名，如 `scope/created`、`directive/x-loading/mounted`）
-     * @param payload 事件载荷（离散信号快照，非可变状态）
-     * @param retain  是否保留（态信号用 true，流信号用 false）
+     * **命名**：action 函数名入事件路径（每个 action 独立命名空间），payload 亦带 name 方便通配订阅。
+     * 通配订阅（见 types 的 action 通配契约）可抓任意 action 的开始 / 成功 / 失败：全局 loading、错误 toast。
+     *
+     * **注册时自动包装**（一般无需手动调用）：`engine.actions[name] = fn`（Proxy set）、
+     * `<script type="actions">` 提取（compiler）、构造时 `options.actions`（构造函数扫描）三入口
+     * 均自动调用本方法。包装后的函数被 x-on 调用时 `this` 仍为 OnEvalContext（透传 this 与 args）。
+     *
+     * **reject 处理**：async reject 经内部 `then(_, onRejected)` 消费并广播 `rejected`，故经 x-on
+     * 触发的 async action **不再产生 unhandled rejection**；直接 `await engine.actions[name]()`
+     * 的调用者仍会收到 reject（原 Promise 状态不变）。
+     *
+     * **防双重包装**：已包装的函数（`__buildActionWrapped` 标记）直接返回，避免三入口重叠时
+     * `buildAction(buildAction(fn))` 双重广播。
+     *
+     * @param name   action 函数名（入事件路径 `actions/<name>/...` + payload.name）
+     * @param action 原始 action 函数（this/args 透传）
+     * @returns 包装后的函数（同签名）
      */
-    broadcast(type: string, payload?: any, retain?: boolean): any[] {
-        // retain 态信号（如 engine/ready）须始终 emit——要缓存以供晚订阅者补拿，不受门控影响；
-        // 流信号（plain）仅当存在任意监听者时 emit——生产无订阅≈零成本（热路径门控）。
-        if (retain || this.listenerCount > 0) return this.emit(type as any, payload, retain);
-        return [];
+    buildAction<A extends (...args: any[]) => any>(name: string, action: A): A {
+        if ((action as any).__buildActionWrapped) return action;
+        const engine = this;
+        const wrapped = function (this: unknown, ...args: Parameters<A>) {
+            const result = action.apply(this, args);
+            // 仅 thenable 才进入生命周期广播（同步 action 无生命周期意义，原样返回）
+            if (result && typeof (result as any).then === "function") {
+                engine.emit(`actions/${name}/pending` as any, { name });
+                (result as Promise<any>).then(
+                    (value) => engine.emit(`actions/${name}/resolved` as any, { name, result: value }),
+                    (error) => engine.emit(`actions/${name}/rejected` as any, { name, error }),
+                );
+            }
+            return result;
+        } as A;
+        (wrapped as any).__buildActionWrapped = true;
+        return wrapped;
     }
 
     /**
@@ -165,17 +215,17 @@ export class AutoTemplateEngine<
      * watcher 才能作用在可见 DOM 上。
      */
     compile() {
-        this.broadcast("engine/compile/before", { root: this.template });
+        this.emit("engine/compile/before", { root: this.template });
         const root = this.compiler.compile();
         // 挂载编译产物的子节点（而非 root 本身）：engine.template 是 el 的深克隆（含外层容器），
         // 编译后的 root 是该容器的重建；取其子节点挂回 el，避免容器内多套一层容器克隆。
         this.el.replaceChildren(...Array.from(root.childNodes));
-        this.started = true;
+        this.pending = true;
         // 同步消化编译期排队的首次渲染：某些指令（如 x-for）的首次渲染依赖元素已挂载，
         // 在 created 中只能 schedule 到 microtask；此处 el 已挂载，立即 flush 使初始 DOM 同步可见。
         // 用 flushAll 持续消化 x-for 嵌套带来的级联首次渲染，使 mount 返回时各层级 DOM 均已就绪。
         this.scheduler.flushAll();
-        this.broadcast("engine/compile/after", { root });
+        this.emit("engine/compile/after", { root });
         return this;
     }
 
@@ -183,7 +233,7 @@ export class AutoTemplateEngine<
      * 启动引擎：尚未编译时编译挂载；已启动则幂等返回。
      */
     start() {
-        if (!this.started) {
+        if (!this.pending) {
             this.compile();
         }
         return this;
@@ -194,7 +244,7 @@ export class AutoTemplateEngine<
      */
     stop() {
         this.el.replaceChildren();
-        this.started = false;
+        this.pending = false;
         return this;
     }
 
@@ -222,7 +272,7 @@ export class AutoTemplateEngine<
         if (scope.dataScope) {
             // 主路径：合并 → 路径订阅自动驱动
             Object.assign(scope.dataScope as Record<string, any>, data);
-            this.broadcast("scope/data-updated", { id: scope.id, data });
+            this.emit("scope/data-updated", { id: scope.id, data });
             return;
         }
         // 无 dataScope（el 原无 x-data）：新建 + 重建子树（A）
@@ -233,7 +283,7 @@ export class AutoTemplateEngine<
         // 失效本 scope 缓存视图（含新 dataScope 层），子树重建后新子 scope 经 parent 链取到新视图
         scope.invalidateScopeView();
         this._recompileSubtree(scope, el);
-        this.broadcast("scope/data-updated", { id: scope.id, data });
+        this.emit("scope/data-updated", { id: scope.id, data });
     }
 
     /**
@@ -280,7 +330,7 @@ export class AutoTemplateEngine<
             this.logger.warn(`engine.patch: "${selector}" 的 scope 已失效（运行元素被回收）`);
             return this;
         }
-        this.broadcast("engine/patch/before", { selector, el });
+        this.emit("engine/patch/before", { selector, el });
         let R: Node | string | null | undefined;
         try {
             R = updater(T);
@@ -307,7 +357,7 @@ export class AutoTemplateEngine<
             return this;
         }
         this.scheduler.flushAll();
-        this.broadcast("engine/patch/after", { selector });
+        this.emit("engine/patch/after", { selector });
         return this;
     }
 
@@ -410,7 +460,7 @@ export class AutoTemplateEngine<
      * 否则会解绑用户在别处挂的订阅、清空其 computed 对象。
      */
     destroy(): void {
-        this.broadcast("engine/destroy/before");
+        this.emit("engine/destroy/before");
         // 类级销毁：对所有已 initialize 的指令类调用 static dispose(engine)。
         this.directives.disposeAll();
         // 断开 runtime 共享 observer + 卸载全部 live 实例（先于 DOM 清理，避免拆 DOM 时空转回调）
@@ -421,7 +471,7 @@ export class AutoTemplateEngine<
         }
         this.scopes.clear();
         this.el.replaceChildren();
-        this.started = false;
-        this.broadcast("engine/destroy/after");
+        this.pending = false;
+        this.emit("engine/destroy/after");
     }
 }

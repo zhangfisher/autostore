@@ -16,7 +16,7 @@ const ACTION_RE = /^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$/;
  * 构造事件业务 handler：**Action 优先 + 表达式兜底**。
  *
  * **关键：Action 查找延迟到事件触发时**（闭包内调 `scope.getAction`）——因 actions 可能在
- * 指令 `created` 之后才注册（`engine.actions` 赋值、`<script type="js/actions">` 注入均晚于
+ * 指令 `created` 之后才注册（`engine.actions` 赋值、`<script type="actions">` 注入均晚于
  * 编译）。若在 created 时缓存 action 引用，会查到 undefined 误走表达式。
  *
  * 仅"表达式编译"（`new Function`，expr 不变）与"args 求值器"在 created 时一次性完成。

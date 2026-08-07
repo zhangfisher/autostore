@@ -52,9 +52,9 @@ export class AutoTemplateCompiler {
 
     private _getTransformers(): NodeTransformer<HTMLElement>[] {
         return [
-            // 前置：<script type="js/actions"> 提取为局部 action 后剪枝（普通 script 原样保留）
+            // 前置：<script type="actions"> 提取为局部 action 后剪枝（普通 script 原样保留）
             [
-                (node: Node) => node instanceof HTMLScriptElement && node.type === "js/actions",
+                (node: Node) => node instanceof HTMLScriptElement && node.type === "actions",
                 (script: HTMLElement) => this._extractScriptActions(script as HTMLScriptElement),
             ],
             // 文本节点插值：含 {{}} 的文本节点拆分 + 注册。scope 经父元素查 templateScopeMap
@@ -154,7 +154,7 @@ export class AutoTemplateCompiler {
     }
 
     /**
-     * 提取 `<script type="js/actions">` 内容为局部 action，注入最近祖先 scope.actions。
+     * 提取 `<script type="actions">` 内容为局部 action，注入最近祖先 scope.actions。
      *
      * 内容须为对象字面量（如 `{ pay(v){...}, submit(){...} }`），经 new Function 求值得对象。
      * 求值失败或非对象记日志；找不到祖先 scope 则忽略。返回 null 表示剪枝——script 不进渲染 DOM。
@@ -167,17 +167,22 @@ export class AutoTemplateCompiler {
         try {
             const result = new Function(`return (${text})`)();
             if (!result || typeof result !== "object") {
-                this.engine.logger.error(`<script type="js/actions"> 内容须为对象字面量`);
+                this.engine.logger.error(`<script type="actions"> 内容须为对象字面量`);
                 return null;
             }
             parsed = result;
         } catch (e: any) {
-            this.engine.logger.error(`<script type="js/actions"> 解析失败: ${e?.message ?? e}`);
+            this.engine.logger.error(`<script type="actions"> 解析失败: ${e?.message ?? e}`);
             return null;
         }
         const scope = this._findNearestScope(script);
         if (scope) {
-            scope.actions = { ...(scope.actions ?? {}), ...parsed };
+            // 注册时自动包装：每个 action 经 buildAction 包装，获得 `actions/<name>/*` 生命周期广播
+            const wrapped: Record<string, (...args: any[]) => any> = {};
+            for (const [k, fn] of Object.entries(parsed)) {
+                wrapped[k] = typeof fn === "function" ? this.engine.buildAction(k, fn) : fn;
+            }
+            scope.actions = { ...(scope.actions ?? {}), ...wrapped };
         }
         return null;
     }

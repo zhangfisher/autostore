@@ -1,6 +1,6 @@
 # ADR-0006：x-slot 指令（engine 边界 / 隔离快照 / 远程子引擎）
 
-- **状态**：Accepted（Round 5，grill-with-docs）
+- **状态**：Accepted（Round 5，grill-with-docs）｜⚠️ **部分调整（2026-08-07）**：决策 6/7 的 `task/slot/*` 事件已移除，x-slot remote 加载改用 x-loading 覆盖层表达加载态、不广播事件。见 glossary「task/slot 事件（已移除）」。
 - **日期**：2026-08-06
 - **关联**：[glossary.md](../glossary.md)、[ADR-0001](0001-directive-kind-system.md)、[ADR-0003](0003-engine-event-bus.md)、[ADR-0004](0004-reactive-text-interpolation.md)、[ADR-0005](0005-x-html-directive.md)
 
@@ -71,12 +71,13 @@ child engine 不注册到任何全局表——挂指令实例 `this.childEngine`
 
 `destroy()` 另须 **abort 在途 fetch**（AbortController）：避免 fetch 在 teardown 后完成、向已销毁宿主写入（孤儿 DOM + 重建已废弃的 engine）。即 destroy 三件事：abort fetch + `childEngine?.destroy()` + `dispatcher.removeSlotRoot(el)`（决策 8）。
 
-### 6. fetch 期间自渲染 loading 占位（零耦合）+ task 事件 opt-in 全局 loading
+### 6. fetch 期间复用 x-loading 运行时指令（宿主属性 toggle）+ task 事件 opt-in 全局协调
 
-「自动用 x-loading」的落地——x-loading 显隐是**数据驱动**（`config.visible` 绑 store 路径，`loading.ts:227`），非属性开关，x-slot 无法直接「打开」它。采**自渲染 loading 占位**：
+「自动用 x-loading」的落地——**直接在宿主 `setAttribute("x-loading", "true")`**，由父 dispatcher 自动 mount `LoadingDirective` 覆盖层；fetch 完成/失败后 `removeAttribute("x-loading")` → dispatcher unmount。**不自渲染任何 loading DOM**，完全复用 x-loading 的覆盖层 + 全局样式。
 
-- fetch 期间 x-slot 往宿主塞**内置 loading DOM**（极简 spinner，自包含、零配置、不强制用户挂 x-loading）；完成/失败后移除、换上 child engine 产物 / 错误占位。
-- **同时 emit task 域事件**（ADR-0003 决策 3.2，近乎零成本、与信号面一致）：`task/slot/started`（fetch 开始，流信号 plain emit）/ `task/slot/resolved`（成功）/ `task/slot/rejected`（失败）。用户若想用**真正的 x-loading** 统一全局加载态，可放 `<div x-loading="{ visible: 'taskLoading' }">` 并订阅 `task/slot/*`（经 task 域跨源协调）——opt-in，不强制。
+- **可行性根柢**：x-loading 的字面量模式（`resolveLiteral`，`loading.ts:198`）——`x-loading="true"`（或裸 `x-loading`）≡ 静态显示、**不绑 store、不数据耦合**。故 x-slot 无须「打开」一个数据驱动的 x-loading，只须在宿主增删属性，dispatcher 的 attributes 三态（`_attrThreeState`，`dispatcher.ts:182`）自动 mount/unmount 覆盖层。区别于「走父 store 状态位」（决策被否，见被否决方案）——属性 toggle 不触碰任何 store，不违反 engine 边界。
+- **前提：盲区不含 slot 宿主自身**（决策 8）。若宿主被盲，父 dispatcher 会跳过宿主的 x-loading 属性变化、覆盖层不显示。故盲区只覆盖**严格后代**（child engine 子树），宿主自身的 runtime 指令仍归父 dispatcher。
+- **同时 emit task 域事件**（ADR-0003 决策 3.2，近乎零成本、与信号面一致）：`task/slot/started`（fetch 开始，流信号 plain emit）/ `task/slot/resolved`（成功）/ `task/slot/rejected`（失败）。供 opt-in 的**全局**加载协调（用户在宿主外放 x-loading 订阅 `task/slot/*`，经 task 域跨源协调），与默认的宿主覆盖层互补、不强制。
 
 ### 7. fetch 失败 → 错误占位（不静默）；超时为 fast-follow
 
@@ -86,7 +87,9 @@ fetch 失败（网络错 / 非 2xx）→ 宿主渲染**极简错误占位**（�
 
 父 `RuntimeObserverDispatcher` 以 `subtree:true` 观察 `engine.el`（`dispatcher.ts:83`），child engine 写进 x-slot 宿主的运行时指令属性（如 `x-loading`，child engine 编译期**保留** runtime 属性供自身 observer 检测）会被父 dispatcher `_handle`（`dispatcher.ts:159`）`collectEls` → `mount` **二次挂载** → 父/子双引擎抢管同一节点、父 LoadingDirective 在 child 子树里冒出来。
 
-**致盲机制**：dispatcher 维护 `slotRoot: Set<HTMLElement>`。x-slot `created()` 调 `engine.dispatcher.addSlotRoot(el)` 登记宿主为盲区；`destroy()` 调 `removeSlotRoot(el)` 注销。dispatcher 的 `collectEls`（初始扫描 / `onDirectiveRegistered` 重扫）与 `_handle`（childList addedNodes / attributes 三态）对每个候选 el 过滤——`slotRoots.some(r => r === el || r.contains(el))` 命中即**跳过**（不 mount、不 attrChange）。子树内运行时指令的 mount/attr 完全由 child engine 自身 dispatcher 负责，父 engine 对 x-slot 内部**致盲**。
+**致盲机制**：dispatcher 维护 `slotRoots: Set<HTMLElement>`。x-slot `created()` 调 `engine.dispatcher.addSlotRoot(el)` 登记宿主为盲区；`destroy()` 调 `removeSlotRoot(el)` 注销。dispatcher 的 `collectEls`（初始扫描 / `onDirectiveRegistered` 重扫）与 `_handle`（childList addedNodes / attributes 三态）对每个候选 el 过滤——`slotRoots.some(r => r !== el && r.contains(el))` 命中（**严格后代**）即**跳过**（不 mount、不 attrChange）。子树内运行时指令的 mount/attr 完全由 child engine 自身 dispatcher 负责，父 engine 对 x-slot 内部**致盲**。
+
+**盲区不含宿主自身**（`r !== el`）：slot 宿主上的 runtime 指令（如 fetch 期间 x-slot 添加的 `x-loading`，决策 6）仍归父 dispatcher mount/unmount；仅其**子树**（child engine 编译产物）致盲。这是「复用 x-loading」与「隔离 child engine」并存的关键——宿主属性 toggle 须被父 dispatcher 观测，child 子树须被父 dispatcher 忽略。
 
 static 模式已剥除指令属性（决策 1），父 dispatcher 本就无视；盲区主要服务 remote 模式（child engine 保留的 runtime 属性），但**两种模式统一登记盲区**（一行 add/remove，KISS、未来 static 若放宽保留属性亦安全）。
 
@@ -99,7 +102,8 @@ static 模式已剥除指令属性（决策 1），父 dispatcher 本就无视�
 - **复用父 store 的 child engine**：非「完全独立」、父状态渗入 child 违反 engine 边界。否决，child 自带 `new AutoStore({})`。
 - **注释锚点 modifier（移除宿主、内容置注释之间）**：YAGNI。x-slot 只有一种宿主策略（内容在宿主内、宿主始终保留），remote 模式也需要真实宿主挂载 child engine。代价：flex/grid 直接子项、`<table>`/`<select>` 内容模型等「不愿多一层包裹」的场景不支持——文档化为已知限制，不为此加机制。
 - **url 作字面量（非响应式）**：失去「换 state 即换子模板」能力，且与 x-text/x-html 的反应式值语义不一致。否决，url 经 `scope.watch` 求值。
-- **走父 store 状态位驱动 x-loading**：违反 engine 边界（父状态须能表达 child 的加载态）。否决，自渲染占位 + task 事件 opt-in。
+- **走父 store 状态位驱动 x-loading**：违反 engine 边界（父状态须能表达 child 的加载态）。否决——改用宿主 `x-loading` 属性 toggle（字面量模式静态显示、不绑 store，决策 6）。
+- **自渲染 loading 占位（`x-slot-loading`）**：重复实现 x-loading 已有的覆盖层 + 样式，违反 DRY。否决——直接 `setAttribute("x-loading")` 复用运行时指令。
 - **fetch 失败静默留空**：用户无从知晓加载失败。否决，错误占位 + log + task/slot/rejected。
 - **不加盲区、靠 child engine 自行管理**：父 dispatcher 仍 `subtree:true` 观察到 child 子树的 runtime 属性并二次 mount，双引擎抢管。必须致盲，否决「不隔离」。
 
@@ -124,12 +128,13 @@ static 模式已剥除指令属性（决策 1），父 dispatcher 本就无视�
 ## 实现注记（非架构决策，落地时遵循）
 
 - **`directives/presets/slot.ts`**：`SlotDirective extends AutoTemplateDirectiveBase`；`static override priority = 90`（结构指令档，介于 if=80 / for=100）；`static override singleton = true`；`static override ownsChildren = () => true`；kind 默认 Compile。
-  - 字段：`private mode: "static" | "remote"`；`private childEngine?: AutoTemplateEngine`；`private abortCtrl?: AbortController`；`private currentUrl?: string`。
-  - `created()`：`this.engine.dispatcher.addSlotRoot(this.el)`；判定模式——`this.value` 空 → `mode="static"`（compile 填充）；非空 → `mode="remote"`，`this.binding.watch(this.value, ({ value: url }) => this._loadUrl(url))`（watch 返回初值即触发首次 `_loadUrl`）。
-  - `compile()`：仅 static——深克隆 `this.template.childNodes`，对每个克隆 `removeDirectives(node, "x-")` 剥指令属性，`appendChild` 进 `this.el`；若子树含指令/`{{}}` → `logger.warn`。
-  - `_loadUrl(url)`：先 `_teardownEngine()`（abort + childEngine?.destroy() + 清 loading/error）；`url` 假/空 → return（宿主空）；否则渲染 loading 占位 + `broadcast("task/slot/started", { url })` + `fetch(url, { signal: abortCtrl.signal })` → 成功（`res.ok`）→ `this.el.innerHTML = await res.text()` → `this.childEngine = new AutoTemplateEngine(this.el, new AutoStore({}))` → `broadcast("task/slot/resolved", { url })`；失败 → 错误占位 + `logger.error` + `broadcast("task/slot/rejected", { url })`。每次写 DOM 前校验 scope 未销毁（WeakRef deref）。
+  - 字段：`private mode: "static" | "remote"`；`private childEngine?: AutoTemplateEngine`；`private abortCtrl?: AbortController`。
+  - `created()`：`this.engine.dispatcher.addSlotRoot(this.el)`；判定模式——`this.value` 空 → `mode="static"`（compile 填充）；非空 → `mode="remote"`，`const initial = this.binding.watch(this.value, ({ value: url }) => this._loadUrl(url))` 后 `this._loadUrl(initial)`（watch 返回初值即触发首次加载）。
+  - `compile()`：仅 static——深克隆 `this.template.childNodes`，对每个克隆递归 `removeDirectives` 剥指令属性（节点本身 + `querySelectorAll("*")` 后代），`appendChild` 进 `this.el`；若子树含指令/`{{}}` → `logger.warn`。
+  - `_loadUrl(url)`：先 `_teardownEngine()`（abort + childEngine?.destroy() + `removeAttribute("x-loading")`）；`url` 假/空 → `el.replaceChildren()` return；否则 `el.setAttribute("x-loading", "true")`（复用 x-loading，决策 6）+ `broadcast("task/slot/started", { url })` + `fetch(url, { signal: myCtrl.signal })` → 成功（`res.ok`）→ `el.removeAttribute("x-loading")` + `el.innerHTML = await res.text()` + `this.childEngine = new (this.engine.constructor)(this.el, new AutoStore({}))`（经 `this.engine.constructor` 创建同类实例，避 `import AutoTemplateEngine` 循环依赖）→ `broadcast("task/slot/resolved", { url })`；失败 → `removeAttribute("x-loading")` + 错误占位（`.x-slot-error`）+ `logger.error` + `broadcast("task/slot/rejected", { url })`。每次 `fetch` 用独立 AbortController，await 后校验 `myCtrl.signal.aborted` 丢弃被取代/销毁的过期结果。
+  - `_teardownEngine()`：`abortCtrl?.abort()` + `childEngine?.destroy()` + `el.removeAttribute("x-loading")`。
   - `destroy()`：`_teardownEngine()` + `this.engine.dispatcher.removeSlotRoot(this.el)`。
-- **`directives/runtime/dispatcher.ts`**：加 `private slotRoots = new Set<HTMLElement>()`；`addSlotRoot(el)`/`removeSlotRoot(el)`；私有 `_inSlotRoot(el): boolean`（`slotRoots.size && [...slotRoots].some(r => r === el || r.contains(el))`）；`collectEls` 返回前过滤掉 `_inSlotRoot` 命中者；`_handle` 的 addedNodes 分支与 attributes 分支对候选 el 同样过滤。
+- **`directives/runtime/dispatcher.ts`**：加 `private slotRoots = new Set<HTMLElement>()`；`addSlotRoot(el)`/`removeSlotRoot(el)`；私有 `_inSlotRoot(el): boolean`（`slotRoots.size && [...slotRoots].some(r => r !== el && r.contains(el))`——**严格后代**，不含宿主自身，决策 8）；`collectEls` 的 `visit` 与 `_handle` 的 addedNodes/attributes 分支对候选 el 过滤盲区。
 - **`directives/presets/index.ts`**：`export * from "./slot"` + `presetDirectives` 追加 `slot: SlotDirective`。
 - **`types.ts AutoTemplateEngineOptions`**：可选 `slotFetchTimeout?: number`（fast-follow，v1 可不落字段）。
 - **测试 `__tests__/x-slot.test.ts`**：① static 冻结——内层 `x-text` 不绑定（textContent 为空）、`{{}}` 不展开、反应式 state 变化后内容不变、DOM API 改动在反应式刷新后保留；② static 内层指令 warn；③ remote——mock fetch，url 初值 → loading → child engine 产物挂载、child engine 独立 store（其内 `x-data`/`x-text` 自治、父 state 变化不影响 child）；④ url 响应式变化 → 旧 child engine destroy + 新 fetch + 重建；⑤ fetch 失败 → 错误占位 + task/slot/rejected；⑥ teardown——x-if toggle false → child engine destroy 无泄漏（spy child.destroy）；⑦ dispatcher 盲区——child 子树内 `x-loading` 不被父 dispatcher 误 mount（父 instances 不含该 el）。

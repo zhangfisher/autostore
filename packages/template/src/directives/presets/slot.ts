@@ -91,8 +91,9 @@ export class SlotDirective extends AutoTemplateDirectiveBase {
      * 加载远程 url：销毁旧 child engine + abort 旧 fetch → 渲染 loading → fetch → 建 child engine。
      *
      * - url 假/空（表达式暂未解析出 url）→ 清空宿主、无 engine；
-     * - 有效 url → 自渲染 loading 占位 + emit `task/slot/started` → fetch → 成功则建 child engine +
-     *   emit `task/slot/resolved`；失败则错误占位 + log + emit `task/slot/rejected`。
+     * - 有效 url → 在宿主添加 `x-loading` 属性（复用运行时指令，dispatcher 自动 mount 覆盖层）+
+     *   fetch → 成功则移除 `x-loading`、建 child engine；
+     *   失败则移除 `x-loading`、错误占位 + log。
      *
      * 每次用一个独立 AbortController；url 变化或 scope 销毁会 abort 旧请求，其在下个 await 点丢弃结果。
      */
@@ -103,8 +104,9 @@ export class SlotDirective extends AutoTemplateDirectiveBase {
             this.el.replaceChildren();
             return;
         }
-        this._renderPlaceholder("x-slot-loading", "加载中…");
-        this.engine.broadcast("task/slot/started", { url: urlStr });
+        // 复用 x-loading 运行时指令：宿主加属性即由 dispatcher mount 覆盖层（ADR-0006 决策 6）。
+        // 宿主自身不在 slot 盲区内（仅子树盲），故父 dispatcher 能观测到此属性变化。
+        this.el.setAttribute("x-loading", "true");
         const myCtrl = (this.abortCtrl = new AbortController());
         try {
             const res = await fetch(urlStr, { signal: myCtrl.signal });
@@ -112,6 +114,7 @@ export class SlotDirective extends AutoTemplateDirectiveBase {
             const html = await res.text();
             // 销毁 / 被新 url 取代 → 已 abort，丢弃本次结果（避免向已销毁宿主或被取代的 slot 写入）
             if (myCtrl.signal.aborted) return;
+            this.el.removeAttribute("x-loading"); // 移除覆盖层（dispatcher unmount）
             this.el.replaceChildren();
             this.el.innerHTML = html;
             // 完全独立 child engine：自带空 store，fetched HTML 用自身 x-data 自治声明状态。
@@ -123,24 +126,24 @@ export class SlotDirective extends AutoTemplateDirectiveBase {
                 options?: any,
             ) => AutoTemplateEngine;
             this.childEngine = new EngineCtor(this.el, new AutoStore({}));
-            this.engine.broadcast("task/slot/resolved", { url: urlStr });
         } catch (e: any) {
             if (myCtrl.signal.aborted) return; // 主动 abort（销毁 / 取代），非真错误
-            this._renderPlaceholder("x-slot-error", "模板加载失败");
+            this.el.removeAttribute("x-loading");
+            this._renderError();
             this.engine.logger.error(`x-slot: 加载远程模板失败 "${urlStr}": ${e?.message ?? e}`);
-            this.engine.broadcast("task/slot/rejected", { url: urlStr });
         } finally {
             // 仅当仍是本次控制器时清空（被新 url 取代则不动新控制器）
             if (this.abortCtrl === myCtrl) this.abortCtrl = undefined;
         }
     }
 
-    /** 销毁当前 child engine + abort 在途 fetch（url 变化 / scope 销毁时调用） */
+    /** 销毁当前 child engine + abort 在途 fetch + 移除 x-loading（url 变化 / scope 销毁时调用） */
     private _teardownEngine(): void {
         this.abortCtrl?.abort();
         this.abortCtrl = undefined;
         this.childEngine?.destroy();
         this.childEngine = undefined;
+        this.el.removeAttribute("x-loading");
     }
 
     /**
@@ -183,12 +186,12 @@ export class SlotDirective extends AutoTemplateDirectiveBase {
         }
     }
 
-    /** 渲染极简占位（loading / error）到宿主，替换现有子节点 */
-    private _renderPlaceholder(cls: string, text: string): void {
+    /** 渲染极简错误占位到宿主，替换现有子节点（loading 已由 x-loading 覆盖层承担） */
+    private _renderError(): void {
         this.el.replaceChildren();
         const el = document.createElement("div");
-        el.className = cls;
-        el.textContent = text;
+        el.className = "x-slot-error";
+        el.textContent = "模板加载失败";
         this.el.appendChild(el);
     }
 

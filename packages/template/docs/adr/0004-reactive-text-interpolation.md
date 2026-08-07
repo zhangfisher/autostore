@@ -93,7 +93,7 @@ if (!hasDirectives(template) && !hasInterpolation(template)) {
 
 ### 7. 边界排除：`<script>`/`<style>` 文本不插值
 
-父元素 `nodeName ∈ {SCRIPT, STYLE}` 的文本节点**跳过插值**：二者文本是代码/样式源（`<script>` 已执行、改写无意义且不重执行；`<style>` 改写 `{{}}` 语义怪异）。`<script type="js/actions">` 已被 script 转换器剪枝，不在此列。`<textarea>`/`<option>` 的文本属表单范畴（值/双向），随属性插值 fast-follow 一并考虑，本轮不特殊处理。
+父元素 `nodeName ∈ {SCRIPT, STYLE}` 的文本节点**跳过插值**：二者文本是代码/样式源（`<script>` 已执行、改写无意义且不重执行；`<style>` 改写 `{{}}` 语义怪异）。`<script type="actions">` 已被 script 转换器剪枝，不在此列。`<textarea>`/`<option>` 的文本属表单范畴（值/双向），随属性插值 fast-follow 一并考虑，本轮不特殊处理。
 
 ### 8. 反应式继承 localScope 约束（既定，非插值新增）
 

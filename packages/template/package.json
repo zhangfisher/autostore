@@ -4,7 +4,7 @@
     "module": "src/index.ts",
     "devDependencies": {
         "@happy-dom/global-registrator": "^20.10.6",
-        "@types/bun": "latest",
+        "@types/bun": "^1.3.14",
         "autostore": "workspace:*",
         "happy-dom": "^20.10.6"
     },

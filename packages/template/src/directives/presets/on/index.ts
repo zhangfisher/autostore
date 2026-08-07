@@ -16,7 +16,7 @@ import type {
  *
  * `x-on:event` / `@event` 监听任意事件；响应函数统一抽象为 **Action**：
  * - **函数来源（Action 优先 + 表达式兜底）**：`@click="submit"` / `submit(args)` 先沿 scope 链查
- *   actions（局部 `<script type="js/actions">` → engine.actions），命中以 OnEvalContext 为 this
+ *   actions（局部 `<script type="actions">` → engine.actions），命中以 OnEvalContext 为 this
  *   调用；否则退化到 `with(data)` 表达式求值（data 为聚合视图；`alert(1)`/`count++` 等仍可用）。详见 eval.ts。
  *
  * **修饰符管道**（按 descriptor.type 分派，见 modifiers/）：

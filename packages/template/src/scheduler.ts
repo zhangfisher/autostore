@@ -51,7 +51,7 @@ export class UpdateScheduler {
      * 会进入新队列并重新排队下一次 microtask，从而正确处理级联更新。
      */
     flush(): void {
-        this.engine.broadcast("render/flush/before");
+        this.engine.emit("render/flush/before");
         this.pending = false;
         const pending = this.queue;
         this.queue = new Set();
@@ -63,7 +63,7 @@ export class UpdateScheduler {
                 console.error("[AutoTemplate] scheduler flush error:", e);
             }
         }
-        this.engine.broadcast("render/flush/after");
+        this.engine.emit("render/flush/after");
     }
 
     /**

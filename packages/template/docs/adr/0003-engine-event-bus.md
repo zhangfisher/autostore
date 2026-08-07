@@ -1,6 +1,6 @@
 # ADR-0003：事件总线（信号面）与分层事件契约
 
-- **状态**：Accepted（Round 3）
+- **状态**：Accepted（Round 3）｜⚠️ **部分废弃（2026-08-07）**：task 域（决策 3.2/3.5）未被采用——x-on async action 改用 `actions/<name>/*`、x-slot 用 x-loading 覆盖层，task 域零消费者已移除。事件总线其余（engine/scope/directive/patch/render 域 + RuntimeObserverDispatcher + broadcast→emit）仍有效。见 glossary「task 域已废弃」。
 - **日期**：2026-08-06
 - **关联**：[glossary.md](../glossary.md)、[ADR-0001](0001-directive-kind-system.md)、[ADR-0002](0002-dynamic-patch.md)
 
