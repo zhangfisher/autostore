@@ -206,6 +206,38 @@ export class AutoTemplateCompiler {
     }
 
     /**
+     * 正向桥：模板元素 → scope（ADR-0002 决策 2）。
+     *
+     * 供 `engine.patch` 经 selector（对 `engine.template` querySelector）定位 patch 目标的 scope，
+     * 再取 `scope.el` 得运行元素。仅含指令或 `{{}}` 插值的元素（有 scope）能命中；
+     * 纯静态裸元素返回 undefined（需挂 `x-patch` 哨兵建 scope）。
+     */
+    getScopeByTemplate(templateEl: HTMLElement): AutoTemplateScope | undefined {
+        return this.templateScopeMap.get(templateEl);
+    }
+
+    /**
+     * 单条指令是否占有子树（ownsChildren）的纯判定谓词。
+     *
+     * 查指令类的静态 `ownsChildren(info)`。提取为谓词后，`scopeOwnsChildren`（boolean 查询）
+     * 与 `_resolveOwnership`（需计数以检测多 owner 冲突）共用同一真相源。
+     */
+    private _ownsChildrenDirective(d: { info: AutoDirectiveInfo }): boolean {
+        const cls = this.engine.directives.get(d.info.name);
+        return !!cls?.ownsChildren?.(d.info);
+    }
+
+    /**
+     * scope 是否被任意结构指令（ownsChildren）占有子树——纯判定，不抛错。
+     *
+     * 供 `engine.patch` 的动态区域守卫（ADR-0002 决策 5）：patch 目标自身或祖先链上有
+     * ownsChildren 指令（x-for / eager x-if / x-slot）即处于动态区域，正向桥不可靠，拒绝。
+     */
+    scopeOwnsChildren(scope: AutoTemplateScope): boolean {
+        return scope.directives.some((d) => this._ownsChildrenDirective(d));
+    }
+
+    /**
      * 编译单个模板元素（transformElement 回调）。
      *
      * - 无指令：原样返回，transformElement 会默认浅克隆并递归子节点；
@@ -249,10 +281,7 @@ export class AutoTemplateCompiler {
      * 提示改用 `x-show`/`x-if.keep`（仅切 display，不占子树）或外层包裹。
      */
     private _resolveOwnership(scope: AutoTemplateScope): boolean {
-        const owners = scope.directives.filter((d) => {
-            const cls = this.engine.directives.get(d.info.name);
-            return !!cls?.ownsChildren?.(d.info);
-        });
+        const owners = scope.directives.filter((d) => this._ownsChildrenDirective(d));
         if (owners.length > 1) {
             throw new Error(
                 "[x-if/x-for 冲突] x-if 的条件销毁语义与 x-for 的列表渲染不能作用于同一元素。\n" +
@@ -287,29 +316,67 @@ export class AutoTemplateCompiler {
     }
 
     /**
+     * 编译单个子节点（compileSubtree / compileChildNodes 共用的单节点逻辑）。
+     *
+     * - **HTMLElement → `transformElement`**（递归子节点 + 文本插值，建 scope / 合成 scope）
+     * - **含 `{{}}` 文本节点 → `compileTextNode`**（插值拆分，返回 DocumentFragment 或 null 剪枝）
+     * - 其余文本/注释 → `cloneNode(true)`
+     *
+     * **铁律：HTMLElement 必须走 `transformElement`（递归），不可用 `compileElement`**——后者只浅克隆，
+     * 会丢失整棵子树与插值（patch 替换自身的关键正确性保证）。
+     *
+     * @param scope 顶层文本插值节点注册 watcher 所用 scope（其父元素 scope）
+     * @returns 编译后节点 / DocumentFragment（多段插值）/ null（剪枝）
+     */
+    private compileOneChild(child: Node, scope: AutoTemplateScope | null): Node | null {
+        if (child instanceof HTMLElement) {
+            return transformElement(child, this._getTransformers());
+        }
+        if (child.nodeType === Node.TEXT_NODE && hasMustache((child as Text).nodeValue)) {
+            // 顶层文本插值需 scope 注册 watcher；无 scope（patch 替换到无祖先 scope 的根级）则原样克隆
+            return scope ? this.compileTextNode(child as Text, scope) : child.cloneNode(true);
+        }
+        return child.cloneNode(true);
+    }
+
+    /**
+     * 编译一组节点并返回运行节点列表（**不挂载**，挂载由调用方处理）。
+     *
+     * 供 `engine.patch` 替换自身：updater 返回的 `string`/`Node` 经解析为 templateNodes，
+     * 本方法编译它们（HTMLElement 走 `transformElement` 递归、文本插值走 `compileTextNode`），
+     * `DocumentFragment` 展开成实际子节点，收集为 runtimeNodes 供调用方 `replaceWith`。
+     *
+     * @param nodes  待编译的模板节点（通常来自 `parseHtmlFragment` 或 updater 返回的 Node）
+     * @param scope  顶层文本插值节点的注册 scope（替换后挂父下，用父 scope）
+     */
+    compileChildNodes(nodes: Node[], scope: AutoTemplateScope | null): Node[] {
+        const result: Node[] = [];
+        for (const child of nodes) {
+            const compiled = this.compileOneChild(child, scope);
+            if (compiled == null) continue;
+            if (compiled instanceof DocumentFragment) {
+                result.push(...Array.from(compiled.childNodes));
+            } else {
+                result.push(compiled);
+            }
+        }
+        return result;
+    }
+
+    /**
      * 编译某模板的全部子节点并挂到指定父元素，返回已编译节点列表。
      *
-     * 共享给结构指令（eager x-if 编译/重建子树 / x-for 项 / engine.data 重建子树）：元素子节点
-     * 走完整 `compileElement` 管线（建 scope、`_linkParent` 链接到父作用域）；**含 `{{}}` 的文本
-     * 子节点走 `compileTextNode`**（插值），其余文本/注释节点直接深克隆。
-     *
-     * `compileTextNode` 可能返回 `DocumentFragment`（多段插值）或 `null`（x-text 在场剪枝）：
-     * fragment 搬入父后**展开成实际子节点**入 `nodes`（供 if.ts 精确移除，不可入空 fragment）；
-     * null 跳过（剪枝）。
+     * 共享给结构指令（eager x-if 编译/重建子树 / x-for 项 / engine.data 重建子树 / `engine.patch`
+     * 子树重建）：单节点编译委托 `compileOneChild`，挂载用 `appendChild`。`compileTextNode` 可能
+     * 返回 `DocumentFragment`（多段插值）或 `null`（x-text 在场剪枝）：fragment 搬入父后展开成实际
+     * 子节点入 `nodes`（供 if.ts 精确移除）；null 跳过（剪枝）。
      *
      * @param scope 子树根的 scope，供直接文本子节点插值注册（项 scope / x-if scope 等）
      */
     compileSubtree(parentEl: HTMLElement, templateEl: HTMLElement, scope: AutoTemplateScope): Node[] {
         const nodes: Node[] = [];
         for (const child of Array.from(templateEl.childNodes)) {
-            let compiled: Node | null;
-            if (child instanceof HTMLElement) {
-                compiled = transformElement(child, this._getTransformers());
-            } else if (child.nodeType === Node.TEXT_NODE && hasMustache((child as Text).nodeValue)) {
-                compiled = this.compileTextNode(child as Text, scope);
-            } else {
-                compiled = child.cloneNode(true);
-            }
+            const compiled = this.compileOneChild(child, scope);
             if (compiled == null) continue; // 剪枝（如 x-text 在场的插值文本）
             if (compiled instanceof DocumentFragment) {
                 // fragment：搬入父后展开成实际子节点入 nodes（供调用方精确移除）

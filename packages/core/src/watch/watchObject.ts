@@ -12,7 +12,7 @@ export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions
     constructor(
         public store: AutoStore<any>,
         descriptor: WatchDescriptor,
-        public context?: ComputedContext<any>,
+        context?: ComputedContext<any>,
     ) {
         super(store, descriptor, context);
         if (typeof this.options.filter !== "function")

@@ -1,11 +1,6 @@
 import type { ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
-import type {
-    AnyObserverObject,
-    AnyObserverDescriptor,
-    ObserverType,
-    ObserverContext,
-} from "../observer/types";
+import type { AnyObserverObject, ObserverType, ObserverContext } from "../observer/types";
 import type { Dict } from "../types";
 import { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";

@@ -5,6 +5,7 @@ import { AutoStore, FastEvent } from "autostore";
 import type { AutoTemplateScope } from "./scope";
 import { UpdateScheduler } from "./scheduler";
 import { RuntimeObserverDispatcher } from "./directives/runtime/dispatcher";
+import { parseHtmlFragment } from "./utils/transformElement";
 
 /**
  * 框架保留键：x-data 默认模式的私有响应式数据域在 store.state 下的容器键。
@@ -236,6 +237,81 @@ export class AutoTemplateEngine<
     }
 
     /**
+     * 动态 patch：修改模板片段并增量同步到运行树（ADR-0002）。
+     *
+     * 开发者在 `updater` 回调里就地修改 `engine.template` 的某个 scope 子树（回调入参即命中的
+     * 模板元素），本方法据 `updater` 返回值决定重建范围，**只动 patch 目标子树，保留其余运行态**
+     * （焦点/滚动/未提交输入）。selector 对 `engine.template` querySelector；命中须为 scope
+     * （含指令或 `{{}}` 插值的元素；纯静态裸元素需挂 `x-patch` 哨兵）。
+     *
+     * **返回四态**（判定用 `===`/`typeof`，`undefined != null` 严格区分）：
+     * - `void`/`undefined` 或 `=== templateEl` → **子树重建**（复用 `_recompileSubtree`）
+     * - 新 `Node`（`!== templateEl`）→ **替换自身**
+     * - `string`（HTML）→ **替换自身**（`<template>` 解析，可多节点，空串=删除）
+     * - `null` → **删除自身**
+     *
+     * **动态区域守卫**：patch 目标自身或祖先链含 ownsChildren 结构指令（x-for / eager x-if /
+     * x-slot）→ 拒绝（运行侧结构非同构，正向桥不可靠）。
+     *
+     * updater 抛错则记日志、不重建；patch 后同步 `flushAll`，返回时 DOM 已更新。dispatcher 经
+     * MutationObserver 自动处理新/旧节点的 runtime 指令 mount/unmount，patch 不直接操作。
+     *
+     * @param selector 对 `engine.template` 的 CSS 选择器（命中的须为 scope 元素）
+     * @param updater  接收命中的模板元素，就地修改；返回值决定重建语义
+     */
+    patch(selector: string, updater: (templateEl: HTMLElement) => Node | string | null | undefined): this {
+        const hit = this.template.querySelector(selector);
+        if (!hit || !(hit instanceof HTMLElement)) {
+            this.logger.warn(`engine.patch: selector "${selector}" 未命中模板元素`);
+            return this;
+        }
+        const T = hit;
+        if (this._isInDynamicRegion(T)) {
+            this.logger.warn(`engine.patch: "${selector}" 处于动态区域（x-for/x-if/x-slot），拒绝`);
+            return this;
+        }
+        const scope = this.compiler.getScopeByTemplate(T);
+        if (!scope) {
+            this.logger.warn(`engine.patch: "${selector}" 非 scope 元素（无指令/插值），需挂 x-patch`);
+            return this;
+        }
+        const el = scope.el;
+        if (!el) {
+            this.logger.warn(`engine.patch: "${selector}" 的 scope 已失效（运行元素被回收）`);
+            return this;
+        }
+        this.broadcast("engine/patch/before", { selector, el });
+        let R: Node | string | null | undefined;
+        try {
+            R = updater(T);
+        } catch (e: any) {
+            this.logger.error(`engine.patch updater 抛错，不重建: ${e?.message ?? e}`);
+            return this;
+        }
+        if (R === null) {
+            this._deleteSelf(scope, T, el);
+        } else if (R === undefined || R === T) {
+            this._recompileSubtree(scope, el);
+        } else if (typeof R === "string") {
+            const frag = parseHtmlFragment(R);
+            const nodes = frag ? Array.from(frag.childNodes) : [];
+            if (nodes.length === 0) {
+                this._deleteSelf(scope, T, el);
+            } else {
+                this._replaceSelf(scope, T, el, nodes);
+            }
+        } else if (R instanceof Node) {
+            this._replaceSelf(scope, T, el, [R]);
+        } else {
+            this.logger.warn(`engine.patch: updater 返回了非法类型（${typeof R}），已忽略`);
+            return this;
+        }
+        this.scheduler.flushAll();
+        this.broadcast("engine/patch/after", { selector });
+        return this;
+    }
+
+    /**
      * 遍历 scopes 查找 `scope.el === el` 的 scope。
      *
      * engine.scopes 以 WeakRef 为 key，无法直接 get(el)，只能遍历 values 做 deref 比较（O(n)）。
@@ -268,6 +344,62 @@ export class AutoTemplateEngine<
             // 消化编译期 schedule 的首次渲染（如嵌套 x-for）
             this.scheduler.flushAll();
         }
+    }
+
+    /**
+     * patch 替换自身：用 `templateNodes` 替换 T（模板侧 + 运行侧），destroy 旧 scope、编译新节点。
+     *
+     * 顺序（经评审验证）：① 模板侧先 replaceWith（新节点进 engine.template，`compileElement` 的
+     * `_linkParent` 能沿新祖先链找到父 scope）→ ② destroy 旧 scope（watcher 立即 off，降低新旧
+     * scope 瞬时重叠）→ ③ 编译 templateNodes 建新 scope → ④ 运行侧 replaceWith。
+     *
+     * @param scope         T 对应的旧 scope
+     * @param T             模板侧被替换元素
+     * @param el            运行侧被替换元素（scope.el）
+     * @param templateNodes 替换 T 的新模板节点（来自 parseHtmlFragment 或 updater 返回的 Node）
+     */
+    private _replaceSelf(scope: AutoTemplateScope, T: HTMLElement, el: HTMLElement, templateNodes: Node[]) {
+        // ① 模板侧先替换：templateNodes 进 engine.template，后续 _linkParent 沿新祖先链生效
+        T.replaceWith(...templateNodes);
+        // ② destroy 旧 scope（从 parent.children 移除 + 递归 off watcher + 指令 destroy）
+        scope.destroy();
+        // ③ 编译新节点建新 scope（HTMLElement 走 transformElement 递归 + 文本插值）
+        let runtimeNodes: Node[];
+        try {
+            runtimeNodes = this.compiler.compileChildNodes(templateNodes, scope.parent);
+        } catch (e: any) {
+            this.logger.error(`engine.patch 编译失败，模板已变更但运行树可能未同步: ${e?.message ?? e}`);
+            return;
+        }
+        // ④ 运行侧替换；dispatcher 检测 add → runtime 指令 mounted（自动）
+        el.replaceWith(...runtimeNodes);
+    }
+
+    /**
+     * patch 删除自身：destroy scope + 模板/运行双侧移除（`null` 与空串共用同一路径）。
+     *
+     * dispatcher 检测 el remove → runtime 指令 unmounted（自动）。
+     */
+    private _deleteSelf(scope: AutoTemplateScope, T: HTMLElement, el: HTMLElement) {
+        scope.destroy();
+        T.remove();
+        el.remove();
+    }
+
+    /**
+     * 动态区域判定：T 自身或祖先链上有 ownsChildren 结构指令（x-for / eager x-if / x-slot）。
+     *
+     * 这些区域的运行侧结构由指令运行时生成，与模板非同构，正向桥不可靠——patch 落入即拒绝。
+     * 沿 templateScopeMap 上溯，O(树深)。
+     */
+    private _isInDynamicRegion(T: HTMLElement): boolean {
+        let p: HTMLElement | null = T;
+        while (p) {
+            const scope = this.compiler.getScopeByTemplate(p);
+            if (scope && this.compiler.scopeOwnsChildren(scope)) return true;
+            p = p.parentElement;
+        }
+        return false;
     }
 
     /**

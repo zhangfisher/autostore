@@ -40,7 +40,7 @@ export type NodeTransformer<T extends Node = Node> = [
  * @param html - HTML 片段字符串
  * @returns 解析后的 DocumentFragment；空或纯空白字符串返回 `null`（表示剪枝）
  */
-function parseHtmlFragment(html: string): DocumentFragment | null {
+export function parseHtmlFragment(html: string): DocumentFragment | null {
     const tpl = document.createElement("template");
     tpl.innerHTML = html.trim();
     const frag = tpl.content;

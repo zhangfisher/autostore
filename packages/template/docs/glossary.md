@@ -68,13 +68,13 @@
 `engine.template` 为**唯一事实源**（只读编译输入）；运行树为派生、一次性产物。动态编译**只经修改模板触发**，不提供"运行树 → 模板"反向桥。见 [ADR-0002](adr/0002-dynamic-patch.md) 决策 1。
 
 ### 正向桥（Forward Bridge）
-"模板元素 → scope"的映射，编译期由 `WeakMap<模板el, scope>` 维护（scope 创建时登记）。`patch(templateEl)` 经正向桥定位 scope，再取 `scope.el`（运行元素）。**仅 scope 元素有正向桥**；裸元素无映射，不可直接 patch。
+"模板元素 → scope"的映射，复用编译期 `templateScopeMap`（实例字段，半持久化），经 `compiler.getScopeByTemplate(el)` 访问。`patch(selector, updater)` 的 selector 对 `engine.template` 命中后，经正向桥定位 scope、取 `scope.el`（运行元素）。**仅含指令（Compile/Hybrid）或 `{{}}` 插值（合成 scope）的元素有正向桥**；纯静态裸元素无映射，需挂 `x-patch` 哨兵。
 
 ### 补丁单元（Patch Unit）
-一次 `patch` 重建的最小范围 = **一个 scope 的子树**（destroy `scope.children` + `compileSubtree` 重挂，复用 `_recompileSubtree`）。scope 元素**自身**不在重建范围内。
+`patch` 的重建范围由 `updater` 返回值决定（四态）：`void`/同引用 → **子树重建**（destroy `scope.children` + `compileSubtree` 重挂，复用 `_recompileSubtree`，scope 自身不动）；新 `Node`/`string`(HTML) → **替换自身**；`null`/空串 → **删除自身**。替换/删除涉及 scope 自身 destroy + 模板/运行双侧 DOM 替换或移除。
 
 ### 增量编译 vs 全量编译
-- **增量编译（`patch`）**：仅重建 patch 目标 scope 子树，保留其余子树运行态（焦点/滚动/未提交输入）。覆盖"在 scope 内插/删/改子节点"。
+- **增量编译（`patch`）**：仅动 patch 目标（子树重建 / 替换自身 / 删除自身），保留其余子树运行态（焦点/滚动/未提交输入）。
 - **全量编译（`compile`）**：重建整棵运行树（`replaceChildren`），丢弃全部运行态。用于初始化或"scope 自身指令变更"等 patch 不覆盖的场景。
 
 ### 动态区域（Dynamic Region）/ 稳定子树（Stable Subtree）

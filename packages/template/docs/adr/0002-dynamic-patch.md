@@ -98,16 +98,20 @@ engine.patch("#workspace", () => '<p x-text="content"></p>');
 
 ## 后果
 
-- ✅ 新增代码小：正向桥（`WeakMap<模板el, scope>`，scope 创建时一行 set）+ `patch` 公共化 `_recompileSubtree` + 动态区域守卫。
+- ✅ **正向桥复用现有 `templateScopeMap`**（compiler 实例字段，半持久化）：加 public `getScopeByTemplate(el)` 即可，**无需新建 WeakMap、无需改 `compile()` 重置**（patch 走 `compileSubtree`/`compileElement`，不触发全量 `compile()`；全量 compile 重置后整树重建立即重填 map，一致）。
+- ✅ **新增代码小**：`getScopeByTemplate` + `scopeOwnsChildren`（提取自 `_resolveOwnership`）+ `compileOneChild`/`compileChildNodes`（`compileSubtree` 委托）+ `patch`/`_replaceSelf`/`_deleteSelf`/`_isInDynamicRegion` + `x-patch` 哨兵（照抄 `html.ts` no-op）+ 导出 `parseHtmlFragment`。
 - ✅ 保留未改动子树运行态（增量核心价值）。
-- ✅ 与 [ADR-0001] 通道划分自洽：patch 管 scope 通道，observer 通道自治。
-- ⚠️ `templateScopeMap` 需**持久化**为 `WeakMap<模板el, scope>`（不再每次 `compile()` 清空，需改 `compiler.ts:92`），否则增量 `_linkParent` 断链——**需改现有代码**。
-- ⚠️ 裸容器场景需变通（挂 `x-data="{}"`）。
+- ✅ 与 [ADR-0001] 通道划分自洽：patch 管 scope 通道；**dispatcher 透明**——patch 插入/删除节点时 runtime 指令 mount/unmount 由 `RuntimeObserverDispatcher`（[ADR-0003]）的 MutationObserver 自动处理，patch 不直接操作。
+- ✅ **发 `engine/patch/before|after` 事件**（对齐 `compile`/`data`，经 `broadcast` 门控，无订阅零成本）。
+- ✅ **patch 边界 = 有 scope 的元素** = 含指令（Compile/Hybrid）**或**含 `{{}}` 插值（合成 scope，[ADR-0004]）；纯静态裸元素挂 `x-patch` 哨兵。
+- ⚠️ `engine.scopes` 的 `WeakRef` entry destroy 后不自动清理（`_recompileSubtree` 同样未清，既存特性）；patch 高频替换放大堆积——本次不修。
+- ⚠️ updater 抛错 / 编译失败后，模板可能已变更但运行树未同步（未定义状态，文档声明）。
 
 ## 待决
 
 - ~~**scope 自身指令变更的处置**~~ → **已决**：`updater` 返回新节点（`!== templateEl`）触发"替换自身"重建，解锁改 scope 自身指令（决策 4）。
-- **patch 非 scope 元素的行为**：warn 忽略 vs 抛错？
-- **动态区域内 patch**：拒绝 vs 升级重建？
-- **`updater` 抛错**：记日志 + 不重建（模板可能已被部分修改，状态不一致需文档声明）。
 - ~~**零副作用哨兵指令**~~ → **已决**：引入 `x-patch`（决策 6），等效 `x-data="{}"` 但无副作用、不建数据域。
+- ~~**patch 非 scope 元素的行为**~~ → **已决（实现）**：warn 忽略，不抛错（低频误用，柔降级）。
+- ~~**动态区域内 patch**~~ → **已决（实现）**：拒绝（warn），不升级重建。
+- ~~**`updater` 抛错**~~ → **已决（实现）**：记 error 日志 + 不重建（模板可能已被部分修改，状态不一致属未定义）。
+- **fast-follow**：patch 返回的 HTML 字符串经 `engine.options.sanitizer` 消毒（参 [ADR-0005]/[ADR-0006] 待决）；`engine.scopes` WeakRef entry 主动清理。

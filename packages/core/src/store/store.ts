@@ -123,7 +123,6 @@ export class AutoStore<
                     debug: false,
                     enableComputed: true,
                     reentry: true,
-                    delimiter: ".",
                     lazy: false,
                     enableValueExpr: true,
                     shadow: false,

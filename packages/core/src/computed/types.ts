@@ -17,6 +17,7 @@
  *
  */
 import type {
+    ObserverContext,
     ObserverDescriptor,
     ObserverDescriptorBuilder,
     ObserverOptions,
@@ -291,17 +292,13 @@ export type SyncComputedOptions<Value = any, Scope = any> = Pick<
     | "extras"
     | "cascadeDestroy"
     | "refStore"
+    | "anchor"
 >;
 
 /**
  * 计算属性所在的位置
  */
-export type ComputedContext<Value = any> = {
-    path: string[];
-    value: Value;
-    parentPath: string[];
-    parent: any;
-};
+export type ComputedContext<Value = any> = ObserverContext<Value>;
 
 export type ComputedSyncReturns<T = any> = (...args: any) => Exclude<T, Promise<any>>;
 

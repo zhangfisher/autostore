@@ -4,7 +4,6 @@ import type {
     ComputedDescriptorBuilder,
     ComputedGetter,
 } from "../computed/types";
-import { OBSERVER_DESCRIPTOR_BUILDER_FLAG } from "../consts";
 import type { AnyAutoStore, Dict } from "../types";
 import { WatchObject } from "../watch";
 import type { WatchDescriptorBuilder } from "../watch/types";
@@ -181,6 +180,28 @@ export interface ObserverOptions<Value = any, Schema extends Dict = Dict> {
     schema?: Schema;
 
     refStore?: AnyAutoStore | AnyAutoStore[];
+    /**
+     * 锚点：声明该计算对象"逻辑上位于此路径"，用于动态创建(computedObjects.create)时启用相对路径。
+     *
+     * @description
+     *
+     * 动态创建的计算对象是游离的(detached)，默认没有上下文，因此 scope 和 depends
+     * 只能使用根(ROOT)或绝对路径。
+     *
+     * 通过 `anchor` 声明逻辑位置后，即可使用相对路径(如 `./xxx`、`../xxx`、`CURRENT`、`PARENT`)。
+     * 提供 anchor **不会**改变游离性质：对象始终 `associated=false`，计算结果不回写状态树，id 自动生成。
+     * anchor 仅用于解析相对的 scope 指向与 depends 路径。
+     *
+     * 仅需提供 `path`，`parentPath` 会自动推导；`value`/`parent` 当前未使用。
+     *
+     * @example
+     *
+     * computedObjects.create(
+     *   (order) => order.price * order.count,
+     *   { anchor: { path: ['order', 'total'] } },
+     * )
+     */
+    anchor?: Partial<ObserverContext>;
 }
 
 export type ObserverBuilder<Value = any, Scope = any> =

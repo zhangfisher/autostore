@@ -30,7 +30,7 @@ export class ComputedObject<
     constructor(
         store: AutoStore<any>,
         public descriptor: ComputedDescriptor,
-        public context?: ComputedContext<Value>,
+        context?: ComputedContext<Value>,
     ) {
         super(store, descriptor, context);
         descriptor.options.depends = calcDependPaths(this.path, this.options.depends);

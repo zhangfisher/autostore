@@ -12,7 +12,7 @@ import { joinPath } from "../utils/joinPath";
 import { setVal } from "../utils/setVal";
 import { getId } from "../utils/getId";
 import type { ObserverContext, ObserverDescriptor, ObserverOptions } from "./types";
-import type { StateOperate, AutoStoreEvents, UpdateOptions } from "../store/types";
+import type { StateOperate, UpdateOptions } from "../store/types";
 import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
@@ -64,13 +64,18 @@ export class ObserverObject<
             descriptor.options,
         ) as unknown as Required<Options>;
         this._id = this._options.id || (this._associated ? joinPath(context?.path) : getId());
-        this._path = context?.path || [`#${this._id}`];
+        // 上下文来源：关联对象用构造上下文；游离对象(如动态create)回退到 options.anchor。
+        // options.anchor 仅用于解析相对 scope/depends，不影响 _associated（关联与否只由构造 context 决定）。
+        const ctx = (context || (this._options.anchor as ObserverContext<Value> | undefined)) as
+            | ObserverContext<Value>
+            | undefined;
+        this.context = ctx;
+        this._path = ctx?.path || [`#${this._id}`];
         if (!this._path) this._path = [`#${this._id}`];
         this._initial = this._options.initial;
         this.onInitOptions(this._options);
-        // this._createRefStateCtx(context?.value);
         this._depends = calcDependPaths(this._path, this._options.depends);
-        emitStoreEvent(this.store, "observer:created", { context, observer: this });
+        emitStoreEvent(this.store, "observer:created", { context: ctx, observer: this });
         this._onInitial();
     }
     get type() {
@@ -161,12 +166,21 @@ export class ObserverObject<
             /**
              * 为什么赋值没有写到state?
              *
-             * 当独立创建的Observer时，即通过this.computedObjects.create()创建时，没有指定绑定到相关的状态上时
+             * 当独立创建的Observer时，即通过this.computedObjects.create()创建时，没有指定绑定到相关的状态上时，
+             * 此对象是游离的(detached)，值保存在对象自身，不回写状态树。
+             *
+             * 游离对象的值变更不进入state变更流(operates)，而是通过store顶层总线的独立事件
+             * `observer:set:<id>` 通知，仅 obj.watch 能监听。详见 ADR-0002。
              */
             const oldValue = this._value;
             if (value !== oldValue) {
                 this._value = value;
-                this.store._notify({ type: "set", path: this.path, value, oldValue });
+                this.store.emit(`observer:set:${this.id}`, {
+                    type: "set",
+                    path: this.path,
+                    value,
+                    oldValue,
+                });
             }
         }
     }
@@ -178,19 +192,6 @@ export class ObserverObject<
         this.onInitial();
     }
 
-    // private _createRefStateCtx(value: any) {
-    //     const _getRefStore =
-    //         value?._getRefStore ||
-    //         (() => {
-    //             return this.options.refStore || this.store.options.refStore;
-    //         });
-    //     if (isFunction(_getRefStore)) {
-    //         const storeRef = _getRefStore() as WeakRef<AutoStore<any>>;
-    //         if (storeRef) {
-    //             this._refStateCtx = createRefState(storeRef, this as ObserverObject);
-    //         }
-    //     }
-    // }
     /**
      * 供子类继承进行初始化
      */
@@ -252,24 +253,29 @@ export class ObserverObject<
      * 
      * 
      * 
-     * @param options 
-     * @param  {boolean}  options.expand - 是否扩展侦听范围到子对象，当value是一个object时使用
-     * 
-     * 当Observer对象的值是一个对象时，如异步计算对象value={value,loading,timeout,....}     
-     * 则.watch((val)=>{....})这里正常返回的应该是value.value
-     * 如果需要侦听value对象的所有属性变化，则需要设置expand=true,此时侦听的就是`path.*`的变化
-     * 由于changesets支持通配符，所以就可以侦听到所成员属性的变化
-     * 
-     * @returns 
+     * @param options 侦听选项（仅关联对象生效；游离对象仅监听 set 更新，options 不生效，详见 ADR-0002）
+     *
+     * @returns
      */
     watch(listener: WatchListener, options?: WatchListenerOptions) {
-        const watcher = this.store.watch(
-            this.getValueWatchPath(),
-            (operate) => {
+        let watcher: Watcher;
+        if (this._associated) {
+            // 关联对象：监听 state 路径变化（走 operates 总线），支持 options(once/operates/filter)
+            watcher = this.store.watch(
+                this.getValueWatchPath(),
+                (operate) => {
+                    listener.call(this, operate);
+                },
+                options,
+            );
+        } else {
+            // 游离对象：值变更走 store 顶层总线 observer:set:<id>，不走 operates。
+            // 仅监听 set 更新；options(once/operates/expand/filter) 在游离对象上不生效。
+            watcher = this.store.on(`observer:set:${this.id}`, (operate) => {
+                // @ts-ignore
                 listener.call(this, operate);
-            },
-            options,
-        );
+            });
+        }
         this._subscribers.push(watcher);
         return watcher;
     }
@@ -336,8 +342,11 @@ export class ObserverObject<
         if (this._destroyed) return;
         this._destroyed = true;
         this.onDestroy(); // 1. 子类清理（如异步计算取消 inflight）
-        this.detach(); // 2. 解除依赖订阅
-        // 3. 从两个集合移除：用原生 Map.delete，避免与集合 delete（已路由到 destroy）互相递归
+        this.detach(); // 2. 解除依赖订阅（含 obj.watch 注册的 _subscribers）
+        // 3. 游离对象的值变更事件命名空间清理：移除所有 observer:set:<id> 监听，
+        //    包括绕过 obj.watch 直接 store.on 注册的，防泄漏（关联对象此事件无监听，为 no-op）
+        this.store.off(`observer:set:${this.id}`);
+        // 4. 从两个集合移除：用原生 Map.delete，避免与集合 delete（已路由到 destroy）互相递归
         Map.prototype.delete.call(this.store.computedObjects, this.id);
         Map.prototype.delete.call(this.store.watchObjects, this.id);
         emitStoreEvent(this.store, "observer:destroyed", this);
