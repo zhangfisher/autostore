@@ -138,6 +138,7 @@
 - **修饰符与选项等价（ADR-0007）**：修饰符在解析期注入为指令选项键（`.ctrl` ≡ `options.ctrl=true`），指令层只读 `options`、不再读 `modifiers`。带值配置（如 debounce 时长）走 `x-on-options="{debounce:500}"`；元素级共享配置走 `x-options`。`OnEvalContext.$options` 暴露该聚合视图。
 - **配置 / 数据双通道（ADR-0007）**：`$options`（配置，只读）与 `data`（数据，可读写）正交——host options 绝不进入 `data` 聚合视图，避免键名污染与重名冲突。
 - **错误宽松**：action 调用与表达式求值共用 try/catch + `engine.logger.error` 不中断，复用 `watchExpression` 的宽松求值模式。
+- **返回值冒泡（计划：[ADR-0008](../adr/0008-x-on-feedback-modifier.md)）**：`.feedback` 修饰符要求 business handler 返回 action 的返回值（action 分支 `return action.call(ctx,...args)`、表达式分支 `return exprGetter(...)`），管道（`guardWrapped` + 各 wrapper）透传该返回值；`.feedback` wrapper 据此捕获本次触发的 Promise，驱动 pending/resolved/rejected 状态机。wrapper 经可选 `order` 字段排序，feedback 固定最内层（拿原始返回值）。**当前实现尚未冒泡**（返回值丢弃），系 feedback 落地时的配套改动。
 
 ## Testing Decisions
 
@@ -150,7 +151,7 @@
 ## Out of Scope
 
 - **异步 Action 的生命周期广播**：✅ **已由 `engine.buildAction` 实现**（独立特性，非本 spec 范围）——action 返回 thenable 时广播 `actions/<name>/{pending,resolved,rejected}`，注册时自动包装（Proxy set / 构造扫描 / `<script type="actions">` 三入口），reject 经内部 then 消费消除 unhandled rejection。详见 glossary「actions 域」与 `buildAction.test.ts`。本 spec 仅覆盖同步 Action 规格。
-- **action 返回值的消费**：x-on 不消费 action 返回值（同步丢弃）；async action 返回的 Promise 经 buildAction 消费用于广播生命周期，但 resolve 值不回传 x-on 调用点。
+- **action 返回值的消费**：x-on 主逻辑不消费 action 返回值（同步丢弃）；async action 返回的 Promise 经 buildAction 消费用于广播 `actions/<name>/*` 生命周期，但 resolve 值不回传 x-on 调用点。**例外（计划中，[ADR-0008](../adr/0008-x-on-feedback-modifier.md)）**：`.feedback` 修饰符需要 business handler 把 action 返回值**冒泡**（`return action.call(...)`），供其 wrapper 捕获 Promise 驱动 UI 反馈状态机；非 feedback 场景返回值仍不被消费。
 - **新的 action 来源**：如 ESM 导入、动态注册 API、装饰器声明等——均非本 spec 范围。
 - **表达式兜底的求值语义细节**：`with(data)` 表达式分支属于「表达式 / 插值」通用规格（见 [reactive-interpolation.md](reactive-interpolation.md) 与 `watchExpression`），非 Action 规格本身；本 spec 只划定「何时走表达式」的边界。
 - **自定义修饰符注册 API**：属 ADR-0007 修饰符体系，非 Action 规格。
@@ -160,6 +161,7 @@
 
 - **状态**：本 spec 描述的特性**已实现并通过测试**（`x-on.test.ts` 全绿、全量测试 0 失败、template 包 0 类型错误）。此 spec 作为「已商定行为」的权威记录，供验证 / 回归 / 后续维护代理参照，而非绿地新建、**零代码变更**。
 - **决策出处**：实现见求值器 / 类型文件 / `scope.getAction`；修饰符与配置统一见 [ADR-0007](../adr/0007-directive-options-and-modifiers.md)；指令类别（Compile / scope 通道）见 [ADR-0001](../adr/0001-directive-kind-system.md)；术语见 [glossary「钩子」/「RuntimeDirective 接口」](../glossary.md)。
+- **feedback 修饰符（计划中）**：`x-on:click.feedback="submit"` 为 async action 提供声明式 UI 反馈（自动加 `pending`/`resolved`/`rejected` 类 + 可叠加 x-loading overlay），信号源为 **handler 返回值捕获**（非订阅全局 `actions/*` 事件，避免同名 action 串扰 + 覆盖同步 action）。完整设计见 [ADR-0008](../adr/0008-x-on-feedback-modifier.md)、术语见 [glossary「x-on 反馈」](../glossary.md)。落地需配套 business 返回值冒泡（见 Implementation Decisions）。
 - **哲学一致性**：Action 优先 + 表达式兜底兼顾「显式 action 的可测试 / 可维护」与「内联表达式的零样板」，与 Alpine.js `x-on` 同源；`OnEvalContext` 的 `data`（读写数据）/ `$options`（只读配置）双正交通道，与 ADR-0007 的「配置与数据分通道」一脉相承。
 - **未发布到 issue tracker**：因本机未配置 tracker 与 triage 标签词表（且无 `gh` CLI），spec 暂落仓库 markdown（与既有 `x-html.md` / `reactive-interpolation.md` / `engine-patch.md` spec 一致）；待 `/setup-matt-pocock-skills` 配置后可迁移至 tracker 并打 `ready-for-agent`。
 - **异步 Action 已落地**：本 spec 定稿后，async action 的生命周期广播已由 `engine.buildAction` 实现（`actions/<name>/{pending,resolved,rejected}`），glossary 已更新「actions 域」描述（task 域已废弃）。本 spec 仍专注同步 Action 规格，async 行为以 glossary + buildAction 实现为权威。

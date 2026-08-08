@@ -240,6 +240,33 @@ export default defineConfig({
                     ],
                 },
             ],
+            "/zh/template/": [
+                {
+                    text: "关于",
+                    items: [
+                        { text: "关于", link: "/zh/template/intro/about" },
+                        { text: "安装", link: "/zh/template/intro/install" },
+                        { text: "快速入门", link: "/zh/template/intro/get-started" },
+                        { text: "常见问题", link: "/zh/template/intro/qu" },
+                    ],
+                },
+                {
+                    text: "指南",
+                    items: [
+                        { text: "初始化", link: "/zh/template/guide/initial" },
+                        { text: "响应式", link: "/zh/template/guide/reactive-state" },
+                        {
+                            text: "指令",
+                            items: [
+                                { text: "文本插值", link: "/zh/template/guide/directives/x-text" },
+                                { text: "HTML插值", link: "/zh/template/guide/directives/x-html" },
+                                { text: "样式", link: "/zh/template/guide/directives/x-style" },
+                                { text: "类", link: "/zh/template/guide/directives/x-class" },
+                            ],
+                        },
+                    ],
+                },
+            ],
         },
         socialLinks: [{ icon: "github", link: "https://github.com/zhangfisher/autostore/" }],
     },

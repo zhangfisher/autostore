@@ -1,4 +1,4 @@
-import type { AutoStore, FastEvent } from "autostore";
+import type { AutoStore, AutoStoreOptions, Dict, FastEvent } from "autostore";
 
 /**
  * AutoStore 任意类型
@@ -95,7 +95,15 @@ export interface DirectiveBinding {
  *
  * 传递给 AutoTemplate 构造函数的配置选项。
  */
-export interface AutoTemplateEngineOptions extends FastEvent.FastLiteEventOptions {
+export interface AutoTemplateEngineOptions<State extends Dict = any> extends FastEvent.FastLiteEventOptions {
+    /**
+     * 自建 store 的配置（仅当构造器第二参为裸状态对象时消费，ADR-0009 决策 4）。
+     *
+     * 第二参为 AutoStore 实例时此选项被忽略（用户已自配 store）。透传给 `new AutoStore(state, storeOptions)`。
+     *
+     * @default undefined（AutoStore 默认选项）
+     */
+    storeOptions?: AutoStoreOptions<State>;
     /**
      * 是否启用调试模式
      *

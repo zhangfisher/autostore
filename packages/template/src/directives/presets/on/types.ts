@@ -50,15 +50,22 @@ export type GuardModifierDesc = {
     apply: (event: Event, rt: ModifierRuntime) => boolean;
 };
 
-/** wrapper 类修饰符：包装 next 返回新 handler；可写 cleanup.cancel 注册清理 */
+/** wrapper 类修饰符：包装 next 返回新 handler；可写 cleanup.cancel 注册清理。
+ *
+ * `next` 与返回的 handler 均可返回任意值（`any`）——管道透传 business 的返回值，供依赖它的
+ * wrapper（如 `.feedback` 捕获 async action 的 Promise）使用。`order`（默认 0，越大越内层）
+ * 控制 wrapper 包裹顺序：OnDirective 按 order **降序** apply（大者先 apply、居内层，更靠近
+ * business），依赖返回值的 wrapper 声明大 order 固定最内层。见 ADR-0008。 */
 export type WrapperModifierDesc = {
     name: string;
     type: "wrapper";
+    /** 包裹顺序（默认 0，越大越靠近 business 内层）；.feedback 声明 Infinity 固定最内层以拿原始返回值 */
+    order?: number;
     apply: (
-        next: (event: Event) => void,
+        next: (event: Event) => any,
         rt: ModifierRuntime,
         cleanup: CleanupHandle,
-    ) => (event: Event) => void;
+    ) => (event: Event) => any;
 };
 
 /** 修饰符描述符判别联合（按 type 收窄 apply 形状） */

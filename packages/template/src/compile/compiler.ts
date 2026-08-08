@@ -18,6 +18,7 @@ import { DirectiveKind } from "../directives/base";
 import type { AutoDirectiveInfo } from "../directives/types";
 import type { AutoTemplateEngine } from "../engine";
 import { transformElement, type NodeTransformer, type OwnsChildrenResult } from "../utils/transformElement";
+import { buildAction } from "../utils/buildAction";
 import { hasDirectives } from "../directives/utils/hasDirectives";
 import { hasMustache, isRawTextElement, parseInterpolation, synthAttrExpr } from "./mustache";
 
@@ -154,10 +155,13 @@ export class AutoTemplateCompiler {
     }
 
     /**
-     * 提取 `<script type="actions">` 内容为局部 action，注入最近祖先 scope.actions。
+     * 提取 `<script type="actions">` 内容为 action 并注册（注入目标由 `global` 标志决定）：
+     * - 默认（无 global）：**局部 action** → 注入最近祖先 scope.actions（buildAction local=true，只 DOM 冒泡）。
+     * - `global` 标志（`<script type="actions" global>`）：**全局 action** → 注入 engine.actions
+     *   （Proxy set trap 自动 buildAction 包装，双发总线+DOM），供任意 scope 经 getAction 终点查到。
      *
      * 内容须为对象字面量（如 `{ pay(v){...}, submit(){...} }`），经 new Function 求值得对象。
-     * 求值失败或非对象记日志；找不到祖先 scope 则忽略。返回 null 表示剪枝——script 不进渲染 DOM。
+     * 求值失败或非对象记日志；局部模式找不到祖先 scope 则忽略。返回 null 表示剪枝——script 不进渲染 DOM。
      * 普通 `<script>`（无 type 或其他 type）不匹配此 transformer，经 transformElement 默认路径原样保留。
      */
     private _extractScriptActions(script: HTMLScriptElement): null {
@@ -175,12 +179,24 @@ export class AutoTemplateCompiler {
             this.engine.logger.error(`<script type="actions"> 解析失败: ${e?.message ?? e}`);
             return null;
         }
+        // global 标志（`<script type="actions" global>`）：声明全局 action，注入 engine.actions
+        // （actions Proxy 的 set trap 自动 buildAction 包装，local=false 双发总线+DOM），供任意 scope
+        // 经 getAction 终点查到；不依赖最近祖先 scope，可在模板任意位置声明。
+        if (script.hasAttribute("global")) {
+            for (const [k, fn] of Object.entries(parsed)) {
+                if (typeof fn === "function") this.engine.actions[k] = fn;
+            }
+            return null;
+        }
         const scope = this._findNearestScope(script);
         if (scope) {
-            // 注册时自动包装：每个 action 经 buildAction 包装，获得 `actions/<name>/*` 生命周期广播
+            // 默认局部 action：buildAction local=true，只 DOM 冒泡、不进总线（ADR-0012 避免同名串扰）；
+            // 祖先聚合经 DOM action:<name> 冒泡隔离作用域
             const wrapped: Record<string, (...args: any[]) => any> = {};
             for (const [k, fn] of Object.entries(parsed)) {
-                wrapped[k] = typeof fn === "function" ? this.engine.buildAction(k, fn) : fn;
+                wrapped[k] = typeof fn === "function"
+                    ? buildAction((type, payload) => this.engine.emit(type as any, payload), k, fn, true)
+                    : fn;
             }
             scope.actions = { ...(scope.actions ?? {}), ...wrapped };
         }

@@ -103,8 +103,14 @@
 
 一律过去时/状态形容词，禁命令式。使 `directive/*/mounted`（任意指令挂载）、`actions/*/pending`（任意 action 开始）等"跨主体抓同动词"模式成立。
 
-### actions 域（x-on async action 生命周期）
-事件总线中承载 **async action 生命周期**的域：`actions/<name>/<verb>`——`<name>` = action 函数名（**入路径**），verb = `pending`/`resolved`/`rejected`。由 `engine.buildAction` 在**注册时自动包装**触发——`engine.actions[name]=fn`（actions Proxy 的 set trap）、构造时 `options.actions`（构造函数扫描）、`<script type="actions">`（compiler 提取）三入口均自动包装；仅 async action（返回 thenable）广播，同步 action 透明（不广播）。reject 经内部 `then(_, onRejected)` 消费广播 `rejected`，消除 unhandled rejection。payload 亦带 `name`（方便 `actions/*/pending` 通配订阅者区分）。流信号 plain emit（不 retain）。见 `engine.buildAction` 实现。
+> **元素级反馈不订阅本域事件**：x-on 的 `.feedback` 修饰符（[ADR-0008](adr/0008-x-on-feedback-modifier.md)）做元素级 async action 反馈时，**不订阅** `actions/<name>/*`——全局事件按 name 广播会致同名 action 多元素串扰（点其一、两个都亮），且同步 action 不广播（feedback 永不触发）。feedback 改为捕获 business handler 的**返回值**（action 返回的 Promise），精确到本次触发。全局 actions 事件（供全局 loading/toast）与 feedback 元素级反馈**正交并存**。
+
+### actions 域（x-on action 生命周期）
+事件总线中承载 **action 生命周期**的域：`actions/<name>/<verb>`——`<name>` = action 函数名（**入路径**），verb = `pending`/`resolved`/`rejected`。由 `utils/buildAction` 在**注册时自动包装**触发——`engine.actions[name]=fn`（actions Proxy 的 set trap）、构造时 `options.actions`（构造函数扫描）、`<script type="actions">`（compiler 提取）三入口均自动包装。**同步/异步 action 统一广播**（ADR-0011）：pending 在执行前、resolved（成功）/rejected（失败）在完成时——同步 action 同 tick 内 pending→resolved（或抛错 pending→rejected），异步经 `then`；同步抛错 broadcast rejected 后 **rethrow**（保持错误传播），async reject 经内部 `then(_, onRejected)` 消费消除 unhandled rejection。payload 亦带 `name`（方便通配订阅者区分）。流信号 plain emit（不 retain）。见 `utils/buildAction` 实现。
+
+> **ADR-0010 起双发并存**：`buildAction` 在 thenable 分支除 emit 本域总线事件外，**同时** dispatch DOM 冒泡事件 `action:<name>`（`bubbles+composed`，detail **不带 el/scope**——靠 `event.target` 与冒泡路径表达触发元素/作用域），服务**祖先聚合后代 action**（`<form @action:submit>`，经 x-on 监听、phase 修饰符过滤）。总线（全局通配）与 DOM 冒泡（DOM 层级）**正交并存**，见下文「action DOM 冒泡事件」。
+
+> **ADR-0012 局部 action 隔离**：局部 action（`scope.actions`，`<script type="actions">`）**只 DOM 冒泡、不进总线**——总线是全局通道，局部 action 同名进总线会与其他 scope 串扰（消费者无法区分来源）。故总线 `actions/<name>/*` 只承载全局 action（name 唯一、无冲突）；DOM `action:<name>` 承载全部（冒泡隔离作用域）。经 `buildAction` 的 `local` 标志区分（compiler 入口 true、engine 入口 false）。配套 `<script type="actions" global>` 标志可声明全局 action（注入 `engine.actions`、双发），与默认局部区分。见 [ADR-0012](adr/0012-local-action-dom-only.md)。
 
 > **task 域已废弃（2026-08-07）**：ADR-0003 原设计的 `task/<source>/<verb>` 统一异步事件抽象未被采用——x-on async action 用 `actions/<name>/*`（per-action 精确订阅，name 入路径），x-slot remote 加载用 x-loading 指令自带覆盖层（不广播事件）。task 域零消费者，已移除。"一处订阅抓所有异步"的跨源诉求当前不存在，若未来出现再评估统一抽象。
 
@@ -202,6 +208,47 @@ remote 模式在 x-slot 宿主上创建的**完全独立** `AutoTemplateEngine` 
 ### ~~task/slot 事件（已移除）~~
 remote 模式**原计划**广播 `task/slot/{started,resolved,rejected}` 供全局加载协调，但 task 域抽象未被采用（见上文「task 域已废弃」）。x-slot remote 加载的加载态改由 **x-loading 指令自带覆盖层**（宿主 `setAttribute("x-loading")` toggle，dispatcher 自动 mount/unmount）表达，错误由占位 + `logger.error` 表达——**不广播任何事件**。
 
+## x-on 反馈（feedback）
+
+### feedback 修饰符（action 执行反馈）
+`x-on:click.feedback="submit"` 启用的 **wrapper 修饰符**，为 action 提供**声明式 UI 反馈**：**同步/异步统一**（ADR-0013）——同步成功直接加 `resolved` 类、同步抛错加 `rejected` 类、async 先加 `pending` 类（常驻）再 resolve/reject 切 `resolved`/`rejected`。经 `x-on-options="{feedback:{...}}"` 或宿主 `x-options` 配置 `at`（目标元素）/ `timeout`（终态延时清除）/ `pendingClass` / `resolvedClass` / `rejectedClass` / `loading`。`.feedback` 裸修饰符 = 全默认。**信号源 = business handler 返回值捕获**（async 的 Promise 冒泡；同步抛错经 eval.ts rethrow 冒泡，ADR-0013），非订阅全局 `actions/*` 事件（避免串扰）。**pending 仅 async**（同步无加载窗口）；feedback 固定 wrapper 链最内层（拿原始返回值）。见 [ADR-0008](adr/0008-x-on-feedback-modifier.md)、[ADR-0013](adr/0013-feedback-sync-async-unified.md)。
+
+### 命令式 overlay 模式（Imperative Overlay Mode）
+x-loading 的一种使用模式：`setAttribute('x-loading', JSON.stringify({message,bgColor,...}))`（对象配置**省略 visible**）→ x-loading 的 `resolveLiteral("")===true` 使其"属性存在即显示、用配置渲染"；`removeAttribute('x-loading')` → 隐藏。该行为原为"裸 `x-loading` ≡ 显示"设计的副作用，被 feedback 的 `loading` 配置对象复用，实现**命令式 overlay 显隐而 x-loading 零改动**。已测试锁定 + 文档化为正式契约（[ADR-0008](adr/0008-x-on-feedback-modifier.md) 决策 8）。区别于 x-loading 的反应式模式（visible 走 store 路径）与字面量模式（`"true"`/`"false"`）。
+
+### generation 防陈旧（Stale-Reject Guard）
+feedback 状态机的重入竞态防护：单调递增 `gen` 标记每次触发，Promise 回调校验 `my === gen` 才生效。action pending 中再触发（连点）时 `gen++`，旧 Promise 的 resolve/reject 因不匹配被忽略——避免"慢 action 后 resolve 覆盖快 action 终态"。旧 Promise **不取消**（core 无 cancel 能力），仅 feedback 元素侧忽略；全局 `actions/*` 广播照常。见 [ADR-0008](adr/0008-x-on-feedback-modifier.md) 决策 4。
+
+## action DOM 冒泡事件（祖先聚合）
+
+### action: DOM 事件（Action Bubble Event）
+action 生命周期的 **DOM 表达**：`action:<name>` CustomEvent，`bubbles:true` + `composed:true`，`detail={name, phase, result?/error?}`，由 `buildAction` 在 thenable 分支 dispatch 自**触发元素**（`OnEvalContext.el`）。与总线 `actions/<name>/*`（全局广播、吃通配符）**正交并存**——服务**祖先聚合后代 action**：事件冒泡到祖先即等价「action 发生在该祖先作用域内」。经 `x-on` 监听（`<form @action:submit>`），与 `@click` 同构、**零新指令**。**作用域由冒泡路径表达（detail 不带 scope）、触发元素由 `event.target` 表达（detail 不带 el）**——规避 ADR-0008 否决的「payload 带 el」。命令式 `engine.actions[name]()` 直调无触发元素 → 只走总线、不发 DOM 事件（声明式 vs 命令式不对称）。见 [ADR-0010](adr/0010-action-dom-bubble-event.md)。
+
+### phase 修饰符（Phase Modifier）
+`x-on` 的 **guard 类**修饰符 `.pending` / `.resolved` / `.rejected`，过滤 `action:<name>` 事件的 `detail.phase`：`@action:submit.pending` 仅在 pending 阶段触发 handler。与 `.left` / `.right` / `.middle`（鼠标键）**同构**——都是互斥事件维度的 guard、**单选使用**（`.pending.resolved` 同 `.left.right` 般无意义；多 phase 靠挂多个 listener，`x-on` `singleton=false` 支持同元素多实例）。裸 `@action:submit`（无 phase）= 听所有 phase，handler 读 `e.detail.phase` 自行分派。对非 `action:` 事件误用 phase 修饰符静默失效（同 `.left` 对非 mouse 事件）。见 [ADR-0010](adr/0010-action-dom-bubble-event.md)。
+
+### 祖先聚合（Ancestor Aggregation）
+action 监听的 **DOM 层级模式**：祖先元素经 `@action:<name>` 监听后代触发的 action 生命周期（依赖 CustomEvent 冒泡）。典型场景 `<form @action:submit>` 聚合内部各 button 的 submit，做容器级 UI 协调（如任一 submit 在跑则 form 显 submitting）。区别于 **feedback**（声明在触发元素、元素级自带状态机）与**总线订阅**（全局、无 DOM 层级、吃通配符）。三者**正交**：feedback=元素级精确反馈、总线=全局通配协调、祖先聚合=DOM 层级聚合。见 [ADR-0010](adr/0010-action-dom-bubble-event.md)。
+
+## 引擎构造（数据源）
+
+### 数据源（Data Source）
+`AutoTemplateEngine` 构造器第二参，二态输入：`AutoStore` 实例（**借用**）或裸状态对象（**种子**，engine 自动 `new AutoStore(state)` 建 store）。形参名仍为 `store`（字段 `engine.store` 是公开契约），类型联合 `AutoStore<State> | State`。判别走 `instanceof AutoStore` 主 + `__AUTO_STORE__` brand 兜重复包；`null`/`undefined`/非对象静默走自建路径兜空 store（不抛错）。见 [ADR-0009](adr/0009-store-or-state-input.md) 决策 1/3/5。
+
+### 种子状态（Seed State）
+数据源的裸对象形态，仅作**初始种子**。建 store 后其身份**失效**——`engine.state`/`engine.store.state`（Proxy，响应式根）与原裸对象**身份不同**，且对原裸对象的直接赋值**绕过 Proxy set trap、不触发更新**。故裸对象建后应丢弃，统一以响应式状态句柄访问/改写。区别于外部传入的 AutoStore 实例（其 `.state` 本就是响应式句柄）。
+_Avoid_: 初始状态、初始数据（"种子"强调一次性播种、建后即弃）
+
+### 响应式状态句柄（Reactive State Handle）
+访问/改写状态的唯一正道：`engine.state` / `engine.store.state`（二者同源，均返回 store 的响应式 Proxy 根）。改写即触发细粒度更新。种子状态经 engine 建 store 后，唯有此句柄是响应式的。见 [ADR-0009](adr/0009-store-or-state-input.md) 决策 1。
+_Avoid_: state 引用、state 对象（"句柄"强调它是访问正道、区别于已失效的种子）
+
+### 自有 store vs 借用 store（Owned vs Borrowed Store）
+engine 对 store 的两种所有权：**借用**（第二参为 AutoStore 实例）= 外部共享资源，`engine.destroy()` **绝不**销毁它（保留原"绝不 destroy 外部 store"不变量）；**自有**（第二参为种子状态，engine 自建）= 引擎自有资源，`engine.destroy()` **会**销毁它（回收 computedObjects / 事件订阅 / Proxy 等 core 资源）。引擎以私有 `_ownsStore` 标志区分（不暴露 getter）。谁建谁销毁（RAII）。见 [ADR-0009](adr/0009-store-or-state-input.md) 决策 2。
+
+### storeOptions（自建 store 配置）
+`AutoTemplateEngineOptions` 上的 `storeOptions?: AutoStoreOptions<State>` 字段，**仅自建路径**（第二参为种子状态）消费：`new AutoStore(state, options?.storeOptions)`。第二参为 AutoStore 实例时被忽略（用户已自配）。为与 `State` 联动，`AutoTemplateEngineOptions` 泛型化为 `<State extends Dict = any>`。见 [ADR-0009](adr/0009-store-or-state-input.md) 决策 4。
+
 ## 决策记录
 - ✅ [ADR-0001] 运行时指令走纯 observer 通道（方案 A）—— *待补全 Initialize/Dispose 契约后定稿*
 - ✅ [ADR-0002] 动态 patch 机制（模板增量编译）—— *待确认"scope 自身指令变更"处置*
@@ -209,3 +256,10 @@ remote 模式**原计划**广播 `task/slot/{started,resolved,rejected}` 供全�
 - ✅ [ADR-0004] 响应式文本插值（`{{ }}`）—— *Accepted（Round 1，grill-with-docs）*
 - ✅ [ADR-0005] x-html 指令（默认消毒的原始 HTML 注入）—— *Accepted（Round 1，grill-with-docs）*
 - ✅ [ADR-0006] x-slot 指令（engine 边界 / 隔离快照 / 远程子引擎）—— *Accepted（Round 5，grill-with-docs）*
+- ✅ [ADR-0007] 指令配置统一（modifier 注入 options + 元素级 host options 回退）—— *Accepted*
+- ✅ [ADR-0008] x-on feedback 修饰符（async action 执行反馈）—— *Accepted（grill-with-docs）*
+- ✅ [ADR-0009] 构造器第二参接受 `store | state`（自建 store 归 engine 销毁）—— *Accepted（Round 3，grill-with-docs）｜实现待落地*
+- ✅ [ADR-0010] action DOM 冒泡事件 + phase 修饰符（祖先聚合后代 action）—— *Accepted（grill-with-docs）｜实现待落地*
+- ✅ [ADR-0011] 同步 action 统一广播 lifecycle（同步/异步一致）—— *Accepted（grill-with-docs）｜feedback 同步响应待错误流重构*
+- ✅ [ADR-0012] 局部 action 只 DOM 冒泡、不进总线（隔离同名串扰）—— *Accepted（grill-with-docs）｜实现待落地*
+- ✅ [ADR-0013] feedback 同步/异步一致（错误流冒泡）—— *Accepted（grill-with-docs）｜实现待落地*

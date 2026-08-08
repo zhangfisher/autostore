@@ -78,23 +78,42 @@ export class OnDirective extends AutoTemplateDirectiveBase {
         );
 
         // === 3. guard 层（最内层，AND 组合，任一 false 短路不执行业务） ===
-        const guardWrapped = (eventObj: Event) => {
+        // 透传 business 返回值（ADR-0008）：放行时 return business()，短路时 undefined；
+        // 供 .feedback 等 wrapper 经 next(event) 捕获 async action 的 Promise。
+        const guardWrapped = (eventObj: Event): any => {
             for (const rt of guardRts) {
                 const desc = MODIFIERS[rt.name] as GuardModifierDesc;
                 if (!desc.apply(eventObj, rt)) return;
             }
-            business(eventObj);
+            return business(eventObj);
         };
 
-        // === 4. wrapper 层（由外向内包裹，在 guard 之外） ===
-        let current: (eventObj: Event) => void = guardWrapped;
+        // === 4. wrapper 层（按 order 降序排列后 apply，在 guard 之外） ===
+        // apply 语义：每次把 current 包进新 handler（新 handler 在 current 外层）。故先 apply 的 wrapper
+        // 居内层（更靠近 business）。按 order 降序 → order 大者先 apply → 居内层。依赖返回值的 wrapper
+        // （.feedback，order=Infinity）据此固定最内层，确保拿到 business 原始返回值（见 ADR-0008）。
+        wrapperRts.sort((a, b) => {
+            // wrapperRts 仅含 wrapper（分桶时 type 非 option/guard），cast 取 order
+            const oa = (MODIFIERS[a.name] as WrapperModifierDesc | undefined)?.order ?? 0;
+            const ob = (MODIFIERS[b.name] as WrapperModifierDesc | undefined)?.order ?? 0;
+            return ob - oa; // 降序：order 大者先 apply → 居内层
+        });
+        let current: (eventObj: Event) => any = guardWrapped;
         for (const rt of wrapperRts) {
             const desc = MODIFIERS[rt.name] as WrapperModifierDesc;
             const cleanup: CleanupHandle = {};
             current = desc.apply(current, rt, cleanup);
             if (cleanup.cancel) this.cleanups.push(cleanup);
         }
-        this.finalHandler = current;
+        // 兜底吞错（ADR-0013）：action 同步抛错经 wrapper 链冒泡至此（eval.ts 已 logger）；
+        // 有 .feedback 时 feedback 已 catch 吞、不至此；无 .feedback 时此处吞防 addEventListener handler uncaught。
+        this.finalHandler = (event: Event) => {
+            try {
+                current(event);
+            } catch {
+                /* eval.ts 已 logger，吞防 uncaught */
+            }
+        };
 
         // === 5. 合并 option + addEventListener ===
         this.listenerOptions = optionParts;

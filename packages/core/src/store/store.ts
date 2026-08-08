@@ -87,6 +87,7 @@ export class AutoStore<
     State extends Dict,
     Options = unknown,
 > extends FastLiteEvent<AutoStoreEvents> {
+    __AUTO_STORE__: boolean = true;
     declare types: FastEvent<AutoStoreEvents>["types"] & {
         rawState: State;
         state: ComputedState<State>;

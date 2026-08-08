@@ -6,6 +6,17 @@ import type { AutoTemplateScope } from "./scope";
 import { UpdateScheduler } from "./scheduler";
 import { RuntimeObserverDispatcher } from "./directives/runtime/dispatcher";
 import { parseHtmlFragment } from "./utils/transformElement";
+import { buildAction } from "./utils/buildAction";
+
+/**
+ * 判别 x 是否为 AutoStore 实例（ADR-0009 决策 3）。
+ *
+ * `instanceof` 为主；`__AUTO_STORE__` 实例字段兜"双副本 autostore 致 instanceof 失灵"场景
+ * （AutoStore 经 super() 子类如 ReactAutoStore 亦有此字段）。
+ */
+const isAutoStore = (x: unknown): x is AutoStore<any> =>
+    x instanceof AutoStore ||
+    (x !== null && typeof x === "object" && (x as Record<string, unknown>).__AUTO_STORE__ === true);
 
 /**
  * 框架保留键：x-data 默认模式的私有响应式数据域在 store.state 下的容器键。
@@ -46,16 +57,18 @@ export class AutoTemplateEngine<
 > extends FastEvent.FastLiteEvent<AutoTemplateEngineEvents> {
     /** 挂载容器（编译产物替换其子节点，容器本身保留） */
     readonly el: HTMLElement;
-    /** 外部传入的响应式数据源（引擎不创建、销毁时也不碰） */
+    /** 响应式数据源：外部传入的 AutoStore 实例（借用）或裸状态自建的 store（拥有，见 _ownsStore）。ADR-0009 */
     readonly store: AutoStore<State>;
+    /** engine 是否拥有 store（裸状态自建路径）。destroy 时仅当拥有才回收 store（ADR-0009 决策 2）。 */
+    private _ownsStore = false;
 
     /**
      * 重写基类 accessor：基类 options 是 getter，子类不得用实例属性遮蔽（TS2610），
      * 故以 getter 重写，返回合并类型（协变兼容基类 FastLiteEventOptions）。
      * 构造完成前 _fullOptions 未就绪时回退 super.options，规避基类构造期虚分派读到 undefined。
      */
-    override get options(): AutoTemplateEngineOptions {
-        return super.options as AutoTemplateEngineOptions;
+    override get options(): AutoTemplateEngineOptions<State> {
+        return super.options as AutoTemplateEngineOptions<State>;
     }
     readonly compiler: AutoTemplateCompiler;
     readonly directives: DirectiveManager;
@@ -79,20 +92,30 @@ export class AutoTemplateEngine<
 
     /**
      * @param el       挂载根元素（必须是 HTMLElement）
-     * @param store    外部 AutoStore 实例（响应式数据源）
-     * @param options  配置选项
-     * @throws {Error} el 非 HTMLElement / store 非 AutoStore 实例
+     * @param store    响应式数据源：AutoStore 实例（借用，engine 不销毁）或裸状态对象（engine 自动
+     *                 `new AutoStore(state, options.storeOptions)` 并拥有、destroy 时销毁）。ADR-0009
+     * @param options  配置选项（`storeOptions` 仅裸状态路径消费）
+     * @throws {Error} el 非 HTMLElement
      */
-    constructor(el: HTMLElement, store: AutoStore<State>, options?: Partial<AutoTemplateEngineOptions>) {
+    constructor(
+        el: HTMLElement,
+        store: AutoStore<State> | State,
+        options?: Partial<AutoTemplateEngineOptions<State>>,
+    ) {
         super({ autostart: true, debug: false, actions: {}, ...options });
         if (!(el instanceof HTMLElement)) {
             throw new Error("Root element must be an HTMLElement");
         }
-        if (!store || !(store instanceof AutoStore)) {
-            throw new Error("store must be an AutoStore instance");
-        }
         this.el = el;
-        this.store = store;
+        // 数据源分流（ADR-0009）：AutoStore 实例直接借用；裸状态自建 store（_ownsStore 标记，destroy 时回收）。
+        // null/undefined/非对象静默走自建路径，core 的 state||{} 兜成空 store（不抛错，ADR-0009 决策 5）。
+        if (isAutoStore(store)) {
+            this.store = store;
+            this._ownsStore = false;
+        } else {
+            this.store = new AutoStore(store as State, options?.storeOptions);
+            this._ownsStore = true;
+        }
         // 注入框架保留键 _scopes（x-data 私有响应式域容器）；1 engine 1 store 约定下由 engine 负责
         this._ensureScopesState();
         // 注册时自动包装：构造时传入的 options.actions 一次性包装
@@ -101,7 +124,11 @@ export class AutoTemplateEngine<
         const _initActions = this.options.actions!;
         for (const _k of Object.keys(_initActions)) {
             if (typeof _initActions[_k] === "function") {
-                _initActions[_k] = this.buildAction(_k, _initActions[_k] as any) as any;
+                _initActions[_k] = buildAction(
+                    (type, payload) => this.emit(type as any, payload),
+                    _k,
+                    _initActions[_k] as any,
+                ) as any;
             }
         }
         this.template = el.cloneNode(true) as HTMLElement;
@@ -143,55 +170,19 @@ export class AutoTemplateEngine<
         const target = this.options.actions!;
         this._actionsProxy = new Proxy(target, {
             set: (t, key: string, value: any) => {
-                t[key] = typeof value === "function" ? (this.buildAction(key, value) as any) : value;
+                t[key] = typeof value === "function"
+                    ? (buildAction((type, payload) => this.emit(type as any, payload), key, value) as any)
+                    : value;
                 return true;
             },
         });
         return this._actionsProxy;
     }
 
-    /**
-     * 把一个 action 包装为**广播生命周期事件**的版本。
-     *
-     * 仅当 action 返回 thenable（Promise）时广播 `actions/<name>/{pending,resolved,rejected}`；
-     * 同步 action（含同步抛错）行为完全不变（透传给 x-on 求值器的现有 try/catch）。
-     *
-     * **命名**：action 函数名入事件路径（每个 action 独立命名空间），payload 亦带 name 方便通配订阅。
-     * 通配订阅（见 types 的 action 通配契约）可抓任意 action 的开始 / 成功 / 失败：全局 loading、错误 toast。
-     *
-     * **注册时自动包装**（一般无需手动调用）：`engine.actions[name] = fn`（Proxy set）、
-     * `<script type="actions">` 提取（compiler）、构造时 `options.actions`（构造函数扫描）三入口
-     * 均自动调用本方法。包装后的函数被 x-on 调用时 `this` 仍为 OnEvalContext（透传 this 与 args）。
-     *
-     * **reject 处理**：async reject 经内部 `then(_, onRejected)` 消费并广播 `rejected`，故经 x-on
-     * 触发的 async action **不再产生 unhandled rejection**；直接 `await engine.actions[name]()`
-     * 的调用者仍会收到 reject（原 Promise 状态不变）。
-     *
-     * **防双重包装**：已包装的函数（`__buildActionWrapped` 标记）直接返回，避免三入口重叠时
-     * `buildAction(buildAction(fn))` 双重广播。
-     *
-     * @param name   action 函数名（入事件路径 `actions/<name>/...` + payload.name）
-     * @param action 原始 action 函数（this/args 透传）
-     * @returns 包装后的函数（同签名）
-     */
-    buildAction<A extends (...args: any[]) => any>(name: string, action: A): A {
-        if ((action as any).__buildActionWrapped) return action;
-        const engine = this;
-        const wrapped = function (this: unknown, ...args: Parameters<A>) {
-            const result = action.apply(this, args);
-            // 仅 thenable 才进入生命周期广播（同步 action 无生命周期意义，原样返回）
-            if (result && typeof (result as any).then === "function") {
-                engine.emit(`actions/${name}/pending` as any, { name });
-                (result as Promise<any>).then(
-                    (value) => engine.emit(`actions/${name}/resolved` as any, { name, result: value }),
-                    (error) => engine.emit(`actions/${name}/rejected` as any, { name, error }),
-                );
-            }
-            return result;
-        } as A;
-        (wrapped as any).__buildActionWrapped = true;
-        return wrapped;
-    }
+    // buildAction 已提炼至 utils/buildAction.ts（ADR-0010，双通道广播）；三入口——构造函数
+    // options.actions 扫描、actions Proxy 的 set trap、compiler 提取 `<script type="actions">`
+    // ——均经该 utils 函数包装（emit 经 `(t,p)=>this.emit(t as any,p)` 适配）。engine 不再暴露
+    // 公有 buildAction API（原为内部实现细节被误暴露）。
 
     /**
      * 确保 store.state[SCOPES_KEY] 存在（x-data 私有响应式域容器）。
@@ -309,7 +300,10 @@ export class AutoTemplateEngine<
      * @param selector 对 `engine.template` 的 CSS 选择器（命中的须为 scope 元素）
      * @param updater  接收命中的模板元素，就地修改；返回值决定重建语义
      */
-    patch(selector: string, updater: (templateEl: HTMLElement) => Node | string | null | undefined): this {
+    patch(
+        selector: string,
+        updater: (templateEl: HTMLElement) => Node | string | null | undefined,
+    ): this {
         const hit = this.template.querySelector(selector);
         if (!hit || !(hit instanceof HTMLElement)) {
             this.logger.warn(`engine.patch: selector "${selector}" 未命中模板元素`);
@@ -322,7 +316,9 @@ export class AutoTemplateEngine<
         }
         const scope = this.compiler.getScopeByTemplate(T);
         if (!scope) {
-            this.logger.warn(`engine.patch: "${selector}" 非 scope 元素（无指令/插值），需挂 x-patch`);
+            this.logger.warn(
+                `engine.patch: "${selector}" 非 scope 元素（无指令/插值），需挂 x-patch`,
+            );
             return this;
         }
         const el = scope.el;
@@ -408,7 +404,12 @@ export class AutoTemplateEngine<
      * @param el            运行侧被替换元素（scope.el）
      * @param templateNodes 替换 T 的新模板节点（来自 parseHtmlFragment 或 updater 返回的 Node）
      */
-    private _replaceSelf(scope: AutoTemplateScope, T: HTMLElement, el: HTMLElement, templateNodes: Node[]) {
+    private _replaceSelf(
+        scope: AutoTemplateScope,
+        T: HTMLElement,
+        el: HTMLElement,
+        templateNodes: Node[],
+    ) {
         // ① 模板侧先替换：templateNodes 进 engine.template，后续 _linkParent 沿新祖先链生效
         T.replaceWith(...templateNodes);
         // ② destroy 旧 scope（从 parent.children 移除 + 递归 off watcher + 指令 destroy）
@@ -418,7 +419,9 @@ export class AutoTemplateEngine<
         try {
             runtimeNodes = this.compiler.compileChildNodes(templateNodes, scope.parent);
         } catch (e: any) {
-            this.logger.error(`engine.patch 编译失败，模板已变更但运行树可能未同步: ${e?.message ?? e}`);
+            this.logger.error(
+                `engine.patch 编译失败，模板已变更但运行树可能未同步: ${e?.message ?? e}`,
+            );
             return;
         }
         // ④ 运行侧替换；dispatcher 检测 add → runtime 指令 mounted（自动）
@@ -456,8 +459,9 @@ export class AutoTemplateEngine<
      * 彻底销毁引擎：清空调度队列、销毁所有 scope（off watcher + 删 computed）、
      * 移除挂载 DOM。
      *
-     * **关键约束**：`store` 为外部共享资源，**绝不调用 `store.destroy()`**，
-     * 否则会解绑用户在别处挂的订阅、清空其 computed 对象。
+     * **store 销毁纪律（ADR-0009 决策 2）**：仅当 engine 自建 store（第二参为裸状态、`_ownsStore=true`）
+     * 才调 `store.destroy()` 回收其 computedObjects / 事件订阅 / Proxy 等 core 资源；
+     * 外部传入的 store 是共享资源，**绝不销毁**（否则解绑用户在别处挂的订阅、清空其 computed 对象）。
      */
     destroy(): void {
         this.emit("engine/destroy/before");
@@ -472,6 +476,10 @@ export class AutoTemplateEngine<
         this.scopes.clear();
         this.el.replaceChildren();
         this.pending = false;
+        // 仅自建 store（裸状态路径）才销毁；外部 store 是共享资源，绝不销毁（ADR-0009 决策 2）
+        if (this._ownsStore) {
+            this.store.destroy();
+        }
         this.emit("engine/destroy/after");
     }
 }

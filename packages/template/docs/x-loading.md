@@ -150,6 +150,8 @@ el.removeAttribute('x-loading');               // 删除属性 → 卸载实例�
 
 **边界** 若确需监听名为 `true`/`false` 的状态键（不推荐），无法直接绑定——可用表达式包裹（如 `x-loading="!!stateTrue"`）绕过。
 
+**派生：命令式 overlay 模式（feedback 复用）** 上述「空 visible ≡ true」有一处派生用途——对象配置**省略 visible** 时（如外部 `setAttribute('x-loading', JSON.stringify({message:'保存中', bgColor:'#000'}))`），`parseObject` 解析得 `visible:""`，`resolveLiteral("")===true` → **属性存在即显示、用配置渲染**；`removeAttribute('x-loading')` → 隐藏。此「命令式 overlay 模式」被 x-on 的 `.feedback` 修饰符（[ADR-0008](./adr/0008-x-on-feedback-modifier.md)）复用——feedback 在 pending 时 set 配置对象、resolved/rejected 时 remove，实现命令式 overlay 显隐而 **x-loading 零改动**。已测试锁定（`resolveLiteral("")===true`）+ 文档化为正式契约；重构 `resolveLiteral` 时测试会守住该行为。
+
 ### ADR-009：selector 指定覆盖层挂载目标
 
 **背景** 有时 loading 应覆盖的不是声明 `x-loading` 的元素本身，而是其内部某个区域（如表格体），甚至宿主外的全局元素（如模态框）。

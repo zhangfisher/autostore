@@ -1,6 +1,7 @@
 # ADR-0006：x-slot 指令（engine 边界 / 隔离快照 / 远程子引擎）
 
 - **状态**：Accepted（Round 5，grill-with-docs）｜⚠️ **部分调整（2026-08-07）**：决策 6/7 的 `task/slot/*` 事件已移除，x-slot remote 加载改用 x-loading 覆盖层表达加载态、不广播事件。见 glossary「task/slot 事件（已移除）」。
+- **续（2026-08-08，[ADR-0009](0009-store-or-state-input.md)）**：child engine 构造由 `new AutoTemplateEngine(host, new AutoStore({}))` 改为 `new AutoTemplateEngine(host, {})`——engine 自建 store（ADR-0009 决策 6）；决策 4 / 实现注记已据此同步。
 - **日期**：2026-08-06
 - **关联**：[glossary.md](../glossary.md)、[ADR-0001](0001-directive-kind-system.md)、[ADR-0003](0003-engine-event-bus.md)、[ADR-0004](0004-reactive-text-interpolation.md)、[ADR-0005](0005-x-html-directive.md)
 
@@ -56,8 +57,8 @@
 **有值即 remote 模式**（与无值 static 对立，二选一，无第三态）。`this.value` 是**反应式表达式**，经 `this.binding.watch(this.value, cb)` 订阅（与 x-text/x-html 完全同构——复用 `scope.watch` 路径/表达式双轨、`collectDependencies`、scheduler 合并；支持 scope 相对路径、x-data 局部变量、x-for item）。watch 返回的当前值 = url。
 
 **child engine 完全独立**：
-- **store**：`new AutoStore({})`——空状态，由 fetched HTML 内的 `x-data` 自治声明。**不复用父 engine.store**（否则父状态渗入 child、违反「边界」）。child engine 与父 engine 状态零耦合。
-- **挂载元素**：x-slot 宿主 `this.el` 本身。fetch 成功后 `this.el.innerHTML = html`，再 `new AutoTemplateEngine(this.el, new AutoStore({}))`——engine 构造期 `this.template = el.cloneNode(true)`（`engine.ts:97`）捕获已写入的 html 为模板，`compile()` 以之为输入重建。宿主元素身份不变（父 scope 仍持有它），仅其**子节点**被 child engine 接管。
+- **store**：经 `new AutoTemplateEngine(this.el, {})` 由 engine 自建空 store——空状态，由 fetched HTML 内的 `x-data` 自治声明。**不复用父 engine.store**（否则父状态渗入 child、违反「边界」）。child engine 与父 engine 状态零耦合。
+- **挂载元素**：x-slot 宿主 `this.el` 本身。fetch 成功后 `this.el.innerHTML = html`，再 `new AutoTemplateEngine(this.el, {})`——engine 构造期 `this.template = el.cloneNode(true)`（`engine.ts:97`）捕获已写入的 html 为模板，`compile()` 以之为输入重建。宿主元素身份不变（父 scope 仍持有它），仅其**子节点**被 child engine 接管。
 - **持有位置**：挂在指令实例 `this.childEngine`（非 scope 对象——scope 是通用容器、不该认识 engine 领域概念；指令 own 自己的资源、在自己 `destroy()` 回收，职责内聚 SRP）。
 
 **url 响应式驱动 child engine 生命周期**（watch cb）：
@@ -99,7 +100,7 @@ static 模式已剥除指令属性（决策 1），父 dispatcher 本就无视�
 
 - **α 跨 toggle 保内容（stash + adopt）**：与「`scope.destroy()` → child engine.destroy()」干净 teardown 正面冲突（scope 死于每次 toggle，α 要内容跨 toggle 幸存则不能在 scope 死时销毁 engine），须引入「detach 不销毁、仅 template 位置永久消失才销毁」的复杂分支。复杂度高、与用户选定的 teardown 机制互斥，否决（决策 3）。
 - **内容编译岛（内层一次性编译获响应式）**：与「隔离 DOM 空间」「engine 不碰内容」核心措辞冲突——engine 经 watcher 持续改写内容即非隔离。内层反应式需求由 remote 模式（独立 child engine）承接，非 static 职责。否决。
-- **复用父 store 的 child engine**：非「完全独立」、父状态渗入 child 违反 engine 边界。否决，child 自带 `new AutoStore({})`。
+- **复用父 store 的 child engine**：非「完全独立」、父状态渗入 child 违反 engine 边界。否决，child 经 `{}` 由 engine 自建空 store。
 - **注释锚点 modifier（移除宿主、内容置注释之间）**：YAGNI。x-slot 只有一种宿主策略（内容在宿主内、宿主始终保留），remote 模式也需要真实宿主挂载 child engine。代价：flex/grid 直接子项、`<table>`/`<select>` 内容模型等「不愿多一层包裹」的场景不支持——文档化为已知限制，不为此加机制。
 - **url 作字面量（非响应式）**：失去「换 state 即换子模板」能力，且与 x-text/x-html 的反应式值语义不一致。否决，url 经 `scope.watch` 求值。
 - **走父 store 状态位驱动 x-loading**：违反 engine 边界（父状态须能表达 child 的加载态）。否决——改用宿主 `x-loading` 属性 toggle（字面量模式静态显示、不绑 store，决策 6）。
@@ -131,7 +132,7 @@ static 模式已剥除指令属性（决策 1），父 dispatcher 本就无视�
   - 字段：`private mode: "static" | "remote"`；`private childEngine?: AutoTemplateEngine`；`private abortCtrl?: AbortController`。
   - `created()`：`this.engine.dispatcher.addSlotRoot(this.el)`；判定模式——`this.value` 空 → `mode="static"`（compile 填充）；非空 → `mode="remote"`，`const initial = this.binding.watch(this.value, ({ value: url }) => this._loadUrl(url))` 后 `this._loadUrl(initial)`（watch 返回初值即触发首次加载）。
   - `compile()`：仅 static——深克隆 `this.template.childNodes`，对每个克隆递归 `removeDirectives` 剥指令属性（节点本身 + `querySelectorAll("*")` 后代），`appendChild` 进 `this.el`；若子树含指令/`{{}}` → `logger.warn`。
-  - `_loadUrl(url)`：先 `_teardownEngine()`（abort + childEngine?.destroy() + `removeAttribute("x-loading")`）；`url` 假/空 → `el.replaceChildren()` return；否则 `el.setAttribute("x-loading", "true")`（复用 x-loading，决策 6）+ `broadcast("task/slot/started", { url })` + `fetch(url, { signal: myCtrl.signal })` → 成功（`res.ok`）→ `el.removeAttribute("x-loading")` + `el.innerHTML = await res.text()` + `this.childEngine = new (this.engine.constructor)(this.el, new AutoStore({}))`（经 `this.engine.constructor` 创建同类实例，避 `import AutoTemplateEngine` 循环依赖）→ `broadcast("task/slot/resolved", { url })`；失败 → `removeAttribute("x-loading")` + 错误占位（`.x-slot-error`）+ `logger.error` + `broadcast("task/slot/rejected", { url })`。每次 `fetch` 用独立 AbortController，await 后校验 `myCtrl.signal.aborted` 丢弃被取代/销毁的过期结果。
+  - `_loadUrl(url)`：先 `_teardownEngine()`（abort + childEngine?.destroy() + `removeAttribute("x-loading")`）；`url` 假/空 → `el.replaceChildren()` return；否则 `el.setAttribute("x-loading", "true")`（复用 x-loading，决策 6）+ `broadcast("task/slot/started", { url })` + `fetch(url, { signal: myCtrl.signal })` → 成功（`res.ok`）→ `el.removeAttribute("x-loading")` + `el.innerHTML = await res.text()` + `this.childEngine = new (this.engine.constructor)(this.el, {})`（经 `this.engine.constructor` 创建同类实例，避 `import AutoTemplateEngine` 循环依赖）→ `broadcast("task/slot/resolved", { url })`；失败 → `removeAttribute("x-loading")` + 错误占位（`.x-slot-error`）+ `logger.error` + `broadcast("task/slot/rejected", { url })`。每次 `fetch` 用独立 AbortController，await 后校验 `myCtrl.signal.aborted` 丢弃被取代/销毁的过期结果。
   - `_teardownEngine()`：`abortCtrl?.abort()` + `childEngine?.destroy()` + `el.removeAttribute("x-loading")`。
   - `destroy()`：`_teardownEngine()` + `this.engine.dispatcher.removeSlotRoot(this.el)`。
 - **`directives/runtime/dispatcher.ts`**：加 `private slotRoots = new Set<HTMLElement>()`；`addSlotRoot(el)`/`removeSlotRoot(el)`；私有 `_inSlotRoot(el): boolean`（`slotRoots.size && [...slotRoots].some(r => r !== el && r.contains(el))`——**严格后代**，不含宿主自身，决策 8）；`collectEls` 的 `visit` 与 `_handle` 的 addedNodes/attributes 分支对候选 el 过滤盲区。

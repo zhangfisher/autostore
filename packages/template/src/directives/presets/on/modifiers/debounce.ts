@@ -23,7 +23,11 @@ export default {
             if (timer) clearTimeout(timer);
             timer = setTimeout(() => {
                 timer = null;
-                next(event);
+                // 兜底吞错（ADR-0013）：next 抛错（action 同步失败经 feedback 冒泡，或无 wrapper 直接冒泡）
+                // 时 eval.ts 已 logger，此处吞防 setTimeout 内 uncaught
+                try {
+                    next(event);
+                } catch {}
             }, ms);
         };
     },

@@ -32,7 +32,7 @@ export function createEvalHandler(
     el: HTMLElement,
     directiveOptions: Record<string, any> | undefined,
     hostOptions: Record<string, any> | null | undefined,
-): (event: Event) => void {
+): (event: Event) => any {
     const trimmed = expr.trim();
     const match = trimmed.match(ACTION_RE);
 
@@ -56,6 +56,8 @@ export function createEvalHandler(
 
     // 指令配置聚合视图（ADR-0007）：created 时构造一次，闭包捕获，事件触发时复用
     const $options = createDirectiveOptions(directiveOptions, hostOptions);
+    // 返回值冒泡（ADR-0008）：action/表达式分支的返回值经管道透传，供 .feedback 等 wrapper 捕获
+    // （如 async action 返回的 Promise）。同步抛错经 catch logger 后 rethrow，供 .feedback 检测同步失败（ADR-0013）。
     return (event) => {
         // 聚合数据视图：localScope + dataScope + 全局 state，供表达式 with 求值与 ctx.data（写入透传 dataScope）
         const data = scope.getScopeContext();
@@ -74,16 +76,18 @@ export function createEvalHandler(
                 };
                 try {
                     const args = argsFn ? argsFn(event, data) : [];
-                    action.call(ctx, ...args);
+                    return action.call(ctx, ...args);
                 } catch (e: any) {
+                    // logger 后 rethrow（ADR-0013）：让 .feedback 等 wrapper 检测同步失败。
+                    // 冒泡错误由 OnDirective finalHandler / debounce setTimeout 兜底吞掉（防 uncaught）。
                     engine.logger.error(`x-on action "${name}" 执行失败: ${e?.message ?? e}`);
+                    throw e;
                 }
-                return;
             }
         }
         // 2) 表达式兜底：覆盖 alert(1)、全局/模板函数 pay(1)、count++ 等
         try {
-            exprGetter(event, data);
+            return exprGetter(event, data);
         } catch (e: any) {
             engine.logger.error(`x-on 表达式 "${expr}" 求值失败: ${e?.message ?? e}`);
         }

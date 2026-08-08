@@ -19,6 +19,10 @@ import down from "./down";
 import left from "./left";
 import right from "./right";
 import middle from "./middle";
+import feedback from "./feedback";
+import pending from "./pending";
+import resolved from "./resolved";
+import rejected from "./rejected";
 
 /**
  * 内置修饰符注册表：name → descriptor。
@@ -47,4 +51,8 @@ export const MODIFIERS: Record<string, ModifierDesc> = {
     left,
     right,
     middle,
+    feedback,
+    pending,
+    resolved,
+    rejected,
 };

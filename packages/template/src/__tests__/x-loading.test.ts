@@ -154,6 +154,17 @@ describe("x-loading 运行时通道（Runtime 指令 / observer）", () => {
         expect(overlayOf(h)).toBeNull();
     });
 
+    test("命令式 overlay 模式：对象配置无 visible → 属性存在即显示（ADR-0008 决策 8，feedback 依赖）", async () => {
+        // 初始 x-loading 对象配置省略 visible → resolveLiteral("")===true → 静态显示 + 配置渲染。
+        // feedback 的 loading 配置对象（命令式 setAttribute 注入「无 visible 的配置」）复用此契约，故锁定。
+        // 「移除即隐藏」由上条 removeAttribute 测试覆盖（属性删 → unmount → overlay 移除）。
+        const { root } = mount(`<div id="h" x-loading="{ message:'保存中', color:'red' }"></div>`, {});
+        const h = root.querySelector("#h")!;
+        const overlay = overlayOf(h);
+        expect(overlay).not.toBeNull();
+        expect(overlay!.querySelector(".x-loading-message")!.textContent).toBe("保存中");
+    });
+
     test("元素从 DOM 移除 → observer 自动卸载（无泄露）", async () => {
         const { root, store } = mount(`<div id="h" x-loading="l"></div>`, { l: true });
         const h = root.querySelector("#h")!;
