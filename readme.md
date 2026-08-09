@@ -1,3 +1,5 @@
+
+
 # AutoStore
 
 [![npm version](https://badge.fury.io/js/autostore.svg)](https://badge.fury.io/js/autostore)
@@ -28,6 +30,8 @@ npm install autostore
 yarn add autostore
 pnpm add autostore
 ```
+
+- For React projects, install the official adapter: `npm install @autostorejs/react`
 
 ## Get-started
 
