@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-data.global · 合并进全局</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- x-data.global：数据合并进全局 store，所有 scope 可见，可直接改 engine.state -->
+        <div class="demo-app" x-data.global="{ theme: 'green', lang: 'zh' }">
+            <p>
+                主题：<span class="val" x-text="theme"></span>，语言：<span class="val" x-text="lang"></span>
+            </p>
+            <button class="btn" @click="swap">切换主题</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {},
+                {
+                    actions: {
+                        // theme 经 x-data.global 注入全局，直接改 engine.state 即可
+                        swap: () => {
+                            engine.state.theme = engine.state.theme === "green" ? "blue" : "green";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

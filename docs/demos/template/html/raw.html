@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-html · .raw 原样写入</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- .raw 跳过消毒，原样写入受信 HTML（含内联 style 等都被保留） -->
+        <div class="demo-app">
+            <p class="muted">受信内容（.raw 原样写入）：</p>
+            <div class="card" x-html.raw="trusted"></div>
+            <button class="btn" @click="swap">切换受信片段</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { trusted: "<strong style='color:#42b883'>受信内容 A</strong>" },
+                {
+                    actions: {
+                        swap: () => {
+                            engine.state.trusted =
+                                "<em style='color:#e07000'>受信内容 B</em>";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

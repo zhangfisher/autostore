@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-text · 文本插值</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 文本节点中用 {{ }} 插值：路径、表达式、多段混排，效果与 x-text 等价 -->
+        <div class="demo-app">
+            <p>商品：{{ order.name }}，单价 {{ order.price }} 元</p>
+            <p>合计：{{ order.price * order.count }} 元（共 {{ order.count }} 件）</p>
+            <button class="btn" @click="add">加购一件</button>
+            <button class="btn" @click="raise">增加价格</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { order: { name: "AutoStore 手册", price: 18, count: 3 } },
+                {
+                    actions: {
+                        add: () => {
+                            engine.state.order.count++;
+                        },
+                        raise: () => {
+                            engine.state.order.price++;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-bind · class 绑定</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- :class 支持对象 / 数组 / 字符串，按 diff 增量更新 -->
+        <div class="demo-app">
+            <p :class="{ val: on, muted: !on }">对象 class：{{ on ? "启用" : "禁用" }}</p>
+            <p :class="['card', tag]">数组 class（card + {{ tag }}）</p>
+            <p :class="cls">字符串 class（{{ cls }}）</p>
+            <button class="btn" @click="toggle">切换</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { on: true, tag: "tag", cls: "card" },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.on = !engine.state.on;
+                            engine.state.tag = engine.state.tag === "tag" ? "tag-warn" : "tag";
+                            engine.state.cls = engine.state.cls === "card" ? "val" : "card";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

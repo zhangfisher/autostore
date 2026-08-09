@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-html · 默认消毒</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- x-html 默认消毒：script / on* 事件属性被剥除，安全渲染 -->
+        <div class="demo-app">
+            <p class="muted">下方内容由 x-html 渲染：</p>
+            <div class="card" x-html="content"></div>
+            <button class="btn" @click="inject">注入含恶意脚本的 HTML</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { content: "<p>初始 <strong>富文本</strong></p>" },
+                {
+                    actions: {
+                        // script 与 onerror 都被默认消毒剥除：不弹窗、安全显示
+                        inject: () => {
+                            engine.state.content =
+                                '<p>注入成功</p><script>alert("xss")<\/script><img src="x" onerror="alert(1)" alt="坏图">';
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

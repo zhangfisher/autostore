@@ -90,3 +90,54 @@ describe("x-html 原始 HTML 绑定", () => {
 </div>`);
     });
 });
+
+describe("x-html 空值占位与 .hide（ADR-0014）", () => {
+    test("empty 占位：空值渲染指定 HTML（过 sanitize，安全标签保留），可随状态切换", async () => {
+        const { root, store } = mount(`<div x-html="h" x-html-options="{empty:'<i>无</i>'}"></div>`, {
+            h: null,
+        });
+        expect(root).toEqualHTML(`<div>
+  <div><i>无</i></div>
+</div>`);
+        store.state.h = "<b>x</b>";
+        await nextTick();
+        expect(root).toEqualHTML(`<div>
+  <div><b>x</b></div>
+</div>`);
+        store.state.h = null;
+        await nextTick();
+        expect(root).toEqualHTML(`<div>
+  <div><i>无</i></div>
+</div>`);
+    });
+
+    test("empty 占位串也过 sanitize：危险属性被剥（决策 3）", async () => {
+        const { root } = mount(`<div x-html="h" x-html-options="{empty:'<img src=x onerror=alert(1)>'}"></div>`, {
+            h: null,
+        });
+        expect(root).toEqualHTML(`<div>
+  <div><img src="x"></div>
+</div>`);
+    });
+
+    test(".raw 下 empty 占位串原样：危险属性保留（与主值共用 sanitize 判定）", async () => {
+        const { root } = mount(
+            `<div x-html.raw="h" x-html-options="{empty:'<img src=x onerror=alert(1)>'}"></div>`,
+            { h: null },
+        );
+        expect(root).toEqualHTML(`<div>
+  <div><img src="x" onerror="alert(1)"></div>
+</div>`);
+    });
+
+    test(".hide on x-html：空值隐藏宿主，恢复还原 display", async () => {
+        const { root, store } = mount(`<div style="display:flex" x-html.hide="h"></div>`, { h: null });
+        const el = root.firstElementChild as HTMLElement;
+        expect(el.style.display).toBe("none");
+        expect(el.innerHTML).toBe(""); // .hide 优先，不写内容
+        store.state.h = "<b>x</b>";
+        await nextTick();
+        expect(el.style.display).toBe("flex");
+        expect(el.innerHTML).toBe("<b>x</b>");
+    });
+});

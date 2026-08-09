@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-text · 空值占位 empty</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- empty 指定空值占位文案；emptyValues 追加「也算空」的值（附加到默认集 [null,undefined,NaN]） -->
+        <div class="demo-app">
+            <p>
+                库存：<span class="val" x-text="stock" x-text-options="{ empty: '暂无数据' }"></span>
+            </p>
+            <p>
+                评分：<span class="val" x-text="score" x-text-options="{ empty: '未评分', emptyValues: [0] }"></span>
+            </p>
+            <button class="btn" @click="cycle">切换值</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    stock: null,
+                    score: 0,
+                },
+                {
+                    actions: {
+                        cycle: () => {
+                            // stock：null → 100 → null（null 命中默认空值集，显示「暂无数据」）
+                            engine.state.stock = engine.state.stock == null ? 100 : null;
+                            // score：0 → 95 → 0（emptyValues:[0] 让 0 也算空，显示「未评分」）
+                            engine.state.score = engine.state.score === 0 ? 95 : 0;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

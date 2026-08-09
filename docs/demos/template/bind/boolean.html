@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-bind · 布尔属性</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- :disabled / :checked：值为真 setAttribute、为假 removeAttribute -->
+        <div class="demo-app">
+            <p>
+                <button class="btn" :disabled="saving" @click="save">{{ saving ? "保存中…" : "保存" }}</button>
+            </p>
+            <p>
+                <label>
+                    <input class="input" type="checkbox" :checked="agree" @click="check" />
+                    同意条款（当前：{{ agree ? "是" : "否" }}）
+                </label>
+            </p>
+            <button class="btn btn-secondary" :disabled="!agree">下一步（未同意则禁用）</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { saving: false, agree: false },
+                {
+                    actions: {
+                        save: async () => {
+                            engine.state.saving = true;
+                            await new Promise((r) => setTimeout(r, 800));
+                            engine.state.saving = false;
+                        },
+                        check: () => {
+                            engine.state.agree = !engine.state.agree;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

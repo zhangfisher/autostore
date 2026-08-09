@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-text · 绑定状态路径</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- x-text 的值是一个状态路径，引擎订阅该路径 -->
+        <div class="demo-app">
+            <p>姓名：<span class="val" x-text="user.name"></span></p>
+            <p>城市：<span class="val" x-text="user.address.city"></span></p>
+            <p>邮编：<span class="val" x-text="user.address.zip"></span></p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            new AutoTemplateEngine(document.querySelector(".demo-app"), {
+                user: { name: "张三", address: { city: "杭州", zip: "310000" } },
+            });
+        </script>
+    </body>
+</html>

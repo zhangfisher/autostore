@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>指令配置 · 两层回退</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 演示指令选项与宿主选项的两层回退：缺失才回退，不合并不覆盖 -->
+        <div class="demo-app">
+            <p>
+                仅宿主选项：<span x-options="{ empty: '（宿主占位）' }" x-text="stock"></span>
+            </p>
+            <p>
+                指令选项直给：<span x-text="score" x-text-options="{ empty: '【指令占位】' }"></span>
+            </p>
+            <p>
+                两者并存（指令命中、宿主阻断）：<span x-options="{ empty: '宿主' }" x-text="count" x-text-options="{ empty: '指令' }"></span>
+            </p>
+            <button class="btn" @click="toggle">切换 空 / 有值</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { stock: "iPhone", score: 95, count: 3 },
+                {
+                    actions: {
+                        toggle: () => {
+                            // 三者同时在 有值 / null 间切换，观察占位文案来源
+                            const empty = engine.state.stock == null;
+                            engine.state.stock = empty ? "iPhone" : null;
+                            engine.state.score = empty ? 95 : null;
+                            engine.state.count = empty ? 3 : null;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

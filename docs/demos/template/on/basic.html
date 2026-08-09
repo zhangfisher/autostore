@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-on · 事件与修饰符</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- @click / .once / .ctrl / @keydown.enter -->
+        <div class="demo-app">
+            <p>计数：<strong class="val">{{ count }}</strong></p>
+            <p>
+                <button class="btn" @click="inc">+1</button>
+                <button class="btn" @click.once="onceFn">.once（仅一次）</button>
+                <button class="btn" @click.ctrl="ctrlClick">.ctrl（需 Ctrl+点击）</button>
+            </p>
+            <p>
+                回车提交：
+                <input class="input" @keydown.enter="onEnter($event)" placeholder="输入后按回车" />
+            </p>
+            <p class="muted">{{ log }}</p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { count: 0, log: "" },
+                {
+                    actions: {
+                        inc: () => {
+                            engine.state.count++;
+                            engine.state.log = "inc +1";
+                        },
+                        onceFn: () => {
+                            engine.state.log = "once 触发（再点无效）";
+                        },
+                        ctrlClick: () => {
+                            engine.state.log = "Ctrl+点击命中";
+                        },
+                        onEnter: ($event) => {
+                            engine.state.log = "回车提交：" + $event.target.value;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

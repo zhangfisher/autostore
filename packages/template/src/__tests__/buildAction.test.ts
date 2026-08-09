@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-this-alias
 import { describe, expect, test } from "bun:test";
 import "./setup";
 import { mount, nextTick } from "./helpers";
@@ -31,7 +32,9 @@ describe("actions 注册时自动包装（buildAction → actions/<name>/*）", 
             throw new Error("oops");
         };
         engine.on("actions/boom/pending", () => events.push("pending"));
-        engine.on("actions/boom/rejected", (m: any) => events.push(`rejected:${m.payload.error.message}`));
+        engine.on("actions/boom/rejected", (m: any) =>
+            events.push(`rejected:${m.payload.error.message}`),
+        );
         // 触发：buildAction 内部 then(_, onRejected) 消费 reject → 不产生 unhandledRejection
         root.querySelector("button")!.click();
         await nextTick();
@@ -56,7 +59,9 @@ describe("actions 注册时自动包装（buildAction → actions/<name>/*）", 
             throw new Error("oops");
         };
         engine.on("actions/boom/pending", () => events.push("pending"));
-        engine.on("actions/boom/rejected", (m: any) => events.push(`rejected:${m.payload.error.message}`));
+        engine.on("actions/boom/rejected", (m: any) =>
+            events.push(`rejected:${m.payload.error.message}`),
+        );
         // buildAction rethrow 前已广播 rejected；rethrow 的错误被 x-on eval.ts try/catch 捕获记日志（不冒泡到浏览器）
         root.querySelector("button")!.click();
         await nextTick();
@@ -65,9 +70,13 @@ describe("actions 注册时自动包装（buildAction → actions/<name>/*）", 
 
     test("构造时 options.actions 自动包装", async () => {
         const events: string[] = [];
-        const { root, engine } = mount(`<button @click="init">x</button>`, {}, {
-            actions: { init: async () => "ready" },
-        });
+        const { root, engine } = mount(
+            `<button @click="init">x</button>`,
+            {},
+            {
+                actions: { init: async () => "ready" },
+            },
+        );
         engine.on("actions/init/resolved", (m: any) => events.push(m.payload.result));
         root.querySelector("button")!.click();
         await nextTick();
@@ -122,9 +131,15 @@ describe("actions 注册时自动包装（buildAction → actions/<name>/*）", 
         );
         engine.on("actions/doA/resolved", () => busEvents.push("A"));
         engine.on("actions/doB/resolved", () => busEvents.push("B"));
-        root.querySelector("form")!.addEventListener("action:doA", (e: any) => domA.push(e.detail.phase));
-        root.querySelector("form")!.addEventListener("action:doB", (e: any) => domB.push(e.detail.phase));
+        root.querySelector("form")!.addEventListener("action:doA", (e: any) =>
+            domA.push(e.detail.phase),
+        );
+        root.querySelector("form")!.addEventListener("action:doB", (e: any) =>
+            domB.push(e.detail.phase),
+        );
+        //@ts-ignore
         root.querySelector("button.a")!.click();
+        //@ts-ignore
         root.querySelector("button.b")!.click();
         await nextTick();
         // 多个 action 均注册、独立触发；局部只 DOM 冒泡、不进总线（ADR-0012）
@@ -135,7 +150,10 @@ describe("actions 注册时自动包装（buildAction → actions/<name>/*）", 
 
     test("通配 action 通配订阅抓任意 action 开始（payload.name 区分）", async () => {
         const names: string[] = [];
-        const { root, engine } = mount(`<button @click="a">a</button><button @click="b">b</button>`, {});
+        const { root, engine } = mount(
+            `<button @click="a">a</button><button @click="b">b</button>`,
+            {},
+        );
         engine.actions.a = async () => {};
         engine.actions.b = async () => {};
         engine.on("actions/*/pending", (m: any) => names.push(m.payload.name));

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-bind · style 绑定</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- :style 对象（驼峰 key）或字符串，随状态切换 -->
+        <div class="demo-app">
+            <p :style="msg.style">{{ msg.text }}</p>
+            <button class="btn" @click="toggle">切换样式（正常 / 警告）</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const normal = { color: "#42b883", fontSize: "16px" };
+            const warn = { color: "#e07000", fontWeight: "bold", fontSize: "18px" };
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { msg: { text: "这条消息的样式是响应式的", style: normal } },
+                {
+                    actions: {
+                        toggle: () => {
+                            const isNormal = engine.state.msg.style === normal;
+                            engine.state.msg.style = isNormal ? warn : normal;
+                            engine.state.msg.text = isNormal ? "警告样式" : "正常样式";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

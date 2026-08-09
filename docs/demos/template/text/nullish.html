@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-text · null 与 undefined 渲染为空</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- null / undefined 渲染为空串，而非 "null" / "undefined" -->
+        <div class="demo-app">
+            <p>
+                昵称：<span class="val" x-text="user.nickname"></span><span class="empty" x-text="user.nickname == null ? '（空）' : ''"></span>
+            </p>
+            <button class="btn" @click="toggle">切换昵称</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { user: { nickname: undefined } },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.user.nickname =
+                                engine.state.user.nickname == null ? "老张" : undefined;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

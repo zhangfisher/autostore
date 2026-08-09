@@ -13,7 +13,7 @@ const store = new AutoStore({
 
 
 const el= document.querySelector("#app")
-const app  = new AutoTemplate(el,store,{...选项...})
+const app  = new AutoTemplateEngine(el,store,{...选项...})
 
 app.start()
 

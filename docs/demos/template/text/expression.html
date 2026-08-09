@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-text · 绑定表达式</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- x-text 的值可以是任意表达式：算术、拼接、三元 -->
+        <div class="demo-app">
+            <p>合计：<span class="val" x-text="order.price * order.count"></span> 元</p>
+            <p>姓名：<span class="val" x-text="user.first + ' ' + user.last"></span></p>
+            <p>库存：<span class="val" x-text="order.stock > 0 ? '有货' : '缺货'"></span></p>
+            <button class="btn" @click="toggle">切换库存</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    user: { first: "张", last: "三" },
+                    order: { price: 18, count: 3, stock: 5 },
+                },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.order.stock = engine.state.order.stock > 0 ? 0 : 5;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

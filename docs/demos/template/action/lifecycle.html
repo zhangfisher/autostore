@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>动作 · 异步生命周期</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 异步 action：pending 在执行前、resolved 在完成后，均经总线广播 -->
+        <div class="demo-app">
+            <p>
+                状态：<span class="val" x-text="status"></span>
+            </p>
+            <button class="btn" @click="save">保存（async）</button>
+            <p>动作生命周期（订阅 actions/save/*）：</p>
+            <pre class="pre" x-text="log"></pre>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { status: "空闲", log: "" },
+                {
+                    actions: {
+                        save: async () => {
+                            engine.state.status = "保存中...";
+                            await new Promise((r) => setTimeout(r, 800));
+                            engine.state.status = "已保存";
+                        },
+                    },
+                },
+            );
+            // 订阅总线：观察 action 的统一生命周期
+            const logs = [];
+            const push = (msg) => {
+                logs.push(msg);
+                engine.state.log = logs.join("\n");
+            };
+            engine.on("actions/save/pending", () => push("pending  → 保存开始"));
+            engine.on("actions/save/resolved", () => push("resolved → 保存完成"));
+        </script>
+    </body>
+</html>

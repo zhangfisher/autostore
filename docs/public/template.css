@@ -1,0 +1,159 @@
+/**
+ * AutoTemplate 文档 demo 共享样式
+ *
+ * 各 demo 经 <link rel="stylesheet" href="/autostore/template.css"> 引入，
+ * 直接使用其中的组件类（.btn / .input / .val / .card 等），避免每个 demo 重复声明样式。
+ */
+
+/* 容器 */
+.demo-app {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 16px;
+    line-height: 1.8;
+    color: #333;
+}
+
+/* 按钮 */
+.btn {
+    padding: 6px 14px;
+    margin: 8px 8px 0 0;
+    cursor: pointer;
+    background: #42b883;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background 0.15s;
+}
+.btn:hover {
+    background: #369870;
+}
+.btn:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+}
+.btn-secondary {
+    background: #6c757d;
+}
+.btn-secondary:hover {
+    background: #5a6268;
+}
+.btn-danger {
+    background: #e07000;
+}
+.btn-danger:hover {
+    background: #c25e00;
+}
+.btn-sm {
+    padding: 3px 8px;
+    font-size: 12px;
+}
+
+/* 输入框 */
+.input {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+}
+.input:focus {
+    border-color: #42b883;
+}
+
+/* 文本强调 */
+.val {
+    color: #42b883;
+    font-weight: 600;
+}
+.val-lg {
+    color: #42b883;
+    font-weight: 600;
+    font-size: 1.2em;
+}
+.empty {
+    color: #999;
+    font-style: italic;
+}
+.muted {
+    color: #999;
+}
+.label {
+    display: inline-block;
+    min-width: 5em;
+    color: #666;
+}
+
+/* 布局 */
+.row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.card {
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+    background: #fff;
+}
+
+/* 徽标 */
+.tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    background: #e8f5ee;
+    color: #42b883;
+}
+.tag-warn {
+    background: #fef3e0;
+    color: #e07000;
+}
+.tag-danger {
+    background: #fde8e8;
+    color: #c0392b;
+}
+
+/* 列表 */
+.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.list li {
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* 表格 */
+.table {
+    border-collapse: collapse;
+}
+.table th,
+.table td {
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    text-align: left;
+}
+.table th {
+    background: #f8f8f8;
+}
+
+/* 调试输出 */
+.pre {
+    background: #f6f8fa;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+}

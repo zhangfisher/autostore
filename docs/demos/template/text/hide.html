@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-text · .hide 空值隐藏</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- .hide：user.name 为空时整张卡片 display:none 消失；有值时显示并还原 display:flex -->
+        <div class="demo-app">
+            <div class="card" style="display:flex" x-text.hide="user.name"></div>
+            <p class="muted" x-text="user.name == null ? '（卡片已隐藏）' : '（卡片已显示）'"></p>
+            <button class="btn" @click="toggle">切换用户名</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    user: { name: null },
+                },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.user.name = engine.state.user.name == null ? "张三" : null;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

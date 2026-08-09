@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-on · feedback 执行反馈</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            /* feedback 默认类：pending / resolved / rejected */
+            .pending {
+                opacity: 0.6;
+                cursor: progress;
+            }
+            .resolved {
+                box-shadow: 0 0 0 2px #42b88355;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- .feedback：动作 pending/resolved 时给按钮加反馈类 -->
+        <div class="demo-app">
+            <p>
+                <button class="btn" @click.feedback="save">保存（async + feedback）</button>
+            </p>
+            <p>状态：<span class="val" x-text="status"></span></p>
+            <p class="muted">观察按钮：点击后短暂半透明（pending）、完成后绿色描边（resolved）。</p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { status: "空闲" },
+                {
+                    actions: {
+                        save: async () => {
+                            engine.state.status = "保存中…";
+                            await new Promise((r) => setTimeout(r, 900));
+                            engine.state.status = "已保存";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

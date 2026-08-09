@@ -213,6 +213,7 @@
         "@types/bun": "^1.3.14",
         "autostore": "workspace:*",
         "happy-dom": "^20.10.6",
+        "tsup": "^8.5.1",
       },
       "peerDependencies": {
         "autostore": "workspace:*",

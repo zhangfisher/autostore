@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · 命令式 overlay</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 命令式 overlay：setAttribute('x-loading') 显示、removeAttribute 隐藏 -->
+        <div class="demo-app">
+            <p>
+                <button class="btn" @click="load">加载数据（显示 1 秒覆盖层）</button>
+            </p>
+            <div id="panel" class="card">
+                数据展示区。点击按钮后，本区域会被加载覆盖层遮住约 1 秒。
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {},
+                {
+                    actions: {
+                        load: async () => {
+                            const panel = document.querySelector("#panel");
+                            // 属性存在即显示覆盖层，配置经 JSON 传入
+                            panel.setAttribute(
+                                "x-loading",
+                                JSON.stringify({ message: "加载中…" }),
+                            );
+                            await new Promise((r) => setTimeout(r, 1000));
+                            panel.removeAttribute("x-loading");
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

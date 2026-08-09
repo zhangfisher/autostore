@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>动态模板 · patch 子树重建</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- #box 是 x-patch 哨兵 scope，可被 engine.patch 定位 -->
+        <div class="demo-app">
+            <p>
+                当前 content：<span class="val" x-text="content"></span>
+            </p>
+            <div id="box" class="card" x-patch>
+                <p x-text="content"></p>
+            </div>
+            <button class="btn" @click="rebuild">重建 #box 子树</button>
+            <button class="btn" @click="changeMsg">只改 content（不重建）</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { content: "初始内容", count: 0 },
+                {
+                    actions: {
+                        // patch：就地改 #box 模板子树，返回 undefined → 子树重建
+                        rebuild: () => {
+                            engine.patch("#box", (el) => {
+                                engine.state.count += 1;
+                                el.innerHTML =
+                                    `<p x-text="content"></p>` +
+                                    `<p class="muted">（子树第 ${engine.state.count} 次重建）</p>`;
+                            });
+                        },
+                        // 普通响应式：只改值，#box 内外的 x-text 自动刷新，不重建结构
+                        changeMsg: () => {
+                            engine.state.content = "更新于 #" + engine.state.count;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

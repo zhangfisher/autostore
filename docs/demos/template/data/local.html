@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-data · 私有响应式域</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- x-data 默认模式：私有响应式域，子树可见、字段级更新 -->
+        <div class="demo-app" x-data="{ msg: '你好', times: 1 }">
+            <p>{{ msg }}（第 {{ times }} 次）</p>
+            <button class="btn" @click="bump">+1</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const root = document.querySelector(".demo-app");
+            const engine = new AutoTemplateEngine(root, {}, {
+                actions: {
+                    // 普通函数拿 this（OnEvalContext）；this.data 含局部 dataScope
+                    bump: function () {
+                        engine.data(root, { times: this.data.times + 1 });
+                    },
+                },
+            });
+        </script>
+    </body>
+</html>

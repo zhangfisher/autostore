@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>响应式 · 文本与属性插值</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 文本插值 + 属性插值（href），切换用户后全部响应式刷新 -->
+        <div class="demo-app">
+            <p>{{ user.name }}（{{ user.age }} 岁）</p>
+            <p>主页：<a href="/users/{{ user.id }}">/users/{{ user.id }}</a></p>
+            <p>角色：<span class="tag" x-text="user.role"></span></p>
+            <button class="btn" @click="swap">切换用户</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const users = [
+                { id: 101, name: "张三", age: 28, role: "admin" },
+                { id: 202, name: "李四", age: 35, role: "guest" },
+            ];
+            let i = 0;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { user: { ...users[0] } },
+                {
+                    actions: {
+                        swap: () => {
+                            i++;
+                            <!-- engine.state.user = users[i]; -->
+                            Object.assign(engine.state.user, users[i % 2 === 0 ? 0 : 1]);
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

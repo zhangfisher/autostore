@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-bind · 普通属性</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- :href / :title / :src / :alt 绑定普通属性 -->
+        <div class="demo-app">
+            <p>
+                <a :href="link.url" :title="link.tip">{{ link.text }}</a>
+            </p>
+            <p>
+                <img :src="img.src" :alt="img.alt" style="width: 64px; vertical-align: middle" />
+                <span class="muted">{{ img.alt }}</span>
+            </p>
+            <button class="btn" @click="swap">切换内容</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    link: {
+                        url: "https://github.com/zhangfisher/autostore",
+                        text: "AutoStore",
+                        tip: "打开仓库",
+                    },
+                    img: {
+                        src: "https://api.dicebear.com/7.x/identicon/svg?seed=A",
+                        alt: "头像 A",
+                    },
+                },
+                {
+                    actions: {
+                        swap: () => {
+                            engine.state.link = {
+                                url: "https://vitepress.dev",
+                                text: "VitePress",
+                                tip: "打开文档",
+                            };
+                            engine.state.img = {
+                                src: "https://api.dicebear.com/7.x/identicon/svg?seed=B",
+                                alt: "头像 B",
+                            };
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

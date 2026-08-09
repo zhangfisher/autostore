@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-for · 基础列表</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- ul 是容器，li 是项模板；:key 在容器上声明 -->
+        <div class="demo-app">
+            <p>书单（{{ books.length }} 本）：</p>
+            <ul class="list" x-for="book of books" :key="book.id">
+                <li>
+                    #{{ book.id }}
+                    <strong class="val">{{ book.title }}</strong>
+                    — {{ book.author }}
+                </li>
+            </ul>
+            <button class="btn" @click="add">末尾添加</button>
+            <button class="btn" @click="removeFirst">移除首项</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            let nextId = 3;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    books: [
+                        { id: 1, title: "AutoStore", author: "wxz" },
+                        { id: 2, title: "FlexState", author: "wxz" },
+                    ],
+                },
+                {
+                    actions: {
+                        add: () => {
+                            engine.state.books.push({
+                                id: nextId++,
+                                title: "新书 " + nextId,
+                                author: "新作者",
+                            });
+                        },
+                        removeFirst: () => {
+                            engine.state.books.shift();
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

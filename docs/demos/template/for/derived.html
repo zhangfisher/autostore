@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-for · 循环派生变量</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- $index / $odd / $end 等派生变量在每项作用域自动可用 -->
+        <div class="demo-app">
+            <ul class="list" x-for="item of items">
+                <li :class="$odd ? 'val' : 'muted'">
+                    第 {{ $index + 1 }} 项：{{ item }}<span x-if="!$end">；</span>
+                </li>
+            </ul>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            new AutoTemplateEngine(document.querySelector(".demo-app"), {
+                items: ["甲", "乙", "丙", "丁"],
+            });
+        </script>
+    </body>
+</html>

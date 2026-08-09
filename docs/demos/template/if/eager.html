@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-if · eager 条件渲染</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- eager：true 编译子树，false 移除子树并销毁 watcher -->
+        <div class="demo-app">
+            <button class="btn" @click="toggle">{{ show ? "隐藏" : "显示" }}详情</button>
+            <div x-if="show">
+                <p class="card">这是详情内容。隐藏时整段子树会从 DOM 移除、watcher 销毁。</p>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { show: false },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.show = !engine.state.show;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>
