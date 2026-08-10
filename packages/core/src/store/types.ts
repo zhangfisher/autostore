@@ -53,6 +53,11 @@ export interface StateOperate<Value = any, Parent = any> {
      * 当getter执行出错时携带此错误
      */
     error?: Error;
+    /**
+     * 该操作是否由后代广播派生（整体替换结构化值时，为子树内已订阅后代生成的独立操作）。
+     * 下游可据此识别广播派生事件，消解重复或语义冲突。详见 ADR-0001。
+     */
+    broadcast?: boolean;
 }
 
 type ToArray<T> = T | T[];

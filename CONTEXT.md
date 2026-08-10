@@ -1,0 +1,32 @@
+# AutoStore
+
+一个基于 Proxy 的响应式状态管理库：状态树的所有读写删除操作都被捕获为「操作(Operate)」，通过事件总线广播给订阅者，驱动计算属性与监听器。
+
+## Language
+
+**State（状态）**:
+被 Proxy 包装的响应式对象树，所有变化都经操作事件对外通知。
+_Avoid_: store data, model
+
+**Operate / StateOperate（操作）**:
+对状态某路径的一次原子变更描述，包含 `type`（get/set/delete/insert/update/remove/batch）、`path`、`value`、`oldValue` 等。是整个响应式系统的基本事件载荷。
+_Avoid_: event, action, mutation（这些词保留给更上层概念）
+
+**Operate Type（操作类型）**:
+操作所属的变更族——对象族 `set`/`delete`，数组族 `insert`/`update`/`remove`，以及读 `get` 与聚合 `batch`。后代监听器收到的类型由「该后代路径实际发生了什么」推导，而非继承父操作类型。
+
+**Watch（监听）**:
+对一条或多条状态路径的订阅；当这些路径（或其子树，见「子树广播」）发生变更时回调。订阅路径支持通配符 `*`（一层）与 `**`（多层）。
+_Avoid_: listener, observer（observer 另有含义）
+
+**Observer（观察者对象）**:
+挂载在状态树某路径上的动态值对象，分 computed（计算属性）与 watch 两种。拥有独立的生命周期与自通知机制，不参与子树广播。
+_Avoid_: computed（computed 只是 observer 的一种）
+
+**Broadcast / 子树广播（Subtree Broadcast）**:
+发布端能力：对一条路径 `emit` 时，除精确命中自身外，同时唤醒该路径子树内**已订阅**的所有后代监听器（含通配符），并允许为每个后代改写其收到的操作。方向仅向下。用于修复「整体替换对象时后代监听器不触发」的语义缺陷。
+_Avoid_: fan-out, propagate
+
+**Peep（偷看）**:
+在 `_peeping=true` 守卫下读取状态，抑制 `get` 操作事件，避免在监听器/广播回调内部读值引发无限循环。
+_Avoid_: silent read, peek

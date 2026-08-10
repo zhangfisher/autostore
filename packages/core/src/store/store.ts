@@ -83,6 +83,43 @@ import { isFuncDefine } from "../utils/isFuncDefine";
 import { getComputedObject } from "../utils/getComputedObject";
 import { silence } from "../utils/silence";
 
+/** 后代广播派生时，用于探测路径是否存在的哨兵值 */
+const BROADCAST_SENTINEL = Symbol("autostore.broadcast");
+
+/**
+ * 判断一个值是否为可下钻的结构化值：普通对象 {} / Map / Array。
+ * 显式排除 Set（第一阶段范围），以及 Date/RegExp/类实例/observer 对象等非纯对象。
+ */
+function isBroadcastableValue(value: any): boolean {
+    if (value == null || typeof value !== "object") return false;
+    if (value instanceof Set) return false; // Set 暂不纳入下钻
+    if (Array.isArray(value) || value instanceof Map) return true;
+    // 普通对象：原型为 null 或 Object.prototype（排除类实例、observer 对象等）
+    const proto = Object.getPrototypeOf(value);
+    return proto === null || proto === Object.prototype;
+}
+
+/**
+ * 判断一个 operate 是否应触发后代广播。
+ * 仅处理 set / delete / update(set 陷阱) 且值为结构化值的情形；
+ * insert/remove/fill 等数组方法产生的 operate（带 indexs、value 为增量数组、含移位语义）
+ * 留待后续阶段。详见 ADR-0001。
+ */
+function shouldBroadcastOperate(params: StateOperate): boolean {
+    const t = params.type;
+    if (t === "set" || t === "delete") {
+        return isBroadcastableValue(params.value);
+    }
+    if (t === "update") {
+        // set 陷阱产生的 arr[i] = 结构化值：indexs 为空、value 为单个结构化值。
+        // fill 产生的 update 带 indexs 且 value 为数组，不在本阶段处理。
+        return (
+            (!params.indexs || params.indexs.length === 0) && isBroadcastableValue(params.value)
+        );
+    }
+    return false;
+}
+
 export class AutoStore<
     State extends Dict,
     Options = unknown,
@@ -335,7 +372,93 @@ export class AutoStore<
         }
         if (this._silenting) return;
         params.flags = this._updateFlags;
-        this.operates.emit(params.path.join(this.delimiter), params);
+        const pathStr = params.path.join(this.delimiter);
+        // 后代广播：当 set/delete/update(set 陷阱) 的值是结构化对象({}/Map/Array)时，
+        // 除命中自身路径外，同时唤醒子树内所有已订阅的后代监听器，并为每个后代派生独立 operate。
+        // 修复"整体替换对象时后代 watch 不触发"的语义缺陷。详见 ADR-0001。
+        if (shouldBroadcastOperate(params)) {
+            this._broadcastOperate(pathStr, params);
+        } else {
+            this.operates.emit(pathStr, params);
+        }
+    }
+
+    /**
+     * 对一次结构化值的整体变更执行后代广播。
+     *
+     * 除命中自身路径（由 broadcast 的正常匹配触发，收到原始 operate）外，
+     * 为子树内每个**已订阅**的后代监听器派生一个独立 operate：
+     * - type：后代路径在新快照中存在→`set`；仅旧快照存在→`delete`（不继承父 type）。
+     * - value/oldValue：分别用 getVal 从新/旧对象读取相对路径。
+     * - 逐后代去重：value === oldValue 则跳过。
+     * - observer 后代（computed/watch）跳过，让其自通知机制接管。
+     *
+     * 注意：_peeping 必须在回调内部逐次设置——watch 监听器执行末尾会把它置 false。
+     */
+    private _broadcastOperate(pathStr: string, params: StateOperate) {
+        // observer 后代路径集合（按 this.delimiter 连接），命中即跳过
+        const observerPaths = new Set<string>();
+        this.computedObjects.forEach((c) => observerPaths.add(c.path.join(this.delimiter)));
+        this.watchObjects.forEach((w) => observerPaths.add(w.path.join(this.delimiter)));
+
+        const parentPath = params.path;
+        const t = params.type;
+        // set / update：新对象 = value，旧对象 = oldValue
+        // delete：旧对象(被删) = value，无新对象
+        const newObj = t === "delete" ? undefined : params.value;
+        const oldObj = t === "delete" ? params.value : params.oldValue;
+
+        this.operates.broadcast(pathStr, params, (descType: string, message: any) => {
+            if (observerPaths.has(descType)) return null; // observer 后代：让其自通知
+            const descPath = descType.split(this.delimiter);
+            const relPath = descPath.slice(parentPath.length);
+            if (relPath.length === 0) return null; // 自身路径，已由正常匹配触发，不再派生
+
+            // 通配符后代（含 * / ** 段）无法定位具体子路径：
+            // 不做取值派生，透传父级 operate（指向字面通配路径），仅作"子树有变"通知。
+            if (relPath.some((s) => s === "*" || s === "**")) {
+                return {
+                    ...message,
+                    type: descType,
+                    payload: { ...params, path: descPath, broadcast: true } as StateOperate,
+                };
+            }
+
+            // 读取快照时临时抑制 get 事件（旧对象可能是 proxy）。逐次设置，避免被监听器重置。
+            const prevPeeping = this._peeping;
+            this._peeping = true;
+            try {
+                const inNew =
+                    newObj != null && getVal(newObj, relPath, BROADCAST_SENTINEL) !== BROADCAST_SENTINEL;
+                const inOld =
+                    oldObj != null && getVal(oldObj, relPath, BROADCAST_SENTINEL) !== BROADCAST_SENTINEL;
+                if (!inNew && !inOld) return null; // 两边都不存在：无关后代
+
+                const newVal = inNew ? getVal(newObj, relPath) : undefined;
+                const oldVal = inOld ? getVal(oldObj, relPath) : undefined;
+                // 逐后代去重：新旧都存在且值相等则跳过
+                if (inNew && inOld && newVal === oldVal) return null;
+                // 跳过值为函数的后代（未实例化的 computed/watch getter）
+                if (typeof newVal === "function" || typeof oldVal === "function") return null;
+
+                const derived: StateOperate = {
+                    ...params,
+                    type: inNew ? "set" : "delete",
+                    path: descPath,
+                    value: newVal,
+                    oldValue: oldVal,
+                    parentPath: descPath.slice(0, -1),
+                    parent: inNew
+                        ? getVal(newObj, relPath.slice(0, -1))
+                        : getVal(oldObj, relPath.slice(0, -1)),
+                    indexs: [],
+                    broadcast: true,
+                };
+                return { ...message, type: descType, payload: derived };
+            } finally {
+                this._peeping = prevPeeping;
+            }
+        });
     }
     // ************* Watch **************/
     /**

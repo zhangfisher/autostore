@@ -124,14 +124,14 @@
       "name": "autostore",
       "version": "4.2.2",
       "dependencies": {
-        "fastevent": "^2.6.1",
+        "fastevent": "^2.7.0",
         "flex-tools": "^1.6.4",
       },
       "devDependencies": {
-        "@swc/core": "^1.15.43",
+        "@swc/core": "^1.15.47",
         "@type-challenges/utils": "^0.1.1",
         "@types/bun": "^1.3.14",
-        "@types/node": "^26.1.1",
+        "@types/node": "^26.2.0",
         "tsup": "^8.5.1",
         "type-fest": "^5.8.0",
         "typescript": "^6.0.2",
@@ -1252,7 +1252,7 @@
 
     "fast-levenshtein": ["fast-levenshtein@2.0.6", "https://registry.npmmirror.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz", {}, "sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw=="],
 
-    "fastevent": ["fastevent@2.6.1", "https://registry.npmmirror.com/fastevent/-/fastevent-2.6.1.tgz", {}, "sha512-+351M2YeEdS5aRhv8IUX0UqCEtlV2goYpG1ZLxg7uph/mBpn5NvVHcnSHyyamo/mX0pI9LSPxgpn1eXBvSzjhA=="],
+    "fastevent": ["fastevent@2.7.0", "https://registry.npmmirror.com/fastevent/-/fastevent-2.7.0.tgz", {}, "sha512-GLSRWsImpdb1W/Y+uUlR66NwRqbnWnuir3Lyisl+t8v/H9ehfElUoE/uK6mJGoIN92EVHkGE0UVMTqD3U68Vqg=="],
 
     "fastq": ["fastq@1.20.1", "https://registry.npmmirror.com/fastq/-/fastq-1.20.1.tgz", { "dependencies": { "reusify": "^1.0.4" } }, "sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw=="],
 
@@ -2074,8 +2074,6 @@
 
     "@autostorejs/devtools/@types/node": ["@types/node@24.12.0", "https://registry.npmmirror.com/@types/node/-/node-24.12.0.tgz", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-GYDxsZi3ChgmckRT9HPU0WEhKLP08ev/Yfcq2AstjrDASOYCSXeyjDsHg4v5t4jOj7cyDX3vmprafKlWIG9MXQ=="],
 
-    "@autostorejs/react/@swc/core": ["@swc/core@1.15.43", "https://registry.npmmirror.com/@swc/core/-/core-1.15.43.tgz", { "dependencies": { "@swc/counter": "^0.1.3", "@swc/types": "^0.1.27" }, "optionalDependencies": { "@swc/core-darwin-arm64": "1.15.43", "@swc/core-darwin-x64": "1.15.43", "@swc/core-linux-arm-gnueabihf": "1.15.43", "@swc/core-linux-arm64-gnu": "1.15.43", "@swc/core-linux-arm64-musl": "1.15.43", "@swc/core-linux-ppc64-gnu": "1.15.43", "@swc/core-linux-s390x-gnu": "1.15.43", "@swc/core-linux-x64-gnu": "1.15.43", "@swc/core-linux-x64-musl": "1.15.43", "@swc/core-win32-arm64-msvc": "1.15.43", "@swc/core-win32-ia32-msvc": "1.15.43", "@swc/core-win32-x64-msvc": "1.15.43" }, "peerDependencies": { "@swc/helpers": ">=0.5.17" }, "optionalPeers": ["@swc/helpers"] }, "sha512-1CuKjFkPxIgGdeHVuNbkxmBxkcbdc08u0aiI43pFq6yY1tTVKmXT9hFEooyyKs/sJ3xf1GPHyEwTtk9Xl8dvQw=="],
-
     "@autostorejs/react/@types/node": ["@types/node@24.12.0", "https://registry.npmmirror.com/@types/node/-/node-24.12.0.tgz", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-GYDxsZi3ChgmckRT9HPU0WEhKLP08ev/Yfcq2AstjrDASOYCSXeyjDsHg4v5t4jOj7cyDX3vmprafKlWIG9MXQ=="],
 
     "@autostorejs/react/@types/react": ["@types/react@19.2.14", "https://registry.npmmirror.com/@types/react/-/react-19.2.14.tgz", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
@@ -2282,7 +2280,9 @@
 
     "art-template/source-map": ["source-map@0.5.7", "https://registry.npmmirror.com/source-map/-/source-map-0.5.7.tgz", {}, "sha512-LbrmJOMUSdEVxIKvdcJzQC+nQhe8FUZQTXQy6+I75skNgn3OoQ0DZA8YnFa7gp8tqtL3KPf1kmo0R5DoApeSGQ=="],
 
-    "autostore/@types/node": ["@types/node@26.1.1", "https://registry.npmmirror.com/@types/node/-/node-26.1.1.tgz", { "dependencies": { "undici-types": "~8.3.0" } }, "sha512-nxAkRSVkN1Y0JC1W8ky/fTfkGsMmcrRsbx+3XoZE+rMOX71kLYTV7fLXpqud1GpbpP5TuffXFqfX7fH2GgZREw=="],
+    "autostore/@swc/core": ["@swc/core@1.15.47", "https://registry.npmmirror.com/@swc/core/-/core-1.15.47.tgz", { "dependencies": { "@swc/counter": "^0.1.3", "@swc/types": "^0.1.27" }, "optionalDependencies": { "@swc/core-darwin-arm64": "1.15.47", "@swc/core-darwin-x64": "1.15.47", "@swc/core-linux-arm-gnueabihf": "1.15.47", "@swc/core-linux-arm64-gnu": "1.15.47", "@swc/core-linux-arm64-musl": "1.15.47", "@swc/core-linux-ppc64-gnu": "1.15.47", "@swc/core-linux-s390x-gnu": "1.15.47", "@swc/core-linux-x64-gnu": "1.15.47", "@swc/core-linux-x64-musl": "1.15.47", "@swc/core-win32-arm64-msvc": "1.15.47", "@swc/core-win32-ia32-msvc": "1.15.47", "@swc/core-win32-x64-msvc": "1.15.47" }, "peerDependencies": { "@swc/helpers": ">=0.5.17" }, "optionalPeers": ["@swc/helpers"] }, "sha512-FbsO5JcfOjfH38W/rohBRBweJeERsAuIP4f377lmkmxTcq9exjtx4SkRuZY5CdfhR2CBVwDIJegBpJDffwNsOg=="],
+
+    "autostore/@types/node": ["@types/node@26.2.0", "https://registry.npmmirror.com/@types/node/-/node-26.2.0.tgz", { "dependencies": { "undici-types": "~8.3.0" } }, "sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg=="],
 
     "autostore-docs/@types/react": ["@types/react@19.2.14", "https://registry.npmmirror.com/@types/react/-/react-19.2.14.tgz", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
@@ -2431,30 +2431,6 @@
     "@autostore-examples/react/x-react-components/pretty-print-json": ["pretty-print-json@3.0.6", "https://registry.npmmirror.com/pretty-print-json/-/pretty-print-json-3.0.6.tgz", {}, "sha512-wboR7e5Vqim2giCXJouicwrfB/+whrJuVByBB2/ItHOmEgIEkqKfRiqLR9Rr297cJjplfAyEjwxJ2DJmiPk1yA=="],
 
     "@autostorejs/devtools/@types/node/undici-types": ["undici-types@7.16.0", "https://registry.npmmirror.com/undici-types/-/undici-types-7.16.0.tgz", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-darwin-arm64": ["@swc/core-darwin-arm64@1.15.43", "https://registry.npmmirror.com/@swc/core-darwin-arm64/-/core-darwin-arm64-1.15.43.tgz", { "os": "darwin", "cpu": "arm64" }, "sha512-v1aVuvXdo/BHxJzco9V2xpHrvwWmhfS8t6gziY5wJxd+Z2h8AeJRnAwPD8itCDaGXVBwJ/CaKfxEzTkG0Va0OA=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-darwin-x64": ["@swc/core-darwin-x64@1.15.43", "https://registry.npmmirror.com/@swc/core-darwin-x64/-/core-darwin-x64-1.15.43.tgz", { "os": "darwin", "cpu": "x64" }, "sha512-lp3d4Lamc8dt5huYdGLSR+9hLxmfr1jb0l+4XXG2zPqZwYWRN9R0U2qYoTrggiU2RWW0oV9VbWM3kBnqIc2kdQ=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-linux-arm-gnueabihf": ["@swc/core-linux-arm-gnueabihf@1.15.43", "https://registry.npmmirror.com/@swc/core-linux-arm-gnueabihf/-/core-linux-arm-gnueabihf-1.15.43.tgz", { "os": "linux", "cpu": "arm" }, "sha512-JWTQQELtsG5GgphDrr/XqqmM2pDN3cZqbMS0Mrg+iTiXL3F74sn/S2IyYE/5u4h2KLkTf9qQ7dXyxsbx7YzkeA=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-linux-arm64-gnu": ["@swc/core-linux-arm64-gnu@1.15.43", "https://registry.npmmirror.com/@swc/core-linux-arm64-gnu/-/core-linux-arm64-gnu-1.15.43.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-B4otJRdPWIsmiSBf0uG7Z/+vMWmkufjz5MmYxubwKuZazDW14Zd3symga1N62QR4RT+kEFeHEgsXfZGyn/w0hw=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-linux-arm64-musl": ["@swc/core-linux-arm64-musl@1.15.43", "https://registry.npmmirror.com/@swc/core-linux-arm64-musl/-/core-linux-arm64-musl-1.15.43.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-6zB6OnpViBxYy4tgY3v2i6AZY9fwkcHZ032UOwtwUuW1d19sdT07qF0kZe6/3UR1tUaK6jjg2rmVcUIBCEYVjQ=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-linux-ppc64-gnu": ["@swc/core-linux-ppc64-gnu@1.15.43", "https://registry.npmmirror.com/@swc/core-linux-ppc64-gnu/-/core-linux-ppc64-gnu-1.15.43.tgz", { "os": "linux", "cpu": "ppc64" }, "sha512-coxE1ZWdB3uSDVNoEtYNrRi/1epvckZx9cTJ8ICUxTMTxGk+yvQ/Twacp3ruZSaMPGCriUjP86C37VhaT6nyRg=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-linux-s390x-gnu": ["@swc/core-linux-s390x-gnu@1.15.43", "https://registry.npmmirror.com/@swc/core-linux-s390x-gnu/-/core-linux-s390x-gnu-1.15.43.tgz", { "os": "linux", "cpu": "s390x" }, "sha512-lXfLhs+LpBsD5inuYx+YDH5WsPPBQ95KPUiy8P5wq9ob9xKDZFqwNfU2QW6bGO8NqRO/H9JQomTSt5Yyh+FGfA=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-linux-x64-gnu": ["@swc/core-linux-x64-gnu@1.15.43", "https://registry.npmmirror.com/@swc/core-linux-x64-gnu/-/core-linux-x64-gnu-1.15.43.tgz", { "os": "linux", "cpu": "x64" }, "sha512-07XnKwTmKy8TGOZG3D9fRnLWGynxPjwQnZLVmBFbo6F+7vHYzBIOuwXEhemrChBWb6yDNZsVCcMWCPX6FDD2xg=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-linux-x64-musl": ["@swc/core-linux-x64-musl@1.15.43", "https://registry.npmmirror.com/@swc/core-linux-x64-musl/-/core-linux-x64-musl-1.15.43.tgz", { "os": "linux", "cpu": "x64" }, "sha512-TJc+bsSIaBh+hZvZ5GRtW/K1bw66TJ9vsUwvVIsZdiWxU5ObLwZvfcnZ3UpgVfMnFibRes9uriJrQNBHEEogRQ=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-win32-arm64-msvc": ["@swc/core-win32-arm64-msvc@1.15.43", "https://registry.npmmirror.com/@swc/core-win32-arm64-msvc/-/core-win32-arm64-msvc-1.15.43.tgz", { "os": "win32", "cpu": "arm64" }, "sha512-jfd7s2/bUQYkOHLs+LWQNKZdmDa8+sufKLllhpWAhVQ2GDCwsHe3vR/j+OSiItZNtkzFuaawa3+SAKz9y5gYfw=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-win32-ia32-msvc": ["@swc/core-win32-ia32-msvc@1.15.43", "https://registry.npmmirror.com/@swc/core-win32-ia32-msvc/-/core-win32-ia32-msvc-1.15.43.tgz", { "os": "win32", "cpu": "ia32" }, "sha512-rLAE8JvucqEW1ZGohxPQrQWPBQeJG4+ypKbWfdlU/qmKScvCkxf9/Jxnzki1dkUQCQ7P5Enp13RlvqOlvx/32g=="],
-
-    "@autostorejs/react/@swc/core/@swc/core-win32-x64-msvc": ["@swc/core-win32-x64-msvc@1.15.43", "https://registry.npmmirror.com/@swc/core-win32-x64-msvc/-/core-win32-x64-msvc-1.15.43.tgz", { "os": "win32", "cpu": "x64" }, "sha512-h8MLDHZcfIukwQWj03rIJZx1I0E81AYj2X7J/nGErG4nz+QAv6G1Z+peotvinL3lqpbo32tLYSMFo32/ySzxKg=="],
 
     "@autostorejs/react/@types/node/undici-types": ["undici-types@7.16.0", "https://registry.npmmirror.com/undici-types/-/undici-types-7.16.0.tgz", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
 
@@ -2655,6 +2631,30 @@
     "art-template/escodegen/source-map": ["source-map@0.6.1", "https://registry.npmmirror.com/source-map/-/source-map-0.6.1.tgz", {}, "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g=="],
 
     "autostore-docs/react-dom/scheduler": ["scheduler@0.27.0", "https://registry.npmmirror.com/scheduler/-/scheduler-0.27.0.tgz", {}, "sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q=="],
+
+    "autostore/@swc/core/@swc/core-darwin-arm64": ["@swc/core-darwin-arm64@1.15.47", "https://registry.npmmirror.com/@swc/core-darwin-arm64/-/core-darwin-arm64-1.15.47.tgz", { "os": "darwin", "cpu": "arm64" }, "sha512-GsoMtan3ojGGMGFbl31mmRu5ctZ56re8grGE8mO/OHJ8O+JRkzod02fe7X6ZQ8JvamA3imkEkx/h3u+vsOgPgA=="],
+
+    "autostore/@swc/core/@swc/core-darwin-x64": ["@swc/core-darwin-x64@1.15.47", "https://registry.npmmirror.com/@swc/core-darwin-x64/-/core-darwin-x64-1.15.47.tgz", { "os": "darwin", "cpu": "x64" }, "sha512-leTi7Rx3KF4zcC637iqWgk9SoV8VXAD8ppQYXsep63px5A/UftOcxLN1pmr8Z1si/YvX90ompP/rHgpYkgwXWg=="],
+
+    "autostore/@swc/core/@swc/core-linux-arm-gnueabihf": ["@swc/core-linux-arm-gnueabihf@1.15.47", "https://registry.npmmirror.com/@swc/core-linux-arm-gnueabihf/-/core-linux-arm-gnueabihf-1.15.47.tgz", { "os": "linux", "cpu": "arm" }, "sha512-hBqHuoWKKIsKmDBn9qVeWqj5GWZhtlcczVaqQmNRXsDfq+voR5CxKRfamA367QjJXtceYuliLFfEL8QsskRM2g=="],
+
+    "autostore/@swc/core/@swc/core-linux-arm64-gnu": ["@swc/core-linux-arm64-gnu@1.15.47", "https://registry.npmmirror.com/@swc/core-linux-arm64-gnu/-/core-linux-arm64-gnu-1.15.47.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-TBxvRz+B4K205TWHHZxWVxkC2RFNP/Mz3PNcECBos5PsKwxjg3QSJzdoebr0VCf0Bfh8HOPldKxAP/8XkFe9gA=="],
+
+    "autostore/@swc/core/@swc/core-linux-arm64-musl": ["@swc/core-linux-arm64-musl@1.15.47", "https://registry.npmmirror.com/@swc/core-linux-arm64-musl/-/core-linux-arm64-musl-1.15.47.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-3Yu3Uq/VgytqsPjTMbkPU1ExADytbdWbruJYhA584E9jrpE2Ki+R6VVPoZCeAVk1Cb7QxcRTgblw6bSa6a/R+w=="],
+
+    "autostore/@swc/core/@swc/core-linux-ppc64-gnu": ["@swc/core-linux-ppc64-gnu@1.15.47", "https://registry.npmmirror.com/@swc/core-linux-ppc64-gnu/-/core-linux-ppc64-gnu-1.15.47.tgz", { "os": "linux", "cpu": "ppc64" }, "sha512-wfdMi5IaOaNtmh2/6geRoxIdNfqylUZFdtzTKS655y1axWfIWyx7As74vv0wVdjeCIZ3WmCI9odDd4rUttXOSQ=="],
+
+    "autostore/@swc/core/@swc/core-linux-s390x-gnu": ["@swc/core-linux-s390x-gnu@1.15.47", "https://registry.npmmirror.com/@swc/core-linux-s390x-gnu/-/core-linux-s390x-gnu-1.15.47.tgz", { "os": "linux", "cpu": "s390x" }, "sha512-3hHYBY0yx8Ez7GMRrkhXHQzMdR5IZA6Wq5Ee4svlgwvSECLpnAJ9+0AimEGUFDvuLwE7nV/2+PYe8+Nm4rvNcQ=="],
+
+    "autostore/@swc/core/@swc/core-linux-x64-gnu": ["@swc/core-linux-x64-gnu@1.15.47", "https://registry.npmmirror.com/@swc/core-linux-x64-gnu/-/core-linux-x64-gnu-1.15.47.tgz", { "os": "linux", "cpu": "x64" }, "sha512-TjfhjgP/jGCfFHYC3JQPhJA1HwErbIJ9JfREDc1KNkvY6P0LodCgKVIlQ5deeTbkG7ih3bF5PHJLuLpaZjdRyQ=="],
+
+    "autostore/@swc/core/@swc/core-linux-x64-musl": ["@swc/core-linux-x64-musl@1.15.47", "https://registry.npmmirror.com/@swc/core-linux-x64-musl/-/core-linux-x64-musl-1.15.47.tgz", { "os": "linux", "cpu": "x64" }, "sha512-CQpS8Ge/avfjZd0UEwG/sds83Uu32deQXcV1Jo3jD0mmvQQqtYAjpsDZXugmheeAwmt+YIuoVtVHro8LMYHqsQ=="],
+
+    "autostore/@swc/core/@swc/core-win32-arm64-msvc": ["@swc/core-win32-arm64-msvc@1.15.47", "https://registry.npmmirror.com/@swc/core-win32-arm64-msvc/-/core-win32-arm64-msvc-1.15.47.tgz", { "os": "win32", "cpu": "arm64" }, "sha512-0W8IKHsUTYiT7G2RqtOoVWk+89yzZikIiDUb/sCK6BmQDBhN91hQSfyUtW12jhEWLzYgcfmisfsZrmZE+84U1A=="],
+
+    "autostore/@swc/core/@swc/core-win32-ia32-msvc": ["@swc/core-win32-ia32-msvc@1.15.47", "https://registry.npmmirror.com/@swc/core-win32-ia32-msvc/-/core-win32-ia32-msvc-1.15.47.tgz", { "os": "win32", "cpu": "ia32" }, "sha512-ZIp49d2Z4/ka2jO9otOg4hDvTdPmp86kVOgS2M5FCPI7eKKZ1W0boxWn+8XeZrfERtFGW0AlMRm4JhlJa7l3NA=="],
+
+    "autostore/@swc/core/@swc/core-win32-x64-msvc": ["@swc/core-win32-x64-msvc@1.15.47", "https://registry.npmmirror.com/@swc/core-win32-x64-msvc/-/core-win32-x64-msvc-1.15.47.tgz", { "os": "win32", "cpu": "x64" }, "sha512-2h8Iek95vnixkBRCo+H8p09+Q5ll2NgSMFrWTy0iKt7+/t+8/T5mBpiT6c0ZxSS7wcWjwZ9sGZkK70tTSYHdDw=="],
 
     "autostore/@types/node/undici-types": ["undici-types@8.3.0", "https://registry.npmmirror.com/undici-types/-/undici-types-8.3.0.tgz", {}, "sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ=="],
 
