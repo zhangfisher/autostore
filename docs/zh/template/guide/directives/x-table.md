@@ -4,11 +4,22 @@
 该指令处于规划阶段，当前**尚未注册、不可用**。以下为预期 API 与用途，待实现后补全。
 :::
 
-## 预期用途
+## 概述
 
 基于二维数据（行 × 列）渲染表格，简化 `x-for` 嵌套（行循环 + 列循环）的写法，提供表格级的配置（列定义、行 key 等）。
 
-## 预期 API
+## 快速入门
+
+```html
+<table x-table="orders" x-table:options="{ key: 'id' }">
+    <tr x-table-row="rowId">
+        <td>{{ row.name }}</td>
+        <td>{{ row.price }}</td>
+    </tr>
+</table>
+```
+
+## 配置
 
 ```html
 <table x-table="rows" x-table:options="{ key: 'id' }">
@@ -19,18 +30,11 @@
 </table>
 ```
 
-容器 `<table>` 声明 `x-table="<数据>"` 与可选的 `x-table:options`（列/行配置），`<tr x-table-row="<行 id>">` 作为行模板被重复。
+`x-table` 的指令值是行数据数组（必填）；`<tr x-table-row="<行 id>">` 作为行模板被重复。下列配置项经 `x-table:options` 声明；带 ✅ 者可用修饰符方式启用。
 
-## 预期示例
-
-```html
-<table x-table="orders" x-table:options="{ key: 'id' }">
-    <tr x-table-row="rowId">
-        <td>{{ row.name }}</td>
-        <td>{{ row.price }}</td>
-    </tr>
-</table>
-```
+| 配置项 | 默认值  | 修饰符 | 说明                                                |
+| ------ | ------- | ------ | --------------------------------------------------- |
+| `key`  | `index` |        | 行的唯一标识字段名，缺省用 index（与 `x-for` 一致） |
 
 ## 注意事项
 

@@ -68,21 +68,17 @@ describe("findDirectives - 普通长前缀指令", () => {
     });
 });
 
-describe("findDirectives - x-show 别名归一化（≡ x-if.keep）", () => {
-    test('x-show="a" 归一为 x-if + keep 修饰符', () => {
+describe("findDirectives - x-show 独立指令（不再归一为 x-if.keep）", () => {
+    test('x-show="a" 解析为独立 show 指令', () => {
         expect(parseOne({ "x-show": "a" })).toEqual({
-            name: "if",
+            name: "show",
             value: "a",
-            modifiers: ["keep"],
-            options: { keep: true },
         });
     });
 
-    test("x-show 无值时仍归一为 if + keep（不输出 value）", () => {
+    test("x-show 无值时解析为 show（不输出 value）", () => {
         expect(parseOne({ "x-show": "" })).toEqual({
-            name: "if",
-            modifiers: ["keep"],
-            options: { keep: true },
+            name: "show",
         });
     });
 });

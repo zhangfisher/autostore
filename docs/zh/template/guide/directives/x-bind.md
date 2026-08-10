@@ -17,8 +17,7 @@
 <demo html="template/bind/basic.html"/>
 
 ```html
-<a :href="link.url" :title="link.tip">{{ link.text }}</a>
-<img :src="img.src" :alt="img.alt" />
+<a :href="link.url" :title="link.tip">{{ link.text }}</a> <img :src="img.src" :alt="img.alt" />
 ```
 
 `:attr="expr"` 的 `expr` 是表达式（路径、对象、三元等任皆可），随状态自动更新。
@@ -67,6 +66,8 @@
 对象写法经 `Object.assign(el.style, value)` 合并，key 必须是 `CSSStyleDeclaration` 的属性名（驼峰，如 `fontSize`、`backgroundColor`），连字符（`font-size`）不生效。字符串写法用连字符没问题。
 :::
 
+`.transition` 修饰符可让样式变化自动过渡动画（注入默认 `transition:all 0.3s ease-in`，可用 `x-bind-options` 覆盖）。完整说明见 [x-style · 过渡动画 `.transition`](./x-style.md#过渡动画-transition)。
+
 ### 绑定布尔属性
 
 `:disabled` / `:checked` / `:readonly` 等布尔属性，值为真则 `setAttribute`、为假则 `removeAttribute`：
@@ -83,8 +84,7 @@
 属性值里的插值会自动归一化为 `:attr` 绑定，复用上面同一套分派：
 
 ```html
-<a href="/users/{{ user.id }}">主页</a>
-<span class="card {{ user.role }}">标签</span>
+<a href="/users/{{ user.id }}">主页</a> <span class="card {{ user.role }}">标签</span>
 ```
 
 详见[响应式 · 属性插值](../reactive.md#属性插值)。
@@ -92,11 +92,6 @@
 ## 配置
 
 `x-bind` 的指令值即要绑定的表达式，**无独立指令选项与修饰符**。
-
-| 元数据 | 值 | 说明 |
-| --- | --- | --- |
-| `priority` | 中 | 绑定类指令，先于内容类（`x-text`/`x-html`）执行 |
-| `singleton` | `false` | 同一元素可声明多个不同参数的 `:attr`（如 `:class` 与 `:style` 并存） |
 
 ::: info 关于指令配置体系
 指令选项 / 修饰符 / 宿主选项 / 两层回退的通用机制见[指令配置](../config.md)。

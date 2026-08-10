@@ -11,10 +11,6 @@ const OPTIONS_SUFFIX = "-options";
 const ON_DIRECTIVE_NAME = "on";
 /** 属性绑定指令名称 */
 const BIND_DIRECTIVE_NAME = "bind";
-/** x-show 别名指向的指令名（x-show ≡ x-if.keep） */
-const SHOW_ALIAS_NAME = "show";
-/** x-show 归一化的目标指令名 */
-const IF_DIRECTIVE_NAME = "if";
 /** x-class / x-style 作为 x-bind 特化别名的指令名（解析期归一化为 bind+attr，零运行时实体） */
 const CLASS_ALIAS_NAME = "class";
 const STYLE_ALIAS_NAME = "style";
@@ -159,25 +155,18 @@ export function getDirectives(el: HTMLElement, prefix = "x-"): AutoDirectiveInfo
 
             // 3a. -options 后缀：x-if-options="..." 视为对同名指令的额外选项补充
             if (rest.endsWith(OPTIONS_SUFFIX)) {
-                // x-show-options 同样归一为对 x-if 的选项补充
                 const directiveName = rest.slice(0, rest.length - OPTIONS_SUFFIX.length);
-                const normalizedName = directiveName === SHOW_ALIAS_NAME ? IF_DIRECTIVE_NAME : directiveName;
-                if (normalizedName.length > 0) {
-                    pendingOptions.push({ name: normalizedName, value: parseOptions(rawValue) });
+                if (directiveName.length > 0) {
+                    pendingOptions.push({ name: directiveName, value: parseOptions(rawValue) });
                 }
                 continue;
             }
 
             // 3b. 普通长前缀指令：rest 形如 name | name:attr | name.mod | name:attr.mod
             const info = parsePrefixedDirective(rest, rawValue);
-            // x-show 作为 x-if.keep 的快捷方式归一化（解析期别名，零运行时实体）
-            if (info.name === SHOW_ALIAS_NAME) {
-                info.name = IF_DIRECTIVE_NAME;
-                info.modifiers = ["keep", ...(info.modifiers ?? [])];
-            }
             // x-class / x-style 作为 x-bind 的特化别名（解析期归一化，零运行时实体）。
             // :class / x-bind:class 经短/长前缀分支已产出 bind+class，此处仅处理裸 x-class / x-style。
-            else if (info.name === CLASS_ALIAS_NAME) {
+            if (info.name === CLASS_ALIAS_NAME) {
                 info.name = BIND_DIRECTIVE_NAME;
                 info.attr = "class";
             } else if (info.name === STYLE_ALIAS_NAME) {

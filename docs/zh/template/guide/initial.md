@@ -4,7 +4,9 @@
 
 `AutoTemplateEngine` 是模板渲染引擎的核心类。使用流程固定为三步：**选中挂载元素 → 传入状态 → 构造引擎**。本章讲清构造器的三个参数、状态句柄、生命周期方法，以及引擎事件总线。
 
-## 构造引擎
+## 指南
+
+### 构造引擎
 
 ```typescript
 new AutoTemplateEngine(el, store | state, options?)
@@ -25,7 +27,7 @@ const engine = new AutoTemplateEngine(document.getElementById("app"), {
 });
 ```
 
-### 数据源：store 还是 state？
+#### 数据源：store 还是 state？
 
 第二参有两种形态，决定 store 的所有权：
 
@@ -47,7 +49,7 @@ const engine2 = new AutoTemplateEngine(el, { count: 0 });
 传裸状态时，原对象只作**初始种子**——建 store 后它失去响应性。后续读写一律用 `engine.state`（响应式句柄），直接改原种子对象**不会**触发更新。
 :::
 
-### 配置选项
+#### 配置选项
 
 ```typescript
 interface AutoTemplateEngineOptions {
@@ -59,7 +61,7 @@ interface AutoTemplateEngineOptions {
 }
 ```
 
-## 状态句柄
+### 状态句柄
 
 `engine.state` 等价于 `engine.store.state`——响应式状态树的根。**改它就触发更新**：
 
@@ -68,7 +70,7 @@ engine.state.user.name = "李四"; // 订阅了 user.name 的指令自动刷新
 engine.state.order.count += 1;
 ```
 
-## 生命周期
+### 生命周期
 
 | 方法 | 作用 |
 | --- | --- |
@@ -87,7 +89,7 @@ engine.start(); // 恢复
 engine.destroy(); // 彻底清理
 ```
 
-## 事件总线
+### 事件总线
 
 引擎继承分层事件总线，可用 `engine.on(type, handler)` 订阅生命周期与动作事件，支持 `*` / `**` 通配。
 

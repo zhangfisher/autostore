@@ -4,11 +4,22 @@
 该指令处于规划阶段，当前**尚未注册、不可用**。以下为预期 API 与用途，待实现后补全。
 :::
 
-## 预期用途
+## 概述
 
 根据一个表达式的值，在多个候选分支中**切换显示其一**——比串联多个 `x-if` / `x-if-else` 更清晰地表达「多选一」的分派逻辑。
 
-## 预期 API
+## 快速入门
+
+```html
+<div x-switch="order.state">
+    <span x-case="paid" class="val">已支付</span>
+    <span x-case="pending" class="muted">待支付</span>
+    <span x-case="refunded" class="tag-warn">已退款</span>
+    <span x-default>—</span>
+</div>
+```
+
+## 配置
 
 ```html
 <div x-switch="status">
@@ -19,18 +30,7 @@
 </div>
 ```
 
-容器声明 `x-switch="表达式或状态"`，子节点用 `x-case="值"` 声明各分支，`x-default` 兜底。表达式求值后命中匹配的分支显示，其余隐藏。
-
-## 预期示例
-
-```html
-<div x-switch="order.state">
-    <span x-case="paid" class="val">已支付</span>
-    <span x-case="pending" class="muted">待支付</span>
-    <span x-case="refunded" class="tag-warn">已退款</span>
-    <span x-default>—</span>
-</div>
-```
+`x-switch` 的指令值是判别表达式或状态（必填）；分支由子指令 `x-case="值"` 声明、`x-default` 兜底，**`x-switch` 自身无独立配置项**（表达式值为对象时的匹配规则以实现版本为准）。
 
 ## 注意事项
 

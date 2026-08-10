@@ -36,9 +36,13 @@ function isBlankText(node: Node): boolean {
     return node.nodeType === Node.TEXT_NODE && (node.nodeValue ?? "").trim() === "";
 }
 
-/** 元素的有意义子节点（剔除纯空白文本节点后） */
+/** 元素的有意义子节点（剔除纯空白文本节点与注释节点后） */
 function meaningfulChildren(el: Element): Node[] {
-    return Array.from(el.childNodes).filter((n) => !isBlankText(n));
+    // 注释节点一并剔除：注释是装饰性的（如 x-if 的锚点注释），结构等价断言应忽略；
+    // 否则容器仅剩注释时会被计入 meaningfulChildren 触发折行，与空容器 `<div></div>` 不等。
+    return Array.from(el.childNodes).filter(
+        (n) => !isBlankText(n) && n.nodeType !== Node.COMMENT_NODE,
+    );
 }
 
 /** 序列化元素属性：按键名排序 + 转义，返回带前导空格的串（无属性则空串） */

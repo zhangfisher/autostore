@@ -4,27 +4,35 @@ import type { AutoDirectiveInfo } from "../types";
 import type { AutoTemplateScope } from "../../scope";
 
 /**
- * x-if：条件渲染。元素本身永远作为锚点留在 DOM，仅切换其**子树**与显隐。
+ * x-if：条件存在性。元素本身随条件**离开/回到 DOM**（detach/reattach），非 display:none。
  *
- * 两态（由 `.keep` 修饰符切换；`x-show` 是 `x-if.keep` 的解析期别名）：
+ * 两态（由 `.keep` 修饰符切换）均**摘除宿主 + 锚点注释占位**，区别在子树保活与否：
  *
  * - **eager（默认 `x-if="expr"`）**——结构指令（ownsChildren）。
  *   - true → 编译并挂载子树（经 `compiler.compileSubtree`）；
- *   - false → `display:none` + 移除子树 DOM + 销毁子 scope（子树 watcher 一并 off）。
+ *   - false → 摘除宿主（el.remove）+ 锚点注释占位 + 销毁子 scope（子树 watcher 一并 off）。
  *   - 控制订阅留在自身 scope（永活），仅 destroy/recreate **子** scope，避免"自杀"；
- *   - 仅精确移除自身编译挂载的节点，不误删兄弟指令（如 x-text 写入的 textContent）；
- *   - 与 x-for 同元素禁止（语义冲突，compiler 抛错），改用 `x-show`/`x-if.keep` 或外层包裹。
+ *   - 与 x-for 同元素禁止（语义冲突，compiler 抛错），改用 `x-show`/`x-if.keep`（均不占子树）或外层包裹。
  *
- * - **keep（`x-if.keep` 或别名 `x-show`）**——仅切 `display`，子树与 watcher 全保留（v1 行为）。
- *   不占 ownsChildren，可与 x-for 共存（x-for 独占子树，本指令只切容器 display）。
+ * - **keep（`x-if.keep`）**——摘宿主但**保活子树与 watcher**，true 时原宿主 reattach（状态保留）。
+ *   不占 ownsChildren，可与 x-for 共存（x-for 独占子树，本指令只切容器存在性）。
  *
- * 注意：叶子元素（无子树，如 `<hr x-if>`、`<input x-if>`）两态等价——均退化为 `display:none`。
+ * **宿主 scope 兼任锚点**：控制 watcher 留 `this.binding`，detach 期间由 `parent.children` 强引用
+ * 保活、照常触发——无需独立锚点 scope 类型。锚点注释由本指令持有，作 reattach 的 DOM 书签
+ * （`parentNode` 恒为当前父，重插位稳定）。详见 ADR-0016。
+ *
+ * 注意：首次 toggle 须 defer 到 microtask——`created` 在 compileElement 内同步执行，此时宿主
+ * 尚未挂进父树（transformElement 的 appendChild 还没发生），detach 需要 parentNode。
+ *
+ * 与 x-show 的区别：x-if 切**存在性**（detach，宿主离开 DOM，不被表单提交/`:nth-child` 计数/
+ * `querySelector` 命中）；x-show 切**可见性**（display:none，宿主永留 DOM）。x-show 是独立指令，
+ * 不再是 `x-if.keep` 的别名。
  */
 export class IfDirective extends AutoTemplateDirectiveBase {
     static override readonly priority = 80;
     static override readonly singleton = true;
 
-    /** eager 模式才占有子树；`.keep`/`x-show`/`x-if-options="{keep:true}"` 不占有（仅切 display） */
+    /** eager 模式才占有子树；`.keep`/`x-if-options="{keep:true}"` 不占有（保活子树，不重编译） */
     static override ownsChildren(info: AutoDirectiveInfo): boolean {
         // keep 经解析期注入为 info.options.keep（modifier 与指令选项等价，ADR-0007）。
         // 静态方法早于 scope 实例，仅读指令级 options，不支持 x-options 宿主回退（编译期局限）。
@@ -33,6 +41,8 @@ export class IfDirective extends AutoTemplateDirectiveBase {
 
     /** eager 模式下本指令编译挂载的子树节点，false 时按此精确移除 */
     private subtreeNodes: Node[] = [];
+    /** 锚点注释：false 时替代宿主留在 DOM，作 reattach 的 DOM 书签（常驻，紧邻宿主前） */
+    private anchorComment: Comment | null = null;
 
     private get keepMode(): boolean {
         // `.keep` modifier 与 x-if-options="{keep:true}" 经 getOption 等价（ADR-0007）
@@ -44,39 +54,80 @@ export class IfDirective extends AutoTemplateDirectiveBase {
         const initial = this.binding.watch(this.value, ({ value }) => {
             this.toggle(!!value);
         });
-        this.toggle(!!initial);
+        // 首次 toggle defer 到 microtask：created 在 compileElement 内同步跑，宿主尚未挂进父树
+        // （transformElement 的 appendChild 还没发生），detach 需要 parentNode。同 x-for 首渲 defer。
+        this.engine.scheduler.schedule(() => this.toggle(!!initial));
+    }
+
+    override destroy() {
+        // 清理锚点注释（宿主的兄弟节点，不会被 el.remove 带走，须显式移除避免残留）
+        this.anchorComment?.remove();
+        this.anchorComment = null;
     }
 
     private toggle(show: boolean) {
-        this.keepMode ? this.toggleDisplay(show) : this.toggleEager(show);
-    }
-
-    /** keep 模式（x-if.keep / x-show）：仅切 display，子树与 watcher 不动（v1 行为） */
-    private toggleDisplay(show: boolean) {
-        if (this.el) this.el.style.display = show ? "" : "none";
+        this.keepMode ? this.toggleKeep(show) : this.toggleEager(show);
     }
 
     /**
-     * eager 模式：true→编译挂载子树；false→移除子树 DOM + 销毁子 scope。
-     * 仅操作自身挂载的 subtreeNodes，不触碰兄弟指令写入的内容（如 x-text 的 textContent）。
+     * 确保锚点注释存在并定位在宿主前（懒创建）。
+     * 宿主此时应在 DOM（ensureAnchor 在 detach 前 / reattach 时调用，el.parentNode 有效）。
+     */
+    private ensureAnchor() {
+        const el = this.el;
+        if (!el || this.anchorComment) return;
+        // 用 parentNode（而非 isConnected）判定挂载状态：测试与部分宿主中 root 可能脱离
+        // document，此时 isConnected 恒 false 会误判。parentNode 非空即代表已在某父节点下。
+        if (!el.parentNode) return;
+        this.anchorComment = document.createComment("x-if");
+        el.parentNode.insertBefore(this.anchorComment, el);
+    }
+
+    /** 摘除宿主：确保锚点（留在原位）后 el.remove()。宿主由本指令 this.el 强引用保活，不 GC。 */
+    private detachHost() {
+        const el = this.el;
+        if (!el) return;
+        this.ensureAnchor();
+        if (el.parentNode) el.remove();
+    }
+
+    /** 重挂宿主：若 el 已 detach（无父），插回锚点注释前。锚点常驻作书签。 */
+    private reattachHost() {
+        const el = this.el;
+        if (!el) return;
+        this.ensureAnchor();
+        const anchor = this.anchorComment;
+        if (!el.parentNode && anchor?.parentNode) {
+            anchor.parentNode.insertBefore(el, anchor);
+        }
+    }
+
+    /** keep 模式（x-if.keep）：摘宿主但保活子树与 watcher，true 时原宿主 reattach（状态保留） */
+    private toggleKeep(show: boolean) {
+        if (show) this.reattachHost();
+        else this.detachHost();
+    }
+
+    /**
+     * eager 模式：true→reattach 宿主 + 编译挂载子树；false→销毁子 scope + 移除子树 + 摘宿主。
+     * 仅操作自身挂载的 subtreeNodes，子树 scope 经 binding.children 由 scope.destroy 递归清理。
      */
     private toggleEager(show: boolean) {
         const el = this.el;
         const tpl = this.template;
         if (!el || !tpl) return;
         if (show) {
+            this.reattachHost();
             // 子树未挂载时才编译（防止重复 true 的二次编译）
             if (this.subtreeNodes.length === 0) {
                 this.subtreeNodes = this.engine.compiler.compileSubtree(el, tpl, this.binding);
             }
-            el.style.display = "";
         } else {
-            // 先销毁子 scope（子树 watcher 批量 off），再精确移除自身挂载的节点
+            // 先销毁子 scope（子树 watcher 批量 off），再精确移除自身挂载的节点，最后摘宿主
             this.destroyChildren();
-            // @ts-ignore
             for (const node of this.subtreeNodes) node.remove();
             this.subtreeNodes = [];
-            el.style.display = "none";
+            this.detachHost();
         }
     }
 

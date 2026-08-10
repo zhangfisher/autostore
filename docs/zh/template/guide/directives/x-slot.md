@@ -60,21 +60,9 @@ engine.state.postUrl = "/posts/2.html";
 
 url 变化时销毁当前 child engine、重新 fetch、重建。加载期间自动用 `x-loading` 显示覆盖层，失败显示错误占位。
 
-### 威胁边界
-
-`x-slot` 的「保持原样」只挡**反应式刷新**（T1：scheduler flush 不擦内容）——这是它的核心价值。而**结构重建**（`x-if` toggle / `engine.data` / `patch`）与**全量重编译**（`engine.compile`）与普通元素一视同仁：宿主被销毁则内容 / child engine 随销，重建时静态重克隆 / remote 重 fetch。
-
 ## 配置
 
-| 配置项 | 形式 | 说明 |
-| --- | --- | --- |
-| 指令值 | 无值 / `x-slot="urlExpr"` | 无值=static 冻结；有值=remote（表达式求值为 url） |
-
-| 元数据 | 值 | 说明 |
-| --- | --- | --- |
-| `priority` | `90` | 结构指令档（介于 `x-if` 80 / `x-for` 100） |
-| `singleton` | `true` | 同元素同名取最后声明 |
-| `ownsChildren` | `true` | 独占子树（static 自行克隆填充、remote 由 child engine 接管） |
+`x-slot` 的指令值决定插槽模式：**无值** = static（编译期冻结子树）、`x-slot="urlExpr"` = remote（表达式求值为 url，由 child engine 接管）。**无独立指令选项与修饰符**。
 
 ::: info 关于指令配置体系
 指令选项 / 修饰符 / 宿主选项 / 两层回退见[指令配置](../config.md)。
@@ -82,6 +70,7 @@ url 变化时销毁当前 child engine、重新 fetch、重建。加载期间自
 
 ## 注意事项
 
+- **「保持原样」只挡反应式刷新**：`x-slot` 的隔离只挡 scheduler flush 不擦内容（核心价值）；而**结构重建**（`x-if` toggle / `engine.data` / `patch`）与**全量重编译**（`engine.compile`）与普通元素一视同仁——宿主被销毁则内容 / child engine 随销，重建时静态重克隆 / remote 重 fetch。
 - **不能与 `x-for` / eager `x-if` 同元素**：三者都要独占子树（ownership 冲突）。需要时外层包裹。
 - **static 内容不响应式**：内层指令 / 插值静默失效，要响应式用普通元素或 remote。
 - **remote 用独立 store**：child engine 自带空 store，不复用父 store——子模板的状态用自身 `x-data` 声明，与父状态零耦合。

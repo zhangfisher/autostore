@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-style · transition 过渡动画</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            .box {
+                display: inline-block;
+                margin: 8px 12px 8px 0;
+                border-radius: 8px;
+                vertical-align: middle;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="demo-app">
+            <div>
+                <!-- x-style.transition：注入默认 transition:all 0.3s ease-in，尺寸/颜色变化自动过渡 -->
+                <div class="box" x-style.transition="box.on ? box.big : box.small"></div>
+            </div>
+            <!-- 同样的 .transition，用 x-bind-options 覆盖过渡时长与缓动（指令选项层显式优先） -->
+            <div
+                class="box"
+                x-style.transition="box.on ? box.big : box.small"
+                x-bind-options="{transition:'all 0.8s ease-out'}"
+            ></div>
+
+            <button class="btn" @click="toggle">切换样式（观察两个方块的不同过渡）</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    box: {
+                        // 布尔旗标驱动两套样式切换：避免对「从 store 读出的对象」做 === 比较
+                        // （读出的是 Proxy，与原始引用永不相等，详见 CONTEXT.md「响应式对象身份」）
+                        on: false,
+                        small: { backgroundColor: "#42b883", width: "120px", height: "120px" },
+                        big: { backgroundColor: "#e07000", width: "200px", height: "160px" },
+                    },
+                },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.box.on = !engine.state.box.on;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

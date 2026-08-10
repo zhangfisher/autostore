@@ -17,12 +17,12 @@
 
         <script>
             const { AutoTemplateEngine } = AutoTemplateSpaces;
-            const root = document.querySelector(".demo-app");
-            const engine = new AutoTemplateEngine(root, {}, {
+            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {}, {
                 actions: {
-                    // 普通函数拿 this（OnEvalContext）；this.data 含局部 dataScope
+                    // this.data 是 OnEvalContext 的聚合视图；写 times 经 set 陷阱透传到
+                    // 本层私有响应式域（store.state._scopes[id].times），触发细粒度更新。
                     bump: function () {
-                        engine.data(root, { times: this.data.times + 1 });
+                        this.data.times = this.data.times + 1;
                     },
                 },
             });

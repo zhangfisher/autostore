@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>动作 · 触发方式</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 无参：裸动作名 / 带参：动作名(参数) / $event：拿事件对象 / 表达式兜底：count++ -->
+        <div class="demo-app">
+            <p>消息：<span class="val" x-text="msg"></span></p>
+            <p>计数：<span class="val" x-text="count"></span></p>
+            <div class="row">
+                <button class="btn" @click="hi">无参：hi</button>
+                <button class="btn" @click="say('来自按钮')">带参：say("...")</button>
+                <button class="btn" @click="count++">表达式兜底：count++</button>
+            </div>
+            <div class="row">
+                <input class="input" @input="onInput($event)" placeholder="$event：输入即触发" />
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { msg: "你好", count: 0 },
+                {
+                    actions: {
+                        // 无参：直接引用动作名
+                        hi: function () {
+                            this.engine.state.msg = "hi() — 无参调用";
+                        },
+                        // 带参：动作名(参数)，参数经 with(data) 求值
+                        say: function (text) {
+                            this.engine.state.msg = `say("${text}") — 带参调用`;
+                        },
+                        // $event：拿到原生事件对象
+                        onInput: function (event) {
+                            this.engine.state.msg = `输入：${event.target.value}`;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

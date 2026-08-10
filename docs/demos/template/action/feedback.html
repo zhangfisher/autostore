@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>动作 · feedback 修饰符</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            /* .feedback 默认反馈类：pending 时加载态、resolved 时成功态 */
+            .btn.pending {
+                background: #999;
+                opacity: 0.7;
+            }
+            .btn.resolved {
+                background: #2c8c5e;
+                box-shadow: 0 0 0 2px #aee9d5;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- .feedback：动作 pending/resolved 时自动切换触发元素类，声明式执行反馈 -->
+        <div class="demo-app">
+            <p>状态：<span class="val" x-text="status"></span></p>
+            <button class="btn" @click.feedback="save">保存（.feedback）</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { status: "空闲" },
+                {
+                    actions: {
+                        save: async function () {
+                            this.engine.state.status = "保存中...";
+                            await new Promise((r) => setTimeout(r, 800));
+                            this.engine.state.status = "已保存";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

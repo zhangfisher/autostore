@@ -14,11 +14,7 @@ engine.patch("#box", (el) => {
 });
 ```
 
-## 为何需要它
-
-`engine.patch` 靠「模板元素 → scope」的正向桥定位运行元素。但**含指令或插值的元素才会建 scope**——纯静态裸元素没有 scope，`patch` 找不到它。
-
-`x-patch` 就是给这种裸元素挂上 scope 的最轻手段：`created` / `compile` / `destroy` 全是空操作，不建数据域、不注入内容，只让元素进正向桥。
+`engine.patch` 靠「模板元素 → scope」的正向桥定位运行元素。但**含指令或插值的元素才会建 scope**——纯静态裸元素没有 scope，`patch` 找不到它。`x-patch` 就是给这种裸元素挂上 scope 的最轻手段：`created` / `compile` / `destroy` 全是空操作，不建数据域、不注入内容，只让元素进正向桥。
 
 ## 快速入门
 

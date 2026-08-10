@@ -5,8 +5,7 @@
 `x-on:event`（简写 `@event`）监听任意事件，触发一个**动作**（action）或求值一段表达式。它是交互的入口——动作里改写状态，状态变化再驱动界面更新。
 
 ```html
-<button @click="save">保存</button>
-<input @input="onInput($event)" />
+<button @click="save">保存</button> <input @input="onInput($event)" />
 ```
 
 ## 快速入门
@@ -39,11 +38,11 @@
 
 修饰符串联在事件名后，按类型分三类：
 
-| 类型 | 修饰符 | 作用 |
-| --- | --- | --- |
-| option | `.once` `.capture` `.passive` | 合并进 `addEventListener` 第 3 参 |
-| guard | `.self` `.ctrl` `.alt` `.shift` `.meta` `.exact` `.enter` `.esc` `.space` ... `.left` `.right` `.middle` | 组成 AND 链，任一不满足则短路 |
-| wrapper | `.debounce` `.feedback` | 由外向内包裹整条管道 |
+| 类型    | 修饰符                                                                                                   | 作用                              |
+| ------- | -------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| option  | `.once` `.capture` `.passive`                                                                            | 合并进 `addEventListener` 第 3 参 |
+| guard   | `.self` `.ctrl` `.alt` `.shift` `.meta` `.exact` `.enter` `.esc` `.space` ... `.left` `.right` `.middle` | 组成 AND 链，任一不满足则短路     |
+| wrapper | `.debounce` `.feedback`                                                                                  | 由外向内包裹整条管道              |
 
 ```html
 <!-- 只触发一次 -->
@@ -97,12 +96,18 @@ feedback 捕获动作返回的 Promise 精确反馈，连点时用 generation �
 
 ## 配置
 
-`x-on` 的指令值是动作名或表达式；修饰符与反馈等行为经指令选项配置（详见[指令配置](../config.md)）。
+`x-on` 的指令值是动作名或表达式（必填）。下列配置项控制触发条件与反馈（修饰符与指令选项等价）；带 ✅ 者可用修饰符方式启用，完整修饰符清单见[指南](#修饰符)与[动作](../action.md)。
 
-| 元数据 | 值 | 说明 |
-| --- | --- | --- |
-| `priority` | `50` | 绑定类指令 |
-| `singleton` | `false` | 同一元素可声明多个不同事件（如 `@click` 与 `@input` 并存） |
+| 配置项                                                                      | 默认值                               | 修饰符 | 说明                                                                         |
+| --------------------------------------------------------------------------- | ------------------------------------ | ------ | ---------------------------------------------------------------------------- |
+| `debounce`                                                                  | `300`（`.debounce` 裸用）            | ✅     | 防抖毫秒；`.debounce` 默认 300，`x-on-options="{debounce:N}"` 自定义         |
+| `feedback`                                                                  | 类名 `pending`/`resolved`/`rejected` | ✅     | 执行反馈对象 `{at,timeout,pendingClass,resolvedClass,rejectedClass,loading}` |
+| `once` / `capture` / `passive`                                              | 未启用                               | ✅     | 合并进 `addEventListener` 第 3 参                                            |
+| guard（`.self` `.ctrl` `.alt` `.shift` `.meta` `.exact` `.enter` `.esc` …） | 未启用                               | ✅     | 组成 AND 链，任一不满足则短路                                                |
+
+::: info 关于指令配置体系
+指令选项 / 修饰符 / 宿主选项 / 两层回退见[指令配置](../config.md)。
+:::
 
 ## 注意事项
 

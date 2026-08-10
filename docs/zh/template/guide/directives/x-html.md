@@ -26,15 +26,15 @@ const engine = new AutoTemplateEngine(el, {
 
 ## 指南
 
-### 默认消毒（safe-by-default）
+### 默认安全转义
 
-注入的 HTML 默认经消毒器处理，`<script>`、`onerror`/`onclick` 等事件属性、危险协议 URL 都被剥除：
+注入的 HTML 默认经安全转义处理，`<script>`、`onerror`/`onclick` 等事件属性、危险协议 URL 都被剥除：
 
 <demo html="template/html/basic.html"/>
 
 ```javascript
 // 含恶意脚本的 HTML：script 被剥、onerror 被剥，安全渲染
-engine.state.content = '<p>注入</p><script>alert(1)<\/script><img src=x onerror=alert(1)>';
+engine.state.content = "<p>注入</p><script>alert(1)<\/script><img src=x onerror=alert(1)>";
 ```
 
 默认消毒器是内置极简实现（剥 `<script>` / `on*` / 危险协议）。高安全场景可注入工业级消毒器：
@@ -43,9 +43,9 @@ engine.state.content = '<p>注入</p><script>alert(1)<\/script><img src=x onerro
 new AutoTemplateEngine(el, state, { sanitizer: DOMPurify.sanitize });
 ```
 
-### .raw 退出消毒
+### 原样输出
 
-`.raw` 修饰符跳过消毒，把绑定值**原样**写入 `innerHTML`——仅用于受信内容（自家服务端富文本、本地静态片段）：
+`.raw` 修饰符把绑定值**原样**写入 `innerHTML`——仅用于受信内容（自家服务端富文本、本地静态片段）：
 
 <demo html="template/html/raw.html"/>
 
@@ -55,7 +55,7 @@ new AutoTemplateEngine(el, state, { sanitizer: DOMPurify.sanitize });
 
 ### 注入内容不编译
 
-注入的 HTML 是**静态快照**——引擎不会递归编译它、不建 scope、不注册 watcher。也就是说，注入的 `<span x-text="x">` 不会被当作指令，只作纯 HTML 显示。要让注入内容也响应式，改数据源触发 `x-html` 重新渲染整段。
+注入的 HTML 是**静态快照,不是模板**——引擎不会递归编译它。也就是说，注入的 `<span x-text="x">` 不会被当作指令，只作纯 HTML 显示。要让注入内容也响应式，改数据源触发 `x-html` 重新渲染整段。
 
 ### 空值占位与隐藏
 
@@ -63,17 +63,14 @@ new AutoTemplateEngine(el, state, { sanitizer: DOMPurify.sanitize });
 
 ## 配置
 
-| 配置项 | 形式 | 说明 |
-| --- | --- | --- |
-| `.raw` | 修饰符 | 跳过消毒、原样写入 innerHTML（受信内容） |
-| `empty` / `emptyValues` | `x-html-options` | 空值占位，同 x-text（占位串过消毒） |
-| `.hide` | 修饰符 | 空值时隐藏宿主，同 x-text |
-| `sanitizer` | `engine.options.sanitizer` | 自定义消毒器（如 DOMPurify），`.raw` 时整体跳过 |
+`x-html` 的指令值是绑定的表达式（必填，作为 HTML 片段写入 `innerHTML`，默认过消毒）。下列配置项控制消毒与空值行为；带 ✅ 者可用修饰符方式启用。
 
-| 元数据 | 值 | 说明 |
-| --- | --- | --- |
-| `priority` | `0` | 内容类指令 |
-| `singleton` | `true` | 同元素同名取最后声明 |
+| 配置项                  | 默认值         | 修饰符 | 说明                                                                                |
+| ----------------------- | -------------- | ------ | ----------------------------------------------------------------------------------- |
+| `.raw`                  | 未启用         | ✅     | 跳过消毒、原样写入 innerHTML（仅受信内容）                                          |
+| `empty` / `emptyValues` | `""` / `[]`    |        | 空值占位，同 x-text（占位串过消毒）                                                 |
+| `.hide`                 | 未启用         | ✅     | 空值时隐藏宿主，同 x-text                                                           |
+| `sanitizer`             | 内置白名单消毒 |        | 自定义消毒器（如 DOMPurify），`.raw` 时整体跳过；经 `engine.options.sanitizer` 配置 |
 
 ::: info 关于指令配置体系
 指令选项 / 修饰符 / 宿主选项 / 两层回退见[指令配置](../config.md)。

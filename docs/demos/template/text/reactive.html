@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
     <head>
         <meta charset="UTF-8" />
@@ -28,9 +28,9 @@
                         },
                         burst: () => {
                             // 同一 tick 内多次赋值，调度器合并为一次 patch，最终只渲染 "3"
-                            engine.state.count = 1;
-                            engine.state.count = 2;
-                            engine.state.count = 3;
+                            engine.state.count++;
+                            engine.state.count++;
+                            engine.state.count++;
                         },
                     },
                 },

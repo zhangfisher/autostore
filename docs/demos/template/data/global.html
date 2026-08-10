@@ -9,28 +9,40 @@
     </head>
 
     <body>
-        <!-- x-data.global：数据合并进全局 store，所有 scope 可见，可直接改 engine.state -->
-        <div class="demo-app" x-data.global="{ theme: 'green', lang: 'zh' }">
-            <p>
-                主题：<span class="val" x-text="theme"></span>，语言：<span class="val" x-text="lang"></span>
-            </p>
-            <button class="btn" @click="swap">切换主题</button>
+        <!-- x-data.global：数据合并进全局 store 根键，所有 scope 可见（不止声明子树）。
+             下面三块互相独立，却都能读到 theme/lang —— 点「切换主题」三块同步变化。 -->
+        <div class="demo-app">
+            <!-- 块 A：声明 x-data.global，数据合并进全局 store.state -->
+            <div class="card" x-data.global="{ theme: 'green', lang: 'zh' }">
+                <div class="label">块 A · 声明处（x-data.global）</div>
+                <p>主题：<b class="val">{{theme}}</b>，语言：<b class="val">{{lang}}</b></p>
+                <button class="btn btn-sm" @click="swap">切换主题</button>
+            </div>
+
+            <!-- 块 B：独立子树，未声明任何 x-data，却能读到 theme/lang —— 证明全局可见 -->
+            <div class="card">
+                <div class="label">块 B · 独立子树（未声明 x-data）</div>
+                <p>同样读到：主题=<b class="val">{{theme}}</b>，语言=<b class="val">{{lang}}</b></p>
+            </div>
+
+            <!-- 块 C：另一个 x-data 私有域，私有数据隔离，但仍能读全局 theme -->
+            <div class="card" x-data="{ local: '私有数据' }">
+                <div class="label">块 C · 另一个 x-data（私有域）</div>
+                <p>私有：<b class="val">{{local}}</b>｜全局主题：<b class="val">{{theme}}</b></p>
+            </div>
         </div>
 
         <script>
             const { AutoTemplateEngine } = AutoTemplateSpaces;
-            const engine = new AutoTemplateEngine(
-                document.querySelector(".demo-app"),
-                {},
-                {
-                    actions: {
-                        // theme 经 x-data.global 注入全局，直接改 engine.state 即可
-                        swap: () => {
-                            engine.state.theme = engine.state.theme === "green" ? "blue" : "green";
-                        },
+            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {}, {
+                actions: {
+                    // theme 经 x-data.global 注入全局 store 根键，直接改 engine.state 即可；
+                    // 三块订阅了全局 theme 的视图都会同步更新（块 B/C 并非声明子树，照样收到）
+                    swap: () => {
+                        engine.state.theme = engine.state.theme === "green" ? "blue" : "green";
                     },
                 },
-            );
+            });
         </script>
     </body>
 </html>

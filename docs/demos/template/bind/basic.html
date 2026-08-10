@@ -23,31 +23,38 @@
 
         <script>
             const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const link1 = {
+                url: "https://github.com/zhangfisher/autostore",
+                text: "AutoStore",
+                tip: "打开仓库",
+            };
+            const link2 = {
+                url: "https://vitepress.dev",
+                text: "VitePress",
+                tip: "打开文档",
+            };
+            const img1 = {
+                src: "https://api.dicebear.com/7.x/identicon/svg?seed=A",
+                alt: "头像 A",
+            };
+            const img2 = {
+                src: "https://api.dicebear.com/7.x/identicon/svg?seed=B",
+                alt: "头像 B",
+            };
+            // 初值须为 false：首次点击即切到 link2；若为 true，首次会重复赋 link1（无变化）
+            let flag = false;
             const engine = new AutoTemplateEngine(
                 document.querySelector(".demo-app"),
                 {
-                    link: {
-                        url: "https://github.com/zhangfisher/autostore",
-                        text: "AutoStore",
-                        tip: "打开仓库",
-                    },
-                    img: {
-                        src: "https://api.dicebear.com/7.x/identicon/svg?seed=A",
-                        alt: "头像 A",
-                    },
+                    link: link1,
+                    img: img1,
                 },
                 {
                     actions: {
                         swap: () => {
-                            engine.state.link = {
-                                url: "https://vitepress.dev",
-                                text: "VitePress",
-                                tip: "打开文档",
-                            };
-                            engine.state.img = {
-                                src: "https://api.dicebear.com/7.x/identicon/svg?seed=B",
-                                alt: "头像 B",
-                            };
+                            engine.state.link = flag ? link1 : link2;
+                            engine.state.img = flag ? img1 : img2;
+                            flag = !flag;
                         },
                     },
                 },

@@ -482,15 +482,15 @@ describe("x-for 与 x-if 等指令组合", () => {
                 ],
             },
         );
-        // b 的 li 存在但 display:none（x-if v1 不移除 DOM）
+        // b 的 li 被 eager x-if 摘除（detach，离开 DOM），ul 仅剩 a
         expect(root).toEqualHTML(`<div>
   <ul>
     <li>a</li>
-    <li style="display: none;">b</li>
   </ul>
 </div>`);
         store.state.items[1]!.show = true;
         await nextTick();
+        // show:true → b 的 li reattach
         expect(root).toEqualHTML(`<div>
   <ul>
     <li>a</li>
@@ -499,26 +499,46 @@ describe("x-for 与 x-if 等指令组合", () => {
 </div>`);
     });
 
-    test("x-for + x-if + x-text 表达式：隐藏期间子树 watcher 仍累积最新值", async () => {
+    test("x-for 项根 eager x-if 隐藏 + items 增项：复用项 refresh 重新 detach（不误显示）", async () => {
+        const { root, store } = mount(
+            `<ul x-for="item of items" :key="item.id"><li x-if="item.show" x-text="item.name"></li></ul>`,
+            { items: [{ id: 1, name: "a", show: false }, { id: 2, name: "b", show: true }] },
+        );
+        // 初始：a 的 li 被 eager x-if 摘除（detach），仅 b 显示
+        expect(root).toEqualHTML(`<div>
+  <ul>
+    <li>b</li>
+  </ul>
+</div>`);
+        // 增项 c：触发 render。Pass3 重排会把 a 的 li 插回 container，但 Pass4 refresh
+        //（lengthChanged）重跑 a 的 x-if watcher → toggle(false) → 重新 detach，故 a 仍不显示
+        store.state.items.push({ id: 3, name: "c", show: true });
+        await nextTick();
+        expect(root).toEqualHTML(`<div>
+  <ul>
+    <li>b</li>
+    <li>c</li>
+  </ul>
+</div>`);
+    });
+
+    test("x-for + x-if + x-text 表达式：隐藏期间宿主 scope watcher 仍累积最新值", async () => {
         const { root, store } = mount(
             `<ul x-for="item of items" :key="item.id"><li x-if="item.show" x-text="item.name + '!'"></li></ul>`,
             { items: [{ id: 1, name: "a", show: false }] },
         );
-        // 初始隐藏
+        // 初始隐藏：eager 摘 li（detach，离开 DOM），ul 空
         expect(root).toEqualHTML(`<div>
-  <ul>
-    <li style="display: none;">a!</li>
-  </ul>
+  <ul></ul>
 </div>`);
-        // 隐藏期间改 name：x-if v1 子树 watcher 仍存活，DOM 被 patch（不可见）
+        // 隐藏期间改 name：x-text watcher 在宿主 li scope 存活（detach 不销毁宿主 scope），
+        // 累积更新到 detach 的 li；ul 仍空（li 不在 DOM）
         store.state.items[0]!.name = "b";
         await nextTick();
         expect(root).toEqualHTML(`<div>
-  <ul>
-    <li style="display: none;">b!</li>
-  </ul>
+  <ul></ul>
 </div>`);
-        // 显示：直接反映累积的最新值
+        // 显示：reattach li，反映隐藏期间累积的最新值 b!
         store.state.items[0]!.show = true;
         await nextTick();
         expect(root).toEqualHTML(`<div>
@@ -545,14 +565,13 @@ describe("x-for 与 x-if 等指令组合", () => {
                 ],
             },
         );
-        // c2 的 li 存在但 display:none
+        // c2 的 li 被 eager x-if 摘除（detach），ol 仅剩 a、c
         expect(root).toEqualHTML(`<div>
   <ul>
     <li>
       <b>R1</b>
       <ol>
         <li>a</li>
-        <li style="display: none;">b</li>
         <li>c</li>
       </ol>
     </li>
@@ -798,12 +817,12 @@ describe("x-for 循环变量注入（$index/$length/$begin/$end/$odd/$even）", 
 </div>`);
     });
 
-    test("$end + x-if：行间分隔线，末行隐藏（hr 为叶子，eager 退化为 display:none）", async () => {
+    test("$end + x-if：行间分隔线，末行 hr 摘除（hr 为叶子，eager detach）", async () => {
         const { root, store } = mount(
             `<ul x-for="n of nums"><li x-text="n"></li><hr x-if="!$end"/></ul>`,
             { nums: ["a", "b", "c"] },
         );
-        // hr 无子树：eager 销毁无对象，退化为 display:none；仅末项 hr 隐藏
+        // hr 为叶子：eager 假时摘除（detach，离开 DOM）；仅末项 c 的 hr 摘除
         expect(root).toEqualHTML(`<div>
   <ul>
     <li>a</li>
@@ -811,10 +830,9 @@ describe("x-for 循环变量注入（$index/$length/$begin/$end/$odd/$even）", 
     <li>b</li>
     <hr>
     <li>c</li>
-    <hr style="display: none;">
   </ul>
 </div>`);
-        // 增项：原末项 c 的 hr 恢复显示，新末项 d 的 hr 隐藏（$end 切换 → 全量重建后正确）
+        // 增项：原末项 c 不再末项 → hr reattach 显示；新末项 d 的 hr 摘除
         store.state.nums.push("d");
         await nextTick();
         expect(root).toEqualHTML(`<div>
@@ -826,7 +844,6 @@ describe("x-for 循环变量注入（$index/$length/$begin/$end/$odd/$even）", 
     <li>c</li>
     <hr>
     <li>d</li>
-    <hr style="display: none;">
   </ul>
 </div>`);
     });

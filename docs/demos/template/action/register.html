@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>动作 · 全局与局部注册</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 全局动作 engine.actions 全模板可见；局部动作 <script type="actions"> 沿 scope 父链优先命中 -->
+        <div class="demo-app">
+            <p>全局消息：<span class="val" x-text="msg"></span></p>
+            <!-- 外层按钮：本 scope 无局部 ping → 命中全局 ping -->
+            <button class="btn" @click="ping('外层按钮')">外层：调用 ping</button>
+
+            <div class="card" x-data="{ localMsg: '块内初始' }">
+                <p>块内消息：<span class="val" x-text="localMsg"></span></p>
+                <!-- 局部动作：仅本 scope 子树可见，同名覆盖全局 -->
+                <script type="actions">
+                    {
+                        ping(who) {
+                            this.data.localMsg = `局部 ping 命中（来自 ${who}）`;
+                        }
+                    }
+                </script>
+                <!-- 块内按钮：命中局部 ping，不冒泡到全局 -->
+                <button class="btn" @click="ping('块内按钮')">块内：调用同名 ping</button>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { msg: "（无）" },
+                {
+                    actions: {
+                        // 全局 ping：进总线、全模板可见
+                        ping: function (who) {
+                            this.engine.state.msg = `全局 ping 命中（来自 ${who}）`;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

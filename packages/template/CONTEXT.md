@@ -54,7 +54,29 @@ _Avoid_: falsy 集（不是 falsy 真值判定）
 x-text / x-html 的修饰符，绑定值为空时将宿主元素内联 `display` 置 `none`（隐藏且不占位）；值恢复非空时**还原原内联 display**（如原 `flex` 保持 `flex`；无内联则还原为空串，让 CSS 类重新接管）。是空值占位的强化手段——要占位文案用 `empty`，要整块消失用 `.hide`。键名 `hide` 与 `empty`（文案）分离，避免撞键。
 _Avoid_: `.empty`（与 empty 文案配置撞键）、`.ghost`（暗示 visibility:hidden 占位，与 display:none 语义冲突）
 
+**`.transition` 修饰符（x-style）**:
+x-style / :style 的修饰符（仅 `attr === 'style'`），每次写样式时注入一条 CSS `transition` 声明，让内联样式的响应式变化被浏览器自动过渡动画，默认 `all 0.3s ease-in`。值取三级优先：用户样式对象自带的 `transition` key（显式）> `getOption('transition')`（`.transition` 注入的 `true`、或 `x-bind-options` 传的字符串）> 默认值。带 `.transition` 时覆盖/关闭须用 `x-bind-options`（指令选项层，早于修饰符合并），`x-options`（宿主层）被修饰符遮蔽、不生效。详见 ADR-0015。
+_Avoid_: `x-transition` 指令（那是挂载/卸载生命周期的**进出场转场动画**，配合 x-if/x-show/x-teleport，是同名正交的另一个概念）、`.smooth`/`.animated`（牺牲与 CSS `transition` 属性的直觉映射）
+
+### 显隐控制层
+
+**锚点注释（Anchor Comment）**:
+x-if（eager / `.keep`）条件为假时留在宿主原位的注释节点，作宿主重挂载的 DOM 书签——随 DOM 移动、`parentNode` 恒为当前父，重插位稳定。仅 x-if 家族使用；x-show 宿主永留 DOM，无锚点。
+_Avoid_: 占位符（歧义大，本表保留给空值渲染）、marker、占位节点
+
+**条件存在性 / x-if（Conditional Presence）**:
+x-if 控制宿主**是否存在于 DOM 树**。条件为假时**摘除宿主**（detach）并以锚点注释占位——宿主离开 DOM，不再被 `querySelector` / `:nth-child` / 表单提交命中。`.keep` 修饰符切两态：eager（默认）假时**销毁子树 scope**、真时重编译子树；`.keep` 假时**保活子树与 watcher**、真时原宿主 reattach（状态保留）。eager 占子树（ownsChildren）故与 x-for 同元素冲突；`.keep` 不占子树，可与 x-for 共存。
+_Avoid_: 显示/隐藏（那是 x-show 的可见性语义）、条件渲染（泛化词）
+
+**条件可见性 / x-show（Conditional Visibility，独立指令）**:
+控制宿主**是否可见**，宿主**永留 DOM**。条件为假时 `display:none`（仍占 `:nth-child` 位、仍被表单提交、`querySelector` 仍命中），子树与 watcher 全保留、最轻量。**独立指令，不再是 `x-if.keep` 的别名**（别名关系已废弃，见下）。不占子树，可与 x-for 共存。
+_Avoid_: x-if.keep 别名/快捷方式（已废弃）、x-if（存在性 vs 可见性，二者正交）
+
 ### 已废弃
+
+**x-show 别名（x-show as x-if.keep alias）**:
+已废弃。x-show 曾是 `x-if.keep` 的解析期别名（`getDirectives.ts` 归一化为 `if` + `keep` 修饰符，零运行时实体），把「条件存在性」与「条件可见性」两个正交概念合并成一指令的两态，造成 `.keep` 到底 detach 还是 display:none 的语义反复。现拆分：x-show 独立为可见性指令（display:none），`x-if.keep` 升级为存在性指令（detach 保活）。详见 ADR-0016。
+_Avoid_: （不再使用）
 
 **位置参数修饰符（Positional Modifier Argument）**:
 已被废弃的修饰符带值语法，形如 `.debounce.500` 中句点后的数字段。带值配置现统一走**指令选项**（如 `x-on-options="{debounce:500}"`）。详见 ADR-0007。

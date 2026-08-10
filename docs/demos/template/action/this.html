@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>动作 · action 的 this</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- action 执行时 this = OnEvalContext：携带 el / $event / data / scope / store / engine / $options -->
+        <div class="demo-app">
+            <!-- 全局根状态（engine.state） -->
+            <p>全局计数：<span class="val" x-text="count"></span></p>
+            <!-- x-data 私有响应式域：this.data.log 的写入经 set 陷阱透传，触发下方 pre 字段级更新 -->
+            <div x-data="{ log: '点击按钮，观察 this 各字段的值\n' }">
+                <div class="row">
+                    <button class="btn" @click="onEl">this.el</button>
+                    <button class="btn" @click="onEvent">this.$event</button>
+                    <button class="btn" @click="onData">this.data</button>
+                    <button class="btn" @click="onEngine">this.engine</button>
+                    <button class="btn" @click="onScope">this.scope</button>
+                </div>
+                <pre class="pre" x-text="log"></pre>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { count: 0 },
+                {
+                    actions: {
+                        // 触发元素（= $event.currentTarget），可就近操作 DOM
+                        onEl: function () {
+                            this.data.log += `this.el      = <${this.el.tagName.toLowerCase()}>\n`;
+                        },
+                        // 原生事件对象：拿 target / type / 按键等
+                        onEvent: function () {
+                            this.data.log += `this.$event  = type="${this.$event.type}"  target=<${this.$event.target.tagName.toLowerCase()}>\n`;
+                        },
+                        // 聚合数据视图（局部 dataScope + 全局 state）：读可见全部，写局部键透传响应式
+                        onData: function () {
+                            this.data.log += `this.data    → count = ${this.data.count}\n`;
+                            this.engine.state.count += 1;
+                            this.data.log += `  写 this.engine.state.count++ 后 → ${this.data.count}\n`;
+                        },
+                        // 引擎入口：等价于外部持有的 engine 变量
+                        onEngine: function () {
+                            this.data.log += `this.engine  === 外部 engine ? ${this.engine === engine}\n`;
+                        },
+                        // scope 入口：getDataScope() 取当前 x-data 块的响应式代理
+                        onScope: function () {
+                            const ds = this.scope.getDataScope();
+                            this.data.log += `this.scope   = id#${this.scope.id}  dataScope.keys = [${Object.keys(ds ?? {}).join(", ")}]\n`;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

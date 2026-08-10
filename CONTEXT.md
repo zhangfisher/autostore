@@ -30,3 +30,7 @@ _Avoid_: fan-out, propagate
 **Peep（偷看）**:
 在 `_peeping=true` 守卫下读取状态，抑制 `get` 操作事件，避免在监听器/广播回调内部读值引发无限循环。
 _Avoid_: silent read, peek
+
+**响应式对象身份（Reactive Identity）**:
+从 store 读出的对象型状态是包装该原始对象的 Proxy（按 target 在 `proxyCache` 中缓存），其引用与原始对象永不相等。因此判别「当前状态是否为某对象」不能用 `===` 比较读出的值与原始引用——应以布尔/字符串等原始值作状态判据，或比较某个判别字段。
+_Avoid_: 对象引用、原始对象引用

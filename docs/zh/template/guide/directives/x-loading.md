@@ -62,18 +62,18 @@ engine.state.ui.loading = false; // 隐藏
 
 ## 配置
 
-`setAttribute` 时传 JSON 配置对象（命令式 overlay 模式）：
+`x-loading` 的指令值是显示状态表达式（快速绑定 `x-loading="isLoading"`，全默认），或配置对象（`x-loading="{ visible:'isLoading', ... }"`，`visible` 必填）。下列配置项在配置绑定时生效；带 ✅ 者可用修饰符方式启用。
 
-| 配置项 | 说明 |
-| --- | --- |
-| `message` | 覆盖层提示文案 |
-| `bgColor` | 覆盖层背景色 |
-| 其他 | 由实现定义的覆盖层样式项 |
-
-| 元数据 | 值 | 说明 |
-| --- | --- | --- |
-| `kind` | `Runtime` | 运行时指令，属性保留、observer 驱动（不走 scope 通道） |
-| `priority` | — | runtime 指令不参与 scope 排序 |
+| 配置项     | 默认值       | 修饰符 | 说明                                                      |
+| ---------- | ------------ | ------ | --------------------------------------------------------- |
+| `visible`  | 必填         |        | 显示状态表达式（全局路径或表达式）                        |
+| `message`  | 无（不渲染） |        | 覆盖层提示文案；不传则不渲染文本节点                      |
+| `bgColor`  | `"black"`    |        | 覆盖层背景色                                              |
+| `color`    | `"#888"`     |        | loader 旋转色（经 `currentColor` 注入）                   |
+| `opacity`  | `0.5`        |        | 覆盖层透明度                                              |
+| `delay`    | `0`          |        | 显示前延时（防闪烁），毫秒                                |
+| `selector` | 宿主元素     |        | 覆盖层挂载目标选择器；`@` 前缀走 `document.querySelector` |
+| `.screen`  | 未启用       | ✅     | 全屏覆盖（`position:fixed`）                              |
 
 ::: info 关于指令配置体系
 指令选项 / 修饰符 / 宿主选项 / 两层回退见[指令配置](../config.md)。

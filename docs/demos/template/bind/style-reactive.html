@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-style · 响应式切换</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 状态的细粒度变化（字号 / 颜色 / 加粗）自动驱动内联 style 更新 -->
+        <div class="demo-app">
+            <p :style="{ color: theme.color, fontSize: theme.size + 'px', fontWeight: theme.bold ? '700' : '400' }">
+                字号 {{ theme.size }}px · {{ theme.bold ? "加粗" : "常规" }}
+            </p>
+            <div class="row">
+                <span class="label">字号</span>
+                <input
+                    type="range"
+                    min="12"
+                    max="40"
+                    :value="theme.size"
+                    @input="resize($event)"
+                />
+            </div>
+            <div class="row">
+                <button class="btn" @click="recolor">换颜色</button>
+                <button class="btn btn-secondary" @click="toggleBold">
+                    {{ theme.bold ? "取消加粗" : "加粗" }}
+                </button>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const COLORS = ["#42b883", "#e07000", "#3b82f6", "#c0392b", "#8e44ad"];
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    theme: {
+                        size: 16,
+                        color: "#42b883",
+                        bold: false,
+                    },
+                },
+                {
+                    actions: {
+                        // @input 经 $event 实时回写状态，style 随之更新
+                        resize: (e) => {
+                            engine.state.theme.size = Number(e.target.value);
+                        },
+                        recolor: () => {
+                            const i = COLORS.indexOf(engine.state.theme.color);
+                            engine.state.theme.color = COLORS[(i + 1) % COLORS.length];
+                        },
+                        toggleBold: () => {
+                            engine.state.theme.bold = !engine.state.theme.bold;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

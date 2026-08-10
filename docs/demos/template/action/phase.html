@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>动作 · phase 修饰符与祖先聚合</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- form 聚合后代任意 submit 动作：任一在跑则"提交中"，完成则"已提交" -->
+        <div class="demo-app">
+            <form
+                @action:submit.pending="formStatus = '提交中...'"
+                @action:submit.resolved="formStatus = '已提交'"
+            >
+                <p>表单状态：<span class="val" x-text="formStatus"></span></p>
+                <div class="row">
+                    <!-- type=button 阻止表单默认提交跳转 -->
+                    <button class="btn" type="button" @click="submit">提交</button>
+                    <button class="btn btn-secondary" type="button" @click="submit">保存草稿</button>
+                </div>
+                <p class="muted">两个按钮都触发 submit 动作，表单统一聚合其生命周期。</p>
+            </form>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { formStatus: "空闲" },
+                {
+                    actions: {
+                        submit: async function () {
+                            await new Promise((r) => setTimeout(r, 800));
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

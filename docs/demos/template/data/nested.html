@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-data · 多级嵌套作用域</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 三级 x-data 嵌套：演示同名键覆盖、未声明键继承、从父/祖父读取 -->
+        <div class="demo-app">
+            <!-- 祖父级：声明 user / role -->
+            <div x-data="{ user: '张三', role: 'admin' }">
+                <div class="card">
+                    <div class="label">祖父级 x-data（声明 user、role）</div>
+                    <p>
+                        读到：user=<b class="val">{{user}}</b>，role=<b class="val">{{role}}</b>
+                    </p>
+                    <button class="btn btn-sm" @click="bump">改本层 user</button>
+                </div>
+
+                <!-- 父级：覆盖 user、新增 score；role 继承祖父 -->
+                <div x-data="{ user: '李四', score: 88 }">
+                    <div class="card">
+                        <div class="label">父级 x-data（覆盖 user、新增 score）</div>
+                        <p>
+                            user=<b class="val">{{user}}</b><span class="muted">←覆盖</span>，
+                            role=<b class="val">{{role}}</b><span class="muted">←继承祖父</span>，
+                            score=<b class="val">{{score}}</b><span class="muted">←新增</span>
+                        </p>
+                        <button class="btn btn-sm" @click="bump">改本层 user</button>
+                    </div>
+
+                    <!-- 子级：覆盖 score；user 继承父、role 继承祖父 -->
+                    <div x-data="{ score: 100 }">
+                        <div class="card">
+                            <div class="label">子级 x-data（覆盖 score）</div>
+                            <p>
+                                user=<b class="val">{{user}}</b><span class="muted">←继承父</span>，
+                                role=<b class="val">{{role}}</b><span class="muted">←继承祖父</span>，
+                                score=<b class="val">{{score}}</b><span class="muted">←覆盖父</span>
+                            </p>
+                            <button class="btn btn-sm" @click="inc">改本层 score</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {}, {
+                actions: {
+                    // 同名 bump：this 指向触发按钮所在的 x-data 层，改的是各自本层的 user。
+                    //   - 点「祖父级」按钮：祖父 user 变（张三→张三!），父/子 user 不变（父已覆盖 user）
+                    //   - 点「父级」按钮：父 user 变（李四→李四!），子 user 跟变（子继承父），祖父不变
+                    bump: function () {
+                        this.data.user = this.data.user + "!";
+                    },
+                    // inc 改本层 score：子层 score 变（100→101），父层 score 不变（子已覆盖 score）
+                    inc: function () {
+                        this.data.score = this.data.score + 1;
+                    },
+                },
+            });
+        </script>
+    </body>
+</html>

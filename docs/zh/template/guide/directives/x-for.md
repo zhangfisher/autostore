@@ -41,12 +41,12 @@ engine.state.books.shift();
 
 每项作用域自动注入一组 `$` 前缀派生变量（不占自定义命名空间）：
 
-| 变量 | 含义 |
-| --- | --- |
-| `$index` | 0-based 序号 |
-| `$length` | 本次渲染项数（筛选后长度） |
-| `$begin` / `$end` | 是否首项 / 末项 |
-| `$odd` / `$even` | 奇数行 / 偶数行（对齐 CSS `:nth-child`） |
+| 变量              | 含义                                     |
+| ----------------- | ---------------------------------------- |
+| `$index`          | 0-based 序号                             |
+| `$length`         | 本次渲染项数（筛选后长度）               |
+| `$begin` / `$end` | 是否首项 / 末项                          |
+| `$odd` / `$even`  | 奇数行 / 偶数行（对齐 CSS `:nth-child`） |
 
 <demo html="template/for/derived.html"/>
 
@@ -90,23 +90,20 @@ engine.state.books.shift();
 
 ```html
 <!-- 用唯一 id 作 key：重排/中间增删时其他项零成本复用 -->
-<ul x-for="item of items" :key="item.id">...</ul>
+<ul x-for="item of items" :key="item.id">
+    ...
+</ul>
 ```
 
 缺省 `:key` 用 index——末尾增删（push/pop）零成本，但中间插入/重排会导致后续项重订阅。
 
 ## 配置
 
-| 配置项 | 形式 | 说明 |
-| --- | --- | --- |
-| 指令值 | `x-for="item of items"` | `项变量[, index变量] of 数组路径\|表达式` |
-| `:key` | 容器上的 `:key="expr"` | 项的唯一标识，缺省用 index |
+`x-for` 的指令值形如 `项变量[, index变量] of 数组路径\|表达式`（必填，如 `x-for="item of items"`）。下列配置项控制项标识；带 ✅ 者可用修饰符方式启用。
 
-| 元数据 | 值 | 说明 |
-| --- | --- | --- |
-| `priority` | `100` | 最高结构指令，先于 `x-if` 等占有子树 |
-| `singleton` | `true` | 同元素同名取最后声明 |
-| `ownsChildren` | `true` | 永远独占子树（子节点是项模板） |
+| 配置项 | 默认值  | 修饰符 | 说明                                               |
+| ------ | ------- | ------ | -------------------------------------------------- |
+| `:key` | `index` |        | 容器上的 `:key="expr"`，项的唯一标识，缺省用 index |
 
 ::: info 关于指令配置体系
 指令选项 / 修饰符 / 宿主选项 / 两层回退见[指令配置](../config.md)。

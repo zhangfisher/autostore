@@ -299,16 +299,16 @@ export class AutoTemplateCompiler {
      *
      * 任意指令类的静态 `ownsChildren(info)` 返回 true 即视为占有。同元素出现多个占有者
      * （当前仅 `x-for` + eager `x-if`）语义互斥——前者重复子树、后者条件销毁子树——直接抛错，
-     * 提示改用 `x-show`/`x-if.keep`（仅切 display，不占子树）或外层包裹。
+     * 提示改用 `x-show`/`x-if.keep`（均不占子树）或外层包裹。
      */
     private _resolveOwnership(scope: AutoTemplateScope): boolean {
         const owners = scope.directives.filter((d) => this._ownsChildrenDirective(d));
         if (owners.length > 1) {
             throw new Error(
-                "[x-if/x-for 冲突] x-if 的条件销毁语义与 x-for 的列表渲染不能作用于同一元素。\n" +
-                    "若需控制整个列表显隐，请改用：\n" +
-                    '  • x-show="<expr>"     （= x-if.keep：保留子树与 watcher，仅切 display）\n' +
-                    '  • x-if.keep="<expr>"  （同上）\n' +
+                "[x-if/x-for 冲突] x-if 的条件存在性（detach）与 x-for 的列表渲染不能作用于同一元素。\n" +
+                    "若需控制整个列表显隐，请改用（均不占子树，可与 x-for 共存）：\n" +
+                    '  • x-show="<expr>"      （display:none，宿主永留 DOM）\n' +
+                    '  • x-if.keep="<expr>"   （detach 宿主，保活子树与 watcher）\n' +
                     '或用外层包裹：<div x-if="<expr>"><ul x-for="…">…</ul></div>',
             );
         }

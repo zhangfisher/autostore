@@ -14,7 +14,7 @@ import { normalizeClass } from "../utils/normalizeClass";
  * **patch 按 attr 分派**（顺序敏感，`checked` 同属 property 与 boolean → property 优先）：
  * - `class` → `normalizeClass` + `classList` diff（有 `lastApplied` 状态，**绝不用 `className=`**，
  *   原生 `class` 属性的 token 永不被碰；静态类走原生 `class`、动态类走 x-class，dirty tracking 合并）
- * - `style` → 字符串 `cssText` / 对象 `Object.assign(el.style)`（diff 留 v2）
+ * - `style` → 字符串 `cssText` 整体替换 / 对象按 key 增删 diff（`lastAppliedStyle` 清残留，避免 `Object.assign` 合并泄漏）
  * - property 型（`value` / `checked`）→ `el[attr] = value`（**单向 state→DOM，非 x-model 双向**）
  * - boolean 型（`disabled` / `readonly` / `hidden` / `selected` / `multiple`）→ truthy `setAttribute` / falsy `removeAttribute`
  * - 普通 attribute → null/undefined/false `removeAttribute`，否则 `setAttribute(attr, String(value))`
@@ -42,10 +42,14 @@ import { normalizeClass } from "../utils/normalizeClass";
  * <div class="btn" x-class="{primary:isPrimary}"></div>
  * // state:{isPrimary:true} → class="btn primary"；isPrimary=false → class="btn"
  *
- * @example x-style：字符串走 `cssText` 整体替换 / 对象走 `Object.assign(el.style)` 合并
+ * @example x-style：字符串走 `cssText` 整体替换 / 对象按 key diff（切换时清除上次多余 key，不残留）
  * <div x-style="styleStr"></div>                                 // state:{styleStr:'color:red'} → style="color:red"
- * <div x-style="styleObj"></div>                                 // state:{styleObj:{color:'red',fontSize:'12px'}} → 合并到 el.style
+ * <div x-style="styleObj"></div>                                 // state:{styleObj:{color:'red',fontSize:'12px'}} → 写入 el.style
  * // 求值为 null/undefined/false/'' → 移除 style 属性
+ *
+ * @example x-style.transition：注入 CSS `transition` 属性，使内联样式变化被浏览器过渡动画
+ * <div x-style.transition="s"></div>                             // state:{s:{color:'red'}} → 首渲即带 transition:all 0.3s ease-in
+ * // 默认值 'all 0.3s ease-in'；x-options/x-bind-options 传字符串可覆盖；对象自带 transition key 显式优先；详见 ADR-0015
  *
  * @example `:value` / `:checked` 走 property，单向 state→DOM（非 x-model 双向，不监听 input 事件）
  * <input :value="text">
@@ -74,6 +78,8 @@ export class BindDirective extends AutoTemplateDirectiveBase {
 
     /** class 分支脏追踪：上次本指令产出的类名集合，用于 diff 增删（原生 class 的 token 不在此集，永不被碰） */
     private lastApplied = new Set<string>();
+    /** style 分支脏追踪：上次对象写入的 style key 集合，用于切换时清除「上次有、本次无」的残留 key */
+    private lastAppliedStyle = new Set<string>();
 
     override created() {
         if (this.value == null || this.value === "") return;
@@ -123,20 +129,56 @@ export class BindDirective extends AutoTemplateDirectiveBase {
     }
 
     /**
-     * style 分支：字符串 → `cssText` 整体替换；对象 → `Object.assign(el.style)` 合并；
-     * falsy → 移除 style 属性。细粒度 diff 留待 v2。
+     * 解析 `.transition` 配置层有效值（三级优先中的 ②③ 层，详见 ADR-0015）。
+     *
+     * - `getOption('transition') === true`（`.transition` 修饰符解析期注入）→ 默认 `'all 0.3s ease-in'`
+     * - 字符串（`x-options` / `x-bind-options` 覆盖）→ 该字符串
+     * - `false` / `undefined` → 不注入（显式 `false` 关闭，与 ADR-0007「显式 false 生效」一致）
+     *
+     * ① 层（用户 style 对象自带的 `transition` key）由 `patchStyle` 对象分支结构处理，不在此。
+     */
+    private resolveTransitionOption(): string | undefined {
+        const opt = this.getOption("transition");
+        if (opt === true) return "all 0.3s ease-in";
+        if (typeof opt === "string") return opt;
+        return undefined;
+    }
+
+    /**
+     * style 分支：字符串 → `cssText` 整体替换；对象 → 按 key 增删 diff（`lastAppliedStyle`
+     * 清除「上次有、本次无」的残留 key，避免 `Object.assign` 合并造成的样式泄漏）；falsy → 移除 style 属性。
+     *
+     * **`.transition` 注入**（仅 style）：每次 patch 内部把有效 `transition` 合并进去——对象模式并入写入对象
+     * （用户自带 `transition` key 显式优先），字符串模式前置注入（用户串内已声明的 `transition` 因 CSS
+     * 「后声明优先」仍胜出）。**不在 `created()` 设一次**：字符串模式 `cssText` 整替会擦除一次性写入。
+     * 注入项纳入 `lastAppliedStyle` 追踪，持续生效；falsy 清空时随 `removeAttribute('style')` 一并清除。
      */
     private patchStyle(value: any) {
         const el = this.el;
         if (!el) return;
         if (value == null || value === false || value === "") {
             el.removeAttribute("style");
+            this.lastAppliedStyle.clear();
             return;
         }
+        // .transition 配置层有效值（②③ 层）；无 .transition 时为 undefined，行为同前
+        const transition = this.resolveTransitionOption();
         if (typeof value === "object") {
-            Object.assign(el.style, value);
+            // 用户对象自带 transition key 即显式优先（①）；否则注入配置层默认/覆盖（②③）
+            const merged =
+                transition && !Object.prototype.hasOwnProperty.call(value, "transition")
+                    ? { ...value, transition }
+                    : value;
+            const next = new Set(Object.keys(merged));
+            // 清掉上次写过、本次对象里没有的 key，防止残留（如 warn→normal 后 fontWeight 仍停留）
+            for (const k of this.lastAppliedStyle) if (!next.has(k)) (el.style as any)[k] = "";
+            // 写本次对象里的 key（驼峰 key 经 CSSStyleDeclaration 的 camelCase 访问器生效）
+            for (const k of next) (el.style as any)[k] = (merged as Record<string, any>)[k];
+            this.lastAppliedStyle = next;
             return;
         }
-        el.style.cssText = String(value);
+        // 字符串模式：前置注入（用户串里若已声明 transition，CSS 后声明优先 → 显式仍胜出）
+        el.style.cssText = transition ? `transition:${transition};${String(value)}` : String(value);
+        this.lastAppliedStyle.clear();
     }
 }
