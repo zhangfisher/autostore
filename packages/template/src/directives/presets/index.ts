@@ -28,6 +28,7 @@ import { OnDirective } from "./on";
 import { LoadingDirective } from "./loading";
 import { SlotDirective } from "./slot";
 import { PatchDirective } from "./patch";
+import { ModelDirective } from "./model";
 
 /**
  * 预设指令映射：指令名 → 指令类。
@@ -45,6 +46,7 @@ export const presetDirectives: Record<string, typeof AutoTemplateDirectiveBase> 
     data: DataDirective,
     bind: BindDirective,
     on: OnDirective,
+    model: ModelDirective,
     loading: LoadingDirective,
     slot: SlotDirective,
     patch: PatchDirective,

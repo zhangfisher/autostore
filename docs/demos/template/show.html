@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-show（条件可见性）</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- x-show：假时 display:none，宿主永留 DOM（仍被 querySelector 命中/表单提交）；
+             子树与 watcher 全保留。可与同模式的 x-if.keepalive demo 对照（detach vs display:none） -->
+        <div class="demo-app">
+            <button class="btn" @click="toggle">{{ on ? "隐藏" : "显示" }}面板</button>
+            <button class="btn" @click="check">querySelector 命中？</button>
+            <p class="muted">检查结果：{{ report }}</p>
+
+            <p>
+                改 draft（面板隐藏时改也行，watcher 仍存活）：
+                <input class="input" @input="onInput($event)" :value="draft" />
+            </p>
+
+            <div x-show="on">
+                <p class="card">
+                    x-show：假时宿主 <strong>仍在 DOM</strong>（仅 <code>display:none</code>）——仍被
+                    <code>querySelector</code> 命中、仍占 <code>:nth-child</code> 位、仍被表单提交；
+                    子树与 watcher <strong>全保留</strong>。
+                </p>
+                <p>
+                    面板内 input（:value 跟随上方）：
+                    <input id="show-input" class="input" :value="draft" readonly />
+                </p>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { on: true, draft: "hello", report: "（点上方按钮检查）" },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.on = !engine.state.on;
+                        },
+                        onInput: ($event) => {
+                            engine.state.draft = $event.target.value;
+                        },
+                        check: () => {
+                            engine.state.report = document.querySelector("#show-input")
+                                ? "✅ 命中（宿主在 DOM，仅 display:none）"
+                                : "❌ 未命中（宿主已离开 DOM）";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

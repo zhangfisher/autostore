@@ -1,6 +1,6 @@
 import type { AutoTemplateEngine } from "../../../engine";
 import type { AutoTemplateScope } from "../../../scope";
-import type { OnEvalContext } from "./types";
+import type { AutoTemplateActionContext } from "./types";
 import { createDirectiveOptions } from "../../utils/createDirectiveOptions";
 
 /**
@@ -65,12 +65,13 @@ export function createEvalHandler(
         if (name) {
             const action = scope.getAction(name);
             if (typeof action === "function") {
-                const ctx: OnEvalContext = {
+                const ctx: AutoTemplateActionContext = {
                     el,
                     $event: event,
                     data,
                     scope,
                     store: engine.store,
+                    state: engine.store.state,
                     engine,
                     $options,
                 };

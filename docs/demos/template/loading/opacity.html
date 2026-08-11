@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · opacity 透明度</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            .panel {
+                position: relative;
+                min-height: 110px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex: 1;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- opacity：覆盖层透明度（0~1），作用于 bgColor 的 alpha 通道，默认 0.5 -->
+        <div class="demo-app">
+            <p>
+                <button class="btn" @click="toggle">{{ on ? '隐藏' : '显示' }}覆盖层</button>
+            </p>
+            <div class="row">
+                <div class="card panel" x-loading="{ visible:'on', bgColor:'black', opacity:0.2 }">
+                    <code>opacity:0.2</code>（淡）
+                </div>
+                <div class="card panel" x-loading="{ visible:'on', bgColor:'black', opacity:0.5 }">
+                    <code>opacity:0.5</code>（默认）
+                </div>
+                <div class="card panel" x-loading="{ visible:'on', bgColor:'black', opacity:0.8 }">
+                    <code>opacity:0.8</code>（深）
+                </div>
+            </div>
+            <p class="muted">opacity 只调遮罩底色 alpha，loader 与文案保持清晰（非整元素 opacity）。</p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { on: true },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.on = !engine.state.on;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

@@ -85,7 +85,7 @@
 
 `x-data` 仅在编译期注入一次，不监听属性变化。运行时改局部数据有两条路：
 
-- **在动作内**（推荐）：直接写 `this.data.<键> = v`——OnEvalContext.data 的 set 陷阱透传到本层私有响应式域，触发细粒度更新。
+- **在动作内**（推荐）：直接写 `this.data.<键> = v`——AutoTemplateActionContext.data 的 set 陷阱透传到本层私有响应式域，触发细粒度更新。
 - **命令式 `engine.data(el, data)`**：合并进 el 对应 scope 的私有域，路径订阅自动驱动。适合在动作之外（定时器、外部回调）更新。
 
 <demo html="template/data/runtime.html"/>

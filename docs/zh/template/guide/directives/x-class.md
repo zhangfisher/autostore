@@ -1,4 +1,4 @@
-# x-class 类名绑定
+# 类名绑定
 
 ## 概述
 
@@ -25,13 +25,17 @@
 
 键为类名、值为真则启用：
 
+<demo html="template/bind/class-object.html"/>
+
 ```html
 <span :class="{ val: user.active, 'is-loading': user.busy }">状态</span>
 ```
 
 ### 数组写法
 
-合并多个类：
+合并多个类；`falsy` 项（如 `cond && 'val'`）会被自动跳过：
+
+<demo html="template/bind/class-array.html"/>
 
 ```html
 <span :class="['card', theme, user.active && 'val']">标签</span>
@@ -41,8 +45,26 @@
 
 直接给类名字符串：
 
+<demo html="template/bind/class-string.html"/>
+
 ```html
 <span :class="theme">主题</span>
+```
+
+### 响应式切换
+
+`:class` 的表达式随状态自动求值并 patch——改 `engine.state` 中被引用的路径，类名立即按 diff 增删，无需手动操作 DOM。多个状态可同时驱动同一元素的 class（对象写法还支持计算键），且与静态 `class="..."` 共存（diff 只管自己写入的 token）：
+
+<demo html="template/bind/class-reactive.html"/>
+
+```html
+<!-- selected / done / 优先级各自独立变化，class 自动 diff；静态 task 类常驻 -->
+<div
+    class="task"
+    :class="{ selected: task.selected, done: task.done, ['pri-' + task.priority]: true }"
+>
+    {{ task.title }}
+</div>
 ```
 
 更完整的说明（diff 更新、与静态 class 共存）见 [x-bind · 绑定 class](./x-bind.md)。

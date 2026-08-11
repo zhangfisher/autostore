@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-class · 对象写法</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            /* 业务类名样式：让 :class 写入的 token 有可见差异 */
+            .val {
+                color: #fff;
+                background-color: #42b883;
+            }
+            .muted {
+                color: #999;
+                background-color: #f2f2f2;
+            }
+            .val,
+            .muted {
+                padding: 4px 12px;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- :class 接收对象：键为类名、值为真则启用，按 diff 增量更新 -->
+        <div class="demo-app">
+            <p>
+                <span :class="{ val: on, muted: !on }">对象 class：{{ on ? "启用" : "禁用" }}</span>
+            </p>
+            <button class="btn" @click="toggle">切换</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { on: true },
+                {
+                    actions: {
+                        // 改 state.on 即自动 patch：val/muted 两类按 diff 增删
+                        toggle: () => {
+                            engine.state.on = !engine.state.on;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

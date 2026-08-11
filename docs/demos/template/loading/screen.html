@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · .screen 全屏覆盖</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            .panel {
+                position: relative;
+                min-height: 100px;
+                display: flex;
+                align-items: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- .screen 修饰符：覆盖层 position:fixed;inset:0 撑满整个视口 -->
+        <div class="demo-app">
+            <p>
+                <button class="btn" @click="go">{{ page ? '隐藏' : '显示' }}全屏加载</button>
+            </p>
+            <div class="card panel" x-loading.screen="{ visible:'page', message:'全屏加载中…' }">
+                <code>x-loading.screen</code>：覆盖层以 <code>position:fixed</code> 撑满视口（仍留在宿主子树，不 teleport）。
+            </div>
+            <p class="muted">常用于整页/整应用级加载态（如首屏拉取、路由切换）。</p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { page: false },
+                {
+                    actions: {
+                        go: async () => {
+                            if (engine.state.page) return;
+                            engine.state.page = true;
+                            await new Promise((r) => setTimeout(r, 1500));
+                            engine.state.page = false;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

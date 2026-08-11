@@ -206,6 +206,7 @@
     "packages/template": {
       "name": "@autostorejs/template",
       "dependencies": {
+        "asyncsignal": "^1.0.1",
         "really-relaxed-json": "^0.3.2",
       },
       "devDependencies": {
@@ -1017,6 +1018,8 @@
     "ast-types": ["ast-types@0.16.1", "https://registry.npmmirror.com/ast-types/-/ast-types-0.16.1.tgz", { "dependencies": { "tslib": "^2.0.1" } }, "sha512-6t10qk83GOG8p0vKmaCr8eiilZwO171AvbROMtvvNiwrTly62t+7XkA8RdIIVbpMhCASAsxgAzdRSwh6nw/5Dg=="],
 
     "async": ["async@3.2.6", "https://registry.npmmirror.com/async/-/async-3.2.6.tgz", {}, "sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA=="],
+
+    "asyncsignal": ["asyncsignal@1.0.1", "https://registry.npmmirror.com/asyncsignal/-/asyncsignal-1.0.1.tgz", {}, "sha512-jjMz7lbO3YtFmwPR0rhSwop2S9fIKhpI4Ib9t/1RU2WDpFwfqC9KEV94TBhGC/jyzZ40e6hgq3eERyv82dAinw=="],
 
     "autostore": ["autostore@workspace:packages/core"],
 

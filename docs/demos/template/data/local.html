@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
     <head>
         <meta charset="UTF-8" />
@@ -17,15 +17,19 @@
 
         <script>
             const { AutoTemplateEngine } = AutoTemplateSpaces;
-            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {}, {
-                actions: {
-                    // this.data 是 OnEvalContext 的聚合视图；写 times 经 set 陷阱透传到
-                    // 本层私有响应式域（store.state._scopes[id].times），触发细粒度更新。
-                    bump: function () {
-                        this.data.times = this.data.times + 1;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {},
+                {
+                    actions: {
+                        // this.data 是 AutoTemplateActionContext 的聚合视图；写 times 经 set 陷阱透传到
+                        // 本层私有响应式域（store.state._scopes[id].times），触发细粒度更新。
+                        bump: function () {
+                            this.data.times = this.data.times + 1;
+                        },
                     },
                 },
-            });
+            );
         </script>
     </body>
 </html>

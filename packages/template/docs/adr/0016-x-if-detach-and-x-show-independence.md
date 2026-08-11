@@ -3,6 +3,7 @@
 - **状态**：Accepted（grill-with-docs）
 - **日期**：2026-08-10
 - **关联**：[CONTEXT.md](../../CONTEXT.md)、[ADR-0001](0001-directive-kind-system.md)、[ADR-0007](0007-directive-options-and-modifiers.md)
+- **命名更新（2026-08-11）**：本文记录的 `.keep` 修饰符（及指令选项键 `keep`）已重命名为 **`.keepalive`** / `keepalive`，语义不变（摘宿主但保活子树与 watcher）。正文保留历史用名 `.keep` 不改，迁移说明见 [CONTEXT.md](../../CONTEXT.md)「已废弃」区。
 
 ## 背景
 

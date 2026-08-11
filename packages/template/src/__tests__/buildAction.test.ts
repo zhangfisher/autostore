@@ -163,7 +163,7 @@ describe("actions 注册时自动包装（buildAction → actions/<name>/*）", 
         expect(names).toEqual(["a", "b"]);
     });
 
-    test("经 x-on 触发：this 仍为 OnEvalContext（buildAction 透传 this/args）", async () => {
+    test("经 x-on 触发：this 仍为 AutoTemplateActionContext（buildAction 透传 this/args）", async () => {
         let captured: any;
         const { root, engine } = mount(`<button @click="probe">x</button>`, { count: 7 });
         engine.actions.probe = async function (this: any) {
@@ -184,7 +184,7 @@ describe("actions 注册时自动包装（buildAction → actions/<name>/*）", 
  * buildAction 在 thenable 分支双发：总线 actions/<name>/*（上一 describe 覆盖）+ DOM 冒泡
  * action:<name>（bubbles+composed，detail 不带 el/scope）。祖先经 @action:<name> 监听（复用 x-on），
  * phase 修饰符 .pending/.resolved/.rejected 按 detail.phase 过滤（guard 类型，与 .left/.right 同构）。
- * 命令式直调（this 非 OnEvalContext）无触发元素 → 只走总线、不冒泡。
+ * 命令式直调（this 非 AutoTemplateActionContext）无触发元素 → 只走总线、不冒泡。
  */
 describe("action:<name> DOM 冒泡事件 + phase 修饰符（ADR-0010）", () => {
     test("DOM 冒泡到祖先元素，detail 带 phase（pending→resolved）", async () => {
@@ -230,7 +230,7 @@ describe("action:<name> DOM 冒泡事件 + phase 修饰符（ADR-0010）", () =>
         expect([...engine.state.log]).toEqual(["p", "r"]);
     });
 
-    test("命令式直调不冒泡 DOM 事件（this 非 OnEvalContext，只走总线）", async () => {
+    test("命令式直调不冒泡 DOM 事件（this 非 AutoTemplateActionContext，只走总线）", async () => {
         let domCount = 0;
         const { root, engine } = mount(`<div></div>`, {});
         engine.actions.save = async () => "done";

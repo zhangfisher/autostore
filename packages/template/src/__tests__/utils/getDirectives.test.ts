@@ -68,7 +68,7 @@ describe("findDirectives - 普通长前缀指令", () => {
     });
 });
 
-describe("findDirectives - x-show 独立指令（不再归一为 x-if.keep）", () => {
+describe("findDirectives - x-show 独立指令（不再归一为 x-if.keepalive）", () => {
     test('x-show="a" 解析为独立 show 指令', () => {
         expect(parseOne({ "x-show": "a" })).toEqual({
             name: "show",

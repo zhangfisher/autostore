@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · 字面量模式</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            .panel {
+                position: relative;
+                min-height: 90px;
+                display: flex;
+                align-items: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 字面量模式：x-loading="true" / "false" 直接静态显隐，不订阅状态 -->
+        <div class="demo-app">
+            <div class="card panel" x-loading="true">
+                <code>x-loading="true"</code>：恒显示加载层（静态，无状态绑定）。
+            </div>
+            <p class="muted">
+                <code>x-loading="false"</code> 与不写该属性等价，覆盖层永不出现；裸
+                <code>x-loading</code>（无值）等同 <code>"true"</code>。
+            </p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            new AutoTemplateEngine(document.querySelector(".demo-app"), {});
+        </script>
+    </body>
+</html>

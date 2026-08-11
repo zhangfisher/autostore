@@ -83,14 +83,22 @@ export class AutoTemplateCompiler {
      * 拆为「字面量段 + 表达式段」，每表达式段一个 text node + 一个 `scope.watch`；
      * 返回由段 text node 组成的 `DocumentFragment`（调用方 appendChild 搬入父）。
      *
-     * **x-text/x-html 在场 → 返回 null（剪枝）**：x-text 整体覆写 textContent，若插值已建段
-     * text node + watcher，首次 compile 后段 node 被清空成游离节点、watcher 仍订阅 → 孤儿
-     * watcher 泄漏。故编译期剪枝该文本节点（非「建了让 x-text 覆盖」）。见 ADR-0004 决策 5。
+     * **x-text / 非 compile 的 x-html 在场 → 返回 null（剪枝）**：x-text 整体覆写 textContent，
+     * 若插值已建段 text node + watcher，首次 compile 后段 node 被清空成游离节点、watcher 仍订阅 →
+     * 孤儿 watcher 泄漏。故编译期剪枝该文本节点（非「建了让 x-text 覆盖」）。见 ADR-0004 决策 5。
      *
-     * @returns DocumentFragment（段 text node 集合）；x-text/x-html 在场返回 null（剪枝）
+     * **x-html.compile 例外（ADR-0017）**：compile 模式把注入内容作为子模板编译，其顶层文本插值
+     * 应正常编译（由 recompileSubtree 注入），故 compile 模式的 html 指令不触发剪枝——宿主原生
+     * 子节点反正被注入内容覆盖，无孤儿 watcher 风险。
+     *
+     * @returns DocumentFragment（段 text node 集合）；x-text / 非 compile 的 x-html 在场返回 null（剪枝）
      */
     private compileTextNode(node: Text, scope: AutoTemplateScope): DocumentFragment | null {
-        if (scope.directives.some((d) => d.info.name === "text" || d.info.name === "html")) {
+        if (
+            scope.directives.some(
+                (d) => d.info.name === "text" || (d.info.name === "html" && !d.info.options?.compile),
+            )
+        ) {
             return null;
         }
         const segments = parseInterpolation(node.nodeValue ?? "");
@@ -299,7 +307,7 @@ export class AutoTemplateCompiler {
      *
      * 任意指令类的静态 `ownsChildren(info)` 返回 true 即视为占有。同元素出现多个占有者
      * （当前仅 `x-for` + eager `x-if`）语义互斥——前者重复子树、后者条件销毁子树——直接抛错，
-     * 提示改用 `x-show`/`x-if.keep`（均不占子树）或外层包裹。
+     * 提示改用 `x-show`/`x-if.keepalive`（均不占子树）或外层包裹。
      */
     private _resolveOwnership(scope: AutoTemplateScope): boolean {
         const owners = scope.directives.filter((d) => this._ownsChildrenDirective(d));
@@ -308,7 +316,7 @@ export class AutoTemplateCompiler {
                 "[x-if/x-for 冲突] x-if 的条件存在性（detach）与 x-for 的列表渲染不能作用于同一元素。\n" +
                     "若需控制整个列表显隐，请改用（均不占子树，可与 x-for 共存）：\n" +
                     '  • x-show="<expr>"      （display:none，宿主永留 DOM）\n' +
-                    '  • x-if.keep="<expr>"   （detach 宿主，保活子树与 watcher）\n' +
+                    '  • x-if.keepalive="<expr>"   （detach 宿主，保活子树与 watcher）\n' +
                     '或用外层包裹：<div x-if="<expr>"><ul x-for="…">…</ul></div>',
             );
         }

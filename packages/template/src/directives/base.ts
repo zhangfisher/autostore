@@ -90,7 +90,7 @@ export class AutoTemplateDirectiveBase {
      * 改由指令自行编译/管理子树（如 x-for 重复、x-if 条件销毁）。
      *
      * 默认 false。结构指令按需 override；可依据 info（如修饰符）动态决定——
-     * x-if 仅 eager 模式占有子树，`.keep`/`x-show` 不占有。
+     * x-if 仅 eager 模式占有子树，`.keepalive`/`x-show` 不占有。
      */
     static ownsChildren(_info: AutoDirectiveInfo): boolean {
         return false;

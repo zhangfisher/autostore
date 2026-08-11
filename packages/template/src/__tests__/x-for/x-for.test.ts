@@ -628,7 +628,7 @@ describe("x-for B 语义新增能力", () => {
     });
 
     test("x-for 与 x-show 同元素：x-show 控制整个容器显隐（保留项子树与 watcher）", async () => {
-        // x-for + eager x-if 同元素已禁止（语义冲突）；控制整表显隐用 x-show（= x-if.keep）
+        // x-for + eager x-if 同元素已禁止（语义冲突）；控制整表显隐用 x-show（= x-if.keepalive）
         const { root, store } = mount(
             `<ul x-for="item of items" :key="item.id" x-show="show"><li x-text="item.name"></li></ul>`,
             {

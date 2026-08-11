@@ -7,6 +7,7 @@ import { UpdateScheduler } from "./scheduler";
 import { RuntimeObserverDispatcher } from "./directives/runtime/dispatcher";
 import { parseHtmlFragment } from "./utils/transformElement";
 import { buildAction } from "./utils/buildAction";
+import { recompileSubtree } from "./utils/recompileSubtree";
 
 /**
  * 判别 x 是否为 AutoStore 实例（ADR-0009 决策 3）。
@@ -273,7 +274,7 @@ export class AutoTemplateEngine<
         Object.assign(scope.dataScope as Record<string, any>, data);
         // 失效本 scope 缓存视图（含新 dataScope 层），子树重建后新子 scope 经 parent 链取到新视图
         scope.invalidateScopeView();
-        this._recompileSubtree(scope, el);
+        recompileSubtree(scope, el);
         this.emit("scope/data-updated", { id: scope.id, data });
     }
 
@@ -286,7 +287,7 @@ export class AutoTemplateEngine<
      * （含指令或 `{{}}` 插值的元素；纯静态裸元素需挂 `x-patch` 哨兵）。
      *
      * **返回四态**（判定用 `===`/`typeof`，`undefined != null` 严格区分）：
-     * - `void`/`undefined` 或 `=== templateEl` → **子树重建**（复用 `_recompileSubtree`）
+     * - `void`/`undefined` 或 `=== templateEl` → **子树重建**（复用 `recompileSubtree`）
      * - 新 `Node`（`!== templateEl`）→ **替换自身**
      * - `string`（HTML）→ **替换自身**（`<template>` 解析，可多节点，空串=删除）
      * - `null` → **删除自身**
@@ -337,7 +338,7 @@ export class AutoTemplateEngine<
         if (R === null) {
             this._deleteSelf(scope, T, el);
         } else if (R === undefined || R === T) {
-            this._recompileSubtree(scope, el);
+            recompileSubtree(scope, el);
         } else if (typeof R === "string") {
             const frag = parseHtmlFragment(R);
             const nodes = frag ? Array.from(frag.childNodes) : [];
@@ -368,28 +369,6 @@ export class AutoTemplateEngine<
             if (scope.el === el) return scope;
         }
         return undefined;
-    }
-
-    /**
-     * 重建 scope 的子树（A 方案：DOM 重建）。
-     *
-     * 销毁旧子 scope（off watcher + 递归）→ 清空 el 子 DOM → 用 `scope.template` 重新编译子节点
-     * （建新 scope + created 订阅 + compile 首渲）。用于 `engine.data` 在"dataScope 从无到有"后，
-     * 让子树 watcher 重新 `collectDependencies`（订阅新 dataScope 路径）。
-     */
-    private _recompileSubtree(scope: AutoTemplateScope, el: HTMLElement) {
-        // 1. 销毁旧子 scope（递归 off watcher；destroy 不删 DOM，下面统一清）
-        for (const child of scope.children) child.destroy();
-        scope.children.clear();
-        // 2. 清空 el 的子 DOM（旧渲染节点）
-        el.replaceChildren();
-        // 3. 用原始模板重新编译子节点挂到 el（建新 scope + created 订阅 + compile 首渲）
-        const template = scope.template;
-        if (template) {
-            this.compiler.compileSubtree(el, template, scope);
-            // 消化编译期 schedule 的首次渲染（如嵌套 x-for）
-            this.scheduler.flushAll();
-        }
     }
 
     /**

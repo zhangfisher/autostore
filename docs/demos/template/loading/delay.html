@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · delay 防闪烁</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            .panel {
+                position: relative;
+                min-height: 100px;
+                display: flex;
+                align-items: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- delay：显示前延时（毫秒）；窗口内回假则定时器取消、覆盖层从不挂载 → 防闪烁 -->
+        <div class="demo-app">
+            <p>
+                <button class="btn" @click="quick">触发快速加载（350ms）</button>
+            </p>
+            <div class="card panel" x-loading="{ visible:'fast', delay:0 }">
+                <code>delay:0</code>：立即显示，350ms 的短任务会闪现一下 loader。
+            </div>
+            <div class="card panel" x-loading="{ visible:'fast', delay:500 }">
+                <code>delay:500</code>：500ms 窗口内任务已完成（350ms）→ 定时器取消、覆盖层<strong>从不出现</strong>。
+            </div>
+            <p class="muted">用于「请求很快时不想惊扰用户」的场景：delay 大于典型耗时即无感。</p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { fast: false },
+                {
+                    actions: {
+                        quick: async () => {
+                            engine.state.fast = true;
+                            await new Promise((r) => setTimeout(r, 350));
+                            engine.state.fast = false;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

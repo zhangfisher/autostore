@@ -62,9 +62,9 @@ export default {
 
 ### 5. dispatch 源 + 命令式不对称
 
-- **dispatch 源 = 触发元素**（`OnEvalContext.el`）。`buildAction` 的 `wrapped` 内 `this = OnEvalContext`，闭包捕获 `const triggerEl = (this as any)?.el`，`then` 回调用该闭包变量 dispatch。
-  - ADR-0008 当年称「then 回调拿不到 el」，是因 feedback 走返回值捕获**不需要** el，非技术不可行；现在需要了，闭包即可。
-- **命令式不对称**：经 `@click="submit"` 触发 → 有 OnEvalContext、有 el、**双发**；命令式直调 `engine.actions.save()` → `this` 非 ctx、**无 el、只走总线、不发 DOM 事件**。这是 DOM 事件本质决定的（无 DOM 上下文则无冒泡），文档化即可。
+- **dispatch 源 = 触发元素**（`AutoTemplateActionContext.el`）。`buildAction` 的 `wrapped` 内 `this = AutoTemplateActionContext`，闭包捕获 `const triggerEl = (this as any)?.el`，`then` 回调用该闭包变量 dispatch。
+    - ADR-0008 当年称「then 回调拿不到 el」，是因 feedback 走返回值捕获**不需要** el，非技术不可行；现在需要了，闭包即可。
+- **命令式不对称**：经 `@click="submit"` 触发 → 有 AutoTemplateActionContext、有 el、**双发**；命令式直调 `engine.actions.save()` → `this` 非 ctx、**无 el、只走总线、不发 DOM 事件**。这是 DOM 事件本质决定的（无 DOM 上下文则无冒泡），文档化即可。
 - **async 跨 `scope.destroy`**（submit 跑一半 form 被卸载）：`triggerEl` detach → resolved 时已不在文档树 → dispatchEvent 不冒泡到任何监听者 → **天然安全停止**（比总线「engine 活着就一直广播到全局」反而更干净）。
 
 ### 6. `buildAction` 提炼到 `utils/buildAction.ts`
@@ -75,11 +75,11 @@ export default {
 
 ## 三通道正交关系（核心心智模型）
 
-| 通道 | 机制 | 层级 | 典型场景 |
-|------|------|------|----------|
-| **feedback**（ADR-0008） | handler 返回值捕获 | 元素级、自带状态机 | 「这个按钮点击后自己闪 pending/resolved 类」 |
-| **总线**（ADR-0003） | `engine.emit` 全局广播 | 全局、吃通配符 | 全局 loading 条 / 错误 toast / 可观测埋点 |
-| **DOM 冒泡**（本 ADR） | `action:<name>` CustomEvent | DOM 层级、冒泡 | `<form>` 聚合内部各 `submit` |
+| 通道                     | 机制                        | 层级               | 典型场景                                     |
+| ------------------------ | --------------------------- | ------------------ | -------------------------------------------- |
+| **feedback**（ADR-0008） | handler 返回值捕获          | 元素级、自带状态机 | 「这个按钮点击后自己闪 pending/resolved 类」 |
+| **总线**（ADR-0003）     | `engine.emit` 全局广播      | 全局、吃通配符     | 全局 loading 条 / 错误 toast / 可观测埋点    |
+| **DOM 冒泡**（本 ADR）   | `action:<name>` CustomEvent | DOM 层级、冒泡     | `<form>` 聚合内部各 `submit`                 |
 
 三者正交并存，各占一个维度。
 
@@ -103,7 +103,7 @@ export default {
 
 ## 实现注记（非架构决策，落地时遵循）
 
-- **`utils/buildAction.ts`**：导出 `buildAction(emit, name, action)`；`wrapped` 内 `const triggerEl = (this as any)?.el`（仅 OnEvalContext 有 el），thenable 分支双发——`emit("actions/<name>/pending", {name})` + `triggerEl?.dispatchEvent(new CustomEvent("action:<name>", {bubbles:true, composed:true, detail:{name, phase:"pending"}}))`；resolved/rejected 同理（detail 带 `result`/`error`）。保留 `__buildActionWrapped` 防双重包装。`triggerEl` 为空（命令式直调）时跳过 dispatch、只 emit。
+- **`utils/buildAction.ts`**：导出 `buildAction(emit, name, action)`；`wrapped` 内 `const triggerEl = (this as any)?.el`（仅 AutoTemplateActionContext 有 el），thenable 分支双发——`emit("actions/<name>/pending", {name})` + `triggerEl?.dispatchEvent(new CustomEvent("action:<name>", {bubbles:true, composed:true, detail:{name, phase:"pending"}}))`；resolved/rejected 同理（detail 带 `result`/`error`）。保留 `__buildActionWrapped` 防双重包装。`triggerEl` 为空（命令式直调）时跳过 dispatch、只 emit。
 - **三个 phase guard**：`modifiers/pending.ts` / `resolved.ts` / `rejected.ts`（或单文件导出三 descriptor），`apply: (e) => e?.detail?.phase === "<name>"`，注册进 `MODIFIERS`。
 - **engine.ts**：移除 `buildAction` 公有方法 + JSDoc；构造函数、`actions` Proxy set trap 改调 `buildAction(this.emit.bind(this), ...)`（emit 经 `FastLiteEvent` 的 `emit`，注意通配事件名转型）。
 - **`compiler.ts:183`**：`this.engine.buildAction(k, fn)` → `buildAction(this.engine.emit.bind(this.engine), k, fn)`。

@@ -6,15 +6,15 @@ import type { AutoTemplateScope } from "../../scope";
 /**
  * x-if：条件存在性。元素本身随条件**离开/回到 DOM**（detach/reattach），非 display:none。
  *
- * 两态（由 `.keep` 修饰符切换）均**摘除宿主 + 锚点注释占位**，区别在子树保活与否：
+ * 两态（由 `.keepalive` 修饰符切换）均**摘除宿主 + 锚点注释占位**，区别在子树保活与否：
  *
  * - **eager（默认 `x-if="expr"`）**——结构指令（ownsChildren）。
  *   - true → 编译并挂载子树（经 `compiler.compileSubtree`）；
  *   - false → 摘除宿主（el.remove）+ 锚点注释占位 + 销毁子 scope（子树 watcher 一并 off）。
  *   - 控制订阅留在自身 scope（永活），仅 destroy/recreate **子** scope，避免"自杀"；
- *   - 与 x-for 同元素禁止（语义冲突，compiler 抛错），改用 `x-show`/`x-if.keep`（均不占子树）或外层包裹。
+ *   - 与 x-for 同元素禁止（语义冲突，compiler 抛错），改用 `x-show`/`x-if.keepalive`（均不占子树）或外层包裹。
  *
- * - **keep（`x-if.keep`）**——摘宿主但**保活子树与 watcher**，true 时原宿主 reattach（状态保留）。
+ * - **keepalive（`x-if.keepalive`）**——摘宿主但**保活子树与 watcher**，true 时原宿主 reattach（状态保留）。
  *   不占 ownsChildren，可与 x-for 共存（x-for 独占子树，本指令只切容器存在性）。
  *
  * **宿主 scope 兼任锚点**：控制 watcher 留 `this.binding`，detach 期间由 `parent.children` 强引用
@@ -32,11 +32,11 @@ export class IfDirective extends AutoTemplateDirectiveBase {
     static override readonly priority = 80;
     static override readonly singleton = true;
 
-    /** eager 模式才占有子树；`.keep`/`x-if-options="{keep:true}"` 不占有（保活子树，不重编译） */
+    /** eager 模式才占有子树；`.keepalive`/`x-if-options="{keepalive:true}"` 不占有（保活子树，不重编译） */
     static override ownsChildren(info: AutoDirectiveInfo): boolean {
-        // keep 经解析期注入为 info.options.keep（modifier 与指令选项等价，ADR-0007）。
+        // keepalive 经解析期注入为 info.options.keepalive（modifier 与指令选项等价，ADR-0007）。
         // 静态方法早于 scope 实例，仅读指令级 options，不支持 x-options 宿主回退（编译期局限）。
-        return info.options?.keep !== true;
+        return info.options?.keepalive !== true;
     }
 
     /** eager 模式下本指令编译挂载的子树节点，false 时按此精确移除 */
@@ -44,9 +44,9 @@ export class IfDirective extends AutoTemplateDirectiveBase {
     /** 锚点注释：false 时替代宿主留在 DOM，作 reattach 的 DOM 书签（常驻，紧邻宿主前） */
     private anchorComment: Comment | null = null;
 
-    private get keepMode(): boolean {
-        // `.keep` modifier 与 x-if-options="{keep:true}" 经 getOption 等价（ADR-0007）
-        return !!this.getOption("keep");
+    private get keepAliveMode(): boolean {
+        // `.keepalive` modifier 与 x-if-options="{keepalive:true}" 经 getOption 等价（ADR-0007）
+        return !!this.getOption("keepalive");
     }
 
     override created() {
@@ -66,7 +66,7 @@ export class IfDirective extends AutoTemplateDirectiveBase {
     }
 
     private toggle(show: boolean) {
-        this.keepMode ? this.toggleKeep(show) : this.toggleEager(show);
+        this.keepAliveMode ? this.toggleKeepAlive(show) : this.toggleEager(show);
     }
 
     /**
@@ -102,8 +102,8 @@ export class IfDirective extends AutoTemplateDirectiveBase {
         }
     }
 
-    /** keep 模式（x-if.keep）：摘宿主但保活子树与 watcher，true 时原宿主 reattach（状态保留） */
-    private toggleKeep(show: boolean) {
+    /** keepalive 模式（x-if.keepalive）：摘宿主但保活子树与 watcher，true 时原宿主 reattach（状态保留） */
+    private toggleKeepAlive(show: boolean) {
         if (show) this.reattachHost();
         else this.detachHost();
     }

@@ -14,6 +14,8 @@ last:"fisher"
 
 const engine = new AutoTemplateEngine(el,store,{...})
 
+- 绑定状态
+
 x-model语法：
 
 <input type="text"  x-model="order.price"/>
@@ -52,6 +54,7 @@ x-model允许与表达式进行绑定
 <input name="ip3" type="text" x-model="user.ip" x-model-options="{get:(value)=>value.split('.')[2]} />
 <input name="ip4" type="text" x-model="user.ip" x-model-options="{get:(value)=>value.split('.')[3]} />
 
+x-model-get只是快捷方式，不是指令。
 当使用 x-model直接配置getter,setter时，直接在元素上写js代码，js代码如何比较复杂，则不利于管理。
 推荐使用action来实现。
 
@@ -60,7 +63,7 @@ x-model允许与表达式进行绑定
         return value.split(".")[index]
    }
    setUser(value){
-        const store = this.
+        const store = this.store
         user.first=value.split(',')[0];
         user.last=value.split(',')[1]
    }
@@ -71,3 +74,22 @@ x-model允许与表达式进行绑定
 <input name="ip1" type="text" x-model="user.ip" x-model-options="{set:'splitIp(1)'}/>
 
 也就是说，getter，setter只需要指定action即可。这样可以简化代码，也方便复用.
+
+重点：
+
+x-model是双向绑定autostore state.
+为了避免循环，可以按以下思路
+
+store.update((operate)=>{
+...
+},{
+flags:<指定一个特殊序列值，如-seq,>  
+})
+
+store.watch(path,(operate)=>{
+if(operate.flags<0) return // 在此忽略
+})
+
+然后在watch变化时，检查operate.flags的值来绕过循环。
+
+可以参考 packages\syncer\src\syncers\syncer.ts 同步机制

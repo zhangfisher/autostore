@@ -95,7 +95,8 @@ export interface DirectiveBinding {
  *
  * 传递给 AutoTemplate 构造函数的配置选项。
  */
-export interface AutoTemplateEngineOptions<State extends Dict = any> extends FastEvent.FastLiteEventOptions {
+export interface AutoTemplateEngineOptions<State extends Dict = any>
+    extends FastEvent.FastLiteEventOptions {
     /**
      * 自建 store 的配置（仅当构造器第二参为裸状态对象时消费，ADR-0009 决策 4）。
      *
@@ -121,7 +122,7 @@ export interface AutoTemplateEngineOptions<State extends Dict = any> extends Fas
     /**
      * 全局事件 action 函数表。
      *
-     * `@click="name"` / `@click="name(args)"` 命中时，以 OnEvalContext 为 this 调用。
+     * `@click="name"` / `@click="name(args)"` 命中时，以 AutoTemplateActionContext 为 this 调用。
      * 作为 scope.getAction 查找链的终点；模板内 `<script type="actions">` 注入的
      * 局部 action 优先级更高（沿 scope parent 链先命中）。
      *
@@ -140,6 +141,10 @@ export interface AutoTemplateEngineOptions<State extends Dict = any> extends Fas
      * @default 内置极简 sanitizeHtml（utils/sanitize.ts）
      */
     sanitizer?: (html: string) => string;
+    /**
+     * 一些模板块，用于定制一些引擎的内置行为模板，比如x-loading
+     */
+    blocks?: Record<"loading" | string, any>;
 }
 
 /**

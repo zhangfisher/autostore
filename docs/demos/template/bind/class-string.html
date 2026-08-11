@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-class · 字符串写法</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            .tag {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 4px;
+                font-size: 14px;
+                color: #42b883;
+                background-color: #f0fff4;
+                border: 1px solid #42b883;
+            }
+            .warn {
+                color: #fff;
+                background-color: #e07000;
+                border-color: #e07000;
+                font-weight: 600;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- :class 接收字符串：作为类名整体，diff 只替换变化的 token -->
+        <div class="demo-app">
+            <p>
+                <span :class="cls">字符串 class（{{ cls }}）</span>
+            </p>
+            <button class="btn" @click="toggle">切换</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { cls: "tag" },
+                {
+                    actions: {
+                        // 字符串可含多个 token（空格分隔）；tag 常驻，warn 按 diff 增删
+                        toggle: () => {
+                            engine.state.cls = engine.state.cls === "tag" ? "tag warn" : "tag";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

@@ -49,13 +49,13 @@ for (const m of info.modifiers ?? []) {
 ### 4. `getOption()` 基类方法 + `$options` 代理双出口
 
 - **`getOption(key)`**（基类实例方法）：指令内部读取配置的统一入口，按决策 3 顺序回退。
-- **`$options` 代理**（`OnEvalContext` 字段）：暴露给 `x-on` action 的只读聚合视图，`get`/`has`/`ownKeys`/`getOwnPropertyDescriptor` 按决策 3 顺序虚拟回退，`set`/`deleteProperty` 返回 false（配置静态）。与 `createScopeContext` 的只读聚合 Proxy 同构。
+- **`$options` 代理**（`AutoTemplateActionContext` 字段）：暴露给 `x-on` action 的只读聚合视图，`get`/`has`/`ownKeys`/`getOwnPropertyDescriptor` 按决策 3 顺序虚拟回退，`set`/`deleteProperty` 返回 false（配置静态）。与 `createScopeContext` 的只读聚合 Proxy 同构。
 
 ### 5. 砍掉 `.500` 位置参数；`$modifiers` 废弃为 `$options`
 
 - **位置参数废弃**：`ModifierRuntime.num` 删除。debounce 等带值配置走指令选项 `x-on-options="{debounce:500}"`（键存在即启用、值为时长；`.debounce` 修饰符等价 `options.debounce=true` 即默认时长）。
 - **`OnDirective` 重写**：`created()` 的修饰符分派循环（现遍历 `this.modifiers` 查 `MODIFIERS` 分桶）改为遍历 `this.options` 键查 `MODIFIERS`；`exact` 守卫从读 `rt.modifiers` 数组改为读 options 键集合（据 `MODIFIERS` 注册表判系统键）；`$modifiers` 从 options 键重建——但因决策 6 直接删除，无需重建。
-- **`$modifiers` 删除**：修饰符已注入 options，`$modifiers` 成了 `$options` 的子集，冗余。`OnEvalContext.$modifiers` 删除，改为 `$options` 代理。破坏面小：生产代码仅 `OnDirective` 链路三处，测试仅 `x-on.test.ts` 一处断言。
+- **`$modifiers` 删除**：修饰符已注入 options，`$modifiers` 成了 `$options` 的子集，冗余。`AutoTemplateActionContext.$modifiers` 删除，改为 `$options` 代理。破坏面小：生产代码仅 `OnDirective` 链路三处，测试仅 `x-on.test.ts` 一处断言。
 
 ### 6. host options 不进入表达式数据视图（边界）
 
@@ -81,7 +81,7 @@ host options 挂 scope，所有 Compile 指令（含 `OnDirective`，它是 Comp
 - ✅ **配置与数据分通道**：`$options`（配置）与 `data`（数据）正交，命名空间不冲突。
 - ✅ **表达力补全**：带值配置（debounce 时长等）有了声明式出口；元素级共享配置无需重复。
 - ⚠️ **`OnDirective` 重写**：修饰符分派循环、`exact`、`$modifiers` 三处改读 options（非几行，是 `created()` 主体）。
-- ⚠️ **破坏性变更**：删除 `.500` 位置参数语法、删除 `OnEvalContext.$modifiers`。需大版本号与迁移说明。
+- ⚠️ **破坏性变更**：删除 `.500` 位置参数语法、删除 `AutoTemplateActionContext.$modifiers`。需大版本号与迁移说明。
 - ⚠️ **`x-options` 解析为新增职责**：`getDirectives` 需识别裸 `x-options` 并产出 host options（现有仅识别带指令名的 `-options` 后缀）。
 
 ## 实现注记（非架构决策，落地时遵循）
@@ -89,7 +89,7 @@ host options 挂 scope，所有 Compile 指令（含 `OnDirective`，它是 Comp
 - **修饰符注入点**：`getDirectives` 现有的 `pendingOptions` 合并循环（合并 `x-{name}-options`）之后，追加 modifier→options 注入循环。`x-show`/`x-class` 等解析期别名归一化（`getDirectives.ts:156-180`）在注入之前完成，保证 `.keep` 等别名修饰符正确注入。
 - **`x-options` 解析**：`getDirectives` 识别裸 `x-options`（`rest === "options"`），用 `parseOptions` 解析为对象。因 `getDirectives` 不持有 scope，host options 经调用方（`scope._createDirectives`）挂到 `scope.hostOptions`；`getDirectives` 签名可不变（host options 作为附带返回或由调用方二次解析）。
 - **`getOption` 陷阱**：`hasOwnProperty` 判定命中（显式 `false` 生效），非 falsy 判定。
-- **`$options` 代理构造点**：`createEvalHandler`（`on/eval.ts`）构造 `OnEvalContext` 时，以 `this.options` + `this.binding.hostOptions` 造 Proxy 注入；形参从 `$modifiers` 改为接收 `directiveOptions` + `hostOptions`。
+- **`$options` 代理构造点**：`createEvalHandler`（`on/eval.ts`）构造 `AutoTemplateActionContext` 时，以 `this.options` + `this.binding.hostOptions` 造 Proxy 注入；形参从 `$modifiers` 改为接收 `directiveOptions` + `hostOptions`。
 - **基类字段**：`info.modifiers` 保留（解析产物、调试用），但基类构造不再提取 `this.modifiers`（或保留为兼容字段、文档标注弃用）；指令统一经 `getOption` / `this.options` 读取。
 - **测试改动**：`getDirectives.test.ts` 补 modifier 注入断言、`x-options` 解析断言；`x-on.test.ts:104` 的 `$modifiers` 断言改为 `$options`；新增 `debounce` 经 `x-on-options` 配置时长的用例；删除 `.debounce.500` 用例（`x-on.test.ts:318`）。
 - **文档**：CONTEXT.md 术语表已随本 ADR 建立；用户文档需补 `x-options` / `x-{name}-options` / 修饰符等价说明，并标注 `.500` 与 `$modifiers` 废弃。

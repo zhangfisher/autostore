@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-class · 数组写法</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            .badge {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+            .light {
+                color: #333;
+                background-color: #f0fff4;
+                border: 1px solid #42b883;
+            }
+            .dark {
+                color: #fff;
+                background-color: #2c3e50;
+            }
+            /* busy 为真时附加的加载态类 */
+            .is-loading::after {
+                content: " ⏳";
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- :class 接收数组：合并多个类；falsy 项（busy && 'is-loading'）被自动跳过 -->
+        <div class="demo-app">
+            <p>
+                <span :class="['badge', theme, busy && 'is-loading']">数组 class（{{ theme }}）</span>
+            </p>
+            <div class="row">
+                <button class="btn" @click="switchTheme">切换主题</button>
+                <button class="btn btn-secondary" @click="toggleBusy">
+                    {{ busy ? "停止加载" : "开始加载" }}
+                </button>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { theme: "light", busy: false },
+                {
+                    actions: {
+                        switchTheme: () => {
+                            engine.state.theme = engine.state.theme === "light" ? "dark" : "light";
+                        },
+                        // busy 切到 false 时 'is-loading' 被求值为 false → diff 移除该 token
+                        toggleBusy: () => {
+                            engine.state.busy = !engine.state.busy;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

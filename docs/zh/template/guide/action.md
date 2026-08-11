@@ -84,19 +84,19 @@ engine.actions.rename = () => {
 
 ### action 的 this
 
-动作函数执行时，`this` 被绑定为**求值上下文**（`OnEvalContext`）——一个聚合了触发现场与全部入口的对象。无论全局还是局部动作，`this` 形态完全一致：
+动作函数执行时，`this` 被绑定为**求值上下文**（`AutoTemplateActionContext`）——一个聚合了触发现场与全部入口的对象。无论全局还是局部动作，`this` 形态完全一致：
 
 <demo html="template/action/this.html"/>
 
-| 字段            | 含义                                                                     |
-| --------------- | ------------------------------------------------------------------------ |
-| `this.$event`   | 原生事件对象（`@click` 的 `MouseEvent`、`@input` 的 `InputEvent` 等）    |
-| `this.el`       | 触发元素（= `this.$event.currentTarget`），可就近读写 DOM                |
-| `this.data`     | 数据聚合视图：本层 `localScope` + `x-data` 响应域 + 全局 `state` 拍平     |
-| `this.scope`    | 当前 `AutoTemplateScope` 实例（`getDataScope()` / `engine` / `parent`）  |
-| `this.store`    | `AutoStore` 实例（`watch` / `state` / `collectDependencies` 等）          |
-| `this.engine`   | `AutoTemplateEngine` 实例（等价于外部持有的 `engine` 变量）              |
-| `this.$options` | 指令配置只读聚合视图（指令选项 → `x-options` 宿主选项，两层回退）         |
+| 字段            | 含义                                                                    |
+| --------------- | ----------------------------------------------------------------------- |
+| `this.$event`   | 原生事件对象（`@click` 的 `MouseEvent`、`@input` 的 `InputEvent` 等）   |
+| `this.el`       | 触发元素（= `this.$event.currentTarget`），可就近读写 DOM               |
+| `this.data`     | 数据聚合视图：本层 `localScope` + `x-data` 响应域 + 全局 `state` 拍平   |
+| `this.scope`    | 当前 `AutoTemplateScope` 实例（`getDataScope()` / `engine` / `parent`） |
+| `this.store`    | `AutoStore` 实例（`watch` / `state` / `collectDependencies` 等）        |
+| `this.engine`   | `AutoTemplateEngine` 实例（等价于外部持有的 `engine` 变量）             |
+| `this.$options` | 指令配置只读聚合视图（指令选项 → `x-options` 宿主选项，两层回退）       |
 
 #### this.data：读写聚合视图
 
@@ -113,10 +113,11 @@ actions: {
 ```
 
 ::: tip 何时用 this.data、何时用 this.engine.state
+
 - 操作**当前 `x-data` 块**的局部字段 → `this.data.xxx`（写入响应式，推荐）。
 - 操作**全局根状态** → `this.engine.state.xxx`。
 - 需要拿到当前 `x-data` 块的响应式代理本身（非聚合视图） → `this.scope.getDataScope()`。
-:::
+  :::
 
 ::: warning 仅在「动作分支」绑定 this
 `this` 仅当指令值命中具名动作（`save` / `remove(id)`）时才绑定。表达式兜底分支（如 `count++`、`alert(1)`）走 `with(this.data)` 求值，**不经过函数调用**，故没有 `this`——此时直接写变量名即可（`count++` 而非 `this.data.count++`）。

@@ -174,10 +174,10 @@ describe("x-if + x-text 同元素（宿主 scope 跨 detach 存活）", () => {
     });
 });
 
-describe("x-if.keep（摘宿主但保活子树与 watcher）", () => {
-    test("keep：false 摘宿主（注释占位）保活子树，true reattach 原宿主（状态保留）", async () => {
+describe("x-if.keepalive（摘宿主但保活子树与 watcher）", () => {
+    test("keepalive：false 摘宿主（注释占位）保活子树，true reattach 原宿主（状态保留）", async () => {
         const { root, store } = mount(
-            `<div id="t" x-if.keep="show"><span x-text="msg"></span></div>`,
+            `<div id="t" x-if.keepalive="show"><span x-text="msg"></span></div>`,
             { show: true, msg: "a" },
         );
         await nextTick();
@@ -254,16 +254,16 @@ describe("x-for + eager x-if 同元素冲突", () => {
                 `<ul x-for="item of items" :key="item.id" x-if="show"><li x-text="item.name"></li></ul>`,
                 { show: false, items: [] },
             ),
-        ).toThrow(/x-if\/x-for 冲突[\s\S]*x-show[\s\S]*x-if\.keep/);
+        ).toThrow(/x-if\/x-for 冲突[\s\S]*x-show[\s\S]*x-if\.keepalive/);
     });
 
-    test("x-for + x-if.keep 同元素：不冲突，.keep detach 容器、保活项子树", async () => {
+    test("x-for + x-if.keepalive 同元素：不冲突，.keepalive detach 容器、保活项子树", async () => {
         const { root, store } = mount(
-            `<ul id="t" x-for="item of items" :key="item.id" x-if.keep="show"><li x-text="item.name"></li></ul>`,
+            `<ul id="t" x-for="item of items" :key="item.id" x-if.keepalive="show"><li x-text="item.name"></li></ul>`,
             { show: false, items: [{ id: 1, name: "a" }] },
         );
         await nextTick();
-        // x-if.keep 不占 ownsChildren，与 x-for 共存；show=false 摘容器（注释占位）
+        // x-if.keepalive 不占 ownsChildren，与 x-for 共存；show=false 摘容器（注释占位）
         expect(root.querySelector("#t")).toBeNull();
         store.state.show = true;
         await nextTick();

@@ -1,7 +1,7 @@
 # Spec：x-on 的 Action 抽象（事件响应函数的统一规格）
 
 > 关联：[ADR-0001](../adr/0001-directive-kind-system.md)、[ADR-0007](../adr/0007-directive-options-and-modifiers.md)、[glossary「钩子」/「RuntimeDirective 接口」](../glossary.md)。
-> 术语统一引用项目 glossary（DirectiveKind / scope 通道 / Compile 指令 / priority / singleton / OnEvalContext）。
+> 术语统一引用项目 glossary（DirectiveKind / scope 通道 / Compile 指令 / priority / singleton / AutoTemplateActionContext）。
 
 ## Problem Statement
 
@@ -18,7 +18,7 @@
 1. **语法识别**：一条正则把指令值分为「Action 候选」与「表达式兜底」两类。
 2. **来源链**：局部 `<script type="actions">` 注入 + 全局 `engine.actions`。
 3. **查找链与时机**：沿 scope parent 链子覆盖父、命中即止；**查找延迟到事件触发时**。
-4. **`OnEvalContext` 契约**：action 的 `this`、参数求值、`data` 读写通道、`$options` 配置通道。
+4. **`AutoTemplateActionContext` 契约**：action 的 `this`、参数求值、`data` 读写通道、`$options` 配置通道。
 5. **Action 优先 + 表达式兜底 + 修饰符管道**：命中具名 action 优先，否则退化为 `with(data)` 表达式；guard / wrapper / option 三类修饰符对二者同样生效。
 
 本 spec **不引入任何代码变更**——所描述行为均已实现并通过测试，此处为「已商定行为」的权威记录。
@@ -55,7 +55,7 @@
 20. 作为维护者，我想「action 引用不在 `created` 时缓存、而在每次事件触发时现查」，这样规避「actions 后注册 → created 时查到 undefined 误走表达式」的时序暗坑。
 21. 作为维护者，我想「表达式编译」与「参数求值器」在 `created` 时一次性完成（指令值不变），这样事件触发路径零重复编译开销。
 
-### OnEvalContext 契约（this / 参数 / data 通道 / $options）
+### AutoTemplateActionContext 契约（this / 参数 / data 通道 / $options）
 
 22. 作为模板开发者，我想在 action 内经 `this.el` 拿到触发元素，这样可操作 DOM。
 23. 作为模板开发者，我想在 action 内经 `this.$event` 拿到原生事件对象，这样可读 `target.value` / `key` / 阻止默认行为等。
@@ -102,40 +102,40 @@
 
 - **指令性质**：`x-on` 为 **Compile 指令**（scope 通道），`priority = 50`、`singleton = false`。生命周期：`created()` 一次性构造最终 handler 并 `addEventListener`；`destroy()` 先 cancel wrapper 清理、再 `removeEventListener`。事件是 **push 模型**——不经 scheduler、不调 `collectDependencies`（区别于 x-text/x-html 等拉模型绑定）。
 - **语法识别（Action 候选 vs 表达式，决策编码）**：指令值经一条正则判定。匹配者先尝试 Action 查找，不匹配者直接走表达式兜底。该正则来自现有求值器实现，精确编码了「Action 候选」边界：
-  ```
-  ^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$
-  ```
-  形态对照：
-  | 指令值 | 命中？ | name | argsSrc | 走向 |
-  |---|---|---|---|---|
-  | `submit` | ✅ | `submit` | undefined | Action 候选（无参） |
-  | `submit()` | ✅ | `submit` | `""` | Action 候选（空参，等价裸名） |
-  | `pay(1, x)` | ✅ | `pay` | `"1, x"` | Action 候选（带参） |
-  | `count++` / `a + b` / `user.save` / `alert(1)` | ❌ | — | — | 表达式兜底 |
-  > 注意 `alert(1)` 形似 `name(args)` 但 `alert` 未在查找链命中 → 仍落表达式兜底（见「Action 优先 + 表达式兜底」）。判据是「**正则匹配 + 查找链命中 function**」二者皆真才走 Action。
+    ```
+    ^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$
+    ```
+    形态对照：
+    | 指令值                                         | 命中？ | name     | argsSrc   | 走向                          |
+    | ---------------------------------------------- | ------ | -------- | --------- | ----------------------------- |
+    | `submit`                                       | ✅     | `submit` | undefined | Action 候选（无参）           |
+    | `submit()`                                     | ✅     | `submit` | `""`      | Action 候选（空参，等价裸名） |
+    | `pay(1, x)`                                    | ✅     | `pay`    | `"1, x"`  | Action 候选（带参）           |
+    | `count++` / `a + b` / `user.save` / `alert(1)` | ❌     | —        | —         | 表达式兜底                    |
+    > 注意 `alert(1)` 形似 `name(args)` 但 `alert` 未在查找链命中 → 仍落表达式兜底（见「Action 优先 + 表达式兜底」）。判据是「**正则匹配 + 查找链命中 function**」二者皆真才走 Action。
 - **来源链**：
-  - **局部**：`<script type="actions">` 在编译期被提取，内容按宽松 JSON 解析为对象字面量、注入**最近祖先 scope.actions**；该 `<script>` 节点从渲染 DOM 移除（普通 `<script>` 原样保留）。非法内容（非对象字面量 / 解析失败）记 `engine.logger.error`，不崩溃。
-  - **全局**：`engine.actions` 是 `options.actions` 的**同一引用**（getter 直返），运行时 `engine.actions.xxx = fn` 即时生效。
+    - **局部**：`<script type="actions">` 在编译期被提取，内容按宽松 JSON 解析为对象字面量、注入**最近祖先 scope.actions**；该 `<script>` 节点从渲染 DOM 移除（普通 `<script>` 原样保留）。非法内容（非对象字面量 / 解析失败）记 `engine.logger.error`，不崩溃。
+    - **全局**：`engine.actions` 是 `options.actions` 的**同一引用**（getter 直返），运行时 `engine.actions.xxx = fn` 即时生效。
 - **查找链**：`scope.getAction(name)` 沿 parent 链——本 `scope.actions` → 各祖先 `actions` → `engine.actions`（终点）。子覆盖父、`hasOwnProperty` 判命中、命中即止。
 - **查找时机（关键）**：Action 查找**延迟到事件触发时**（handler 闭包内现调 `scope.getAction`）。理由：actions 可能在指令 `created` 之后才注册（运行时赋值 `engine.actions`、后注入的局部 script），若 `created` 时缓存引用会查到 undefined 误走表达式。仅「表达式编译」（`new Function`，指令值不变）与「参数求值器」在 `created` 时一次性完成，事件触发路径零重复编译。
-- **调用约定**：命中 function 时，以 `OnEvalContext` 为 `this` 调用；参数由 args 求值器（`new Function('$event','data','with(data){return [...]}')`）产出数组，无参（裸名 / 空括号）则无参调用。调用包裹 try/catch，异常记 `engine.logger.error`、不中断。
-- **`OnEvalContext` 契约（决策编码）**：作为 action 的 `this`，同时其字段经表达式 `with(data)` 可见。字段语义：
-  | 字段 | 类型 | 语义 |
-  |---|---|---|
-  | `el` | HTMLElement | 触发元素 |
-  | `$event` | Event | 原生事件对象（亦作表达式求值器形参注入） |
-  | `data` | 聚合视图 | `scope.getScopeContext()`：localScope + dataScope + 全局 state 拍平。**可读可写**：写 x-data 字段经 set 陷阱透传到响应式 dataScope 触发细粒度更新；写 localScope（普通对象）不响应式 |
-  | `scope` | AutoTemplateScope | 当前 scope 实例，提供 `getDataScope()`（沿链取最近 x-data 域）/ `engine` / `parent` 等，供深层访问与写入 |
-  | `store` | AutoStore | 实例，`this.store.state` 写入即响应式 |
-  | `engine` | AutoTemplateEngine | 引擎实例 |
-  | `$options` | 只读聚合视图 | 指令配置：指令选项 → 宿主 `x-options` 两层回退；只读（set/ delete 静默失败）；与 `data` 正交 |
+- **调用约定**：命中 function 时，以 `AutoTemplateActionContext` 为 `this` 调用；参数由 args 求值器（`new Function('$event','data','with(data){return [...]}')`）产出数组，无参（裸名 / 空括号）则无参调用。调用包裹 try/catch，异常记 `engine.logger.error`、不中断。
+- **`AutoTemplateActionContext` 契约（决策编码）**：作为 action 的 `this`，同时其字段经表达式 `with(data)` 可见。字段语义：
+    | 字段       | 类型               | 语义                                                                                                                                                                                 |
+    | ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+    | `el`       | HTMLElement        | 触发元素                                                                                                                                                                             |
+    | `$event`   | Event              | 原生事件对象（亦作表达式求值器形参注入）                                                                                                                                             |
+    | `data`     | 聚合视图           | `scope.getScopeContext()`：localScope + dataScope + 全局 state 拍平。**可读可写**：写 x-data 字段经 set 陷阱透传到响应式 dataScope 触发细粒度更新；写 localScope（普通对象）不响应式 |
+    | `scope`    | AutoTemplateScope  | 当前 scope 实例，提供 `getDataScope()`（沿链取最近 x-data 域）/ `engine` / `parent` 等，供深层访问与写入                                                                             |
+    | `store`    | AutoStore          | 实例，`this.store.state` 写入即响应式                                                                                                                                                |
+    | `engine`   | AutoTemplateEngine | 引擎实例                                                                                                                                                                             |
+    | `$options` | 只读聚合视图       | 指令配置：指令选项 → 宿主 `x-options` 两层回退；只读（set/ delete 静默失败）；与 `data` 正交                                                                                         |
 - **Action 优先 + 表达式兜底**：handler 内——若指令值是 Action 候选**且** `scope.getAction(name)` 返回 function，则按 action 调用并 `return`；否则退化到 `with(data)` 表达式求值（`new Function('$event','data','with(data){return (EXPR)}')`）。表达式求值亦 try/catch 记日志不中断。
 - **修饰符管道（三类 descriptor）**：修饰符统一为 `{ name, type, apply }`，`type` 判别三型：
-  - **option**（once/capture/passive）→ `apply` 返回字段合并进 `addEventListener` 第 3 参；
-  - **guard**（self/ctrl/按键别名/鼠标键/exact）→ 组成 **AND 链**，置于业务 handler 之前，任一返回 false 短路；
-  - **wrapper**（debounce）→ 由外向内包裹整条管道（在 guard 之外），可注册 `cleanup.cancel` 供 destroy 清理。
-  组装顺序：业务 handler（求值器）→ guard 包裹（最内层）→ wrapper 由外向内包裹 → option 合并 → `addEventListener`。故 wrapper 到时才校验 guard。
-- **修饰符与选项等价（ADR-0007）**：修饰符在解析期注入为指令选项键（`.ctrl` ≡ `options.ctrl=true`），指令层只读 `options`、不再读 `modifiers`。带值配置（如 debounce 时长）走 `x-on-options="{debounce:500}"`；元素级共享配置走 `x-options`。`OnEvalContext.$options` 暴露该聚合视图。
+    - **option**（once/capture/passive）→ `apply` 返回字段合并进 `addEventListener` 第 3 参；
+    - **guard**（self/ctrl/按键别名/鼠标键/exact）→ 组成 **AND 链**，置于业务 handler 之前，任一返回 false 短路；
+    - **wrapper**（debounce）→ 由外向内包裹整条管道（在 guard 之外），可注册 `cleanup.cancel` 供 destroy 清理。
+      组装顺序：业务 handler（求值器）→ guard 包裹（最内层）→ wrapper 由外向内包裹 → option 合并 → `addEventListener`。故 wrapper 到时才校验 guard。
+- **修饰符与选项等价（ADR-0007）**：修饰符在解析期注入为指令选项键（`.ctrl` ≡ `options.ctrl=true`），指令层只读 `options`、不再读 `modifiers`。带值配置（如 debounce 时长）走 `x-on-options="{debounce:500}"`；元素级共享配置走 `x-options`。`AutoTemplateActionContext.$options` 暴露该聚合视图。
 - **配置 / 数据双通道（ADR-0007）**：`$options`（配置，只读）与 `data`（数据，可读写）正交——host options 绝不进入 `data` 聚合视图，避免键名污染与重名冲突。
 - **错误宽松**：action 调用与表达式求值共用 try/catch + `engine.logger.error` 不中断，复用 `watchExpression` 的宽松求值模式。
 - **返回值冒泡（计划：[ADR-0008](../adr/0008-x-on-feedback-modifier.md)）**：`.feedback` 修饰符要求 business handler 返回 action 的返回值（action 分支 `return action.call(ctx,...args)`、表达式分支 `return exprGetter(...)`），管道（`guardWrapped` + 各 wrapper）透传该返回值；`.feedback` wrapper 据此捕获本次触发的 Promise，驱动 pending/resolved/rejected 状态机。wrapper 经可选 `order` 字段排序，feedback 固定最内层（拿原始返回值）。**当前实现尚未冒泡**（返回值丢弃），系 feedback 落地时的配套改动。
@@ -162,6 +162,6 @@
 - **状态**：本 spec 描述的特性**已实现并通过测试**（`x-on.test.ts` 全绿、全量测试 0 失败、template 包 0 类型错误）。此 spec 作为「已商定行为」的权威记录，供验证 / 回归 / 后续维护代理参照，而非绿地新建、**零代码变更**。
 - **决策出处**：实现见求值器 / 类型文件 / `scope.getAction`；修饰符与配置统一见 [ADR-0007](../adr/0007-directive-options-and-modifiers.md)；指令类别（Compile / scope 通道）见 [ADR-0001](../adr/0001-directive-kind-system.md)；术语见 [glossary「钩子」/「RuntimeDirective 接口」](../glossary.md)。
 - **feedback 修饰符（计划中）**：`x-on:click.feedback="submit"` 为 async action 提供声明式 UI 反馈（自动加 `pending`/`resolved`/`rejected` 类 + 可叠加 x-loading overlay），信号源为 **handler 返回值捕获**（非订阅全局 `actions/*` 事件，避免同名 action 串扰 + 覆盖同步 action）。完整设计见 [ADR-0008](../adr/0008-x-on-feedback-modifier.md)、术语见 [glossary「x-on 反馈」](../glossary.md)。落地需配套 business 返回值冒泡（见 Implementation Decisions）。
-- **哲学一致性**：Action 优先 + 表达式兜底兼顾「显式 action 的可测试 / 可维护」与「内联表达式的零样板」，与 Alpine.js `x-on` 同源；`OnEvalContext` 的 `data`（读写数据）/ `$options`（只读配置）双正交通道，与 ADR-0007 的「配置与数据分通道」一脉相承。
+- **哲学一致性**：Action 优先 + 表达式兜底兼顾「显式 action 的可测试 / 可维护」与「内联表达式的零样板」，与 Alpine.js `x-on` 同源；`AutoTemplateActionContext` 的 `data`（读写数据）/ `$options`（只读配置）双正交通道，与 ADR-0007 的「配置与数据分通道」一脉相承。
 - **未发布到 issue tracker**：因本机未配置 tracker 与 triage 标签词表（且无 `gh` CLI），spec 暂落仓库 markdown（与既有 `x-html.md` / `reactive-interpolation.md` / `engine-patch.md` spec 一致）；待 `/setup-matt-pocock-skills` 配置后可迁移至 tracker 并打 `ready-for-agent`。
 - **异步 Action 已落地**：本 spec 定稿后，async action 的生命周期广播已由 `engine.buildAction` 实现（`actions/<name>/{pending,resolved,rejected}`），glossary 已更新「actions 域」描述（task 域已废弃）。本 spec 仍专注同步 Action 规格，async 行为以 glossary + buildAction 实现为权威。

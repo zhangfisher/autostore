@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · message 提示文案</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            .panel {
+                position: relative;
+                min-height: 100px;
+                display: flex;
+                align-items: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- message：覆盖层下方的提示文案；不传则不渲染文本节点 -->
+        <div class="demo-app">
+            <p>
+                <button class="btn" @click="toggle">{{ on ? '隐藏' : '显示' }}覆盖层</button>
+            </p>
+            <div class="row">
+                <div class="card panel" x-loading="{ visible:'on', message:'正在拉取数据…' }" style="flex:1">
+                    带 <code>message</code>：loader 下方渲染文案
+                </div>
+                <div class="card panel" x-loading="on" style="flex:1">
+                    无 <code>message</code>（快速绑定）：仅 loader，不渲染文本
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { on: true },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.on = !engine.state.on;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

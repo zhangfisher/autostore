@@ -5,8 +5,8 @@ import { normalizeClass } from "../utils/normalizeClass";
  * 属性绑定指令（singleton=false，priority=50）。
  *
  * `x-bind:attr` / `:attr` 绑定任意属性；`x-class` / `x-style` 作为其特化别名——
- * 经 `getDirectives` 解析期归一化为 `bind+class` / `bind+style`，**无独立指令类、零运行时实体**
- * （同 `x-show` → `x-if.keep` 模式）。因此 `x-class` / `:class` / `x-bind:class` 三种写法完全等价。
+ * 经 `getDirectives` 解析期归一化为 `bind+class` / `bind+style`，**无独立指令类、零运行时实体**。
+ * 因此 `x-class` / `:class` / `x-bind:class` 三种写法完全等价。
  *
  * **求值**：整值表达式，经 `scope.watch` 订阅（纯路径走精准订阅，表达式走 `collectDependencies`，
  * 自动注入 x-for 的 localScope），首渲用 watch 返回的当前值；后续变化经 `scheduler` 微任务合并后 patch。

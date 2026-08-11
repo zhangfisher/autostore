@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-class · 响应式切换</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            /* 静态 class：常驻，:class 的 diff 不会动它（两套来源互不依赖） */
+            .task {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                margin: 8px 0;
+                border-radius: 6px;
+                background-color: #fafafa;
+                border: 2px solid transparent;
+                border-left-width: 4px;
+                transition: all 0.2s ease-in;
+            }
+            /* :class 写入的 token：随 state 自动增删 */
+            .selected {
+                border-color: #42b883;
+                background-color: #f0fff4;
+            }
+            .done {
+                opacity: 0.6;
+                text-decoration: line-through;
+            }
+            .pri-high {
+                border-left-color: #c0392b;
+            }
+            .pri-normal {
+                border-left-color: #e07000;
+            }
+            .pri-low {
+                border-left-color: #999;
+            }
+            .task-title {
+                flex: 1;
+                font-size: 15px;
+            }
+            .pri-btn {
+                padding: 4px 12px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                background-color: #fff;
+                cursor: pointer;
+                font-size: 13px;
+            }
+            .pri-btn.active {
+                color: #fff;
+                background-color: #42b883;
+                border-color: #42b883;
+            }
+            .row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 6px 0;
+            }
+            .label {
+                font-size: 14px;
+                color: #666;
+                min-width: 56px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 多个状态同时驱动同一元素的 class（对象含计算键），且与静态 class="task" 共存 -->
+        <div class="demo-app">
+            <div
+                class="task"
+                :class="{ selected: task.selected, done: task.done, ['pri-' + task.priority]: true }"
+            >
+                <span class="task-title">{{ task.title }}</span>
+            </div>
+
+            <div class="row">
+                <label class="row" style="min-width: auto">
+                    <input type="checkbox" :checked="task.selected" @change="toggleSelected($event)" />
+                    <span class="label" style="min-width: auto">选中</span>
+                </label>
+                <button class="btn" @click="toggleDone">{{ task.done ? "标记未完成" : "标记完成" }}</button>
+            </div>
+
+            <div class="row">
+                <span class="label">优先级</span>
+                <button class="pri-btn" :class="{ active: task.priority === 'high' }" @click="setPriority('high')">
+                    高
+                </button>
+                <button
+                    class="pri-btn"
+                    :class="{ active: task.priority === 'normal' }"
+                    @click="setPriority('normal')"
+                >
+                    中
+                </button>
+                <button class="pri-btn" :class="{ active: task.priority === 'low' }" @click="setPriority('low')">
+                    低
+                </button>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    task: {
+                        title: "整理本周需求文档",
+                        selected: false,
+                        done: false,
+                        priority: "normal",
+                    },
+                },
+                {
+                    actions: {
+                        // 表单交互回写 state，class 随之 diff 更新——无需手动操作 DOM
+                        toggleSelected: (e) => {
+                            engine.state.task.selected = e.target.checked;
+                        },
+                        toggleDone: () => {
+                            engine.state.task.done = !engine.state.task.done;
+                        },
+                        setPriority: (level) => {
+                            engine.state.task.priority = level;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

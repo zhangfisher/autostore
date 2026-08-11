@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-html · .compile 子模板编译</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- .compile 把绑定值作为子模板编译：注入的 x-text/{{}} 生效，且响应 state 变化 -->
+        <div class="demo-app">
+            <p class="muted">下方内容由 x-html.compile 作为子模板编译（指令/插值均生效）：</p>
+            <div class="card" x-html.compile="tpl"></div>
+            <button class="btn" @click="rename">改 name（注入内容随之更新）</button>
+            <button class="btn" @click="swap">切换模板（值变全量重建）</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    // tpl 是一段模板字符串，里面的 x-text / {{}} 会被当作子模板编译
+                    tpl: "<span x-text='name'></span>，<em>{{greeting}}</em>",
+                    name: "zhang",
+                    greeting: "hello",
+                },
+                {
+                    actions: {
+                        // 改 name：注入的 <span> 经 x-text 绑定，随之更新（证明 watcher 已建立）
+                        rename: () => {
+                            engine.state.name = engine.state.name === "zhang" ? "li" : "zhang";
+                        },
+                        // 换 tpl：销毁旧子树 + 重编译新内容（全量重建）
+                        swap: () => {
+                            engine.state.tpl =
+                                "<strong x-text='greeting'></strong>，<code x-text='name'></code>";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

@@ -32,6 +32,7 @@ return (event) => {
 ```
 
 理由：全局事件订阅有两个无法回避的硬伤——
+
 - **串扰**：`actions/submit/pending` 按 **action name** 全局广播，且 payload **不带 el**（ADR-0003 明确"避免持 DOM 引用泄漏"）。页面上两个 `x-on:click.feedback="submit"` 按钮，点其一 → 两个都进 pending，feedback 无法区分是哪个按钮触发的。
 - **同步 action 失效**：ADR-0003 明确"仅 async action（返回 thenable）广播；同步 action 不广播"。若 submit 是同步函数，事件根本不发，feedback 永远停在初态。
 
@@ -147,7 +148,7 @@ rejected:  target.removeAttribute("x-loading")
 ## 被否决的方案
 
 - **订阅全局 `actions/<name>/*` 事件**：串扰（同名 action 多元素同时亮）+ 同步 action 永不触发 + payload 无 el 无法按元素过滤。否决，改用返回值捕获（决策 1）。
-- **事件 payload 加 el 标识 + 订阅时按 el 过滤**：违反 ADR-0003"payload 不带 el"决策；且 buildAction 在**注册时**包装，广播发生在 action 返回的 Promise 的 `then` 里，拿不到调用点的 el（el 在 `action.call(ctx)` 的 `this=OnEvalContext` 上，要透传到 then 回调较绕）。否决。
+- **事件 payload 加 el 标识 + 订阅时按 el 过滤**：违反 ADR-0003"payload 不带 el"决策；且 buildAction 在**注册时**包装，广播发生在 action 返回的 Promise 的 `then` 里，拿不到调用点的 el（el 在 `action.call(ctx)` 的 `this=AutoTemplateActionContext` 上，要透传到 then 回调较绕）。否决。
 - **feedback 自渲染 overlay（内建轻量渲染）**：与 x-loading 双份渲染逻辑，违反 DRY。否决，改用 DOM 属性操控复用 x-loading（决策 7）。
 - **显式 `imperative:true` 字段（小改 x-loading）**：契约更清晰、不依赖副作用，但核验后发现现有 `resolveLiteral("")===true` 已能工作，改 x-loading 是无谓成本。否决，改用隐式行为 + 测试锁定（决策 8）。
 - **全态 timeout（pending 也计时清除）**：action 耗时 > timeout 时 pending 消失，UI 误示"没在跑"。否决，改仅清终态类（决策 3）。
@@ -171,37 +172,45 @@ rejected:  target.removeAttribute("x-loading")
 
 - **返回值冒泡点**：`on/eval.ts` 的 `createEvalHandler` 返回的闭包，action 命中分支 `return action.call(ctx, ...args)`、表达式兜底分支 `return exprGetter(event, data)`。`on/index.ts` 的 `guardWrapped` 改 `return business(eventObj)`；wrapper apply 返回的 handler 末尾 `return next(event)`（feedback 自身也透传，供外层 wrapper 或未来消费者用）。
 - **feedback.ts 状态机骨架**：
-  ```ts
-  apply: (next, rt, cleanup) => {
-      const cfg = resolveFeedbackConfig(rt.options.feedback);   // true→全默认 / 对象→取配置
-      const target = () => resolveTarget(rt.el, cfg.at);          // 宿主/closest/@
-      let gen = 0, termTimer: any = null;
-      cleanup.cancel = () => { clearTimeout(termTimer); stripAll(); };
-      const enter = (cls) => {                                    // pending 进入
-          clearTimeout(termTimer);
-          target().classList.remove(cfg.resolvedClass, cfg.rejectedClass);
-          target().classList.add(cls);
-          if (cfg.loading) setLoading(target(), cfg.loading);     // setAttribute(x-loading, cfg)
-      };
-      const settle = (cls) => {                                   // resolved/rejected 终态
-          clearTimeout(termTimer);
-          const t = target();
-          t.classList.remove(cfg.pendingClass);
-          t.classList.add(cls);
-          if (cfg.loading) t.removeAttribute("x-loading");
-          if (cfg.timeout > 0) termTimer = setTimeout(() => t.classList.remove(cls), cfg.timeout);
-      };
-      return (event) => {
-          const ret = next(event);
-          if (!ret || typeof ret.then !== "function") return ret; // 同步: 静默
-          const my = ++gen;
-          enter(cfg.pendingClass);
-          ret.then((v) => my === gen && settle(cfg.resolvedClass),
-                   (e) => my === gen && settle(cfg.rejectedClass));
-          return ret;
-      };
-  }
-  ```
+    ```ts
+    apply: (next, rt, cleanup) => {
+        const cfg = resolveFeedbackConfig(rt.options.feedback); // true→全默认 / 对象→取配置
+        const target = () => resolveTarget(rt.el, cfg.at); // 宿主/closest/@
+        let gen = 0,
+            termTimer: any = null;
+        cleanup.cancel = () => {
+            clearTimeout(termTimer);
+            stripAll();
+        };
+        const enter = (cls) => {
+            // pending 进入
+            clearTimeout(termTimer);
+            target().classList.remove(cfg.resolvedClass, cfg.rejectedClass);
+            target().classList.add(cls);
+            if (cfg.loading) setLoading(target(), cfg.loading); // setAttribute(x-loading, cfg)
+        };
+        const settle = (cls) => {
+            // resolved/rejected 终态
+            clearTimeout(termTimer);
+            const t = target();
+            t.classList.remove(cfg.pendingClass);
+            t.classList.add(cls);
+            if (cfg.loading) t.removeAttribute("x-loading");
+            if (cfg.timeout > 0) termTimer = setTimeout(() => t.classList.remove(cls), cfg.timeout);
+        };
+        return (event) => {
+            const ret = next(event);
+            if (!ret || typeof ret.then !== "function") return ret; // 同步: 静默
+            const my = ++gen;
+            enter(cfg.pendingClass);
+            ret.then(
+                (v) => my === gen && settle(cfg.resolvedClass),
+                (e) => my === gen && settle(cfg.rejectedClass),
+            );
+            return ret;
+        };
+    };
+    ```
 - **`resolveTarget`**：`at` 省略 → `el`；`at` 以 `@` 开头 → `document.querySelector(at.slice(1))`；否则 → `el.closest(at)`。`closest`/`querySelector` 未命中或非法 → 回退 `el` + `logger.warn`（与 x-loading selector 回退语义一致，健壮不中断）。
 - **`setLoading` 防闪烁**：缓存 `currentLoadingAttr`，`setAttribute` 前比对——相同 JSON 不重复 set，避免 MutationObserver 的 `attrChanged` 触发 overlay teardown+remount 闪烁。pending→resolved 的 `removeAttribute` 总是执行。
 - **`order` 排序**：`WrapperModifierDesc` 增 `order?: number`；`OnDirective.created()` 分桶后 `wrapperRts.sort((a,b) => (MODIFIERS[b.name].order ?? 0) - (MODIFIERS[a.name].order ?? 0))`（**降序**）。apply 语义是"把 current 包进新 handler、新 handler 在 current 外层"，故先 apply 的 wrapper 居内层；降序使 order 大者先 apply → 居内层。feedback(order=Infinity) 据此固定最内层。

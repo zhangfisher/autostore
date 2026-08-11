@@ -227,7 +227,7 @@ export class AutoTemplateScope {
     /**
      * 沿 parent 链查找最近的 x-data 私有响应式域（`dataScope`）。
      *
-     * 供 OnEvalContext 经 `this.scope.getDataScope()` 使用：action 无论挂在 x-data 元素本身
+     * 供 AutoTemplateActionContext 经 `this.scope.getDataScope()` 使用：action 无论挂在 x-data 元素本身
      * 还是其后代，均可拿到"当前所在 x-data 块"的可读可写响应式代理——区别于 `getScopeContext`
      * 返回的只读聚合视图（写已有键会抛 TypeError）。整条链均无 x-data 时返回 null。
      *
@@ -408,11 +408,17 @@ export class AutoTemplateScope {
     runDirectives(directives: AutoTemplateDirectiveBase[]): void {
         for (const d of directives) {
             if (typeof d.created === "function") d.created();
-            this.engine.emit(("directive/" + d.info.name + "/created") as any, { name: d.info.name, id: this.id });
+            this.engine.emit(("directive/" + d.info.name + "/created") as any, {
+                name: d.info.name,
+                id: this.id,
+            });
         }
         for (const d of directives) {
             if (typeof d.compile === "function") d.compile(this.engine.state, this.el!);
-            this.engine.emit(("directive/" + d.info.name + "/compiled") as any, { name: d.info.name, id: this.id });
+            this.engine.emit(("directive/" + d.info.name + "/compiled") as any, {
+                name: d.info.name,
+                id: this.id,
+            });
         }
     }
 
@@ -437,7 +443,10 @@ export class AutoTemplateScope {
             this._updates.length = 0;
             for (const d of this.directives) {
                 if (typeof d.destroy === "function") d.destroy(this.el!);
-                this.engine.emit(("directive/" + d.info.name + "/destroyed") as any, { name: d.info.name, id: this.id });
+                this.engine.emit(("directive/" + d.info.name + "/destroyed") as any, {
+                    name: d.info.name,
+                    id: this.id,
+                });
             }
         } catch (e: any) {
             this.engine.logger.error(e);

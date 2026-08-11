@@ -15,7 +15,7 @@
  *   总线是全局通道，局部 action 同名进总线会与其他 scope 同名局部 action 串扰（消费者无法区分）；
  *   DOM 冒泡天然隔离作用域（冒泡只到祖先）。经 `local` 标志区分（compiler 入口传 true、engine 入口默认 false）。
  *
- * **dispatch 源 = OnEvalContext.el**：wrapped 内 `this = OnEvalContext`（经 x-on 触发），
+ * **dispatch 源 = AutoTemplateActionContext.el**：wrapped 内 `this = AutoTemplateActionContext`（经 x-on 触发），
  * 闭包捕获 `this.el` 作 triggerEl。命令式直调（this 非 ctx、无 el）→ triggerEl 为空：
  * 全局 action 仍 emit 总线（只不走 DOM）；局部 action 既无总线也无 DOM = 静默（组件内部调用，自知结果）。
  *
@@ -52,7 +52,7 @@ export function buildAction<A extends (...args: any[]) => any>(
 ): A {
     if ((action as any).__buildActionWrapped) return action;
     const wrapped = function (this: unknown, ...args: Parameters<A>) {
-        // 触发元素：仅 OnEvalContext（经 x-on 触发）有 el；命令式直调无 el
+        // 触发元素：仅 AutoTemplateActionContext（经 x-on 触发）有 el；命令式直调无 el
         const triggerEl = (this as any)?.el as HTMLElement | undefined;
         // 双通道广播：总线（全局通配，仅全局 action）+ DOM 冒泡（祖先聚合，全局+局部）。
         // local=true（局部 action）：跳过 emit，只 DOM——避免同名局部 action 总线串扰（ADR-0012）。

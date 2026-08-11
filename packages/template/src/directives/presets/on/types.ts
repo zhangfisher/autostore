@@ -9,10 +9,14 @@
  * OnDirective 主逻辑据 `type` 分派：option 合并 options、guard 组成 AND 链、wrapper 由外向内包裹。
  */
 
+import type { AnyAutoStore } from "autostore";
 import type { AutoTemplateScope } from "../../../scope";
 
 /** addEventListener 第 3 参的子集（option 类修饰符可产出的字段） */
-export type EventListenerOptionsSubset = Pick<AddEventListenerOptions, "once" | "capture" | "passive">;
+export type EventListenerOptionsSubset = Pick<
+    AddEventListenerOptions,
+    "once" | "capture" | "passive"
+>;
 
 /**
  * 修饰符运行时上下文（apply 入参）。
@@ -77,7 +81,7 @@ export type ModifierDesc = OptionModifierDesc | GuardModifierDesc | WrapperModif
  * 命中 engine.actions 或 scope 局部 action 时，以本对象为 `this` 调用；
  * `$event` 亦作为表达式求值器的形参注入。
  */
-export interface OnEvalContext {
+export interface AutoTemplateActionContext {
     /** 触发元素 */
     el: HTMLElement;
     /** 原生事件对象 */
@@ -94,7 +98,8 @@ export interface OnEvalContext {
      */
     scope: AutoTemplateScope;
     /** AutoStore 实例 */
-    store: any;
+    store: AnyAutoStore;
+    state: Record<string, any>;
     /** 引擎实例 */
     engine: any;
     /**

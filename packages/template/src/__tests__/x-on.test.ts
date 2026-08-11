@@ -435,7 +435,7 @@ describe('x-on <script type="actions"> 局部 action', () => {
 /**
  * x-on 结合 x-data（含嵌套）。
  *
- * OnEvalContext 语义：
+ * AutoTemplateActionContext 语义：
  * - `this.data`：scope.getScopeContext() 聚合视图 —— localScope + dataScope + 全局 state，
  *   **可读可写**：写 x-data 字段透传到响应式 dataScope（store.state._scopes[id]）触发更新。
  * - `this.scope`：AutoTemplateScope 实例 —— 经 getDataScope() 沿链拿最近 x-data 域（dataScope 引用）。

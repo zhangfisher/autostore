@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
     <head>
         <meta charset="UTF-8" />
@@ -9,7 +9,7 @@
     </head>
 
     <body>
-        <!-- action 执行时 this = OnEvalContext：携带 el / $event / data / scope / store / engine / $options -->
+        <!-- action 执行时 this = AutoTemplateActionContext：携带 el / $event / data / scope / store / engine / $options -->
         <div class="demo-app">
             <!-- 全局根状态（engine.state） -->
             <p>全局计数：<span class="val" x-text="count"></span></p>

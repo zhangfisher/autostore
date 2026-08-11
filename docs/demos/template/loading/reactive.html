@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · 反应式绑定</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+        <style>
+            /* 宿主需 position:relative，覆盖层（absolute inset:0）才相对它定位 */
+            .panel {
+                position: relative;
+                min-height: 90px;
+                display: flex;
+                align-items: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 反应式模式：x-loading 绑定全局状态路径，值真则显示、假则隐藏 -->
+        <div class="demo-app">
+            <p>
+                <button class="btn" @click="start">开始加载（1.2 秒）</button>
+            </p>
+            <div id="panel" class="card panel" x-loading="ui.loading">
+                本区域绑定了 <code>x-loading="ui.loading"</code>。状态置真即显示覆盖层、置假即隐藏，
+                随状态自动切换——无需手动 setAttribute。
+            </div>
+            <p class="muted">当前状态：<span class="val" x-text="ui.loading ? '加载中' : '空闲'"></span></p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { ui: { loading: false } },
+                {
+                    actions: {
+                        start: async () => {
+                            engine.state.ui.loading = true;
+                            await new Promise((r) => setTimeout(r, 1200));
+                            engine.state.ui.loading = false;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>
