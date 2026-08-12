@@ -1,5 +1,9 @@
 import { AutoTemplateDirectiveBase } from "../base";
 import { normalizeClass } from "../utils/normalizeClass";
+import { getVal, joinPath, splitPath } from "autostore";
+
+/** 配置分隔符：value 含此字符时，@ 左配置状态路径、右配置属性路径，绑定来源切到 configManager（见 ADR-0019） */
+const CONFIG_SEPARATOR = "@";
 
 /**
  * 属性绑定指令（singleton=false，priority=50）。
@@ -8,9 +12,18 @@ import { normalizeClass } from "../utils/normalizeClass";
  * 经 `getDirectives` 解析期归一化为 `bind+class` / `bind+style`，**无独立指令类、零运行时实体**。
  * 因此 `x-class` / `:class` / `x-bind:class` 三种写法完全等价。
  *
- * **求值**：整值表达式，经 `scope.watch` 订阅（纯路径走精准订阅，表达式走 `collectDependencies`，
- * 自动注入 x-for 的 localScope），首渲用 watch 返回的当前值；后续变化经 `scheduler` 微任务合并后 patch。
+ * ## 两个值来源（正交，见 ADR-0019）
  *
+ * - **状态绑定**（默认，value 不含 `@`）：整值表达式经 `scope.watch` 订阅 store.state（纯路径走精准订阅，
+ *   表达式走 `collectDependencies`，自动注入 x-for 的 localScope）。支持相对表达式。`order.price` = 绑状态值。
+ * - **配置绑定**（value 含 `@`）：`:placeholder="order.price@placeholder"` 把值来源切到 `configManager`
+ *   元数据。`@` 左为**配置状态路径**（定位 configManager.state 中的 schema 条目），右为**配置属性路径**
+ *   （schema 对象的属性，**支持多段嵌套**，如 `@style.color` 读 `schema.style.color`；schema 可扩展故无白名单）。
+ *   用 `indexOf("@")` 第一个 `@` 分割。`@` 两侧纯路径 only，不支持表达式。经 `configManager.collectDependencies("read")`
+ *   自动追踪依赖（含嵌套），回调同样经 scheduler 合并。configManager/schema 不存在 → warn + 静默；
+ *   属性取不到 → 复用 patch removeAttribute。
+ *
+ * ## 求值（状态绑定）
  * **patch 按 attr 分派**（顺序敏感，`checked` 同属 property 与 boolean → property 优先）：
  * - `class` → `normalizeClass` + `classList` diff（有 `lastApplied` 状态，**绝不用 `className=`**，
  *   原生 `class` 属性的 token 永不被碰；静态类走原生 `class`、动态类走 x-class，dirty tracking 合并）
@@ -58,6 +71,18 @@ import { normalizeClass } from "../utils/normalizeClass";
  * @example `:disabled` 等 boolean 型：truthy setAttribute / falsy removeAttribute
  * <button :disabled="locked">提交</button>
  * // state:{locked:true} → 禁用；locked=false → 解除（同此理：readonly / hidden / selected / multiple）
+ *
+ * @example `@` 配置引用：把 configManager 元数据响应式注入属性（见 ADR-0019）
+ * <input :placeholder="order.price@placeholder"/>
+ * // configManager.state["configKey.order.price"].placeholder = "请输入价格" → placeholder="请输入价格"
+ * // @ 左 order.price 为配置状态路径，右 placeholder 为配置属性路径；改 schema.placeholder 自动更新
+ *
+ * @example `@` 右侧支持嵌套属性路径（绑 schema 对象属性）
+ * <input :placeholder="order.price@style.color"/>
+ * // 读 schema.style.color，支持任意深度嵌套
+ *
+ * @example `@` 全分派复用：class/style/property/boolean 均可绑元数据
+ * <input :class="order.price@inputClass" :disabled="order.price@readonly"/>
  */
 
 /** property 型属性：state→DOM 单向写入（`el[attr] = value`），不监听事件 = 不是 x-model */
@@ -83,9 +108,79 @@ export class BindDirective extends AutoTemplateDirectiveBase {
 
     override created() {
         if (this.value == null || this.value === "") return;
+        // value 含 `@` → 配置绑定（configManager 元数据）；否则 → 状态绑定（store.state）
+        if (String(this.value).includes(CONFIG_SEPARATOR)) {
+            this._bindConfig();
+            return;
+        }
         // watch 返回当前值做首渲；后续变化经 scheduler flush 回调 patch
         const initial = this.binding.watch(this.value, ({ value }) => this.patch(value));
         this.patch(initial);
+    }
+
+    /**
+     * 配置绑定：把 `配置状态路径@配置属性路径` 绑到 configManager 元数据（ADR-0019）。
+     *
+     * - `indexOf("@")` 第一个 `@` 分割：左侧配置状态路径，右侧配置属性路径（支持多段嵌套，如 `style.color`）；
+     * - 左侧 `splitPath(".")` 拼 fullKey（复刻 `configManager.add` 的 `joinPath([configKey?, ...pathKey])`，configKey 空串不加前缀）；
+     * - 右侧 `splitPath(".")` 作为 getVal 路径读 schema 对象（支持任意深度嵌套）；
+     * - `configManager.collectDependencies("read")` 在求值回调内 `getVal(state[fullKey], rightPath)` 自动追踪依赖
+     *   （含嵌套层），规避手工拼 watch 路径；
+     * - 三层降级：configManager/schema 不存在 → warn + 静默；属性取不到 → 复用 patch removeAttribute（不额外 warn）；
+     * - watcher 进 `this.watchers`，随 scope.destroy 回收（与 scope 通道同构）；
+     * - 回调经 `engine.scheduler.schedule` 合并（同 tick 多次变化合并成一次 patch）。
+     */
+    private _bindConfig() {
+        const logger = this.engine.logger;
+        // configManager 不存在 → warn + 静默（不动 DOM）
+        const cm = this.engine.store.configManager;
+        if (!cm) {
+            logger.warn(
+                `x-bind: 配置引用 "${this.value}" 需要 configManager，但 store 未配置（value="${this.value}"）`,
+            );
+            return;
+        }
+        const raw = String(this.value);
+        const at = raw.indexOf(CONFIG_SEPARATOR);
+        // 第一个 @ 分割（左侧配置状态路径不含 @；右侧多余 @ 在 getVal 时取不到值、走 falsy 降级）
+        const leftRaw = raw.slice(0, at);
+        const rightRaw = raw.slice(at + 1);
+        // @ 两侧均须非空
+        if (!leftRaw.trim() || !rightRaw.trim()) {
+            logger.warn(
+                `x-bind: 配置引用 "${this.value}" 的 @ 两侧均须非空（左配置状态路径 + 右配置属性路径），已忽略`,
+            );
+            return;
+        }
+        const leftSegs = splitPath(leftRaw, ".");
+        const rightPath = splitPath(rightRaw, ".");
+        // fullKey 复刻 configManager.add：仅左侧，configKey 空串不加前缀（add 内 if(configKey) splice 对空串 falsy 不执行）
+        const configKey = this.engine.store.configKey;
+        const fullKey = joinPath(configKey ? [configKey, ...leftSegs] : leftSegs);
+        // collectDependencies 自动追踪：getVal(schema, rightPath)，响应式系统记录 [fullKey, ...rightPath] 依赖路径（含嵌套）。
+        // cm.state 类型是 AutoStoreConfigures（flat `.` 连接 key → schema 对象），用 Record cast 访问。
+        const cmState = cm.state as Record<string, any>;
+        const read = () => {
+            const schema = cmState[fullKey];
+            return schema == null ? undefined : getVal(schema, rightPath);
+        };
+        let firstValue: any;
+        const deps = cm.collectDependencies(() => {
+            firstValue = read();
+        }, "read");
+        // schema 不存在 → warn + 静默（首渲即 undefined 且 schema 不存在才 warn；属性取不到不额外 warn）
+        if (firstValue === undefined) {
+            if (cmState[fullKey] == null) {
+                logger.warn(
+                    `x-bind: 配置引用 "${this.value}" 对应的 schema "${fullKey}" 不存在于 configManager，已忽略`,
+                );
+            }
+        }
+        // 首渲：undefined 走 patch falsy 分支 removeAttribute（与既有语义一致）
+        this.patch(firstValue);
+        // 后续变化：watcher 订阅收集到的依赖，回调经 scheduler 合并后 patch（与 scope.watchPath 同构）
+        const update = () => this.patch(read());
+        this.watchers.push(cm.watch(deps, () => this.engine.scheduler.schedule(update)));
     }
 
     /**

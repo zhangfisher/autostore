@@ -1,8 +1,10 @@
 import { AutoTemplateDirectiveBase } from "../base";
-import { isSimpleStatePath } from "../../scope";
+import { isSimpleStatePath, type AutoTemplateScope } from "../../scope";
 import { setVal } from "autostore";
 import type { AutoTemplateActionContext } from "./on/types";
 import { createDirectiveOptions } from "../utils/createDirectiveOptions";
+import type { AutoDirectiveInfo } from "../types";
+import type { AutoTemplateEngine } from "../../engine";
 
 /**
  * 匹配「裸标识符」或「标识符(参数)」，用于 get/set 字符串的 **action 名分派**（复用 x-on 的 ACTION_RE）：
@@ -95,6 +97,202 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     /** 实例唯一 seq（类级自增）；写入 state 时作 flags 标识（-seq），仿 AutoStoreSyncer.seq */
     private static _seq = 0;
     private readonly seq = ++ModelDirective._seq;
+
+    // ── 元数据自动注入（ADR-0020）──────────────────────────────────────
+    //
+    // x-model 元素自动从 configManager schema 注入 input 原生属性。注入白名单按 input type
+    // 精准匹配（通用集 + type 扩展）。仅注入 schema 有的属性（动态交集）。enable→disabled 反向。
+    // name 特殊（无则路径、表达式跳过）。显式绑定优先抑制合成。
+
+    /** 通用注入白名单（所有 text-like input + textarea）。enable 经反向映射注入 disabled（特判）。 */
+    private static readonly COMMON_INJECT_ATTRS = [
+        "placeholder",
+        "title",
+        "required",
+        "readonly",
+        "enable", // → disabled 反向映射（特判）
+        "pattern",
+        "minlength",
+        "maxlength",
+    ] as const;
+
+    /** 含 min/max/step 的 input type（number/range/date 类），扩展注入这三个数值约束属性。 */
+    private static readonly NUMERIC_TYPES = new Set([
+        "number",
+        "range",
+        "date",
+        "time",
+        "datetime-local",
+        "month",
+        "week",
+    ]);
+
+    /**
+     * 元数据自动注入（ADR-0020）：为含 x-model 的元素从 configManager schema 合成隐式 `@` 绑定。
+     *
+     * 由 compiler 在 scope.compile() 后调用（与 `_compileAttrInterpolation` 并列）。合成实体是
+     * 标准 BindDirective 实例（构造合成 AutoDirectiveInfo 喂给 createDirectives），复用 ADR-0019
+     * 全部能力。合成知识内聚于此（compiler 只管调用时机）。
+     *
+     * - configManager 不存在 → 整体跳过（静默，决策 12）；
+     * - 注入白名单 = 通用集 + type 扩展（决策 4）；仅注入 schema 有的属性（决策 5）；
+     * - enable → disabled 反向映射（决策 7）；name 特殊处理（决策 8）；
+     * - 显式绑定优先抑制合成（决策 9）；无条件合成 + 三层降级兜底（决策 10）。
+     */
+    static synthesizeSchemaBindings(
+        engine: AutoTemplateEngine,
+        scope: AutoTemplateScope,
+        el: HTMLElement,
+        modelInfo: AutoDirectiveInfo,
+    ): void {
+        const store = engine.store as any;
+        const cm = store.configManager;
+        // configManager 不存在 → 整体跳过（静默）
+        if (!cm) return;
+        const BindCls = engine.directives.get("bind");
+        if (!BindCls) return;
+        // x-model 绑定值（左配置状态路径用）
+        const modelValue = String(modelInfo.value ?? "");
+        // 表达式场景（非简单路径）：schema 按状态路径注册，表达式路径无对应 schema，
+        // 不合成任何属性（含 @ 绑定与 name 路径——name 走 _injectName 的 isSimpleStatePath 判断跳过）。
+        if (!isSimpleStatePath(modelValue)) return;
+        const configStatePath = modelValue;
+
+        // fullKey 复刻 configManager.add（与 ADR-0019 _bindConfig 同构）
+        const leftSegs = configStatePath.split(".");
+        const configKey = store.configKey;
+        const fullKey = (configKey ? [configKey, ...leftSegs] : leftSegs).join(".");
+        const cmState = cm.state as Record<string, any>;
+        const schema = cmState[fullKey];
+        // schema 未注册 → 跳过 @ 属性合成（仅保留 name 简单路径注入）。
+        // 取舍（修订决策 10）：原无条件全合成会为每个白名单属性产 schema 不存在 WARN，噪音过大；
+        // schema 后注册罕见，牺牲该动态性换静默。name 不依赖 schema（简单路径即注入），故仍执行。
+        const schemaPresent = schema != null;
+        if (!schemaPresent) {
+            ModelDirective._injectName(engine, el, scope, modelValue, undefined);
+            return;
+        }
+        const schemaKeys: Set<string> = new Set(Object.keys(schema));
+
+        const hasValue = (attr: string): boolean => schemaKeys.has(attr) && schema[attr] != null;
+
+        // 同元素已有 bind 指令的 attr 集合（显式绑定优先抑制合成）
+        const explicitAttrs = new Set<string>();
+        for (const d of scope.directives) {
+            if (d.info.name === "bind" && d.info.attr) explicitAttrs.add(d.info.attr);
+        }
+
+        // input type（决定是否扩展 min/max/step）
+        const inputType = (el as HTMLInputElement).type ?? "text";
+
+        /** 合成一个 bind 指令实例（@ 配置引用）并 created，push 进 scope.directives */
+        const synth = (attr: string, schemaAttr: string) => {
+            if (explicitAttrs.has(attr)) return; // 显式绑定优先
+            const info: AutoDirectiveInfo = {
+                name: "bind",
+                attr,
+                value: `${configStatePath}@${schemaAttr}`,
+            };
+            const bind = new BindCls(engine, scope, info);
+            bind.created();
+            scope.directives.push(bind);
+        };
+
+        // 1. 通用白名单：仅注入 schema 有的属性（enable 经反向特判）
+        for (const schemaAttr of ModelDirective.COMMON_INJECT_ATTRS) {
+            if (!hasValue(schemaAttr as string)) continue;
+            if (schemaAttr === "enable") {
+                // enable → disabled 反向映射（决策 7）：值取反。不走 BindDirective（直传语义），
+                // 用专用 patch + 自建 watcher，watcher 进 scope.watchers 由 scope.destroy 回收。
+                if (!explicitAttrs.has("disabled")) {
+                    ModelDirective._injectEnableInvert(engine, scope, el, configStatePath);
+                }
+            } else {
+                synth(schemaAttr as string, schemaAttr as string);
+            }
+        }
+
+        // 2. type 扩展：min/max/step（仅 numeric type）
+        if (ModelDirective.NUMERIC_TYPES.has(inputType)) {
+            for (const extra of ["min", "max", "step"]) {
+                if (hasValue(extra)) synth(extra, extra);
+            }
+        }
+
+        // 3. name 特殊处理（决策 8）：静态写，不走 @ 绑定
+        ModelDirective._injectName(engine, el, scope, modelValue, schemaPresent ? schema : undefined);
+    }
+
+    /**
+     * enable→disabled 反向映射注入（ADR-0020 决策 7）。
+     *
+     * schema.enable 是 boolean（true=可用），DOM disabled 语义反向。读 schema.enable 取反 patch 到
+     * disabled，并 watch configManager 的该依赖路径，变化时重新取反 patch。watcher 进 scope.watchers
+     * 由 scope.destroy 统一回收。
+     */
+    private static _injectEnableInvert(
+        engine: AutoTemplateEngine,
+        scope: AutoTemplateScope,
+        el: HTMLElement,
+        configStatePath: string,
+    ): void {
+        const store = engine.store as any;
+        const cm = store.configManager;
+        const configKey = store.configKey;
+        const leftSegs = configStatePath.split(".");
+        const fullKey = (configKey ? [configKey, ...leftSegs] : leftSegs).join(".");
+        const cmState = cm.state as Record<string, any>;
+        const readInvert = (): boolean | undefined => {
+            const schema = cmState[fullKey];
+            if (schema == null) return undefined;
+            const enable = schema.enable;
+            return enable == null ? undefined : !enable;
+        };
+        // collectDependencies 自动追踪 schema.enable 依赖
+        let first: boolean | undefined;
+        const deps = cm.collectDependencies(() => {
+            first = readInvert();
+        }, "read");
+        // patch 取反值（disabled 属性：truthy setAttribute / falsy removeAttribute）
+        const patchDisabled = (val: boolean | undefined) => {
+            if (val) el.setAttribute("disabled", "");
+            else el.removeAttribute("disabled");
+        };
+        patchDisabled(first);
+        // watcher 订阅 enable 变化，回调经 scheduler 合并后取反 patch
+        scope.watchers.push(
+            cm.watch(deps, () => engine.scheduler.schedule(() => patchDisabled(readInvert()))),
+        );
+    }
+
+    /**
+     * name 注入（ADR-0020 决策 8）：静态写，不走响应式绑定。
+     *
+     * - schema 有 name 元数据 → name = schema.name；
+     * - schema 无 name + x-model 绑定值是简单路径 → name = 路径；
+     * - x-model 绑定值是表达式 → 跳过（用户应显式写 name）。
+     * - 元素已有显式 name 属性 → 跳过（显式优先）。
+     */
+    private static _injectName(
+        engine: AutoTemplateEngine,
+        el: HTMLElement,
+        scope: AutoTemplateScope,
+        modelValue: string,
+        schema: any,
+    ): void {
+        if (el.hasAttribute("name")) return; // 显式优先
+        const logger = engine.logger;
+        // schema 有 name 元数据 → 用之
+        if (schema && schema.name != null) {
+            el.setAttribute("name", String(schema.name));
+            return;
+        }
+        // 简单路径 → name = 路径；表达式（含运算符/空格）→ 跳过
+        if (isSimpleStatePath(modelValue)) {
+            el.setAttribute("name", modelValue);
+        }
+        // 表达式场景静默跳过（不 warn，表达式作 name 语义混乱，用户应显式）
+    }
 
     /** 防循环标志：onInput 触发的写入会让随之而来的 read 回调跳过回写（见类注释「防循环」） */
     private _selfWriting = false;

@@ -348,6 +348,97 @@ x-model 写回管道修饰符（经 ADR-0007 注入为指令选项，`.number` �
 
 管道顺序：`el.value` →(.trim)→ (.number)→ `$value` → set/直写 state。
 
+## 元数据自动注入（x-model + schema）
+
+### 元数据自动注入 / Schema Auto-injection
+
+x-model 元素自动从 configManager schema 合成 input 原生属性的隐式 `@` 绑定。用户只写 `<input x-model="order.price"/>`，引擎按注入白名单与 schema 属性的交集，自动合成 placeholder/title/required/min/max 等 BindDirective 实例（复用 ADR-0019 全部能力：`@` 路径解析、collectDependencies 追踪、scheduler 合并、patch 全分派、三层降级）。详见 ADR-0020。
+
+**合成时机**：compiler 在 `scope.compile()` 之后、`_compileAttrInterpolation` 旁调用 `_synthesizeModelSchemaBindings`。合成知识封装在 `ModelDirective.synthesizeSchemaBindings` 静态方法（compiler 只管调用时机，与 `static initialize`/`static ownsChildren` 同构）。
+
+_Avoid_: 字段属性注入（泛化）、自动绑定（歧义）
+
+### 注入白名单 / Injection Whitelist
+
+元数据自动注入的候选属性集，按 input `type` 精准匹配：
+
+- **通用集**（所有 text-like input + textarea）：`placeholder` / `title` / `required` / `readonly` / `enable`(→disabled) / `pattern` / `minlength` / `maxlength`
+- **numeric type 扩展**（number/range/date/time/datetime-local/month/week）：`min` / `max` / `step`
+
+仅注入 schema **实际承载**的属性（动态交集）；不含 `value`/`checked`（x-model 自管）；`label`/`help` 忽略（非 input 原生属性）。模板包**自治**，不耦合 core 的 widget 类型内部结构。
+
+> schema 未注册时跳过整个 `@` 合成（仅保留 name 简单路径注入），避免每个白名单属性一条 schema 不存在 WARN（静默优先于罕见的后注册动态性）。表达式场景同样跳过（schema 按状态路径注册，表达式路径无对应 schema）。
+
+_Avoid_: schema 属性集（那是 schema 的，白名单是 input 原生属性的候选）
+
+### enable 反向映射 / enable Inversion
+
+schema 的 `enable`（boolean，true=可用）映射到 input 的 `disabled` 属性时**值取反**（enable=false → disabled）。不走普通 `@` 绑定（直传语义），用专用 patch + 自建 watcher（读 `schema.enable` 取反 patch 到 disabled，watcher 订阅 enable 变化经 scheduler 合并重 patch）。与 Field.tsx 的 enable 语义对齐。
+
+_Avoid_: disabled 绑定（语义反向，易误解）
+
+### name 特殊处理 / name Special-casing
+
+name 是表单提交键，不走响应式 `@` 绑定（状态路径编译期固定），**静态写**一次：
+
+- schema 有 `name` 元数据 → `name = schema.name`；
+- schema 无 `name` + x-model 绑定值是**简单路径** → `name = 路径`；
+- x-model 绑定值是**表达式** → 跳过（用户应显式写 `name="..."`）；
+- 元素已有显式 `name` 属性 → 跳过（显式优先）。
+
+### 合成绑定 / Synthesized Binding
+
+compiler 在 `scope.compile()` 后、对含 x-model 的元素合成的隐式 BindDirective 实例（构造合成 `AutoDirectiveInfo` 喂给 `createDirectives`，复用 ADR-0019）。合成实例手动 `created()`，watcher 随 `scope.destroy` 回收。**显式绑定优先抑制合成**：同元素已有 `bind` 的 `attr===白名单项` 则跳过该项合成。
+
+_Avoid_: 隐式指令（那是插值 desugar 的术语）
+
+## 配置绑定（x-bind `@`）
+
+### 配置分隔符 `@`（Config Separator）
+
+x-bind 值中的路径中缀，声明该绑定指向 **configManager 元数据**而非 store 状态。`:placeholder="order.price@placeholder"` 中 `@` 把值来源从 `scope.watch(state)` 切到 `configManager`（经 `this.store.configManager`，全局对象不随每个 scope 引用），左侧为配置状态路径、右侧为配置属性路径。两个值来源正交：
+
+- **状态绑定**（无 `@`）：`scope.watch(expr)` → store.state，支持相对表达式（x-for item / x-data 局部变量）。`order.price` = 绑状态值。
+- **配置绑定**（`@`）：`configManager.collectDependencies("read")` → configManager.state，**仅绝对配置路径**（无 scope 相对语义）。`order.price@placeholder` = 绑 schema 的 placeholder 属性、`order.price@value` = 绑 schema 的 value 属性。
+
+> **语法演进**：初版用 `~` 值前缀（末段恒属性、单段），无法绑 schema 嵌套对象属性。现改为 `@` 路径中缀，右侧属性路径支持多段嵌套。`~` 已移除（未发布无兼容包袱）。
+
+_Avoid_: 元数据前缀、schema 前缀、配置引用前缀（初版 `~` 已废弃）
+
+### 配置引用（Config Reference）
+
+`@` 分隔的整体路径串（如 `order.price@placeholder`），由「配置状态路径 + 配置属性路径」组成。用 `indexOf("@")` 取**第一个** `@` 分割（左侧配置状态路径不含 `@`；右侧多余 `@` 在 getVal 时取不到值、走 falsy 降级），两侧再各用 `splitPath(".")` 拆——与 configManager state key 的 `.` join（`joinPath`）同构，复用 escapePath 支持 key 含 `.` 的转义。
+
+> AutoStore 有**两个事件触发器**：AutoStore 生命周期事件（`store.emit/on`）用 `/`；状态变化事件（`operates.emit/on`，即 `store.watch`）用 `.`（`PATH_DELIMITER`）。`store.delimiter` getter 恒返回 `.`。configManager.state key 与 watch 都用 `.`——自洽。
+
+_Avoid_: 配置路径（歧义，下分配置状态路径 / 配置属性路径）
+
+### 配置状态路径（Config State Path）
+
+配置引用中 `@` 左侧部分（`order.price`），定位 configManager.state 中的 schema 条目。fullKey 拼接仅用左侧、复刻 `configManager.add` 的算法：`joinPath([configKey?, ...leftSegs])`——configKey 空串不加前缀（`add` 内 `if(configKey) splice` 对空串 falsy 不执行），configKey 永非 undefined（store.ts:298 构造期归一为 store.id）。
+
+注意它指向 configManager 的 flat schema 表（key 是 `.` 连接串），**非 store 状态树**。
+
+_Avoid_: 状态路径（那是 store.state 的）
+
+### 配置属性路径（Config Attribute Path）
+
+配置引用中 `@` 右侧部分（`placeholder` 或 `style.color`），schema 对象的属性路径，**支持多段嵌套**——`getVal(schema, rightPath)` 读任意深度。schema 是可扩展数据结构，故**无白名单**。`@` 两侧均须非空（任一为空 → warn + 静默）。
+
+> 较初版 `~`（末段恒属性、单段）的核心改进：右侧支持嵌套，能绑 `schema.style.color` 这类对象属性——这是 `@` 改版的动因。
+
+_Avoid_: schema 字段（泛化）、配置属性（已升级为路径，支持嵌套）
+
+### 配置绑定（Config Binding）
+
+经 `@` 把 configManager 元数据响应式注入 DOM 属性的行为。依赖收集用 `configManager.collectDependencies("read")` 自动追踪——在求值回调内 `getVal(configManager.state[fullKey], rightPath)` 读，响应式系统记录 `[fullKey, ...rightPath]` 依赖路径（**含嵌套层**），**规避手工拼 watch 路径**（configManager state key 是 flat `.` 连接串，手工拼易踩 delimiter 坑）。整体替换 schema 嵌套对象也经后代广播（ADR-0001）唤醒后代监听。回调同样经 `engine.scheduler` 微任务合并（与 `scope.watch` 同构）；watcher 进 `this.watchers` 随 scope.destroy 回收。
+
+**三层降级**（静默优先）：configManager 不存在 / schema 不存在 → warn + 不动 DOM；属性取不到（含嵌套中途断裂）→ 复用 patch 既有 removeAttribute 分支（**不额外 warn**，属性缺失是常态）。patch 全分派复用（class/style/property/boolean/普通 attr）。
+
+`@` 两侧纯路径 only，不支持表达式（`:placeholder="x@placeholder + ' 元'"` 非法）——要变换走 x-model get（ADR-0018）或 computed。详见 ADR-0019。
+
+_Avoid_: 元数据绑定（泛化）
+
 ## 决策记录
 
 - ✅ [ADR-0001] 运行时指令走纯 observer 通道（方案 A）—— _待补全 Initialize/Dispose 契约后定稿_
@@ -363,4 +454,6 @@ x-model 写回管道修饰符（经 ADR-0007 注入为指令选项，`.number` �
 - ✅ [ADR-0011] 同步 action 统一广播 lifecycle（同步/异步一致）—— _Accepted（grill-with-docs）｜feedback 同步响应待错误流重构_
 - ✅ [ADR-0012] 局部 action 只 DOM 冒泡、不进总线（隔离同名串扰）—— _Accepted（grill-with-docs）｜实现待落地_
 - ✅ [ADR-0013] feedback 同步/异步一致（错误流冒泡）—— _Accepted（grill-with-docs）｜实现待落地_
-- ✅ [ADR-0018] x-model 双向绑定指令（阶段1：Compile 通道 + 防循环 + get/set + 修饰符）—— _Accepted（grill-with-docs）｜阶段2 configManager 元数据驱动见 ADR-0019（待）_
+- ✅ [ADR-0018] x-model 双向绑定指令（阶段1：Compile 通道 + 防循环 + get/set + 修饰符）—— _Accepted（grill-with-docs）｜阶段2 configManager 元数据驱动见 ADR-0019_
+- ✅ [ADR-0019] x-bind `@` 分隔符——configManager 元数据绑定（`@` 左配置状态路径/右配置属性路径支持嵌套 + 第一个 @ 分割 + splitPath "." 拆 + fullKey 复刻 add + getVal 读嵌套 + collectDependencies 自动收集 + scheduler 合并 + 三层降级 + patch 全分派复用 + 两侧纯路径 only）—— _Accepted（grill-with-docs）｜初版 `~` 前缀（末段恒属性不支持嵌套）已改版为 `@`_
+- ✅ [ADR-0020] x-model 元数据自动注入（compiler 层合成 + ModelDirective 静态方法封装 + 注入白名单通用集+type扩展 + 动态交集仅注入schema有 + 不含value/checked + enable→disabled 反向 + name 特殊处理 + 显式优先抑制 + schema 未注册跳过合成静默）—— _Accepted（grill-with-docs）_

@@ -98,6 +98,44 @@ _Avoid_: 只读模式（泛化）
 onInput 写 state 触发的 read 回调跳过回写，避免 getter 立即覆盖用户输入。经实例级 `_selfWriting` 标志实现（`scope.watch` 的 scheduler 合并模型不透传 `operate.flags`），写入仍带 `flags:-seq` 供 syncer 识别。
 _Avoid_: 死循环防护（实际无栈溢出，是冗余回写/输入覆盖防护）
 
+**元数据自动注入 / Schema Auto-injection**:
+x-model 元素自动从 configManager schema 合成 input 原生属性的隐式 `@` 绑定——用户只写 `<input x-model="order.price"/>`，引擎按注入白名单与 schema 属性的交集自动合成 placeholder/title/required/min/max 等。合成实体是标准 BindDirective（复用 ADR-0019）。详见 ADR-0020。
+_Avoid_: 字段属性注入（泛化）、自动绑定（歧义）
+
+**注入白名单 / Injection Whitelist**:
+元数据自动注入的候选属性集，按 input type 精准匹配：通用集（placeholder/title/required/readonly/enable/pattern/minlength/maxlength）+ numeric type 扩展（min/max/step）。仅注入 schema 实际承载的属性（动态交集）。不含 value/checked（x-model 自管）。
+_Avoid_: schema 属性集（那是 schema 的，白名单是 input 原生属性的候选）
+
+**enable 反向映射 / enable Inversion**:
+schema 的 `enable`（boolean，true=可用）映射到 input 的 `disabled` 属性时**值取反**（enable=false → disabled）。不走普通 `@` 绑定（直传语义），用专用 patch + 自建 watcher。与 Field.tsx 的 enable 语义对齐。
+_Avoid_: disabled 绑定（语义反向，易误解）
+
+**合成绑定 / Synthesized Binding**:
+compiler 在 scope.compile() 后、对含 x-model 的元素合成的隐式 BindDirective 实例（构造合成 AutoDirectiveInfo 喂给 createDirectives）。合成知识封装在 `ModelDirective.synthesizeSchemaBindings` 静态方法（compiler 只管调用时机）。
+_Avoid_: 隐式指令（那是插值 desugar 的术语）
+
+### 配置绑定层
+
+**配置分隔符 `@`（Config Separator）**:
+x-bind 值中的路径中缀，声明该绑定指向 configManager 元数据而非 store 状态。`:placeholder="order.price@placeholder"` 中 `@` 把值来源从 `scope.watch(state)` 切到 `configManager`，左侧为配置状态路径、右侧为配置属性路径。无 `@` 即状态绑定（支持相对表达式）——配置绑定仅绝对配置路径。
+_Avoid_: 元数据前缀、schema 前缀、配置引用前缀（初版 `~` 已废弃）
+
+**配置引用（Config Reference）**:
+`@` 分隔的整体路径串（如 `order.price@placeholder`），由「配置状态路径 + 配置属性路径」组成。用 `indexOf("@")` 取第一个 `@` 分割，两侧再各用 `splitPath(".")` 拆，与 configManager state key 的 `.` join 同构。
+_Avoid_: 配置路径（歧义，下分）
+
+**配置状态路径（Config State Path）**:
+配置引用中 `@` 左侧部分（`order.price`），定位 configManager.state 中的 schema 条目。注意它指向 configManager 的 flat schema 表，非 store 状态树。
+_Avoid_: 状态路径（那是 store.state 的）
+
+**配置属性路径（Config Attribute Path）**:
+配置引用中 `@` 右侧部分（`placeholder` 或 `style.color`），schema 对象的属性路径，**支持多段嵌套**（`getVal(schema, rightPath)` 读任意深度）。schema 是可扩展数据结构，故**无白名单**。
+_Avoid_: schema 字段（泛化）、配置属性（已升级为路径，支持嵌套）
+
+**配置绑定（Config Binding）**:
+经 `@` 把 configManager 元数据响应式注入 DOM 属性的行为。经 `configManager.collectDependencies("read")` 自动追踪依赖（含嵌套层，规避手工拼 watch 路径），回调同样经 scheduler 合并。三层降级：configManager/schema 不存在 → warn + 静默；属性取不到（含嵌套中途断裂）→ 复用 patch removeAttribute。详见 ADR-0019。
+_Avoid_: 元数据绑定（泛化）
+
 ## 已废弃
 
 **x-show 别名（x-show as x-if.keep alias）**:

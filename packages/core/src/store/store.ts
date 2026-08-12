@@ -113,9 +113,7 @@ function shouldBroadcastOperate(params: StateOperate): boolean {
     if (t === "update") {
         // set 陷阱产生的 arr[i] = 结构化值：indexs 为空、value 为单个结构化值。
         // fill 产生的 update 带 indexs 且 value 为数组，不在本阶段处理。
-        return (
-            (!params.indexs || params.indexs.length === 0) && isBroadcastableValue(params.value)
-        );
+        return (!params.indexs || params.indexs.length === 0) && isBroadcastableValue(params.value);
     }
     return false;
 }
@@ -242,6 +240,9 @@ export class AutoStore<
     }
     get configManager() {
         return this._configManager!;
+    }
+    get configKey() {
+        return this.options.configKey === undefined ? this.id : this.options.configKey;
     }
     get logger() {
         if (!this._logger) {
@@ -429,9 +430,11 @@ export class AutoStore<
             this._peeping = true;
             try {
                 const inNew =
-                    newObj != null && getVal(newObj, relPath, BROADCAST_SENTINEL) !== BROADCAST_SENTINEL;
+                    newObj != null &&
+                    getVal(newObj, relPath, BROADCAST_SENTINEL) !== BROADCAST_SENTINEL;
                 const inOld =
-                    oldObj != null && getVal(oldObj, relPath, BROADCAST_SENTINEL) !== BROADCAST_SENTINEL;
+                    oldObj != null &&
+                    getVal(oldObj, relPath, BROADCAST_SENTINEL) !== BROADCAST_SENTINEL;
                 if (!inNew && !inOld) return null; // 两边都不存在：无关后代
 
                 const newVal = inNew ? getVal(newObj, relPath) : undefined;

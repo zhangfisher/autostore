@@ -15,6 +15,7 @@ import { AutoTemplateScope } from "../scope";
 import { removeDirectives } from "../directives/utils/removeDirectives";
 import { isDirectiveAttr } from "../directives/utils/isDirectiveAttr";
 import { DirectiveKind } from "../directives/base";
+import { ModelDirective } from "../directives/presets/model";
 import type { AutoDirectiveInfo } from "../directives/types";
 import type { AutoTemplateEngine } from "../engine";
 import { transformElement, type NodeTransformer, type OwnsChildrenResult } from "../utils/transformElement";
@@ -163,6 +164,24 @@ export class AutoTemplateCompiler {
     }
 
     /**
+     * x-model 元数据自动注入（ADR-0020）：含 x-model 的元素从 configManager schema 合成隐式 `@` 绑定。
+     *
+     * 与 `_compileAttrInterpolation` 并列，在 scope.compile() 后调用。合成知识封装在
+     * `ModelDirective.synthesizeSchemaBindings` 静态方法（compiler 只管调用时机）。合成实体是
+     * 标准 BindDirective 实例（复用 ADR-0019 全部能力）。无 x-model 的元素直接跳过。
+     */
+    private _synthesizeModelSchemaBindings(el: HTMLElement, scope: AutoTemplateScope): void {
+        const modelDirective = scope.directives.find((d) => d instanceof ModelDirective);
+        if (!modelDirective) return;
+        ModelDirective.synthesizeSchemaBindings(
+            this.engine,
+            scope,
+            el,
+            modelDirective.info,
+        );
+    }
+
+    /**
      * 提取 `<script type="actions">` 内容为 action 并注册（注入目标由 `global` 标志决定）：
      * - 默认（无 global）：**局部 action** → 注入最近祖先 scope.actions（buildAction local=true，只 DOM 冒泡）。
      * - `global` 标志（`<script type="actions" global>`）：**全局 action** → 注入 engine.actions
@@ -295,6 +314,8 @@ export class AutoTemplateCompiler {
         scope.compile();
         // 属性插值 desugar（compile 后；合成 bind 独立注册，复用 BindDirective 五路分派）
         this._compileAttrInterpolation(el, scope);
+        // x-model 元数据自动注入（ADR-0020）：含 x-model 的元素从 schema 合成隐式 @ 绑定
+        this._synthesizeModelSchemaBindings(el, scope);
         // 结构指令占有子树：返回 ownsChildren 信号，跳过子节点自动递归（由指令自行编译）。
         if (ownsChildren) {
             return { node: el, ownsChildren: true };
@@ -459,6 +480,8 @@ export class AutoTemplateCompiler {
         scope.compile();
         // 项根属性插值 desugar（项根不走 compileElement，须在此补；复用 BindDirective）
         this._compileAttrInterpolation(el, scope);
+        // x-model 元数据自动注入（ADR-0020）：项根含 x-model 时同样合成
+        this._synthesizeModelSchemaBindings(el, scope);
         return { el, scope };
     }
 
