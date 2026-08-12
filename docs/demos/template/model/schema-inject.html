@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 字段元数据自动注入</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 字段元数据驱动：用户只写 x-model，schema 的 enable/name/title/required 等
+             自动注入到 input 属性。enable→disabled 反向、name 默认取状态路径 -->
+        <div class="demo-app">
+            <p>
+                <label>用户名：</label>
+                <input class="input" x-model="form.username" />
+            </p>
+            <p>
+                <label>邮箱（只读）：</label>
+                <input class="input" x-model="form.email" />
+            </p>
+            <p>
+                <label>数量（数值约束）：</label>
+                <input class="input" type="number" x-model="order.count" />
+            </p>
+            <p class="hint" style="color: #999">
+                检查元素：username 注入了 placeholder/title/name（=路径），email 注入了 readonly，count 注入了 min/max/step
+            </p>
+            <p class="hint">
+                form.username = <strong x-text="form.username"></strong>
+            </p>
+            <button class="btn btn-secondary" @click="toggleEnable">toggle enable（username 启用/禁用）</button>
+        </div>
+
+        <script>
+            const { configurable, ConfigManager } = AutoStoreSpaces;
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+
+            const cm = new ConfigManager(
+                { load: async () => ({}), save: async () => {} },
+                { autoload: false, global: false },
+            );
+
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    form: {
+                        // enable 控制 disabled（反向）、title 悬停提示、placeholder 占位
+                        // name 元数据未提供 → 自动取状态路径 "form.username"
+                        username: configurable("zhang", {
+                            placeholder: "请输入用户名",
+                            title: "登录账号",
+                            enable: true,
+                        }),
+                        // readonly 约束、required 必填
+                        email: configurable("a@b.com", {
+                            readonly: 1,
+                            required: 1,
+                            name: "emailField", // 显式 name 元数据
+                        }),
+                    },
+                    order: {
+                        // 数值约束：min/max/step（仅 number type 注入）
+                        count: configurable(1, {
+                            min: 0,
+                            max: 100,
+                            step: 1,
+                        }),
+                    },
+                },
+                {
+                    storeOptions: { configManager: cm, configKey: "app" },
+                    actions: {
+                        // 改 schema.enable → disabled 响应式切换（反向映射：enable=false → 禁用）
+                        toggleEnable: () => {
+                            const fullKey = Object.keys(cm.state).find((k) =>
+                                k.endsWith("form.username"),
+                            );
+                            cm.state[fullKey].enable = !cm.state[fullKey].enable;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

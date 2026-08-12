@@ -19,6 +19,10 @@ _Avoid_: event, action, mutation（这些词保留给更上层概念）
 对一条或多条状态路径的订阅；当这些路径（或其子树，见「子树广播」）发生变更时回调。订阅路径支持通配符 `*`（一层）与 `**`（多层）。
 _Avoid_: listener, observer（observer 另有含义）
 
+**Depth（深度钻取）**:
+`WatchListenerOptions.depth` 声明的"向后代钻取的深度"，补足通配符无法表达"自身 + 恰好一级后代"的空缺。实为三档语义而非连续深度：`0`（默认，仅自身被重新赋值）/ `1`（自身 + 恰好一级后代）/ `≥2`（自身 + 全部后代）。回调中的 `operate.path` 仍是真实发生变更的后代路径。详见 ADR-0003。
+_Avoid_: drilldown（OLAP 术语，语境生僻）
+
 **Observer（观察者对象）**:
 挂载在状态树某路径上的动态值对象，分 computed（计算属性）与 watch 两种。拥有独立的生命周期与自通知机制，不参与子树广播。
 _Avoid_: computed（computed 只是 observer 的一种）

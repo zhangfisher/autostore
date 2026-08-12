@@ -258,7 +258,7 @@ export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<Sta
     /**
      * 提供一个配置管理器对象
      */
-    configManager?: ConfigManager | ConfigSource | false;
+    configManager?: ConfigManager | false;
     /**
      * 为当前Store的所有配置项均指定一个统一的前缀
      */

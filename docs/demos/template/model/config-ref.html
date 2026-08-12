@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-bind @ · configManager 元数据绑定</title>
+        <!-- 需同时引 autostore.js（暴露 ConfigManager/configurable）与 template.js -->
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- @ 分隔符：把 configManager 元数据响应式绑到 DOM 属性
+             order.price@placeholder = 绑 schema 的 placeholder 属性 -->
+        <div class="demo-app">
+            <p>
+                <input class="input" :placeholder="order.price@placeholder" :title="order.price@title" />
+            </p>
+            <p>
+                <!-- @ 右侧支持多段嵌套：绑 schema.style 整个对象到 :style，颜色肉眼可见 -->
+                <input class="input" :style="order.price@style" value="嵌套属性 style.color 生效" />
+            </p>
+            <p class="hint" style="color: #999">
+                placeholder / title 来自 configManager schema 的元数据；
+                下方 input 的文字颜色来自 schema.style.color（嵌套属性路径）
+            </p>
+            <button class="btn btn-secondary" @click="toggleLang">切换中/英 placeholder</button>
+            <button class="btn btn-secondary" @click="toggleColor">切换颜色 red/blue</button>
+        </div>
+
+        <script>
+            const { configurable, ConfigManager } = AutoStoreSpaces;
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+
+            // 共享 configManager，state 中用 configurable 标注的字段自动注册 schema
+            const cm = new ConfigManager(
+                { load: async () => ({}), save: async () => {} },
+                { autoload: false, global: false },
+            );
+
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    order: {
+                        // configurable(initial, options)：options 即 schema 元数据
+                        // placeholder/title 是顶层属性，style 是嵌套对象（@ 右侧支持多段）
+                        price: configurable(100, {
+                            placeholder: "请输入价格",
+                            title: "订单价格",
+                            style: { color: "red" },
+                        }),
+                    },
+                },
+                {
+                    storeOptions: { configManager: cm, configKey: "app" },
+                    actions: {
+                        // 改 configManager schema 的元数据 → DOM 属性响应式更新
+                        toggleLang: () => {
+                            const fullKey = Object.keys(cm.state).find((k) =>
+                                k.endsWith("order.price"),
+                            );
+                            cm.state[fullKey].placeholder =
+                                cm.state[fullKey].placeholder === "请输入价格"
+                                    ? "Enter price"
+                                    : "请输入价格";
+                        },
+                        // 切换 schema.style（嵌套对象整体替换）→ :style 响应式更新文字颜色
+                        // 注意：configManager schema 的嵌套对象深层属性改不触发响应式，
+                        // 需整体替换 style 对象才能唤醒 @style 绑定
+                        toggleColor: () => {
+                            const fullKey = Object.keys(cm.state).find((k) =>
+                                k.endsWith("order.price"),
+                            );
+                            const isRed = cm.state[fullKey].style.color === "red";
+                            cm.state[fullKey].style = { color: isRed ? "blue" : "red" };
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · textarea 双向绑定</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- textarea 同样支持 x-model，统一读写 el.value -->
+        <div class="demo-app">
+            <p>
+                <label>备注：</label><br />
+                <textarea class="input" rows="3" x-model="form.remark"></textarea>
+            </p>
+            <p class="hint">已输入 <strong x-text="form.remark.length + ''"></strong> 字</p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {
+                form: { remark: "初始备注内容" },
+            });
+        </script>
+    </body>
+</html>

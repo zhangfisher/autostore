@@ -59,6 +59,13 @@ export class AutoTemplateCompiler {
                 (node: Node) => node instanceof HTMLScriptElement && node.type === "actions",
                 (script: HTMLElement) => this._extractScriptActions(script as HTMLScriptElement),
             ],
+            // 前置：x-block 命名模板块——收集冻结快照到最近祖先 scope.blocks 后剪枝（不进结果 DOM）。
+            // 须排在 HTMLElement 通用规则（compileElement）之前，first-match-wins 命中后不再走通用编译，
+            // 故 x-block 元素不建 scope、不实例化其上其他指令（同元素 x-text 等随块冻结，ADR-0021）。
+            [
+                (node: Node) => node instanceof HTMLElement && node.hasAttribute("x-block"),
+                (blockEl: HTMLElement) => this._collectBlock(blockEl),
+            ],
             // 文本节点插值：含 {{}} 的文本节点拆分 + 注册。scope 经父元素查 templateScopeMap
             // （父元素在自身 walk 前已建 scope，含插值的 directive-less 元素亦由 hasInterpolation
             // 触发建 scope）。无 scope（raw-text 父等）则原样克隆。见 ADR-0004 决策 1/4。
@@ -76,6 +83,57 @@ export class AutoTemplateCompiler {
                 (current: HTMLElement) => this.compileElement(current),
             ],
         ];
+    }
+
+    /**
+     * 收集 x-block 命名模板块（ADR-0021）。
+     *
+     * 编译期前置 transformer 命中 x-block 元素时调用：把该元素**深克隆**为冻结快照（根默认注入
+     * `x-scope` 确保块根无论有无指令都是 scope 锚点），按名存入**最近祖先 scope** 的 `blocks`，
+     * 然后返回 `null` 剪枝——块元素及其子树**不进结果 DOM、不建 scope、不实例化指令**。
+     *
+     * 消费者（x-loading/x-empty/x-error…）经 `scope.lookupBlock(name)` 沿 parent 链就近取用本快照，
+     * clone 后编译渲染、替换其内置 UI（块兜底）。详见 ADR-0021。
+     *
+     * @param blockEl 原树中的 x-block 元素（只读编译输入，仅读取其属性与结构）
+     * @returns 固定 `null`（剪枝，x-block 永不进结果 DOM）
+     */
+    private _collectBlock(blockEl: HTMLElement): null {
+        const name = (blockEl.getAttribute("x-block") ?? "").trim() || "default";
+        // 沿原树向上找最近祖先 scope（与 _linkParent 同构：跨中间无 scope 的纯 div）。
+        // walk 是 DFS，祖先元素已先 transform，若建了 scope 必已 templateScopeMap.set。
+        let owner: AutoTemplateScope | undefined;
+        let p: HTMLElement | null = blockEl.parentElement;
+        while (p) {
+            owner = this.templateScopeMap.get(p);
+            if (owner) break;
+            p = p.parentElement;
+        }
+        if (!owner) {
+            // 无归属：编译期 warn + 丢弃（不进 blocks、不进 DOM）。与引擎静默处理冗余/异常属性的风格一致。
+            this.engine.logger.warn(
+                `x-block: 块 "${name}" 未找到任何祖先 scope，无法归属。请在祖先元素上声明 x-scope（或任意指令）使其建 scope。`,
+            );
+            return null;
+        }
+        // default 唯一性：仅约束直接归属本 scope 的 default（第二个直接归属 default 抛错）。
+        // 其他块名自由、可沿链同名覆盖；沿 parent 链的 default 覆盖由 lookupBlock 就近原则处理（不在此校验）。
+        if (name === "default" && owner.blocks && Object.prototype.hasOwnProperty.call(owner.blocks, "default")) {
+            throw new Error(
+                `[x-block 冲突] 同一 scope 下只能有一个 default 块（直接归属）。第二个 default 块出现在已声明 default 的 scope 内。\n` +
+                    "如需覆盖祖先的 default，请在更内层的 scope 上声明（沿 parent 链就近覆盖）。",
+            );
+        }
+        // 冻结快照：深克隆、保留指令属性（块被消费渲染时才编译）。根默认注入 x-scope——确保块根
+        // 一定是 scope 锚点（消费者可向其注入 localScope、块内表达式有继承起点），无论块根是否已有指令。
+        // 已有 x-scope 或其他指令则不重复注入（hasAttribute 判定，避免覆盖用户显式声明）。
+        const snapshot = blockEl.cloneNode(true) as HTMLElement;
+        if (!snapshot.hasAttribute("x-scope")) {
+            snapshot.setAttribute("x-scope", "");
+        }
+        if (!owner.blocks) owner.blocks = {};
+        owner.blocks[name] = snapshot;
+        return null;
     }
 
     /**

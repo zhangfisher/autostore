@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · .change 修饰符</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- .change：监听 change 事件（失焦触发）而非默认的 input（实时）
+             输入过程中 state 不变，失焦后才写回 -->
+        <div class="demo-app">
+            <p>
+                <label>实时（input）：</label>
+                <input class="input" x-model="a" />
+            </p>
+            <p>
+                <label>失焦（.change）：</label>
+                <input class="input" x-model.change="b" />
+            </p>
+            <p class="hint">
+                a = "<strong x-text="a"></strong>"，
+                b = "<strong x-text="b"></strong>"
+            </p>
+            <p class="hint" style="color: #999">
+                在两个输入框来回输入并切换焦点，对比 a / b 的更新时机
+            </p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {
+                a: "",
+                b: "",
+            });
+        </script>
+    </body>
+</html>

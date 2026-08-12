@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 只读降级（表达式无 set）</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 表达式/computed 无 set 时：读方向正常（显示 fullName），写方向静默降级
+             输入不会回写（fullName 是计算属性，无 setter） -->
+        <div class="demo-app">
+            <p>
+                <label>全名（计算属性）：</label>
+                <input class="input" x-model="user.fullName" />
+            </p>
+            <p class="hint">
+                user.first = "<strong x-text="user.first"></strong>"，
+                user.last = "<strong x-text="user.last"></strong>"
+            </p>
+            <p class="hint">
+                fullName = "<strong x-text="user.fullName"></strong>"（只读，输入不回写）
+            </p>
+            <button class="btn btn-secondary" @click="changeFirst">改 first 为 "王"</button>
+            <p class="hint" style="color: #999">
+                改 first → fullName 重新计算 → 输入框同步更新（state→DOM 正常）；输入框手动改值不会写回
+            </p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    user: {
+                        first: "张",
+                        last: "三",
+                        // 计算属性：读方向正常，但无 setter
+                        fullName: (scope) => scope.user.first + scope.user.last,
+                    },
+                },
+                {
+                    actions: {
+                        changeFirst: () => {
+                            engine.state.user.first = "王";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

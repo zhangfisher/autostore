@@ -356,6 +356,46 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
         // 遮罩底色 + alpha：映射为 bgColor 的 alpha 通道（非元素 opacity，保证 loader/文字清晰）
         overlay.style.background = rgba(bgColor, opacity);
 
+        // 内容：优先消费 loading 块（ADR-0021 跨指令供体协议），未命中回退内置 loader。
+        const content = this._buildContent(color);
+        overlay.appendChild(content);
+
+        target.appendChild(overlay);
+        this.overlay = overlay;
+    }
+
+    /**
+     * 构建覆盖层内容：loading 块（自定义）优先，未命中回退内置 loader（块兜底，ADR-0021）。
+     *
+     * 块消费协议：经 `engine.lookupBlock(el, 'loading')` 沿宿主 scope 的 parent 链就近查找。
+     * 命中 → 深克隆块快照 → 经 `compiler.compileChild` 编译挂载（块根的 x-scope 确保其建 scope、
+     * 块内 x-text 等指令随编译生效，parentScope 为宿主 scope 使块继承宿主数据上下文）。
+     * 未命中 / 宿主无 scope → 内置旋转 loader + 可选 message。
+     *
+     * 块模式下遮罩底色仍由 overlay 承担（x-loading 的视觉壳），块仅替换「 loader + message」内容。
+     *
+     * @param color 内置 loader 的动画色（块模式下忽略，块自定义其视觉）
+     * @returns 已编译的块根元素，或内置 box 元素
+     */
+    private _buildContent(color: string): HTMLElement {
+        // 块消费：宿主须建过 scope 才能经 engine.lookupBlock 反查（Runtime 指令无 binding）。
+        const snapshot = this.el ? this.engine.lookupBlock(this.el, "loading") : undefined;
+        if (snapshot) {
+            // 块快照含指令属性（x-scope + 用户写的 x-text 等），深克隆后编译。
+            // compileChild：把块根当 itemTemplate 编译、挂宿主 scope 为 parent（继承上下文）。
+            const scope = this.engine.findScopeByEl(this.el!);
+            if (scope) {
+                const clone = snapshot.cloneNode(true) as HTMLElement;
+                const { el: compiled } = this.engine.compiler.compileChild(clone, scope, {});
+                return compiled;
+            }
+            // 宿主无 scope（理论上 lookupBlock 命中即有 scope，兜底降级内置）
+        }
+        return this._buildBuiltinContent(color);
+    }
+
+    /** 内置覆盖层内容：旋转 loader + 可选 message（块兜底的缺省形态） */
+    private _buildBuiltinContent(color: string): HTMLElement {
         const box = document.createElement("div");
         box.className = BOX_CLASS;
 
@@ -372,10 +412,7 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
             msg.textContent = this.config.message;
             box.appendChild(msg);
         }
-
-        overlay.appendChild(box);
-        target.appendChild(overlay);
-        this.overlay = overlay;
+        return box;
     }
 
     /**

@@ -118,6 +118,24 @@ function shouldBroadcastOperate(params: StateOperate): boolean {
     return false;
 }
 
+/**
+ * 按 depth 将一条监听路径展开为订阅集。
+ *
+ * depth 是三档语义（非连续深度），详见 ADR-0003：
+ * - depth <= 0：仅自身 → `[path]`
+ * - depth === 1：自身 + 恰好一级后代 → `[path, path + delimiter + "*"]`
+ *   （fastevent 的 `*` 不含自身，故需补 path）
+ * - depth >= 2：自身 + 全部后代 → `[path + delimiter + "**"]`
+ *   （fastevent 的 `**` 含自身，故无需重复 path）
+ *
+ * 仅做路径字符串展开；通配符覆盖关系导致的多触发不在本函数处理（由 watch 调用方做字面去重）。
+ */
+function expandDepthPaths(path: string, depth: number, delimiter: string): string[] {
+    if (!depth || depth <= 0) return [path];
+    if (depth === 1) return [path, `${path}${delimiter}*`];
+    return [`${path}${delimiter}**`];
+}
+
 export class AutoStore<
     State extends Dict,
     Options = unknown,
@@ -298,7 +316,6 @@ export class AutoStore<
         if (this.options.configKey === undefined) this.options.configKey = this.id;
         // 处理 configManager 选项
         if (configManager && typeof configManager === "object" && "add" in configManager) {
-            // 已经是 ConfigManager 实例（有 add 方法）
             this._configManager = configManager as ConfigManager;
             // @ts-ignore
         } else if (globalThis[GLOBAL_CONFIG_MANAGER] && configManager !== false) {
@@ -416,12 +433,15 @@ export class AutoStore<
             if (relPath.length === 0) return null; // 自身路径，已由正常匹配触发，不再派生
 
             // 通配符后代（含 * / ** 段）无法定位具体子路径：
-            // 不做取值派生，透传父级 operate（指向字面通配路径），仅作"子树有变"通知。
+            // 不做取值派生，透传父级 operate 仅作"子树有变"通知。
+            // path 必须保留父级真实路径（params.path），不能用含通配符的 descPath——
+            // 否则订阅者收到 operate.path=["order","**"] 这类模式残留，违背"回调传真实路径"契约。
+            // type 仍用 descType 以便 fastevent 路由到该通配符节点。
             if (relPath.some((s) => s === "*" || s === "**")) {
                 return {
                     ...message,
                     type: descType,
-                    payload: { ...params, path: descPath, broadcast: true } as StateOperate,
+                    payload: { ...params, path: parentPath, broadcast: true } as StateOperate,
                 };
             }
 
@@ -562,7 +582,7 @@ export class AutoStore<
             const paths: string[] = Array.isArray(keyPaths)
                 ? keyPaths.map((v) => (typeof v === "string" ? v : v.join(this.delimiter)))
                 : [keyPaths];
-            const { once, operates, filter } = Object.assign(
+            const { once, operates, filter, depth } = Object.assign(
                 { once: false, operates: "write" },
                 options,
             ) as Required<WatchListenerOptions>;
@@ -571,7 +591,16 @@ export class AutoStore<
                 : this.operates.on.bind(this.operates);
             const listeners: any[] = [];
             const handler = createEventHandler(operates, filter);
+            // once 时 depth 无效，静默降级为 0；未传 depth 视为 0。随后按 depth 三档语义展开每个 path，字面去重后订阅。
+            // 通配符覆盖关系（如 order.* 覆盖 order.price）不去重，可能多触发，见 ADR-0003。
+            const effectiveDepth = once || !depth || depth <= 0 ? 0 : depth;
+            const expandedPaths = new Set<string>();
             paths.forEach((path) => {
+                expandDepthPaths(path, effectiveDepth, this.delimiter).forEach((p) =>
+                    expandedPaths.add(p),
+                );
+            });
+            expandedPaths.forEach((path) => {
                 listeners.push(subscribeMethod.call(this, path as never, handler as any));
             });
             return {

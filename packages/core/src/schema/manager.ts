@@ -90,7 +90,8 @@ export class ConfigManager extends AutoStore<
             }
             if (finalOptions.autoload) this.load().catch(() => {});
             // @ts-expect-error - 动态设置 globalThis 属性
-            return (globalThis[globalKey] = this);
+            globalThis[globalKey] = this;
+            return this;
         }
         if (finalOptions.autoload) this.load().catch(() => {});
     }

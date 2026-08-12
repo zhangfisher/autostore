@@ -258,6 +258,50 @@ remote 模式在 x-slot 宿主上创建的**完全独立** `AutoTemplateEngine` 
 
 remote 模式**原计划**广播 `task/slot/{started,resolved,rejected}` 供全局加载协调，但 task 域抽象未被采用（见上文「task 域已废弃」）。x-slot remote 加载的加载态改由 **x-loading 指令自带覆盖层**（宿主 `setAttribute("x-loading")` toggle，dispatcher 自动 mount/unmount）表达，错误由占位 + `logger.error` 表达——**不广播任何事件**。
 
+## 结构占位与模板块（x-scope / x-block）
+
+### x-scope（结构占位指令）
+
+纯占位指令——元素上声明 `x-scope` 即令其建立 `AutoTemplateScope`，**即便该元素没有其他指令、没有插值**。注册占位类 `ScopeDirective`（`created`/`compile` 皆空、高优先级）。填补「纯容器 `<div>` 不建 scope」的缺口：让后代 scope 的 parent 链落到此处（而非更远祖先），并为后代 `x-block` 提供**归属锚点**。**不建数据域**——与 [x-data](#x-data)（数据注入）职责正交。冗余声明（元素已有其他指令、本就建 scope）静默无副作用。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 1。
+
+> **为什么不能用「未注册属性」零实现**：`x-scope` 即便不注册也会因属性存在触发 `hasDirectives` 建一次 scope，`createDirectives` 随后跳过——看似零成本。但这让 `x-scope` 成为注册表里不存在的幽灵属性，无法设 priority、不可被静态分析/IDE 识别，未来加任何行为都要回头补类。注册占位类换取合法可发现性与确定性执行时机。
+
+### x-block（命名模板块 / 模板块）
+
+编译期树变换标记，**不是渲染指令**。在带 scope 的祖先（x-scope 或其他）内声明一个命名模板片段，编译时被**从渲染树摘除**（不进结果 DOM、不建 scope、不实例化指令），以**深克隆的 template 元素副本**形态上交给最近祖先 scope 的 `blocks`。无值时取名 `default`。
+
+机制 = compiler 前置 NodeTransformer（与 `<script type="actions">` 提取同构）+ 轻量 `BlockDirective`（`ownsChildren=true` 冻结其内容，防子树被正常 walk 编译）。被拦截元素**根本不进 `compileElement`**，故自然地不建 scope、不实例化任何指令。**x-scope 保持 `ownsChildren=false`**——不越权接管子树，职责单一（SRP）。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 2。
+
+> **与 x-slot 的关键区别**（极易混淆）：x-slot 是 **engine 边界 / 隔离运行**（内部不编译、开发者 DOM API 全权管理，或建 child engine）；x-block 是**存模板待引用**（编译期摘除、冻结副本供消费者取用）。x-slot 的内容**留在渲染树里**（静态快照或 child engine 接管）；x-block 的内容**从渲染树移除**、仅作为 `blocks[name]` 存在。二者正交，可共存于同一模板。
+
+### 块归属（Block Ownership）
+
+x-block 挂到其**最近的祖先 scope**——**任意深度**（跨中间无 scope 的纯 `<div>`），与 `_linkParent` 向上找最近 scope 的既有语义同构。嵌套 scope 时归最内层祖先。**不限定直接子**：`<div x-scope><div class="wrap"><div x-block="x">` 的 x-block 仍归属 x-scope。向上找不到任何带 scope 的祖先 → 编译期 `warn` 并丢弃（无处归属）。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 4。
+
+### 块冻结快照（Block Frozen Snapshot）
+
+`scope.blocks[name]` 存的内容形态：`cloneNode(true)` 产出的、保留指令属性、未编译、可被多消费者重复取用而不相互污染的洁净副本。**独立于 `engine.template` 事实源**（ADR-0002 只读约束）。机制与 x-slot static 模式的「深克隆子节点」同构，但区别在：x-slot 快照剥除指令属性（纯静态 HTML）、x-block 快照**保留**指令属性（块被消费渲染时才编译）。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 3。
+
+### 同元素指令随块冻结（Co-frozen Directives）
+
+`x-block="error" x-text="msg"` 的 x-text **不在当前 scope 执行**——x-block 元素是自包含模板单元，其上的指令是「块被消费渲染时」的绑定，非当前 scope 的绑定。由 compiler 前置拦截自然保证（被拦截元素根本不进 `compileElement`，故不实例化任何指令）。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 6。
+
+### `default` 块唯一性（Default Block Uniqueness）
+
+每个 scope 的 `blocks.default` 唯一——**仅约束直接归属本 scope 的 default**（同一 scope 收集到第二个直接归属的 default → 编译期报错）。沿 parent 链**允许覆盖**：内层 scope 的 default 遮蔽外层同名 default，与块查找的就近原则一致。其他块名（loading/error/empty…）不受唯一性约束，纯自由命名。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 7。
+
+### 块查找（Block Lookup）
+
+消费者（x-loading/x-empty/x-error 等）按**约定名**取块的协议：从自身 scope 起沿 parent 链向上，取首个含该名 block 的 scope。命中→用该块替换内置 UI；未命中→回退内置 UI（[块兜底](#块兜底block-fallback)）。与 action/dataScope 的 parent 链查找范式统一，支持「局部覆盖、外层兜底」。公共 API `scope.lookupBlock(name): HTMLElement | undefined`。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 5。
+
+### 块兜底（Block Fallback）
+
+消费者未查找到约定名块时回退其内置预置 UI 的行为。x-block「自定义能力」的缺省语义——块是**可选的覆盖资源**，不存在时引擎行为不退化。这是 x-block 与内置预置 UI 的协作契约：消费者始终先 `lookupBlock`，块存在性只决定「自定义 vs 内置」，不决定「渲染 vs 不渲染」。
+
+### 跨指令供体协议（Cross-directive Provider Protocol）
+
+x-block **不绑定具体消费者**，是声明性资源——任意指令按约定名从 `scope.blocks` 取用。块名**纯自由命名**（各消费指令文档自定其读取名与兜底逻辑），引擎**不预定义 UI 态名册**（不硬编码 loading/error/empty），不限制指令开发者发明新消费场景（开放-封闭原则）。消费关系由各指令文档单独约定，引擎只提供存取基础设施。
+
 ## x-on 反馈（feedback）
 
 ### feedback 修饰符（action 执行反馈）

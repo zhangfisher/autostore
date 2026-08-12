@@ -86,13 +86,14 @@ describe("后代广播：整体替换结构化值", () => {
             expect(o.events[0].broadcast).toBeUndefined();
         });
 
-        test("通配符后代 watch('order.*') 被广播唤醒（一次通知，字面路径）", () => {
+        test("通配符后代 watch('order.*') 被广播唤醒（一次通知，父级真实路径）", () => {
             const all = collect(store, "order.*");
             store.state.order = { count: 101, price: 1.8 };
-            // 通配符是单个订阅节点，整体替换时仅通知一次；无法区分具体命中的子路径
+            // 通配符是单个订阅节点，整体替换时仅通知一次；无法区分具体命中的子路径，
+            // 故透传父级真实路径（params.path），而非含通配符的字面模式路径。
             expect(all.events).toHaveLength(1);
             expect(all.events[0].broadcast).toBe(true);
-            expect(all.events[0].path).toEqual(["order", "*"]);
+            expect(all.events[0].path).toEqual(["order"]);
         });
     });
 

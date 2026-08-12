@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · set action（组合字段反向拆分）</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- set（DOM→state 变换）：把一个输入框的值拆写回多个状态字段
+             输入 "张,三" → user.first="张" + user.last="三"
+             get 把两字段拼回显示，set 把输入拆开写回 -->
+        <div class="demo-app">
+            <p>
+                <label>姓名（姓,名）：</label>
+                <input class="input" x-model="user.first + ',' + user.last" x-model-options="{get:'user.first + \',\' + user.last', set:'setName'}" />
+            </p>
+            <p class="hint">
+                user.first = "<strong x-text="user.first"></strong>"，
+                user.last = "<strong x-text="user.last"></strong>"
+            </p>
+            <p class="hint" style="color: #999">
+                试着输入 "李,四"，两字段分别更新
+            </p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    user: { first: "张", last: "三" },
+                },
+                {
+                    actions: {
+                        // set action：DOM 值自动作首参 $value，this.state 可访问状态写回多字段
+                        setName: function ($value) {
+                            const parts = $value.split(",");
+                            this.state.user.first = parts[0] ?? "";
+                            this.state.user.last = parts[1] ?? "";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

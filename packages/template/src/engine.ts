@@ -1,23 +1,13 @@
 import type { AutoTemplateEngineEvents, AutoTemplateEngineOptions } from "./types";
 import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
-import { AutoStore, FastEvent } from "autostore";
+import { AutoStore, FastEvent, isAutoStore } from "autostore";
 import type { AutoTemplateScope } from "./scope";
 import { UpdateScheduler } from "./scheduler";
 import { RuntimeObserverDispatcher } from "./directives/runtime/dispatcher";
 import { parseHtmlFragment } from "./utils/transformElement";
 import { buildAction } from "./utils/buildAction";
 import { recompileSubtree } from "./utils/recompileSubtree";
-
-/**
- * 判别 x 是否为 AutoStore 实例（ADR-0009 决策 3）。
- *
- * `instanceof` 为主；`__AUTO_STORE__` 实例字段兜"双副本 autostore 致 instanceof 失灵"场景
- * （AutoStore 经 super() 子类如 ReactAutoStore 亦有此字段）。
- */
-const isAutoStore = (x: unknown): x is AutoStore<any> =>
-    x instanceof AutoStore ||
-    (x !== null && typeof x === "object" && (x as Record<string, unknown>).__AUTO_STORE__ === true);
 
 /**
  * 框架保留键：x-data 默认模式的私有响应式数据域在 store.state 下的容器键。
@@ -114,7 +104,9 @@ export class AutoTemplateEngine<
             this.store = store;
             this._ownsStore = false;
         } else {
-            this.store = new AutoStore(store as State, options?.storeOptions);
+            this.store = new AutoStore(store as State, {
+                ...options?.storeOptions,
+            });
             this._ownsStore = true;
         }
         // 注入框架保留键 _scopes（x-data 私有响应式域容器）；1 engine 1 store 约定下由 engine 负责
@@ -171,9 +163,14 @@ export class AutoTemplateEngine<
         const target = this.options.actions!;
         this._actionsProxy = new Proxy(target, {
             set: (t, key: string, value: any) => {
-                t[key] = typeof value === "function"
-                    ? (buildAction((type, payload) => this.emit(type as any, payload), key, value) as any)
-                    : value;
+                t[key] =
+                    typeof value === "function"
+                        ? (buildAction(
+                              (type, payload) => this.emit(type as any, payload),
+                              key,
+                              value,
+                          ) as any)
+                        : value;
                 return true;
             },
         });
@@ -256,7 +253,7 @@ export class AutoTemplateEngine<
      * @param data 要合并的普通对象（合并语义：只增改、不删已有键）
      */
     data(el: HTMLElement, data: Record<string, any>) {
-        const scope = this._findScopeByEl(el);
+        const scope = this.findScopeByEl(el);
         if (!scope) {
             this.logger.warn(`engine.data: 元素未找到对应 scope，已忽略`);
             return;
@@ -276,6 +273,24 @@ export class AutoTemplateEngine<
         scope.invalidateScopeView();
         recompileSubtree(scope, el);
         this.emit("scope/data-updated", { id: scope.id, data });
+    }
+
+    /**
+     * 按 el 反查 scope，再沿 parent 链就近查找命名模板块（ADR-0021）。
+     *
+     * 供 **Runtime 指令**（如 x-loading，无 binding/scope）消费 x-block：编译期元素建过 scope
+     * 的才能被反查到（el 经 `engine.scopes` WeakRef 遍历 deref 比对，O(n)、低频可接受）。
+     * Compile/Hybrid 消费指令应直接用 `this.binding.lookupBlock(name)`，避免 O(n) 遍历。
+     *
+     * 消费者协议：命中则用块替换内置 UI，未命中回退内置（块兜底）。详见 ADR-0021。
+     *
+     * @param el   消费指令的宿主元素（须是建过 scope 的元素，否则反查不到）
+     * @param name 块名（消费者约定名，自由命名）
+     * @returns 块冻结快照 HTMLElement，或 undefined（el 无 scope / 链上无该名块）
+     */
+    lookupBlock(el: HTMLElement, name: string): HTMLElement | undefined {
+        const scope = this.findScopeByEl(el);
+        return scope?.lookupBlock(name);
     }
 
     /**
@@ -362,9 +377,12 @@ export class AutoTemplateEngine<
      * 遍历 scopes 查找 `scope.el === el` 的 scope。
      *
      * engine.scopes 以 WeakRef 为 key，无法直接 get(el)，只能遍历 values 做 deref 比较（O(n)）。
-     * engine.data 是低频 API，O(n) 可接受。
+     * 低频 API（engine.data / 块消费编译），O(n) 可接受。
+     *
+     * 公开供 Runtime 指令（如 x-loading）消费 x-block 时取得宿主 scope 作块编译的 parentScope
+     * （Runtime 指令无 binding，需经 el 反查）。Compile/Hybrid 指令直接用 `this.binding`。
      */
-    private _findScopeByEl(el: HTMLElement): AutoTemplateScope | undefined {
+    findScopeByEl(el: HTMLElement): AutoTemplateScope | undefined {
         for (const scope of this.scopes.values()) {
             if (scope.el === el) return scope;
         }

@@ -114,6 +114,40 @@ _Avoid_: disabled 绑定（语义反向，易误解）
 compiler 在 scope.compile() 后、对含 x-model 的元素合成的隐式 BindDirective 实例（构造合成 AutoDirectiveInfo 喂给 createDirectives）。合成知识封装在 `ModelDirective.synthesizeSchemaBindings` 静态方法（compiler 只管调用时机）。
 _Avoid_: 隐式指令（那是插值 desugar 的术语）
 
+### 结构占位与模板块层
+
+**结构占位 / x-scope（Structural Placeholder）**:
+纯占位指令，元素上声明 `x-scope` 即令该元素建立 `AutoTemplateScope`——即便它没有其他指令、没有插值。目的是在「无其他指令的纯容器 `<div>`」上插入一个 scope 锚点，让后代 scope 的 parent 链落到此处（而非更远的祖先），并为其后代 `x-block` 提供归属。注册占位类 `ScopeDirective`（`created`/`compile` 皆空，高优先级）；冗余声明（元素已有其他指令、本就建 scope）静默无副作用。**不建数据域**——与 x-data 的数据注入职责正交。
+_Avoid_: 作用域容器（泛化）、命名空间（语义不符）、占位符（本表保留给空值渲染，歧义大）
+
+**模板块 / x-block（Template Block）**:
+编译期树变换标记，**不是渲染指令**。在 x-scope（或任意带 scope 的祖先）内声明一个命名模板片段，编译时被**从渲染树摘除**（不进结果 DOM、不建 scope、不实例化指令），以**深克隆的 template 元素副本**形态上交给最近祖先 scope 的 `blocks`。副本**根默认注入 `x-scope`**（若无），确保块根无论有无其他指令都是 scope 锚点（消费者可注入上下文、块内表达式有继承起点）。无值时取名 `default`。块上同元素的其他指令（如 `x-block="error" x-text="msg"`）随块整体冻结，待消费者渲染该块时才编译执行。详见 ADR-0021。
+_Avoid_: 片段（泛化）、插槽（那是 x-slot，正交）、命名空间块
+
+**块归属（Block Ownership）**:
+一个 x-block 挂到其**最近的祖先 scope**——任意深度（跨中间无 scope 的纯 `<div>`），与 `_linkParent` 向上找最近 scope 的语义同构。嵌套 scope 时归最内层祖先；x-block 向上找不到任何带 scope 的祖先时，编译期 warn 并丢弃（无处归属）。
+_Avoid_: 块归属深度（实现细节）、块父（用 scope 统一）
+
+**`default` 块唯一性（Default Block Uniqueness）**:
+每个 scope 的 `blocks.default` 唯一——**仅约束直接归属本 scope 的 default**（同一 scope 收集到第二个直接归属的 default → 编译期报错）。沿 parent 链**允许覆盖**：内层 scope 的 default 遮蔽外层同名 default，与块查找的就近原则一致。
+_Avoid_: 全局唯一（沿链可覆盖）、同名互斥（仅 default 受约束，其他名自由）
+
+**块查找（Block Lookup）**:
+消费者（如 x-loading/x-empty/x-error）按约定名取块的查找协议：从自身 scope 起沿 parent 链向上，取首个含该名 block 的 scope。命中则用该块替换内置 UI；未命中则回退内置 UI。与 action/dataScope 的 parent 链查找范式统一，支持「局部覆盖、外层兜底」。
+_Avoid_: 块解析、块匹配（查找是按 scope 链就近，非内容匹配）
+
+**块兜底（Block Fallback）**:
+消费者未查找到约定名块时回退其内置预置 UI 的行为。这是 x-block「自定义能力」的缺省语义——块是可选的覆盖资源，不存在时引擎行为不退化。
+_Avoid_: 默认块（与 `default` 块名撞义）、降级渲染
+
+**跨指令供体协议（Cross-directive Provider Protocol）**:
+x-block 不绑定具体消费者，是声明性资源——任意指令按约定名从 `scope.blocks` 取用。块名**纯自由命名**（各消费指令文档自定其读取名与兜底逻辑），引擎**不预定义 UI 态名册**（如 loading/error/empty），不限制指令开发者发明新消费场景（开放-封闭）。
+_Avoid_: 插槽契约（与 x-slot 撞义）、UI 态注册表（引擎不维护名册）
+
+**块冻结（Block Frozen Snapshot）**:
+x-block 收集时 `cloneNode(true)` 产出的、独立于 template 事实源的洁净副本。保留指令属性、未编译、可被多消费者重复取用而不相互污染。机制与 x-slot static 模式的「深克隆子节点」同构。
+_Avoid_: 块克隆（强调的是冻结独立事实，非单纯克隆操作）
+
 ### 配置绑定层
 
 **配置分隔符 `@`（Config Separator）**:

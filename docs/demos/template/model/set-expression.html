@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · set 表达式（写回另一字段）</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- set 表达式：形参 $value 是 DOM 输入值，经 with(scope) 执行语句体
+             这里把输入直接写到 dst 字段（用 src 作读取路径占位） -->
+        <div class="demo-app">
+            <p>
+                <label>输入（写到 dst）：</label>
+                <input class="input" x-model="src" x-model-options="{set:'dst=$value'}" />
+            </p>
+            <p class="hint">
+                src = "<strong x-text="src"></strong>"，
+                dst = "<strong x-text="dst"></strong>"
+            </p>
+            <p class="hint" style="color: #999">
+                输入只更新 dst（set 把 $value 赋给 dst），src 不受输入影响
+            </p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {
+                src: "",
+                dst: "",
+            });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 基础双向绑定</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 基础双向绑定：input <-> state.user.name
+             输入即写回状态，状态变化同步回 input.value -->
+        <div class="demo-app">
+            <p>
+                <label>姓名：</label>
+                <input class="input" x-model="user.name" />
+            </p>
+            <p class="hint">你好，<strong x-text="user.name"></strong></p>
+            <button class="btn btn-secondary" @click="reset">重置为 "zhang"</button>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    user: { name: "zhang" },
+                },
+                {
+                    actions: {
+                        // 点击「重置」改 state → input.value 自动同步（state→DOM 方向）
+                        reset: () => {
+                            engine.state.user.name = "zhang";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · get/set action（IP 地址双向同步）</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- 完整 IP 双向同步：4 个输入框共享同一状态 user.ip
+             get action：显示对应八位段（state→DOM 拆分）
+             set action：编辑某段后重组完整 IP 写回（DOM→state 合并） -->
+        <div class="demo-app">
+            <p>
+                <label>IP 地址：</label>
+            </p>
+            <p>
+                <input class="input" style="width: 80px" x-model="user.ip" x-model-options="{get:'octet(0)',set:'joinOctet(0)'}" />
+                <span style="margin: 0 4px">.</span>
+                <input class="input" style="width: 80px" x-model="user.ip" x-model-options="{get:'octet(1)',set:'joinOctet(1)'}" />
+                <span style="margin: 0 4px">.</span>
+                <input class="input" style="width: 80px" x-model="user.ip" x-model-options="{get:'octet(2)',set:'joinOctet(2)'}" />
+                <span style="margin: 0 4px">.</span>
+                <input class="input" style="width: 80px" x-model="user.ip" x-model-options="{get:'octet(3)',set:'joinOctet(3)'}" />
+            </p>
+            <p class="hint">
+                state.user.ip = "<strong x-text="user.ip"></strong>"
+            </p>
+            <p class="hint" style="color: #999">
+                编辑任一段，其余段保持不变，完整 IP 实时同步到状态
+            </p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    user: { ip: "192.168.1.100" },
+                },
+                {
+                    actions: {
+                        // get action：当前状态值自动作首参 value，括号内 0/1/2/3 是段索引
+                        // 返回 IP 的第 index 段用于显示
+                        octet: (value, index) => String(value).split(".")[index] ?? "",
+
+                        // set action：DOM 输入值自动作首参 $value，括号内是段索引
+                        // 读当前完整 IP，替换第 index 段，重组后写回 state.user.ip
+                        joinOctet: function ($value, index) {
+                            const parts = String(this.state.user.ip).split(".");
+                            parts[index] = $value;
+                            this.state.user.ip = parts.join(".");
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

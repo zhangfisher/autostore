@@ -42,3 +42,5 @@ export * from "./emitStoreEvent";
 export * from "./getError";
 export * from "./getDefaultComputedOptions";
 export * from "./installPlugin";
+export * from "./isAutoStore";
+export * from "./getDefaultConfigManager";

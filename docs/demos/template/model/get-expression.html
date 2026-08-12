@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · get 表达式（state→DOM 变换）</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/template.css" />
+    </head>
+
+    <body>
+        <!-- get 表达式：形参 value 是当前 state 值，经 with(scope) 求值
+             这里把数字 state 显示成 "¥ 100" 形式（显示层变换，不污染 state） -->
+        <div class="demo-app">
+            <p>
+                <label>金额：</label>
+                <input class="input" x-model="order.amount" x-model-options="{get:'`¥ ${value}`'}" />
+            </p>
+            <p class="hint">
+                state.order.amount = <strong x-text="order.amount"></strong>（数字，未受显示变换污染）
+            </p>
+            <p class="hint" style="color: #999">
+                输入框显示 "¥ 100"，但 state 仍是数字 100
+            </p>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {
+                order: { amount: 100 },
+            });
+        </script>
+    </body>
+</html>
