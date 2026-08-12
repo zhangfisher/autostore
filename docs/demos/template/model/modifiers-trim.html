@@ -5,17 +5,19 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-model · .trim 修饰符</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- .trim：写回前去除首尾空格 -->
-        <div class="demo-app">
-            <p>
-                <label>用户名：</label>
-                <input class="input" x-model.trim="user.name" placeholder="试着前后加空格" />
-            </p>
-            <p class="hint">
+        <div class="demo-app section">
+            <div class="field">
+                <label class="label">用户名：</label>
+                <div class="control">
+                    <input class="input" x-model.trim="user.name" placeholder="试着前后加空格" />
+                </div>
+            </div>
+            <p class="help">
                 state.user.name = "<strong x-text="user.name"></strong>"（已自动 trim）
             </p>
         </div>

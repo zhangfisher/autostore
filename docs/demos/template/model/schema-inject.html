@@ -6,32 +6,40 @@
         <title>x-model · 字段元数据自动注入</title>
         <script src="/autostore/autostore.js"></script>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 字段元数据驱动：用户只写 x-model，schema 的 enable/name/title/required 等
              自动注入到 input 属性。enable→disabled 反向、name 默认取状态路径 -->
-        <div class="demo-app">
-            <p>
-                <label>用户名：</label>
-                <input class="input" x-model="form.username" />
-            </p>
-            <p>
-                <label>邮箱（只读）：</label>
-                <input class="input" x-model="form.email" />
-            </p>
-            <p>
-                <label>数量（数值约束）：</label>
-                <input class="input" type="number" x-model="order.count" />
-            </p>
-            <p class="hint" style="color: #999">
+        <div class="demo-app section">
+            <div class="field">
+                <label class="label">用户名：</label>
+                <div class="control">
+                    <input class="input" x-model="form.username" />
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">邮箱（只读）：</label>
+                <div class="control">
+                    <input class="input" x-model="form.email" />
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">数量（数值约束）：</label>
+                <div class="control">
+                    <input class="input" type="number" x-model="order.count" />
+                </div>
+            </div>
+            <p class="help">
                 检查元素：username 注入了 placeholder/title/name（=路径），email 注入了 readonly，count 注入了 min/max/step
             </p>
-            <p class="hint">
+            <p class="help">
                 form.username = <strong x-text="form.username"></strong>
             </p>
-            <button class="btn btn-secondary" @click="toggleEnable">toggle enable（username 启用/禁用）</button>
+            <div class="buttons">
+                <button class="button is-light" @click="toggleEnable">toggle enable（username 启用/禁用）</button>
+            </div>
         </div>
 
         <script>

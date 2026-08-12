@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-loading · opacity 透明度</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             .panel {
                 position: relative;
@@ -20,22 +20,22 @@
 
     <body>
         <!-- opacity：覆盖层透明度（0~1），作用于 bgColor 的 alpha 通道，默认 0.5 -->
-        <div class="demo-app">
-            <p>
-                <button class="btn" @click="toggle">{{ on ? '隐藏' : '显示' }}覆盖层</button>
-            </p>
-            <div class="row">
-                <div class="card panel" x-loading="{ visible:'on', bgColor:'black', opacity:0.2 }">
-                    <code>opacity:0.2</code>（淡）
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">{{ on ? '隐藏' : '显示' }}覆盖层</button>
+            </div>
+            <div class="columns">
+                <div class="card panel column" x-loading="{ visible:'on', bgColor:'black', opacity:0.2 }">
+                    <div class="card-content"><code>opacity:0.2</code>（淡）</div>
                 </div>
-                <div class="card panel" x-loading="{ visible:'on', bgColor:'black', opacity:0.5 }">
-                    <code>opacity:0.5</code>（默认）
+                <div class="card panel column" x-loading="{ visible:'on', bgColor:'black', opacity:0.5 }">
+                    <div class="card-content"><code>opacity:0.5</code>（默认）</div>
                 </div>
-                <div class="card panel" x-loading="{ visible:'on', bgColor:'black', opacity:0.8 }">
-                    <code>opacity:0.8</code>（深）
+                <div class="card panel column" x-loading="{ visible:'on', bgColor:'black', opacity:0.8 }">
+                    <div class="card-content"><code>opacity:0.8</code>（深）</div>
                 </div>
             </div>
-            <p class="muted">opacity 只调遮罩底色 alpha，loader 与文案保持清晰（非整元素 opacity）。</p>
+            <div class="block has-text-grey">opacity 只调遮罩底色 alpha，loader 与文案保持清晰（非整元素 opacity）。</div>
         </div>
 
         <script>

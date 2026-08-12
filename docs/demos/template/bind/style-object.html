@@ -5,16 +5,18 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-style · 对象写法</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- :style 接收对象：key 必须是驼峰（CSSStyleDeclaration 属性名），整体合并到 el.style -->
-        <div class="demo-app">
-            <p>
+        <div class="demo-app section">
+            <div class="block">
                 <span :style="badge.solid ? badge.solidStyle : badge.ghostStyle">{{ badge.text }}</span>
-            </p>
-            <button class="btn" @click="toggle">切换配色</button>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换配色</button>
+            </div>
         </div>
 
         <script>

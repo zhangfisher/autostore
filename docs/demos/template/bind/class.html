@@ -5,16 +5,43 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-bind · class 绑定</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            /* 演示 :class 写入的业务 token 样式（移除 template.css 后就地定义） */
+            .val {
+                color: #fff;
+                background-color: #42b883;
+                padding: 2px 10px;
+                border-radius: 4px;
+            }
+            .muted {
+                color: #999;
+            }
+            .tag {
+                color: #42b883;
+                background-color: #f0fff4;
+                border: 1px solid #42b883;
+                padding: 2px 10px;
+                border-radius: 4px;
+            }
+            .tag-warn {
+                color: #fff;
+                background-color: #e07000;
+                padding: 2px 10px;
+                border-radius: 4px;
+            }
+        </style>
     </head>
 
     <body>
         <!-- :class 支持对象 / 数组 / 字符串，按 diff 增量更新 -->
-        <div class="demo-app">
-            <p :class="{ val: on, muted: !on }">对象 class：{{ on ? "启用" : "禁用" }}</p>
-            <p :class="['card', tag]">数组 class（card + {{ tag }}）</p>
-            <p :class="cls">字符串 class（{{ cls }}）</p>
-            <button class="btn" @click="toggle">切换</button>
+        <div class="demo-app section">
+            <div class="block" :class="{ val: on, muted: !on }">对象 class：{{ on ? "启用" : "禁用" }}</div>
+            <div class="block" :class="['card', tag]"><div class="card-content">数组 class（card + {{ tag }}）</div></div>
+            <div class="block" :class="cls">字符串 class（{{ cls }}）</div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换</button>
+            </div>
         </div>
 
         <script>

@@ -121,7 +121,7 @@ _Avoid_: 隐式指令（那是插值 desugar 的术语）
 _Avoid_: 作用域容器（泛化）、命名空间（语义不符）、占位符（本表保留给空值渲染，歧义大）
 
 **模板块 / x-block（Template Block）**:
-编译期树变换标记，**不是渲染指令**。在 x-scope（或任意带 scope 的祖先）内声明一个命名模板片段，编译时被**从渲染树摘除**（不进结果 DOM、不建 scope、不实例化指令），以**深克隆的 template 元素副本**形态上交给最近祖先 scope 的 `blocks`。副本**根默认注入 `x-scope`**（若无），确保块根无论有无其他指令都是 scope 锚点（消费者可注入上下文、块内表达式有继承起点）。无值时取名 `default`。块上同元素的其他指令（如 `x-block="error" x-text="msg"`）随块整体冻结，待消费者渲染该块时才编译执行。详见 ADR-0021。
+编译期树变换标记，**不是渲染指令**。在 x-scope（或任意带 scope 的祖先）内声明一个命名模板片段，编译时被**从渲染树摘除**（不进结果 DOM、不建 scope、不实例化指令），以**深克隆的 template 元素副本**形态上交给最近祖先 scope 的 `blocks`。无值时取名 `default`。块上同元素的其他指令（如 `x-block="error" x-text="msg"`）随块整体冻结，待消费者渲染该块时才编译执行。**块根 scope 由消费编译路径（`compiler.compileChild`）内禀保证**——消费者无条件 `new AutoTemplateScope`，与根上是否有 `x-scope` 属性无关；`_collectBlock` 不再给快照根注入任何属性（原"注入 x-scope"已作废，ADR-0021 决策 7 修订）。详见 ADR-0021。
 _Avoid_: 片段（泛化）、插槽（那是 x-slot，正交）、命名空间块
 
 **块归属（Block Ownership）**:
@@ -133,12 +133,24 @@ _Avoid_: 块归属深度（实现细节）、块父（用 scope 统一）
 _Avoid_: 全局唯一（沿链可覆盖）、同名互斥（仅 default 受约束，其他名自由）
 
 **块查找（Block Lookup）**:
-消费者（如 x-loading/x-empty/x-error）按约定名取块的查找协议：从自身 scope 起沿 parent 链向上，取首个含该名 block 的 scope。命中则用该块替换内置 UI；未命中则回退内置 UI。与 action/dataScope 的 parent 链查找范式统一，支持「局部覆盖、外层兜底」。
-_Avoid_: 块解析、块匹配（查找是按 scope 链就近，非内容匹配）
+消费者（如 x-loading/x-empty/x-error）按约定名取块的查找协议，经 `getBlock(name)`（原 `lookupBlock`）执行：从自身 scope 起沿 parent 链向上取首个含该名 block 的 scope，**到顶兜底查 `engine.options.blocks`（全局块，懒预编译缓存）**。命中则用该块替换内置 UI；未命中则回退默认块/内置 UI。**局部 x-block 沿链遮蔽全局同名块**（就近原则，与 `getAction` 内层覆盖全局 `engine.actions` 同构）。与 action/dataScope 的 parent 链查找范式统一，支持「局部覆盖、外层兜底」。三个落点：`scope.getBlock(name)`（链终点兜底全局）、`engine.getBlock(el, name)`（经 el 反查 scope，供 Runtime 指令）、Compile/Hybrid 指令直接 `this.binding.scope.getBlock(name)`。
+_Avoid_: 块解析、块匹配（查找是按 scope 链就近+全局兜底，非内容匹配）
 
 **块兜底（Block Fallback）**:
-消费者未查找到约定名块时回退其内置预置 UI 的行为。这是 x-block「自定义能力」的缺省语义——块是可选的覆盖资源，不存在时引擎行为不退化。
-_Avoid_: 默认块（与 `default` 块名撞义）、降级渲染
+消费者未查找到约定名块时回退其默认渲染的行为。两种形态：**(a) 消费指令自带的默认块**（如 x-loading 的 `DEFAULT_BLOCK` 模板串，渲染统一走「编译块」路径，可被全局/局部块覆盖）；**(b) 纯代码兜底**（已被 (a) 取代，x-loading 不再保留代码 DOM 路径）。块是可选的覆盖资源，不存在时消费者回退其默认实现，引擎行为不退化。
+_Avoid_: 降级渲染
+
+**全局块（Global Block）**:
+经引擎构造选项 `AutoTemplateEngineOptions.blocks`（`Record<string, string>`）声明的、**全引擎复用**的命名模板块，字符串入参。是 scope 链查找的**终点兜底**（`getBlock` 到顶后查此）。与局部块（x-block 声明、入参为 DOM）相对——二者经同一条 `getBlock` 链统一取用，消费者无需区分来源。懒预编译（见「块预编译」），**构造期配置语义、运行时突变不失效缓存**（与 `actions`/`sanitizer` 等 options 同纪律）。详见 ADR-0021 决策 9。
+_Avoid_: 全局模板（泛化）、注册块（无注册表，引擎不维护名册）
+
+**块预编译（Block Precompile）**:
+全局块字符串入参首次被 `getBlock` 命中时，经 `parseHtmlFragment` 解析 + 自动包装（见「块自动包装」）为「恰好一个带 `x-block` 的根元素」，存入 engine 私有缓存 Map（key=块名，value=预编译根），后续命中只 `cloneNode(true)` 不重复解析。**懒编译**——仅首次使用时预编译，未用的全局块永不解析。预编译产物形态与局部块 `_collectBlock` 快照一致（未编译、保留指令属性、**不注入 x-scope**），消费者经同一路径渲染。解析失败/空串 → `logger.warn` + 视为未命中。详见 ADR-0021 决策 11。
+_Avoid_: 块编译（预编译只解析+包装，编译在消费时）、块缓存（强调的是懒解析+复用，非单纯存储）
+
+**块自动包装（Block Auto-wrap）**:
+全局块字符串入参规范化为「恰好一个带 `x-block` 的根元素」的规则（仅全局块字符串入参适用，局部块入参已是 DOM）：单顶级元素无 `x-block` → 根打本 key 名；已含 `x-block` → 尊重原值不重命名；多顶级节点/元素+文本混排 → 包一层 `<div x-block="name">`；纯文本无元素 → 包成 `<div x-block="name">文本`。包装标签固定 `<div>`（不开放配置）。详见 ADR-0021 决策 10。
+_Avoid_: 块归一化（泛化）、块封装
 
 **跨指令供体协议（Cross-directive Provider Protocol）**:
 x-block 不绑定具体消费者，是声明性资源——任意指令按约定名从 `scope.blocks` 取用。块名**纯自由命名**（各消费指令文档自定其读取名与兜底逻辑），引擎**不预定义 UI 态名册**（如 loading/error/empty），不限制指令开发者发明新消费场景（开放-封闭）。

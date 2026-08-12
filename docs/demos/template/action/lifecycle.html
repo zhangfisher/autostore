@@ -5,18 +5,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>动作 · 异步生命周期</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 异步 action：pending 在执行前、resolved 在完成后，均经总线广播 -->
-        <div class="demo-app">
-            <p>
-                状态：<span class="val" x-text="status"></span>
-            </p>
-            <button class="btn" @click="save">保存（async）</button>
-            <p>动作生命周期（订阅 actions/save/*）：</p>
-            <pre class="pre" x-text="log"></pre>
+        <div class="demo-app section">
+            <div class="block">
+                状态：<span class="has-text-primary has-text-weight-semibold" x-text="status"></span>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="save">保存（async）</button>
+            </div>
+            <div class="block">动作生命周期（订阅 actions/save/*）：</div>
+            <pre x-text="log"></pre>
         </div>
 
         <script>

@@ -5,15 +5,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-text · .hide 空值隐藏</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- .hide：user.name 为空时整张卡片 display:none 消失；有值时显示并还原 display:flex -->
-        <div class="demo-app">
-            <div class="card" style="display:flex" x-text.hide="user.name"></div>
-            <p class="muted" x-text="user.name == null ? '（卡片已隐藏）' : '（卡片已显示）'"></p>
-            <button class="btn" @click="toggle">切换用户名</button>
+        <div class="demo-app section">
+            <div class="card" x-text.hide="user.name"><div class="card-content"></div></div>
+            <div class="block has-text-grey" x-text="user.name == null ? '（卡片已隐藏）' : '（卡片已显示）'"></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换用户名</button>
+            </div>
         </div>
 
         <script>

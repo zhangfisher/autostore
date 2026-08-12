@@ -5,26 +5,30 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-model · .number 修饰符</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- .number：写回前 Number()，避免字符串污染计算属性
              不加 .number 时 price/count 是字符串，price*count 会变成字符串拼接 -->
-        <div class="demo-app">
-            <p>
-                <label>单价：</label>
-                <input class="input" type="number" x-model.number="order.price" />
-            </p>
-            <p>
-                <label>数量：</label>
-                <input class="input" type="number" x-model.number="order.count" />
-            </p>
-            <p class="hint">
+        <div class="demo-app section">
+            <div class="field">
+                <label class="label">单价：</label>
+                <div class="control">
+                    <input class="input" type="number" x-model.number="order.price" />
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">数量：</label>
+                <div class="control">
+                    <input class="input" type="number" x-model.number="order.count" />
+                </div>
+            </div>
+            <p class="help">
                 price 类型：<strong x-text="typeof order.price"></strong>，
                 count 类型：<strong x-text="typeof order.count"></strong>
             </p>
-            <p class="hint">
+            <p class="help">
                 总价 price * count = <strong x-text="order.price * order.count"></strong>
             </p>
         </div>

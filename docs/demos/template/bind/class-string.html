@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-class · 字符串写法</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             .tag {
                 display: inline-block;
@@ -27,11 +27,13 @@
 
     <body>
         <!-- :class 接收字符串：作为类名整体，diff 只替换变化的 token -->
-        <div class="demo-app">
-            <p>
+        <div class="demo-app section">
+            <div class="block">
                 <span :class="cls">字符串 class（{{ cls }}）</span>
-            </p>
-            <button class="btn" @click="toggle">切换</button>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换</button>
+            </div>
         </div>
 
         <script>

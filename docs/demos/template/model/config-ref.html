@@ -7,26 +7,32 @@
         <!-- 需同时引 autostore.js（暴露 ConfigManager/configurable）与 template.js -->
         <script src="/autostore/autostore.js"></script>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- @ 分隔符：把 configManager 元数据响应式绑到 DOM 属性
              order.price@placeholder = 绑 schema 的 placeholder 属性 -->
-        <div class="demo-app">
-            <p>
-                <input class="input" :placeholder="order.price@placeholder" :title="order.price@title" />
-            </p>
-            <p>
-                <!-- @ 右侧支持多段嵌套：绑 schema.style 整个对象到 :style，颜色肉眼可见 -->
-                <input class="input" :style="order.price@style" value="嵌套属性 style.color 生效" />
-            </p>
-            <p class="hint" style="color: #999">
+        <div class="demo-app section">
+            <div class="field">
+                <div class="control">
+                    <input class="input" :placeholder="order.price@placeholder" :title="order.price@title" />
+                </div>
+            </div>
+            <div class="field">
+                <div class="control">
+                    <!-- @ 右侧支持多段嵌套：绑 schema.style 整个对象到 :style，颜色肉眼可见 -->
+                    <input class="input" :style="order.price@style" value="嵌套属性 style.color 生效" />
+                </div>
+            </div>
+            <p class="help">
                 placeholder / title 来自 configManager schema 的元数据；
                 下方 input 的文字颜色来自 schema.style.color（嵌套属性路径）
             </p>
-            <button class="btn btn-secondary" @click="toggleLang">切换中/英 placeholder</button>
-            <button class="btn btn-secondary" @click="toggleColor">切换颜色 red/blue</button>
+            <div class="buttons">
+                <button class="button is-light" @click="toggleLang">切换中/英 placeholder</button>
+                <button class="button is-light" @click="toggleColor">切换颜色 red/blue</button>
+            </div>
         </div>
 
         <script>

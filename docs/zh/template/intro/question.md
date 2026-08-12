@@ -44,3 +44,38 @@ new AutoTemplateEngine(el, state, { debug: true });
 ## 可以自定义指令吗？
 
 可以。所有内置指令都继承自 `AutoTemplateDirectiveBase`，你可以注册自己的指令类。详见[指令类型](../guide/directive.md)。
+
+## `x-for` 和 `x-if` 可以在同一个元素上使用吗？
+
+**默认不行——会编译期报错；但有三条正确写法。**
+
+原因：`x-for` 和默认 `x-if`（eager）都声明**占有子树**（`ownsChildren`）——`x-for` 要把子树当项模板重复渲染，`x-if` 要按条件销毁/重建子树，两者语义互斥，写在同一元素会在编译期抛 `[x-if/x-for 冲突]`。
+
+按「条件作用对象」选择：
+
+```html
+<!-- ✅ 写法 1（最常用）：项模板内嵌 x-if，按每项数据条件渲染子内容 -->
+<ul x-for="notice of notices" :key="notice.id">
+    <li>
+        {{ notice.title }}
+        <span x-if="notice.unread">未读</span>
+    </li>
+</ul>
+
+<!-- ✅ 写法 2：x-if.keepalive 控制整表显隐（detach 容器、保活项子树） -->
+<ul x-for="notice of notices" x-if.keepalive="visible">...</ul>
+
+<!-- ✅ 写法 3：x-show 用 display:none 切显隐（容器永留 DOM） -->
+<ul x-for="notice of notices" x-show="visible">...</ul>
+
+<!-- ✅ 写法 4：外层包裹，条件渲染与列表渲染分层 -->
+<div x-if="visible">
+    <ul x-for="notice of notices">...</ul>
+</div>
+```
+
+::: tip 选哪个？
+逐项显隐用写法 1；整表「出现/消失」且想保活列表状态用写法 2，仅切显隐用写法 3，逻辑分层清晰用写法 4。
+:::
+
+更完整的说明与可交互示例见[列表渲染 · 与 x-if 组合](../guide/directives/x-for.md#与-x-if-组合)。

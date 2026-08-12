@@ -5,14 +5,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-bind · style 绑定</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- :style 对象（驼峰 key）或字符串，随状态切换 -->
-        <div class="demo-app">
-            <p :style="msg.warn ? msg.warnStyle : msg.normalStyle">{{ msg.text }}</p>
-            <button class="btn" @click="toggle">切换样式（正常 / 警告）</button>
+        <div class="demo-app section">
+            <div class="block" :style="msg.warn ? msg.warnStyle : msg.normalStyle">{{ msg.text }}</div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换样式（正常 / 警告）</button>
+            </div>
         </div>
 
         <script>

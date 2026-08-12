@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-class · 对象写法</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             /* 业务类名样式：让 :class 写入的 token 有可见差异 */
             .val {
@@ -27,11 +27,13 @@
 
     <body>
         <!-- :class 接收对象：键为类名、值为真则启用，按 diff 增量更新 -->
-        <div class="demo-app">
-            <p>
+        <div class="demo-app section">
+            <div class="block">
                 <span :class="{ val: on, muted: !on }">对象 class：{{ on ? "启用" : "禁用" }}</span>
-            </p>
-            <button class="btn" @click="toggle">切换</button>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换</button>
+            </div>
         </div>
 
         <script>

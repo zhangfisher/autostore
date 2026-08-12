@@ -207,6 +207,7 @@
       "name": "@autostorejs/template",
       "dependencies": {
         "asyncsignal": "^1.0.1",
+        "fastevent": "^2.7.0",
         "really-relaxed-json": "^0.3.2",
       },
       "devDependencies": {

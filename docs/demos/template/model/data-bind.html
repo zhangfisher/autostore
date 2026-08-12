@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 绑定 x-data 局部数据</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+
+    <body>
+        <!-- x-model 绑 x-data 局部字段：
+             读方向（state→DOM）：scope.watch 因局部上下文走表达式支路，经 getScopeContext 读到 count。
+             写方向（DOM→state）：简单路径会落到全局 state.count（分裂），故用 set 表达式经
+               with(scope) 的 set 陷阱透传到本层私有响应式域 _scopes[id].count，读写才同源。 -->
+        <div class="demo-app section">
+            <div x-data="{ count: 0, label: '计数' }">
+                <div class="field">
+                    <label class="label">{{ label }}：</label>
+                    <div class="control">
+                        <!-- set:'count=$value' 把 DOM 输入值写回本层 x-data 的 count -->
+                        <input
+                            class="input"
+                            x-model="count"
+                            x-model-options="{set:'count=$value'}"
+                        />
+                    </div>
+                </div>
+                <p class="help">
+                    {{ label }} = <strong x-text="count"></strong>（来自本层 x-data 私有响应式域）
+                </p>
+                <div class="buttons">
+                    <button class="button is-light" @click="reset">重置为 0</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {}, // 全局 store 留空：count 完全由 x-data 局部提供，验证读写同源
+                {
+                    actions: {
+                        // action 内改 count：经 this.data 的 set 陷阱透传到本层响应式域，
+                        // 与 x-model 的 set 表达式写到同一份 count，二者双向同步。
+                        reset: function () {
+                            this.data.count = 0;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

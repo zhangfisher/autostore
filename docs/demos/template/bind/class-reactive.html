@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-class · 响应式切换</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             /* 静态 class：常驻，:class 的 diff 不会动它（两套来源互不依赖） */
             .task {
@@ -71,7 +71,7 @@
 
     <body>
         <!-- 多个状态同时驱动同一元素的 class（对象含计算键），且与静态 class="task" 共存 -->
-        <div class="demo-app">
+        <div class="demo-app section">
             <div
                 class="task"
                 :class="{ selected: task.selected, done: task.done, ['pri-' + task.priority]: true }"
@@ -84,7 +84,7 @@
                     <input type="checkbox" :checked="task.selected" @change="toggleSelected($event)" />
                     <span class="label" style="min-width: auto">选中</span>
                 </label>
-                <button class="btn" @click="toggleDone">{{ task.done ? "标记未完成" : "标记完成" }}</button>
+                <button class="button is-primary is-small" @click="toggleDone">{{ task.done ? "标记未完成" : "标记完成" }}</button>
             </div>
 
             <div class="row">

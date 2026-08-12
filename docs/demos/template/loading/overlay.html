@@ -5,17 +5,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-loading · 命令式 overlay</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 命令式 overlay：setAttribute('x-loading') 显示、removeAttribute 隐藏 -->
-        <div class="demo-app">
-            <p>
-                <button class="btn" @click="load">加载数据（显示 1 秒覆盖层）</button>
-            </p>
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="load">加载数据（显示 1 秒覆盖层）</button>
+            </div>
             <div id="panel" class="card">
-                数据展示区。点击按钮后，本区域会被加载覆盖层遮住约 1 秒。
+                <div class="card-content">数据展示区。点击按钮后，本区域会被加载覆盖层遮住约 1 秒。</div>
             </div>
         </div>
 

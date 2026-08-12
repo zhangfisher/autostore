@@ -5,44 +5,56 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-data · 多级嵌套作用域</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 三级 x-data 嵌套：演示同名键覆盖、未声明键继承、从父/祖父读取 -->
-        <div class="demo-app">
+        <div class="demo-app section">
             <!-- 祖父级：声明 user / role -->
             <div x-data="{ user: '张三', role: 'admin' }">
                 <div class="card">
-                    <div class="label">祖父级 x-data（声明 user、role）</div>
-                    <p>
-                        读到：user=<b class="val">{{user}}</b>，role=<b class="val">{{role}}</b>
-                    </p>
-                    <button class="btn btn-sm" @click="bump">改本层 user</button>
+                    <div class="card-content">
+                        <div class="heading has-text-grey">祖父级 x-data（声明 user、role）</div>
+                        <div class="block">
+                            读到：user=<b class="has-text-primary has-text-weight-semibold">{{user}}</b>，role=<b class="has-text-primary has-text-weight-semibold">{{role}}</b>
+                        </div>
+                        <div class="buttons">
+                            <button class="button is-primary is-small" @click="bump">改本层 user</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 父级：覆盖 user、新增 score；role 继承祖父 -->
                 <div x-data="{ user: '李四', score: 88 }">
                     <div class="card">
-                        <div class="label">父级 x-data（覆盖 user、新增 score）</div>
-                        <p>
-                            user=<b class="val">{{user}}</b><span class="muted">←覆盖</span>，
-                            role=<b class="val">{{role}}</b><span class="muted">←继承祖父</span>，
-                            score=<b class="val">{{score}}</b><span class="muted">←新增</span>
-                        </p>
-                        <button class="btn btn-sm" @click="bump">改本层 user</button>
+                        <div class="card-content">
+                            <div class="heading has-text-grey">父级 x-data（覆盖 user、新增 score）</div>
+                            <div class="block">
+                                user=<b class="has-text-primary has-text-weight-semibold">{{user}}</b><span class="has-text-grey">←覆盖</span>，
+                                role=<b class="has-text-primary has-text-weight-semibold">{{role}}</b><span class="has-text-grey">←继承祖父</span>，
+                                score=<b class="has-text-primary has-text-weight-semibold">{{score}}</b><span class="has-text-grey">←新增</span>
+                            </div>
+                            <div class="buttons">
+                                <button class="button is-primary is-small" @click="bump">改本层 user</button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 子级：覆盖 score；user 继承父、role 继承祖父 -->
                     <div x-data="{ score: 100 }">
                         <div class="card">
-                            <div class="label">子级 x-data（覆盖 score）</div>
-                            <p>
-                                user=<b class="val">{{user}}</b><span class="muted">←继承父</span>，
-                                role=<b class="val">{{role}}</b><span class="muted">←继承祖父</span>，
-                                score=<b class="val">{{score}}</b><span class="muted">←覆盖父</span>
-                            </p>
-                            <button class="btn btn-sm" @click="inc">改本层 score</button>
+                            <div class="card-content">
+                                <div class="heading has-text-grey">子级 x-data（覆盖 score）</div>
+                                <div class="block">
+                                    user=<b class="has-text-primary has-text-weight-semibold">{{user}}</b><span class="has-text-grey">←继承父</span>，
+                                    role=<b class="has-text-primary has-text-weight-semibold">{{role}}</b><span class="has-text-grey">←继承祖父</span>，
+                                    score=<b class="has-text-primary has-text-weight-semibold">{{score}}</b><span class="has-text-grey">←覆盖父</span>
+                                </div>
+                                <div class="buttons">
+                                    <button class="button is-primary is-small" @click="inc">改本层 score</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

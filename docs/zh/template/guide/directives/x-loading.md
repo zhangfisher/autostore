@@ -23,7 +23,7 @@ function load() {
 
 ## 指南
 
-### 命令式 overlay 模式
+### 命令式
 
 `setAttribute("x-loading", JSON.stringify({message, ...}))`（配置对象**省略 visible**）即显示覆盖层并用配置渲染；`removeAttribute("x-loading")` 隐藏。属性存在即显示、不存在即隐藏：
 
@@ -39,7 +39,7 @@ panel.removeAttribute("x-loading");
 
 这个模式被 `x-on` 的 `.feedback` 修饰符（`loading` 配置）和 `x-slot` remote 加载复用——零额外接线。
 
-### 反应式模式
+### 绑定状态控制
 
 把 `x-loading` 绑定到状态路径，值真则显示、假则隐藏，随状态自动切换：
 
@@ -66,64 +66,7 @@ engine.state.ui.loading = false; // 隐藏
 
 裸 `x-loading`（无值）等同 `"true"`；`"false"` 与不写该属性等价。适合无需切换的静态骨架屏。
 
-### message 提示文案
-
-`message` 渲染在 loader 下方的提示文案；不传则不渲染文本节点（默认只有 loader）。
-
-<demo html="template/loading/message.html"/>
-
-```html
-<!-- 配置绑定下传 message -->
-<div x-loading="{ visible:'on', message:'正在拉取数据…' }">内容</div>
-<!-- 快速绑定（无 message）：仅 loader -->
-<div x-loading="on">内容</div>
-```
-
-### color：loader 旋转色
-
-`color` 控制 loader 圆环的旋转色，经 `currentColor` 注入到 conic/radial 两处渐变。支持 hex、`rgb()/rgba()`、`hsl()/hsla()` 及常用颜色名；不可识别的值回退默认色 `#888`。
-
-<demo html="template/loading/color.html"/>
-
-```html
-<div x-loading="{ visible:'on', color:'#42b883' }">内容</div>
-<div x-loading="{ visible:'on', color:'red' }">内容</div>
-```
-
-### bgColor：遮罩底色
-
-`bgColor` 是覆盖层的背景色，默认 `"black"`。它不直接作为元素底色，而是与 `opacity` 合成为 `rgba(bgColor, opacity)`——这样 loader 与文案始终保持清晰，不被透明度拉淡。
-
-<demo html="template/loading/bgcolor.html"/>
-
-```html
-<div x-loading="{ visible:'on', bgColor:'white' }">内容</div>
-<div x-loading="{ visible:'on', bgColor:'#42b883' }">内容</div>
-```
-
-### opacity：透明度
-
-`opacity` 取 `0~1`，作用于 `bgColor` 的 alpha 通道（覆盖层底色透明度），默认 `0.5`。它不是整元素 `opacity`，故 loader 与文案不受影响。
-
-<demo html="template/loading/opacity.html"/>
-
-```html
-<div x-loading="{ visible:'on', bgColor:'black', opacity:0.2 }">内容</div>
-<div x-loading="{ visible:'on', bgColor:'black', opacity:0.8 }">内容</div>
-```
-
-### delay：防闪烁
-
-`delay`（毫秒）在显示覆盖层前等待一段窗口期。若窗口期内 visible 回假，挂载定时器被取消、覆盖层**从不出现**——典型用途是「请求很快时不想惊扰用户」：把 delay 设得略大于典型耗时即可无感。
-
-<demo html="template/loading/delay.html"/>
-
-```html
-<!-- delay:500：500ms 内完成的短任务不会闪现 loader -->
-<div x-loading="{ visible:'fast', delay:500 }">内容</div>
-```
-
-### selector：挂载目标
+### 挂载目标
 
 默认覆盖层挂在宿主元素上。`selector` 可改挂载目标：
 
@@ -142,7 +85,7 @@ engine.state.ui.loading = false; // 隐藏
 <div x-loading="{ visible:'on', selector:'@#modal' }">宿主</div>
 ```
 
-### .screen：全屏覆盖
+### 全屏覆盖
 
 `.screen` 修饰符让覆盖层以 `position:fixed;inset:0` 撑满整个视口（仍留在宿主子树，不 teleport）。常用于整页/整应用级加载态。
 
@@ -152,6 +95,145 @@ engine.state.ui.loading = false; // 隐藏
 <div x-loading.screen="{ visible:'pageLoading', message:'加载中…' }">内容</div>
 ```
 
+### 默认加载样式
+
+#### 提示文本
+
+`message` 渲染在 loader 下方的提示文案。默认模板的 message 元素恒存在，不传 `message` 时其文本为空（不显示文案、仅 loader）；若用自定义模板，message 是否渲染由你的模板决定。
+
+<demo html="template/loading/message.html"/>
+
+```html
+<!-- 配置绑定下传 message -->
+<div x-loading="{ visible:'on', message:'正在拉取数据…' }">内容</div>
+<!-- 快速绑定（无 message）：仅 loader -->
+<div x-loading="on">内容</div>
+```
+
+#### 旋转色
+
+`color` 控制 loader 圆环的旋转色，经 `currentColor` 注入到 conic/radial 两处渐变。支持 hex、`rgb()/rgba()`、`hsl()/hsla()` 及常用颜色名；不可识别的值回退默认色 `#888`。
+
+<demo html="template/loading/color.html"/>
+
+```html
+<div x-loading="{ visible:'on', color:'#42b883' }">内容</div>
+<div x-loading="{ visible:'on', color:'red' }">内容</div>
+```
+
+#### 遮罩底色
+
+`bgColor` 是覆盖层的背景色，默认 `"black"`。它不直接作为元素底色，而是与 `opacity` 合成为 `rgba(bgColor, opacity)`——这样 loader 与文案始终保持清晰，不被透明度拉淡。
+
+<demo html="template/loading/bgcolor.html"/>
+
+```html
+<div x-loading="{ visible:'on', bgColor:'white' }">内容</div>
+<div x-loading="{ visible:'on', bgColor:'#42b883' }">内容</div>
+```
+
+#### 透明度
+
+`opacity` 取 `0~1`，作用于 `bgColor` 的 alpha 通道（覆盖层底色透明度），默认 `0.5`。它不是整元素 `opacity`，故 loader 与文案不受影响。
+
+<demo html="template/loading/opacity.html"/>
+
+```html
+<div x-loading="{ visible:'on', bgColor:'black', opacity:0.2 }">内容</div>
+<div x-loading="{ visible:'on', bgColor:'black', opacity:0.8 }">内容</div>
+```
+
+#### 防闪烁
+
+`delay`（毫秒）在显示覆盖层前等待一段窗口期。若窗口期内 visible 回假，挂载定时器被取消、覆盖层**从不出现**——典型用途是「请求很快时不想惊扰用户」：把 delay 设得略大于典型耗时即可无感。
+
+<demo html="template/loading/delay.html"/>
+
+```html
+<!-- delay:500：500ms 内完成的短任务不会闪现 loader -->
+<div x-loading="{ visible:'fast', delay:500 }">内容</div>
+```
+
+### 自定义加载模板
+
+默认覆盖层是内置旋转 `loader`。若不满意——想换成脉冲扩散点、进度条、骨架屏，甚至完全自定义布局——无需 fork 指令，用**模板块**覆盖即可。`x-loading` 渲染时会先经 `getBlock("loading")` 取块：取到则用块替换默认 loader，取不到才回退内置。
+
+块有两类，按**就近原则**查找（局部覆盖全局）：
+
+#### 局部块
+
+在宿主的任意祖先上声明 `x-scope` 建 scope 锚点，其内用 `x-block="loading"` 声明一个命名模板块。该块在编译期从渲染树摘除、上交给最近祖先 scope 的 `blocks`，`x-loading` 渲染时沿 scope 链就近取用：
+
+<demo html="template/loading/block-local.html"/>
+
+```html
+<!-- x-scope 建 scope 锚点，让内部 x-block 有归属 -->
+<div x-scope>
+    <!-- 自定义 loading 块：根即 overlay 壳（x-loading 注入定位/背景样式） -->
+    <div x-block="loading">
+        <div class="loader"></div>
+        <!-- message 经 x-loading 配置注入块，块内 x-text 响应式取值 -->
+        <div class="my-msg" x-text="message"></div>
+    </div>
+
+    <!-- 这两个宿主共用上面的局部块 -->
+    <div x-loading="{ visible:'on', message:'正在拉取数据…' }">内容</div>
+</div>
+```
+
+#### 全局块
+
+在 engine 构造选项 `blocks.loading` 声明一个**全引擎复用**的模板（字符串入参）。所有 `x-loading` 在无局部块覆盖时都取它：
+
+<demo html="template/loading/block-global.html"/>
+
+```javascript
+const engine = new AutoTemplateEngine(el, state, {
+    blocks: {
+        // 多顶级节点会自动包一层 div 并打 x-block="loading"
+        loading: `
+            <div class="loader"></div>
+            <div class="my-msg" x-text="message"></div>
+        `,
+    },
+});
+```
+
+#### 块内可用的注入字段
+
+块的 scope 会以 **dataScope**（响应式）注入 `x-loading` 配置的全字段，块内表达式/指令直接按字段名取用：
+
+| 字段       | 含义                                       | 块内典型用法                 |
+| ---------- | ------------------------------------------ | ---------------------------- |
+| `message`  | 提示文案                                   | `x-text="message"`           |
+| `color`    | loader 旋转色                              | `:style="{color}"`           |
+| `bgColor`  | 遮罩底色                                   | 自定义遮罩时取用             |
+| `opacity`  | 透明度                                     | 自定义遮罩时取用             |
+| `visible`  | 显隐表达式串（**脚枪**：是字符串，非布尔） | 块内一般不用（显隐由宿主管） |
+| `delay`    | 防闪烁毫秒                                 | 块内一般不用                 |
+| `selector` | 挂载目标选择器                             | 块内一般不用                 |
+
+::: warning 块根即 overlay 壳
+自定义块的**根元素就是 overlay 壳**——`x-loading` 会把定位（`position:absolute`/`fixed`、`inset:0`、flex 居中）和背景（`rgba(bgColor, opacity)`）作为内联样式注入到块根。所以块根通常写一个空 `<div>` 承载壳样式，把实际内容放它的子节点里（见上方示例的 `.loader`）。
+:::
+
+#### 自动包装规则（仅全局块字符串入参）
+
+全局块入参是字符串，首次使用时按顶级节点数自动规范化为「恰好一个带 `x-block` 的根元素」：
+
+| 输入                       | 包装结果                             |
+| -------------------------- | ------------------------------------ |
+| 单顶级元素、无 `x-block`   | 根打本 key 名（`x-block="loading"`） |
+| 已含 `x-block`             | 尊重原值不重命名                     |
+| 多顶级节点 / 元素+文本混排 | 包一层 `<div x-block="loading">`     |
+| 纯文本无元素               | 包成 `<div x-block="loading">文本`   |
+
+局部块入参已是 DOM 元素，不经包装。块根**总是创建 scope**（由消费编译路径保证），块内表达式有继承起点。
+
+::: info 局部覆盖全局
+查找顺序是「自身 scope → 各祖先 scope → 全局 `options.blocks`」。所以在某个 `x-scope` 内声明局部 `x-block="loading"`，只覆盖该子树内的 x-loading，其余仍走全局块——支持「公共全局样式 + 局部特例」。
+:::
+
 ## 配置
 
 `x-loading` 的指令值是显示状态表达式（快速绑定 `x-loading="isLoading"`，全默认），或配置对象（`x-loading="{ visible:'isLoading', ... }"`，`visible` 必填）。下列配置项在配置绑定时生效；带 ✅ 者可用修饰符方式启用。
@@ -160,9 +242,9 @@ engine.state.ui.loading = false; // 隐藏
 | ---------- | ------------ | ------ | --------------------------------------------------------- |
 | `visible`  | 必填         |        | 显示状态表达式（全局路径或表达式）                        |
 | `message`  | 无（不渲染） |        | 覆盖层提示文案；不传则不渲染文本节点                      |
-| `bgColor`  | `"black"`    |        | 覆盖层背景色（与 opacity 合成为 rgba）                   |
+| `bgColor`  | `"black"`    |        | 覆盖层背景色（与 opacity 合成为 rgba）                    |
 | `color`    | `"#888"`     |        | loader 旋转色（经 `currentColor` 注入）                   |
-| `opacity`  | `0.5`        |        | 覆盖层底色透明度（作用于 bgColor 的 alpha）              |
+| `opacity`  | `0.5`        |        | 覆盖层底色透明度（作用于 bgColor 的 alpha）               |
 | `delay`    | `0`          |        | 显示前延时（防闪烁），毫秒                                |
 | `selector` | 宿主元素     |        | 覆盖层挂载目标选择器；`@` 前缀走 `document.querySelector` |
 | `.screen`  | 未启用       | ✅     | 全屏覆盖（`position:fixed`）                              |

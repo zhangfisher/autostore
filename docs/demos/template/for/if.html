@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-for · 与 x-if 组合</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+
+    <body>
+        <!-- 项模板内嵌 x-if：按每项数据条件渲染子内容（最常见的组合方式） -->
+        <div class="demo-app section">
+            <div class="content">
+                <ul x-for="notice of notices" :key="notice.id">
+                    <li>
+                        {{ notice.title }}
+                        <span x-if="notice.unread" class="tag is-warning">未读</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="markAllRead">全部标为已读</button>
+                <button class="button" @click="reset">重置</button>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            // SEED 每次返回全新对象数组，避免被响应式代理写入污染，保证 reset 可还原
+            const SEED = () => [
+                { id: 1, title: "系统升级完成", unread: true },
+                { id: 2, title: "您有一条新消息", unread: true },
+                { id: 3, title: "欢迎使用 AutoStore", unread: false },
+            ];
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { notices: SEED() },
+                {
+                    actions: {
+                        markAllRead: () => {
+                            // 逐项改字段：x-if 订阅 notice.unread，字段级细粒度触发标记消失
+                            engine.state.notices.forEach((n) => (n.unread = false));
+                        },
+                        reset: () => {
+                            engine.state.notices = SEED();
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

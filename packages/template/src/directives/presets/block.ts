@@ -10,7 +10,7 @@ import { AutoTemplateDirectiveBase } from "../base";
  * 一等名位，让 `x-block` 成为合法可发现的指令名（文档/类型友好），并为未来在块根挂指令
  * 生命周期留落点。
  *
- * 消费者（x-loading/x-empty/x-error…）经 `scope.lookupBlock(name)` 取用快照，clone + 编译渲染、
+ * 消费者（x-loading/x-empty/x-error…）经 `scope.getBlock(name)` 取用快照（到顶兜底全局块），clone + 编译渲染、
  * 替换内置 UI。详见 ADR-0021。
  *
  * 无值 `x-block` 取名 `default`；有值 `x-block="loading"` 取名 `loading`。命名自由，引擎不预定义

@@ -170,6 +170,60 @@ action 可声明在 `<script type="actions">`（局部）或 `engine.actions`（
 <input x-model="user.fullName" />
 ```
 
+### 绑定 x-data 局部数据
+
+`x-model` 也能双向绑定到 [x-data](./x-data.md) 声明的**局部响应式字段**——把表单的临时状态就近放在一起，不必塞进全局 store。但有一个**读写方向不对称**的坑要先讲清：
+
+::: warning 简单路径会「读局部、写全局」——必须用 set 表达式桥接
+`x-model` 两条方向走不同支路：
+
+- **读方向**（state→DOM）：经 `scope.watch` 的表达式支路，能读到 x-data 局部字段 ✓
+- **写方向**（DOM→state）：**简单路径**走 `setVal` 直写**全局 `store.state.<路径>`**，**绕过** x-data 私有域 ✗
+
+于是 `x-model="count"`（`count` 是 x-data 局部字段）会「读局部、写全局」——读到的是局部值，输入却写进了全局 state.count，二者分裂、demo 跑不通。
+
+**解法**：用 `set` 表达式。`set` 经 `with(scope)` 在 `getScopeContext()` 上执行，其 set 陷阱按 `localScope > dataScope` 就近命中**本层** x-data 字段（详见 [action · this.data](../action.md)），读写才同源：
+
+```html
+<div x-data="{ count: 0 }">
+    <!-- set:'count=$value' 把 DOM 输入写回本层 x-data 的 count -->
+    <input x-model="count" x-model-options="{set:'count=$value'}" />
+</div>
+```
+:::
+
+<demo html="template/model/data-bind.html" />
+
+```html
+<div x-data="{ count: 0, label: '计数' }">
+    <input x-model="count" x-model-options="{set:'count=$value'}" />
+    <button @click="reset">重置</button>
+</div>
+```
+
+action 内改 `this.data.count` 与 `x-model` 的 `set` 写到同一份局部字段，二者双向同步。
+
+### 多级嵌套 x-data 绑定
+
+x-data 父子层经 `getScopeContext` 的 parent 链层叠（子覆盖父同名键、未声明键继承）。各级 `x-model` 配 `set` 表达式后，写入按就近命中**只改本层**——子层输入框改子层 user，父层纹丝不动；未覆盖的键（如子层读 `role`）沿链继承父层。
+
+<demo html="template/model/nested-data.html" />
+
+```html
+<div x-data="{ user: '张三', role: 'admin' }">
+    <input x-model="user" x-model-options="{set:'user=$value'}" /> <!-- 改父层 user -->
+    <div x-data="{ user: '李四', score: 88 }">
+        <input x-model="user" x-model-options="{set:'user=$value'}" /> <!-- 改子层 user -->
+        <input x-model.number="score" x-model-options="{set:'score=Number($value)||0'}" />
+        <span>{{ role }}</span> <!-- 继承父层 -->
+    </div>
+</div>
+```
+
+::: tip 写入命中本层、读取就近继承
+`getScopeContext` 的 set 陷阱只改本层已声明键，故各级 `x-model` 输入框各自独立、互不串扰；读方向同名键子覆盖父、未声明键沿 parent 链向上取最近一层。这与 [x-data · 嵌套作用域](./x-data.md#嵌套作用域) 的隔离语义一致。
+:::
+
 ### 循环防护
 
 双向绑定有一个循环风险：用户输入写回 state → state 变化触发 read 回调写回 DOM → 若 get 变换存在，会**立即覆盖用户刚输入的内容**。
@@ -255,3 +309,4 @@ AutoStore 的 `configManager` 为每个状态字段维护一份**字段元数据
 - **get/set 禁箭头函数**：配置值只能是字符串（relaxed-json 约束），箭头函数字面量会解析失败。
 - **动态改 `x-model` 属性值不支持**：运行时 `setAttribute("x-model", ...)` 改绑定值不生效（编译期解析，首版有意）。
 - **循环防护是内置的**：无需手动处理，写入经 flags 标识，read 回调自动跳过自身触发的回写。
+- **绑定 x-data 局部字段须配 set 表达式**：简单路径 `x-model="<局部字段>"` 会「读局部、写全局」（写方向经 `setVal` 直写 `store.state` 绕过私有域），导致读写分裂。绑局部字段时务必加 `x-model-options="{set:'<字段>=$value'}"`，详见上文[绑定 x-data 局部数据](#绑定-x-data-局部数据)。

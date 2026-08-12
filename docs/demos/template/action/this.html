@@ -5,24 +5,24 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>动作 · action 的 this</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- action 执行时 this = AutoTemplateActionContext：携带 el / $event / data / scope / store / engine / $options -->
-        <div class="demo-app">
+        <div class="demo-app section">
             <!-- 全局根状态（engine.state） -->
-            <p>全局计数：<span class="val" x-text="count"></span></p>
+            <div class="block">全局计数：<span class="has-text-primary has-text-weight-semibold" x-text="count"></span></div>
             <!-- x-data 私有响应式域：this.data.log 的写入经 set 陷阱透传，触发下方 pre 字段级更新 -->
             <div x-data="{ log: '点击按钮，观察 this 各字段的值\n' }">
-                <div class="row">
-                    <button class="btn" @click="onEl">this.el</button>
-                    <button class="btn" @click="onEvent">this.$event</button>
-                    <button class="btn" @click="onData">this.data</button>
-                    <button class="btn" @click="onEngine">this.engine</button>
-                    <button class="btn" @click="onScope">this.scope</button>
+                <div class="buttons">
+                    <button class="button is-primary" @click="onEl">this.el</button>
+                    <button class="button is-primary" @click="onEvent">this.$event</button>
+                    <button class="button is-primary" @click="onData">this.data</button>
+                    <button class="button is-primary" @click="onEngine">this.engine</button>
+                    <button class="button is-primary" @click="onScope">this.scope</button>
                 </div>
-                <pre class="pre" x-text="log"></pre>
+                <pre x-text="log"></pre>
             </div>
         </div>
 

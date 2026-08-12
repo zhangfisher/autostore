@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>快速入门 · TODO 应用</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+
+    <body>
+        <!-- 一个相对完整的 TODO 应用：
+             x-model 输入 + @click 添加 + x-for 列表 + :class 完成态 + @click 切换/删除 + x-empty 空状态 + 计数 -->
+        <div class="demo-app section" style="max-width: 520px; margin: 0 auto">
+            <h1 class="title is-4 has-text-centered">TODO 清单</h1>
+
+            <!-- 输入框：x-model 双向绑定到全局状态 input -->
+            <div class="field has-addons">
+                <div class="control is-expanded">
+                    <input
+                        class="input"
+                        x-model="input"
+                        placeholder="要做点什么？"
+                        @keydown.enter="add"
+                    />
+                </div>
+                <div class="control">
+                    <button class="button is-primary" @click="add">添加</button>
+                </div>
+            </div>
+
+            <!-- 列表：x-for 重复渲染项模板，:key 用 id 复用 -->
+            <ul class="block" x-for="todo of todos" :key="todo.id">
+                <!-- 一行一项：点击文字切换完成态，:class 按状态加删除线 -->
+                <li
+                    class="todo-item is-flex is-align-items-center is-justify-content-space-between px-2 py-2"
+                >
+                    <!-- :style 挂在 HTMLElement（span）上：svg 不可绑指令（SVGElement 不参与编译），
+                         故 svg 的 stroke=currentColor 经 CSS 继承 span 的 color 完成配色 -->
+                    <span
+                        @click="toggle(todo.id)"
+                        class="todo-label is-flex is-align-items-center"
+                        style="gap: 0.5rem"
+                        :style="todo.done ? 'color:#b5b5b5;text-decoration:line-through' : 'color:#48c78e;text-decoration:none'"
+                    >
+                        <!-- 状态图标：圆 + 勾，颜色继承自父 span 的 color -->
+                        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                            <circle
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            />
+                            <path
+                                d="M7 12.5l3.5 3.5L17 9"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                        {{ todo.text }}
+                    </span>
+                    <!-- 删除按钮：平时淡出，行 hover 时显现 -->
+                    <button
+                        class="todo-delete delete is-small"
+                        @click="remove(todo.id)"
+                    ></button>
+                </li>
+                <!-- 空状态：数组为空时渲染一次 -->
+                <li x-empty class="has-text-grey has-text-centered py-3">
+                    还没有任务，添加一条吧～
+                </li>
+            </ul>
+
+            <!-- 剩余计数：实时反映未完成数量 -->
+            <div class="block has-text-grey is-size-7">
+                剩余 {{ remaining }} / {{ todos.length }} 项未完成
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    input: "",
+                    todos: [
+                        { id: 1, text: "阅读快速入门", done: false },
+                        { id: 2, text: "写一个 TODO 应用", done: false },
+                    ],
+                    // remaining 是计算字段：实时统计未完成项数
+                    remaining: (scope) => scope.todos.filter((t) => !t.done).length,
+                },
+                {
+                    actions: {
+                        add() {
+                            const text = this.state.input.trim();
+                            if (!text) return;
+                            const todos = this.state.todos;
+                            todos.push({
+                                id: Date.now(),
+                                text,
+                                done: false,
+                            });
+                            this.state.input = "";
+                        },
+                        toggle(id) {
+                            const todo = this.state.todos.find((t) => t.id === id);
+                            if (todo) todo.done = !todo.done;
+                        },
+                        remove(id) {
+                            const todos = this.state.todos;
+                            const i = todos.findIndex((t) => t.id === id);
+                            if (i >= 0) todos.splice(i, 1);
+                        },
+                    },
+                },
+            );
+        </script>
+
+        <style>
+            /* 文字与图标同色（svg 的 stroke=currentColor 继承 span 的 color），
+               color / text-decoration 由 :style 按完成态切换，加过渡更顺滑 */
+            .todo-label {
+                transition: color 0.15s ease;
+            }
+            /* 条目整行可点（切换完成态）：手型 + hover 浅色背景 + 圆角 + 过渡 */
+            .todo-item {
+                cursor: pointer;
+                border-radius: 6px;
+                transition: background-color 0.15s ease;
+            }
+            .todo-item:hover {
+                background-color: #f5f5f5;
+            }
+            /* 删除按钮：平时半透明，行 hover 时完全显现 */
+            .todo-delete {
+                opacity: 0.35;
+                transition: opacity 0.15s ease;
+            }
+            .todo-item:hover .todo-delete {
+                opacity: 1;
+            }
+        </style>
+    </body>
+</html>

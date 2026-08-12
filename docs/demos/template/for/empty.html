@@ -5,17 +5,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-for · x-empty 空状态</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- x-empty 子节点在数组为空时渲染一次 -->
-        <div class="demo-app">
-            <ul class="list" x-for="item of items">
-                <li>{{ item }}</li>
-                <li x-empty class="empty">（列表为空，没有数据）</li>
-            </ul>
-            <button class="btn" @click="toggle">切换 空 / 有值</button>
+        <div class="demo-app section">
+            <div class="content">
+                <ul x-for="item of items">
+                    <li>{{ item }}</li>
+                    <li x-empty class="has-text-grey">（列表为空，没有数据）</li>
+                </ul>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换 空 / 有值</button>
+            </div>
         </div>
 
         <script>

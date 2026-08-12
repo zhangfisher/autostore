@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-loading · .screen 全屏覆盖</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             .panel {
                 position: relative;
@@ -18,14 +18,14 @@
 
     <body>
         <!-- .screen 修饰符：覆盖层 position:fixed;inset:0 撑满整个视口 -->
-        <div class="demo-app">
-            <p>
-                <button class="btn" @click="go">{{ page ? '隐藏' : '显示' }}全屏加载</button>
-            </p>
-            <div class="card panel" x-loading.screen="{ visible:'page', message:'全屏加载中…' }">
-                <code>x-loading.screen</code>：覆盖层以 <code>position:fixed</code> 撑满视口（仍留在宿主子树，不 teleport）。
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="go">{{ page ? '隐藏' : '显示' }}全屏加载</button>
             </div>
-            <p class="muted">常用于整页/整应用级加载态（如首屏拉取、路由切换）。</p>
+            <div class="card panel" x-loading.screen="{ visible:'page', message:'全屏加载中…' }">
+                <div class="card-content"><code>x-loading.screen</code>：覆盖层以 <code>position:fixed</code> 撑满视口（仍留在宿主子树，不 teleport）。</div>
+            </div>
+            <div class="block has-text-grey">常用于整页/整应用级加载态（如首屏拉取、路由切换）。</div>
         </div>
 
         <script>

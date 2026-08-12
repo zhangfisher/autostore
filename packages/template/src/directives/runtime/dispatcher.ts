@@ -200,6 +200,7 @@ export class RuntimeObserverDispatcher {
                         for (const [el, names] of this.collectEls(n)) for (const name of names) this.unmount(el, name);
                 });
             } else if (mut.type === "attributes" && mut.attributeName) {
+                
                 const el = mut.target;
                 if (!(el instanceof HTMLElement)) continue;
                 if (this._inSlotRoot(el)) continue; // slot 盲区：属性变化交 child engine dispatcher

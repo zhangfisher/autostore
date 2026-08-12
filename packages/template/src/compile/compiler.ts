@@ -12,13 +12,18 @@
  * 并让子作用域继承父的 localScope（供 x-for 注入的 item/index 向下传递到嵌套子元素）。
  */
 import { AutoTemplateScope } from "../scope";
+import { SCOPES_KEY } from "../engine";
 import { removeDirectives } from "../directives/utils/removeDirectives";
 import { isDirectiveAttr } from "../directives/utils/isDirectiveAttr";
 import { DirectiveKind } from "../directives/base";
 import { ModelDirective } from "../directives/presets/model";
 import type { AutoDirectiveInfo } from "../directives/types";
 import type { AutoTemplateEngine } from "../engine";
-import { transformElement, type NodeTransformer, type OwnsChildrenResult } from "../utils/transformElement";
+import {
+    transformElement,
+    type NodeTransformer,
+    type OwnsChildrenResult,
+} from "../utils/transformElement";
 import { buildAction } from "../utils/buildAction";
 import { hasDirectives } from "../directives/utils/hasDirectives";
 import { hasMustache, isRawTextElement, parseInterpolation, synthAttrExpr } from "./mustache";
@@ -70,7 +75,8 @@ export class AutoTemplateCompiler {
             // （父元素在自身 walk 前已建 scope，含插值的 directive-less 元素亦由 hasInterpolation
             // 触发建 scope）。无 scope（raw-text 父等）则原样克隆。见 ADR-0004 决策 1/4。
             [
-                (node: Node) => node.nodeType === Node.TEXT_NODE && hasMustache((node as Text).nodeValue),
+                (node: Node) =>
+                    node.nodeType === Node.TEXT_NODE && hasMustache((node as Text).nodeValue),
                 (node: Node) => {
                     const parent = node.parentElement;
                     const scope = parent ? this.templateScopeMap.get(parent) : undefined;
@@ -92,8 +98,8 @@ export class AutoTemplateCompiler {
      * `x-scope` 确保块根无论有无指令都是 scope 锚点），按名存入**最近祖先 scope** 的 `blocks`，
      * 然后返回 `null` 剪枝——块元素及其子树**不进结果 DOM、不建 scope、不实例化指令**。
      *
-     * 消费者（x-loading/x-empty/x-error…）经 `scope.lookupBlock(name)` 沿 parent 链就近取用本快照，
-     * clone 后编译渲染、替换其内置 UI（块兜底）。详见 ADR-0021。
+     * 消费者（x-loading/x-empty/x-error…）经 `scope.getBlock(name)` 沿 parent 链就近取用本快照
+     * （到顶兜底全局块），clone 后编译渲染、替换其默认 UI（块兜底）。详见 ADR-0021。
      *
      * @param blockEl 原树中的 x-block 元素（只读编译输入，仅读取其属性与结构）
      * @returns 固定 `null`（剪枝，x-block 永不进结果 DOM）
@@ -117,20 +123,21 @@ export class AutoTemplateCompiler {
             return null;
         }
         // default 唯一性：仅约束直接归属本 scope 的 default（第二个直接归属 default 抛错）。
-        // 其他块名自由、可沿链同名覆盖；沿 parent 链的 default 覆盖由 lookupBlock 就近原则处理（不在此校验）。
-        if (name === "default" && owner.blocks && Object.prototype.hasOwnProperty.call(owner.blocks, "default")) {
+        // 其他块名自由、可沿链同名覆盖；沿 parent 链的 default 覆盖由 getBlock 就近原则处理（不在此校验）。
+        if (
+            name === "default" &&
+            owner.blocks &&
+            Object.prototype.hasOwnProperty.call(owner.blocks, "default")
+        ) {
             throw new Error(
                 `[x-block 冲突] 同一 scope 下只能有一个 default 块（直接归属）。第二个 default 块出现在已声明 default 的 scope 内。\n` +
                     "如需覆盖祖先的 default，请在更内层的 scope 上声明（沿 parent 链就近覆盖）。",
             );
         }
-        // 冻结快照：深克隆、保留指令属性（块被消费渲染时才编译）。根默认注入 x-scope——确保块根
-        // 一定是 scope 锚点（消费者可向其注入 localScope、块内表达式有继承起点），无论块根是否已有指令。
-        // 已有 x-scope 或其他指令则不重复注入（hasAttribute 判定，避免覆盖用户显式声明）。
+        // 冻结快照：深克隆、保留指令属性（块被消费渲染时才编译）。
+        // 不注入 x-scope——「block 总是创建 scope」由块消费编译路径（compileChild 无条件 new AutoTemplateScope）
+        // 内禀保证，与根上是否有 x-scope 属性无关。注入 x-scope 冗余且污染块模板，已作废（ADR-0021 决策 7 修订）。
         const snapshot = blockEl.cloneNode(true) as HTMLElement;
-        if (!snapshot.hasAttribute("x-scope")) {
-            snapshot.setAttribute("x-scope", "");
-        }
         if (!owner.blocks) owner.blocks = {};
         owner.blocks[name] = snapshot;
         return null;
@@ -155,7 +162,8 @@ export class AutoTemplateCompiler {
     private compileTextNode(node: Text, scope: AutoTemplateScope): DocumentFragment | null {
         if (
             scope.directives.some(
-                (d) => d.info.name === "text" || (d.info.name === "html" && !d.info.options?.compile),
+                (d) =>
+                    d.info.name === "text" || (d.info.name === "html" && !d.info.options?.compile),
             )
         ) {
             return null;
@@ -201,7 +209,9 @@ export class AutoTemplateCompiler {
         }
         for (const { name, value } of targets) {
             // 冲突检测：同属性已有显式 bind（:name / x-bind:name / x-class 等）
-            const conflict = scope.directives.some((d) => d.info.name === "bind" && d.info.attr === name);
+            const conflict = scope.directives.some(
+                (d) => d.info.name === "bind" && d.info.attr === name,
+            );
             if (conflict) {
                 throw new Error(
                     `[插值冲突] 属性 "${name}" 已有显式绑定（:${name}/x-bind:${name}），与插值 ${name}="${value}" 互斥。\n` +
@@ -231,12 +241,7 @@ export class AutoTemplateCompiler {
     private _synthesizeModelSchemaBindings(el: HTMLElement, scope: AutoTemplateScope): void {
         const modelDirective = scope.directives.find((d) => d instanceof ModelDirective);
         if (!modelDirective) return;
-        ModelDirective.synthesizeSchemaBindings(
-            this.engine,
-            scope,
-            el,
-            modelDirective.info,
-        );
+        ModelDirective.synthesizeSchemaBindings(this.engine, scope, el, modelDirective.info);
     }
 
     /**
@@ -279,11 +284,17 @@ export class AutoTemplateCompiler {
             // 祖先聚合经 DOM action:<name> 冒泡隔离作用域
             const wrapped: Record<string, (...args: any[]) => any> = {};
             for (const [k, fn] of Object.entries(parsed)) {
-                wrapped[k] = typeof fn === "function"
-                    ? buildAction((type, payload) => this.engine.emit(type as any, payload), k, fn, true)
-                    : fn;
+                wrapped[k] =
+                    typeof fn === "function"
+                        ? buildAction(
+                              (type, payload) => this.engine.emit(type as any, payload),
+                              k,
+                              fn,
+                              true,
+                          )
+                        : fn;
             }
-            scope.actions = { ...(scope.actions ?? {}), ...wrapped };
+            scope.actions = { ...scope.actions, ...wrapped };
         }
         return null;
     }
@@ -481,8 +492,12 @@ export class AutoTemplateCompiler {
      *
      * @param scope 子树根的 scope，供直接文本子节点插值注册（项 scope / x-if scope 等）
      */
-    compileSubtree(parentEl: HTMLElement, templateEl: HTMLElement, scope: AutoTemplateScope): Node[] {
-        const nodes: Node[] = [];
+    compileSubtree(
+        parentEl: HTMLElement,
+        templateEl: HTMLElement,
+        scope: AutoTemplateScope,
+    ): ChildNode[] {
+        const nodes: ChildNode[] = [];
         for (const child of Array.from(templateEl.childNodes)) {
             const compiled = this.compileOneChild(child, scope);
             if (compiled == null) continue; // 剪枝（如 x-text 在场的插值文本）
@@ -492,8 +507,9 @@ export class AutoTemplateCompiler {
                 parentEl.appendChild(compiled);
                 nodes.push(...moved);
             } else {
+                // 非 fragment：HTMLElement/Text/Comment 等均为 ChildNode（可被调用方 remove）
                 parentEl.appendChild(compiled);
-                nodes.push(compiled);
+                nodes.push(compiled as ChildNode);
             }
         }
         return nodes;
@@ -514,9 +530,20 @@ export class AutoTemplateCompiler {
      */
     compileChild(
         itemTemplate: HTMLElement,
-        parentScope: AutoTemplateScope,
+        parentScope: AutoTemplateScope | null,
         localScope: Record<string, any>,
         reuseEl?: HTMLElement,
+        /**
+         * 编译前注入块根的**响应式** dataScope（仿 DataDirective.applyLocal）。
+         *
+         * 与 localScope（普通对象、非响应式）并列：在 `scope.compile()` 之前把数据写入
+         * `store.state._scopes[scope.id]` 并令 `scope.dataScope` 指向它。块内指令 watch 首次求值时，
+         * `getScopeContext` 的 `_scopeView` 缓存即建成含 dataScope 层的 Proxy，`collectDependencies`
+         * 收集到 `_scopes.<id>.<field>` 精准路径——后续 `Object.assign` 进该响应式代理即字段级细粒度更新。
+         *
+         * 供 x-loading 等消费者把 config 注入块（ADR-0021 决策 12-c）。无此参则不注入 dataScope。
+         */
+        initialData?: Record<string, any>,
     ): { el: HTMLElement; scope: AutoTemplateScope } {
         const el = reuseEl ?? (itemTemplate.cloneNode(false) as HTMLElement);
         if (!reuseEl) removeDirectives(el, "x-", this._runtimeKeepAttr());
@@ -527,7 +554,23 @@ export class AutoTemplateCompiler {
         }
         const scope = new AutoTemplateScope(this.engine, el, itemTemplate);
         scope.localScope = localScope;
-        parentScope.addChild(scope);
+        // 编译前注入响应式 dataScope（须早于 scope.compile()——各指令 watch 在 compile 内建立，
+        // 首次求值的 getScopeContext 缓存须含 dataScope 层，否则 collectDependencies 收不到精准路径）
+        if (initialData) {
+            const scopes = (this.engine.store.state as Record<string, any>)[SCOPES_KEY] as Record<
+                string,
+                any
+            >;
+            if (!scopes[scope.id]) scopes[scope.id] = {};
+            // dataScope 收敛为局部非空引用：scope.dataScope 字段可为 null（未注入时），
+            // 此处守卫内必已初始化，用局部变量避免 Object.assign 接收 null 的类型错误。
+            const dataScope = scopes[scope.id];
+            scope.dataScope = dataScope;
+            Object.assign(dataScope, initialData);
+        }
+        // parentScope 可空（rootless 块编译，如 x-loading 宿主无 scope 的动态插入场景）：跳过父子挂接，
+        // 块 scope 独立（无祖先继承），仅靠 initialData 注入的 dataScope 提供上下文。
+        parentScope?.addChild(scope);
         this.templateScopeMap.set(itemTemplate, scope);
         this.engine.scopes.set(new WeakRef(el), scope);
         // 项根本身若是结构指令（嵌套 x-for，如 <ul x-for="row"><li x-for="cell">），

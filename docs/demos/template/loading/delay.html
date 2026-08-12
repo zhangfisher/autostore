@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-loading · delay 防闪烁</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             .panel {
                 position: relative;
@@ -18,17 +18,17 @@
 
     <body>
         <!-- delay：显示前延时（毫秒）；窗口内回假则定时器取消、覆盖层从不挂载 → 防闪烁 -->
-        <div class="demo-app">
-            <p>
-                <button class="btn" @click="quick">触发快速加载（350ms）</button>
-            </p>
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="quick">触发快速加载（350ms）</button>
+            </div>
             <div class="card panel" x-loading="{ visible:'fast', delay:0 }">
-                <code>delay:0</code>：立即显示，350ms 的短任务会闪现一下 loader。
+                <div class="card-content"><code>delay:0</code>：立即显示，350ms 的短任务会闪现一下 loader。</div>
             </div>
             <div class="card panel" x-loading="{ visible:'fast', delay:500 }">
-                <code>delay:500</code>：500ms 窗口内任务已完成（350ms）→ 定时器取消、覆盖层<strong>从不出现</strong>。
+                <div class="card-content"><code>delay:500</code>：500ms 窗口内任务已完成（350ms）→ 定时器取消、覆盖层<strong>从不出现</strong>。</div>
             </div>
-            <p class="muted">用于「请求很快时不想惊扰用户」的场景：delay 大于典型耗时即无感。</p>
+            <div class="block has-text-grey">用于「请求很快时不想惊扰用户」的场景：delay 大于典型耗时即无感。</div>
         </div>
 
         <script>

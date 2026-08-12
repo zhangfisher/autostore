@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-loading · 反应式绑定</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             /* 宿主需 position:relative，覆盖层（absolute inset:0）才相对它定位 */
             .panel {
@@ -19,15 +19,17 @@
 
     <body>
         <!-- 反应式模式：x-loading 绑定全局状态路径，值真则显示、假则隐藏 -->
-        <div class="demo-app">
-            <p>
-                <button class="btn" @click="start">开始加载（1.2 秒）</button>
-            </p>
-            <div id="panel" class="card panel" x-loading="ui.loading">
-                本区域绑定了 <code>x-loading="ui.loading"</code>。状态置真即显示覆盖层、置假即隐藏，
-                随状态自动切换——无需手动 setAttribute。
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="start">开始加载（1.2 秒）</button>
             </div>
-            <p class="muted">当前状态：<span class="val" x-text="ui.loading ? '加载中' : '空闲'"></span></p>
+            <div id="panel" class="card panel" x-loading="ui.loading">
+                <div class="card-content">
+                    本区域绑定了 <code>x-loading="ui.loading"</code>。状态置真即显示覆盖层、置假即隐藏，
+                    随状态自动切换——无需手动 setAttribute。
+                </div>
+            </div>
+            <div class="block has-text-grey">当前状态：<span class="has-text-primary has-text-weight-semibold" x-text="ui.loading ? '加载中' : '空闲'"></span></div>
         </div>
 
         <script>

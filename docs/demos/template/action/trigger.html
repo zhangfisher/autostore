@@ -5,21 +5,23 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>动作 · 触发方式</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 无参：裸动作名 / 带参：动作名(参数) / $event：拿事件对象 / 表达式兜底：count++ -->
-        <div class="demo-app">
-            <p>消息：<span class="val" x-text="msg"></span></p>
-            <p>计数：<span class="val" x-text="count"></span></p>
-            <div class="row">
-                <button class="btn" @click="hi">无参：hi</button>
-                <button class="btn" @click="say('来自按钮')">带参：say("...")</button>
-                <button class="btn" @click="count++">表达式兜底：count++</button>
+        <div class="demo-app section">
+            <div class="block">消息：<span class="has-text-primary has-text-weight-semibold" x-text="msg"></span></div>
+            <div class="block">计数：<span class="has-text-primary has-text-weight-semibold" x-text="count"></span></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="hi">无参：hi</button>
+                <button class="button is-primary" @click="say('来自按钮')">带参：say("...")</button>
+                <button class="button is-primary" @click="count++">表达式兜底：count++</button>
             </div>
-            <div class="row">
-                <input class="input" @input="onInput($event)" placeholder="$event：输入即触发" />
+            <div class="field">
+                <div class="control">
+                    <input class="input" @input="onInput($event)" placeholder="$event：输入即触发" />
+                </div>
             </div>
         </div>
 

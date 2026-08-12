@@ -5,26 +5,30 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-model · 只读降级（表达式无 set）</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 表达式/computed 无 set 时：读方向正常（显示 fullName），写方向静默降级
              输入不会回写（fullName 是计算属性，无 setter） -->
-        <div class="demo-app">
-            <p>
-                <label>全名（计算属性）：</label>
-                <input class="input" x-model="user.fullName" />
-            </p>
-            <p class="hint">
+        <div class="demo-app section">
+            <div class="field">
+                <label class="label">全名（计算属性）：</label>
+                <div class="control">
+                    <input class="input" x-model="user.fullName" />
+                </div>
+            </div>
+            <p class="help">
                 user.first = "<strong x-text="user.first"></strong>"，
                 user.last = "<strong x-text="user.last"></strong>"
             </p>
-            <p class="hint">
+            <p class="help">
                 fullName = "<strong x-text="user.fullName"></strong>"（只读，输入不回写）
             </p>
-            <button class="btn btn-secondary" @click="changeFirst">改 first 为 "王"</button>
-            <p class="hint" style="color: #999">
+            <div class="buttons">
+                <button class="button is-light" @click="changeFirst">改 first 为 "王"</button>
+            </div>
+            <p class="help">
                 改 first → fullName 重新计算 → 输入框同步更新（state→DOM 正常）；输入框手动改值不会写回
             </p>
         </div>

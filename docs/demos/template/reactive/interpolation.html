@@ -5,16 +5,18 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>响应式 · 文本与属性插值</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 文本插值 + 属性插值（href），切换用户后全部响应式刷新 -->
-        <div class="demo-app">
-            <p>{{ user.name }}（{{ user.age }} 岁）</p>
-            <p>主页：<a href="/users/{{ user.id }}">/users/{{ user.id }}</a></p>
-            <p>角色：<span class="tag" x-text="user.role"></span></p>
-            <button class="btn" @click="swap">切换用户</button>
+        <div class="demo-app section">
+            <div class="block">{{ user.name }}（{{ user.age }} 岁）</div>
+            <div class="block">主页：<a href="/users/{{ user.id }}">/users/{{ user.id }}</a></div>
+            <div class="block">角色：<span class="tag is-primary" x-text="user.role"></span></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="swap">切换用户</button>
+            </div>
         </div>
 
         <script>

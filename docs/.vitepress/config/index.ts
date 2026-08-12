@@ -244,9 +244,10 @@ export default defineConfig({
             "/zh/template/": [
                 {
                     text: "关于",
+                    link: "/zh/template/intro/about",
                     items: [
-                        { text: "关于", link: "/zh/template/intro/about" },
                         { text: "安装", link: "/zh/template/intro/install" },
+                        { text: "名词解释", link: "/zh/template/intro/glossary" },
                         { text: "快速入门", link: "/zh/template/intro/get-started" },
                         { text: "特征和优势", link: "/zh/template/intro/features" },
                         { text: "常见问题", link: "/zh/template/intro/question" },
@@ -261,6 +262,7 @@ export default defineConfig({
                         { text: "指令类型", link: "/zh/template/guide/directive" },
                         { text: "指令配置", link: "/zh/template/guide/config" },
                         { text: "动态模板", link: "/zh/template/guide/patch" },
+                        { text: "模板块", link: "/zh/template/guide/block" },
                     ],
                 },
                 {
@@ -272,6 +274,7 @@ export default defineConfig({
                         { text: "x-style", link: "/zh/template/guide/directives/x-style" },
                         { text: "x-class", link: "/zh/template/guide/directives/x-class" },
                         { text: "x-data", link: "/zh/template/guide/directives/x-data" },
+                        { text: "x-scope", link: "/zh/template/guide/directives/x-scope" },
                         { text: "x-if", link: "/zh/template/guide/directives/x-if" },
                         { text: "x-show", link: "/zh/template/guide/directives/x-show" },
                         { text: "x-for", link: "/zh/template/guide/directives/x-for" },

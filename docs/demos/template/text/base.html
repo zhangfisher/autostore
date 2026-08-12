@@ -4,20 +4,22 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-text 文本插值</title>
-        <!-- template.js 自包含 core；template.css 提供通用组件样式（.btn/.val 等） -->
+        <!-- template.js 自包含 core；bulma.min.css 提供 Bulma 组件样式 -->
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- x-text 把状态值绑定到元素的 textContent -->
-        <div class="demo-app">
-            <p>你好，<span class="val" x-text="user.name"></span>！</p>
+        <div class="demo-app section">
+            <div class="block">你好，<span class="has-text-primary has-text-weight-semibold" x-text="user.name"></span>！</div>
             <!-- 文本节点中也可直接用 {{ }} 插值（与 x-text 等价的响应式文本绑定） -->
-            <p>商品：{{ order.name }}，单价 {{ order.price }} 元，数量 {{ order.count }}</p>
+            <div class="block">商品：{{ order.name }}，单价 {{ order.price }} 元，数量 {{ order.count }}</div>
             <!-- x-text 也支持任意表达式 -->
-            <p>合计：<strong x-text="order.price * order.count"></strong> 元</p>
-            <button class="btn" @click="rename">点我改名并加购</button>
+            <div class="block">合计：<strong class="has-text-primary has-text-weight-semibold" x-text="order.price * order.count"></strong> 元</div>
+            <div class="buttons">
+                <button class="button is-primary" @click="rename">点我改名并加购</button>
+            </div>
         </div>
 
         <script>

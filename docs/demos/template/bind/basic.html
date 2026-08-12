@@ -5,20 +5,22 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-bind · 普通属性</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- :href / :title / :src / :alt 绑定普通属性 -->
-        <div class="demo-app">
-            <p>
+        <div class="demo-app section">
+            <div class="block">
                 <a :href="link.url" :title="link.tip">{{ link.text }}</a>
-            </p>
-            <p>
+            </div>
+            <div class="block">
                 <img :src="img.src" :alt="img.alt" style="width: 64px; vertical-align: middle" />
-                <span class="muted">{{ img.alt }}</span>
-            </p>
-            <button class="btn" @click="swap">切换内容</button>
+                <span class="has-text-grey">{{ img.alt }}</span>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="swap">切换内容</button>
+            </div>
         </div>
 
         <script>

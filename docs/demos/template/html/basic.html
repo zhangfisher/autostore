@@ -5,15 +5,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-html · 默认消毒</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- x-html 默认消毒：script / on* 事件属性被剥除，安全渲染 -->
-        <div class="demo-app">
-            <p class="muted">下方内容由 x-html 渲染：</p>
-            <div class="card" x-html="content"></div>
-            <button class="btn" @click="inject">注入含恶意脚本的 HTML</button>
+        <div class="demo-app section">
+            <div class="block has-text-grey">下方内容由 x-html 渲染：</div>
+            <div class="card"><div class="card-content" x-html="content"></div></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="inject">注入含恶意脚本的 HTML</button>
+            </div>
         </div>
 
         <script>

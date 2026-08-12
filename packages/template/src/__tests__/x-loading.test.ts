@@ -232,7 +232,9 @@ describe("x-loading 配置绑定（对象语法）", () => {
         expect(bg).toMatch(/rgba?\(/);
     });
 
-    test("message 渲染文本；不传则无文本节点", () => {
+    test("message 渲染文本；不传则 message 元素文本为空", () => {
+        // ADR-0021 决策 12：DEFAULT_BLOCK 的 message 经 x-text="message" 绑定。
+        // message 元素恒存在（默认块模板写死），不传时 x-text 写空串（而非移除节点）
         const withMsg = mount(
             `<div id="h" x-loading="{ visible:'l', message:'正在加载' }"></div>`,
             { l: true },
@@ -241,7 +243,9 @@ describe("x-loading 配置绑定（对象语法）", () => {
         expect(msg1?.textContent).toBe("正在加载");
 
         const noMsg = mount(`<div id="h" x-loading="{ visible:'l' }"></div>`, { l: true });
-        expect(noMsg.root.querySelector("#h .x-loading-message")).toBeNull();
+        const msgEl = noMsg.root.querySelector("#h .x-loading-message");
+        expect(msgEl).not.toBeNull(); // 元素存在
+        expect(msgEl?.textContent).toBe(""); // 但文本为空
     });
 });
 
@@ -301,16 +305,17 @@ describe("x-loading selector 目标元素", () => {
 });
 
 describe("x-loading 修饰符", () => {
-    test(".screen 追加全屏 class", () => {
+    test(".screen → 覆盖层 position:fixed（撑满视口）", () => {
+        // ADR-0021 决策 12-b：壳样式走内联 style（position），不再追加 .x-loading-screen class
         const { root } = mount(`<div id="h" x-loading.screen="l"></div>`, { l: true });
         const ov = overlayOf(root.querySelector("#h"))!;
-        expect(ov.className).toContain("x-loading-screen");
+        expect(ov.style.position).toBe("fixed");
     });
 
-    test("无 .screen 时不追加全屏 class", () => {
+    test("无 .screen → 覆盖层 position:absolute（撑满宿主）", () => {
         const { root } = mount(`<div id="h" x-loading="l"></div>`, { l: true });
         const ov = overlayOf(root.querySelector("#h"))!;
-        expect(ov.className).not.toContain("x-loading-screen");
+        expect(ov.style.position).toBe("absolute");
     });
 });
 

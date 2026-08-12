@@ -5,19 +5,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-text · 空值占位 empty</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- empty 指定空值占位文案；emptyValues 追加「也算空」的值（附加到默认集 [null,undefined,NaN]） -->
-        <div class="demo-app">
-            <p>
-                库存：<span class="val" x-text="stock" x-text-options="{ empty: '暂无数据' }"></span>
-            </p>
-            <p>
-                评分：<span class="val" x-text="score" x-text-options="{ empty: '未评分', emptyValues: [0] }"></span>
-            </p>
-            <button class="btn" @click="cycle">切换值</button>
+        <div class="demo-app section">
+            <div class="block">
+                库存：<span class="has-text-primary has-text-weight-semibold" x-text="stock" x-text-options="{ empty: '暂无数据' }"></span>
+            </div>
+            <div class="block">
+                评分：<span class="has-text-primary has-text-weight-semibold" x-text="score" x-text-options="{ empty: '未评分', emptyValues: [0] }"></span>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="cycle">切换值</button>
+            </div>
         </div>
 
         <script>

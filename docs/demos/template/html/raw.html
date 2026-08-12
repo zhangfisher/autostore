@@ -5,15 +5,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-html · .raw 原样写入</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- .raw 跳过消毒，原样写入受信 HTML（含内联 style 等都被保留） -->
-        <div class="demo-app">
-            <p class="muted">受信内容（.raw 原样写入）：</p>
-            <div class="card" x-html.raw="trusted"></div>
-            <button class="btn" @click="swap">切换受信片段</button>
+        <div class="demo-app section">
+            <div class="block has-text-grey">受信内容（.raw 原样写入）：</div>
+            <div class="card"><div class="card-content" x-html.raw="trusted"></div></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="swap">切换受信片段</button>
+            </div>
         </div>
 
         <script>

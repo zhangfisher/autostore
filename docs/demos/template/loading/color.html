@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-loading · color loader 旋转色</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             .panel {
                 position: relative;
@@ -20,25 +20,25 @@
 
     <body>
         <!-- color：loader 旋转色（经 currentColor 注入），支持 hex / rgb / 颜色名 -->
-        <div class="demo-app">
-            <p>
-                <button class="btn" @click="toggle">{{ on ? '隐藏' : '显示' }} loader</button>
-            </p>
-            <div class="row">
-                <div class="card panel" x-loading="{ visible:'on', color:'#42b883' }">
-                    <code>color:'#42b883'</code>
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">{{ on ? '隐藏' : '显示' }} loader</button>
+            </div>
+            <div class="columns">
+                <div class="card panel column" x-loading="{ visible:'on', color:'#42b883' }">
+                    <div class="card-content"><code>color:'#42b883'</code></div>
                 </div>
-                <div class="card panel" x-loading="{ visible:'on', color:'#e07000' }">
-                    <code>color:'#e07000'</code>
+                <div class="card panel column" x-loading="{ visible:'on', color:'#e07000' }">
+                    <div class="card-content"><code>color:'#e07000'</code></div>
                 </div>
-                <div class="card panel" x-loading="{ visible:'on', color:'#3b82f6' }">
-                    <code>color:'#3b82f6'</code>
+                <div class="card panel column" x-loading="{ visible:'on', color:'#3b82f6' }">
+                    <div class="card-content"><code>color:'#3b82f6'</code></div>
                 </div>
-                <div class="card panel" x-loading="{ visible:'on', color:'red' }">
-                    <code>color:'red'</code>
+                <div class="card panel column" x-loading="{ visible:'on', color:'red' }">
+                    <div class="card-content"><code>color:'red'</code></div>
                 </div>
             </div>
-            <p class="muted">默认 <code>color:'#888'</code>（灰色）。颜色解析支持 hex、rgb()/rgba()、hsl()/hsla() 及常用颜色名。</p>
+            <div class="block has-text-grey">默认 <code>color:'#888'</code>（灰色）。颜色解析支持 hex、rgb()/rgba()、hsl()/hsla() 及常用颜色名。</div>
         </div>
 
         <script>

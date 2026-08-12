@@ -1,7 +1,7 @@
 import type { AutoTemplateEngineEvents, AutoTemplateEngineOptions } from "./types";
 import { DirectiveManager } from "./directives/manager";
 import { AutoTemplateCompiler } from "./compile/compiler";
-import { AutoStore, FastEvent, isAutoStore } from "autostore";
+import { AutoStore, FastEvent, getDefaultConfigManager, isAutoStore } from "autostore";
 import type { AutoTemplateScope } from "./scope";
 import { UpdateScheduler } from "./scheduler";
 import { RuntimeObserverDispatcher } from "./directives/runtime/dispatcher";
@@ -104,9 +104,7 @@ export class AutoTemplateEngine<
             this.store = store;
             this._ownsStore = false;
         } else {
-            this.store = new AutoStore(store as State, {
-                ...options?.storeOptions,
-            });
+            this.store = new AutoStore(store as State, options?.storeOptions);
             this._ownsStore = true;
         }
         // 注入框架保留键 _scopes（x-data 私有响应式域容器）；1 engine 1 store 约定下由 engine 负责
@@ -148,9 +146,6 @@ export class AutoTemplateEngine<
         return this.store.logger;
     }
 
-    /** actions 代理（set 时自动 buildAction 包装，懒构造） */
-    private _actionsProxy: Record<string, (...args: any[]) => any> | null = null;
-
     /**
      * 全局事件 action 表（来自 options.actions），作为 scope.getAction 查找链的终点。
      *
@@ -176,6 +171,18 @@ export class AutoTemplateEngine<
         });
         return this._actionsProxy;
     }
+
+    private _createStore() {}
+
+    /** actions 代理（set 时自动 buildAction 包装，懒构造） */
+    private _actionsProxy: Record<string, (...args: any[]) => any> | null = null;
+    /**
+     * 全局块懒预编译缓存（ADR-0021 决策 11）：key=块名，value=预编译根元素（已自动包装、含 `x-block`、
+     * 未编译、保留指令属性、**不注入 x-scope**）。首次 `getBlock` 命中全局时解析 `options.blocks[name]`
+     * 字符串入参并写入此 Map，后续命中直接 `cloneNode(true)`。生命周期随 engine（destroy 自动回收）。
+     * 记录 null 表示该名全局块解析失败/不存在，已查明「视为未命中」，避免重复解析尝试。
+     */
+    private _globalBlockCache = new Map<string, HTMLElement | null>();
 
     // buildAction 已提炼至 utils/buildAction.ts（ADR-0010，双通道广播）；三入口——构造函数
     // options.actions 扫描、actions Proxy 的 set trap、compiler 提取 `<script type="actions">`
@@ -276,21 +283,104 @@ export class AutoTemplateEngine<
     }
 
     /**
-     * 按 el 反查 scope，再沿 parent 链就近查找命名模板块（ADR-0021）。
+     * 按 el 反查 scope，再沿 parent 链就近查找命名模板块，到顶兜底全局块（ADR-0021 决策 5/9）。
      *
      * 供 **Runtime 指令**（如 x-loading，无 binding/scope）消费 x-block：编译期元素建过 scope
      * 的才能被反查到（el 经 `engine.scopes` WeakRef 遍历 deref 比对，O(n)、低频可接受）。
-     * Compile/Hybrid 消费指令应直接用 `this.binding.lookupBlock(name)`，避免 O(n) 遍历。
+     * Compile/Hybrid 消费指令应直接用 `this.binding.getBlock(name)`，避免 O(n) 遍历。
      *
-     * 消费者协议：命中则用块替换内置 UI，未命中回退内置（块兜底）。详见 ADR-0021。
+     * 消费者协议：命中则用块替换默认 UI，未命中回退默认块（块兜底）。详见 ADR-0021。
      *
      * @param el   消费指令的宿主元素（须是建过 scope 的元素，否则反查不到）
      * @param name 块名（消费者约定名，自由命名）
-     * @returns 块冻结快照 HTMLElement，或 undefined（el 无 scope / 链上无该名块）
+     * @returns 块冻结快照 HTMLElement，或 undefined（el 无 scope / 链+全局均无该名块）
      */
-    lookupBlock(el: HTMLElement, name: string): HTMLElement | undefined {
+    getBlock(el: HTMLElement, name: string): HTMLElement | undefined {
         const scope = this.findScopeByEl(el);
-        return scope?.lookupBlock(name);
+        return scope?.getBlock(name);
+    }
+
+    /**
+     * 全局块兜底解析（ADR-0021 决策 9/10/11）：`scope.getBlock` 到顶后委托本方法。
+     *
+     * 懒预编译：首次访问某全局块时，把 `options.blocks[name]` 字符串入参解析为 DOM，按自动包装规则
+     * （决策 10）规范化为「恰好一个带 `x-block` 的根元素」，存入 `_globalBlockCache`；后续命中直接
+     * 返回缓存（消费者自管 `cloneNode(true)`）。解析失败/不存在 → 记 null 缓存 + 返回 undefined
+     * （视为未命中，由消费者回退默认块；记 null 避免重复解析尝试）。
+     *
+     * **不注入 x-scope**（决策 7 修订：scope 由消费编译路径 compileChild 内禀保证）。
+     * **不回写 options.blocks**（不突变用户输入）。**运行时突变 options.blocks 不失效缓存**
+     * （构造期配置语义，与 actions/sanitizer 等同纪律）。
+     *
+     * @param name 全局块名
+     * @returns 预编译根元素（未编译、含 x-block），或 undefined（无此全局块/解析失败）
+     */
+    _resolveGlobalBlock(name: string): HTMLElement | undefined {
+        if (this._globalBlockCache.has(name)) {
+            return this._globalBlockCache.get(name) ?? undefined;
+        }
+        const blocks = this.options.blocks;
+        const raw = blocks?.[name];
+        if (typeof raw !== "string" || raw.trim() === "") {
+            // 非字符串 / 空串 → 记 null（视为未命中），避免重复判定
+            this._globalBlockCache.set(name, null);
+            return undefined;
+        }
+        let root: HTMLElement | null = null;
+        try {
+            root = this._wrapGlobalBlock(raw, name);
+        } catch (e: any) {
+            this.logger.warn(`全局块 "${name}" 解析失败，视为未命中: ${e?.message ?? e}`);
+            this._globalBlockCache.set(name, null);
+            return undefined;
+        }
+        if (!root) {
+            this.logger.warn(`全局块 "${name}" 解析为空，视为未命中`);
+            this._globalBlockCache.set(name, null);
+            return undefined;
+        }
+        this._globalBlockCache.set(name, root);
+        return root;
+    }
+
+    /**
+     * 全局块自动包装（ADR-0021 决策 10）：把字符串入参规范化为「恰好一个带 `x-block` 的根元素」。
+     *
+     * 规则（仅全局块字符串入参适用；局部块入参已是 DOM）：
+     * | 输入形态 | 包装结果 |
+     * |---|---|
+     * | 单顶级元素、无 `x-block` | 根打本 key 名（`x-block="name"`） |
+     * | 单顶级元素、**已含** `x-block` | 尊重原值不重命名 |
+     * | 多顶级节点 / 元素+文本混排 | 包一层 `<div x-block="name">` |
+     * | 纯文本无元素 | 包成 `<div x-block="name">文本` |
+     *
+     * 包装标签固定 `<div>`（YAGNI，不开放配置）。**不注入 x-scope**（决策 7 修订）。
+     *
+     * @param html  全局块字符串入参（已 trim 非空）
+     * @param name  全局块名（单根无 x-block 时用作根标签名）
+     * @returns 规范化后的根元素；解析为空返回 null
+     */
+    private _wrapGlobalBlock(html: string, name: string): HTMLElement | null {
+        const frag = parseHtmlFragment(html);
+        if (!frag) return null;
+        // 取顶级元素节点（忽略顶级文本/注释以判定"单根元素"）
+        const elementChildren = Array.from(frag.children);
+        const hasTextNode = Array.from(frag.childNodes).some(
+            (n) => n.nodeType === Node.TEXT_NODE && (n.nodeValue ?? "").trim() !== "",
+        );
+        if (elementChildren.length === 1 && !hasTextNode) {
+            // 单顶级元素：已含 x-block 则尊重原值，否则打本 key 名
+            const root = elementChildren[0] as HTMLElement;
+            if (!root.hasAttribute("x-block")) {
+                root.setAttribute("x-block", name);
+            }
+            return root;
+        }
+        // 多顶级元素 / 元素+文本混排 / 纯文本：包一层 div
+        const wrap = document.createElement("div");
+        wrap.setAttribute("x-block", name);
+        wrap.appendChild(frag);
+        return wrap;
     }
 
     /**
@@ -381,6 +471,7 @@ export class AutoTemplateEngine<
      *
      * 公开供 Runtime 指令（如 x-loading）消费 x-block 时取得宿主 scope 作块编译的 parentScope
      * （Runtime 指令无 binding，需经 el 反查）。Compile/Hybrid 指令直接用 `this.binding`。
+     * 亦用于 `engine.getBlock` 的全局块兜底（`scope.getBlock` 到顶委托 `engine._resolveGlobalBlock`）。
      */
     findScopeByEl(el: HTMLElement): AutoTemplateScope | undefined {
         for (const scope of this.scopes.values()) {

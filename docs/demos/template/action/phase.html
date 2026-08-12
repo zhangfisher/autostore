@@ -5,23 +5,23 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>动作 · phase 修饰符与祖先聚合</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- form 聚合后代任意 submit 动作：任一在跑则"提交中"，完成则"已提交" -->
-        <div class="demo-app">
+        <div class="demo-app section">
             <form
                 @action:submit.pending="formStatus = '提交中...'"
                 @action:submit.resolved="formStatus = '已提交'"
             >
-                <p>表单状态：<span class="val" x-text="formStatus"></span></p>
-                <div class="row">
+                <div class="block">表单状态：<span class="has-text-primary has-text-weight-semibold" x-text="formStatus"></span></div>
+                <div class="buttons">
                     <!-- type=button 阻止表单默认提交跳转 -->
-                    <button class="btn" type="button" @click="submit">提交</button>
-                    <button class="btn btn-secondary" type="button" @click="submit">保存草稿</button>
+                    <button class="button is-primary" type="button" @click="submit">提交</button>
+                    <button class="button is-light" type="button" @click="submit">保存草稿</button>
                 </div>
-                <p class="muted">两个按钮都触发 submit 动作，表单统一聚合其生命周期。</p>
+                <div class="block has-text-grey">两个按钮都触发 submit 动作，表单统一聚合其生命周期。</div>
             </form>
         </div>
 

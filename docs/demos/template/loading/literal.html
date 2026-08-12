@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-loading · 字面量模式</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             .panel {
                 position: relative;
@@ -18,14 +18,14 @@
 
     <body>
         <!-- 字面量模式：x-loading="true" / "false" 直接静态显隐，不订阅状态 -->
-        <div class="demo-app">
+        <div class="demo-app section">
             <div class="card panel" x-loading="true">
-                <code>x-loading="true"</code>：恒显示加载层（静态，无状态绑定）。
+                <div class="card-content"><code>x-loading="true"</code>：恒显示加载层（静态，无状态绑定）。</div>
             </div>
-            <p class="muted">
+            <div class="block has-text-grey">
                 <code>x-loading="false"</code> 与不写该属性等价，覆盖层永不出现；裸
                 <code>x-loading</code>（无值）等同 <code>"true"</code>。
-            </p>
+            </div>
         </div>
 
         <script>

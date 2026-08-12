@@ -144,7 +144,7 @@ export interface AutoTemplateEngineOptions<State extends Dict = any>
     /**
      * 一些模板块，用于定制一些引擎的内置行为模板，比如x-loading
      */
-    blocks?: Record<"loading" | string, any>;
+    blocks?: Record<string, any>;
 }
 
 /**

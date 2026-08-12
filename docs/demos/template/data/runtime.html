@@ -5,19 +5,19 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-data · 运行时更新 engine.data</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- engine 挂在根容器 .demo-app；x-data 放在子元素 #block 上。
              engine.data(el) 的 el 必须是「挂 DOM 的 scope 元素」（如 #block），
              不能传根容器——根容器的 scope 绑在内部克隆节点上，_findScopeByEl 找不到。 -->
-        <div class="demo-app">
+        <div class="demo-app section">
             <div id="block" x-data="{ msg: '你好', times: 1 }">
-                <p>{{ msg }}（第 {{ times }} 次）</p>
-                <div class="row">
-                    <button class="btn" @click="bump">+1</button>
-                    <button class="btn btn-secondary" @click="rename">追加「世界」</button>
+                <div class="block">{{ msg }}（第 {{ times }} 次）</div>
+                <div class="buttons">
+                    <button class="button is-primary" @click="bump">+1</button>
+                    <button class="button is-light" @click="rename">追加「世界」</button>
                 </div>
             </div>
         </div>

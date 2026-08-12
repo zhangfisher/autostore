@@ -5,16 +5,18 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-text · 绑定表达式</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- x-text 的值可以是任意表达式：算术、拼接、三元 -->
-        <div class="demo-app">
-            <p>合计：<span class="val" x-text="order.price * order.count"></span> 元</p>
-            <p>姓名：<span class="val" x-text="user.first + ' ' + user.last"></span></p>
-            <p>库存：<span class="val" x-text="order.stock > 0 ? '有货' : '缺货'"></span></p>
-            <button class="btn" @click="toggle">切换库存</button>
+        <div class="demo-app section">
+            <div class="block">合计：<span class="has-text-primary has-text-weight-semibold" x-text="order.price * order.count"></span> 元</div>
+            <div class="block">姓名：<span class="has-text-primary has-text-weight-semibold" x-text="user.first + ' ' + user.last"></span></div>
+            <div class="block">库存：<span class="has-text-primary has-text-weight-semibold" x-text="order.stock > 0 ? '有货' : '缺货'"></span></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换库存</button>
+            </div>
         </div>
 
         <script>

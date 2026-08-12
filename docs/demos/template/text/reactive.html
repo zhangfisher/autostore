@@ -5,15 +5,17 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-text · 响应式自动更新</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 改 state，所有订阅该状态的 x-text 自动刷新 -->
-        <div class="demo-app">
-            <p>当前计数：<strong class="val-lg" x-text="count"></strong></p>
-            <button class="btn" @click="inc">+1</button>
-            <button class="btn" @click="burst">连赋 3 次（合并为 1 次更新）</button>
+        <div class="demo-app section">
+            <div class="block">当前计数：<strong class="has-text-primary is-size-4 has-text-weight-bold" x-text="count"></strong></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="inc">+1</button>
+                <button class="button is-primary" @click="burst">连赋 3 次（合并为 1 次更新）</button>
+            </div>
         </div>
 
         <script>

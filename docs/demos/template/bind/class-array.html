@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-class · 数组写法</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             .badge {
                 display: inline-block;
@@ -31,13 +31,13 @@
 
     <body>
         <!-- :class 接收数组：合并多个类；falsy 项（busy && 'is-loading'）被自动跳过 -->
-        <div class="demo-app">
-            <p>
+        <div class="demo-app section">
+            <div class="block">
                 <span :class="['badge', theme, busy && 'is-loading']">数组 class（{{ theme }}）</span>
-            </p>
-            <div class="row">
-                <button class="btn" @click="switchTheme">切换主题</button>
-                <button class="btn btn-secondary" @click="toggleBusy">
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="switchTheme">切换主题</button>
+                <button class="button is-light" @click="toggleBusy">
                     {{ busy ? "停止加载" : "开始加载" }}
                 </button>
             </div>

@@ -5,14 +5,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-style · 字符串写法</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- :style 接收字符串：作为 cssText 整体替换，连字符写法没问题（区别于对象写法的驼峰要求） -->
-        <div class="demo-app">
-            <p :style="msg.plain ? msg.plainCss : msg.warnCss">{{ msg.text }}</p>
-            <button class="btn" @click="toggle">切换样式</button>
+        <div class="demo-app section">
+            <div class="block" :style="msg.plain ? msg.plainCss : msg.warnCss">{{ msg.text }}</div>
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">切换样式</button>
+            </div>
         </div>
 
         <script>

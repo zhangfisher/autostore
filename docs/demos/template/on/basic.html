@@ -5,23 +5,25 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-on · 事件与修饰符</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- @click / .once / .ctrl / @keydown.enter -->
-        <div class="demo-app">
-            <p>计数：<strong class="val">{{ count }}</strong></p>
-            <p>
-                <button class="btn" @click="inc">+1</button>
-                <button class="btn" @click.once="onceFn">.once（仅一次）</button>
-                <button class="btn" @click.ctrl="ctrlClick">.ctrl（需 Ctrl+点击）</button>
-            </p>
-            <p>
-                回车提交：
-                <input class="input" @keydown.enter="onEnter($event)" placeholder="输入后按回车" />
-            </p>
-            <p class="muted">{{ log }}</p>
+        <div class="demo-app section">
+            <div class="block">计数：<strong class="has-text-primary has-text-weight-semibold">{{ count }}</strong></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="inc">+1</button>
+                <button class="button is-primary" @click.once="onceFn">.once（仅一次）</button>
+                <button class="button is-primary" @click.ctrl="ctrlClick">.ctrl（需 Ctrl+点击）</button>
+            </div>
+            <div class="field">
+                <label class="label">回车提交：</label>
+                <div class="control">
+                    <input class="input" @keydown.enter="onEnter($event)" placeholder="输入后按回车" />
+                </div>
+            </div>
+            <div class="block has-text-grey">{{ log }}</div>
         </div>
 
         <script>

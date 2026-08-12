@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-loading · message 提示文案</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
             .panel {
                 position: relative;
@@ -18,16 +18,16 @@
 
     <body>
         <!-- message：覆盖层下方的提示文案；不传则不渲染文本节点 -->
-        <div class="demo-app">
-            <p>
-                <button class="btn" @click="toggle">{{ on ? '隐藏' : '显示' }}覆盖层</button>
-            </p>
-            <div class="row">
-                <div class="card panel" x-loading="{ visible:'on', message:'正在拉取数据…' }" style="flex:1">
-                    带 <code>message</code>：loader 下方渲染文案
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">{{ on ? '隐藏' : '显示' }}覆盖层</button>
+            </div>
+            <div class="columns">
+                <div class="card panel column" x-loading="{ visible:'on', message:'正在拉取数据…' }">
+                    <div class="card-content">带 <code>message</code>：loader 下方渲染文案</div>
                 </div>
-                <div class="card panel" x-loading="on" style="flex:1">
-                    无 <code>message</code>（快速绑定）：仅 loader，不渲染文本
+                <div class="card panel column" x-loading="on">
+                    <div class="card-content">无 <code>message</code>（快速绑定）：仅 loader，不渲染文本</div>
                 </div>
             </div>
         </div>

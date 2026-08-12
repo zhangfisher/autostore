@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 多级嵌套 x-data 绑定</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+
+    <body>
+        <!-- 多级嵌套 x-data + x-model：父层声明 user，子层覆盖 user、新增 score。
+             各层 x-model 经 set 表达式写「本层命中」的字段：
+               - getScopeContext 的 set 陷阱按 localScope > dataScope 就近命中本层，
+                 故子层 input 改的是子层 user、父层 input 改的是父层 user，互不影响。
+               - 未覆盖的键沿 parent 链继承（子层 score 改本层；子层读 role 继承父层）。 -->
+        <div class="demo-app section">
+            <!-- 父层：声明 user / role -->
+            <div x-data="{ user: '张三', role: 'admin' }">
+                <div class="card">
+                    <div class="card-content">
+                        <div class="heading has-text-grey">父级 x-data（声明 user、role）</div>
+                        <div class="field">
+                            <label class="label">user：</label>
+                            <div class="control">
+                                <input
+                                    class="input"
+                                    x-model="user"
+                                    x-model-options="{set:'user=$value'}"
+                                />
+                            </div>
+                        </div>
+                        <p class="help">
+                            user=<b class="has-text-primary has-text-weight-semibold">{{user}}</b>，role=<b class="has-text-primary has-text-weight-semibold">{{role}}</b>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 子层：覆盖 user、新增 score；role 继承父层 -->
+                <div x-data="{ user: '李四', score: 88 }">
+                    <div class="card">
+                        <div class="card-content">
+                            <div class="heading has-text-grey">子级 x-data（覆盖 user、新增 score）</div>
+                            <div class="field">
+                                <label class="label">user：</label>
+                                <div class="control">
+                                    <input
+                                        class="input"
+                                        x-model="user"
+                                        x-model-options="{set:'user=$value'}"
+                                    />
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label class="label">score：</label>
+                                <div class="control">
+                                    <input
+                                        class="input"
+                                        x-model.number="score"
+                                        x-model-options="{set:'score=Number($value)||0'}"
+                                    />
+                                </div>
+                            </div>
+                            <p class="help">
+                                user=<b class="has-text-primary has-text-weight-semibold">{{user}}</b><span class="has-text-grey">←覆盖，改此框不动父层</span>，
+                                score=<b class="has-text-primary has-text-weight-semibold">{{score}}</b><span class="has-text-grey">←本层</span>，
+                                role=<b class="has-text-primary has-text-weight-semibold">{{role}}</b><span class="has-text-grey">←继承父层</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            // 全局 store 留空：user/score 全部由各级 x-data 提供，验证多级局部读写同源。
+            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {});
+        </script>
+    </body>
+</html>

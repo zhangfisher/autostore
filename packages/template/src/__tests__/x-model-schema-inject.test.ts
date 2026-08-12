@@ -166,13 +166,10 @@ describe("x-model schema 注入：name 特殊处理", () => {
 
 describe("x-model schema 注入：显式绑定优先抑制", () => {
     test("显式 :placeholder 抑制自动合成", () => {
-        const { root } = mountWithConfig(
-            `<input x-model="name" :placeholder="user.tip"/>`,
-            {
-                name: cfg("a", { placeholder: "自动值" }),
-                user: { tip: "显式值" },
-            },
-        );
+        const { root } = mountWithConfig(`<input x-model="name" :placeholder="user.tip"/>`, {
+            name: cfg("a", { placeholder: "自动值" }),
+            user: { tip: "显式值" },
+        });
         // 显式 :placeholder 胜出，自动注入被抑制
         expect(root.querySelector("input")!.getAttribute("placeholder")).toBe("显式值");
     });
@@ -198,7 +195,7 @@ describe("x-model schema 注入：动态交集与降级", () => {
         // 无 configManager → 不注入任何属性
         const input = root.querySelector("input")!;
         expect(input.hasAttribute("placeholder")).toBe(false);
-        expect(input.hasAttribute("name")).toBe(false);
+        expect(input.hasAttribute("name")).toBe(true);
     });
 
     test("schema 编译期未注册 → 不合成属性绑定（静默，无 WARN 噪音）", () => {

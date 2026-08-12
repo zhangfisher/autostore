@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · 全局 blocks 自定义加载模板</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .panel {
+                position: relative;
+                min-height: 120px;
+                display: flex;
+                align-items: center;
+            }
+            /* 全局自定义 loading 块：脉冲扩散三圆环（替代默认旋转 loader）
+               原配色 #000/#0004 改白色，以适配默认黑色半透明遮罩 */
+            .loader {
+                width: 20px;
+                aspect-ratio: 1;
+                border-radius: 50%;
+                background: #fff;
+                box-shadow: 0 0 0 0 #fff4;
+                animation: l2 1.5s infinite linear;
+                position: relative;
+            }
+            .loader:before,
+            .loader:after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                border-radius: inherit;
+                box-shadow: 0 0 0 0 #fff4;
+                animation: inherit;
+                animation-delay: -0.5s;
+            }
+            .loader:after {
+                animation-delay: -1s;
+            }
+            @keyframes l2 {
+                100% {
+                    box-shadow: 0 0 0 40px #0000;
+                }
+            }
+            .my-msg {
+                margin-top: 10px;
+                color: #fff;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 全局 blocks 自定义 loading：在 engine 构造选项 blocks.loading 声明一个全局模板，
+             全引擎所有 x-loading（无局部块覆盖时）都复用它。字符串入参经自动包装成块。 -->
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">{{ on ? '隐藏' : '显示' }}覆盖层</button>
+            </div>
+
+            <div class="columns">
+                <!-- 这两个宿主都没有局部 x-block，渲染时自动走全局 blocks.loading -->
+                <div
+                    class="card panel column"
+                    x-loading="{ visible:'on', message:'同步中…' }"
+                >
+                    <div class="card-content">全局块（脉冲扩散）+ message</div>
+                </div>
+                <div class="card panel column" x-loading="{ visible:'on' }">
+                    <div class="card-content">全局块（脉冲扩散），无 message</div>
+                </div>
+            </div>
+
+            <div class="block has-text-grey">
+                全局 <code>blocks.loading</code> 是字符串模板，首次使用时自动包装（多顶级节点包一层 div、打 <code>x-block="loading"</code>），全引擎复用、可被局部 <code>x-block</code> 就近覆盖。
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { on: true },
+                {
+                    // 全局 loading 块：多顶级节点（loader + 文案）会被自动包一层 div
+                    blocks: {
+                        loading: `
+                            <div class="loader"></div>
+                            <div class="my-msg" x-text="message"></div>
+                        `,
+                    },
+                    actions: {
+                        toggle: () => {
+                            engine.state.on = !engine.state.on;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

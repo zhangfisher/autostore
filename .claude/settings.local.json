@@ -30,7 +30,8 @@
       "mcp__ide__getDiagnostics",
       "mcp__codegraph__codegraph_node",
       "mcp__codegraph__codegraph_files",
-      "mcp__codegraph__codegraph_explore"
+      "mcp__codegraph__codegraph_explore",
+      "Bash(curl -sIL \"https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css\")"
     ],
     "additionalDirectories": [
       "e:\\Work\\Code\\sources\\autostore\\packages\\syncer\\examples\\worker-react\\src\\examples"

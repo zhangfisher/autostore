@@ -5,22 +5,24 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-bind · 布尔属性</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- :disabled / :checked：值为真 setAttribute、为假 removeAttribute -->
-        <div class="demo-app">
-            <p>
-                <button class="btn" :disabled="saving" @click="save">{{ saving ? "保存中…" : "保存" }}</button>
-            </p>
-            <p>
-                <label>
-                    <input class="input" type="checkbox" :checked="agree" @click="check" />
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" :disabled="saving" @click="save">{{ saving ? "保存中…" : "保存" }}</button>
+            </div>
+            <div class="block">
+                <label class="checkbox">
+                    <input type="checkbox" :checked="agree" @click="check" />
                     同意条款（当前：{{ agree ? "是" : "否" }}）
                 </label>
-            </p>
-            <button class="btn btn-secondary" :disabled="!agree">下一步（未同意则禁用）</button>
+            </div>
+            <div class="buttons">
+                <button class="button is-light" :disabled="!agree">下一步（未同意则禁用）</button>
+            </div>
         </div>
 
         <script>

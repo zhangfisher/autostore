@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-loading · 局部 x-block 自定义加载模板</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            /* panel 给覆盖层提供定位上下文（position:relative） */
+            .panel {
+                position: relative;
+                min-height: 120px;
+                display: flex;
+                align-items: center;
+            }
+            /* 自定义 loading 块的视觉：脉冲扩散三圆环（替代默认旋转 loader）
+               原配色 #000/#0004 改白色，以适配默认黑色半透明遮罩 */
+            .loader {
+                width: 20px;
+                aspect-ratio: 1;
+                border-radius: 50%;
+                background: #fff;
+                box-shadow: 0 0 0 0 #fff4;
+                animation: l2 1.5s infinite linear;
+                position: relative;
+            }
+            .loader:before,
+            .loader:after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                border-radius: inherit;
+                box-shadow: 0 0 0 0 #fff4;
+                animation: inherit;
+                animation-delay: -0.5s;
+            }
+            .loader:after {
+                animation-delay: -1s;
+            }
+            @keyframes l2 {
+                100% {
+                    box-shadow: 0 0 0 40px #0000;
+                }
+            }
+            .my-msg {
+                margin-top: 10px;
+                color: #fff;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 局部 x-block 自定义 loading：在祖先 x-scope 内声明 x-block="loading"，
+             x-loading 自动消费该块替换默认 loader。块内 message 经 dataScope 响应式注入。 -->
+        <div class="demo-app section">
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">{{ on ? '隐藏' : '显示' }}覆盖层</button>
+            </div>
+
+            <!-- x-scope 建 scope 锚点，使其内的 x-block="loading" 有归属；
+                 x-block 在编译期从渲染树摘除、上交给最近祖先 scope 的 blocks；
+                 x-loading 渲染时经 getBlock("loading") 取到该块替换内置 loader -->
+            <div x-scope>
+                <!-- 自定义 loading 模板块：根即 overlay 壳（x-loading 注入定位/背景样式），
+                     块内 x-text="message" 取 x-loading 注入的 message 字段 -->
+                <div x-block="loading">
+                    <div class="loader"></div>
+                    <div class="my-msg" x-text="message"></div>
+                </div>
+
+                <div class="columns">
+                    <div
+                        class="card panel column"
+                        x-loading="{ visible:'on', message:'正在拉取数据…' }"
+                    >
+                        <div class="card-content">自定义块（脉冲扩散）+ 注入 message</div>
+                    </div>
+                    <div class="card panel column" x-loading="{ visible:'on' }">
+                        <div class="card-content">自定义块（脉冲扩散），无 message</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="block has-text-grey">
+                左右两个宿主共用同一个局部 <code>x-block="loading"</code> 块——<code>message</code> 经 x-loading 配置注入块内，<code>x-text="message"</code> 响应式取值。
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { on: true },
+                {
+                    actions: {
+                        toggle: () => {
+                            engine.state.on = !engine.state.on;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

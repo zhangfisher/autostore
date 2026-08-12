@@ -40,7 +40,7 @@ export class IfDirective extends AutoTemplateDirectiveBase {
     }
 
     /** eager 模式下本指令编译挂载的子树节点，false 时按此精确移除 */
-    private subtreeNodes: Node[] = [];
+    private subtreeNodes: ChildNode[] = [];
     /** 锚点注释：false 时替代宿主留在 DOM，作 reattach 的 DOM 书签（常驻，紧邻宿主前） */
     private anchorComment: Comment | null = null;
 

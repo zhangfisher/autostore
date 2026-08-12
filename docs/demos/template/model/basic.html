@@ -5,19 +5,23 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-model · 基础双向绑定</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 基础双向绑定：input <-> state.user.name
              输入即写回状态，状态变化同步回 input.value -->
-        <div class="demo-app">
-            <p>
-                <label>姓名：</label>
-                <input class="input" x-model="user.name" />
-            </p>
-            <p class="hint">你好，<strong x-text="user.name"></strong></p>
-            <button class="btn btn-secondary" @click="reset">重置为 "zhang"</button>
+        <div class="demo-app section">
+            <div class="field">
+                <label class="label">姓名：</label>
+                <div class="control">
+                    <input class="input" x-model="user.name" />
+                </div>
+            </div>
+            <p class="help">你好，<strong x-text="user.name"></strong></p>
+            <div class="buttons">
+                <button class="button is-light" @click="reset">重置为 "zhang"</button>
+            </div>
         </div>
 
         <script>

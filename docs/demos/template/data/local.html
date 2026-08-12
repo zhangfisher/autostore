@@ -5,14 +5,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-data · 私有响应式域</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- x-data 默认模式：私有响应式域，子树可见、字段级更新 -->
-        <div class="demo-app" x-data="{ msg: '你好', times: 1 }">
-            <p>{{ msg }}（第 {{ times }} 次）</p>
-            <button class="btn" @click="bump">+1</button>
+        <div class="demo-app section" x-data="{ msg: '你好', times: 1 }">
+            <div class="block">{{ msg }}（第 {{ times }} 次）</div>
+            <div class="buttons">
+                <button class="button is-primary" @click="bump">+1</button>
+            </div>
         </div>
 
         <script>

@@ -5,18 +5,22 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-slot · static 冻结快照</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- static：x-slot 内指令被剥、不编译；改名只影响普通区域 -->
-        <div class="demo-app">
+        <div class="demo-app section">
             <div class="card" x-slot>
-                <p>静态快照（engine 永不覆写）：</p>
-                <span x-text="name">（我是初始文本）</span>
+                <div class="card-content">
+                    <p>静态快照（engine 永不覆写）：</p>
+                    <span x-text="name">（我是初始文本）</span>
+                </div>
             </div>
-            <p>普通区域：<span class="val" x-text="name"></span></p>
-            <button class="btn" @click="swap">改名（只影响普通区域）</button>
+            <div class="block">普通区域：<span class="has-text-primary has-text-weight-semibold" x-text="name"></span></div>
+            <div class="buttons">
+                <button class="button is-primary" @click="swap">改名（只影响普通区域）</button>
+            </div>
         </div>
 
         <script>

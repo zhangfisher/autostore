@@ -5,22 +5,26 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-for · 基础列表</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- ul 是容器，li 是项模板；:key 在容器上声明 -->
-        <div class="demo-app">
-            <p>书单（{{ books.length }} 本）：</p>
-            <ul class="list" x-for="book of books" :key="book.id">
-                <li>
-                    #{{ book.id }}
-                    <strong class="val">{{ book.title }}</strong>
-                    — {{ book.author }}
-                </li>
-            </ul>
-            <button class="btn" @click="add">末尾添加</button>
-            <button class="btn" @click="removeFirst">移除首项</button>
+        <div class="demo-app section">
+            <div class="block">书单（{{ books.length }} 本）：</div>
+            <div class="content">
+                <ul x-for="book of books" :key="book.id">
+                    <li>
+                        #{{ book.id }}
+                        <strong class="has-text-primary has-text-weight-semibold">{{ book.title }}</strong>
+                        — {{ book.author }}
+                    </li>
+                </ul>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="add">末尾添加</button>
+                <button class="button is-primary" @click="removeFirst">移除首项</button>
+            </div>
         </div>
 
         <script>

@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-this-alias
 import type { AutoTemplateEngine } from "./engine";
 import { AutoTemplateDirectiveBase } from "./directives/base";
 import { getVal, type Watcher } from "autostore";
@@ -128,8 +129,8 @@ export class AutoTemplateScope {
      * `default` 唯一性仅约束**直接归属本 scope**（收集时第二个直接归属 default 抛错）；
      * 沿 parent 链允许同名覆盖（内层遮蔽外层）。其他块名自由、可多 scope 同名。
      *
-     * 消费者（x-loading/x-empty/x-error…）经 `lookupBlock(name)` 沿 parent 链就近取用，
-     * 命中则替换内置 UI，未命中回退内置（块兜底）。本字段**仅在收集到块时才创建**，
+     * 消费者（x-loading/x-empty/x-error…）经 `getBlock(name)` 沿 parent 链就近取用（到顶兜底全局块），
+     * 命中则替换默认 UI，未命中回退默认块（块兜底）。本字段**仅在收集到块时才创建**，
      * 多数 scope 无块 → undefined，避免给每个 scope 平白分配一个空对象（YAGNI）。
      */
     blocks: Record<string, HTMLElement> | null = null;
@@ -259,20 +260,21 @@ export class AutoTemplateScope {
     }
 
     /**
-     * 沿 parent 链就近查找命名模板块（ADR-0021）。
+     * 沿 parent 链就近查找命名模板块，到顶兜底全局块（ADR-0021 决策 5/9）。
      *
      * 消费者协议的核心查找：从本 scope 起，向上取首个含该名 block 的祖先 scope，
-     * 命中即止（就近覆盖语义——内层 scope 的同名块遮蔽外层）。整条链无命中返回 undefined，
-     * 由消费者回退其内置预置 UI（块兜底）。
+     * 命中即止（就近覆盖语义——内层 scope 的同名块遮蔽外层、亦遮蔽全局）。scope 链无命中时
+     * 兜底查 `engine.options.blocks`（全局块，字符串入参，懒预编译缓存），由 `engine.getBlock`
+     * 解析/包装/缓存。整条链（含全局）无命中返回 undefined，由消费者回退其默认块（块兜底）。
      *
-     * 与 `getAction`/`getDataScope` 的 parent 链查找范式同构。供 x-loading 等 Compile/Hybrid
-     * 消费指令经 `this.binding.lookupBlock(name)` 使用；Runtime 指令（无 binding）改用
-     * `engine.lookupBlock(el, name)`（经 el 反查 scope 后委托本方法）。
+     * 与 `getAction`/`getDataScope` 的 parent 链查找范式同构（getAction 末端亦兜底 engine.actions）。
+     * 供 x-loading 等 Compile/Hybrid 消费指令经 `this.binding.getBlock(name)` 使用；Runtime 指令
+     * （无 binding）改用 `engine.getBlock(el, name)`（经 el 反查 scope 后委托本方法）。
      *
      * @param name 块名（消费者约定名，如 `loading`/`empty`/`error`；自由命名）
      * @returns 块冻结快照 HTMLElement（未编译、保留指令属性），或 undefined（未命中）
      */
-    lookupBlock(name: string): HTMLElement | undefined {
+    getBlock(name: string): HTMLElement | undefined {
         let s: AutoTemplateScope | null = this;
         while (s) {
             if (s.blocks && Object.prototype.hasOwnProperty.call(s.blocks, name)) {
@@ -280,7 +282,8 @@ export class AutoTemplateScope {
             }
             s = s.parent;
         }
-        return undefined;
+        // 兜底全局块（懒预编译缓存，见 engine.getBlock 全局解析）
+        return this.engine._resolveGlobalBlock(name);
     }
 
     /**

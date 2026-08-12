@@ -5,28 +5,30 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>x-style · 响应式切换</title>
         <script src="/autostore/template.js"></script>
-        <link rel="stylesheet" href="/autostore/template.css" />
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
 
     <body>
         <!-- 状态的细粒度变化（字号 / 颜色 / 加粗）自动驱动内联 style 更新 -->
-        <div class="demo-app">
-            <p :style="{ color: theme.color, fontSize: theme.size + 'px', fontWeight: theme.bold ? '700' : '400' }">
+        <div class="demo-app section">
+            <div class="block" :style="{ color: theme.color, fontSize: theme.size + 'px', fontWeight: theme.bold ? '700' : '400' }">
                 字号 {{ theme.size }}px · {{ theme.bold ? "加粗" : "常规" }}
-            </p>
-            <div class="row">
-                <span class="label">字号</span>
-                <input
-                    type="range"
-                    min="12"
-                    max="40"
-                    :value="theme.size"
-                    @input="resize($event)"
-                />
             </div>
-            <div class="row">
-                <button class="btn" @click="recolor">换颜色</button>
-                <button class="btn btn-secondary" @click="toggleBold">
+            <div class="field">
+                <label class="label">字号</label>
+                <div class="control">
+                    <input
+                        type="range"
+                        min="12"
+                        max="40"
+                        :value="theme.size"
+                        @input="resize($event)"
+                    />
+                </div>
+            </div>
+            <div class="buttons">
+                <button class="button is-primary" @click="recolor">换颜色</button>
+                <button class="button is-light" @click="toggleBold">
                     {{ theme.bold ? "取消加粗" : "加粗" }}
                 </button>
             </div>
