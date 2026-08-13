@@ -64,10 +64,10 @@ export class AutoTemplateScope {
      *
      * 由 `DataDirective` 在 `created()` 首次注入时令本字段指向 `store.state._scopes[id]`（core 自动
      * 建响应式代理）。**永不换引用**——`_scopeView` Proxy 闭包绑定该引用；运行时更新只 `Object.assign`
-     * 原地改（见 `engine.data`），绝不整体替换。与 `localData` 同级叠加进 `getContext`。
+     * 原地改（见 `engine.data`），绝不整体替换。与 `locals` 同级叠加进 `getContext`。
      *
      * 读写经 store 响应式代理 → `collectDependencies` 收集 `_scopes.<id>.<field>` 精准路径，
-     * 字段级细粒度更新（**响应式**，无需 refresh——与 localData 的 refresh 驱动不同）。
+     * 字段级细粒度更新（**响应式**，无需 refresh——与 locals 的 refresh 驱动不同）。
      *
      * 父子元素的 data 经 parent 链层叠（子覆盖父同名键）；容器 x-data 经 parent 链
      * 自动透传进 x-for 各 item scope（item.parent = 容器 scope）。
@@ -79,7 +79,7 @@ export class AutoTemplateScope {
     /**
      * data 聚合视图 getter（ADR-0022 决策二-3 修订）。
      *
-     * 返回 `getContext()`——localData + _data + parent 链 + 全局 state 的聚合 Proxy 视图（响应式、
+     * 返回 `getContext()`——locals + _data + parent 链 + 全局 state 的聚合 Proxy 视图（响应式、
      * 可读可写）。供 Proxy this 的 `this.data`、外部便捷访问。底层响应式域经 `_data` 字段访问。
      */
     get data(): Record<string, any> {
@@ -93,10 +93,19 @@ export class AutoTemplateScope {
      * method 内 `this` 是 Proxy，`this.<method名>` 直调/互调。普通 scope（非组件实例）为 null。
      */
     methods: Record<string, (...args: any[]) => any> | null = null;
+    /**
+     * 组件实例的非响应式局部变量（ADR-0022 决策二-3 (10)）。
+     *
+     * 由 `<script setup>` 的 `locals` 段经 `injectComponentSemantics` 注入。**普通对象、不进聚合视图**
+     *（getContext 不含 _locals）——模板表达式读不到，仅经 Proxy this 的 `this.<key>` 访问
+     *（method/data/framework key 优先级高于 _locals）。典型用途：定时器句柄、缓存、防抖标记。
+     * 非组件实例 scope 为 null。
+     */
+    _locals: Record<string, any> | null = null;
     /** 本作用域持有的 watcher（destroy 时统一 off） */
     watchers: Watcher[] = [];
     /** 本作用域 watch 注册的 update 闭包（refresh 时同步重跑，destroy 时清空）。
-     *  用途见 refresh()：x-for 复用项 localData 原地更新后，驱动项内绑定重新求值并 patch。 */
+     *  用途见 refresh()：x-for 复用项 locals 原地更新后，驱动项内绑定重新求值并 patch。 */
     private _updates: Array<() => void> = [];
     /** 子作用域集合（x-if 子树、x-for 各项），destroy 时递归清理 */
     children = new Set<AutoTemplateScope>();
@@ -135,14 +144,19 @@ export class AutoTemplateScope {
     }
 
     /**
-     * 局部作用域数据（x-for 注入的 item/index 等）。
-     * 由 compiler 在编译期设置，子作用域继承父的 localData。与 `data` 同级叠加进 `getContext`。
+     * x-for 注入的局部数据（item/index 等循环派生变量）。
+     *
+     * 由 compiler 在编译期设置，子作用域继承父的 locals（嵌套 x-for 内层取外层 item）。
+     * **进聚合视图**（getContext 第一优先级 locals > data），故模板表达式 `x-text="item.name"` 可见。
+     * 普通对象、非响应式（x-for 复用项时原地 Object.assign + scope.refresh 驱动重渲染）。
+     *
+     * 原名 `localData`（ADR-0022 决策二-3 (10) 更名），与新 `_locals`（组件私有局部变量，不进聚合视图）区分。
      */
-    localData: Record<string, any> | null = null;
+    locals: Record<string, any> | null = null;
     /**
      * 本作用域局部事件 action（由 `<script type="actions">` 在编译期注入）。
      *
-     * 与 localData/data 同级参与 getAction 的 parent 链查找（子覆盖父，命中即止）；
+     * 与 locals/data 同级参与 getAction 的 parent 链查找（子覆盖父，命中即止）；
      * scope destroy 时随 scope 对象回收，无需手动清理。null 表示本层无局部 action。
      */
     actions: Record<string, (...args: any[]) => any> | null = null;
@@ -185,11 +199,11 @@ export class AutoTemplateScope {
      * 本字段**仅在收集到组件时才创建**，多数 scope 无组件 → null，避免给每个 scope 平白分配空对象（YAGNI）。
      */
     components: Record<string, HTMLElement> | null = null;
-    /** 缓存的聚合视图（命中优先级：localData > data > parent 链 > engine.state） */
+    /** 缓存的聚合视图（命中优先级：locals > data > parent 链 > engine.state） */
     private _scopeView: any = null;
 
     /**
-     * 当前作用域上下文：沿 parent 链逐层查找（自身 localData 优先，命中不到查父级，直至根 engine.state）。
+     * 当前作用域上下文：沿 parent 链逐层查找（自身 locals 优先，命中不到查父级，直至根 engine.state）。
      *
      * 之所以用 parent 链而非共享栈：watchExpression 把返回的 scope 捕获进闭包，
      * 在 scheduler flush 时跨 tick 异步复用——每层视图必须不可变且互相独立，
@@ -200,7 +214,7 @@ export class AutoTemplateScope {
         if (this._scopeView) return this._scopeView;
         // 父级视图：父作用域的聚合视图；无父则退化为根 context
         const parentView = this.parent ? this.parent.getContext() : this.engine.state;
-        const local = this.localData;
+        const local = this.locals;
         const data = this._data;
         if (!local && !data) {
             // 无自身局部变量与 x-data 数据：直接复用父级视图（缓存别名，零额外代理）
@@ -210,7 +224,7 @@ export class AutoTemplateScope {
         this._scopeView = new Proxy(parentView, {
             get(_t, k: string | symbol) {
                 if (typeof k === "string") {
-                    // 命中优先级：localData(x-for 的 item/index) > data(x-data 注入)
+                    // 命中优先级：locals(x-for 的 item/index) > data(x-data 注入)
                     if (local && Object.prototype.hasOwnProperty.call(local, k)) return local[k];
                     if (data && Object.prototype.hasOwnProperty.call(data, k)) return data[k];
                 }
@@ -224,10 +238,10 @@ export class AutoTemplateScope {
                 return k in parentView;
             },
             set(_t, k: string | symbol, val: any): boolean {
-                // 写入透传（与 get 同序：localData > data）：命中即写对应容器。
+                // 写入透传（与 get 同序：locals > data）：命中即写对应容器。
                 // data = store.state._scopes[id] 是响应式代理——写它触发细粒度更新，
                 // 故 `this.data.<x-data字段> = v` 与 `with(data){ <字段>++ }` 直接生效。
-                // localData 为普通对象（x-for item），写入不响应式；未命中本层则委托父视图沿链。
+                // locals 为普通对象（x-for item），写入不响应式；未命中本层则委托父视图沿链。
                 // 视图结构（Proxy target 引用）不变，仅 set 透传底层容器，不破坏缓存复用语义。
                 if (typeof k === "string") {
                     if (local && Object.prototype.hasOwnProperty.call(local, k)) {
@@ -257,7 +271,7 @@ export class AutoTemplateScope {
     }
 
     /**
-     * 本 scope 或任意祖先是否持有局部数据（`localData` 或 `data`）。
+     * 本 scope 或任意祖先是否持有局部数据（`locals` 或 `data`）。
      *
      * 决定 `watch` / `read` 的支路选择：只要有任意一层局部数据，简单路径也可能解析到局部变量
      * （如 x-data 注入的 `a`、x-for 的 `item`），**必须走表达式支路**经 `getContext` 求值，
@@ -268,7 +282,7 @@ export class AutoTemplateScope {
     private hasLocalContext(): boolean {
         let s: AutoTemplateScope | null = this;
         while (s) {
-            if (s.localData || s._data) return true;
+            if (s.locals || s._data) return true;
             s = s.parent;
         }
         return false;
@@ -448,6 +462,20 @@ export class AutoTemplateScope {
                 if (owner) {
                     return owner.methods![k]!.bind(owner.getMethodThis());
                 }
+                // 组件响应式 data 域（_data）优先于 _locals（ADR-0022 决策二-3 (10)：Q2 data 优先）。
+                // 直接判 _data（聚合视图 Proxy 的 hasOwnProperty 不走 has 陷阱，不可靠）。
+                if (scope._data && Object.prototype.hasOwnProperty.call(scope._data, k)) {
+                    return scope._data[k];
+                }
+                // 组件局部变量 _locals：非响应式、不进聚合视图。仅 method/钩子经 this.<key> 访问。
+                if (scope._locals && Object.prototype.hasOwnProperty.call(scope._locals, k)) {
+                    return scope._locals[k];
+                }
+                // 其余经聚合视图（x-for locals / parent 链 / 全局 state），支持 this.x 取模板可见的变量
+                const view = scope.getContext();
+                if (typeof k === "string" && k in view) {
+                    return view[k];
+                }
                 // scope 原生方法/字段（watch/read/getComponent/getAction/...）
                 const native = Reflect.get(scope, k);
                 return typeof native === "function" ? (native as any).bind(scope) : native;
@@ -462,11 +490,21 @@ export class AutoTemplateScope {
                     );
                     return true; // 静默忽略（不真写入，也不报错）
                 }
-                // 非框架键：透传到聚合视图（this.data.x = v 之类经 getContext 视图 set 陷阱）
+                // 组件响应式 data 域（_data）已有键 → 写 _data（响应式，Q2 data 优先）。
+                if (typeof k === "string" && scope._data && Object.prototype.hasOwnProperty.call(scope._data, k)) {
+                    scope._data[k] = val;
+                    return true;
+                }
+                // 组件局部变量 _locals：声明键与新键均写 _locals（非响应式，如 this.timer = setInterval）
+                if (typeof k === "string" && scope._locals) {
+                    scope._locals[k] = val;
+                    return true;
+                }
+                // 无 _data/_locals（非组件实例 scope）：透传聚合视图兜底
                 try {
                     (scope.getContext() as any)[k] = val;
                 } catch {
-                    /* 聚合视图 set 失败（如只读键）静默 */
+                    /* 聚合视图 set 失败静默 */
                 }
                 return true;
             },
@@ -514,9 +552,9 @@ export class AutoTemplateScope {
      * @returns 当前值（供指令 `compile` 初始渲染）
      */
     watch(value: string, listener: ScopeWatchListener): any {
-        // 有局部数据（自身或祖先的 localData/data）时，变量可能来自局部作用域
+        // 有局部数据（自身或祖先的 locals/data）时，变量可能来自局部作用域
         // （如 x-data 的 a、x-for 的 item），不能按 state 路径直接订阅——统一走表达式支路
-        // （经 getContext 聚合 localData+data+state 求值）。
+        // （经 getContext 聚合 locals+data+state 求值）。
         if (!this.hasLocalContext() && isSimpleStatePath(value)) {
             return this.watchPath(value, listener);
         }
@@ -586,7 +624,7 @@ export class AutoTemplateScope {
     /**
      * 同步重跑本作用域注册的全部 update 闭包，并递归刷新所有子作用域。
      *
-     * 用途：x-for 复用项时，项内 localData 字段（item / $index / $end 等）已原地更新，
+     * 用途：x-for 复用项时，项内 locals 字段（item / $index / $end 等）已原地更新，
      * 需让项内全部绑定（含 `$end` 这类订阅为空、store 不会自动触发的 watcher）重新求值并 patch DOM。
      *
      * 同步直跑、不进 scheduler：render 自身已在 scheduler flush 内执行，update 闭包内的 listener

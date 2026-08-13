@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · 局部变量 locals</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+    <body>
+        <!--
+            局部变量 locals：组件实例的「非响应式」内部状态。
+            - 与 data 不同：locals 不进响应式聚合视图，改了不触发更新（适合定时器句柄、缓存、防抖标记）；
+            - 经 this.<键> 读写（如 this.timer），跨生命周期共享；
+            - 模板表达式读不到 locals（{{timer}} 无效）——它是组件私有的。
+            本 demo：用 locals.timer 跨 created/mounted/beforeUnmount 共享定时器句柄。
+        -->
+        <div id="app" x-scope>
+            <div x-component="clock">
+                <div class="clock">
+                    <span class="time" x-text="time"></span>
+                    <span class="hint">（locals.timer 驱动，每秒刷新 time）</span>
+                </div>
+                <script setup>
+                    {
+                        data() { return { time: new Date().toLocaleTimeString() } },
+                        // locals：非响应式局部变量，跨生命周期共享
+                        locals: { timer: null },
+                        mounted() {
+                            // 启动定时器，句柄存 locals.timer（非响应式，不该触发更新）
+                            this.timer = setInterval(() => {
+                                this.data.time = new Date().toLocaleTimeString();
+                            }, 1000);
+                        },
+                        beforeUnmount() {
+                            // 清理：读取 locals.timer（watcher 仍活，可读最终状态）
+                            clearInterval(this.timer);
+                        },
+                    }
+                </script>
+                <style>
+                    .clock {
+                        padding: 12px 16px;
+                        background: #f5f9ff;
+                        border-left: 3px solid #3273dc;
+                        border-radius: 4px;
+                        font-family: monospace;
+                        font-size: 1.1rem;
+                    }
+                    .time {
+                        font-weight: 700;
+                        color: #3273dc;
+                    }
+                    .hint {
+                        color: #888;
+                        font-size: 0.8rem;
+                        margin-left: 8px;
+                    }
+                </style>
+            </div>
+
+            <div class="panel">
+                <div class="label">locals.timer 跨生命周期共享：mounted 启动、beforeUnmount 清理</div>
+                <label class="checkbox">
+                    <input type="checkbox" x-model="running" />
+                    挂载时钟组件（取消勾选触发 beforeUnmount → clearInterval）
+                </label>
+            </div>
+
+            <div class="panel">
+                <div x-if="running"><div x-use="clock"></div></div>
+                <div x-if="!running" class="unmounted">时钟已卸载（locals.timer 已清理）</div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.getElementById("app"), {
+                running: true,
+            });
+        </script>
+
+        <style>
+            .panel {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            }
+            .label {
+                font-size: 0.8rem;
+                color: #888;
+                margin-bottom: 8px;
+            }
+            .unmounted {
+                padding: 12px 16px;
+                color: #888;
+                font-style: italic;
+            }
+        </style>
+    </body>
+</html>

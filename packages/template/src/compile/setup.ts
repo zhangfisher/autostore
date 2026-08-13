@@ -65,6 +65,7 @@ export function mergeComponentSetups(setups: ComponentSetup[]): ComponentSetup |
     if (setups.length === 0) return undefined;
     const dataFns: Array<() => Record<string, any>> = [];
     const methods: Record<string, (...args: any[]) => any> = {};
+    const locals: Record<string, any> = {};
     const hooks: ComponentHooks = {
         created: [],
         mounted: [],
@@ -74,6 +75,7 @@ export function mergeComponentSetups(setups: ComponentSetup[]): ComponentSetup |
     let hasHooks = false;
     let hasData = false;
     let hasMethods = false;
+    let hasLocals = false;
     for (const s of setups) {
         // data：收集函数（实例化时依次调用合并返回值）
         if (typeof s.data === "function") {
@@ -86,6 +88,11 @@ export function mergeComponentSetups(setups: ComponentSetup[]): ComponentSetup |
                 if (typeof fn === "function") methods[k] = fn;
             }
             hasMethods = true;
+        }
+        // locals：浅合并（ADR-0022 决策二-3 (10)，非响应式局部变量，后者同名覆盖前者）
+        if (s.locals && typeof s.locals === "object") {
+            Object.assign(locals, s.locals);
+            hasLocals = true;
         }
         // hooks：同名串行收集
         for (const phase of SETUP_HOOK_PHASES) {
@@ -113,6 +120,7 @@ export function mergeComponentSetups(setups: ComponentSetup[]): ComponentSetup |
         };
     }
     if (hasMethods) merged.methods = methods;
+    if (hasLocals) merged.locals = locals;
     // hooks 单独返回（供实例化时克隆到 scope.hooks），不放进 setup 避免重复
     // 但为接口完整，setup 上的四阶段钩子取合并后数组的「首项」无意义——hooks 经第二返回值传递。
     // 此处把 hooks 挂到 merged 上以兼容 ComponentSetup 类型（实例化时优先读 hooks 字段）。

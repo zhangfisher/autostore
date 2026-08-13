@@ -87,7 +87,7 @@
 ```
 
 - `data()` 返回的对象注入组件的响应式 data 域，模板里直接用字段名（`count`）取用；
-- `methods` 注入 `scope.actions`，可被 `x-on` 调用；
+- `methods` 是组件的**内部方法**，可被 `x-on` 调用，方法间还能 `this.其他方法()` 互调（详见「组件上下文」）；
 - 方法内 `this.data` 即组件数据域，可读可写，修改后界面自动更新。
 
 ### 第 3 步：加样式（`<style>`）
@@ -117,7 +117,7 @@
         {
             data() { return { count: 0 } },
             mounted() {
-                const init = this.scope.el.getAttribute('data-count');
+                const init = this.el.getAttribute('data-count');
                 if (init !== null) this.data.count = Number(init);
             },
         }
@@ -161,7 +161,7 @@
                     dec() { this.data.count -= this.data.step },
                 },
                 mounted() {
-                    const init = this.scope.el.getAttribute('data-count');
+                    const init = this.el.getAttribute('data-count');
                     if (init !== null) this.data.count = Number(init);
                 },
             }
@@ -319,41 +319,121 @@ const engine = new AutoTemplateEngine(el, {}, {
 
 ### 组件上下文
 
-组件 methods 与生命周期钩子内的 `this` 是一个上下文对象，提供三件套：
+组件 methods 与生命周期钩子内的 `this` 是一个 **Proxy 代理对象**，把组件实例的能力以直观的方式暴露出来——方法内 `this.xxx` 就像操作一个「组件实例」，无需关心底层 scope。
 
-| `this.x` | 指向 |
-| --- | --- |
-| `this.data` | 组件聚合数据视图（含 `data()` 返回值 + `x-use` 传入的 props），响应式、可读可写 |
-| `this.state` | 全局 store 状态（`engine.store.state`） |
-| `this.scope` | 当前组件实例 scope（`this.scope.el` 即组件根元素） |
+#### this 暴露集合
 
-`methods` 注入 `scope.actions`，复用 `x-on` 的 action 查找机制——所以 `x-on:click="inc"` 能直接调用组件方法。方法内 `this.data.count++` 修改后，界面自动更新。
+| `this.x` | 指向 | 可写 |
+| --- | --- | --- |
+| `this.data` | 组件聚合数据视图（`data()` 返回 + `x-use` props + 全局 state），**响应式** | ✅ 逐字段写触发更新 |
+| `this.state` | 全局 store 状态（`engine.store.state`） | ✅ |
+| `this.engine` | 引擎实例（事件总线 `this.engine.emit/on`、`this.engine.store` 等） | ❌ |
+| `this.scope` | 当前组件实例 scope（需调 scope 原生方法时用） | ❌ |
+| `this.el` | 组件根元素 HTMLElement | ❌ |
+| `this.<方法名>` | 组件 methods（**支持 `this.inc()` 直调、`this.other()` 互调**，仅本组件边界内） | — |
+| `this.<locals 键>` | 组件局部变量（见下文「局部变量」，非响应式） | ✅ |
+| `this.watch` / `this.read` / `this.getComponent` | scope 同名方法（订阅/读值/取组件） | — |
+| `this.$parent` | 父组件实例的 Proxy（沿链最近父组件，支持 `this.$parent.$parent` 链式；顶层为 null） | — |
 
-下面这个 demo 展示在 `created` 钩子里读全局 `state.user.name` 与自身 `data.greeting` 拼接问候语：
+::: warning 框架引用键不可整体覆盖
+`this.data` / `this.state` / `this.engine` / `this.scope` / `this.el` 是框架注入的引用，**禁止整体覆盖**（`this.data = {...}` 会 warn 并忽略）。改数据请逐字段：`this.data.count = 5`。
+:::
+
+#### methods 是独立机制（非 action）
+
+组件 methods 与 action 是**两种不同机制**：methods 是组件内部方法，注入 `scope.methods`（不是 `scope.actions`），经**组件边界**查找（不穿透父组件，保证封装），以 Proxy 为 this 调用。`x-on:click="inc"` 优先查组件 method，找不到才退回 action。
+
+- `this.inc()`、`this.other()` **直接调用**组件方法（无需 `this.methods.inc()`）；
+- method 内 `this.data.count++` 修改后，界面自动更新；
+- methods **不经事件总线包装**——不广播 `actions/<name>/*`、不冒泡 CustomEvent（定位是组件内部逻辑）。
+
+下面这个 demo 在 `created` 演示读 `this.data` / `this.state`，`mounted` 演示 `this.el`，模板用响应式表达式拼接问候语（点击改全局用户名 → 自动更新）：
 
 <demo html="template/component/context.html"/>
 
 ```html
 <div x-component="hello">
-    <div x-text="message"></div>
+    <!-- 模板表达式订阅 state.user.name，响应式更新 -->
+    <div class="hello" x-text="greeting + '，' + user.name + '！'"></div>
     <script setup>
         {
             data() { return { greeting: '你好' } },
             created() {
-                // created：读全局 state + 自身 data 拼接
-                this.data.message = `${this.data.greeting}，${this.state.user.name}！`;
+                // created：演示 this.data（组件 data）与 this.state（全局 state）可读
+                console.log('greeting =', this.data.greeting, '；user =', this.state.user.name);
             },
             mounted() {
-                this.scope.el.setAttribute('title', '由组件上下文生成');
+                // mounted：this.el 即组件根元素
+                this.el.setAttribute('title', '由组件上下文生成');
             },
         }
     </script>
 </div>
 ```
 
-::: tip methods 不广播事件
-组件 methods 定位是「组件内部逻辑」，注入 `scope.actions` 时**不经事件总线包装**——即不广播 `actions/<name>/{pending,resolved,rejected}`、不冒泡 CustomEvent。需要跨元素事件聚合时，方法内显式 `this.scope.engine.emit(...)`，或让祖先 watch 组件改动的 data。
+::: tip 方法间互调
+method 内可直接 `this.otherMethod()` 调用同组件的其他方法——无需 `this.methods.xxx()` 或 `this.getMethod('xxx')`，符合主流组件框架的直觉。
 :::
+
+### 局部变量（`locals`）
+
+组件实例除了响应式的 `data`，还能有一份**非响应式**的内部状态——`<script setup>` 的 `locals` 段。它专为「不该触发更新的实例内部数据」设计：定时器句柄、缓存、防抖标记、第三方库实例引用等。
+
+```javascript
+{
+    data() { return { time: '...' } },     // 响应式：改了驱动更新
+    locals: { timer: null, cache: {} },    // 非响应式：改了不更新，组件私有
+    methods: {
+        start() { this.timer = setInterval(() => this.data.time = Date(), 1000) },
+    },
+    beforeUnmount() { clearInterval(this.timer) },
+}
+```
+
+#### locals 与 data 的区别
+
+| | `data` | `locals` |
+| --- | --- | --- |
+| 响应式 | ✅ 改了触发更新 | ❌ 改了不更新 |
+| 模板可见 | ✅ `{{x}}` / `x-text="x"` 可读 | ❌ 模板表达式读不到（不进聚合视图） |
+| 访问方式 | `this.data.x` 或模板 `x` | 仅 `this.x`（method/钩子内） |
+| 典型用途 | 业务展示数据 | 定时器句柄、缓存、防抖标记 |
+
+#### 读写规则
+
+- **读**：`this.<locals键>`（如 `this.timer`）。优先级低于 method/data/框架引用——同名时 data 字段优先，locals 被遮蔽。
+- **写**：`this.<键> = 值`——若该键已在 `data` 声明则写 data（响应式），否则写 locals（非响应式）。故 `this.timer = setInterval(...)` 自动落进 locals。
+- **跨生命周期共享**：`created` 设、`mounted` 用、`beforeUnmount` 清——这是 locals 的核心用途（实例级、跨阶段、非响应式）。
+
+::: warning locals 不进模板
+locals 是组件私有的，**模板表达式读不到**——`<span x-text="timer">` 取不到 `locals.timer`（它是定时器句柄，本就不该显示）。要展示的数据放 `data`，内部状态放 `locals`。
+:::
+
+下面这个 demo 用 `locals.timer` 跨 `mounted`/`beforeUnmount` 共享定时器句柄：勾选挂载时钟、取消勾选卸载（`beforeUnmount` 清理定时器）。
+
+<demo html="template/component/locals.html"/>
+
+```html
+<div x-component="clock">
+    <span x-text="time"></span>
+    <script setup>
+        {
+            data() { return { time: '00:00:00' } },
+            locals: { timer: null },          // 非响应式局部变量
+            mounted() {
+                this.timer = setInterval(() => {    // 句柄存 locals
+                    this.data.time = new Date().toLocaleTimeString();
+                }, 1000);
+            },
+            beforeUnmount() {
+                clearInterval(this.timer);          // 读 locals 清理
+            },
+        }
+    </script>
+</div>
+<!-- 勾选挂载、取消勾选卸载（触发 beforeUnmount） -->
+<div x-if="running"><div x-use="clock"></div></div>
+```
 
 ### 组件样式
 
@@ -568,8 +648,8 @@ CSS 变量是**字符串**——`bind("count")` 注入 `100` 时，`width: var(-
         {
             data() { return { total: 0 } },
             created() {
-                // watch 全局 state.cart，变化时重新求和
-                this.scope.engine.store.watch('cart', () => {
+                // watch 全局 state.cart 的子键（cart.*），子组件改 cart[id] 时重新求和
+                this.engine.store.watch('cart.*', () => {
                     this.data.total = Object.values(this.state.cart).reduce((s, n) => s + n, 0);
                 });
             },
@@ -578,7 +658,7 @@ CSS 变量是**字符串**——`bind("count")` 注入 `100` 时，`width: var(-
 </div>
 ```
 
-`this.state` 是 `engine.store.state`，组件内直接读写；`this.scope.engine.store.watch(path, fn)` 监听全局路径变化。
+`this.state` 是 `engine.store.state`，组件内直接读写；`this.engine.store.watch(path, fn)` 监听全局路径变化。
 
 #### 方式三：事件总线（跨组件解耦）
 
@@ -592,7 +672,7 @@ CSS 变量是**字符串**——`bind("count")` 注入 `100` 时，`width: var(-
             methods: {
                 favorite() {
                     // 发送方：emit 自定义事件
-                    this.scope.engine.emit('favorite', { id: this.data.id, name: this.data.label });
+                    this.engine.emit('favorite', { id: this.data.id, name: this.data.label });
                 },
             },
         }
@@ -680,7 +760,7 @@ engine.on('favorite', (e) => {
 - **props 覆盖不重置内部状态**：props 响应式更新只覆盖声明键；组件内部状态（用户交互改的 `data` 字段）不会被外部 props 重置。
 - **scoped 样式不穿透**：`<style>` 默认纯隔离，不支持 `:deep()`/`>>>`。
 - **`bind` 回退固定 unset**：响应式样式的 `var()` 回退值固定为 `unset`、不可配；要自定义默认值用 `:style` 指令。
-- **methods 不经事件总线**：组件 methods 不广播 `actions/*` 事件、不冒泡 CustomEvent（定位是组件内部逻辑）。需事件聚合时显式 `this.scope.engine.emit(...)`。
+- **methods 不经事件总线**：组件 methods 不广播 `actions/*` 事件、不冒泡 CustomEvent（定位是组件内部逻辑）。需事件聚合时显式 `this.engine.emit(...)`。
 - **全局组件配置期语义**：`options.components` 是构造期配置，运行时突变它**不失效懒预编译缓存**（与 `actions`/`sanitizer` 等同纪律）。要动态注册组件用 `x-import`。
 - **远程加载需静态服务器**：`x-import` 经 `fetch` 加载，本地直接打开 HTML 文件（`file://`）会因 CORS 受限，需通过 HTTP 服务器访问。
 

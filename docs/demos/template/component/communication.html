@@ -79,8 +79,12 @@
                 <script setup>
                     {
                         data() {
-                            // id 由 props 传入；qty 默认 1
+                            // id 由 props 传入；qty 默认 1（组件内部状态，由 +/- 修改）
                             return { id: 0, qty: 1 };
+                        },
+                        mounted() {
+                            // ② 初始化：把自身 qty 注册进全局 state.cart（cart 是各商品数量的聚合镜像）
+                            this.state.cart[this.data.id] = this.data.qty;
                         },
                         methods: {
                             inc() {
@@ -94,7 +98,7 @@
                             },
                             favorite() {
                                 // ③ 事件总线：emit 自定义事件，无父子关系的监听者收到
-                                this.scope.engine.emit("favorite", { id: this.data.id, name: this.data.label });
+                                this.engine.emit("favorite", { id: this.data.id, name: this.data.label });
                             },
                         },
                     }
@@ -110,8 +114,9 @@
                             return { total: 0 };
                         },
                         created() {
-                            // 监听全局 state.cart 的任意变化，重新求和（子组件改 cart 自动回流）
-                            this.scope.engine.store.watch("cart", () => {
+                            // 监听全局 state.cart 的子键变化（product 改 cart[id] 触发，重新求和）。
+                            // 注意 watch("cart") 只监听整体替换、不监听子键；用 cart.* 监听所有子键。
+                            this.engine.store.watch("cart.*", () => {
                                 const cart = this.state.cart;
                                 this.data.total = Object.keys(cart).reduce(
                                     (s, k) => s + (cart[k] || 0),
@@ -127,11 +132,11 @@
             </div>
 
             <div class="panel">
-                <div class="label">① 商品列表（product 组件，props 下传 name/id）</div>
-                <!-- props 下传：每个 product 实例传入不同商品名(label)与 id -->
-                <div x-use="{ name: 'product', label: '键盘', id: 1, qty: 1 }"></div>
-                <div x-use="{ name: 'product', label: '鼠标', id: 2, qty: 2 }"></div>
-                <div x-use="{ name: 'product', label: '显示器', id: 3, qty: 1 }"></div>
+                <div class="label">① 商品列表（product 组件，props 下传 label/id；qty 是组件内部 data）</div>
+                <!-- props 仅下传 label/id（外部配置）；qty 是组件内部状态（初始 1），由 +/- 修改 -->
+                <div x-use="{ name: 'product', label: '键盘', id: 1 }"></div>
+                <div x-use="{ name: 'product', label: '鼠标', id: 2 }"></div>
+                <div x-use="{ name: 'product', label: '显示器', id: 3 }"></div>
             </div>
 
             <div class="panel">
@@ -153,8 +158,9 @@
         <script>
             const { AutoTemplateEngine } = AutoTemplateSpaces;
             const engine = new AutoTemplateEngine(document.getElementById("app"), {
-                // 全局 state.cart：各 product 组件写回、cart-total 读，跨组件共享
-                cart: { 1: 1, 2: 2, 3: 1 },
+                // 全局 state.cart：由各 product 组件在 mounted 时把自身 qty 注册进来
+                //（cart 是各商品数量的「聚合镜像」，初始为空，不硬编码——避免与商品初值脱节）
+                cart: {},
                 favCount: 0,
                 lastFav: "",
             });

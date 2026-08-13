@@ -592,6 +592,11 @@ export class AutoTemplateCompiler {
         if (def.setup?.methods) {
             scope.methods = { ...def.setup.methods };
         }
+        // locals 注入 scope._locals（ADR-0022 决策二-3 (10)：非响应式局部变量，不进聚合视图）。
+        // 经 Proxy this 的 this.<key> 读写（method/data/framework 优先级高于 _locals）。
+        if (def.setup?.locals) {
+            scope._locals = { ...def.setup.locals };
+        }
         // hooks 克隆到 scope.hooks（每阶段函数数组克隆，避免多实例共享同一数组引用）
         if (def.hooks) {
             scope.hooks = {
@@ -740,7 +745,7 @@ export class AutoTemplateCompiler {
             while (el.firstChild) el.removeChild(el.firstChild);
         }
         const scope = new AutoTemplateScope(this.engine, el, itemTemplate);
-        scope.localData = localData;
+        scope.locals = localData;
         // 组件语义注入（须早于 scope.compile()——created hook 与各指令 watch 首次求值须读到完整 data/actions）。
         // data 合并顺序 R1=A：componentDef.data() 先注入默认，initialData（x-use props）后覆盖。
         if (componentDef) {
@@ -777,7 +782,7 @@ export class AutoTemplateCompiler {
             const parentScope = this.templateScopeMap.get(p);
             if (parentScope) {
                 parentScope.addChild(scope);
-                if (parentScope.localData) scope.localData = parentScope.localData;
+                if (parentScope.locals) scope.locals = parentScope.locals;
                 return;
             }
             p = p.parentElement;

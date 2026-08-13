@@ -172,7 +172,13 @@ export class UseDirective extends AutoTemplateDirectiveBase {
             );
             return;
         }
-        const def = this.engine.getComponentDef(snapshot) ?? null;
+        // def 查找：作用域组件经 _componentDefs（WeakMap，snapshot 为 key）；
+        // 全局组件经 _globalComponentDefCache（按 name）——getComponentDef 对全局 snapshot 返回 undefined，
+        // 须 fallback getGlobalComponentDef，否则全局组件的 setup(data/methods/hooks)丢失、不注入。
+        const def =
+            this.engine.getComponentDef(snapshot) ??
+            this.engine.getGlobalComponentDef(name) ??
+            null;
         this.instanceDef = def;
         this.instanceScope = this.binding; // 宿主 scope 即组件实例 scope
         // 属性继承（T4=B）：组件快照根属性并入宿主（须早于实例化，宿主属性就位后编译子树）

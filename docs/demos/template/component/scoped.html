@@ -3,32 +3,36 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>x-component · 作用域组件就近覆盖</title>
+        <title>x-component · 就近覆盖（局部特例遮蔽全局）</title>
         <script src="/autostore/template.js"></script>
         <link rel="stylesheet" href="/autostore/bulma.min.css" />
     </head>
     <body>
         <!--
-            作用域组件 vs 全局组件的就近覆盖规则：
-            - 全局组件在 options.components.badge 声明（蓝底），全引擎兜底；
-            - 顶部 x-scope 内再声明一个局部 badge 组件（绿底），仅该子树可见、就近遮蔽全局。
-            两个 x-use="badge" 取到的是各自最近作用域的版本。
+            组件查找「沿 parent 链就近 + 全局兜底」：
+            - 全局组件 badge（蓝底）在 options.components 声明，全引擎兜底；
+            - 内层 x-scope 声明一个同名局部 badge（绿底），仅该子树可见。
+            因 getComponent 沿 parent 链向上查找（ADR-0022 决策五），查找顺序是：
+              本 scope.components → 各祖先 scope.components → 全局兜底。
+            故：
+              - 外层 x-use（无局部 badge，链上无祖先局部）→ 兜底全局（蓝）；
+              - 内层 x-use（自身 scope 有局部 badge）→ 命中局部（绿），就近遮蔽全局。
+            注意：就近链是「向上穿透」的——只要祖先 scope 声明了同名局部组件，
+            后代就能取到（非「独立作用域」）。本 demo把局部声明放内层，演示「局部特例」。
         -->
         <div id="app" x-scope>
-            <!-- 局部组件 badge（绿底）：仅本 x-scope 子树可见，就近遮蔽全局同名 -->
-            <div x-component="badge">
-                <span class="badge local">局部绿标</span>
-            </div>
-
-            <!-- 这个 x-use 命中局部组件（绿底） -->
+            <!-- 外层：无局部 badge → getComponent 沿链无祖先局部 → 兜底全局（蓝） -->
             <div class="panel">
-                <div class="label">本作用域内：命中局部 badge（绿）</div>
+                <div class="label">外层（无局部 badge）：兜底全局 → 蓝</div>
                 <div x-use="badge"></div>
             </div>
 
-            <!-- 外层作用域，无局部 badge → 走全局兜底（蓝底） -->
-            <div class="panel outer" x-scope>
-                <div class="label">外层独立作用域：无局部 badge → 兜底全局（蓝）</div>
+            <!-- 内层 x-scope：声明局部 badge（绿），仅本子树就近可见、遮蔽全局 -->
+            <div class="panel inner" x-scope>
+                <div x-component="badge">
+                    <span class="badge local">局部绿标</span>
+                </div>
+                <div class="label">内层（声明局部 badge）：就近命中局部 → 绿</div>
                 <div x-use="badge"></div>
             </div>
         </div>

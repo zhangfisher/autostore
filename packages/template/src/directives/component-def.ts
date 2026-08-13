@@ -47,6 +47,14 @@ export interface ComponentMethodContext {
 export interface ComponentSetup {
     data?: () => Record<string, any>;
     methods?: Record<string, (...args: any[]) => any>;
+    /**
+     * 组件实例的非响应式局部变量（ADR-0022 决策二-3 (10)）。
+     *
+     * 注入 `scope._locals`（普通对象、**不进聚合视图**）——模板表达式 `{{x}}` 读不到，仅经 Proxy this
+     * 的 `this.<key>` 访问（method/data/framework key 优先级高于 _locals）。典型用途：定时器句柄、
+     * 缓存、防抖标记等实例内部状态。多 `<script setup>` 的 locals **浅合并**。
+     */
+    locals?: Record<string, any>;
     created?: () => void;
     mounted?: () => void;
     beforeUnmount?: () => void;

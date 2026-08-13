@@ -568,6 +568,26 @@ describe("x-component <script setup> / <style> 提取（ADR-0022 决策四）", 
         const def = engine.getGlobalComponentDef("gcard")!;
         expect(def.setup?.data?.()).toEqual({ x: 5 });
     });
+
+    test("全局组件 x-use 实例化：setup.data 注入 + props 覆盖（regression: use.ts def 查找须兼顾全局）", async () => {
+        // 回归覆盖：use.ts._instantiate 的 def 查找经 getComponentDef(snapshot)（WeakMap，仅作用域组件），
+        // 全局组件 def 在 _globalComponentDefCache（按 name）——须 fallback getGlobalComponentDef，
+        // 否则全局组件 setup 丢失、data 不注入（曾导致全局组件 card 不渲染绑定值）。
+        const { root } = mount(
+            `<div x-scope>
+                <div id="h" x-use="{ name: 'gcard', x: 100 }"></div>
+            </div>`,
+            {},
+            {
+                components: {
+                    gcard: `<span class="gx" x-text="x"></span><script setup>{ data(){return{x:5}} }</script>`,
+                },
+            },
+        );
+        await nextTick();
+        // data() 默认 x=5 被 props x=100 覆盖，且经 def 注入生效（def 查找修复后）
+        expect(root.querySelector(".gx")?.textContent).toBe("100");
+    });
 });
 
 describe("x-component 生命周期钩子 scope.hooks（ADR-0022 决策三）", () => {
@@ -1557,6 +1577,92 @@ describe("x-component methods Proxy this（ADR-0022 决策二-3 修订）", () =
         expect((globalThis as any).__mt_method).not.toBeNull();
         expect((globalThis as any).__mt_hook).toBe((globalThis as any).__mt_method); // 同一 Proxy 对象
     });
+
+    test("局部变量 locals：this.b 读写非响应式", async () => {
+        (globalThis as any).__mt_lv = "init";
+        const { root } = mount(
+            `<div x-scope>
+                <div id="host" x-use="c"></div>
+                <div x-component="c">
+                    <button class="b" x-on:click="bump">b</button>
+                    <script setup>{
+                        locals:{ counter: 0 },
+                        methods:{ bump(){ this.counter++; globalThis.__mt_lv = this.counter } }
+                    }</script>
+                </div>
+             </div>`,
+            {},
+        );
+        await nextTick();
+        root.querySelector<HTMLButtonElement>(".b")!.click();
+        expect((globalThis as any).__mt_lv).toBe(1); // 局部变量自增生效
+        // 非响应式：再点一次，counter 持续自增（非响应式不影响，仅验证读写）
+        root.querySelector<HTMLButtonElement>(".b")!.click();
+        expect((globalThis as any).__mt_lv).toBe(2);
+    });
+
+    test("局部变量 locals 不进聚合视图（模板读不到）", async () => {
+        const { root } = mount(
+            `<div x-scope>
+                <div id="host" x-use="c"></div>
+                <div x-component="c">
+                    <span class="lv" x-text="secret">占位</span>
+                    <script setup>{ locals:{ secret: "隐秘" }, data(){ return { count: 0 } } }</script>
+                </div>
+             </div>`,
+            {},
+        );
+        await nextTick();
+        // secret 是 _locals，不进聚合视图 → 模板 x-text 求值失败（secret is not defined），
+        // 不会渲染出 _locals 的值"隐秘"（保留原文本或空，关键是读不到 _locals）。
+        expect(root.querySelector(".lv")?.textContent).not.toBe("隐秘");
+    });
+
+    test("局部变量 locals 跨生命周期共享（created 设、beforeUnmount 读）", async () => {
+        (globalThis as any).__mt_lvlife = null;
+        const { root, store } = mount(
+            `<div x-scope>
+                <div x-if="show">
+                    <div id="host" x-use="c"></div>
+                </div>
+                <div x-component="c">
+                    <script setup>{
+                        created(){ this.timer = 42 },
+                        beforeUnmount(){ globalThis.__mt_lvlife = this.timer }
+                    }</script>
+                </div>
+             </div>`,
+            { show: true },
+        );
+        await nextTick();
+        // 销毁组件（x-if=false 触发 beforeUnmount）→ 读到 created 设的 timer
+        store.state.show = false;
+        await nextTick();
+        expect((globalThis as any).__mt_lvlife).toBe(42);
+    });
+
+    test("method/data 优先于 locals（同名遮蔽）", async () => {
+        (globalThis as any).__mt_pri = null;
+        const { root } = mount(
+            `<div x-scope>
+                <div id="host" x-use="c"></div>
+                <div x-component="c">
+                    <button class="b" x-on:click="probe">p</button>
+                    <script setup>{
+                        locals:{ name: "局部" },
+                        data(){ return { name: "数据" } },
+                        methods:{ probe(){ globalThis.__mt_pri = this.name } }
+                    }</script>
+                </div>
+             </div>`,
+            {},
+        );
+        await nextTick();
+        root.querySelector<HTMLButtonElement>(".b")!.click();
+        // data.name 优先于 locals.name → "数据"
+        expect((globalThis as any).__mt_pri).toBe("数据");
+    });
 });
+
 
 

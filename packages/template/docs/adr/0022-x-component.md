@@ -5,7 +5,8 @@
 - **关联**：[CONTEXT.md](../../CONTEXT.md)、[ADR-0021](0021-x-scope-and-x-block.md)（本 ADR 承接其 x-block/x-scope 决策）、[ADR-0001](0001-directive-kind-system.md)、[ADR-0017](0017-x-html-compile-modifier.md)
 - **共识来源**：grilling 四轮决策（约 30 个决策点），本 ADR 即共识落盘
 - **扩展**：决策四-4.1「组件作用域 CSS 的响应式绑定（`bind()`）」——grilling 两轮 16 决策点（Q1–Q16）后续扩展，本 ADR 决策四-4 的能力延伸（仅落盘共识，未实施）
-- **修订**：决策二-3「methods 独立机制 + Proxy this」——methods 从 action 剥离为独立机制（`scope.methods` + `getMethod` 组件边界）、this 改 Proxy（策略 C 规则 B）、钩子同步 Proxy、scope.data getter 化。**仅落盘共识，未实施**（详见决策二-3 修订记录）
+- **修订**：决策二-3「methods 独立机制 + Proxy this」——methods 从 action 剥离为独立机制（`scope.methods` + `getMethod` 组件边界）、this 改 Proxy（策略 C 规则 B）、钩子同步 Proxy、scope.data getter 化。**已实施**（详见决策二-3 修订记录）
+- **修订2**：决策二-3 (10)「组件局部变量 `_locals`」——新增 `locals` 段（非响应式、不进聚合视图、仅 `this.x` 访问）；`scope.localData` 更名 `scope.locals`（x-for 容器，语义不变）。**仅落盘共识，未实施**
 
 > **实施修订记录**：grilling 阶段决策七「定义 scope 链（defScopeMap/ComponentDef.parent/.components）」
 > 在实施中经核查发现**可大幅简化**——`compileSubtree` 编译父组件快照子树时，内层 x-component 经
@@ -163,6 +164,30 @@ this=Proxy 后，`this.$event` 失效（scope 无 `$event` 属性，`$event` 是
 - **支持链式向上多层**：`this.$parent.$parent.$parent...`（Proxy get 陷阱递归处理 `$parent` 键，每层沿链找下一级 isComponent 祖先），直到无父组件返回 null。
 - **与"method 不穿透边界"不矛盾**（方向不同）：`getMethod` 的组件边界禁止**子组件 method 查找被动落到父组件**（被动继承的封装）；`$parent` 是子组件**主动显式**访问父组件实例（主动寻址，类似 Vue `this.$parent`）。两者并存自洽。
 - **实现**：`getMethodThis` 的 get 陷阱特判 `$parent` 键——沿 parent 链找最近 `isComponent` 祖先，返回其 `getMethodThis()`（懒构造、缓存），无则 null。
+
+##### (10) 组件局部变量（`_locals`，非响应式，不进聚合视图）
+
+`<script setup>` 增 `locals` 段，声明组件实例的**非响应式局部变量**——定时器句柄、缓存、防抖标记等实例内部状态，**不应进响应式 data 域**（否则无谓触发更新），也不应被模板表达式读到。
+
+```js
+{
+    locals: { timer: null, cache: {} },   // 非响应式局部变量
+    data() { return { count: 0 } },        // 响应式数据
+    methods: {
+        start() { this.timer = setInterval(() => this.data.count++, 1000) },
+    },
+    beforeUnmount() { clearInterval(this.timer) },
+}
+```
+
+- **存储 `scope._locals`**：实例级普通对象（非响应式）。`injectComponentSemantics` 注入 `def.setup.locals` 到 `scope._locals`。
+- **访问 `this.<locals键>`**：Proxy this（getMethodThis）的 get 陷阱——method/data/framework key 优先级**高于** _locals，_locals 是最低优先级（局部变量被同名 method/data 遮蔽时静默）。set 陷阱：非 framework 键写入 _locals（实例级普通赋值，不响应式）。
+- **不进聚合视图**：_locals **不纳入 `getContext`**——模板表达式 `{{timer}}`/`x-text="cache"` **读不到**组件局部变量。这是与 x-for `locals`（见下）的关键区别：组件 _locals 严格隔离（只有 `this.x` 访问），x-for locals 经聚合视图暴露给模板。
+- **钩子可访问**：生命周期钩子的 this 也是 Proxy，`this.timer` 等经同一 get/set 陷阱读写 _locals（跨阶段共享非响应式状态的核心用途）。
+- **浅合并**：多个 `<script setup>` 的 locals 浅合并到一个 _locals（同 methods 语义，后声明覆盖先声明）。
+- **更名 `scope.localData` → `scope.locals`**：x-for 的 item/index 容器（原 `scope.localData`）更名为 `scope.locals`，**语义不变**（仍进聚合视图、沿 parent 链继承）。更名理由：与新 `_locals` 命名对齐，区分"模板可见的 locals（x-for）"与"组件私有的 _locals"。两者职责分离：
+  - `scope.locals`（原 localData）：x-for 注入的 item/index，**进聚合视图**，模板表达式可见。
+  - `scope._locals`（新增）：组件私有局部变量，**不进聚合视图**，仅 `this.x` 访问。
 
 #### 4. `default` 唯一性放宽（R5=B）
 

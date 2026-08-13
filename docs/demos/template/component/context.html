@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
     <head>
         <meta charset="UTF-8" />
@@ -13,25 +13,26 @@
             - this.data   组件聚合数据视图（data() 返回 + x-use props），响应式、可读可写
             - this.state  全局 store 状态（engine.store.state）
             - this.scope  当前组件实例 scope（this.scope.el 即组件根元素）
-            本 demo：组件读取全局 state.user.name 与自身 data.greeting 拼接问候语。
+            本 demo：greeting 来自组件 data，user.name 来自全局 state；
+            模板里响应式拼接，故「改全局用户名」后问候语自动更新（created 仅实例化时跑一次，
+            但模板表达式订阅了 state.user.name，状态变化驱动重渲染）。
         -->
         <div id="app" x-scope>
             <div x-component="hello">
-                <div class="hello" x-text="message"></div>
+                <div class="hello" x-text="greeting + '，' + user.name + '！'"></div>
                 <script setup>
                     {
                         data() {
                             return { greeting: "你好" };
                         },
                         created() {
-                            // created：scope 创建 + data 注入后、编译前
-                            // 读全局 state.user.name 与自身 data.greeting 拼接
-                            const name = this.state.user.name;
-                            this.data.message = `${this.data.greeting}，${name}！`;
+                            // created：scope 创建 + data 注入后、编译前。
+                            // 演示 this.data（组件 data）与 this.state（全局 state）可读。
+                            console.log("[created] greeting =", this.data.greeting, "；user =", this.state.user.name);
                         },
                         mounted() {
-                            // mounted：DOM 子树编译完成，this.scope.el 即组件根
-                            this.scope.el.setAttribute("title", "由组件上下文生成");
+                            // mounted：DOM 子树编译完成，this.scope.el 即组件根。
+                            this.el.setAttribute("title", "由组件上下文生成");
                         },
                     }
                 </script>
@@ -47,12 +48,16 @@
             </div>
 
             <div class="panel">
-                <div class="label">组件读取全局 state + 自身 data（created 拼接）</div>
+                <div class="label">
+                    组件读取全局 state.user.name + 自身 data.greeting（响应式拼接）
+                </div>
                 <div x-use="hello"></div>
             </div>
 
             <div class="panel">
-                <div class="label">改全局用户名 → 组件内 created 不会重跑（仅实例化时执行一次）</div>
+                <div class="label">
+                    改全局用户名 → 问候语响应式更新（模板订阅了 state.user.name）
+                </div>
                 <button class="button is-small is-primary" @click="rename">改全局用户名</button>
             </div>
         </div>

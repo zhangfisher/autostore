@@ -19,8 +19,11 @@
     <body>
         <!--
             x-scope 让纯容器建 scope，使内部 x-component 有归属锚点。
-            组件 theme 的 <style> 用 bind() 把状态注入为 CSS 变量，
+            组件 bar 的 <style> 用 bind() 把状态注入为 CSS 变量，
             状态变化时样式自动响应更新（无需 :style 逐元素绑定）。
+            注意：barWidth / barColor 是「全局 state」字段，bind 表达式经组件 scope 的聚合视图
+            沿 parent 链读到它们（组件自身 data 不持有，避免 props 遮蔽全局 state）。滑块/按钮
+            改全局 state → bind 订阅触发 → CSS 变量更新。label 经 x-use props 传入组件 data。
         -->
         <div id="app" x-scope>
             <!-- 组件声明：<style> 内 bind 绑定状态到 CSS 变量 -->
@@ -29,7 +32,7 @@
                     <span class="bar-label" x-text="label"></span>
                 </div>
                 <style>
-                    /* 纯路径：注入为 --bar-color / --bar-width */
+                    /* 表达式（含 +）：注入为 --h{hash}；纯路径 barColor：注入为 --barColor（驼峰保留） */
                     .bar-track {
                         width: bind("barWidth + 'px'");
                         background: bind("barColor");
@@ -40,7 +43,7 @@
                         padding: 0 8px;
                         transition: width 0.2s, background 0.2s;
                     }
-                    /* 表达式：注入为 --h{hash}，随 width 变化自动响应 */
+                    /* 表达式：注入为 --h{hash}，随 barWidth 变化自动响应 */
                     .bar-label {
                         color: bind("barWidth > 120 ? '#fff' : '#333'");
                         font-size: bind("12 + barWidth / 20 + 'px'");
@@ -49,10 +52,10 @@
                 </style>
             </div>
 
-            <!-- 实例 1：初始宽度 80，颜色红 -->
+            <!-- 实例：仅传 label（props），barWidth/barColor 留给全局 state -->
             <div class="demo-card">
                 <p class="is-size-7 has-text-grey">拖动滑块改变 barWidth，观察宽度/颜色/字号响应式变化：</p>
-                <div id="b1" x-use="{ name: 'bar', label: '进度', barWidth: 80, barColor: '#ff3860' }"></div>
+                <div id="b1" x-use="{ name: 'bar', label: '进度' }"></div>
             </div>
 
             <!-- 控制：滑块 + 按钮，改全局 state 触发 bind 更新 -->
@@ -75,8 +78,8 @@
 
         <script>
             const { AutoTemplateEngine } = AutoTemplateSpaces;
-            // barWidth / barColor / label 经 x-use props 注入组件 data 域，
-            // bind 表达式经组件 scope 读到这些响应式字段。
+            // barWidth / barColor 是全局 state 字段（bind 经聚合视图沿链读取，滑块/按钮改它们触发更新）；
+            // label 仅作展示，也可放全局 state。
             const engine = new AutoTemplateEngine(document.getElementById("app"), {
                 barWidth: 80,
                 barColor: "#ff3860",

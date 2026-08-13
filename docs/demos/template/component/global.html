@@ -19,7 +19,7 @@
         -->
         <div id="app" x-scope>
             <div class="panel">
-                <div class="label">全局组件 card（含 <script setup> + props 注入）</div>
+                <div class="label">全局组件 card（含 &lt;script setup&gt; + props 注入）</div>
                 <div x-use="{ name: 'card', title: '全局卡片', desc: '经 options.components 声明' }"></div>
             </div>
             <div class="panel">
@@ -43,7 +43,7 @@
                             </div>
                             <script setup>{
                                 data(){ return { title: '默认标题', desc: '默认描述' } }
-                            }</script>
+                            }<\/script>
                             <style>
                                 .card-wrap { padding: 12px 16px; border-left: 3px solid #3273dc; background:#f5f9ff; border-radius:4px; }
                                 .card-title { font-weight: 700; }
