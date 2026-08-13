@@ -4,7 +4,7 @@ import { isSimpleStatePath, type AutoTemplateScope } from "../../scope";
 
 /** x-for 单个列表项的运行时实体（v2 key-based 复用） */
 type ForItemEntry = {
-    /** 项数据对象（复用时若引用变，原地更新 localScope 后 refresh） */
+    /** 项数据对象（复用时若引用变，原地更新 localData 后 refresh） */
     item: any;
     /** 项在当前列表中的位置序号（index 变 → 项内订阅路径含旧 index 失效 → 重建） */
     index: number;
@@ -13,7 +13,7 @@ type ForItemEntry = {
     /** 该项各成员的渲染节点（与 scopes 同构、同序） */
     nodes: HTMLElement[];
     /** 该项共享的局部作用域（复用时 Object.assign 原地更新，禁止替换引用） */
-    localScope: Record<string, any>;
+    localData: Record<string, any>;
 };
 
 /**
@@ -56,7 +56,7 @@ type ForItemEntry = {
  *
  * **渲染策略（key-based 复用）**：监听 items（支持纯路径 `items` 或表达式 `items.filter(...)`），
  * 结构变化时按 `:key` 做 4-pass diff，**复用未变项**（保留 DOM/scope/订阅 → 焦点/输入态不丢），仅增删/重订阅差异项：
- * - 同 key + index 不变 → 复用：原地 `Object.assign(localScope)` 更新 item + 全部 `$*`，再 `scope.refresh()` 重跑项内绑定。
+ * - 同 key + index 不变 → 复用：原地 `Object.assign(localData)` 更新 item + 全部 `$*`，再 `scope.refresh()` 重跑项内绑定。
  *   （项内订阅路径含 index、index 不变则订阅仍有效；引用变的内容差异由 refresh patch。）
  *   脏标记短路（P2）：item 引用未变 && length 未变 → 跳过 refresh（$* 随 assign 重算但值不变）。
  * - 同 key + index 变（移动）→ 重订阅（P1）：旧订阅路径含旧 index 已失效，**复用项根 DOM**（rebindItem），
@@ -75,17 +75,17 @@ type ForItemEntry = {
  * - 颗粒度差异：纯路径 `items` 仅结构变触发 render（字段级细粒度保留）；表达式 `items.filter(...)`
  *   经 collectDependencies 订阅所有项被读字段 → 字段变更也触发 render（退化为列表级粗粒度）。
  *
- * 项内局部变量（item/index）经 `compileChild` 的 localScope 注入；同一项的多个成员**共享同一 localScope 引用**，
- * 各成员表达式 `item.name` 经各自 `scope.getScopeContext()` 解析（localScope 优先、parent 链回退到根 state）。
+ * 项内局部变量（item/index）经 `compileChild` 的 localData 注入；同一项的多个成员**共享同一 localData 引用**，
+ * 各成员表达式 `item.name` 经各自 `scope.getContext()` 解析（localData 优先、parent 链回退到根 state）。
  *
- * **循环派生变量**（$ 前缀，固定可用、不占用户自定义命名空间）：每项 localScope 还注入
+ * **循环派生变量**（$ 前缀，固定可用、不占用户自定义命名空间）：每项 localData 还注入
  * `$index`(0-based 序号)、`$length`(本次渲染项数，filter/map 后即筛选后长度)、
  * `$begin`(首项)、`$end`(末项)、`$odd`(第 1,3,5... 行，对齐 CSS `:nth-child(odd)`)、
  * `$even`(第 2,4,6... 行)。典型用法：行间分隔线 `<hr x-if="!$end"/>`、末项汇总提示。
  *
  * 注意：
- * - **嵌套遮蔽**——内层 `$index` 等命中自身 localScope、遮蔽外层同名变量；跨层引用外层序号请用自定义 index 名（如 `cell, cidx of ...` 后用 `cidx`）。
- * - **派生变量靠 refresh 重算**——`$end/$begin/$length` 随 items 增删而变，且这些 `$*` 是 localScope 普通字段、非响应式（store 不会自动触发订阅为空的 watcher）。v2 对复用项原地重算全部 `$*` 并经 `scope.refresh()` 重跑项内绑定 patch，保证派生变量始终正确。
+ * - **嵌套遮蔽**——内层 `$index` 等命中自身 localData、遮蔽外层同名变量；跨层引用外层序号请用自定义 index 名（如 `cell, cidx of ...` 后用 `cidx`）。
+ * - **派生变量靠 refresh 重算**——`$end/$begin/$length` 随 items 增删而变，且这些 `$*` 是 localData 普通字段、非响应式（store 不会自动触发订阅为空的 watcher）。v2 对复用项原地重算全部 `$*` 并经 `scope.refresh()` 重跑项内绑定 patch，保证派生变量始终正确。
  * - **x-if 默认 eager（销毁子树）**——`<div x-if="$end">` 为假时移除其子树并销毁 watcher；叶子元素（hr/线，无子树）退化为 `display:none`。
  *   若需"假时仅隐藏、保留子树 watcher"（如隐藏期间继续累积最新值），用 `x-if.keepalive` / `x-show`。
  */
@@ -151,7 +151,11 @@ export class ForDirective extends AutoTemplateDirectiveBase {
     override created() {
         this.parse();
         // 既无项模板也无 special 模板才放弃：允许"仅有 x-empty、无项模板"的容器继续（仅渲染空状态）
-        if (!this.itemsPath || (this.itemTemplates.length === 0 && this.specialTemplates.size === 0)) return;
+        if (
+            !this.itemsPath ||
+            (this.itemTemplates.length === 0 && this.specialTemplates.size === 0)
+        )
+            return;
         // 监听 items 路径，变化时全量重建（回调经 scheduler 合并）
         this.binding.watch(this.itemsPath, () => this.render());
         // 项级监听（P0）：纯路径 itemsPath 时补 `items.*`，捕获 `items[i]={...}` 整体替换单项。
@@ -192,7 +196,9 @@ export class ForDirective extends AutoTemplateDirectiveBase {
         if (tpl) {
             for (const child of Array.from(tpl.children)) {
                 if (!(child instanceof HTMLElement)) continue;
-                const matched = ForDirective.SPECIAL_CHILDREN.find((s) => child.hasAttribute(s.match));
+                const matched = ForDirective.SPECIAL_CHILDREN.find((s) =>
+                    child.hasAttribute(s.match),
+                );
                 if (matched) {
                     const arr = this.specialTemplates.get(matched.name) ?? [];
                     arr.push(child);
@@ -203,7 +209,9 @@ export class ForDirective extends AutoTemplateDirectiveBase {
             }
         }
         if (this.itemTemplates.length === 0 && this.specialTemplates.size === 0) {
-            this.engine.logger.error(`x-for: 缺少项模板（容器无元素子节点，path="${this.itemsPath}"）`);
+            this.engine.logger.error(
+                `x-for: 缺少项模板（容器无元素子节点，path="${this.itemsPath}"）`,
+            );
         }
         // :key 可选：未提供时 evalKey 回退用 index
         this.keyExpr = tpl?.getAttribute(":key") ?? tpl?.getAttribute("x-bind:key") ?? null;
@@ -219,7 +227,7 @@ export class ForDirective extends AutoTemplateDirectiveBase {
     /**
      * key-based 渲染：4-pass diff（复用未变项、仅增删/重订阅差异项）。
      *
-     * Pass 1 决策：同 key + index 不变 → 复用（原地更新 localScope）；同 key + index 变 → 移动
+     * Pass 1 决策：同 key + index 不变 → 复用（原地更新 localData）；同 key + index 变 → 移动
      *   （旧订阅路径含旧 index 已失效，P1 复用项根 DOM 仅重订阅）；新 key → 新建。
      * Pass 2 清理：新列表中消失的旧 key → 销毁。
      * Pass 3 重排：DOM 已就位则跳过（P2）；否则从后向前、组内正序 insertBefore。
@@ -227,7 +235,8 @@ export class ForDirective extends AutoTemplateDirectiveBase {
      */
     private render() {
         const container = this.el;
-        if (!container || (this.itemTemplates.length === 0 && this.specialTemplates.size === 0)) return;
+        if (!container || (this.itemTemplates.length === 0 && this.specialTemplates.size === 0))
+            return;
 
         // === special 决策：取 priority 最高、且有模板、且 when(raw) 为真的描述符 ===
         const raw = this.binding.read(this.itemsPath);
@@ -279,14 +288,14 @@ export class ForDirective extends AutoTemplateDirectiveBase {
             const old = this.itemMap.get(key);
             let entry: ForItemEntry;
             if (old && old.index === index) {
-                // (A) 同 key + index 不变 → 复用 DOM/scope/订阅：原地更新 localScope（item + 全部 $*）。
+                // (A) 同 key + index 不变 → 复用 DOM/scope/订阅：原地更新 localData（item + 全部 $*）。
                 //    订阅路径含 index、index 不变则订阅仍有效；引用变的内容差异由 Pass 4 refresh patch。
-                //    铁律：Object.assign 原地改，禁止换 localScope 对象（_scopeView Proxy 闭包绑定引用）。
+                //    铁律：Object.assign 原地改，禁止换 localData 对象（_scopeView Proxy 闭包绑定引用）。
                 entry = old;
                 const itemChanged = old.item !== item; // P2 脏标记
                 entry.item = item;
-                Object.assign(entry.localScope, this.buildLocalScope(item, index, length));
-                // P2 短路：item 引用未变 && length 未变 → localScope 内容未变，跳过 refresh
+                Object.assign(entry.localData, this.buildLocalData(item, index, length));
+                // P2 短路：item 引用未变 && length 未变 → localData 内容未变，跳过 refresh
                 // （$* 随 Object.assign 重算但值不变；项内字段变更已由字段级 watcher 精准 patch，未进 render）。
                 if (itemChanged || lengthChanged) reuseEntries.push(entry);
             } else if (old) {
@@ -335,7 +344,7 @@ export class ForDirective extends AutoTemplateDirectiveBase {
             }
         }
 
-        // === Pass 4：复用项 refresh（localScope 已原地更新，驱动项内绑定重求值 patch）===
+        // === Pass 4：复用项 refresh（localData 已原地更新，驱动项内绑定重求值 patch）===
         // 仅 reuse 项需要：recreate/create 已在 createItem/compileChild 首次渲染。
         // refresh 重算 $length/$end/$begin 等依赖全局长度的派生变量 + 引用变化项的内容。
         for (const entry of reuseEntries) {
@@ -343,10 +352,10 @@ export class ForDirective extends AutoTemplateDirectiveBase {
         }
     }
 
-    /** 构造项的 localScope（item/index + 全部循环派生变量 $*）。
+    /** 构造项的 localData（item/index + 全部循环派生变量 $*）。
      *  v2 复用时通过 Object.assign 原地写回同一对象——禁止替换引用，因 watchExpression 的
-     *  _scopeView Proxy 闭包绑定了 localScope 对象引用，换对象会使 refresh 取不到新值。 */
-    private buildLocalScope(item: any, index: number, length: number): Record<string, any> {
+     *  _scopeView Proxy 闭包绑定了 localData 对象引用，换对象会使 refresh 取不到新值。 */
+    private buildLocalData(item: any, index: number, length: number): Record<string, any> {
         return {
             [this.itemName]: item,
             [this.indexName]: index,
@@ -364,15 +373,15 @@ export class ForDirective extends AutoTemplateDirectiveBase {
     /** 新建单个列表项：编译全部成员模板，返回 entry。
      *  不插入 DOM、不登记 itemMap、不做重复 key 检测（均由 render 负责）。 */
     private createItem(item: any, index: number, length: number): ForItemEntry {
-        const localScope = this.buildLocalScope(item, index, length);
+        const localData = this.buildLocalData(item, index, length);
         const scopes: AutoTemplateScope[] = [];
         const nodes: HTMLElement[] = [];
         for (const tpl of this.itemTemplates) {
-            const { el, scope } = this.engine.compiler.compileChild(tpl, this.binding, localScope);
+            const { el, scope } = this.engine.compiler.compileChild(tpl, this.binding, localData);
             scopes.push(scope);
             nodes.push(el);
         }
-        return { item, index, scopes, nodes, localScope };
+        return { item, index, scopes, nodes, localData };
     }
 
     /**
@@ -387,20 +396,20 @@ export class ForDirective extends AutoTemplateDirectiveBase {
     private rebindItem(old: ForItemEntry, item: any, index: number, length: number): ForItemEntry {
         // 销毁旧 scope（off watcher + 清 children），但不 remove DOM——nodes 由 render Pass 3 管理
         for (const s of old.scopes) s.destroy();
-        // 用新 localScope（新 index）逐成员重新编译，复用 old.nodes 的项根 DOM（reuseEl）。
+        // 用新 localData（新 index）逐成员重新编译，复用 old.nodes 的项根 DOM（reuseEl）。
         // old.nodes 与 itemTemplates 同长（createItem 按模板顺序建 nodes），索引配对安全。
-        const localScope = this.buildLocalScope(item, index, length);
+        const localData = this.buildLocalData(item, index, length);
         const scopes: AutoTemplateScope[] = [];
         for (let i = 0; i < this.itemTemplates.length; i++) {
             const { scope } = this.engine.compiler.compileChild(
                 this.itemTemplates[i]!,
                 this.binding,
-                localScope,
+                localData,
                 old.nodes[i]!,
             );
             scopes.push(scope);
         }
-        return { item, index, scopes, nodes: old.nodes, localScope };
+        return { item, index, scopes, nodes: old.nodes, localData };
     }
 
     /** 销毁单个列表项：destroy 全部成员 scope（递归清理子树 watcher + 自移除父级 children）+
@@ -427,8 +436,8 @@ export class ForDirective extends AutoTemplateDirectiveBase {
     /**
      * 挂载当前激活的 special（如 x-empty）：逐模板 compileChild 克隆编译后按文档序 append 进容器。
      *
-     * localScope 传**空对象 {}**——不注入 item/$index（空状态下它们无意义），空元素上的绑定
-     * （x-text/:class 等）经 scope.getScopeContext() 回退到父作用域求值，与"把空元素挪到 x-for 外当兄弟"语义一致。
+     * localData 传**空对象 {}**——不注入 item/$index（空状态下它们无意义），空元素上的绑定
+     * （x-text/:class 等）经 scope.getContext() 回退到父作用域求值，与"把空元素挪到 x-for 外当兄弟"语义一致。
      * compileChild 内部 removeDirectives 会剥离 x-empty 属性，输出 DOM 无 x-empty 残留。
      * 多个 x-empty 全部渲染、按文档序占位。
      */

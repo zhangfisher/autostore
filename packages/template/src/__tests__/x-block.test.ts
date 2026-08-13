@@ -16,7 +16,7 @@ import { mount, nextTick } from "./helpers";
  * - 决策 9 getBlock 沿 parent 链就近 + 全局块兜底 + 局部遮蔽全局
  * - 决策 10 全局块自动包装（单根打标/多根包 div/已含尊重/纯文本）
  * - 决策 11 懒预编译缓存（首次解析、后续 deepClone、失败视为未命中）
- * - x-loading 消费 loading 块替换默认块（dataScope 注入）
+ * - x-loading 消费 loading 块替换默认块（data 注入）
  */
 
 describe("x-scope 结构占位", () => {
@@ -390,10 +390,10 @@ describe("全局块（决策 9/10/11）", () => {
     });
 });
 
-describe("x-loading dataScope 注入与 attrChanged patch（决策 12）", () => {
-    test("决策12-c：config 以 dataScope 注入块（message/color 响应式取用）", async () => {
+describe("x-loading data 注入与 attrChanged patch（决策 12）", () => {
+    test("决策12-c：config 以 data 注入块（message/color 响应式取用）", async () => {
         // 自定义 loading 块用 x-text="message" 取注入的 message（注：x-text 与初始文本子节点
-        // 共存属既有渲染细节，块内不写初始占位文本以聚焦 dataScope 注入本身）
+        // 共存属既有渲染细节，块内不写初始占位文本以聚焦 data 注入本身）
         const { root, store } = mount(
             `<div x-scope>
                 <div x-block="loading"><span class="msg" x-text="message"></span></div>
@@ -403,11 +403,11 @@ describe("x-loading dataScope 注入与 attrChanged patch（决策 12）", () =>
         );
         await nextTick();
         const host = root.querySelector("#host")!;
-        // 块内 x-text="message" 取到注入的 dataScope.message
+        // 块内 x-text="message" 取到注入的 data.message
         expect(host.querySelector(".msg")?.textContent).toBe("加载中");
     });
 
-    test("决策12-c：全局 loading 块经 getBlock 兜底命中 + dataScope 注入", async () => {
+    test("决策12-c：全局 loading 块经 getBlock 兜底命中 + data 注入", async () => {
         const { root } = mount(
             `<div id="host" x-loading="{ visible: 'loading', message: '全局加载' }">内容</div>`,
             { loading: true },
@@ -419,14 +419,14 @@ describe("x-loading dataScope 注入与 attrChanged patch（决策 12）", () =>
         );
         await nextTick();
         const host = root.querySelector("#host")!;
-        // 全局块兜底命中，message 经 dataScope 注入
+        // 全局块兜底命中，message 经 data 注入
         expect(host.querySelector(".global-msg")?.textContent).toBe("全局加载");
     });
 
     // 注：attrChanged（编程式 setAttribute 改 x-loading 配置值）经 dispatcher 路由存在既有局限
     //（配置绑定 `x-loading="{...}"` 的 setAttribute 不触发 attrChanged，与快速绑定行为不一致），
     // 属 dispatcher 层面预存缺陷、非本 block 特性范畴，故不为 attrChanged 细粒度 patch 单设用例。
-    // dataScope 注入的响应式已由 12-c（首次渲染取注入值）覆盖；运行时改 config 的可靠途径是
+    // data 注入的响应式已由 12-c（首次渲染取注入值）覆盖；运行时改 config 的可靠途径是
     // engine.data 或重建宿主，不走 setAttribute 配置绑定。
 
     test("决策12-b：块根即 overlay 壳，注入壳样式（定位/背景）", async () => {

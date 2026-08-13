@@ -34,11 +34,11 @@
 
 ### 1. 三档语义：存在性（x-if 家族，detach）vs 可见性（x-show，display:none）正交分离
 
-| 指令 | 假时宿主 | 子树 | 表单提交 | 状态 | ownsChildren | 共存 x-for |
-|---|---|---|---|---|---|---|
-| `x-if`（eager 默认） | **摘除 + 锚点注释** | 销毁重编译 | ✅ 不提交 | 子树丢 | true | ❌ |
-| `x-if.keep` | **摘除 + 锚点注释** | 保活 | ✅ 不提交 | 全保留 | false | ✅ |
-| `x-show`（独立） | **display:none** | 保活（el 留 DOM） | ⚠️ 仍提交 | 全保留 | false | ✅ |
+| 指令                 | 假时宿主            | 子树              | 表单提交  | 状态   | ownsChildren | 共存 x-for |
+| -------------------- | ------------------- | ----------------- | --------- | ------ | ------------ | ---------- |
+| `x-if`（eager 默认） | **摘除 + 锚点注释** | 销毁重编译        | ✅ 不提交 | 子树丢 | true         | ❌         |
+| `x-if.keep`          | **摘除 + 锚点注释** | 保活              | ✅ 不提交 | 全保留 | false        | ✅         |
+| `x-show`（独立）     | **display:none**    | 保活（el 留 DOM） | ⚠️ 仍提交 | 全保留 | false        | ✅         |
 
 对照 Vue `v-if`/`v-show`：存在性（节点在不在）与可见性（在但看不见）各一指令。`.keep` 与 `x-show` 都保活，唯一差别是 detach（不提交/不被 querySelector 命中）vs display:none（提交/可命中）——正是用户要拆开的两个正交需求。
 
@@ -127,4 +127,4 @@ eager 额外 `destroyChildren()`（假）/ `compileSubtree()`（真）；`.keep`
 
 - **复用项**（同 key + index 不变，`Object.assign(localScope)` + `refresh`）：项 scope.`refresh()` 递归到 input 宿主 scope.`refresh()` → 重跑控制 watcher 的 update 闭包 → 重求值 `item.active`（取新 localScope）→ toggle。✓
 - **rebind 项**（index 变，销毁重建）：旧 input 宿主 scope destroy（含其控制 watcher），`compileChild` 重建 input + 新 x-if，按当前 `item.active` 初始化。✓
-- 关键不变量：控制 watcher 挂 input 宿主 scope（`this.binding`），其 `parent` = 项 scope，localScope 经 `getScopeContext` parent 链聚合；**detach 不破坏 scope 的 parent 链**（scope 关系独立于 DOM 位置）。
+- 关键不变量：控制 watcher 挂 input 宿主 scope（`this.binding`），其 `parent` = 项 scope，localScope 经 `getContext` parent 链聚合；**detach 不破坏 scope 的 parent 链**（scope 关系独立于 DOM 位置）。

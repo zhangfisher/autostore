@@ -57,11 +57,11 @@
 
 ### 嵌套作用域
 
-父子元素的 dataScope 经 `getScopeContext` 的 parent 链层叠，读取时**就近命中**：
+父子元素的 data 经 `getContext` 的 parent 链层叠，读取时**就近命中**：
 
 - **同名键覆盖**：子层声明的同名键覆盖父层——子读到自己那份，父层值不受影响。
 - **未声明键继承**：子层没声明的键，沿 parent 链向上取最近一层的值（父 → 祖父 → … → 全局 state）。
-- **写入命中本层**：`this.data.<键> = v` 只改本层 dataScope 已有的键；本层没有则向上委托。
+- **写入命中本层**：`this.data.<键> = v` 只改本层 data 已有的键；本层没有则向上委托。
 
 <demo html="template/data/nested.html"/>
 
@@ -91,7 +91,7 @@
 <demo html="template/data/runtime.html"/>
 
 ```javascript
-// 动作内：最简，直接写本层 dataScope
+// 动作内：最简，直接写本层 data
 bump: function () { this.data.times++; }
 
 // 命令式：el 必须是挂 DOM 的 scope 元素（见下方警告）

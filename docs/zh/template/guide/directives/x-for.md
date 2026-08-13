@@ -145,7 +145,7 @@ engine.state.books.shift();
 
 | 决策 | 触发条件 | 引擎动作 |
 | --- | --- | --- |
-| **复用** | 旧列表中存在**同 key 且 index 不变**的项 | 原地更新项数据（`Object.assign(localScope)`），重跑项内绑定——DOM、scope、订阅、焦点全保留 |
+| **复用** | 旧列表中存在**同 key 且 index 不变**的项 | 原地更新项数据（`Object.assign(localData)`），重跑项内绑定——DOM、scope、订阅、焦点全保留 |
 | **重订阅（移动）** | 旧列表存在**同 key 但 index 变**（被移动/前插） | 复用项根 DOM 节点，仅因 index 变化重订阅项内依赖 index 的绑定 |
 | **新建** | 出现旧列表没有的新 key | 克隆项模板、建 scope、建立订阅、挂载 |
 | **销毁** | 旧列表里某个 key 在新列表消失 | 销毁该项 scope（连带子树订阅 off）、移除 DOM |

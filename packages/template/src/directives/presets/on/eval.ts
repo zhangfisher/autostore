@@ -59,8 +59,8 @@ export function createEvalHandler(
     // 返回值冒泡（ADR-0008）：action/表达式分支的返回值经管道透传，供 .feedback 等 wrapper 捕获
     // （如 async action 返回的 Promise）。同步抛错经 catch logger 后 rethrow，供 .feedback 检测同步失败（ADR-0013）。
     return (event) => {
-        // 聚合数据视图：localScope + dataScope + 全局 state，供表达式 with 求值与 ctx.data（写入透传 dataScope）
-        const data = scope.getScopeContext();
+        // 聚合数据视图：localData + data + 全局 state，供表达式 with 求值与 ctx.data（写入透传 data）
+        const data = scope.getContext();
         // 1) Action 优先：每次触发时查 scope.getAction（actions 可能后于 created 注册）
         if (name) {
             const action = scope.getAction(name);

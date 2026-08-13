@@ -154,7 +154,7 @@ describe("x-bind 属性绑定", () => {
     });
 });
 
-describe("x-bind:class 在 x-for 内（localScope 注入）", () => {
+describe("x-bind:class 在 x-for 内（localData 注入）", () => {
     test("项内表达式读取 item 字段", async () => {
         const { root } = mount(
             `<ul x-for="item of items"><li x-class="item.on ? 'active' : 'inactive'"></li></ul>`,

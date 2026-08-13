@@ -98,7 +98,7 @@ let stylesInjected = false;
 /**
  * 默认 loading 块模板（ADR-0021 决策 12）：x-loading 渲染统一走「编译块」路径，无自定义块时
  * 用本模板作默认实现。形态与公开示例同构——`overlay` 壳 > `box` > `loader`(`:style="color"`) +
- * `message`(`x-text="message"`)。`color`/`message` 经块 dataScope 响应式注入（见 {@link mountOverlay}）。
+ * `message`(`x-text="message"`)。`color`/`message` 经块 data 响应式注入（见 {@link mountOverlay}）。
  *
  * **由 LoadingDirective 持有**（非 engine 注册表）——是「某指令自带的、可被全局/局部 loading 块
  * 覆盖的默认实现」，不违反「引擎不预定义 UI 态名册」。消费者取块 = `getBlock('loading') ?? DEFAULT_BLOCK`。
@@ -183,7 +183,7 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
 
     /** 当前已挂载的覆盖层（= 编译后的块根；未挂载时为 null）；delay 窗口期内仍为 null */
     private overlay: HTMLElement | null = null;
-    /** 已挂载覆盖层对应的块 scope（attrChanged 细粒度 patch 其 dataScope；unmount 时 destroy） */
+    /** 已挂载覆盖层对应的块 scope（attrChanged 细粒度 patch 其 data；unmount 时 destroy） */
     private blockScope: AutoTemplateScope | null = null;
     /** delay 定时器句柄（延迟挂载未触发时存在） */
     private delayTimer: ReturnType<typeof setTimeout> | null = null;
@@ -233,8 +233,8 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
      * 属性值变化（dispatcher 检测到 setAttribute）：细粒度 patch，不重编译块（ADR-0021 决策 12-(d)）。
      *
      * 解析新 config 后：
-     * - **视觉字段**（message/color/bgColor/opacity）→ `Object.assign` 进块 dataScope，块内绑定经
-     *   响应式字段级细粒度更新；同时重算壳样式（bg/opacity 既是 dataScope 值、又是 overlay 背景）写回块根；
+     * - **视觉字段**（message/color/bgColor/opacity）→ `Object.assign` 进块 data，块内绑定经
+     *   响应式字段级细粒度更新；同时重算壳样式（bg/opacity 既是 data 值、又是 overlay 背景）写回块根；
      * - **visible** → 重判显隐（show/hide），delay 重置定时器；
      * - **selector** → 变化需移位，重建 overlay（块随之重编译重注入）。
      *
@@ -243,9 +243,9 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
     /**
      * 属性值变化（dispatcher 检测到 setAttribute）：重建 overlay（ADR-0021 决策 12-d）。
      *
-     * 解析新 config 后整体 teardown + remount：块随新 config 重新编译、dataScope 重新注入、
+     * 解析新 config 后整体 teardown + remount：块随新 config 重新编译、data 重新注入、
      * 壳样式重算。**不细粒度 patch 既有块**——attrChanged 是编程式 setAttribute 的罕见路径，
-     * 重建最简且正确（避免块已编译的 dataScope/订阅与 dispatcher 时序耦合）。块内 message/color
+     * 重建最简且正确（避免块已编译的 data/订阅与 dispatcher 时序耦合）。块内 message/color
      * 等随新 config 重新编译即取新值。
      */
     attrChanged(newVal: string, _oldVal?: string): void {
@@ -411,7 +411,7 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
      *
      * 渲染统一走「编译块」路径：取块 = `getBlock('loading') ?? DEFAULT_BLOCK`，深克隆 → 经 compileChild
      * 编译挂载（parentScope 为宿主 scope 使块继承宿主数据上下文；**config 经 compileChild 第 5 参
-     * initialData 在 compile 前注入 dataScope**，确保块内 watch 首次求值即收集到 `_scopes.<id>.<field>`
+     * initialData 在 compile 前注入 data**，确保块内 watch 首次求值即收集到 `_scopes.<id>.<field>`
      * 精准路径，后续 attrChanged 可字段级细粒度更新）→ 注入壳样式到块根 → 挂到 target。
      */
     private mountOverlay(): void {
@@ -423,10 +423,10 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
         const snapshot = this._resolveLoadingBlock();
         const clone = snapshot.cloneNode(true) as HTMLElement;
 
-        // config 视图：七字段，作为块根 dataScope 在 compile 前注入（响应式，块内 x-text="message" 取用）
+        // config 视图：七字段，作为块根 data 在 compile 前注入（响应式，块内 x-text="message" 取用）
         const initialData = this._configData();
         // 编译块：parentScope = 宿主 scope（继承宿主数据上下文）；宿主无 scope（动态插入等）传 null
-        // —— compileChild 支持空 parentScope，块 scope 独立、仅靠 initialData 的 dataScope 提供上下文
+        // —— compileChild 支持空 parentScope，块 scope 独立、仅靠 initialData 的 data 提供上下文
         const parentScope = this.engine.findScopeByEl(this.el!) ?? null;
         const compiled = this.engine.compiler.compileChild(
             clone,
@@ -487,7 +487,7 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
     }
 
     /**
-     * 构造注入块 dataScope 的 config 视图（全七字段，决策 12-(c) Q7 全注入）。
+     * 构造注入块 data 的 config 视图（全七字段，决策 12-(c) Q7 全注入）。
      *
      * `visible` 是表达式串（如 `"order.isSubmit"`）——块内若 x-if="visible" 期待布尔会拿到字符串，
      * 属已知脚枪（visible 是宿主显隐逻辑，控制 overlay 挂载与否，非块内消费字段），文档已标注。

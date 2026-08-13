@@ -23,7 +23,7 @@ import { recompileSubtree } from "../../utils/recompileSubtree";
  *
  * **`.compile` 修饰符（ADR-0017）**：反转上述定位——把绑定值作为**子模板编译执行**。
  * 注入内容写回 `scope.template` 后调 `recompileSubtree`，建 scope/watcher、继承宿主作用域
- * （localScope/dataScope 经 `_linkParent` 自动传递），支持嵌套 x-data/x-for/x-if，与正常模板一致。
+ * （localData/data 经 `_linkParent` 自动传递），支持嵌套 x-data/x-for/x-if，与正常模板一致。
  * - **隐式强制跳过消毒**（sanitize 会剥 x-* 指令属性致模板失效），安全等级**高于 `.raw`**：
  *   `.raw` 的 `<script>` 经 innerHTML 不执行，`.compile` 注入的 `x-on` 会真实绑定执行——须确保来源可信。
  * - 每次值变全量销毁旧子树 + 重编译（无 diff）；空值销毁子树 + 清空宿主、忽略 `empty` 文案

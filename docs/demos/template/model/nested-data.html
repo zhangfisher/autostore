@@ -11,7 +11,7 @@
     <body>
         <!-- 多级嵌套 x-data + x-model：父层声明 user，子层覆盖 user、新增 score。
              各层 x-model 经 set 表达式写「本层命中」的字段：
-               - getScopeContext 的 set 陷阱按 localScope > dataScope 就近命中本层，
+               - getContext 的 set 陷阱按 localData > data 就近命中本层，
                  故子层 input 改的是子层 user、父层 input 改的是父层 user，互不影响。
                - 未覆盖的键沿 parent 链继承（子层 score 改本层；子层读 role 继承父层）。 -->
         <div class="demo-app section">

@@ -15,7 +15,7 @@ const CONFIG_SEPARATOR = "@";
  * ## 两个值来源（正交，见 ADR-0019）
  *
  * - **状态绑定**（默认，value 不含 `@`）：整值表达式经 `scope.watch` 订阅 store.state（纯路径走精准订阅，
- *   表达式走 `collectDependencies`，自动注入 x-for 的 localScope）。支持相对表达式。`order.price` = 绑状态值。
+ *   表达式走 `collectDependencies`，自动注入 x-for 的 localData）。支持相对表达式。`order.price` = 绑状态值。
  * - **配置绑定**（value 含 `@`）：`:placeholder="order.price@placeholder"` 把值来源切到 `configManager`
  *   元数据。`@` 左为**配置状态路径**（定位 configManager.state 中的 schema 条目），右为**配置属性路径**
  *   （schema 对象的属性，**支持多段嵌套**，如 `@style.color` 读 `schema.style.color`；schema 可扩展故无白名单）。

@@ -335,8 +335,8 @@ describe("x-for 嵌套渲染", () => {
 
 describe("x-for 嵌套作用域链（内层 body 引用外层变量）", () => {
     test("二层嵌套：内层 body 同时引用外层 row 与内层 cell", async () => {
-        // 内层 li 属于 compileChild 创建的项作用域，localScope={cell,index}（无 _linkParent 继承），
-        // `row` 只能经 getScopeContext 的 parent 链回退到外层项作用域解析。
+        // 内层 li 属于 compileChild 创建的项作用域，localData={cell,index}（无 _linkParent 继承），
+        // `row` 只能经 getContext 的 parent 链回退到外层项作用域解析。
         const { root, store } = mount(
             `<ul x-for="row of matrix" :key="row.id"><ol x-for="cell of row.cells" :key="cell.id"><li x-text="row.title + ':' + cell.v"></li></ol></ul>`,
             {
@@ -502,7 +502,12 @@ describe("x-for 与 x-if 等指令组合", () => {
     test("x-for 项根 eager x-if 隐藏 + items 增项：复用项 refresh 重新 detach（不误显示）", async () => {
         const { root, store } = mount(
             `<ul x-for="item of items" :key="item.id"><li x-if="item.show" x-text="item.name"></li></ul>`,
-            { items: [{ id: 1, name: "a", show: false }, { id: 2, name: "b", show: true }] },
+            {
+                items: [
+                    { id: 1, name: "a", show: false },
+                    { id: 2, name: "b", show: true },
+                ],
+            },
         );
         // 初始：a 的 li 被 eager x-if 摘除（detach），仅 b 显示
         expect(root).toEqualHTML(`<div>
@@ -691,7 +696,7 @@ describe("x-for B 语义新增能力", () => {
     });
 
     test("复合项含嵌套 x-for：每项多成员，其一为内层循环", async () => {
-        // 关键风险点：每个外层迭代用同一 localScope 编译多个成员，
+        // 关键风险点：每个外层迭代用同一 localData 编译多个成员，
         // 其中 <ol x-for> 成员自身是结构指令、起自己的 render。
         // 验证：外层 row.title 与内层 cell.v 均正确，parent 链不串项，内外层增项各自正确重建。
         const { root, store } = mount(
@@ -875,7 +880,7 @@ describe("x-for 循环变量注入（$index/$length/$begin/$end/$odd/$even）", 
     });
 
     test("嵌套遮蔽：内层 $index 遮蔽外层", async () => {
-        // 内层 $index 命中自身 localScope、遮蔽外层；跨层引用需自定义 index 名
+        // 内层 $index 命中自身 localData、遮蔽外层；跨层引用需自定义 index 名
         const { root } = mount(
             `<ul x-for="row of matrix"><ol x-for="cell of row.cells"><li x-text="$index"></li></ol></ul>`,
             {

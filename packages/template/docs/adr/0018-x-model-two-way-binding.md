@@ -18,7 +18,7 @@
 
 - 挂 `input` 事件在 `compile` 期即可（`el` 对象存在就能 `addEventListener`，元素插入 DOM 后事件自然触发）——不需要 observer 通道的 `mounted`；
 - x-model **不响应 `setAttribute` 动态改值**（不需要 observer 通道的 `attrChanged`）；
-- scope 相对表达式（x-for item / x-data 局部变量）是 scope 通道能力，Compile 同样具备（`scope.watch` + `collectDependencies` + `getScopeContext`）。
+- scope 相对表达式（x-for item / x-data 局部变量）是 scope 通道能力，Compile 同样具备（`scope.watch` + `collectDependencies` + `getContext`）。
 
 故 `kind` 取默认 Compile（属性剥除，符合 x-model 不需属性保留的语义）。代价：运行时 `setAttribute("x-model", ...)` 改绑定值不生效——首版不支持，符合 KISS。
 
@@ -41,7 +41,7 @@ relaxed-json 不支持函数字面量。实测 `really-relaxed-json`：
 
 故 **get/set 值只能是字符串**，**禁箭头函数字面量**（表达式体降级为字符串后求值返回函数对象非值、语句块体直接解析失败）。两条正道，复用 x-on 的 `ACTION_RE` 分派（`name(args)?` 匹配走 action、否则走表达式）：
 
-- **表达式**：固定形参 `value`(get) / `$value`(set)，`new Function(..., "with(scope){...}")`，`scope = binding.getScopeContext()`（localScope+dataScope+state 聚合视图）。`$value` 取 `$` 前缀与 x-on 的 `$event` 对齐（「框架注入的特殊变量」）。
+- **表达式**：固定形参 `value`(get) / `$value`(set)，`new Function(..., "with(scope){...}")`，`scope = binding.getContext()`（localScope+dataScope+state 聚合视图）。`$value` 取 `$` 前缀与 x-on 的 `$event` 对齐（「框架注入的特殊变量」）。
 - **action 名**：`splitIp(1)` 等。**当前值自动作首参**（get 的 `value` / set 的 `$value`），括号内为追加参数；`this` = `AutoTemplateActionContext`（复用 x-on 的 el/data/scope/store/state/engine/$options，附加 `value`/`$value`）。
 
 ### 4. 防循环：flags + 实例级 `_selfWriting` 标志

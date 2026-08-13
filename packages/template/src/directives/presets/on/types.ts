@@ -87,13 +87,13 @@ export interface AutoTemplateActionContext {
     /** 原生事件对象 */
     $event: Event;
     /**
-     * 数据聚合视图（scope.getScopeContext()）：localScope + dataScope + 全局 state 拍平的视图。
+     * 数据聚合视图（scope.getContext()）：localData + data + 全局 state 拍平的视图。
      * **可读可写**：读 `this.data.xxx` 取所有可见数据；写 x-data 字段经 set 陷阱透传到响应式
-     * dataScope（= store.state._scopes[id]，触发细粒度更新）。localScope 为普通对象，写入不响应式。
+     * data（= store.state._scopes[id]，触发细粒度更新）。localData 为普通对象，写入不响应式。
      */
     data: any;
     /**
-     * 当前 AutoTemplateScope 实例：提供 `dataScope` / `getDataScope()` / `engine` / `parent` 等，
+     * 当前 AutoTemplateScope 实例：提供 `data` / `getData()` / `engine` / `parent` 等，
      * 供 action 做深层访问与写入（区别于只读的 `data` 聚合视图）。
      */
     scope: AutoTemplateScope;

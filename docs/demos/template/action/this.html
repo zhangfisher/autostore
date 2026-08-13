@@ -41,7 +41,7 @@
                         onEvent: function () {
                             this.data.log += `this.$event  = type="${this.$event.type}"  target=<${this.$event.target.tagName.toLowerCase()}>\n`;
                         },
-                        // 聚合数据视图（局部 dataScope + 全局 state）：读可见全部，写局部键透传响应式
+                        // 聚合数据视图（局部 data + 全局 state）：读可见全部，写局部键透传响应式
                         onData: function () {
                             this.data.log += `this.data    → count = ${this.data.count}\n`;
                             this.engine.state.count += 1;
@@ -51,10 +51,10 @@
                         onEngine: function () {
                             this.data.log += `this.engine  === 外部 engine ? ${this.engine === engine}\n`;
                         },
-                        // scope 入口：getDataScope() 取当前 x-data 块的响应式代理
+                        // scope 入口：getData() 取当前 x-data 块的响应式代理
                         onScope: function () {
-                            const ds = this.scope.getDataScope();
-                            this.data.log += `this.scope   = id#${this.scope.id}  dataScope.keys = [${Object.keys(ds ?? {}).join(", ")}]\n`;
+                            const ds = this.scope.getData();
+                            this.data.log += `this.scope   = id#${this.scope.id}  data.keys = [${Object.keys(ds ?? {}).join(", ")}]\n`;
                         },
                     },
                 },

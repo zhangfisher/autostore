@@ -9,7 +9,7 @@
  * 但允许每个子节点各自走 transformer 处理）。
  *
  * 编译期通过 templateScopeMap 建立 scope 父子关系（向上查找最近指令祖先），
- * 并让子作用域继承父的 localScope（供 x-for 注入的 item/index 向下传递到嵌套子元素）。
+ * 并让子作用域继承父的 localData（供 x-for 注入的 item/index 向下传递到嵌套子元素）。
  */
 import { AutoTemplateScope } from "../scope";
 import { SCOPES_KEY } from "../engine";
@@ -50,7 +50,7 @@ function hasInterpolation(el: HTMLElement): boolean {
 
 export class AutoTemplateCompiler {
     readonly engine: AutoTemplateEngine;
-    /** 编译期：原树模板元素 → scope 映射，用于建立 scope 父子关系与 localScope 继承 */
+    /** 编译期：原树模板元素 → scope 映射，用于建立 scope 父子关系与 localData 继承 */
     private templateScopeMap = new WeakMap<HTMLElement, AutoTemplateScope>();
 
     constructor(engine: AutoTemplateEngine<any>) {
@@ -358,7 +358,7 @@ export class AutoTemplateCompiler {
      * 编译单个模板元素（transformElement 回调）。
      *
      * - 无指令：原样返回，transformElement 会默认浅克隆并递归子节点；
-     * - 有指令：浅克隆 + 移除指令属性 + 建 scope + 建立 parent 关系 + 继承 localScope + 执行指令。
+     * - 有指令：浅克隆 + 移除指令属性 + 建 scope + 建立 parent 关系 + 继承 localData + 执行指令。
      * - 含结构指令（ownsChildren，如 x-for / eager x-if）：返回 `ownsChildren` 信号，
      *   让 transformElement 跳过该元素子节点的自动递归——子节点由指令自行编译，
      *   避免"正常通道编译一次 + 指令克隆再编译"的双重冲突。
@@ -518,12 +518,12 @@ export class AutoTemplateCompiler {
     /**
      * 供 x-for 编译单个列表项的模板。
      *
-     * 手动建根 scope 并注入 localScope（item/index），再用 transformElement
-     * 递归编译其子节点（嵌套 scope 经 _linkParent 挂为本 scope 子代并继承 localScope）。
+     * 手动建根 scope 并注入 localData（item/index），再用 transformElement
+     * 递归编译其子节点（嵌套 scope 经 _linkParent 挂为本 scope 子代并继承 localData）。
      *
      * @param itemTemplate 单个项的模板元素（x-for 子模板的克隆）
      * @param parentScope  x-for 所在 scope，项 scope 挂为其子（删项时递归销毁）
-     * @param localScope   注入该项的局部变量（{ item, index }）
+     * @param localData   注入该项的局部变量（{ item, index }）
      * @param reuseEl      复用既有项根 DOM 节点（移动复用场景）；缺省则克隆模板。
      *                     复用时保留项根节点身份（保住项根本身的焦点/属性），但其子树 DOM 会被
      *                     清空重建（旧 scope 已销毁）→ 子节点焦点丢失，彻底保留需 core 对象身份订阅。
@@ -531,17 +531,17 @@ export class AutoTemplateCompiler {
     compileChild(
         itemTemplate: HTMLElement,
         parentScope: AutoTemplateScope | null,
-        localScope: Record<string, any>,
+        localData: Record<string, any>,
         reuseEl?: HTMLElement,
         /**
-         * 编译前注入块根的**响应式** dataScope（仿 DataDirective.applyLocal）。
+         * 编译前注入块根的**响应式** data（仿 DataDirective.applyLocal）。
          *
-         * 与 localScope（普通对象、非响应式）并列：在 `scope.compile()` 之前把数据写入
-         * `store.state._scopes[scope.id]` 并令 `scope.dataScope` 指向它。块内指令 watch 首次求值时，
-         * `getScopeContext` 的 `_scopeView` 缓存即建成含 dataScope 层的 Proxy，`collectDependencies`
+         * 与 localData（普通对象、非响应式）并列：在 `scope.compile()` 之前把数据写入
+         * `store.state._scopes[scope.id]` 并令 `scope.data` 指向它。块内指令 watch 首次求值时，
+         * `getContext` 的 `_scopeView` 缓存即建成含 data 层的 Proxy，`collectDependencies`
          * 收集到 `_scopes.<id>.<field>` 精准路径——后续 `Object.assign` 进该响应式代理即字段级细粒度更新。
          *
-         * 供 x-loading 等消费者把 config 注入块（ADR-0021 决策 12-c）。无此参则不注入 dataScope。
+         * 供 x-loading 等消费者把 config 注入块（ADR-0021 决策 12-c）。无此参则不注入 data。
          */
         initialData?: Record<string, any>,
     ): { el: HTMLElement; scope: AutoTemplateScope } {
@@ -553,23 +553,23 @@ export class AutoTemplateCompiler {
             while (el.firstChild) el.removeChild(el.firstChild);
         }
         const scope = new AutoTemplateScope(this.engine, el, itemTemplate);
-        scope.localScope = localScope;
-        // 编译前注入响应式 dataScope（须早于 scope.compile()——各指令 watch 在 compile 内建立，
-        // 首次求值的 getScopeContext 缓存须含 dataScope 层，否则 collectDependencies 收不到精准路径）
+        scope.localData = localData;
+        // 编译前注入响应式 data（须早于 scope.compile()——各指令 watch 在 compile 内建立，
+        // 首次求值的 getContext 缓存须含 data 层，否则 collectDependencies 收不到精准路径）
         if (initialData) {
             const scopes = (this.engine.store.state as Record<string, any>)[SCOPES_KEY] as Record<
                 string,
                 any
             >;
             if (!scopes[scope.id]) scopes[scope.id] = {};
-            // dataScope 收敛为局部非空引用：scope.dataScope 字段可为 null（未注入时），
+            // data 收敛为局部非空引用：scope.data 字段可为 null（未注入时），
             // 此处守卫内必已初始化，用局部变量避免 Object.assign 接收 null 的类型错误。
-            const dataScope = scopes[scope.id];
-            scope.dataScope = dataScope;
-            Object.assign(dataScope, initialData);
+            const data = scopes[scope.id];
+            scope.data = data;
+            Object.assign(data, initialData);
         }
         // parentScope 可空（rootless 块编译，如 x-loading 宿主无 scope 的动态插入场景）：跳过父子挂接，
-        // 块 scope 独立（无祖先继承），仅靠 initialData 注入的 dataScope 提供上下文。
+        // 块 scope 独立（无祖先继承），仅靠 initialData 注入的 data 提供上下文。
         parentScope?.addChild(scope);
         this.templateScopeMap.set(itemTemplate, scope);
         this.engine.scopes.set(new WeakRef(el), scope);
@@ -588,7 +588,7 @@ export class AutoTemplateCompiler {
 
     /**
      * 向上查找最近的已注册指令祖先 scope，把 scope 挂为其子，
-     * 并继承祖先的 localScope（让 item/index 向嵌套子元素传递）。
+     * 并继承祖先的 localData（让 item/index 向嵌套子元素传递）。
      */
     private _linkParent(template: HTMLElement, scope: AutoTemplateScope): void {
         let p: HTMLElement | null = template.parentElement;
@@ -596,7 +596,7 @@ export class AutoTemplateCompiler {
             const parentScope = this.templateScopeMap.get(p);
             if (parentScope) {
                 parentScope.addChild(scope);
-                if (parentScope.localScope) scope.localScope = parentScope.localScope;
+                if (parentScope.localData) scope.localData = parentScope.localData;
                 return;
             }
             p = p.parentElement;

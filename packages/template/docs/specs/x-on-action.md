@@ -62,9 +62,9 @@
 24. 作为模板开发者，我想在 action 内经 `this.store`（AutoStore 实例）直接写全局响应式 state（`this.store.state.count++`），这样改动自动联动 DOM。
 25. 作为模板开发者，我想在 action 内经 `this.data` 读取**聚合视图**（x-data 局部字段 + 全局 state 拍平可见），这样无需关心数据来自哪一层。
 26. 作为模板开发者，我想在 action 内经 `this.data.<x-data 字段> = v` **写入**并触发细粒度响应式更新，这样局部状态改动联动 DOM。
-27. 作为模板开发者，我想在 action 内经 `this.scope`（AutoTemplateScope 实例）做深层访问（`getDataScope()` 沿链取最近 x-data 域、`engine`、`parent`），这样区别于只读的 `this.data` 聚合视图。
+27. 作为模板开发者，我想在 action 内经 `this.scope`（AutoTemplateScope 实例）做深层访问（`getData()` 沿链取最近 x-data 域、`engine`、`parent`），这样区别于只读的 `this.data` 聚合视图。
 28. 作为模板开发者，我想嵌套 x-data 下、后代元素的 action 经聚合视图自动读到**最近（内层）** x-data 字段，这样同名字段就近覆盖。
-29. 作为模板开发者，我想无 x-data 时 `getDataScope()` 返回 null、`this.data` 仍可读全局 state，这样 action 在无局部数据场景仍可用。
+29. 作为模板开发者，我想无 x-data 时 `getData()` 返回 null、`this.data` 仍可读全局 state，这样 action 在无局部数据场景仍可用。
 30. 作为模板开发者，我想在 action 内经 `this.$options` 读取指令配置（含修饰符注入的开关，如 `.left` → `$options.left === true`），这样 action 可据修饰符分支。
 31. 作为模板开发者，我想 `this.$options` 按两层回退（指令选项 → 宿主 `x-options`）且**只读**（写入静默失败），这样配置静态、与 `data` 数据通道正交不冲突。
 32. 作为模板开发者，我想 action 参数表达式内可用 `$event`（`@input="recv($event.target.value)"`），这样事件对象能透进参数。
@@ -120,15 +120,15 @@
 - **查找时机（关键）**：Action 查找**延迟到事件触发时**（handler 闭包内现调 `scope.getAction`）。理由：actions 可能在指令 `created` 之后才注册（运行时赋值 `engine.actions`、后注入的局部 script），若 `created` 时缓存引用会查到 undefined 误走表达式。仅「表达式编译」（`new Function`，指令值不变）与「参数求值器」在 `created` 时一次性完成，事件触发路径零重复编译。
 - **调用约定**：命中 function 时，以 `AutoTemplateActionContext` 为 `this` 调用；参数由 args 求值器（`new Function('$event','data','with(data){return [...]}')`）产出数组，无参（裸名 / 空括号）则无参调用。调用包裹 try/catch，异常记 `engine.logger.error`、不中断。
 - **`AutoTemplateActionContext` 契约（决策编码）**：作为 action 的 `this`，同时其字段经表达式 `with(data)` 可见。字段语义：
-    | 字段       | 类型               | 语义                                                                                                                                                                                 |
-    | ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-    | `el`       | HTMLElement        | 触发元素                                                                                                                                                                             |
-    | `$event`   | Event              | 原生事件对象（亦作表达式求值器形参注入）                                                                                                                                             |
-    | `data`     | 聚合视图           | `scope.getScopeContext()`：localScope + dataScope + 全局 state 拍平。**可读可写**：写 x-data 字段经 set 陷阱透传到响应式 dataScope 触发细粒度更新；写 localScope（普通对象）不响应式 |
-    | `scope`    | AutoTemplateScope  | 当前 scope 实例，提供 `getDataScope()`（沿链取最近 x-data 域）/ `engine` / `parent` 等，供深层访问与写入                                                                             |
-    | `store`    | AutoStore          | 实例，`this.store.state` 写入即响应式                                                                                                                                                |
-    | `engine`   | AutoTemplateEngine | 引擎实例                                                                                                                                                                             |
-    | `$options` | 只读聚合视图       | 指令配置：指令选项 → 宿主 `x-options` 两层回退；只读（set/ delete 静默失败）；与 `data` 正交                                                                                         |
+    | 字段       | 类型               | 语义                                                                                                                                                                            |
+    | ---------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | `el`       | HTMLElement        | 触发元素                                                                                                                                                                        |
+    | `$event`   | Event              | 原生事件对象（亦作表达式求值器形参注入）                                                                                                                                        |
+    | `data`     | 聚合视图           | `scope.getContext()`：localData + data + 全局 state 拍平。**可读可写**：写 x-data 字段经 set 陷阱透传到响应式 data 触发细粒度更新；写 localData（普通对象）不响应式 |
+    | `scope`    | AutoTemplateScope  | 当前 scope 实例，提供 `getData()`（沿链取最近 x-data 域）/ `engine` / `parent` 等，供深层访问与写入                                                                        |
+    | `store`    | AutoStore          | 实例，`this.store.state` 写入即响应式                                                                                                                                           |
+    | `engine`   | AutoTemplateEngine | 引擎实例                                                                                                                                                                        |
+    | `$options` | 只读聚合视图       | 指令配置：指令选项 → 宿主 `x-options` 两层回退；只读（set/ delete 静默失败）；与 `data` 正交                                                                                    |
 - **Action 优先 + 表达式兜底**：handler 内——若指令值是 Action 候选**且** `scope.getAction(name)` 返回 function，则按 action 调用并 `return`；否则退化到 `with(data)` 表达式求值（`new Function('$event','data','with(data){return (EXPR)}')`）。表达式求值亦 try/catch 记日志不中断。
 - **修饰符管道（三类 descriptor）**：修饰符统一为 `{ name, type, apply }`，`type` 判别三型：
     - **option**（once/capture/passive）→ `apply` 返回字段合并进 `addEventListener` 第 3 参；

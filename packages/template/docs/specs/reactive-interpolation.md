@@ -43,7 +43,7 @@
 22. 作为模板作者，我希望同元素多个属性各自插值互不干扰。
 23. 作为模板作者，我希望插值与原生静态 class（`class="btn"`）等可正确共存/合并。
 24. 作为维护者，我希望同属性既有显式 `:attr` 又有插值时**编译期明确报错**，而非静默损坏 class diff 或丢失静态部分。
-25. 作为维护者，我希望插值的反应式语义与既有 `x-text`/`x-bind` **完全一致**（含 localScope 约束），不引入第二套规则。
+25. 作为维护者，我希望插值的反应式语义与既有 `x-text`/`x-bind` **完全一致**（含 localData 约束），不引入第二套规则。
 26. 作为维护者，我希望大列表场景的插值性能可接受（每表达式段一个 watcher），并作为观察项被记录。
 27. 作为维护者，我希望插值完全复用 `scope.watch` 的路径/表达式双轨（纯路径走精准订阅、表达式走 collectDependencies）。
 
@@ -57,7 +57,7 @@
 - **合成表达式两形态（关键）**：**整体单段**（整个值恰为单个 `{{E}}`）→ 透传**原值 `E`**，让 BindDirective 类型分派拿原生 bool/对象/原生类型（规避 boolean `"false"` 恒真坑）；**混合段**（字面量 + 表达式）→ concat + 每段 nullish→`''` 强转。
 - **同属性冲突 = 编译期报错**：同属性名既有显式 bind（`:attr`/`x-bind:attr`/`x-class` 等）又有插值 → 抛错（互斥），不沿用 x-text 静默——因属性冲突会坏 class diff 或因 desugar 已移除平属性而丢静态部分。
 - **动态区域生效**：`compileSubtree` 此前对文本节点 `cloneNode(true)` 绕过所有转换器（致 x-for 项 / x-if 子树插值静默失效）——抽 `compileTextNode` 复用函数，**主 walk 文本转换器 + compileSubtree 文本分支共用**；compileSubtree 文本签名补 scope 入参（三处调用点下传）；fragment 返回值展开为实际子节点（保结构指令精确移除）。
-- **反应式继承 localScope 约束**：插值不引入新语义——`{{obj.field}}`（响应式对象引用）细粒度响应；`{{n}}`（primitive 循环变量 / `$index` 等 localScope 普通属性）`collectDependencies` 收不到，靠项 rebind 时 `scope.refresh()` 兜底（引擎现状）。
+- **反应式继承 localData 约束**：插值不引入新语义——`{{obj.field}}`（响应式对象引用）细粒度响应；`{{n}}`（primitive 循环变量 / `$index` 等 localData 普通属性）`collectDependencies` 收不到，靠项 rebind 时 `scope.refresh()` 兜底（引擎现状）。
 - **转义纪律**：插值结果一律 `String(value)` → `nodeValue`（浏览器转义、XSS 安全）；原始 HTML 注入是 `x-html` 职责，非插值职责。
 
 ## Testing Decisions

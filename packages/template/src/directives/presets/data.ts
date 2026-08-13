@@ -15,7 +15,7 @@ import { SCOPES_KEY } from "../../engine";
  * **两种模式（均为响应式，仅作用域不同）**：
  *
  * - **默认**（`x-data="{a:1}"`）：数据写入**私有响应式域** `store.state._scopes[scope.id]`
- *   （`scope.dataScope` 指向该 store 代理对象）。经 `getScopeContext` 与 localScope 同级叠加暴露，
+ *   （`scope.data` 指向该 store 代理对象）。经 `getContext` 与 localData 同级叠加暴露，
  *   子树可见、scope 间隔离。读写经 store → `collectDependencies` 收集 `_scopes.<id>.<field>` 精准路径，
  *   字段级细粒度更新，**无需 refresh**。
  * - **global**（`x-data.global="{a:1}"`）：数据**合并进全局 AutoStore 根键**（`store.state.a=1`），
@@ -28,18 +28,18 @@ import { SCOPES_KEY } from "../../engine";
  * **值解析**：用 really-relaxed-json（`toJson` → `JSON.parse`），值必须是普通对象 `{...}`；
  * 解析失败**静默处理——仅打印日志**，按空对象继续，不中断编译。
  *
- * **嵌套覆盖**：父子元素的 dataScope 经 `getScopeContext` 的 parent 链层叠，子覆盖父同名键。
+ * **嵌套覆盖**：父子元素的 data 经 `getContext` 的 parent 链层叠，子覆盖父同名键。
  *
  * **与 x-for 共存**：x-data 不占 `ownsChildren`，与 x-for 自由共存；容器 x-data 经 parent 链
- * 自动透传进各 item scope。x-for 的 localScope（item/$index 等）仍为普通对象、靠 x-for 自身的
- * refresh 驱动——本指令只负责 dataScope 的响应式化。
+ * 自动透传进各 item scope。x-for 的 localData（item/$index 等）仍为普通对象、靠 x-for 自身的
+ * refresh 驱动——本指令只负责 data 的响应式化。
  *
- * **铁律：永不整体替换 `_scopes[id]`**——`scope.dataScope` 闭包绑定该 store 代理引用，
+ * **铁律：永不整体替换 `_scopes[id]`**——`scope.data` 闭包绑定该 store 代理引用，
  * 写入只 `Object.assign` 原地改、`delete` 消失键，绝不 `store.state._scopes[id] = newObj`，
- * 否则 dataScope 指向旧代理、新数据写不进。
+ * 否则 data 指向旧代理、新数据写不进。
  *
  * **优先级 = 200**（最高，> x-for 100）：保证 `created()` 最先执行，在兄弟指令 `watch()` 缓存
- * `_scopeView` 之前把数据注入 dataScope / store，使首渲即读到正确数据。
+ * `_scopeView` 之前把数据注入 data / store，使首渲即读到正确数据。
  */
 export class DataDirective extends AutoTemplateDirectiveBase {
     static override readonly priority = 200;
@@ -84,7 +84,9 @@ export class DataDirective extends AutoTemplateDirectiveBase {
         try {
             const parsed: unknown = JSON.parse(toJson(trimmed));
             if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-                this.engine.logger.warn(`x-data: 值必须解析为对象，实际得到 ${JSON.stringify(parsed)}`);
+                this.engine.logger.warn(
+                    `x-data: 值必须解析为对象，实际得到 ${JSON.stringify(parsed)}`,
+                );
                 return {};
             }
             return parsed as Record<string, any>;
@@ -95,22 +97,25 @@ export class DataDirective extends AutoTemplateDirectiveBase {
     }
 
     /**
-     * 默认模式：把数据**原地同步**进 `scope.dataScope`（私有响应式域 = `store.state._scopes[id]`）。
+     * 默认模式：把数据**原地同步**进 `scope.data`（私有响应式域 = `store.state._scopes[id]`）。
      *
-     * 首次写入时令 `scope.dataScope` 指向 `store.state._scopes[scope.id]`（core 自动为其建响应式代理），
+     * 首次写入时令 `scope.data` 指向 `store.state._scopes[scope.id]`（core 自动为其建响应式代理），
      * 此后**永不换引用**（`_scopeView` Proxy 闭包绑定，铁律见类注释）。先删除新数据中已不存在的旧键，
      * 再 `Object.assign` 写入/更新——均经 store 代理触发 set/delete 通知，订阅者自动更新。
      */
     private applyLocal(data: Record<string, any>) {
         const scope = this.binding;
-        if (!scope.dataScope) {
-            const scopes = (this.engine.store.state as Record<string, any>)[SCOPES_KEY] as Record<string, any>;
+        if (!scope.data) {
+            const scopes = (this.engine.store.state as Record<string, any>)[SCOPES_KEY] as Record<
+                string,
+                any
+            >;
             // 不存在才建：避免对已存在的 [id] 重复赋值触发无谓的 set 通知
             if (!scopes[scope.id]) scopes[scope.id] = {};
-            scope.dataScope = scopes[scope.id];
+            scope.data = scopes[scope.id];
         }
         // 上面 if 已 ensure 非空；TS 不跨语句窄化属性访问，用 ! 断言非 null
-        const ds = scope.dataScope!;
+        const ds = scope.data!;
         for (const k of Object.keys(ds)) {
             if (!Object.prototype.hasOwnProperty.call(data, k)) delete ds[k];
         }
@@ -136,10 +141,7 @@ export class DataDirective extends AutoTemplateDirectiveBase {
         }
         // 2. 写入/更新
         for (const [k, v] of Object.entries(data)) {
-            if (
-                Object.prototype.hasOwnProperty.call(state, k) &&
-                !this.attachedKeys.has(k)
-            ) {
+            if (Object.prototype.hasOwnProperty.call(state, k) && !this.attachedKeys.has(k)) {
                 this.engine.logger.warn(`x-data.global: 键 "${k}" 已存在于 store，覆盖写入`);
             }
             state[k] = v; // 新键自动建响应式代理；已有键触发 set notify

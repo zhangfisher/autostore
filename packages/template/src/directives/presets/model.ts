@@ -37,7 +37,7 @@ const ACTION_RE = /^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$/;
  * **值形态：字符串 only**。relaxed-json 不支持函数字面量——`{get:(v)=>...}` 会被解析成字符串且求值错乱、
  * 语句块箭头函数直接解析失败（详见 ADR-0018）。**箭头函数字面量禁用**，给两条正道：
  * - **表达式**：固定形参 `value`(get)/`$value`(set)，`new Function(...,"with(scope){...}")`，
- *   `scope = binding.getScopeContext()`（localScope+dataScope+state 聚合视图）。
+ *   `scope = binding.getContext()`（localData+data+state 聚合视图）。
  * - **action 名**：`ACTION_RE` 分派（`splitIp(1)` 等）。**当前值自动作首参**，括号内为追加参数；
  *   `this` = `AutoTemplateActionContext`（el/data/scope/store/state/engine/$options + value/$value）。
  *
@@ -220,7 +220,13 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         }
 
         // 3. name 特殊处理（决策 8）：静态写，不走 @ 绑定
-        ModelDirective._injectName(engine, el, scope, modelValue, schemaPresent ? schema : undefined);
+        ModelDirective._injectName(
+            engine,
+            el,
+            scope,
+            modelValue,
+            schemaPresent ? schema : undefined,
+        );
     }
 
     /**
@@ -319,7 +325,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         }
         const expr = String(this.value ?? "");
         if (!expr.trim()) return;
-        // scope.watch：纯路径走精准订阅、表达式走 collectDependencies，自动注入 localScope/dataScope。
+        // scope.watch：纯路径走精准订阅、表达式走 collectDependencies，自动注入 localData/data。
         // 返回当前值供 compile 首渲；后续变化经 scheduler 微任务合并后回调 writeToDom。
         this._initialValue = this.binding.watch(expr, ({ value }) => this.writeToDom(value));
     }
@@ -434,7 +440,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
      * 否则 → 表达式（形参 `value`=当前 state 值，`with(scope)` 注入状态）。
      */
     private _evalGet(getExpr: string, value: any): any {
-        const scopeCtx = this.binding.getScopeContext();
+        const scopeCtx = this.binding.getContext();
         const m = getExpr.trim().match(ACTION_RE);
         const name = m?.[1];
         if (name) {
@@ -462,7 +468,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
      * 否则 → 表达式（形参 `$value`=DOM 输入值，`with(scope)` 注入；语句体执行赋值，可写多字段）。
      */
     private _evalSet(setExpr: string, $value: any): void {
-        const scopeCtx = this.binding.getScopeContext();
+        const scopeCtx = this.binding.getContext();
         const m = setExpr.trim().match(ACTION_RE);
         const name = m?.[1];
         if (name) {
@@ -516,7 +522,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         return {
             el: this.el,
             $event: undefined as any,
-            data: this.binding.getScopeContext(),
+            data: this.binding.getContext(),
             scope: this.binding,
             store: engine.store,
             state: engine.store.state,

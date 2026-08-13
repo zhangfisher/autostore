@@ -436,9 +436,9 @@ describe('x-on <script type="actions"> 局部 action', () => {
  * x-on 结合 x-data（含嵌套）。
  *
  * AutoTemplateActionContext 语义：
- * - `this.data`：scope.getScopeContext() 聚合视图 —— localScope + dataScope + 全局 state，
- *   **可读可写**：写 x-data 字段透传到响应式 dataScope（store.state._scopes[id]）触发更新。
- * - `this.scope`：AutoTemplateScope 实例 —— 经 getDataScope() 沿链拿最近 x-data 域（dataScope 引用）。
+ * - `this.data`：scope.getContext() 聚合视图 —— localData + data + 全局 state，
+ *   **可读可写**：写 x-data 字段透传到响应式 data（store.state._scopes[id]）触发更新。
+ * - `this.scope`：AutoTemplateScope 实例 —— 经 getData() 沿链拿最近 x-data 域（data 引用）。
  *
  * action 读写 x-data 均可经 `this.data.<字段>`；嵌套场景沿 parent 链自动定位最近 x-data 块。
  */
@@ -471,7 +471,7 @@ describe("x-on 结合 x-data（含嵌套）", () => {
         expect(received).toEqual({ local: 1, global: 2 });
     });
 
-    test("this.scope 为 AutoTemplateScope 实例，getDataScope() 沿链取 dataScope", () => {
+    test("this.scope 为 AutoTemplateScope 实例，getData() 沿链取 data", () => {
         let captured: any;
         const { root, engine } = mount(
             `<div x-data="{count:0}"><button @click="probe">?</button></div>`,
@@ -481,11 +481,11 @@ describe("x-on 结合 x-data（含嵌套）", () => {
             captured = this.scope;
         };
         root.querySelector("button")!.click();
-        // x-data 在父 div：button 自身 scope 不直接持有 dataScope（null），
-        // 须经 getDataScope() 沿 parent 链（或 this.data 代理视图）才能取到——
+        // x-data 在父 div：button 自身 scope 不直接持有 data（null），
+        // 须经 getData() 沿 parent 链（或 this.data 代理视图）才能取到——
         // 即"x-data 数据在 _scopeView 中经代理获取，而非 scope 直接拥有"。
-        expect(captured.dataScope).toBeNull();
-        expect(captured.getDataScope()).toEqual({ count: 0 });
+        expect(captured.data).toBeNull();
+        expect(captured.getData()).toEqual({ count: 0 });
         expect(captured.engine).toBe(engine);
     });
 
@@ -515,40 +515,40 @@ describe("x-on 结合 x-data（含嵌套）", () => {
         expect(received).toBe(2);
     });
 
-    test("this.scope.getDataScope() 写最近 x-data 联动 DOM", async () => {
+    test("this.scope.getData() 写最近 x-data 联动 DOM", async () => {
         const { root, engine } = mount(
             `<div x-data="{count:0}"><button @click="incr">+</button><span x-text="count"></span></div>`,
             {},
         );
         engine.actions.incr = function (this: any) {
-            this.scope.getDataScope().count++;
+            this.scope.getData().count++;
         };
         root.querySelector("button")!.click();
         await nextTick();
         expect(root.querySelector("span")!.textContent).toBe("1");
     });
 
-    test("嵌套：后代 action 经 getDataScope() 沿链写祖先 x-data", async () => {
+    test("嵌套：后代 action 经 getData() 沿链写祖先 x-data", async () => {
         const { root, engine } = mount(
             `<div x-data="{count:0}"><div><button @click="incr">+</button></div><span x-text="count"></span></div>`,
             {},
         );
         engine.actions.incr = function (this: any) {
-            // 后代 button 无自身 x-data，getDataScope() 沿 parent 链取到祖先 div 的 dataScope
-            this.scope.getDataScope().count++;
+            // 后代 button 无自身 x-data，getData() 沿 parent 链取到祖先 div 的 data
+            this.scope.getData().count++;
         };
         root.querySelector("button")!.click();
         await nextTick();
         expect(root.querySelector("span")!.textContent).toBe("1");
     });
 
-    test("嵌套覆盖写：内层 getDataScope() 指向内层，外层不变", async () => {
+    test("嵌套覆盖写：内层 getData() 指向内层，外层不变", async () => {
         const { root, engine } = mount(
             `<div x-data="{count:1}"><span class="outer" x-text="count"></span><div x-data="{count:2}"><span class="inner" x-text="count"></span><button @click="incr">+</button></div></div>`,
             {},
         );
         engine.actions.incr = function (this: any) {
-            this.scope.getDataScope().count++;
+            this.scope.getData().count++;
         };
         root.querySelector("button")!.click();
         await nextTick();
@@ -556,16 +556,16 @@ describe("x-on 结合 x-data（含嵌套）", () => {
         expect(root.querySelector(".outer")!.textContent).toBe("1");
     });
 
-    test("无 x-data：getDataScope() 返回 null，data 仍读全局 state", () => {
-        let dataScope: any;
+    test("无 x-data：getData() 返回 null，data 仍读全局 state", () => {
+        let data: any;
         let received: any;
         const { root, engine } = mount(`<button @click="probe">?</button>`, { global: 9 });
         engine.actions.probe = function (this: any) {
-            dataScope = this.scope.getDataScope();
+            data = this.scope.getData();
             received = this.data.global;
         };
         root.querySelector("button")!.click();
-        expect(dataScope).toBeNull();
+        expect(data).toBeNull();
         expect(received).toBe(9);
     });
 
@@ -575,14 +575,14 @@ describe("x-on 结合 x-data（含嵌套）", () => {
             {},
         );
         engine.actions.write = function (this: any) {
-            this.data.count = 99; // 聚合视图 set 透传到响应式 dataScope
+            this.data.count = 99; // 聚合视图 set 透传到响应式 data
         };
         root.querySelector("button")!.click();
         await nextTick();
         expect(root.querySelector("span")!.textContent).toBe("99");
     });
 
-    test('表达式写入：@click="count++" 经 with(data) 透传到 dataScope', async () => {
+    test('表达式写入：@click="count++" 经 with(data) 透传到 data', async () => {
         const { root } = mount(
             `<div x-data="{count:5}"><button @click="count++">+</button><span x-text="count"></span></div>`,
             {},
@@ -592,9 +592,9 @@ describe("x-on 结合 x-data（含嵌套）", () => {
         expect(root.querySelector("span")!.textContent).toBe("6");
     });
 
-    test('局部 <script type="actions"> action 经 getDataScope() 写 x-data', async () => {
+    test('局部 <script type="actions"> action 经 getData() 写 x-data', async () => {
         const { root } = mount(
-            `<div x-data="{count:0}"><button @click="incr">+</button><span x-text="count"></span><script type="actions">{ incr(){ this.scope.getDataScope().count++ } }</script></div>`,
+            `<div x-data="{count:0}"><button @click="incr">+</button><span x-text="count"></span><script type="actions">{ incr(){ this.scope.getData().count++ } }</script></div>`,
             {},
         );
         root.querySelector("button")!.click();

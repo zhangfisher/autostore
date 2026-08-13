@@ -73,7 +73,7 @@ export class AutoTemplateEngine<
     readonly scopes = new Map<WeakRef<Node>, AutoTemplateScope>();
     /**
      * 整个 engine 响应式数据驱动的核心：直接暴露 `store.state`（响应式根状态）。
-     * 作为 scope 聚合视图（getScopeContext）的根 fallback、模板表达式求值的最终数据源。
+     * 作为 scope 聚合视图（getContext）的根 fallback、模板表达式求值的最终数据源。
      */
     get state() {
         return this.store.state;
@@ -248,11 +248,11 @@ export class AutoTemplateEngine<
      * 运行时更新/创建数据（替代已废除的 x-data setAttribute 监听）。
      *
      * `data(el, data)` 合并进 el 对应 scope 的私有响应式域 `_scopes[scope.id]`：
-     * - **scope 已有 dataScope**（模板有 x-data）→ `Object.assign` 合并，路径订阅自动驱动更新
+     * - **scope 已有 data**（模板有 x-data）→ `Object.assign` 合并，路径订阅自动驱动更新
      *   （主路径，不动 DOM、不重订阅）。
-     * - **scope 无 dataScope**（el 原无 x-data）→ 新建 dataScope + 失效本 scope 视图 + destroy 子树 +
+     * - **scope 无 data**（el 原无 x-data）→ 新建 data + 失效本 scope 视图 + destroy 子树 +
      *   重新编译子树（A 方案：子树 DOM 重建）。因 watcher 的 `collectDependencies` 仅 created 跑一次，
-     *   不覆盖新出现的 dataScope，只能重建让子树重新订阅。
+     *   不覆盖新出现的 data，只能重建让子树重新订阅。
      *
      * 不支持 global 模式（x-data.global 仍由模板属性驱动；运行时改全局请直接操作 `store.state`）。
      *
@@ -265,18 +265,18 @@ export class AutoTemplateEngine<
             this.logger.warn(`engine.data: 元素未找到对应 scope，已忽略`);
             return;
         }
-        if (scope.dataScope) {
+        if (scope.data) {
             // 主路径：合并 → 路径订阅自动驱动
-            Object.assign(scope.dataScope as Record<string, any>, data);
+            Object.assign(scope.data as Record<string, any>, data);
             this.emit("scope/data-updated", { id: scope.id, data });
             return;
         }
-        // 无 dataScope（el 原无 x-data）：新建 + 重建子树（A）
+        // 无 data（el 原无 x-data）：新建 + 重建子树（A）
         const scopes = (this.store.state as Record<string, any>)[SCOPES_KEY] as Record<string, any>;
         if (!scopes[scope.id]) scopes[scope.id] = {};
-        scope.dataScope = scopes[scope.id];
-        Object.assign(scope.dataScope as Record<string, any>, data);
-        // 失效本 scope 缓存视图（含新 dataScope 层），子树重建后新子 scope 经 parent 链取到新视图
+        scope.data = scopes[scope.id];
+        Object.assign(scope.data as Record<string, any>, data);
+        // 失效本 scope 缓存视图（含新 data 层），子树重建后新子 scope 经 parent 链取到新视图
         scope.invalidateScopeView();
         recompileSubtree(scope, el);
         this.emit("scope/data-updated", { id: scope.id, data });

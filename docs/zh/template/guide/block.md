@@ -54,7 +54,7 @@
 </div>
 ```
 
-`x-scope` 不建数据域、不注入 dataScope、不订阅、不渲染。元素已有其他指令（本就建 scope）时，`x-scope` 冗余但**静默无副作用**。
+`x-scope` 不建数据域、不注入 data、不订阅、不渲染。元素已有其他指令（本就建 scope）时，`x-scope` 冗余但**静默无副作用**。
 
 ::: warning 必须有祖先 scope
 每个 `x-block` 都需要至少一个祖先 scope（来自 `x-scope` 或任意其他指令、插值）。否则该块在编译期被 `warn` 丢弃，消费者取不到它、回退内置默认 UI。
@@ -133,7 +133,7 @@ const engine = new AutoTemplateEngine(el, { on: true }, {
 - **命中**自定义块 → 深克隆快照 → 经编译路径渲染（块内 `x-text` 等指令此时才编译、建立响应式订阅）→ 替换内置旋转 loader；
 - **未命中** → 回退内置默认 loader（**块兜底**）。
 
-块内指令的响应式数据来源是消费者注入的 **dataScope**。`x-loading` 会把配置里的 `message` / `color` 等字段注入块，块内用 `x-text="message"` 即可响应式取用：
+块内指令的响应式数据来源是消费者注入的 **data**。`x-loading` 会把配置里的 `message` / `color` 等字段注入块，块内用 `x-text="message"` 即可响应式取用：
 
 ```html
 <div x-scope>

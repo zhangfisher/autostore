@@ -92,15 +92,15 @@ engine.actions.rename = () => {
 | --------------- | ----------------------------------------------------------------------- |
 | `this.$event`   | 原生事件对象（`@click` 的 `MouseEvent`、`@input` 的 `InputEvent` 等）   |
 | `this.el`       | 触发元素（= `this.$event.currentTarget`），可就近读写 DOM               |
-| `this.data`     | 数据聚合视图：本层 `localScope` + `x-data` 响应域 + 全局 `state` 拍平   |
-| `this.scope`    | 当前 `AutoTemplateScope` 实例（`getDataScope()` / `engine` / `parent`） |
+| `this.data`     | 数据聚合视图：本层 `localData` + `x-data` 响应域 + 全局 `state` 拍平   |
+| `this.scope`    | 当前 `AutoTemplateScope` 实例（`getData()` / `engine` / `parent`） |
 | `this.store`    | `AutoStore` 实例（`watch` / `state` / `collectDependencies` 等）        |
 | `this.engine`   | `AutoTemplateEngine` 实例（等价于外部持有的 `engine` 变量）             |
 | `this.$options` | 指令配置只读聚合视图（指令选项 → `x-options` 宿主选项，两层回退）       |
 
 #### this.data：读写聚合视图
 
-`this.data` 是 `scope.getScopeContext()` 返回的「拍平」视图：读任意键都沿 scope 父链取最近同名值；写**已存在的 `x-data` 字段**会经 set 陷阱透传到响应式域（`store.state._scopes[id]`），触发字段级细粒度更新：
+`this.data` 是 `scope.getContext()` 返回的「拍平」视图：读任意键都沿 scope 父链取最近同名值；写**已存在的 `x-data` 字段**会经 set 陷阱透传到响应式域（`store.state._scopes[id]`），触发字段级细粒度更新：
 
 ```javascript
 actions: {
@@ -116,7 +116,7 @@ actions: {
 
 - 操作**当前 `x-data` 块**的局部字段 → `this.data.xxx`（写入响应式，推荐）。
 - 操作**全局根状态** → `this.engine.state.xxx`。
-- 需要拿到当前 `x-data` 块的响应式代理本身（非聚合视图） → `this.scope.getDataScope()`。
+- 需要拿到当前 `x-data` 块的响应式代理本身（非聚合视图） → `this.scope.getData()`。
   :::
 
 ::: warning 仅在「动作分支」绑定 this

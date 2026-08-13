@@ -11,7 +11,7 @@
 </div>
 ```
 
-`compileElement` 只在元素「含指令或插值」时才建 scope，否则只浅克隆。这导致一个仅作结构包裹的纯 `<div>` 不建 scope——其后代 `x-block` 无处就近归属（编译期 `warn` 丢弃），后代 scope 的 parent 链也会越过它落到更远的祖先。`x-scope` 就是填补这个缺口的最轻手段：`created` / `compile` / `destroy` 全是空操作，不建数据域、不注入 dataScope、不订阅、不渲染。
+`compileElement` 只在元素「含指令或插值」时才建 scope，否则只浅克隆。这导致一个仅作结构包裹的纯 `<div>` 不建 scope——其后代 `x-block` 无处就近归属（编译期 `warn` 丢弃），后代 scope 的 parent 链也会越过它落到更远的祖先。`x-scope` 就是填补这个缺口的最轻手段：`created` / `compile` / `destroy` 全是空操作，不建数据域、不注入 data、不订阅、不渲染。
 
 ## 快速入门
 
@@ -26,7 +26,7 @@
 `x-scope` 让任意纯容器都成为 scope 锚点，达成两件事：
 
 1. **为后代 `x-block` 提供归属锚点**——`x-block` 收集时向上找最近 scope 挂 `blocks`，若无 `x-scope`（也无其他指令祖先），块无处归属 → 编译期 `warn` 丢弃。`x-scope` 让任意 `<div>` 都能当块容器。
-2. **截断后代 scope 链**——后代 scope 经 `_linkParent` 向上找最近 scope 作父，若无 `x-scope`，后代的 parent 会落到更远的祖先（跳过中间纯容器），localScope 继承链可能越过预期。`x-scope` 在此插入确定的 scope 边界。
+2. **截断后代 scope 链**——后代 scope 经 `_linkParent` 向上找最近 scope 作父，若无 `x-scope`，后代的 parent 会落到更远的祖先（跳过中间纯容器），localData 继承链可能越过预期。`x-scope` 在此插入确定的 scope 边界。
 
 ### 何时用 x-scope
 
@@ -77,6 +77,6 @@
 ## 注意事项
 
 - **只在纯容器上用**：已有指令/插值的元素无需 `x-scope`（重复加无副作用，但多余）。
-- **不建数据、不渲染内容**：`x-scope` 仅为 scope 锚点服务，不改变元素的其他行为，也不注入任何 dataScope。
+- **不建数据、不渲染内容**：`x-scope` 仅为 scope 锚点服务，不改变元素的其他行为，也不注入任何 data。
 - **必须有祖先或自身 scope 才能收 `x-block`**：每个 `x-block` 都需要至少一个祖先 scope（来自 `x-scope` 或任意其他指令、插值）。否则该块在编译期被 `warn` 丢弃。
 - **完整的块机制**（声明摘除、`getBlock` 就近覆盖、全局块兜底、消费者注入）见[模板块](../block.md)。

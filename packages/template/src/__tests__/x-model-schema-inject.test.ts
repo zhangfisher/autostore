@@ -195,7 +195,7 @@ describe("x-model schema 注入：动态交集与降级", () => {
         // 无 configManager → 不注入任何属性
         const input = root.querySelector("input")!;
         expect(input.hasAttribute("placeholder")).toBe(false);
-        expect(input.hasAttribute("name")).toBe(true);
+        expect(input.hasAttribute("name")).toBe(false);
     });
 
     test("schema 编译期未注册 → 不合成属性绑定（静默，无 WARN 噪音）", () => {

@@ -50,11 +50,11 @@
 
 `updater` 返回值决定重建范围：
 
-| 返回值 | 语义 | 处理 |
-|---|---|---|
-| `void`/`undefined`（就地改未返回）或 `=== templateEl`（同引用） | **子树重建**（纯增量） | destroy `scope.children` + `compileSubtree(scope.el, templateEl)`，复用 `_recompileSubtree`（`engine.ts:242`）；scope 自身指令/订阅不变 |
-| `string`（HTML）或新 `Node`（`!== templateEl`） | **替换自身** | `string` 先经 `<template>.innerHTML` 解析为节点（可能多个）；模板侧 `T.replaceWith(...nodes)` → 运行侧各 node 经 `compileElement` 产运行节点、`scope.el.replaceWith(...runtimeNodes)` → destroy 旧 scope（含子树）→ 新 scope 逐个 `_linkParent` → flush。**空串解析为 0 节点 → `replaceWith()` 无参 = 删除**（与 `null` 等价） |
-| `null` | **删除自身** | `scope.destroy()`（递归 off watcher + 从 `scope.parent.children` 移除，见 `scope.ts:409`）→ 模板侧 `T.remove()` + 运行侧 `scope.el.remove()` → flush |
+| 返回值                                                          | 语义                   | 处理                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `void`/`undefined`（就地改未返回）或 `=== templateEl`（同引用） | **子树重建**（纯增量） | destroy `scope.children` + `compileSubtree(scope.el, templateEl)`，复用 `_recompileSubtree`（`engine.ts:242`）；scope 自身指令/订阅不变                                                                                                                                                                                        |
+| `string`（HTML）或新 `Node`（`!== templateEl`）                 | **替换自身**           | `string` 先经 `<template>.innerHTML` 解析为节点（可能多个）；模板侧 `T.replaceWith(...nodes)` → 运行侧各 node 经 `compileElement` 产运行节点、`scope.el.replaceWith(...runtimeNodes)` → destroy 旧 scope（含子树）→ 新 scope 逐个 `_linkParent` → flush。**空串解析为 0 节点 → `replaceWith()` 无参 = 删除**（与 `null` 等价） |
+| `null`                                                          | **删除自身**           | `scope.destroy()`（递归 off watcher + 从 `scope.parent.children` 移除，见 `scope.ts:409`）→ 模板侧 `T.remove()` + 运行侧 `scope.el.remove()` → flush                                                                                                                                                                           |
 
 - **返回值判定（严格区分，实现须用 `===` / `typeof`，不可 `==`——因 `undefined == null`）**：`R === null` → 删除；`R === undefined || R === templateEl` → 子树重建；`typeof R === 'string'` → 替换自身（`<template>` 解析 HTML）；`R instanceof Node` → 替换自身（单节点）；其余（数字等）→ warn 忽略。
 - **删除契约**：删除**必须** `return null`，**不得**在回调内 `T.remove()`——后者是命令式偷偷删，patch 仍按子树重建处理已脱离模板的 `T`，行为错误。`return null` 才让 patch 知道删除意图并正确做双侧移除 + scope destroy。
@@ -77,12 +77,13 @@ patch 目标若处于**动态区域**——其模板祖先链上存在 `ownsChil
 
 - **kind = Compile**；`created`/`compile`/`destroy` 全 no-op；编译期属性剥除。
 - **唯一作用**：让 `hasDirectives(template)` 为 true → `compileElement` 建 scope（`compiler.ts:113-118`）→ 元素进正向桥 `WeakMap`，成为可 patch 锚。
-- **不建数据域**：无 `_scopes[id]` 条目、无 `dataScope`、不参与 `getScopeContext` 层叠——比 `x-data="{}"` 更轻。
+- **不建数据域**：无 `_scopes[id]` 条目、无 `dataScope`、不参与 `getContext` 层叠——比 `x-data="{}"` 更轻。
 - **命名**：与 `engine.patch` 同名，`patch('#x')` 时 `#x` 上挂 `x-patch`，心智一致。
 
 ```html
 <div id="workspace" x-patch></div>
 ```
+
 ```js
 engine.patch("#workspace", () => '<p x-text="content"></p>');
 ```

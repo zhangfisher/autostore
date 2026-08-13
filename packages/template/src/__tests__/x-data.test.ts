@@ -18,7 +18,7 @@ function destroyScopeFor(engine: AutoTemplateEngine, el: Element): void {
 }
 
 describe("x-data 数据指令（编译期首次注入）", () => {
-    test("默认模式：编译期注入 dataScope，后代表达式可读取（渲染元素不保留 x-data 属性）", () => {
+    test("默认模式：编译期注入 data，后代表达式可读取（渲染元素不保留 x-data 属性）", () => {
         const { root } = mount(`<div id="a" x-data="{a:1}"><span x-text="a"></span></div>`, {});
         expect(root).toEqualHTML(`<div>
   <div id="a">
@@ -72,7 +72,7 @@ describe("x-data 数据指令（编译期首次注入）", () => {
 </div>`);
     });
 
-    test("解析失败静默：仅打印日志，不中断编译，dataScope 为空", () => {
+    test("解析失败静默：仅打印日志，不中断编译，data 为空", () => {
         const { root } = mount(`<div x-data="{bad"><span x-text="a"></span></div>`, {});
         expect(root).toEqualHTML(`<div>
   <div>
@@ -81,7 +81,7 @@ describe("x-data 数据指令（编译期首次注入）", () => {
 </div>`);
     });
 
-    test("解析为非对象（数组）：静默忽略，dataScope 为空", () => {
+    test("解析为非对象（数组）：静默忽略，data 为空", () => {
         const { root } = mount(`<div x-data="[1,2,3]"><span x-text="a"></span></div>`, {});
         expect(root).toEqualHTML(`<div>
   <div>
@@ -122,19 +122,19 @@ describe("engine.data 运行时更新", () => {
 </div>`);
     });
 
-    test("新增键：dataScope 形状变化触发子树重建，新键被订阅", async () => {
+    test("新增键：data 形状变化触发子树重建，新键被订阅", async () => {
         const { root, engine } = mount(
             `<div id="a" x-data="{a:1}"><span x-text="a"></span><span x-text="b"></span></div>`,
             {},
         );
-        // 初始 b 不存在于 dataScope
+        // 初始 b 不存在于 data
         expect(root).toEqualHTML(`<div>
   <div id="a">
     <span>1</span>
     <span></span>
   </div>
 </div>`);
-        // engine.data 新增 b → dataScope 形状变 → 子树重建 → b 订阅
+        // engine.data 新增 b → data 形状变 → 子树重建 → b 订阅
         engine.data(root.querySelector("#a")!, { b: 2 });
         await nextTick();
         expect(root).toEqualHTML(`<div>
@@ -204,7 +204,7 @@ describe("engine.data 运行时更新", () => {
 </div>`);
     });
 
-    test("给空 dataScope 注入数据：新增键被精准订阅", async () => {
+    test("给空 data 注入数据：新增键被精准订阅", async () => {
         const { root, engine } = mount(
             `<div id="a" x-data="{}"><span x-text="b"></span></div>`,
             {},

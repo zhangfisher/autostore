@@ -103,7 +103,7 @@
 
 ### x-patch（哨兵指令）
 
-零副作用 Compile 指令，唯一作用是让裸元素成为 scope（进正向桥）、从而可被 `engine.patch` 定位。`created`/`compile`/`destroy` 全 no-op，不建 `_scopes[id]` 数据域、不注入 `dataScope`。等效 `x-data="{}"` 但更轻、更语义化。用法：`<div id="x" x-patch></div>` → `engine.patch("#x", ...)`。
+零副作用 Compile 指令，唯一作用是让裸元素成为 scope（进正向桥）、从而可被 `engine.patch` 定位。`created`/`compile`/`destroy` 全 no-op，不建 `_scopes[id]` 数据域、不注入 `data`。等效 `x-data="{}"` 但更轻、更语义化。用法：`<div id="x" x-patch></div>` → `engine.patch("#x", ...)`。
 
 ## 事件总线（信号面）
 
@@ -164,7 +164,7 @@ engine 级共享 MutationObserver 分发器（`engine.el` 上单一 observer，`
 
 ### 合成 scope（Synthesized Scope / 隐式指令）
 
-含 `{{}}` 但无任何显式指令的元素，由编译器**自动建 scope**（条件 `hasDirectives(el) || hasInterpolatedDirectText(el)`）。`hasInterpolatedDirectText` 只扫**直接** Text 子节点（非递归、O(直接子节点数)）。合成 scope 与指令 scope 同构（登记 `engine.scopes`、`_linkParent`、继承 localScope、destroy 递归清理），插值等同一个隐式指令。保证 scope 先于文本转换器就位，转换器经 `templateScopeMap.get(parentElement)` 即可取 scope，无需 old→new 元素映射。见 [ADR-0004](adr/0004-reactive-text-interpolation.md) 决策 2。
+含 `{{}}` 但无任何显式指令的元素，由编译器**自动建 scope**（条件 `hasDirectives(el) || hasInterpolatedDirectText(el)`）。`hasInterpolatedDirectText` 只扫**直接** Text 子节点（非递归、O(直接子节点数)）。合成 scope 与指令 scope 同构（登记 `engine.scopes`、`_linkParent`、继承 localData、destroy 递归清理），插值等同一个隐式指令。保证 scope 先于文本转换器就位，转换器经 `templateScopeMap.get(parentElement)` 即可取 scope，无需 old→new 元素映射。见 [ADR-0004](adr/0004-reactive-text-interpolation.md) 决策 2。
 
 ### compileTextNode（文本节点编译函数）
 
@@ -178,9 +178,9 @@ engine 级共享 MutationObserver 分发器（`engine.el` 上单一 observer，`
 
 插值结果一律 `String(value)` 写入 text node `nodeValue`（浏览器自动转义、XSS 安全）；原始 HTML 注入是 x-html 的职责，**非插值职责**。`{{{ }}}`（三花括号、原始 HTML）本轮不做，留作 fast-follow。见 [ADR-0004](adr/0004-reactive-text-interpolation.md) 决策 6。
 
-### 插值反应式继承 localScope 约束
+### 插值反应式继承 localData 约束
 
-插值不引入新反应式语义，完全继承 `scope.watch` 的 localScope 行为：`{{obj.field}}`（obj 为响应式对象引用）细粒度响应；`{{n}}`（primitive 循环变量 / `$index` / `$end`，localScope 普通属性）`collectDependencies` 收不到，仅靠项 rebind 时的 `scope.refresh()` 兜底重算（引擎现状，所有指令同此约束）。见 [ADR-0004](adr/0004-reactive-text-interpolation.md) 决策 8。
+插值不引入新反应式语义，完全继承 `scope.watch` 的 localData 行为：`{{obj.field}}`（obj 为响应式对象引用）细粒度响应；`{{n}}`（primitive 循环变量 / `$index` / `$end`，localData 普通属性）`collectDependencies` 收不到，仅靠项 rebind 时的 `scope.refresh()` 兜底重算（引擎现状，所有指令同此约束）。见 [ADR-0004](adr/0004-reactive-text-interpolation.md) 决策 8。
 
 ### 属性插值 / desugar-to-x-bind
 
@@ -292,7 +292,7 @@ x-block 挂到其**最近的祖先 scope**——**任意深度**（跨中间无 
 
 ### 块查找（Block Lookup）
 
-消费者（x-loading/x-empty/x-error 等）按**约定名**取块的协议：从自身 scope 起沿 parent 链向上，取首个含该名 block 的 scope。命中→用该块替换内置 UI；未命中→回退内置 UI（[块兜底](#块兜底block-fallback)）。与 action/dataScope 的 parent 链查找范式统一，支持「局部覆盖、外层兜底」。公共 API `scope.lookupBlock(name): HTMLElement | undefined`。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 5。
+消费者（x-loading/x-empty/x-error 等）按**约定名**取块的协议：从自身 scope 起沿 parent 链向上，取首个含该名 block 的 scope。命中→用该块替换内置 UI；未命中→回退内置 UI（[块兜底](#块兜底block-fallback)）。与 action/data 的 parent 链查找范式统一，支持「局部覆盖、外层兜底」。公共 API `scope.getBlock(name): HTMLElement | undefined`。见 [ADR-0021](adr/0021-x-scope-and-x-block.md) 决策 5。
 
 ### 块兜底（Block Fallback）
 

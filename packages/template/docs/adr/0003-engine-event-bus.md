@@ -29,11 +29,11 @@
 
 事件总线承载**离散信号**，不承载值、不承载控制流确定性。三平面职责正交：
 
-| 平面 | 承载 | 机制 | 何时用 |
-|---|---|---|---|
-| **数据面** | 值（状态） | `store.state` 响应式 | 任何"数据是什么" |
-| **控制面** | 确定性控制流 | 直接命令调用 | 任何"按序做什么" |
-| **信号面**（新） | 离散事件通知 | `FastLiteEvent` | "发生了什么"的广播/观察/协调 |
+| 平面             | 承载         | 机制                 | 何时用                       |
+| ---------------- | ------------ | -------------------- | ---------------------------- |
+| **数据面**       | 值（状态）   | `store.state` 响应式 | 任何"数据是什么"             |
+| **控制面**       | 确定性控制流 | 直接命令调用         | 任何"按序做什么"             |
+| **信号面**（新） | 离散事件通知 | `FastLiteEvent`      | "发生了什么"的广播/观察/协调 |
 
 ### 2. 留 FastLiteEvent，不上 Full
 
@@ -49,25 +49,25 @@
 
 #### 3.1 四条不变量（让通配可信）
 
-| 不变量 | 内容 | 存在理由 |
-|---|---|---|
-| **I1 动词固定深度** | 每个域内"动作动词"恒在同一深度 | 让 `<域>/*/<动词>` 成立——无需中间 `**` |
-| **I2 受控动词词表** | 跨指令/跨源共用一组动词；自定事件只能**扩词表**、不另起深度 | 让 `<域>/*/<动词>` 跨主体语义一致 |
-| **I3 主体在固定槽** | 命名空间类域把"主体"（指令名/异步源）恒放 segment[2] | 让 `<域>/<主体>/*` 与 `<域>/*/<动词>` **同时**可用 |
-| **I4 阶段后缀** | 流水线门的 `before`/`after` 恒在叶子 | 保 `<域>/<stage>/*` 抓全阶段 |
+| 不变量              | 内容                                                        | 存在理由                                           |
+| ------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
+| **I1 动词固定深度** | 每个域内"动作动词"恒在同一深度                              | 让 `<域>/*/<动词>` 成立——无需中间 `**`             |
+| **I2 受控动词词表** | 跨指令/跨源共用一组动词；自定事件只能**扩词表**、不另起深度 | 让 `<域>/*/<动词>` 跨主体语义一致                  |
+| **I3 主体在固定槽** | 命名空间类域把"主体"（指令名/异步源）恒放 segment[2]        | 让 `<域>/<主体>/*` 与 `<域>/*/<动词>` **同时**可用 |
+| **I4 阶段后缀**     | 流水线门的 `before`/`after` 恒在叶子                        | 保 `<域>/<stage>/*` 抓全阶段                       |
 
 > I1 与"`**` 仅末尾"**互相成就**：动词深度固定 → 永不需中间 `**` → 通配优先级永远可预测。
 
 #### 3.2 域 × 形状 × 深度
 
-| 域 | 形状 | 深度 | 主体槽 | 动词 / 阶段词表 |
-|---|---|---|---|---|
-| `engine` | `engine/<stage>/<phase>` ＋少数 `engine/<verb>` | 3(2) | — | stage:`init`/`compile`/`destroy`/`start`/`stop`；phase:`before`/`after` |
-| `scope` | `scope/<verb>` | 2 | —（按 `payload.id` 过滤） | `created`/`compiled`/`destroyed`/`data-updated` |
-| `directive` | `directive/<name>/<verb>[/<sub>]` | 3(+) | **name @ seg2** | 见 3.3 动词词表 |
-| `task` | `task/<source>/<verb>` | 3 | **source @ seg2** | `started`/`ended`/`resolved`/`rejected`/`progressed` |
-| `patch` | `patch/<verb>` | 2 | —（payload 带 scope） | `before`/`after` |
-| `render` | `render/flush/<phase>` | 3 | — | `before`/`after` |
+| 域          | 形状                                            | 深度 | 主体槽                    | 动词 / 阶段词表                                                         |
+| ----------- | ----------------------------------------------- | ---- | ------------------------- | ----------------------------------------------------------------------- |
+| `engine`    | `engine/<stage>/<phase>` ＋少数 `engine/<verb>` | 3(2) | —                         | stage:`init`/`compile`/`destroy`/`start`/`stop`；phase:`before`/`after` |
+| `scope`     | `scope/<verb>`                                  | 2    | —（按 `payload.id` 过滤） | `created`/`compiled`/`destroyed`/`data-updated`                         |
+| `directive` | `directive/<name>/<verb>[/<sub>]`               | 3(+) | **name @ seg2**           | 见 3.3 动词词表                                                         |
+| `task`      | `task/<source>/<verb>`                          | 3    | **source @ seg2**         | `started`/`ended`/`resolved`/`rejected`/`progressed`                    |
+| `patch`     | `patch/<verb>`                                  | 2    | —（payload 带 scope）     | `before`/`after`                                                        |
+| `render`    | `render/flush/<phase>`                          | 3    | —                         | `before`/`after`                                                        |
 
 #### 3.3 动词词表（受控，跨指令共享）
 
@@ -82,18 +82,18 @@ scope 通道（base.ts 钩子）                    : created | compiled | destr
 
 #### 3.4 通配契约（cheatsheet——证明方案达成"按需订阅 / 通配订阅一批"）
 
-| 订阅模式 | 匹配 | 价值 |
-|---|---|---|
-| `directive/loading/**` | loading 指令全部事件 | 单指令调试 |
-| `directive/loading/*` | loading 指令直接动词 | 单指令动作集 |
+| 订阅模式                  | 匹配                          | 价值                              |
+| ------------------------- | ----------------------------- | --------------------------------- |
+| `directive/loading/**`    | loading 指令全部事件          | 单指令调试                        |
+| `directive/loading/*`     | loading 指令直接动词          | 单指令动作集                      |
 | **`directive/*/mounted`** | 任意指令挂载（observer 通道） | ★ dispatcher 广播 / devtools 高亮 |
-| **`directive/*/created`** | 任意指令创建（scope 通道） | ★ 全局初始化观察 |
-| `directive/**` | 所有指令事件 | devtools 事件流 |
-| **`task/*/started`** | 任意任务开始 | ★ 全局 loading 指示器 |
-| `task/x-data/**` | 仅 x-data 的异步 | 局部 loading |
-| `engine/compile/*` | 编译前/后 | 编译性能计量 |
-| `scope/**` | 所有 scope 事件 | devtools scope 树 |
-| `**`（= `onAny`） | 全部 | 全量日志/录制回放 |
+| **`directive/*/created`** | 任意指令创建（scope 通道）    | ★ 全局初始化观察                  |
+| `directive/**`            | 所有指令事件                  | devtools 事件流                   |
+| **`task/*/started`**      | 任意任务开始                  | ★ 全局 loading 指示器             |
+| `task/x-data/**`          | 仅 x-data 的异步              | 局部 loading                      |
+| `engine/compile/*`        | 编译前/后                     | 编译性能计量                      |
+| `scope/**`                | 所有 scope 事件               | devtools scope 树                 |
+| `**`（= `onAny`）         | 全部                          | 全量日志/录制回放                 |
 
 ★ 标模式 = 单层 `*` 落在主体槽 + 动词固定深度，是"通配订阅一批同类"的全部秘诀。
 
@@ -103,10 +103,10 @@ scope 通道（base.ts 钩子）                    : created | compiled | destr
 
 `task/**` 把散落在各处的异步操作统一成一条可订阅的流，使"全局 loading / 错误 toast / 进度 / Suspense / devtools 异步检查器"等**跨源协调**成为可能（解耦的"广播给未知监听者"）。其实现分两类：
 
-| 异步源 | 归属 | 实现 |
-|---|---|---|
-| 异步 computed | store 层 | **转发** store 已发的 `observer:run`/`done`/`error`/`cancel`（`store/types.ts:378-396`）→ `task/computed/started`/`ended` |
-| x-data 异步初值 / x-on async action / action 内 fetch | 模板原生 | **新插桩** emit `task/<source>/started`/`ended` |
+| 异步源                                                | 归属     | 实现                                                                                                                      |
+| ----------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 异步 computed                                         | store 层 | **转发** store 已发的 `observer:run`/`done`/`error`/`cancel`（`store/types.ts:378-396`）→ `task/computed/started`/`ended` |
+| x-data 异步初值 / x-on async action / action 内 fetch | 模板原生 | **新插桩** emit `task/<source>/started`/`ended`                                                                           |
 
 故 `task/**` 的本质是**对异构异步源的转发 + 归一化**：把 store 的 `:` 分隔事件与模板原生异步，统一到 `/` 层级命名空间，供消费者一处订阅。这也把 Q6 的插桩成本压到只剩模板原生源。
 
@@ -148,7 +148,7 @@ export interface AutoTemplateEngineEvents {
 事件总线对控制面的作用分两类，须严格区分：
 
 - **消除横切样板（✅ 简化）**：runtime observer 管理（→ 决策 7 共享 dispatcher，如 `loading.ts:170-265` 的 ~90 行通用样板移入 dispatcher）、指令生命周期广播（→ 基类自动 emit，零 per-指令样板）、异步协调（→ 决策 3.5 `task/**`）、横切关注（日志/devtools/计量，声明式订阅替代散落 inline）。
-- **不取代命令式核心（❌ 事件化=加间接层、丢清晰度）**：编译 DFS 核心（`compileElement`/`_linkParent`/`_resolveOwnership`）、反应式数据流（`scope.watch`/`getScopeContext`/parent 链——store 已是优雅解，事件是值传播的错误抽象）、`scheduler`（已极简）、请求-响应查找（`getAction`/`getDataScope`——需返回值的链上查询，事件是广播非查询）。
+- **不取代命令式核心（❌ 事件化=加间接层、丢清晰度）**：编译 DFS 核心（`compileElement`/`_linkParent`/`_resolveOwnership`）、反应式数据流（`scope.watch`/`getContext`/parent 链——store 已是优雅解，事件是值传播的错误抽象）、`scheduler`（已极简）、请求-响应查找（`getAction`/`getDataScope`——需返回值的链上查询，事件是广播非查询）。
 
 **基类自动 emit**：`AutoTemplateDirectiveBase` 在 `created`/`compile`/`destroy`/`mounted`/`unmounted`/`attrChanged` 内自动 emit `directive/<name>/<verb>`（决策 3.3 词表），使每个指令零样板可观测。编排权仍留 engine（控制序列），事件是生命周期的**声明式监督旁路**。
 
@@ -176,10 +176,10 @@ compile() {
 
 指令解耦最大的坑是**隐式顺序竞态**：`runDirectives` 按 priority 跑（`scope.ts:396`），若 A(priority 高) 在 `created()` emit `ready`、B(priority 低) 在自己 `created()` 才 `on`——**A 先发 B 后订，B 错过**。`retain` 是解药，但要分两类用对：
 
-| 信号性质 | 例子 | 用法 |
-|---|---|---|
-| **态信号**（一次性、表"当前是否就绪"） | `engine/ready`、`directive/x-data/ready` | **`retain=true`** emit；晚订者立即补拿，无竞态 |
-| **流信号**（可重复、表"发生了"） | `task/*/started`、`directive/x-for/item-added` | **plain emit**；retain 会只留最后一条，反错 |
+| 信号性质                               | 例子                                           | 用法                                           |
+| -------------------------------------- | ---------------------------------------------- | ---------------------------------------------- |
+| **态信号**（一次性、表"当前是否就绪"） | `engine/ready`、`directive/x-data/ready`       | **`retain=true`** emit；晚订者立即补拿，无竞态 |
+| **流信号**（可重复、表"发生了"）       | `task/*/started`、`directive/x-for/item-added` | **plain emit**；retain 会只留最后一条，反错    |
 
 > **铁律：态信号 retain，流信号 plain。** 没有它，跨指令事件必有偶发丢消息。
 

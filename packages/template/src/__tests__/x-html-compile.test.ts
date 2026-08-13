@@ -28,7 +28,7 @@ describe("x-html.compile - 子模板编译", () => {
         expect(root).toEqualHTML(`<div><div id="app"><div>Hello zhang</div></div></div>`);
     });
 
-    test("作用域继承：注入模板取到宿主 x-data 的局部变量（dataScope 经 _linkParent 传递）", () => {
+    test("作用域继承：注入模板取到宿主 x-data 的局部变量（data 经 _linkParent 传递）", () => {
         const { root } = mount(
             `<div id="app"><div x-data="{msg:'hi'}" x-html.compile="tpl"></div></div>`,
             { tpl: "<span x-text='msg'></span>" },

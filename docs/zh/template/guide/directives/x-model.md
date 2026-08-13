@@ -182,7 +182,7 @@ action 可声明在 `<script type="actions">`（局部）或 `engine.actions`（
 
 于是 `x-model="count"`（`count` 是 x-data 局部字段）会「读局部、写全局」——读到的是局部值，输入却写进了全局 state.count，二者分裂、demo 跑不通。
 
-**解法**：用 `set` 表达式。`set` 经 `with(scope)` 在 `getScopeContext()` 上执行，其 set 陷阱按 `localScope > dataScope` 就近命中**本层** x-data 字段（详见 [action · this.data](../action.md)），读写才同源：
+**解法**：用 `set` 表达式。`set` 经 `with(scope)` 在 `getContext()` 上执行，其 set 陷阱按 `localData > data` 就近命中**本层** x-data 字段（详见 [action · this.data](../action.md)），读写才同源：
 
 ```html
 <div x-data="{ count: 0 }">
@@ -205,7 +205,7 @@ action 内改 `this.data.count` 与 `x-model` 的 `set` 写到同一份局部字
 
 ### 多级嵌套 x-data 绑定
 
-x-data 父子层经 `getScopeContext` 的 parent 链层叠（子覆盖父同名键、未声明键继承）。各级 `x-model` 配 `set` 表达式后，写入按就近命中**只改本层**——子层输入框改子层 user，父层纹丝不动；未覆盖的键（如子层读 `role`）沿链继承父层。
+x-data 父子层经 `getContext` 的 parent 链层叠（子覆盖父同名键、未声明键继承）。各级 `x-model` 配 `set` 表达式后，写入按就近命中**只改本层**——子层输入框改子层 user，父层纹丝不动；未覆盖的键（如子层读 `role`）沿链继承父层。
 
 <demo html="template/model/nested-data.html" />
 
@@ -221,7 +221,7 @@ x-data 父子层经 `getScopeContext` 的 parent 链层叠（子覆盖父同名�
 ```
 
 ::: tip 写入命中本层、读取就近继承
-`getScopeContext` 的 set 陷阱只改本层已声明键，故各级 `x-model` 输入框各自独立、互不串扰；读方向同名键子覆盖父、未声明键沿 parent 链向上取最近一层。这与 [x-data · 嵌套作用域](./x-data.md#嵌套作用域) 的隔离语义一致。
+`getContext` 的 set 陷阱只改本层已声明键，故各级 `x-model` 输入框各自独立、互不串扰；读方向同名键子覆盖父、未声明键沿 parent 链向上取最近一层。这与 [x-data · 嵌套作用域](./x-data.md#嵌套作用域) 的隔离语义一致。
 :::
 
 ### 循环防护

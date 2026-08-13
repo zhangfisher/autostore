@@ -55,7 +55,7 @@ x-text / x-html 的修饰符，绑定值为空时将宿主元素内联 `display`
 _Avoid_: `.empty`（与 empty 文案配置撞键）、`.ghost`（暗示 visibility:hidden 占位，与 display:none 语义冲突）
 
 **`.compile` 修饰符（x-html）**:
-x-html 的修饰符，将绑定值作为**子模板编译执行**（而非静态 HTML 快照）——反转 x-html"不编译注入内容"的原定位。注入内容写回 `scope.template` 后调 `recompileSubtree`，建 scope/watcher、继承宿主作用域（localScope/dataScope 经 `_linkParent` 自动传递），支持嵌套 x-data/x-for/x-if，与正常模板一致。**隐式强制跳过消毒**（sanitize 会剥指令属性致模板失效），安全等级**高于 `.raw`：.raw 的 `<script>` 经 innerHTML 不执行，compile 注入的 `x-on` 会真实绑定执行**——须确保来源可信。每次值变全量销毁旧子树 + 重编译（无 diff）；空值销毁子树 + 清空宿主、忽略 `empty` 文案（结构空状态无文案占位语义），`.hide` 仍生效。详见 ADR-0017。
+x-html 的修饰符，将绑定值作为**子模板编译执行**（而非静态 HTML 快照）——反转 x-html"不编译注入内容"的原定位。注入内容写回 `scope.template` 后调 `recompileSubtree`，建 scope/watcher、继承宿主作用域（localData/data 经 `_linkParent` 自动传递），支持嵌套 x-data/x-for/x-if，与正常模板一致。**隐式强制跳过消毒**（sanitize 会剥指令属性致模板失效），安全等级**高于 `.raw`：.raw 的 `<script>` 经 innerHTML 不执行，compile 注入的 `x-on` 会真实绑定执行**——须确保来源可信。每次值变全量销毁旧子树 + 重编译（无 diff）；空值销毁子树 + 清空宿主、忽略 `empty` 文案（结构空状态无文案占位语义），`.hide` 仍生效。详见 ADR-0017。
 _Avoid_: `.template`（与 engine.template/`<template>` 标签重载）、`.render`（泛化）、`.eval`（求值联想 + 安全负面含义）
 
 **`.transition` 修饰符（x-style）**:
@@ -133,7 +133,7 @@ _Avoid_: 块归属深度（实现细节）、块父（用 scope 统一）
 _Avoid_: 全局唯一（沿链可覆盖）、同名互斥（仅 default 受约束，其他名自由）
 
 **块查找（Block Lookup）**:
-消费者（如 x-loading/x-empty/x-error）按约定名取块的查找协议，经 `getBlock(name)`（原 `lookupBlock`）执行：从自身 scope 起沿 parent 链向上取首个含该名 block 的 scope，**到顶兜底查 `engine.options.blocks`（全局块，懒预编译缓存）**。命中则用该块替换内置 UI；未命中则回退默认块/内置 UI。**局部 x-block 沿链遮蔽全局同名块**（就近原则，与 `getAction` 内层覆盖全局 `engine.actions` 同构）。与 action/dataScope 的 parent 链查找范式统一，支持「局部覆盖、外层兜底」。三个落点：`scope.getBlock(name)`（链终点兜底全局）、`engine.getBlock(el, name)`（经 el 反查 scope，供 Runtime 指令）、Compile/Hybrid 指令直接 `this.binding.scope.getBlock(name)`。
+消费者（如 x-loading/x-empty/x-error）按约定名取块的查找协议，经 `getBlock(name)`（原 `lookupBlock`）执行：从自身 scope 起沿 parent 链向上取首个含该名 block 的 scope，**到顶兜底查 `engine.options.blocks`（全局块，懒预编译缓存）**。命中则用该块替换内置 UI；未命中则回退默认块/内置 UI。**局部 x-block 沿链遮蔽全局同名块**（就近原则，与 `getAction` 内层覆盖全局 `engine.actions` 同构）。与 action/data 的 parent 链查找范式统一，支持「局部覆盖、外层兜底」。三个落点：`scope.getBlock(name)`（链终点兜底全局）、`engine.getBlock(el, name)`（经 el 反查 scope，供 Runtime 指令）、Compile/Hybrid 指令直接 `this.binding.scope.getBlock(name)`。
 _Avoid_: 块解析、块匹配（查找是按 scope 链就近+全局兜底，非内容匹配）
 
 **块兜底（Block Fallback）**:
