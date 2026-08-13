@@ -1,0 +1,49 @@
+<!--
+    远程组件测试文件（被 x-import 加载）。
+    一个文件可含 1-N 个 x-component，此处定义 like-button：
+    带完整的 data / methods / scoped style，演示远程组件与本地组件能力完全等价。
+-->
+<div x-component="like-button">
+    <button class="like-btn" x-on:click="toggle" :class="{ liked: liked }">
+        <span class="heart">{{ liked ? '❤️' : '🤍' }}</span>
+        <span class="cnt" x-text="count"></span>
+    </button>
+    <script setup>
+        {
+            data() {
+                return { liked: false, count: 0 };
+            },
+            methods: {
+                toggle() {
+                    this.data.liked = !this.data.liked;
+                    this.data.count += this.data.liked ? 1 : -1;
+                },
+            },
+        }
+    </script>
+    <style>
+        .like-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1px solid #dbdbdb;
+            border-radius: 999px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .like-btn.liked {
+            border-color: #ff3860;
+            background: #fff0f3;
+        }
+        .heart {
+            font-size: 1rem;
+        }
+        .cnt {
+            font-weight: 700;
+            min-width: 16px;
+            text-align: center;
+        }
+    </style>
+</div>

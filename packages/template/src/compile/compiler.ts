@@ -27,6 +27,10 @@ import {
 import { buildAction } from "../utils/buildAction";
 import { hasDirectives } from "../directives/utils/hasDirectives";
 import { hasMustache, isRawTextElement, parseInterpolation, synthAttrExpr } from "./mustache";
+import { buildComponentDef } from "./collect";
+import type { ComponentDef } from "../directives/component-def";
+import { mountComponentScopedAttr, injectComponentStyle } from "../utils/scopedStyle";
+import { coerceStyleValue, type StyleBind } from "../utils/styleBind";
 
 /**
  * 元素是否含插值（需建 scope 的判据之一）。
@@ -64,12 +68,12 @@ export class AutoTemplateCompiler {
                 (node: Node) => node instanceof HTMLScriptElement && node.type === "actions",
                 (script: HTMLElement) => this._extractScriptActions(script as HTMLScriptElement),
             ],
-            // 前置：x-block 命名模板块——收集冻结快照到最近祖先 scope.blocks 后剪枝（不进结果 DOM）。
+            // 前置：x-component 命名组件——收集冻结快照到最近祖先 scope.components 后剪枝（不进结果 DOM）。
             // 须排在 HTMLElement 通用规则（compileElement）之前，first-match-wins 命中后不再走通用编译，
-            // 故 x-block 元素不建 scope、不实例化其上其他指令（同元素 x-text 等随块冻结，ADR-0021）。
+            // 故 x-component 元素不建 scope、不实例化其上其他指令（同元素 x-text 等随组件冻结，ADR-0022）。
             [
-                (node: Node) => node instanceof HTMLElement && node.hasAttribute("x-block"),
-                (blockEl: HTMLElement) => this._collectBlock(blockEl),
+                (node: Node) => node instanceof HTMLElement && node.hasAttribute("x-component"),
+                (componentEl: HTMLElement) => this._collectComponent(componentEl),
             ],
             // 文本节点插值：含 {{}} 的文本节点拆分 + 注册。scope 经父元素查 templateScopeMap
             // （父元素在自身 walk 前已建 scope，含插值的 directive-less 元素亦由 hasInterpolation
@@ -92,54 +96,61 @@ export class AutoTemplateCompiler {
     }
 
     /**
-     * 收集 x-block 命名模板块（ADR-0021）。
+     * 收集 x-component 命名组件（ADR-0022，承接 ADR-0021）。
      *
-     * 编译期前置 transformer 命中 x-block 元素时调用：把该元素**深克隆**为冻结快照（根默认注入
-     * `x-scope` 确保块根无论有无指令都是 scope 锚点），按名存入**最近祖先 scope** 的 `blocks`，
-     * 然后返回 `null` 剪枝——块元素及其子树**不进结果 DOM、不建 scope、不实例化指令**。
+     * 编译期前置 transformer 命中 x-component 元素时调用：把该元素**深克隆**为冻结快照，
+     * 按名存入**最近祖先 scope** 的 `components`，然后返回 `null` 剪枝——组件元素及其子树
+     * **不进结果 DOM、不建 scope、不实例化指令**。
      *
-     * 消费者（x-loading/x-empty/x-error…）经 `scope.getBlock(name)` 沿 parent 链就近取用本快照
-     * （到顶兜底全局块），clone 后编译渲染、替换其默认 UI（块兜底）。详见 ADR-0021。
+     * 消费者（x-loading/x-empty/x-error…）经 `scope.getComponent(name)` 沿 parent 链就近取用本快照
+     * （到顶兜底全局组件），clone 后编译渲染、替换其默认 UI（组件兜底）。详见 ADR-0022。
      *
-     * @param blockEl 原树中的 x-block 元素（只读编译输入，仅读取其属性与结构）
-     * @returns 固定 `null`（剪枝，x-block 永不进结果 DOM）
+     * **default 唯一性已放宽**（ADR-0022 决策四-4）：同名组件直接归属同一 scope 时 warn + 后者覆盖
+     * （不再抛错）。沿 parent 链的就近覆盖由 getComponent 就近原则处理。
+     *
+     * > 注：`<script setup>` / `<style>` 的提取与求值、嵌套私有子组件（定义 scope 链）在后续阶段实现，
+     * > 当前阶段（命名硬切）保持组件行为与原 x-block 一致。
+     *
+     * @param componentEl 原树中的 x-component 元素（只读编译输入，仅读取其属性与结构）
+     * @returns 固定 `null`（剪枝，x-component 永不进结果 DOM）
      */
-    private _collectBlock(blockEl: HTMLElement): null {
-        const name = (blockEl.getAttribute("x-block") ?? "").trim() || "default";
+    private _collectComponent(componentEl: HTMLElement): null {
+        const name = (componentEl.getAttribute("x-component") ?? "").trim() || "default";
         // 沿原树向上找最近祖先 scope（与 _linkParent 同构：跨中间无 scope 的纯 div）。
         // walk 是 DFS，祖先元素已先 transform，若建了 scope 必已 templateScopeMap.set。
+        // 注：实例化父组件时 compileSubtree 编译其快照子树，内层 x-component 经 transformElement
+        // 再次命中本收集器，归属到父组件的**实例 scope**——运行期 scope 链天然实现嵌套私有子组件。
         let owner: AutoTemplateScope | undefined;
-        let p: HTMLElement | null = blockEl.parentElement;
+        let p: HTMLElement | null = componentEl.parentElement;
         while (p) {
             owner = this.templateScopeMap.get(p);
             if (owner) break;
             p = p.parentElement;
         }
         if (!owner) {
-            // 无归属：编译期 warn + 丢弃（不进 blocks、不进 DOM）。与引擎静默处理冗余/异常属性的风格一致。
+            // 无归属：编译期 warn + 丢弃（不进 components、不进 DOM）。与引擎静默处理冗余/异常属性的风格一致。
             this.engine.logger.warn(
-                `x-block: 块 "${name}" 未找到任何祖先 scope，无法归属。请在祖先元素上声明 x-scope（或任意指令）使其建 scope。`,
+                `x-component: 组件 "${name}" 未找到任何祖先 scope，无法归属。请在祖先元素上声明 x-scope（或任意指令）使其建 scope。`,
             );
             return null;
         }
-        // default 唯一性：仅约束直接归属本 scope 的 default（第二个直接归属 default 抛错）。
-        // 其他块名自由、可沿链同名覆盖；沿 parent 链的 default 覆盖由 getBlock 就近原则处理（不在此校验）。
+        // default 唯一性放宽（ADR-0022 决策四-4）：同名组件直接归属本 scope → warn + 后者覆盖（不再抛错）。
+        // 沿 parent 链的就近覆盖由 getComponent 就近原则处理（不在此校验）。
         if (
-            name === "default" &&
-            owner.blocks &&
-            Object.prototype.hasOwnProperty.call(owner.blocks, "default")
+            owner.components &&
+            Object.prototype.hasOwnProperty.call(owner.components, name)
         ) {
-            throw new Error(
-                `[x-block 冲突] 同一 scope 下只能有一个 default 块（直接归属）。第二个 default 块出现在已声明 default 的 scope 内。\n` +
-                    "如需覆盖祖先的 default，请在更内层的 scope 上声明（沿 parent 链就近覆盖）。",
+            this.engine.logger.warn(
+                `[x-component] 组件 "${name}" 在同一 scope 下重复声明，后者覆盖前者（ADR-0022 决策四-4 放宽 default 唯一性）。`,
             );
         }
-        // 冻结快照：深克隆、保留指令属性（块被消费渲染时才编译）。
-        // 不注入 x-scope——「block 总是创建 scope」由块消费编译路径（compileChild 无条件 new AutoTemplateScope）
-        // 内禀保证，与根上是否有 x-scope 属性无关。注入 x-scope 冗余且污染块模板，已作废（ADR-0021 决策 7 修订）。
-        const snapshot = blockEl.cloneNode(true) as HTMLElement;
-        if (!owner.blocks) owner.blocks = {};
-        owner.blocks[name] = snapshot;
+        // 组装组件定义：提取 <script setup>/<style>、求值合并 setup、深克隆冻结快照（已剥离 script/style）。
+        const def = buildComponentDef(componentEl, name, (msg) => this.engine.logger.warn(msg));
+        // scope.components 仍存 HTMLElement 快照（保持 getComponent 的 HTMLElement 契约，x-loading 等消费者不变）；
+        // ComponentDef 元数据（setup/hooks/styles）以快照根为 key 注册到 engine，供 x-use 实例化时反查。
+        this.engine.registerComponentDef(def);
+        if (!owner.components) owner.components = {};
+        owner.components[name] = def.snapshot;
         return null;
     }
 
@@ -528,6 +539,173 @@ export class AutoTemplateCompiler {
      *                     复用时保留项根节点身份（保住项根本身的焦点/属性），但其子树 DOM 会被
      *                     清空重建（旧 scope 已销毁）→ 子节点焦点丢失，彻底保留需 core 对象身份订阅。
      */
+    /**
+     * 注入组件语义到既有 scope（ADR-0022 决策二/三）。
+     *
+     * 供 x-use 复用宿主 scope 化身组件实例（宿主 scope 本身即组件实例 scope，不另建），以及
+     * compileChild 在新建 scope 后调用。注入内容：
+     * - `isComponent=true` + `componentName=def.name`；
+     * - `data`：data() 默认值先注入、props 后覆盖（R1=A 合并顺序），写入响应式 `_scopes[id]` 域；
+     * - `methods`：注入 `scope.actions`（复用 x-on action 查找）；
+     * - `hooks`：克隆到 `scope.hooks`（四阶段生命周期，每阶段数组克隆避免多实例共享引用）。
+     *
+     * @param scope 目标 scope（x-use 的宿主 scope，或 compileChild 新建的 scope）
+     * @param def   组件定义
+     * @param props x-use 传入的 props（覆盖 data() 默认值；undefined 则只注入默认值）
+     */
+    injectComponentSemantics(
+        scope: AutoTemplateScope,
+        def: ComponentDef,
+        props?: Record<string, any>,
+    ): void {
+        scope.isComponent = true;
+        scope.componentName = def.name;
+        const scopes = (this.engine.store.state as Record<string, any>)[SCOPES_KEY] as Record<
+            string,
+            any
+        >;
+        const hasComponentData = !!def.setup?.data;
+        if (hasComponentData || props) {
+            if (!scopes[scope.id]) scopes[scope.id] = {};
+            const data = scopes[scope.id];
+            scope._data = data;
+            // 1) 组件 data() 默认值（先）
+            if (hasComponentData) {
+                try {
+                    const defaults = def.setup!.data!();
+                    if (defaults && typeof defaults === "object") Object.assign(data, defaults);
+                } catch (e: any) {
+                    this.engine.logger.warn(
+                        `x-component "${def.name}" data() 执行失败，跳过默认值: ${e?.message ?? e}`,
+                    );
+                }
+            }
+            // 2) x-use props（后覆盖同名键，R1=A）
+            if (props) Object.assign(data, props);
+            // 失效 scope 的 _scopeView 缓存：宿主 scope 可能已缓存了 data 注入前的聚合视图
+            // （如 x-use 宿主在 compileElement 阶段构建 _scopeView），注入 data 后须重建，否则
+            // 后代 watch 经 getContext 读不到新 data 字段（与 DataDirective.invalidateScopeView 同理）。
+            scope.invalidateScopeView();
+        }
+        // methods 注入 scope.methods（ADR-0022 决策二-3 修订：从 action 剥离为独立机制，
+        // 不再进 scope.actions）。method 经 getMethod（组件边界）查找、getMethodThis（Proxy）调用。
+        if (def.setup?.methods) {
+            scope.methods = { ...def.setup.methods };
+        }
+        // hooks 克隆到 scope.hooks（每阶段函数数组克隆，避免多实例共享同一数组引用）
+        if (def.hooks) {
+            scope.hooks = {
+                created: def.hooks.created.slice(),
+                mounted: def.hooks.mounted.slice(),
+                beforeUnmount: def.hooks.beforeUnmount.slice(),
+                unmounted: def.hooks.unmounted.slice(),
+            };
+        }
+    }
+
+    /**
+     * 实例化组件到既有 scope（ADR-0022 决策五，供 x-use）。
+     *
+     * 宿主 scope 化身组件实例（T4=B 宿主化身组件根），步骤：
+     * 1. 注册组件快照根到 templateScopeMap（映射到宿主 scope），使快照子树编译时 _linkParent 能找到宿主 scope；
+     * 2. 注入组件语义（data/methods/hooks）到宿主 scope；
+     * 3. compileSubtree 编译组件快照子树到宿主元素（快照内指令建子 scope，watch 时读到注入的 data）；
+     * 4. 补触发 created/mounted hooks（宿主 compile() 早于组件注入，hooks 须补触发）；
+     * 5. flush 调度器消化首次渲染。
+     *
+     * @param hostScope   宿主 scope（化身组件实例 scope）
+     * @param snapshot    组件冻结快照根
+     * @param def         组件定义（可空：纯快照组件无 setup）
+     * @param props       x-use 传入的 props（覆盖 data() 默认）
+     */
+    instantiateComponent(
+        hostScope: AutoTemplateScope,
+        snapshot: HTMLElement,
+        def: ComponentDef | null,
+        props?: Record<string, any>,
+    ): void {
+        // 1. 注册快照根到 templateScopeMap：子树编译时 _linkParent 沿 parentElement 找到此映射 → 宿主 scope
+        this.templateScopeMap.set(snapshot, hostScope);
+        // 2. 注入组件语义
+        if (def) {
+            this.injectComponentSemantics(hostScope, def, props);
+        } else if (props) {
+            this.injectInitialData(hostScope, props);
+        }
+        const hostEl = hostScope.el!;
+        // 2.5 响应式 <style> bind 订阅（ADR-0022 决策四-4.1）：须在 data 注入（步骤2）后、compileSubtree 前。
+        // 遍历 def.styleBinds 调 hostScope.watch——watcher 进 scope.watchers，随 scope.destroy 自动 off（零额外卸载接线）。
+        // 首求值立即收集依赖并写首值；created hook 若在步骤4 改 data，会触发 watcher 重求值更新变量（响应式自动回流）。
+        // 变量挂组件根元素 hostEl（每实例独立，与 data-cmp-{id} 同构隔离）；null/undefined 不写走 var(--name, unset) 回退。
+        if (def?.styleBinds && def.styleBinds.length > 0) {
+            this._bindStyleVars(hostScope, hostEl, def.styleBinds);
+        }
+        // 3. 编译快照子树到宿主元素（hostScope.el）
+        this.compileSubtree(hostEl, snapshot, hostScope);
+        // 3.5 组件作用域 CSS（ADR-0022 决策四-4）：给组件根+后代打 data-cmp-{id} 属性 + 注入改写后的样式
+        if (def?.styles && def.styles.length > 0) {
+            mountComponentScopedAttr(hostEl, hostScope.id);
+            injectComponentStyle(def.name, def.styles, hostScope.id);
+        }
+        // 4. 补触发组件 created/mounted hooks
+        if (def) {
+            hostScope["_runHooks"]("created");
+            hostScope["_runHooks"]("mounted");
+        }
+        // 5. flush 首次渲染
+        this.engine.scheduler.flushAll();
+    }
+
+    /**
+     * 为组件实例的 `<style>` bind 建立 CSS 变量订阅（ADR-0022 决策四-4.1）。
+     *
+     * 遍历 `def.styleBinds`，对每个 bind 调 `hostScope.watch(expr)`——watch 返回当前值做首写、
+     * watcher 进 `hostScope.watchers`（随 scope.destroy 自动 off，零额外卸载接线）。
+     * 求值结果经 `coerceStyleValue` 归一化后写入组件根元素的 CSS 变量：null/undefined 不写
+     * （removeProperty，CSS 走 `var(--name, unset)` 回退），其余 `String(value)` 写入。
+     *
+     * @param scope  组件实例 scope（watcher 寄主，destroy 时统一 off）
+     * @param rootEl 组件根元素（变量挂载点，每实例独立）
+     * @param binds  bind 清单（编译期提取、多实例共享只读）
+     */
+    private _bindStyleVars(
+        scope: AutoTemplateScope,
+        rootEl: HTMLElement,
+        binds: StyleBind[],
+    ): void {
+        const apply = (varName: string, value: unknown) => {
+            const coerced = coerceStyleValue(value);
+            if (coerced == null) {
+                rootEl.style.removeProperty(varName);
+            } else {
+                rootEl.style.setProperty(varName, coerced);
+            }
+        };
+        for (const b of binds) {
+            // watch 返回首值（同步求值 + 收集依赖），但首次 flush 前回调未触发——
+            // 须用返回值手动写首值，否则首帧变量缺失（listener 仅在状态变化 flush 时才回调）。
+            const first = scope.watch(b.expr, ({ value }) => apply(b.varName, value));
+            apply(b.varName, first);
+        }
+    }
+
+    /**
+     * 仅注入响应式 data（无组件语义，ADR-0021 决策 12-c 保留路径）。
+     *
+     * 供 x-loading 等非组件消费者：把 initialData 写入 `store.state._scopes[scope.id]` 并令 scope.data
+     * 指向它。块内指令 watch 首次求值即收集到 `_scopes.<id>.<field>` 精准路径。
+     */
+    injectInitialData(scope: AutoTemplateScope, initialData: Record<string, any>): void {
+        const scopes = (this.engine.store.state as Record<string, any>)[SCOPES_KEY] as Record<
+            string,
+            any
+        >;
+        if (!scopes[scope.id]) scopes[scope.id] = {};
+        const data = scopes[scope.id];
+        scope._data = data;
+        Object.assign(data, initialData);
+    }
+
     compileChild(
         itemTemplate: HTMLElement,
         parentScope: AutoTemplateScope | null,
@@ -541,9 +719,18 @@ export class AutoTemplateCompiler {
          * `getContext` 的 `_scopeView` 缓存即建成含 data 层的 Proxy，`collectDependencies`
          * 收集到 `_scopes.<id>.<field>` 精准路径——后续 `Object.assign` 进该响应式代理即字段级细粒度更新。
          *
-         * 供 x-loading 等消费者把 config 注入块（ADR-0021 决策 12-c）。无此参则不注入 data。
+         * 供 x-loading 等消费者把 config 注入块（ADR-0021 决策 12-c）；x-use 实例化组件时传入 props
+         *（决策二-2，作为组件 data 域的覆盖值，后于 componentDef.data() 注入）。无此参则不注入 data。
          */
         initialData?: Record<string, any>,
+        /**
+         * 组件定义（ADR-0022 决策二/三）：x-use 实例化组件时传入，注入组件语义：
+         * - `data()`：先于 initialData 注入 scope.data（默认值，被 props 覆盖，决策 R1=A 合并顺序）；
+         * - `methods`：注入 scope.actions（复用 x-on action 查找，this=ComponentMethodContext）；
+         * - `hooks`：克隆到 scope.hooks（四阶段生命周期，compile/destroy 时触发）。
+         * 无此参（x-for/loading 等非组件场景）则跳过组件语义注入。
+         */
+        componentDef?: ComponentDef,
     ): { el: HTMLElement; scope: AutoTemplateScope } {
         const el = reuseEl ?? (itemTemplate.cloneNode(false) as HTMLElement);
         if (!reuseEl) removeDirectives(el, "x-", this._runtimeKeepAttr());
@@ -554,19 +741,13 @@ export class AutoTemplateCompiler {
         }
         const scope = new AutoTemplateScope(this.engine, el, itemTemplate);
         scope.localData = localData;
-        // 编译前注入响应式 data（须早于 scope.compile()——各指令 watch 在 compile 内建立，
-        // 首次求值的 getContext 缓存须含 data 层，否则 collectDependencies 收不到精准路径）
-        if (initialData) {
-            const scopes = (this.engine.store.state as Record<string, any>)[SCOPES_KEY] as Record<
-                string,
-                any
-            >;
-            if (!scopes[scope.id]) scopes[scope.id] = {};
-            // data 收敛为局部非空引用：scope.data 字段可为 null（未注入时），
-            // 此处守卫内必已初始化，用局部变量避免 Object.assign 接收 null 的类型错误。
-            const data = scopes[scope.id];
-            scope.data = data;
-            Object.assign(data, initialData);
+        // 组件语义注入（须早于 scope.compile()——created hook 与各指令 watch 首次求值须读到完整 data/actions）。
+        // data 合并顺序 R1=A：componentDef.data() 先注入默认，initialData（x-use props）后覆盖。
+        if (componentDef) {
+            this.injectComponentSemantics(scope, componentDef, initialData);
+        } else if (initialData) {
+            // 非组件场景（x-loading 等消费者）仅注入 initialData 到响应式 data 域（无 data()/methods/hooks）
+            this.injectInitialData(scope, initialData);
         }
         // parentScope 可空（rootless 块编译，如 x-loading 宿主无 scope 的动态插入场景）：跳过父子挂接，
         // 块 scope 独立（无祖先继承），仅靠 initialData 注入的 data 提供上下文。

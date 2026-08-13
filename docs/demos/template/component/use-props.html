@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · x-use 实例化与 props</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+    <body>
+        <!--
+            x-use 实例化组件 + props 注入：
+            - 字面量组件名：x-use="greeting"（不经表达式求值）；
+            - 对象形式传 props：x-use="{ name:'greeting', who:'张三' }"，其余键注入组件 data 域；
+            - 合并顺序：data() 默认先注入，props 后覆盖（外部优先）；
+            - 属性继承：宿主 class 与组件根 class 拼接。
+            组件内部状态（用户交互改的）不被外部 props 重置——props 更新只覆盖声明的键。
+        -->
+        <div id="app" x-scope>
+            <!-- 组件声明 -->
+            <div x-component="greeting" class="greet-root">
+                <div class="greeting">
+                    <span x-text="who"></span>，你好！已被点击 <span x-text="hits"></span> 次。
+                </div>
+                <button class="button is-small" x-on:click="hit">点我 +1</button>
+                <script setup>
+                    {
+                        // data() 默认值：who 与 hits
+                        data() {
+                            return { who: "匿名", hits: 0 };
+                        },
+                        methods: {
+                            // 内部方法改的是组件内部状态 hits
+                            hit() {
+                                this.data.hits++;
+                            },
+                        },
+                    }
+                </script>
+                <style>
+                    .greeting {
+                        display: inline-block;
+                        padding: 6px 12px;
+                        background: #f5f5f5;
+                        border-radius: 6px;
+                    }
+                </style>
+            </div>
+
+            <!-- ① 字面量组件名：用 data() 默认值（who=匿名） -->
+            <div class="panel">
+                <div class="label">字面量名实例化（who 用默认值"匿名"）</div>
+                <div x-use="greeting" class="host-a"></div>
+            </div>
+
+            <!-- ② 对象形式传 props：who 覆盖默认值；宿主 host-cls 与组件根 greet-root 的 class 拼接 -->
+            <div class="panel">
+                <div class="label">传 props：who=张三（覆盖默认），宿主 class 与组件根 class 拼接</div>
+                <div x-use="{ name: 'greeting', who: '张三' }" class="host-cls"></div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.getElementById("app"), {});
+        </script>
+
+        <style>
+            .panel {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            }
+            .label {
+                font-size: 0.8rem;
+                color: #888;
+                margin-bottom: 8px;
+            }
+            /* 宿主 class + 组件根 class 拼接后，两者样式都生效 */
+            .host-cls {
+                background: #eef6ff;
+            }
+            .greet-root {
+                padding: 8px;
+                border-radius: 8px;
+            }
+        </style>
+    </body>
+</html>

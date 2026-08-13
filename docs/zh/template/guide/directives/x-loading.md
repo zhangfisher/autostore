@@ -156,41 +156,41 @@ engine.state.ui.loading = false; // 隐藏
 
 ### 自定义加载模板
 
-默认覆盖层是内置旋转 `loader`。若不满意——想换成脉冲扩散点、进度条、骨架屏，甚至完全自定义布局——无需 fork 指令，用**模板块**覆盖即可。`x-loading` 渲染时会先经 `getBlock("loading")` 取块：取到则用块替换默认 loader，取不到才回退内置。
+默认覆盖层是内置旋转 `loader`。若不满意——想换成脉冲扩散点、进度条、骨架屏，甚至完全自定义布局——无需 fork 指令，用**组件**覆盖即可。`x-loading` 渲染时会先经 `getComponent("loading")` 取组件：取到则用块替换默认 loader，取不到才回退内置。
 
 块有两类，按**就近原则**查找（局部覆盖全局）：
 
-#### 局部块
+#### 局部组件
 
-在宿主的任意祖先上声明 `x-scope` 建 scope 锚点，其内用 `x-block="loading"` 声明一个命名模板块。该块在编译期从渲染树摘除、上交给最近祖先 scope 的 `blocks`，`x-loading` 渲染时沿 scope 链就近取用：
+在宿主的任意祖先上声明 `x-scope` 建 scope 锚点，其内用 `x-component="loading"` 声明一个命名组件。该组件在编译期从渲染树摘除、上交给最近祖先 scope 的 `components`，`x-loading` 渲染时沿 scope 链就近取用：
 
 <demo html="template/loading/block-local.html"/>
 
 ```html
-<!-- x-scope 建 scope 锚点，让内部 x-block 有归属 -->
+<!-- x-scope 建 scope 锚点，让内部 x-component 有归属 -->
 <div x-scope>
-    <!-- 自定义 loading 块：根即 overlay 壳（x-loading 注入定位/背景样式） -->
-    <div x-block="loading">
+    <!-- 自定义 loading 组件：根即 overlay 壳（x-loading 注入定位/背景样式） -->
+    <div x-component="loading">
         <div class="loader"></div>
         <!-- message 经 x-loading 配置注入块，块内 x-text 响应式取值 -->
         <div class="my-msg" x-text="message"></div>
     </div>
 
-    <!-- 这两个宿主共用上面的局部块 -->
+    <!-- 这两个宿主共用上面的局部组件 -->
     <div x-loading="{ visible:'on', message:'正在拉取数据…' }">内容</div>
 </div>
 ```
 
-#### 全局块
+#### 全局组件
 
-在 engine 构造选项 `blocks.loading` 声明一个**全引擎复用**的模板（字符串入参）。所有 `x-loading` 在无局部块覆盖时都取它：
+在 engine 构造选项 `components.loading` 声明一个**全引擎复用**的模板（字符串入参）。所有 `x-loading` 在无局部组件覆盖时都取它：
 
 <demo html="template/loading/block-global.html"/>
 
 ```javascript
 const engine = new AutoTemplateEngine(el, state, {
-    blocks: {
-        // 多顶级节点会自动包一层 div 并打 x-block="loading"
+    components: {
+        // 多顶级节点会自动包一层 div 并打 x-component="loading"
         loading: `
             <div class="loader"></div>
             <div class="my-msg" x-text="message"></div>
@@ -217,21 +217,21 @@ const engine = new AutoTemplateEngine(el, state, {
 自定义块的**根元素就是 overlay 壳**——`x-loading` 会把定位（`position:absolute`/`fixed`、`inset:0`、flex 居中）和背景（`rgba(bgColor, opacity)`）作为内联样式注入到块根。所以块根通常写一个空 `<div>` 承载壳样式，把实际内容放它的子节点里（见上方示例的 `.loader`）。
 :::
 
-#### 自动包装规则（仅全局块字符串入参）
+#### 自动包装规则（仅全局组件字符串入参）
 
-全局块入参是字符串，首次使用时按顶级节点数自动规范化为「恰好一个带 `x-block` 的根元素」：
+全局组件入参是字符串，首次使用时按顶级节点数自动规范化为「恰好一个带 `x-component` 的根元素」：
 
 | 输入                       | 包装结果                             |
 | -------------------------- | ------------------------------------ |
-| 单顶级元素、无 `x-block`   | 根打本 key 名（`x-block="loading"`） |
-| 已含 `x-block`             | 尊重原值不重命名                     |
-| 多顶级节点 / 元素+文本混排 | 包一层 `<div x-block="loading">`     |
-| 纯文本无元素               | 包成 `<div x-block="loading">文本`   |
+| 单顶级元素、无 `x-component`   | 根打本 key 名（`x-component="loading"`） |
+| 已含 `x-component`             | 尊重原值不重命名                     |
+| 多顶级节点 / 元素+文本混排 | 包一层 `<div x-component="loading">`     |
+| 纯文本无元素               | 包成 `<div x-component="loading">文本`   |
 
-局部块入参已是 DOM 元素，不经包装。块根**总是创建 scope**（由消费编译路径保证），块内表达式有继承起点。
+局部组件入参已是 DOM 元素，不经包装。块根**总是创建 scope**（由消费编译路径保证），块内表达式有继承起点。
 
 ::: info 局部覆盖全局
-查找顺序是「自身 scope → 各祖先 scope → 全局 `options.blocks`」。所以在某个 `x-scope` 内声明局部 `x-block="loading"`，只覆盖该子树内的 x-loading，其余仍走全局块——支持「公共全局样式 + 局部特例」。
+查找顺序是「自身 scope → 各祖先 scope → 全局 `options.components`」。所以在某个 `x-scope` 内声明局部 `x-component="loading"`，只覆盖该子树内的 x-loading，其余仍走全局组件——支持「公共全局样式 + 局部特例」。
 :::
 
 ## 配置

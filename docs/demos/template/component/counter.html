@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · 快速入门计数器</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <!--
+            一个完整的计数器组件，集中演示组件核心能力：
+            - data()    ：组件初始状态（count / step）
+            - methods   ：组件方法（inc / dec / reset），注入 scope.actions，由 x-on 调用
+            - mounted   ：DOM 编译完成后的生命周期钩子（读宿主 data-count 初始化）
+            - <style>   ：作用域样式，仅命中本组件实例元素（仿 Vue <style scoped>）
+            - props     ：x-use 传入的 count 覆盖 data() 默认值（合并顺序：data() 先、props 后）
+        -->
+    </head>
+    <body>
+        <div id="app" x-scope>
+            <!-- ① 声明组件 counter：编译期被摘除，仅作为"模板供体"上交给祖先 scope -->
+            <div x-component="counter">
+                <div class="counter">
+                    <button class="button is-small" x-on:click="dec">−</button>
+                    <span class="count" x-text="count"></span>
+                    <button class="button is-small is-primary" x-on:click="inc">+</button>
+                </div>
+                <!-- ② <script setup>：声明 data / methods / 生命周期钩子 -->
+                <script setup>
+                    {
+                        // data() 返回组件初始状态，注入组件响应式 data 域
+                        data() {
+                            return { count: 0, step: 1 };
+                        },
+                        // methods 注入 scope.actions，可被 x-on 调用，this.data 即组件数据域
+                        methods: {
+                            inc() {
+                                this.data.count += this.data.step;
+                            },
+                            dec() {
+                                this.data.count -= this.data.step;
+                            },
+                            reset() {
+                                this.data.count = 0;
+                            },
+                        },
+                        // mounted：DOM 子树编译完成后触发（此处演示读取外部初始值）
+                        mounted() {
+                            const el = this.scope.el;
+                            const init = el.getAttribute("data-count");
+                            if (init !== null) this.data.count = Number(init);
+                        },
+                    }
+                </script>
+                <!-- ③ <style>：默认仅命中本组件实例（实例化时打 data-cmp-{id} 隔离） -->
+                <style>
+                    .counter {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 8px 14px;
+                        border: 1px solid #dbdbdb;
+                        border-radius: 8px;
+                        background: #fafafa;
+                    }
+                    .count {
+                        min-width: 48px;
+                        text-align: center;
+                        font-weight: 700;
+                        font-size: 1.25rem;
+                        font-variant-numeric: tabular-nums;
+                    }
+                </style>
+            </div>
+
+            <!-- ④ 实例化组件：使用 data() 默认值，mounted 钩子读 data-count=10 初始化 -->
+            <div class="panel">
+                <div class="label">默认实例（mounted 初始化为 10）</div>
+                <div x-use="counter" data-count="10"></div>
+            </div>
+
+            <!-- ⑤ 传 props：对象形式，count 覆盖 data() 默认值（合并顺序：data() 先、props 后） -->
+            <div class="panel">
+                <div class="label">props 注入（初始 count=100，step=5）</div>
+                <div x-use="{ name: 'counter', count: 100, step: 5 }"></div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.getElementById("app"), {});
+        </script>
+
+        <style>
+            .panel {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            }
+            .label {
+                font-size: 0.8rem;
+                color: #888;
+                margin-bottom: 8px;
+            }
+        </style>
+    </body>
+</html>

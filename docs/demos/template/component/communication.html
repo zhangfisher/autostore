@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · 组件间通讯</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .panel {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            }
+            .label {
+                font-size: 0.8rem;
+                color: #888;
+                margin-bottom: 8px;
+            }
+            .prod-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 0;
+                border-bottom: 1px dashed #eee;
+            }
+            .prod-row:last-child {
+                border-bottom: none;
+            }
+            .prod-name {
+                flex: 1;
+            }
+            .total {
+                font-weight: 700;
+                font-size: 1.1rem;
+                color: #ff3860;
+            }
+            .badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 999px;
+                background: #ff3860;
+                color: #fff;
+                font-size: 0.75rem;
+                margin-left: 6px;
+            }
+            .log {
+                font-family: monospace;
+                font-size: 0.8rem;
+                color: #555;
+                background: #f9f9f9;
+                padding: 8px 10px;
+                border-radius: 6px;
+                max-height: 90px;
+                overflow-y: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <!--
+            组件间通讯的三种方式演示（购物车场景）：
+            ① props 下传（父→子）：父用 x-use 把商品信息传给 product 组件；
+            ② 全局 state 共享（任意组件）：product 与 cart-total 都读写全局 state.cart，
+               product 改数量 → 全局 state.cart 变化 → cart-total 自动刷新（经 watch 路径订阅）；
+            ③ 事件总线（跨组件解耦）：product 点击"收藏"时 emit('favorite', ...)，
+               不相关的侧栏 favorite-panel 监听该事件并计数——两者无 props/父子关系，纯靠总线通讯。
+        -->
+        <div id="app" x-scope>
+            <!-- 组件 product：单个商品行，含加减按钮 + 收藏 -->
+            <div x-component="product">
+                <div class="prod-row">
+                    <span class="prod-name" x-text="label"></span>
+                    <button class="button is-small" x-on:click="dec">−</button>
+                    <span class="qty" x-text="qty"></span>
+                    <button class="button is-small is-primary" x-on:click="inc">+</button>
+                    <button class="button is-small is-warning" x-on:click="favorite">收藏</button>
+                </div>
+                <script setup>
+                    {
+                        data() {
+                            // id 由 props 传入；qty 默认 1
+                            return { id: 0, qty: 1 };
+                        },
+                        methods: {
+                            inc() {
+                                this.data.qty++;
+                                // ② 子→全局：把数量写回全局 state.cart（父/兄弟组件经路径订阅感知）
+                                this.state.cart[this.data.id] = this.data.qty;
+                            },
+                            dec() {
+                                if (this.data.qty > 0) this.data.qty--;
+                                this.state.cart[this.data.id] = this.data.qty;
+                            },
+                            favorite() {
+                                // ③ 事件总线：emit 自定义事件，无父子关系的监听者收到
+                                this.scope.engine.emit("favorite", { id: this.data.id, name: this.data.label });
+                            },
+                        },
+                    }
+                </script>
+            </div>
+
+            <!-- 组件 cart-total：读全局 state.cart 求和（全局 state 共享） -->
+            <div x-component="cart-total">
+                <div class="total">合计：<span x-text="total"></span> 件</div>
+                <script setup>
+                    {
+                        data() {
+                            return { total: 0 };
+                        },
+                        created() {
+                            // 监听全局 state.cart 的任意变化，重新求和（子组件改 cart 自动回流）
+                            this.scope.engine.store.watch("cart", () => {
+                                const cart = this.state.cart;
+                                this.data.total = Object.keys(cart).reduce(
+                                    (s, k) => s + (cart[k] || 0),
+                                    0,
+                                );
+                            });
+                            // 首次求和
+                            const cart = this.state.cart;
+                            this.data.total = Object.keys(cart).reduce((s, k) => s + (cart[k] || 0), 0);
+                        },
+                    }
+                </script>
+            </div>
+
+            <div class="panel">
+                <div class="label">① 商品列表（product 组件，props 下传 name/id）</div>
+                <!-- props 下传：每个 product 实例传入不同商品名(label)与 id -->
+                <div x-use="{ name: 'product', label: '键盘', id: 1, qty: 1 }"></div>
+                <div x-use="{ name: 'product', label: '鼠标', id: 2, qty: 2 }"></div>
+                <div x-use="{ name: 'product', label: '显示器', id: 3, qty: 1 }"></div>
+            </div>
+
+            <div class="panel">
+                <div class="label">② 合计（cart-total 组件，经全局 state.cart 联动）</div>
+                <div x-use="cart-total"></div>
+            </div>
+
+            <div class="panel">
+                <div class="label">③ 收藏侧栏（favorite-panel，监听事件总线，与 product 无父子关系）</div>
+                <div id="fav-panel">
+                    已收藏 <span class="total" x-text="favCount"></span> 件
+                    <span class="badge" x-show="lastFav">最近：{{ lastFav }}</span>
+                </div>
+            </div>
+
+            <div class="log" id="fav-log">（点击商品行的"收藏"按钮，事件经总线传到此处）</div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.getElementById("app"), {
+                // 全局 state.cart：各 product 组件写回、cart-total 读，跨组件共享
+                cart: { 1: 1, 2: 2, 3: 1 },
+                favCount: 0,
+                lastFav: "",
+            });
+            // ③ 事件总线监听（在 app 作用域外的脚本里订阅，演示"无父子关系"的解耦通讯）
+            engine.on("favorite", (e) => {
+                engine.state.favCount++;
+                engine.state.lastFav = e.name;
+                const log = document.getElementById("fav-log");
+                log.textContent = `→ favorite 事件：{ id: ${e.id}, name: "${e.name}" }`;
+            });
+        </script>
+    </body>
+</html>

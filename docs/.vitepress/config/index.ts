@@ -244,7 +244,7 @@ export default defineConfig({
             "/zh/template/": [
                 {
                     text: "关于",
-                    link: "/zh/template/intro/about",
+                    link: "/zh/template/index",
                     items: [
                         { text: "安装", link: "/zh/template/intro/install" },
                         { text: "名词解释", link: "/zh/template/intro/glossary" },
@@ -262,7 +262,7 @@ export default defineConfig({
                         { text: "指令类型", link: "/zh/template/guide/directive" },
                         { text: "指令配置", link: "/zh/template/guide/config" },
                         { text: "动态模板", link: "/zh/template/guide/patch" },
-                        { text: "模板块", link: "/zh/template/guide/block" },
+                        { text: "组件", link: "/zh/template/guide/component" },
                     ],
                 },
                 {

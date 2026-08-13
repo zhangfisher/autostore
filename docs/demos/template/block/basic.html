@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>x-block · 命名模板块基础</title>
+        <title>x-component · 组件基础</title>
         <script src="/autostore/template.js"></script>
         <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
@@ -53,9 +53,9 @@
     </head>
 
     <body>
-        <!-- 命名模板块基础：
-             1. x-scope 让纯容器建 scope，为其内的 x-block 提供归属锚点；
-             2. x-block="loading" 在编译期被深克隆为快照、上交给最近祖先 scope 的 blocks，
+        <!-- 组件基础：
+             1. x-scope 让纯容器建 scope，为其内的 x-component 提供归属锚点；
+             2. x-component="loading" 在编译期被深克隆为快照、上交给最近祖先 scope 的 blocks，
                 然后【从渲染树摘除】——它本身不会出现在页面上；
              3. x-loading 渲染时经 getBlock("loading") 取到该快照，clone+编译后替换内置 loader。 -->
         <div class="demo-app section">
@@ -65,7 +65,7 @@
 
             <div x-scope>
                 <!-- 声明命名块 loading：骨架屏。此元素编译后即从 DOM 消失，仅作"模板供体" -->
-                <div x-block="loading">
+                <div x-component="loading">
                     <div class="my-skeleton"><span></span><span></span><span></span></div>
                 </div>
 
@@ -76,7 +76,7 @@
             </div>
 
             <div class="block has-text-grey">
-                上面的 <code>x-block="loading"</code> 声明不会渲染成可见节点——它在编译期被摘除，仅在 <code>x-loading</code> 需要时作为模板被克隆消费。
+                上面的 <code>x-component="loading"</code> 声明不会渲染成可见节点——它在编译期被摘除，仅在 <code>x-loading</code> 需要时作为模板被克隆消费。
             </div>
         </div>
 

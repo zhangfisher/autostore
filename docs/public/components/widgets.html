@@ -1,0 +1,53 @@
+<!--
+    远程组件测试文件（被 x-import.global 加载，注册为全局组件）。
+    一个文件含多个 x-component，演示批量注册全局组件。
+-->
+<div x-component="stat">
+    <div class="stat" :class="tone">
+        <div class="stat-label" x-text="label"></div>
+        <div class="stat-value" x-text="value"></div>
+    </div>
+    <style>
+        .stat {
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #f5f5f5;
+            min-width: 80px;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+        }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat.up {
+            background: #f0fdf4;
+        }
+        .stat.up .stat-value {
+            color: #23d160;
+        }
+        .stat.down {
+            background: #fef0f0;
+        }
+        .stat.down .stat-value {
+            color: #ff3860;
+        }
+    </style>
+</div>
+
+<div x-component="chip">
+    <span class="chip" x-text="text"></span>
+    <style>
+        .chip {
+            display: inline-block;
+            padding: 3px 10px;
+            background: #3273dc;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+    </style>
+</div>

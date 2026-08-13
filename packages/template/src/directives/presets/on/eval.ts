@@ -61,7 +61,25 @@ export function createEvalHandler(
     return (event) => {
         // 聚合数据视图：localData + data + 全局 state，供表达式 with 求值与 ctx.data（写入透传 data）
         const data = scope.getContext();
-        // 1) Action 优先：每次触发时查 scope.getAction（actions 可能后于 created 注册）
+        // 1) 组件 method 优先（ADR-0022 决策二-3 修订）：组件内部方法，this=Proxy。
+        //    method 经组件边界查找（不穿透父组件）；经 Proxy get 取出时自动 bind 其**所属组件实例**
+        //    的 Proxy（_findMethodOwner），保证 method 内 this 与所属组件的钩子 this 一致。
+        if (name) {
+            const method = scope.getMethod?.(name);
+            if (typeof method === "function") {
+                try {
+                    const args = argsFn ? argsFn(event, data) : [];
+                    // 经当前 scope 的 Proxy get 陷阱取 method（触发 _findMethodOwner + bind owner proxy），
+                    // 再调用——比 method.call(scope.getMethodThis()) 更准（后者 this 绑当前 scope 非 owner）。
+                    const proxy = scope.getMethodThis();
+                    return (proxy as any)[name](...args);
+                } catch (e: any) {
+                    engine.logger.error(`x-on method "${name}" 执行失败: ${e?.message ?? e}`);
+                    throw e;
+                }
+            }
+        }
+        // 2) Action 兜底：每次触发时查 scope.getAction（actions 可能后于 created 注册）
         if (name) {
             const action = scope.getAction(name);
             if (typeof action === "function") {

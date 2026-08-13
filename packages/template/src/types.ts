@@ -142,9 +142,13 @@ export interface AutoTemplateEngineOptions<State extends Dict = any>
      */
     sanitizer?: (html: string) => string;
     /**
-     * 一些模板块，用于定制一些引擎的内置行为模板，比如x-loading
+     * 全局组件表（ADR-0022）：声明全引擎复用的命名组件（字符串入参，懒预编译缓存）。
+     *
+     * 作为 `scope.getComponent` 查找链的**终点兜底**——scope 链无命中时查此。与局部组件
+     * （x-component 声明、入参为 DOM）经同一条 `getComponent` 链统一取用。供 x-loading 等内置
+     * 消费者定制其默认 UI（如 `getComponent("loading")`）。详见 ADR-0022。
      */
-    blocks?: Record<string, any>;
+    components?: Record<string, any>;
 }
 
 /**
@@ -199,6 +203,10 @@ export interface AutoTemplateEngineEvents {
     "patch/before": { id: number; templateEl: HTMLElement };
     /** patch 后 */
     "patch/after": { id: number };
+
+    // ── component/** 组件注册（ADR-0022，供 x-use 监听异步 x-import 就绪） ──
+    /** 组件注册（x-import fetch 完成注册后广播；name=组件名，供 pending 的 x-use 重新实例化） */
+    "component/registered": { name: string; global: boolean };
 
     // ── render/** 调度 flush（热路径，emit 按 type 门控） ──────
     /** flush 前 */

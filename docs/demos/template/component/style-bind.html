@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · 响应式样式 bind</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            /* 全局演示样式（与组件 scoped 样式无关） */
+            .demo-card {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <!--
+            x-scope 让纯容器建 scope，使内部 x-component 有归属锚点。
+            组件 theme 的 <style> 用 bind() 把状态注入为 CSS 变量，
+            状态变化时样式自动响应更新（无需 :style 逐元素绑定）。
+        -->
+        <div id="app" x-scope>
+            <!-- 组件声明：<style> 内 bind 绑定状态到 CSS 变量 -->
+            <div x-component="bar">
+                <div class="bar-track">
+                    <span class="bar-label" x-text="label"></span>
+                </div>
+                <style>
+                    /* 纯路径：注入为 --bar-color / --bar-width */
+                    .bar-track {
+                        width: bind("barWidth + 'px'");
+                        background: bind("barColor");
+                        height: 24px;
+                        border-radius: 4px;
+                        display: flex;
+                        align-items: center;
+                        padding: 0 8px;
+                        transition: width 0.2s, background 0.2s;
+                    }
+                    /* 表达式：注入为 --h{hash}，随 width 变化自动响应 */
+                    .bar-label {
+                        color: bind("barWidth > 120 ? '#fff' : '#333'");
+                        font-size: bind("12 + barWidth / 20 + 'px'");
+                        font-weight: bold;
+                    }
+                </style>
+            </div>
+
+            <!-- 实例 1：初始宽度 80，颜色红 -->
+            <div class="demo-card">
+                <p class="is-size-7 has-text-grey">拖动滑块改变 barWidth，观察宽度/颜色/字号响应式变化：</p>
+                <div id="b1" x-use="{ name: 'bar', label: '进度', barWidth: 80, barColor: '#ff3860' }"></div>
+            </div>
+
+            <!-- 控制：滑块 + 按钮，改全局 state 触发 bind 更新 -->
+            <div class="demo-card">
+                <input
+                    class="slider is-fullwidth"
+                    type="range"
+                    min="40"
+                    max="240"
+                    value="80"
+                    x-on:input="barWidth = parseInt($event.target.value)"
+                />
+                <div class="buttons mt-2">
+                    <button class="button is-small" x-on:click="barColor='#ff3860'">红</button>
+                    <button class="button is-small is-success" x-on:click="barColor='#23d160'">绿</button>
+                    <button class="button is-small is-info" x-on:click="barColor='#3273dc'">蓝</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            // barWidth / barColor / label 经 x-use props 注入组件 data 域，
+            // bind 表达式经组件 scope 读到这些响应式字段。
+            const engine = new AutoTemplateEngine(document.getElementById("app"), {
+                barWidth: 80,
+                barColor: "#ff3860",
+                label: "进度",
+            });
+        </script>
+    </body>
+</html>

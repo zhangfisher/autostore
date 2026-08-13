@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · 生命周期</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .log {
+                max-height: 220px;
+                overflow-y: auto;
+                font-family: monospace;
+                font-size: 0.82rem;
+                background: #1e1e1e;
+                color: #d4d4d4;
+                padding: 10px 12px;
+                border-radius: 6px;
+                line-height: 1.6;
+            }
+            .log .line {
+                white-space: pre-wrap;
+            }
+            .log .created {
+                color: #4ec9b0;
+            }
+            .log .mounted {
+                color: #dcdcaa;
+            }
+            .log .beforeUnmount {
+                color: #ce9178;
+            }
+            .log .unmounted {
+                color: #f44747;
+            }
+        </style>
+    </head>
+    <body>
+        <!--
+            四阶段生命周期钩子（scope.hooks）：
+            - created         组件 scope 创建 + data 注入后、编译前
+            - mounted         DOM 子树编译完成
+            - beforeUnmount   卸载前（watcher 仍活，可读最终状态做精确清理）
+            - unmounted       卸载后（收尾）
+            本 demo：用 x-if 切换组件挂载/卸载，把每次钩子触发记录到 state.log。
+            引擎无 activated/deactivated（无实例缓存层）、无 beforeUpdate/updated（细粒度无整体重渲染）。
+        -->
+        <div id="app" x-scope>
+            <!-- 组件声明：四阶段钩子各记一条日志 -->
+            <div x-component="timed">
+                <div class="timer">组件实例存活中 · <span x-text="tick"></span></div>
+                <script setup>
+                    {
+                        data() {
+                            return { tick: 0, timer: null };
+                        },
+                        created() {
+                            // created：data 已注入、DOM 尚未编译
+                            log("created", "created · scope 已建、data 已注入（tick=" + this.data.tick + "）");
+                        },
+                        mounted() {
+                            // mounted：DOM 编译完成，可访问 this.scope.el
+                            log("mounted", "mounted · DOM 编译完成（" + this.scope.el.tagName + "）");
+                            // 启动一个定时器（演示资源持有，卸载时须清理）
+                            this.data.timer = setInterval(() => this.data.tick++, 1000);
+                        },
+                        beforeUnmount() {
+                            // beforeUnmount：watcher 仍活，可读最终状态
+                            log("beforeUnmount", "beforeUnmount · 清理定时器（最终 tick=" + this.data.tick + "）");
+                            clearInterval(this.data.timer);
+                        },
+                        unmounted() {
+                            log("unmounted", "unmounted · 卸载收尾完成");
+                        },
+                    }
+                </script>
+                <style>
+                    .timer {
+                        padding: 12px 16px;
+                        background: #f5f5f5;
+                        border-radius: 6px;
+                        font-variant-numeric: tabular-nums;
+                    }
+                </style>
+            </div>
+
+            <div class="buttons">
+                <button class="button is-primary" @click="toggle">
+                    {{ show ? '卸载组件（x-if=false）' : '挂载组件（x-if=true）' }}
+                </button>
+                <button class="button is-small" @click="clearLog">清空日志</button>
+            </div>
+
+            <!-- x-if 控制组件挂载/卸载：true 实例化（触发 created/mounted），false 销毁（beforeUnmount/unmounted） -->
+            <div class="panel">
+                <div x-if="show">
+                    <div x-use="timed"></div>
+                </div>
+                <div x-show="!show" class="placeholder">组件已卸载</div>
+            </div>
+
+            <div class="log">
+                <div class="line" x-for="entry in log">
+                    <span :class="entry.phase" x-text="'[' + entry.phase + '] '"></span><span x-text="entry.text"></span>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            // 日志写入全局 state.log，组件钩子内通过 this.state.log 访问
+            let seq = 0;
+            function log(phase, text) {
+                engine.state.log.push({ phase, text: `#${++seq} ${text}` });
+            }
+            const engine = new AutoTemplateEngine(
+                document.getElementById("app"),
+                { show: true, log: [] },
+                {
+                    actions: {
+                        toggle() {
+                            engine.state.show = !engine.state.show;
+                        },
+                        clearLog() {
+                            seq = 0;
+                            engine.state.log = [];
+                        },
+                    },
+                },
+            );
+        </script>
+
+        <style>
+            .panel {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin: 12px 0;
+                min-height: 56px;
+            }
+            .placeholder {
+                color: #aaa;
+                font-style: italic;
+            }
+            .buttons {
+                margin: 8px 0;
+            }
+        </style>
+    </body>
+</html>

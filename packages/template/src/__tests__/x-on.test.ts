@@ -481,10 +481,11 @@ describe("x-on 结合 x-data（含嵌套）", () => {
             captured = this.scope;
         };
         root.querySelector("button")!.click();
-        // x-data 在父 div：button 自身 scope 不直接持有 data（null），
-        // 须经 getData() 沿 parent 链（或 this.data 代理视图）才能取到——
+        // x-data 在父 div：button 自身 scope 不直接持有 data（_data 为 null），
+        // 须经 getData() 沿 parent 链（或 this.data 聚合视图）才能取到——
         // 即"x-data 数据在 _scopeView 中经代理获取，而非 scope 直接拥有"。
-        expect(captured.data).toBeNull();
+        // 注：scope.data 现为 getter 返回聚合视图（ADR-0022 决策二-3），底层域用 _data。
+        expect(captured._data).toBeNull();
         expect(captured.getData()).toEqual({ count: 0 });
         expect(captured.engine).toBe(engine);
     });

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · 作用域样式 scoped CSS</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            /* 页面级同名 class（验证组件样式不污染外部） */
+            .title {
+                color: #ff3860;
+                font-size: 1.5rem;
+            }
+        </style>
+    </head>
+    <body>
+        <!--
+            组件 <style> 默认仅命中本组件实例（仿 Vue <style scoped>，属性后缀法）：
+            - 实例化时组件根及所有后代被打唯一 data-cmp-{id} 属性；
+            - <style> 每条选择器末尾自动追加 [data-cmp-{id}]，样式隔离到本实例；
+            - 同名组件多实例共享一份改写后的样式（按组件定义缓存 + 引用计数）。
+            下面页面级 .title 是红色，组件内 .title 是蓝色——互不干扰。
+        -->
+        <div id="app" x-scope>
+            <div x-component="card">
+                <div class="title" x-text="title"></div>
+                <div class="desc" x-text="desc"></div>
+                <style>
+                    /* 仅命中本组件实例的 .title（蓝色），不影响页面级同名 .title（红色） */
+                    .title {
+                        color: #3273dc;
+                        font-size: 1rem;
+                        font-weight: 700;
+                    }
+                    .desc {
+                        color: #888;
+                        font-size: 0.85rem;
+                        margin-top: 4px;
+                    }
+                    /* 伪类：属性后缀置于伪类前，hover 仅命中本组件 */
+                    .title:hover {
+                        color: #23d160;
+                        cursor: default;
+                    }
+                </style>
+            </div>
+
+            <!-- 页面级 .title（红色，证明组件样式未泄漏到外部） -->
+            <div class="page-title title">页面级 .title（红）</div>
+
+            <!-- 两个组件实例：scoped 样式各打独立 data-cmp-{id}，互不串扰 -->
+            <div class="panel">
+                <div class="label">组件实例 A（.title 蓝，hover 变绿）</div>
+                <div x-use="{ name: 'card', title: '实例 A 标题', desc: '独立 scoped 样式' }"></div>
+            </div>
+            <div class="panel">
+                <div class="label">组件实例 B（同名组件，样式共享但隔离）</div>
+                <div x-use="{ name: 'card', title: '实例 B 标题', desc: '同组件定义、各自隔离' }"></div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.getElementById("app"), {});
+        </script>
+
+        <style>
+            .panel {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            }
+            .label {
+                font-size: 0.8rem;
+                color: #888;
+                margin-bottom: 8px;
+            }
+            .page-title {
+                margin: 12px 0;
+            }
+        </style>
+    </body>
+</html>

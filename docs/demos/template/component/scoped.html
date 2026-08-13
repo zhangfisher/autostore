@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · 作用域组件就近覆盖</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+    <body>
+        <!--
+            作用域组件 vs 全局组件的就近覆盖规则：
+            - 全局组件在 options.components.badge 声明（蓝底），全引擎兜底；
+            - 顶部 x-scope 内再声明一个局部 badge 组件（绿底），仅该子树可见、就近遮蔽全局。
+            两个 x-use="badge" 取到的是各自最近作用域的版本。
+        -->
+        <div id="app" x-scope>
+            <!-- 局部组件 badge（绿底）：仅本 x-scope 子树可见，就近遮蔽全局同名 -->
+            <div x-component="badge">
+                <span class="badge local">局部绿标</span>
+            </div>
+
+            <!-- 这个 x-use 命中局部组件（绿底） -->
+            <div class="panel">
+                <div class="label">本作用域内：命中局部 badge（绿）</div>
+                <div x-use="badge"></div>
+            </div>
+
+            <!-- 外层作用域，无局部 badge → 走全局兜底（蓝底） -->
+            <div class="panel outer" x-scope>
+                <div class="label">外层独立作用域：无局部 badge → 兜底全局（蓝）</div>
+                <div x-use="badge"></div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.getElementById("app"), {}, {
+                components: {
+                    // 全局组件（蓝底）：字符串入参，自动包装打 x-component="badge"
+                    badge: `<span class="badge global">全局蓝标</span>`,
+                },
+            });
+        </script>
+
+        <style>
+            .panel {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            }
+            .label {
+                font-size: 0.8rem;
+                color: #888;
+                margin-bottom: 8px;
+            }
+            .badge {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 999px;
+                color: #fff;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+            .badge.local {
+                background: #23d160;
+            }
+            .badge.global {
+                background: #3273dc;
+            }
+        </style>
+    </body>
+</html>

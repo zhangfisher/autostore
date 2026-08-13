@@ -100,8 +100,8 @@ let stylesInjected = false;
  * 用本模板作默认实现。形态与公开示例同构——`overlay` 壳 > `box` > `loader`(`:style="color"`) +
  * `message`(`x-text="message"`)。`color`/`message` 经块 data 响应式注入（见 {@link mountOverlay}）。
  *
- * **由 LoadingDirective 持有**（非 engine 注册表）——是「某指令自带的、可被全局/局部 loading 块
- * 覆盖的默认实现」，不违反「引擎不预定义 UI 态名册」。消费者取块 = `getBlock('loading') ?? DEFAULT_BLOCK`。
+ * **由 LoadingDirective 持有**（非 engine 注册表）——是「某指令自带的、可被全局/局部 loading 组件
+ * 覆盖的默认实现」，不违反「引擎不预定义 UI 态名册」。消费者取组件 = `getComponent('loading') ?? DEFAULT_BLOCK`。
  */
 const DEFAULT_BLOCK = `<div class="${OVERLAY_CLASS}">
   <div class="${BOX_CLASS}">
@@ -407,20 +407,20 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
     }
 
     /**
-     * 构建并挂载覆盖层（= 编译后的块根）到目标元素（ADR-0021 决策 12）。
+     * 构建并挂载覆盖层（= 编译后的组件根）到目标元素（ADR-0022 承接 ADR-0021 决策 12）。
      *
-     * 渲染统一走「编译块」路径：取块 = `getBlock('loading') ?? DEFAULT_BLOCK`，深克隆 → 经 compileChild
-     * 编译挂载（parentScope 为宿主 scope 使块继承宿主数据上下文；**config 经 compileChild 第 5 参
-     * initialData 在 compile 前注入 data**，确保块内 watch 首次求值即收集到 `_scopes.<id>.<field>`
-     * 精准路径，后续 attrChanged 可字段级细粒度更新）→ 注入壳样式到块根 → 挂到 target。
+     * 渲染统一走「编译组件」路径：取组件 = `getComponent('loading') ?? DEFAULT_BLOCK`，深克隆 → 经 compileChild
+     * 编译挂载（parentScope 为宿主 scope 使组件继承宿主数据上下文；**config 经 compileChild 第 5 参
+     * initialData 在 compile 前注入 data**，确保组件内 watch 首次求值即收集到 `_scopes.<id>.<field>`
+     * 精准路径，后续 attrChanged 可字段级细粒度更新）→ 注入壳样式到组件根 → 挂到 target。
      */
     private mountOverlay(): void {
         if (this.overlay) return;
         const target = this.resolveTarget();
         if (!target) return;
 
-        // 取块快照：自定义 loading 块（沿宿主 scope 链就近 + 全局兜底），未命中用 DEFAULT_BLOCK
-        const snapshot = this._resolveLoadingBlock();
+        // 取组件快照：自定义 loading 组件（沿宿主 scope 链就近 + 全局兜底），未命中用 DEFAULT_BLOCK
+        const snapshot = this._resolveLoadingComponent();
         const clone = snapshot.cloneNode(true) as HTMLElement;
 
         // config 视图：七字段，作为块根 data 在 compile 前注入（响应式，块内 x-text="message" 取用）
@@ -448,12 +448,12 @@ export class LoadingDirective extends AutoTemplateDirectiveBase implements Runti
     /**
      * 解析 loading 块快照：自定义块优先（宿主 scope 链 + 全局兜底），未命中回退 DEFAULT_BLOCK。
      *
-     * DEFAULT_BLOCK 是字符串模板，每次解析为新的根元素（无缓存需求——仅作兜底，自定义块才走
-     * engine 全局缓存）。返回的快照形态与自定义块一致（含 x-block、未编译、保留指令属性）。
+     * DEFAULT_BLOCK 是字符串模板，每次解析为新的根元素（无缓存需求——仅作兜底，自定义组件才走
+     * engine 全局缓存）。返回的快照形态与自定义组件一致（含 x-component、未编译、保留指令属性）。
      */
-    private _resolveLoadingBlock(): HTMLElement {
+    private _resolveLoadingComponent(): HTMLElement {
         if (this.el) {
-            const custom = this.engine.getBlock(this.el, "loading");
+            const custom = this.engine.getComponent(this.el, "loading");
             if (custom) return custom;
         }
         // DEFAULT_BLOCK 字符串 → 解析取单根元素（parseHtmlFragment 已 trim，单顶级元素）

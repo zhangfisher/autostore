@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-component · 远程加载（全局）</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+    <body>
+        <!--
+            x-import.global：把远程 HTML 里的组件注册为全局组件（engine.options.components），
+            全引擎复用。一个文件可含多个 x-component（批量注册）。
+            组件文件 /autostore/components/widgets.html 含 stat 与 chip 两个组件。
+        -->
+        <div id="app" x-scope>
+            <!-- .global 修饰符：注册为全局组件 -->
+            <div x-import.global="/autostore/components/widgets.html"></div>
+
+            <!-- 组件加载完成后即可跨任意作用域实例化 -->
+            <div class="panel">
+                <div class="label">全局远程组件 stat（传 props：label/value/tone）</div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                    <div x-use="{ name: 'stat', label: '收入', value: '12,580', tone: 'up' }"></div>
+                    <div x-use="{ name: 'stat', label: '支出', value: '3,210', tone: 'down' }"></div>
+                    <div x-use="{ name: 'stat', label: '净利', value: '9,370', tone: 'up' }"></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="label">同一文件的另一全局组件 chip</div>
+                <div style="display:flex;gap:8px">
+                    <div x-use="{ name: 'chip', text: '远程' }"></div>
+                    <div x-use="{ name: 'chip', text: '全局' }"></div>
+                    <div x-use="{ name: 'chip', text: '批量注册' }"></div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(document.getElementById("app"), {});
+        </script>
+
+        <style>
+            .panel {
+                padding: 16px;
+                border: 1px solid #dbdbdb;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            }
+            .label {
+                font-size: 0.8rem;
+                color: #888;
+                margin-bottom: 8px;
+            }
+        </style>
+    </body>
+</html>

@@ -105,17 +105,17 @@ export class DataDirective extends AutoTemplateDirectiveBase {
      */
     private applyLocal(data: Record<string, any>) {
         const scope = this.binding;
-        if (!scope.data) {
+        if (!scope._data) {
             const scopes = (this.engine.store.state as Record<string, any>)[SCOPES_KEY] as Record<
                 string,
                 any
             >;
             // 不存在才建：避免对已存在的 [id] 重复赋值触发无谓的 set 通知
             if (!scopes[scope.id]) scopes[scope.id] = {};
-            scope.data = scopes[scope.id];
+            scope._data = scopes[scope.id];
         }
         // 上面 if 已 ensure 非空；TS 不跨语句窄化属性访问，用 ! 断言非 null
-        const ds = scope.data!;
+        const ds = scope._data!;
         for (const k of Object.keys(ds)) {
             if (!Object.prototype.hasOwnProperty.call(data, k)) delete ds[k];
         }

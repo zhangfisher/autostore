@@ -1,5 +1,6 @@
 // oxlint-disable typescript/no-this-alias
 import type { AutoTemplateEngine } from "./engine";
+import type { ComponentHooks } from "./directives/component-def";
 import { AutoTemplateDirectiveBase } from "./directives/base";
 import { getVal, type Watcher } from "autostore";
 import { getDirectives, getHostOptions } from "./directives/utils/getDirectives";
@@ -70,8 +71,28 @@ export class AutoTemplateScope {
      *
      * 父子元素的 data 经 parent 链层叠（子覆盖父同名键）；容器 x-data 经 parent 链
      * 自动透传进 x-for 各 item scope（item.parent = 容器 scope）。
+     *
+     * 字段名 `_data`（ADR-0022 决策二-3 修订）：对外暴露 `data` 改为 getter 返回 `getContext()`
+     * 聚合视图（供 Proxy this 的 `this.data`），引擎内部读写响应式域用 `_data`。
      */
-    data: Record<string, any> | null = null;
+    _data: Record<string, any> | null = null;
+    /**
+     * data 聚合视图 getter（ADR-0022 决策二-3 修订）。
+     *
+     * 返回 `getContext()`——localData + _data + parent 链 + 全局 state 的聚合 Proxy 视图（响应式、
+     * 可读可写）。供 Proxy this 的 `this.data`、外部便捷访问。底层响应式域经 `_data` 字段访问。
+     */
+    get data(): Record<string, any> {
+        return this.getContext();
+    }
+    /**
+     * 组件实例的内部方法容器（ADR-0022 决策二-3 修订）。
+     *
+     * 由 `<script setup>` 的 methods 经 `injectComponentSemantics` 注入（不再进 `scope.actions`，
+     * 与 action 彻底分离）。method 经 `getMethod`（组件边界）查找、`getMethodThis()`（Proxy）调用——
+     * method 内 `this` 是 Proxy，`this.<method名>` 直调/互调。普通 scope（非组件实例）为 null。
+     */
+    methods: Record<string, (...args: any[]) => any> | null = null;
     /** 本作用域持有的 watcher（destroy 时统一 off） */
     watchers: Watcher[] = [];
     /** 本作用域 watch 注册的 update 闭包（refresh 时同步重跑，destroy 时清空）。
@@ -126,20 +147,44 @@ export class AutoTemplateScope {
      */
     actions: Record<string, (...args: any[]) => any> | null = null;
     /**
-     * x-block 收集的命名模板块（ADR-0021）。
+     * 组件实例的生命周期钩子（ADR-0022 决策三）。
      *
-     * compiler 前置 transformer 命中 `x-block` 元素时，将其**深克隆副本**（根默认注入 x-scope，
-     * 保留指令属性、未编译）按名存入**最近祖先 scope** 的本字段，并把原元素从渲染树摘除。
-     * key 为块名（无值 `x-block` 取 `default`）；value 为冻结快照 HTMLElement。
-     *
-     * `default` 唯一性仅约束**直接归属本 scope**（收集时第二个直接归属 default 抛错）；
-     * 沿 parent 链允许同名覆盖（内层遮蔽外层）。其他块名自由、可多 scope 同名。
-     *
-     * 消费者（x-loading/x-empty/x-error…）经 `getBlock(name)` 沿 parent 链就近取用（到顶兜底全局块），
-     * 命中则替换默认 UI，未命中回退默认块（块兜底）。本字段**仅在收集到块时才创建**，
-     * 多数 scope 无块 → undefined，避免给每个 scope 平白分配一个空对象（YAGNI）。
+     * 仅组件实例 scope 持有（x-use 实例化时从 ComponentDef.hooks 克隆而来）；普通 scope 为 null。
+     * 四阶段：created（compile 前）/ mounted（compile 后）/ beforeUnmount（destroy 开头，watcher 仍活）/
+     * unmounted（destroy 结尾）。由 compileChild 实例化流程与 scope.destroy 分别触发（`_runHooks`）。
+     * 每个 phase 是函数数组（多个 `<script setup>` 同名 hook 串行合并），单个失败 try-catch 不阻断其余。
      */
-    blocks: Record<string, HTMLElement> | null = null;
+    hooks: ComponentHooks | null = null;
+    /**
+     * 是否为组件实例 scope（ADR-0022 决策二）。
+     *
+     * 组件本质上是一个特殊 scope——由 x-use 实例化时（compileChild 传入 componentDef）置 true。
+     * 区别于普通 scope（x-for 项 / x-if 子树 / x-data 块等）：组件实例持有 data（合并 data() + props）、
+     * methods（scope.actions）、hooks（四阶段生命周期）。供内部判定与调试观察。普通 scope 恒 false。
+     */
+    isComponent = false;
+    /**
+     * 组件实例化的组件名（ADR-0022 决策五-递归保护）。
+     *
+     * 仅组件实例 scope 有值（compileChild 传 componentDef 时取 def.name）；普通 scope 为 null。
+     * 供 x-use 的递归深度统计：沿 parent 链统计同名组件实例化深度，防无限递归（T5=A）。
+     */
+    componentName: string | null = null;
+    /**
+     * x-component 收集的命名组件冻结快照（ADR-0022，承接 ADR-0021）。
+     *
+     * compiler 前置 transformer 命中 `x-component` 元素时，将其**深克隆副本**（保留指令属性、未编译；
+     * `<script setup>`/`<style>` 已在收集期提取并移除）按名存入**最近祖先 scope** 的本字段，
+     * 并把原元素从渲染树摘除。key 为组件名（无值 `x-component` 取 `default`）；value 为冻结快照 HTMLElement。
+     *
+     * **`default` 唯一性已放宽**（ADR-0022 决策四-4）：同名组件直接归属同一 scope 时 warn + 后者覆盖
+     * （不再抛错）；沿 parent 链允许就近覆盖（内层遮蔽外层）。其他组件名自由、可多 scope 同名。
+     *
+     * 消费者（x-loading/x-empty/x-error…）经 `getComponent(name)` 沿 parent 链就近取用
+     * （到顶兜底全局组件），命中则替换默认 UI，未命中回退默认实现（组件兜底）。
+     * 本字段**仅在收集到组件时才创建**，多数 scope 无组件 → null，避免给每个 scope 平白分配空对象（YAGNI）。
+     */
+    components: Record<string, HTMLElement> | null = null;
     /** 缓存的聚合视图（命中优先级：localData > data > parent 链 > engine.state） */
     private _scopeView: any = null;
 
@@ -156,7 +201,7 @@ export class AutoTemplateScope {
         // 父级视图：父作用域的聚合视图；无父则退化为根 context
         const parentView = this.parent ? this.parent.getContext() : this.engine.state;
         const local = this.localData;
-        const data = this.data;
+        const data = this._data;
         if (!local && !data) {
             // 无自身局部变量与 x-data 数据：直接复用父级视图（缓存别名，零额外代理）
             this._scopeView = parentView;
@@ -223,7 +268,7 @@ export class AutoTemplateScope {
     private hasLocalContext(): boolean {
         let s: AutoTemplateScope | null = this;
         while (s) {
-            if (s.localData || s.data) return true;
+            if (s.localData || s._data) return true;
             s = s.parent;
         }
         return false;
@@ -259,37 +304,187 @@ export class AutoTemplateScope {
     getData(): Record<string, any> | null {
         let s: AutoTemplateScope | null = this;
         while (s) {
-            if (s.data) return s.data;
+            if (s._data) return s._data;
             s = s.parent;
         }
         return null;
     }
 
     /**
-     * 沿 parent 链就近查找命名模板块，到顶兜底全局块（ADR-0021 决策 5/9）。
+     * 沿 parent 链就近查找命名组件，到顶兜底全局组件（ADR-0022 决策五，承接 ADR-0021 决策 5/9）。
      *
-     * 消费者协议的核心查找：从本 scope 起，向上取首个含该名 block 的祖先 scope，
-     * 命中即止（就近覆盖语义——内层 scope 的同名块遮蔽外层、亦遮蔽全局）。scope 链无命中时
-     * 兜底查 `engine.options.blocks`（全局块，字符串入参，懒预编译缓存），由 `engine.getBlock`
-     * 解析/包装/缓存。整条链（含全局）无命中返回 undefined，由消费者回退其默认块（块兜底）。
+     * 消费者协议的核心查找：从本 scope 起，向上取首个含该名 component 的祖先 scope，
+     * 命中即止（就近覆盖语义——内层 scope 的同名组件遮蔽外层、亦遮蔽全局）。scope 链无命中时
+     * 兜底查 `engine.options.components`（全局组件，字符串入参，懒预编译缓存），由 `engine.getComponent`
+     * 解析/包装/缓存。整条链（含全局）无命中返回 undefined，由消费者回退其默认实现（组件兜底）。
      *
      * 与 `getAction`/`getData` 的 parent 链查找范式同构（getAction 末端亦兜底 engine.actions）。
-     * 供 x-loading 等 Compile/Hybrid 消费指令经 `this.binding.getBlock(name)` 使用；Runtime 指令
-     * （无 binding）改用 `engine.getBlock(el, name)`（经 el 反查 scope 后委托本方法）。
+     * 供 x-loading 等 Compile/Hybrid 消费指令经 `this.binding.getComponent(name)` 使用；Runtime 指令
+     * （无 binding）改用 `engine.getComponent(el, name)`（经 el 反查 scope 后委托本方法）。
      *
-     * @param name 块名（消费者约定名，如 `loading`/`empty`/`error`；自由命名）
-     * @returns 块冻结快照 HTMLElement（未编译、保留指令属性），或 undefined（未命中）
+     * @param name 组件名（消费者约定名，如 `loading`/`empty`/`error`；自由命名）
+     * @returns 组件冻结快照 HTMLElement（未编译、保留指令属性），或 undefined（未命中）
      */
-    getBlock(name: string): HTMLElement | undefined {
+    getComponent(name: string): HTMLElement | undefined {
         let s: AutoTemplateScope | null = this;
         while (s) {
-            if (s.blocks && Object.prototype.hasOwnProperty.call(s.blocks, name)) {
-                return s.blocks[name];
+            if (s.components && Object.prototype.hasOwnProperty.call(s.components, name)) {
+                return s.components[name];
             }
             s = s.parent;
         }
-        // 兜底全局块（懒预编译缓存，见 engine.getBlock 全局解析）
-        return this.engine._resolveGlobalBlock(name);
+        // 兜底全局组件（懒预编译缓存，见 engine.getComponent 全局解析）
+        return this.engine._resolveGlobalComponent(name);
+    }
+
+    /**
+     * 沿 parent 链查找组件内部 method（ADR-0022 决策二-3 修订），**以组件实例 scope 为边界**。
+     *
+     * 查找规则：从本 scope 向上，每遇到 `isComponent` 的祖先 scope 查其 `methods`（命中即止）；
+     * 若该祖先（非起点）是组件实例且未命中，**停止**——不穿透到更上层父组件，保证封装。
+     *
+     * 两种情形统一处理：
+     * - 组件 A 内部元素调 method（button scope → A 实例 scope）：命中 A.methods ✓
+     * - 子组件 B 内部元素调 method（B 内 button → B 实例 scope）：查 B.methods，未命中即止，
+     *   不穿透到父组件 A ✗（封装保证——否则同组件在不同父内行为不同，不可移植）
+     *
+     * 与 `getAction`（无边界、兜底 engine.actions）的区别：action 是跨组件复用的事件处理器
+     * （类比事件冒泡找 handler）；method 是组件私有方法（类比 class method 不穿透实例边界）。
+     *
+     * @param name method 名
+     * @returns 命中的 method 函数，或 undefined（本组件边界内无此 method）
+     */
+    getMethod(name: string): ((...args: any[]) => any) | undefined {
+        let s: AutoTemplateScope | null = this;
+        let first = true;
+        while (s) {
+            if (s.methods && Object.prototype.hasOwnProperty.call(s.methods, name)) {
+                return s.methods[name];
+            }
+            // 组件边界：起点（first）不歇；其后遇到组件实例祖先（非本组件内部元素链上的）查完即止。
+            // 实际语义：从任意子 scope 向上，最多查到最近一层组件实例 scope 的 methods 即停。
+            if (!first && s.isComponent) {
+                return undefined;
+            }
+            first = false;
+            s = s.parent;
+        }
+        return undefined;
+    }
+
+    /**
+     * 沿 parent 链查找 method 命中的**所属 scope**（与 `getMethod` 同边界逻辑，但返回 scope 而非函数）。
+     *
+     * 供 `getMethodThis` 的 Proxy get 陷阱：method 必须以其所属组件实例的 Proxy 为 this，
+     * 故需定位 method 所属 scope，再用它的 `getMethodThis()`。组件边界规则同 `getMethod`
+     * （遇 isComponent 祖先查完即止，不穿透父组件）。
+     *
+     * @param name method 名
+     * @returns 命中 method 的 scope（其 `.methods[name]` 存在），或 undefined
+     */
+    private _findMethodOwner(name: string): AutoTemplateScope | undefined {
+        let s: AutoTemplateScope | null = this;
+        let first = true;
+        while (s) {
+            if (s.methods && Object.prototype.hasOwnProperty.call(s.methods, name)) {
+                return s;
+            }
+            if (!first && s.isComponent) return undefined;
+            first = false;
+            s = s.parent;
+        }
+        return undefined;
+    }
+
+    /**
+     * method/钩子执行时的 this 代理（ADR-0022 决策二-3 修订，策略 C）。
+     *
+     * 懒构造、缓存的 Proxy（每 scope 一个）。Proxy get 陷阱暴露集合（白名单）：
+     * - `data` → getContext() 聚合视图（响应式、可读可写）
+     * - `state` → engine.state
+     * - `engine` → engine 实例
+     * - `scope` → 本 scope 实例
+     * - `el` → 组件根元素（scope.el）
+     * - `<method名>` → getMethod 命中（组件边界，支持 `this.inc()`/`this.other()` 直调互调）
+     * - `watch`/`read`/`getComponent` → scope 同名方法（bind scope）
+     * - `$parent` → 父组件实例的 Proxy（沿链最近 isComponent 祖先的 getMethodThis()，链式向上；无则 null）
+     * - 其余 → scope 原生（bind scope，让用户也能用 scope 其他能力）
+     *
+     * set 陷阱：框架引用键（data/state/engine/scope/el）禁止整体覆盖（warn + 忽略）；
+     * 字段写入（`this.data.x = v`）透传到聚合视图。
+     *
+     * 引擎内部代码用真实 scope（`this` = scope 实例），不经此 Proxy——故 method 名与 scope 原生
+     * 方法同名时用户 method 胜出（仅影响用户代码），不破坏引擎内部。
+     */
+    private _methodThis: any = null;
+    getMethodThis(): any {
+        if (this._methodThis) return this._methodThis;
+        const scope = this;
+        const FRAMEWORK_KEYS = new Set(["data", "state", "engine", "scope", "el"]);
+        this._methodThis = new Proxy(scope, {
+            get(_t, k: string | symbol) {
+                if (typeof k !== "string") return Reflect.get(scope, k);
+                switch (k) {
+                    case "data":
+                        return scope.getContext();
+                    case "state":
+                        return scope.engine.state;
+                    case "engine":
+                        return scope.engine;
+                    case "scope":
+                        return scope;
+                    case "el":
+                        return scope.el;
+                    case "$parent":
+                        // 沿链找最近 isComponent 祖先的 Proxy（链式：其 get 陷阱递归处理 $parent）
+                        return scope._parentComponentProxy();
+                    default:
+                        break;
+                }
+                // method 优先（组件边界）：this.inc() / this.other() 互调。
+                // method 必须以其**所属组件实例**（getMethod 命中的那个 scope）的 Proxy 为 this——
+                // 否则从子 scope 的 Proxy 取 method 时，this 会错绑成子 scope 的 Proxy。
+                const owner = scope._findMethodOwner(k);
+                if (owner) {
+                    return owner.methods![k]!.bind(owner.getMethodThis());
+                }
+                // scope 原生方法/字段（watch/read/getComponent/getAction/...）
+                const native = Reflect.get(scope, k);
+                return typeof native === "function" ? (native as any).bind(scope) : native;
+            },
+            has() {
+                return true; // 让 with(this) 与存在性检查一致
+            },
+            set(_t, k: string | symbol, val: any): boolean {
+                if (typeof k === "string" && FRAMEWORK_KEYS.has(k)) {
+                    scope.engine.logger.warn(
+                        `组件 method/hook 内禁止整体覆盖框架引用 "${k}"（如需改数据请逐字段：this.data.${k} = ...）`,
+                    );
+                    return true; // 静默忽略（不真写入，也不报错）
+                }
+                // 非框架键：透传到聚合视图（this.data.x = v 之类经 getContext 视图 set 陷阱）
+                try {
+                    (scope.getContext() as any)[k] = val;
+                } catch {
+                    /* 聚合视图 set 失败（如只读键）静默 */
+                }
+                return true;
+            },
+        });
+        return this._methodThis;
+    }
+
+    /**
+     * 沿 parent 链找最近的 `isComponent` 祖先，返回其 Proxy this（`$parent` 实现）。
+     * 无父组件（已是顶层组件）返回 null。
+     */
+    private _parentComponentProxy(): any {
+        let s = this.parent;
+        while (s) {
+            if (s.isComponent) return s.getMethodThis();
+            s = s.parent;
+        }
+        return null;
     }
 
     /**
@@ -446,8 +641,35 @@ export class AutoTemplateScope {
      * 随后 compile 用 `watch` 返回的当前值做首次 DOM 写入。
      */
     compile() {
+        // 组件实例：created 在指令 created/compile 之前触发（data 已注入、DOM 子树尚未编译）
+        this._runHooks("created");
         this.runDirectives(this.directives);
         this.engine.emit("scope/compiled", { id: this.id });
+        // 组件实例：mounted 在 DOM 子树编译完成后触发
+        this._runHooks("mounted");
+    }
+
+    /**
+     * 串行执行某阶段的组件生命周期钩子（ADR-0022 决策三 + 决策二-3 修订）。
+     *
+     * 每个 hook 用 `getMethodThis()` 返回的 **Proxy** 作 this（与 method 的 this 完全统一：
+     * data=getContext 视图、state、engine、scope、method 名直调、$parent 等）。单个 hook 抛错
+     * try-catch 记 error 不阻断后续 hook（容错）。hooks 为 null（非组件 scope）或该阶段无 hook
+     * 时静默无副作用。
+     */
+    private _runHooks(phase: "created" | "mounted" | "beforeUnmount" | "unmounted"): void {
+        const fns = this.hooks?.[phase];
+        if (!fns || fns.length === 0) return;
+        const ctx = this.getMethodThis();
+        for (const fn of fns) {
+            try {
+                fn.call(ctx);
+            } catch (e: any) {
+                this.engine.logger.error(
+                    `x-component hook "${phase}" 执行失败: ${e?.message ?? e}`,
+                );
+            }
+        }
     }
 
     /**
@@ -477,6 +699,8 @@ export class AutoTemplateScope {
      */
     destroy() {
         try {
+            // 组件实例：beforeUnmount 在 watcher off 之前触发（watcher 仍活，可读最终状态做精确清理）
+            this._runHooks("beforeUnmount");
             // 从父级 children 移除自身：否则 x-for 全量重建 / x-if 子树切换时，旧项 scope 虽
             // 已 destroy（watcher 已 off），却仍残留在父 children Set 中 → 僵尸 scope 永久驻留（内存泄漏）。
             // Set 迭代中删除「当前元素」安全（既不跳过后续、也不重复访问）。
@@ -497,6 +721,8 @@ export class AutoTemplateScope {
                     id: this.id,
                 });
             }
+            // 组件实例：unmounted 在指令 destroy 之后、scope/destroyed 之前触发（收尾）
+            this._runHooks("unmounted");
         } catch (e: any) {
             this.engine.logger.error(e);
         }
