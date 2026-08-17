@@ -137,6 +137,7 @@ export interface AutoWidgetSelect extends BaseInputAttributes {
     // select 的 value 在 multiple 模式下可以是数组
     value?: string | string[];
     defaultValue?: string | string[];
+    select?: {label:string,value:any}[]
 }
 
 // 映射类型，用于快速查找

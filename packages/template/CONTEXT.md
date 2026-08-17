@@ -79,7 +79,7 @@ _Avoid_: x-if.keep 别名/快捷方式（已废弃）、x-if（存在性 vs 可�
 ### 表单绑定层
 
 **双向绑定 / x-model（Two-way Binding）**:
-输入控件与状态的双向同步——state→DOM（读方向）+ DOM→state（写方向）。区别于 `:value`/`x-bind:value` 的单向 state→DOM（"回写 state 须另用 x-model"）。仅 text-like 控件（`<input>` 非 checkbox/radio + `<textarea>`）。详见 ADR-0018。
+输入控件与状态的双向同步——state→DOM（读方向）+ DOM→state（写方向）。区别于 `:value`/`x-bind:value` 的单向 state→DOM（"回写 state 须另用 x-model"）。控件按 **控件类别（ControlKind）** 分派读写：text-like（`<input>` 非 checkbox/radio + `<textarea>`，读 `el.value`）+ checkbox 单值布尔（读 `el.checked`，详见 ADR-0023）；radio / select / 组收集暂不支持（推迟，见 ADR-0023 推迟项）。详见 ADR-0018、ADR-0023。
 _Avoid_: 双向数据绑定（泛化）、表单绑定（泛化）
 
 **getter（state→DOM 变换）**:
@@ -113,6 +113,18 @@ _Avoid_: disabled 绑定（语义反向，易误解）
 **合成绑定 / Synthesized Binding**:
 compiler 在 scope.compile() 后、对含 x-model 的元素合成的隐式 BindDirective 实例（构造合成 AutoDirectiveInfo 喂给 createDirectives）。合成知识封装在 `ModelDirective.synthesizeSchemaBindings` 静态方法（compiler 只管调用时机）。
 _Avoid_: 隐式指令（那是插值 desugar 的术语）
+
+**控件类别 / ControlKind**:
+x-model 内部对表单控件的分型（text / checkbox / radio / select），决定读源（`el.value` / `el.checked`）、写目标、默认事件（text-like=`input`、选择类=`change`）、单值/组模式。分派发生在 `writeToDom`/`_handleInput` 底层，与 get/set、防循环、元数据注入正交。本期（ADR-0023）仅落地 text 与 checkbox 分支，radio/select 为预留扩展点。
+_Avoid_: 控件类型（与 schema.widget 重载——widget 是 schema 声明的控件类型，ControlKind 是 x-model 运行期按元素判定的绑定分型）、模式（mode）
+
+**控件感知冲突 / Control-aware Conflict**:
+x-model 与显式 bind 的冲突判据随控件类别变化：text-like/`<select>` 查 `:value`（竞写 `el.value`）、`<input type=checkbox>`/`<input type=radio>` 查 `:checked`（竞写 `el.checked`）且 `:value` 放行（设选项值，必需）。取代 ADR-0018 决策 7 的「同元素一律查 `:value`」。详见 ADR-0023。
+_Avoid_: 冲突规则（泛化）、竞写检测（实现细节）
+
+**choices（选项列表，规划中）**:
+规划中用以统一 select / radio / checkbox 组的选项字段（`{label,value}[]`），拟取代 `AutoWidgetSelect.select` 并补齐 `AutoWidgetRadio`/`AutoWidgetCheckbox` 缺失的选项字段。本期（ADR-0023）**未实现**——radio/select/组收集推迟，故该字段未引入、core schema API 不变（`AutoWidgetSelect.select` 保持原样）。实现选项类控件时启用，并据其自动生成 `<option>`/组输入。
+_Avoid_: options（泛化）、备选项（与 `AutoWidgetSelect.select` 撞义，统一后原名废弃）
 
 ### 结构占位与组件层
 
