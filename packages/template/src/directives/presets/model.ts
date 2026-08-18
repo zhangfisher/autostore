@@ -18,20 +18,24 @@ const ACTION_RE = /^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$/;
  * 控件类别（ControlKind）：x-model 内部对表单控件的分型，决定读源/写目标/事件语义。
  *
  * - `text`：`<input>`（除 checkbox/radio 外所有 type）+ `<textarea>`，读写 `el.value`；
- * - `checkbox`：`<input type="checkbox">`，读写 `el.checked`（布尔），ADR-0023 决策 2。
+ * - `checkbox`：`<input type="checkbox">`，读写 `el.checked`（布尔），ADR-0023 决策 2；
+ * - `radio`：`<input type="radio">`，读 `el.checked = (state === el.value)`，写 `state = el.value`。
  *
- * radio / select 为预留扩展点，本期未实现。
+ * select 为预留扩展点，本期未实现。
  */
-export type ControlKind = "text" | "checkbox";
+export type ControlKind = "text" | "checkbox" | "radio";
 
 /**
  * 根据元素判定控件类别（ControlKind）。
  *
- * `<input type="checkbox">` → `checkbox`；其余（input 非 checkbox/radio、textarea）→ `text`。
- * radio / select 暂归 text（未实现），后续 ADR 扩展。
+ * `<input type="checkbox">` → `checkbox`；`<input type="radio">` → `radio`；
+ * 其余（input 非 checkbox/radio、textarea）→ `text`。select 暂归 text（未实现）。
  */
 function detectControlKind(el: HTMLElement): ControlKind {
-    if (el instanceof HTMLInputElement && el.type === "checkbox") return "checkbox";
+    if (el instanceof HTMLInputElement) {
+        if (el.type === "checkbox") return "checkbox";
+        if (el.type === "radio") return "radio";
+    }
     return "text";
 }
 
@@ -46,7 +50,8 @@ function detectControlKind(el: HTMLElement): ControlKind {
  * ## 控件范围
  * - text-like：`<input>`（除 checkbox/radio 外所有 type）+ `<textarea>`，统一读写 `el.value`。
  * - checkbox：`<input type="checkbox">`，读写 `el.checked`（布尔），ADR-0023 决策 2。
- * - radio / select（数组收集/checked 语义）延后。
+ * - radio：`<input type="radio">`，读 `el.checked = (state === el.value)`，写 `state = el.value`。
+ * - select 延后。
  *
  * ## 读写方向（术语钉死）
  * - **getter（get）= state→DOM 变换**：把状态值加工成 DOM 显示值（如 `value.split('.')[0]`）。
@@ -91,7 +96,7 @@ function detectControlKind(el: HTMLElement): ControlKind {
  *
  * ## 冲突（控件感知）
  * - text-like：`:value`/`x-bind:value` 与 `x-model` 同元素 → 编译期报错（竞写 `el.value`）；
- * - checkbox：`:checked`/`x-bind:checked` 与 `x-model` 同元素 → 编译期报错（竞写 `el.checked`）；
+ * - checkbox / radio：`:checked`/`x-bind:checked` 与 `x-model` 同元素 → 编译期报错（竞写 `el.checked`）；
  *   `:value` **放行**（设选项值，必需）。详见 ADR-0023 决策 4。
  *
  * ## 初始
@@ -144,8 +149,8 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     ] as const;
 
     /**
-     * checkbox 注入白名单（ADR-0023 决策 5）：裁剪文本约束属性（placeholder/pattern/
-     * minlength/maxlength/readonly 对 checkbox 无意义），保留 title/required/enable。
+     * checkbox / radio 注入白名单（ADR-0023 决策 5）：裁剪文本约束属性（placeholder/pattern/
+     * minlength/maxlength/readonly 对选择类控件无意义），保留 title/required/enable。
      */
     private static readonly CHECKBOX_INJECT_ATTRS = [
         "title",
@@ -222,6 +227,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         // input type（决定注入白名单 + 是否扩展 min/max/step）
         const inputType = (el as HTMLInputElement).type ?? "text";
         const isCheckbox = inputType === "checkbox";
+        const isRadio = inputType === "radio";
 
         /** 合成一个 bind 指令实例（@ 配置引用）并 created，push 进 scope.directives */
         const synth = (attr: string, schemaAttr: string) => {
@@ -237,8 +243,8 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         };
 
         // 1. 通用白名单：仅注入 schema 有的属性（enable 经反向特判）
-        // checkbox 裁剪文本约束属性（ADR-0023 决策 5）
-        const injectAttrs = isCheckbox
+        // checkbox / radio 裁剪文本约束属性（ADR-0023 决策 5）
+        const injectAttrs = isCheckbox || isRadio
             ? ModelDirective.CHECKBOX_INJECT_ATTRS
             : ModelDirective.COMMON_INJECT_ATTRS;
         for (const schemaAttr of injectAttrs) {
@@ -362,16 +368,26 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         this._controlKind = detectControlKind(this.el);
         // 冲突检测（控件感知，ADR-0023 决策 4）：
         // - text-like：`:value` / `x-bind:value` 与 x-model 同元素 → 竞写 el.value，报错；
-        // - checkbox：`:checked` / `x-bind:checked` 与 x-model 同元素 → 竞写 el.checked，报错；
+        // - checkbox / radio：`:checked` / `x-bind:checked` 与 x-model 同元素 → 竞写 el.checked，报错；
         //   `:value` 放行（设选项值，必需）。
-        if (this._controlKind === "checkbox") {
+        if (this._controlKind === "checkbox" || this._controlKind === "radio") {
             const checkedConflict = this.binding.directives.some(
                 (d) => d.info.name === "bind" && (d as any).attr === "checked",
             );
             if (checkedConflict) {
                 throw new Error(
-                    "x-model 与 :checked/x-bind:checked 不能同时作用于同一 checkbox 元素（两者竞写 el.checked）",
+                    `x-model 与 :checked/x-bind:checked 不能同时作用于同一 ${this._controlKind} 元素（两者竞写 el.checked）`,
                 );
+            }
+            // radio 必须有 value 属性（否则默认 "on"，意外写入无意义值）
+            if (this._controlKind === "radio") {
+                const radioValue = (this.el as HTMLInputElement)?.value;
+                if (!radioValue || radioValue === "on") {
+                    this.engine.logger.warn(
+                        `x-model: <input type="radio"> 缺少 value 属性（默认 "on"），x-model 不生效。请为 radio 添加 value 属性。`,
+                    );
+                    return; // 跳过绑定
+                }
             }
         } else {
             const valueConflict = this.binding.directives.some(
@@ -429,7 +445,8 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
      *
      * 按 ControlKind 分派读源（ADR-0023 决策 1）：
      * - text-like：读 `el.value`，走 trim/number 修饰符管道；
-     * - checkbox：读 `el.checked`（恒写布尔），修饰符管道空转（.trim/.number 对布尔无意义）。
+     * - checkbox：读 `el.checked`（恒写布尔），修饰符管道空转（.trim/.number 对布尔无意义）；
+     * - radio：仅勾选时写 `el.value`（字符串），取消时不写（另一个 radio 会接管）。
      */
     private _handleInput() {
         if (!this.el) return;
@@ -437,6 +454,10 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         if (this._controlKind === "checkbox") {
             // checkbox：读 el.checked，恒写布尔（ADR-0023 决策 2）
             v = (this.el as HTMLInputElement).checked;
+        } else if (this._controlKind === "radio") {
+            // radio：仅勾选时写 el.value（字符串），取消时不写（另一个 radio 会接管）
+            if (!(this.el as HTMLInputElement).checked) return; // 取消态不写入
+            v = (this.el as HTMLInputElement).value;
         } else {
             // text-like：读 el.value，走修饰符管道
             v = (this.el as HTMLInputElement).value;
@@ -489,7 +510,8 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
      *
      * 按 ControlKind 分派写目标（ADR-0023 决策 1）：
      * - text-like：写 `el.value`；
-     * - checkbox：写 `el.checked`（Boolean() coerce，ADR-0023 决策 2）。
+     * - checkbox：写 `el.checked`（Boolean() coerce，ADR-0023 决策 2）；
+     * - radio：写 `el.checked = (display === el.value)`（值匹配，ADR 决策）。
      *
      * 防循环：`_selfWriting=true` 表示本次值变化由 onInput 触发 → 跳过回写（避免 getter 立即覆盖
      * 用户输入、避免冗余 DOM 写），重置标志后返回。其他场景（外部改 state、其他 x-model 实例写入）
@@ -510,6 +532,9 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         if (this._controlKind === "checkbox") {
             // checkbox：写 el.checked（Boolean() coerce，非布尔 state 宽容转换）
             el.checked = Boolean(display);
+        } else if (this._controlKind === "radio") {
+            // radio：值匹配（state 值与 radio 的 value 属性比较）
+            el.checked = display === el.value;
         } else {
             // text-like：写 el.value
             el.value = display == null ? "" : String(display);
