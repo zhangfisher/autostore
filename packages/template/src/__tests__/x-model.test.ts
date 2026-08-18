@@ -216,3 +216,159 @@ describe("x-model 只读降级与冲突", () => {
         expect(() => mount(`<input x-model="a" :value="b" />`, { a: "", b: "x" })).toThrow();
     });
 });
+
+// ── checkbox 单值布尔双向绑定（ADR-0023）─────────────────────────────────
+
+describe("x-model checkbox 单值布尔", () => {
+    test("state→DOM：true → checked，false → unchecked", () => {
+        const { root } = mount(`<input type="checkbox" x-model="agree" />`, { agree: true });
+        expect(root.querySelector("input")!.checked).toBe(true);
+
+        const { root: root2 } = mount(`<input type="checkbox" x-model="agree" />`, { agree: false });
+        expect(root2.querySelector("input")!.checked).toBe(false);
+    });
+
+    test("DOM→state：勾选写 true，取消写 false", async () => {
+        const { root, engine } = mount(`<input type="checkbox" x-model="agree" />`, {
+            agree: false,
+        });
+        const checkbox = root.querySelector("input") as HTMLInputElement;
+        // 勾选
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.agree).toBe(true);
+
+        // 取消
+        checkbox.checked = false;
+        checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.agree).toBe(false);
+    });
+
+    test("外部改 state → checkbox 自动更新", async () => {
+        const { root, engine } = mount(`<input type="checkbox" x-model="agree" />`, {
+            agree: false,
+        });
+        const checkbox = root.querySelector("input") as HTMLInputElement;
+        expect(checkbox.checked).toBe(false);
+
+        engine.state.agree = true;
+        await nextTick();
+        expect(checkbox.checked).toBe(true);
+    });
+
+    test("Boolean() coerce：非布尔 state 宽容转换", () => {
+        // truthy 字符串 → checked
+        const { root } = mount(`<input type="checkbox" x-model="v" />`, { v: "yes" });
+        expect(root.querySelector("input")!.checked).toBe(true);
+
+        // falsy 字符串 → unchecked
+        const { root: root2 } = mount(`<input type="checkbox" x-model="v" />`, { v: "" });
+        expect(root2.querySelector("input")!.checked).toBe(false);
+
+        // 数字 → checked
+        const { root: root3 } = mount(`<input type="checkbox" x-model="v" />`, { v: 1 });
+        expect(root3.querySelector("input")!.checked).toBe(true);
+
+        // null → unchecked
+        const { root: root4 } = mount(`<input type="checkbox" x-model="v" />`, { v: null });
+        expect(root4.querySelector("input")!.checked).toBe(false);
+    });
+
+    test("Boolean() coerce：用户操作后值变为布尔", async () => {
+        const { root, engine } = mount(`<input type="checkbox" x-model="v" />`, { v: "yes" });
+        const checkbox = root.querySelector("input") as HTMLInputElement;
+        expect(checkbox.checked).toBe(true); // Boolean("yes") = true
+
+        // 取消勾选 → 写回 false（布尔）
+        checkbox.checked = false;
+        checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.v).toBe(false); // 从 "yes" 变成 false（布尔）
+    });
+
+    test("嵌套路径双向", async () => {
+        const { root, engine } = mount(`<input type="checkbox" x-model="user.agree" />`, {
+            user: { agree: false },
+        });
+        const checkbox = root.querySelector("input") as HTMLInputElement;
+        expect(checkbox.checked).toBe(false);
+
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.user.agree).toBe(true);
+    });
+
+    test("外部更新 → 防循环不跳过（非自身触发的 read 回调正常应用）", async () => {
+        const { root, engine } = mount(`<input type="checkbox" x-model="agree" />`, {
+            agree: false,
+        });
+        const checkbox = root.querySelector("input") as HTMLInputElement;
+
+        // 外部改 state
+        engine.state.agree = true;
+        await nextTick();
+        expect(checkbox.checked).toBe(true); // 正常更新
+    });
+
+    test("get 变换：Boolean(state) 后写 checked", () => {
+        const { root } = mount(
+            `<input type="checkbox" x-model="count" x-model-options="{get:'value>0'}" />`,
+            { count: 5 },
+        );
+        expect(root.querySelector("input")!.checked).toBe(true); // 5 > 0 = true
+
+        const { root: root2 } = mount(
+            `<input type="checkbox" x-model="count" x-model-options="{get:'value>0'}" />`,
+            { count: 0 },
+        );
+        expect(root2.querySelector("input")!.checked).toBe(false); // 0 > 0 = false
+    });
+
+    test(".change 修饰符：监听 change 而非 input", async () => {
+        const { root, engine } = mount(`<input type="checkbox" x-model.change="agree" />`, {
+            agree: false,
+        });
+        const checkbox = root.querySelector("input") as HTMLInputElement;
+
+        // input 事件不触发写入
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.agree).toBe(false); // 未写入
+
+        // change 事件触发写入
+        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.agree).toBe(true); // 写入
+    });
+
+    test(".trim/.number 修饰符对 checkbox 空转（不报错、不影响）", async () => {
+        const { root, engine } = mount(
+            `<input type="checkbox" x-model.trim.number="agree" />`,
+            { agree: false },
+        );
+        const checkbox = root.querySelector("input") as HTMLInputElement;
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.agree).toBe(true); // 修饰符空转，正常写入布尔
+    });
+});
+
+describe("x-model checkbox 冲突检测", () => {
+    test(":checked 与 x-model 同元素 → 编译期报错", () => {
+        expect(() =>
+            mount(`<input type="checkbox" x-model="a" :checked="b" />`, { a: false, b: true }),
+        ).toThrow();
+    });
+
+    test(":value 与 x-model checkbox 同元素 → 放行（不报错，:value 设选项值）", () => {
+        // checkbox 的 :value 设选项值（提交到表单的值），不与 x-model 竞写
+        expect(() =>
+            mount(`<input type="checkbox" x-model="a" :value="'yes'" />`, { a: false }),
+        ).not.toThrow();
+    });
+});

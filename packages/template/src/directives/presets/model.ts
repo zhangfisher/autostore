@@ -15,6 +15,27 @@ import type { AutoTemplateEngine } from "../../engine";
 const ACTION_RE = /^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$/;
 
 /**
+ * 控件类别（ControlKind）：x-model 内部对表单控件的分型，决定读源/写目标/事件语义。
+ *
+ * - `text`：`<input>`（除 checkbox/radio 外所有 type）+ `<textarea>`，读写 `el.value`；
+ * - `checkbox`：`<input type="checkbox">`，读写 `el.checked`（布尔），ADR-0023 决策 2。
+ *
+ * radio / select 为预留扩展点，本期未实现。
+ */
+export type ControlKind = "text" | "checkbox";
+
+/**
+ * 根据元素判定控件类别（ControlKind）。
+ *
+ * `<input type="checkbox">` → `checkbox`；其余（input 非 checkbox/radio、textarea）→ `text`。
+ * radio / select 暂归 text（未实现），后续 ADR 扩展。
+ */
+function detectControlKind(el: HTMLElement): ControlKind {
+    if (el instanceof HTMLInputElement && el.type === "checkbox") return "checkbox";
+    return "text";
+}
+
+/**
  * x-model：输入控件与状态的双向绑定（**Hybrid 指令**）。
  *
  * 双通道职责正交（ADR-0018）：
@@ -22,9 +43,10 @@ const ACTION_RE = /^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$/;
  *   （x-for item / x-data 局部变量），watcher 进 `scope._updates` 随 `scope.refresh` 重跑；
  * - **observer 通道**（`mounted`/`unmounted`）：挂/移 `input`(或 `change`)事件，承接写方向（DOM→state）。
  *
- * ## 控件范围（首版）
- * text-like：`<input>`（除 checkbox/radio 外所有 type）+ `<textarea>`，统一读写 `el.value`。
- * checkbox/radio/select（数组收集/checked 语义）延后。
+ * ## 控件范围
+ * - text-like：`<input>`（除 checkbox/radio 外所有 type）+ `<textarea>`，统一读写 `el.value`。
+ * - checkbox：`<input type="checkbox">`，读写 `el.checked`（布尔），ADR-0023 决策 2。
+ * - radio / select（数组收集/checked 语义）延后。
  *
  * ## 读写方向（术语钉死）
  * - **getter（get）= state→DOM 变换**：把状态值加工成 DOM 显示值（如 `value.split('.')[0]`）。
@@ -67,8 +89,10 @@ const ACTION_RE = /^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$/;
  *   语义与 flags 等价（只跳过自己，其他 x-model 实例 / 外部写入正常更新显示）。
  * - `seq` = 类级静态自增（`++ModelDirective._seq`，仿 `AutoStoreSyncer.seq`），同 engine 内各实例唯一。
  *
- * ## 冲突
- * `:value`/`x-bind:value` 与 `x-model` 同元素 → **编译期报错**（`created` 内抛错，两者竞写 value 属性）。
+ * ## 冲突（控件感知）
+ * - text-like：`:value`/`x-bind:value` 与 `x-model` 同元素 → 编译期报错（竞写 `el.value`）；
+ * - checkbox：`:checked`/`x-bind:checked` 与 `x-model` 同元素 → 编译期报错（竞写 `el.checked`）；
+ *   `:value` **放行**（设选项值，必需）。详见 ADR-0023 决策 4。
  *
  * ## 初始
  * mount 时 state→DOM 单向（state 作真相源）；state 路径不存在 → warn + 不动 DOM（不回填）。
@@ -104,7 +128,10 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     // 精准匹配（通用集 + type 扩展）。仅注入 schema 有的属性（动态交集）。enable→disabled 反向。
     // name 特殊（无则路径、表达式跳过）。显式绑定优先抑制合成。
 
-    /** 通用注入白名单（所有 text-like input + textarea）。enable 经反向映射注入 disabled（特判）。 */
+    /**
+     * 通用注入白名单（所有 text-like input + textarea）。enable 经反向映射注入 disabled（特判）。
+     * 这是 text-like 的完整白名单；checkbox 使用裁剪版 CHECKBOX_INJECT_ATTRS。
+     */
     private static readonly COMMON_INJECT_ATTRS = [
         "placeholder",
         "title",
@@ -114,6 +141,16 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         "pattern",
         "minlength",
         "maxlength",
+    ] as const;
+
+    /**
+     * checkbox 注入白名单（ADR-0023 决策 5）：裁剪文本约束属性（placeholder/pattern/
+     * minlength/maxlength/readonly 对 checkbox 无意义），保留 title/required/enable。
+     */
+    private static readonly CHECKBOX_INJECT_ATTRS = [
+        "title",
+        "required",
+        "enable", // → disabled 反向映射（特判）
     ] as const;
 
     /** 含 min/max/step 的 input type（number/range/date 类），扩展注入这三个数值约束属性。 */
@@ -182,8 +219,9 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             if (d.info.name === "bind" && d.info.attr) explicitAttrs.add(d.info.attr);
         }
 
-        // input type（决定是否扩展 min/max/step）
+        // input type（决定注入白名单 + 是否扩展 min/max/step）
         const inputType = (el as HTMLInputElement).type ?? "text";
+        const isCheckbox = inputType === "checkbox";
 
         /** 合成一个 bind 指令实例（@ 配置引用）并 created，push 进 scope.directives */
         const synth = (attr: string, schemaAttr: string) => {
@@ -199,7 +237,11 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         };
 
         // 1. 通用白名单：仅注入 schema 有的属性（enable 经反向特判）
-        for (const schemaAttr of ModelDirective.COMMON_INJECT_ATTRS) {
+        // checkbox 裁剪文本约束属性（ADR-0023 决策 5）
+        const injectAttrs = isCheckbox
+            ? ModelDirective.CHECKBOX_INJECT_ATTRS
+            : ModelDirective.COMMON_INJECT_ATTRS;
+        for (const schemaAttr of injectAttrs) {
             if (!hasValue(schemaAttr as string)) continue;
             if (schemaAttr === "enable") {
                 // enable → disabled 反向映射（决策 7）：值取反。不走 BindDirective（直传语义），
@@ -300,6 +342,8 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         // 表达式场景静默跳过（不 warn，表达式作 name 语义混乱，用户应显式）
     }
 
+    /** 控件类别（created 时据 el.type 判定，决定读写语义） */
+    private _controlKind: ControlKind = "text";
     /** 防循环标志：onInput 触发的写入会让随之而来的 read 回调跳过回写（见类注释「防循环」） */
     private _selfWriting = false;
     /** 当前监听的事件类型（mounted 时据 .change 修饰符决定："input" | "change"） */
@@ -314,14 +358,30 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     // ── scope 通道（读方向：state→DOM）──────────────────────────────
 
     override created() {
-        // :value / x-bind:value 与 x-model 同元素 → 编译期报错（两者竞写 value 属性）
-        const conflict = this.binding.directives.some(
-            (d) => d.info.name === "bind" && (d as any).attr === "value",
-        );
-        if (conflict) {
-            throw new Error(
-                "x-model 与 :value/x-bind:value 不能同时作用于同一元素（两者竞写 input.value）",
+        // 判定控件类别（ADR-0023 ControlKind 分派）
+        this._controlKind = detectControlKind(this.el);
+        // 冲突检测（控件感知，ADR-0023 决策 4）：
+        // - text-like：`:value` / `x-bind:value` 与 x-model 同元素 → 竞写 el.value，报错；
+        // - checkbox：`:checked` / `x-bind:checked` 与 x-model 同元素 → 竞写 el.checked，报错；
+        //   `:value` 放行（设选项值，必需）。
+        if (this._controlKind === "checkbox") {
+            const checkedConflict = this.binding.directives.some(
+                (d) => d.info.name === "bind" && (d as any).attr === "checked",
             );
+            if (checkedConflict) {
+                throw new Error(
+                    "x-model 与 :checked/x-bind:checked 不能同时作用于同一 checkbox 元素（两者竞写 el.checked）",
+                );
+            }
+        } else {
+            const valueConflict = this.binding.directives.some(
+                (d) => d.info.name === "bind" && (d as any).attr === "value",
+            );
+            if (valueConflict) {
+                throw new Error(
+                    "x-model 与 :value/x-bind:value 不能同时作用于同一元素（两者竞写 input.value）",
+                );
+            }
         }
         const expr = String(this.value ?? "");
         if (!expr.trim()) return;
@@ -364,15 +424,27 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         this._eventType = undefined;
     }
 
-    /** input/change 事件处理：读 el.value → 修饰符管道 → 写 state（flags 标识 + 防循环置位） */
+    /**
+     * input/change 事件处理：读 DOM 值 → 修饰符管道 → 写 state（flags 标识 + 防循环置位）。
+     *
+     * 按 ControlKind 分派读源（ADR-0023 决策 1）：
+     * - text-like：读 `el.value`，走 trim/number 修饰符管道；
+     * - checkbox：读 `el.checked`（恒写布尔），修饰符管道空转（.trim/.number 对布尔无意义）。
+     */
     private _handleInput() {
         if (!this.el) return;
-        let v: any = (this.el as HTMLInputElement).value;
-        // 写回管道：trim → number（顺序敏感）
-        if (this.getOption("trim") && typeof v === "string") v = v.trim();
-        if (this.getOption("number")) {
-            const n = Number(v);
-            v = Number.isNaN(n) ? v : n; // NaN 回退原字符串，不破坏
+        let v: any;
+        if (this._controlKind === "checkbox") {
+            // checkbox：读 el.checked，恒写布尔（ADR-0023 决策 2）
+            v = (this.el as HTMLInputElement).checked;
+        } else {
+            // text-like：读 el.value，走修饰符管道
+            v = (this.el as HTMLInputElement).value;
+            if (this.getOption("trim") && typeof v === "string") v = v.trim();
+            if (this.getOption("number")) {
+                const n = Number(v);
+                v = Number.isNaN(n) ? v : n; // NaN 回退原字符串，不破坏
+            }
         }
         // 防循环置位：本次写入触发的 read 回调将跳过回写
         this._selfWriting = true;
@@ -415,6 +487,10 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     /**
      * 写 DOM（state→DOM 方向），含 get 变换与防循环跳过。
      *
+     * 按 ControlKind 分派写目标（ADR-0023 决策 1）：
+     * - text-like：写 `el.value`；
+     * - checkbox：写 `el.checked`（Boolean() coerce，ADR-0023 决策 2）。
+     *
      * 防循环：`_selfWriting=true` 表示本次值变化由 onInput 触发 → 跳过回写（避免 getter 立即覆盖
      * 用户输入、避免冗余 DOM 写），重置标志后返回。其他场景（外部改 state、其他 x-model 实例写入）
      * `_selfWriting=false`，正常更新显示。
@@ -430,7 +506,14 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             display = this._evalGet(getExpr, stateValue);
         }
         const el = this.el as HTMLInputElement | null;
-        if (el) el.value = display == null ? "" : String(display);
+        if (!el) return;
+        if (this._controlKind === "checkbox") {
+            // checkbox：写 el.checked（Boolean() coerce，非布尔 state 宽容转换）
+            el.checked = Boolean(display);
+        } else {
+            // text-like：写 el.value
+            el.value = display == null ? "" : String(display);
+        }
     }
 
     /**
