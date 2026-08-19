@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
     <head>
         <meta charset="UTF-8" />
@@ -6,25 +6,88 @@
         <title>x-model · textarea 双向绑定</title>
         <script src="/autostore/template.js"></script>
         <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
+        </style>
     </head>
 
     <body>
         <!-- textarea 同样支持 x-model，统一读写 el.value -->
         <div class="demo-app section">
+            <h3 class="title is-5">textarea</h3>
+            <p class="help" style="margin-bottom: 1rem">
+                <code>&lt;textarea&gt;</code> 统一读写 <code>el.value</code>，用法与 text input
+                一致。
+            </p>
+
             <div class="field">
-                <label class="label">备注：</label>
+                <label class="label">备注</label>
                 <div class="control">
-                    <textarea class="textarea" rows="3" x-model="form.remark"></textarea>
+                    <textarea
+                        class="textarea"
+                        rows="4"
+                        x-model="form.remark"
+                        placeholder="请输入备注内容"
+                    ></textarea>
                 </div>
+                <p class="help">已输入 <strong x-text="form.remark.length + ''"></strong> 字</p>
             </div>
-            <p class="help">已输入 <strong x-text="form.remark.length + ''"></strong> 字</p>
+
+            <div class="field">
+                <label class="label">自我介绍</label>
+                <div class="control">
+                    <textarea
+                        class="textarea"
+                        rows="3"
+                        x-model.trim="form.bio"
+                        placeholder="用一两句话介绍自己"
+                    ></textarea>
+                </div>
+                <p class="help">值（trim 后）：<strong x-text="form.bio || '（空）'"></strong></p>
+            </div>
+
+            <div class="buttons" style="margin-top: 1rem">
+                <button class="button is-primary is-light" type="button" @click="fillSample">
+                    填充示例内容（程序更新）
+                </button>
+                <button class="button is-light" type="button" @click="clear">清空</button>
+            </div>
+
+            <div class="result" x-text="JSON.stringify(form, null, 2)"></div>
         </div>
 
         <script>
             const { AutoTemplateEngine } = AutoTemplateSpaces;
-            const engine = new AutoTemplateEngine(document.querySelector(".demo-app"), {
-                form: { remark: "初始备注内容" },
-            });
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    form: {
+                        remark: "初始备注内容",
+                        bio: "",
+                    },
+                },
+                {
+                    actions: {
+                        fillSample() {
+                            engine.state.form.remark =
+                                "这是一段通过程序设置的备注内容，可以看到 textarea 的值会自动同步更新。";
+                            engine.state.form.bio = "我是一名前端工程师，热爱开源。";
+                        },
+                        clear() {
+                            engine.state.form.remark = "";
+                            engine.state.form.bio = "";
+                        },
+                    },
+                },
+            );
         </script>
     </body>
 </html>

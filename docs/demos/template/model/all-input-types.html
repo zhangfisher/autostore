@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 全控件类型示例</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .demo-app .field { margin-bottom: 1rem; }
+            .demo-app .box { margin-top: 1.5rem; }
+            .radio-group, .checkbox-group { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+            .radio-group label, .checkbox-group label { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
+            .result-panel { background: #f5f5f5; padding: 1rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap; }
+        </style>
+    </head>
+
+    <body>
+        <div class="demo-app section">
+            <h2 class="title is-4">x-model 全控件类型示例</h2>
+            <p class="subtitle is-6">覆盖 text / number / email / password / checkbox / radio / select / textarea</p>
+
+            <form>
+                <!-- ── Text-like 控件 ──────────────────────── -->
+                <div class="box">
+                    <h3 class="title is-5">Text-like 控件</h3>
+
+                    <div class="field">
+                        <label class="label">文本输入（text）</label>
+                        <div class="control">
+                            <input class="input" type="text" x-model="form.username" placeholder="请输入用户名" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">数字输入（number）</label>
+                        <div class="control">
+                            <input class="input" type="number" x-model.number="form.age" min="0" max="150" />
+                        </div>
+                        <p class="help">age 类型：<strong x-text="typeof form.age"></strong>，值：<strong x-text="form.age"></strong></p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">邮箱（email）</label>
+                        <div class="control">
+                            <input class="input" type="email" x-model="form.email" placeholder="user@example.com" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">密码（password）</label>
+                        <div class="control">
+                            <input class="input" type="password" x-model="form.password" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">带修饰符（.trim .number）</label>
+                        <div class="control">
+                            <input class="input" type="text" x-model.trim.number="form.code" placeholder="输入带空格的数字" />
+                        </div>
+                        <p class="help">自动 trim + 转 number，值：<strong x-text="form.code"></strong>，类型：<strong x-text="typeof form.code"></strong></p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">textarea</label>
+                        <div class="control">
+                            <textarea class="textarea" x-model="form.bio" placeholder="自我介绍"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Checkbox 单值 ──────────────────────── -->
+                <div class="box">
+                    <h3 class="title is-5">Checkbox 单值布尔</h3>
+                    <p class="help" style="margin-bottom: 0.75rem;">
+                        checkbox 读写 <code>el.checked</code>（布尔值）。勾选 → <code>true</code>，取消 → <code>false</code>。
+                        非布尔 state 经 <code>Boolean()</code> 宽容转换。
+                    </p>
+
+                    <div class="field">
+                        <div class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" x-model="form.agree" />
+                                我已阅读并同意用户协议
+                            </label>
+                        </div>
+                        <p class="help">agree = <strong x-text="form.agree"></strong>（类型：<strong x-text="typeof form.agree"></strong>）</p>
+                    </div>
+
+                    <div class="field">
+                        <div class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" x-model="form.subscribe" />
+                                订阅邮件通知
+                            </label>
+                        </div>
+                        <p class="help">subscribe = <strong x-text="form.subscribe"></strong></p>
+                    </div>
+                </div>
+
+                <!-- ── Radio ──────────────────────────────── -->
+                <div class="box">
+                    <h3 class="title is-5">Radio 单值选择</h3>
+                    <p class="help" style="margin-bottom: 0.75rem;">
+                        radio 读 <code>el.checked = (state === el.value)</code>，写 <code>state = el.value</code>。
+                        同名 radio 互斥，共享一个 state 值。必须声明 <code>value</code> 属性。
+                    </p>
+
+                    <div class="field">
+                        <label class="label">性别</label>
+                        <div class="radio-group">
+                            <label class="radio">
+                                <input type="radio" name="gender" value="male" x-model="form.gender" />
+                                男
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="gender" value="female" x-model="form.gender" />
+                                女
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="gender" value="other" x-model="form.gender" />
+                                其他
+                            </label>
+                        </div>
+                        <p class="help">gender = <strong x-text="form.gender"></strong></p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">学历</label>
+                        <div class="radio-group">
+                            <label class="radio">
+                                <input type="radio" name="education" value="high-school" x-model="form.education" />
+                                高中
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="education" value="bachelor" x-model="form.education" />
+                                本科
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="education" value="master" x-model="form.education" />
+                                硕士
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="education" value="phd" x-model="form.education" />
+                                博士
+                            </label>
+                        </div>
+                        <p class="help">education = <strong x-text="form.education"></strong></p>
+                    </div>
+                </div>
+
+                <!-- ── Select ─────────────────────────────── -->
+                <div class="box">
+                    <h3 class="title is-5">Select（暂不支持 x-model）</h3>
+                    <p class="help">
+                        select 双向绑定尚未实现。当前可用 <code>:value</code> 单向绑定 + <code>@change</code> 事件手动同步：
+                    </p>
+
+                    <div class="field">
+                        <label class="label">城市（手动同步演示）</label>
+                        <div class="control">
+                            <div class="select">
+                                <select :value="form.city" @change="form.city=$event.target.value">
+                                    <option value="beijing">北京</option>
+                                    <option value="shanghai">上海</option>
+                                    <option value="guangzhou">广州</option>
+                                    <option value="shenzhen">深圳</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="help">city = <strong x-text="form.city"></strong></p>
+                    </div>
+                </div>
+
+                <!-- ── 实时预览 ───────────────────────────── -->
+                <div class="box">
+                    <h3 class="title is-5">实时状态预览</h3>
+                    <div class="result-panel" x-text="JSON.stringify(form, null, 2)"></div>
+                    <div class="buttons" style="margin-top: 1rem;">
+                        <button class="button is-primary" type="button" @click="submit">提交表单</button>
+                        <button class="button is-light" type="button" @click="reset">重置</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    form: {
+                        // text-like
+                        username: "",
+                        age: 25,
+                        email: "",
+                        password: "",
+                        code: "",
+                        bio: "",
+                        // checkbox
+                        agree: false,
+                        subscribe: true,
+                        // radio
+                        gender: "male",
+                        education: "bachelor",
+                        // select（手动同步）
+                        city: "beijing",
+                    },
+                },
+                {
+                    actions: {
+                        submit() {
+                            const data = engine.state.form;
+                            if (!data.username) {
+                                alert("请填写用户名");
+                                return;
+                            }
+                            if (!data.agree) {
+                                alert("请同意用户协议");
+                                return;
+                            }
+                            alert("提交成功！\n\n" + JSON.stringify(data, null, 2));
+                        },
+                        reset() {
+                            engine.state.form = {
+                                username: "",
+                                age: 25,
+                                email: "",
+                                password: "",
+                                code: "",
+                                bio: "",
+                                agree: false,
+                                subscribe: true,
+                                gender: "male",
+                                education: "bachelor",
+                                city: "beijing",
+                            };
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

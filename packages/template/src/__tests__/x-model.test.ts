@@ -505,6 +505,154 @@ describe("x-model radio 双向绑定", () => {
     });
 });
 
+// ── .boolean 修饰符（ADR-0024 决策 3：严格字符串集）─────────────────────────
+
+describe("x-model .boolean 修饰符", () => {
+    test('text："true" → true（严格集命中）', async () => {
+        const { root, engine } = mount(`<input x-model.boolean="flag" />`, { flag: false });
+        const input = root.querySelector("input") as HTMLInputElement;
+        input.value = "true";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.flag).toBe(true);
+    });
+
+    test('text："false" → false（严格集命中，非 Boolean() 陷阱）', async () => {
+        const { root, engine } = mount(`<input x-model.boolean="flag" />`, { flag: true });
+        const input = root.querySelector("input") as HTMLInputElement;
+        input.value = "false";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.flag).toBe(false); // Boolean("false")===true 是陷阱，严格集修复
+    });
+
+    test('text：空串 → false（空=否定）', async () => {
+        const { root, engine } = mount(`<input x-model.boolean="flag" />`, { flag: true });
+        const input = root.querySelector("input") as HTMLInputElement;
+        input.value = "";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.flag).toBe(false);
+    });
+
+    test('text：未识别串保留原值（"abc"/"0" 不破坏，镜像 .number NaN 回退）', async () => {
+        const { root, engine } = mount(`<input x-model.boolean="flag" />`, { flag: false });
+        const input = root.querySelector("input") as HTMLInputElement;
+        input.value = "abc";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.flag).toBe("abc"); // 保留原字符串
+
+        input.value = "0";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.flag).toBe("0"); // "0" 不在严格集，保留
+    });
+
+    test(".trim.boolean：trim 先行（\" true \" → true）", async () => {
+        const { root, engine } = mount(`<input x-model.trim.boolean="flag" />`, {
+            flag: false,
+        });
+        const input = root.querySelector("input") as HTMLInputElement;
+        input.value = " true ";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.flag).toBe(true);
+    });
+
+    test(".boolean.number 顺序执行：boolean 先转、number 后跑毁掉布尔（冲突自担）", async () => {
+        const { root, engine } = mount(`<input x-model.boolean.number="flag" />`, {
+            flag: false,
+        });
+        const input = root.querySelector("input") as HTMLInputElement;
+        input.value = "true";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        // boolean 先（"true"→true），number 后（Number(true)=1）——顺序执行、不短路
+        expect(engine.state.flag).toBe(1);
+    });
+
+    test(".number.boolean 顺序执行：number 先 NaN 回退、boolean 后转（得到 true）", async () => {
+        const { root, engine } = mount(`<input x-model.number.boolean="flag" />`, {
+            flag: false,
+        });
+        const input = root.querySelector("input") as HTMLInputElement;
+        input.value = "true";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        // number 先（Number("true")=NaN → 回退 "true"），boolean 后（"true"→true）
+        expect(engine.state.flag).toBe(true);
+    });
+
+    test("checkbox 空转：.boolean 对恒写布尔的 checkbox 冗余无害", async () => {
+        const { root, engine } = mount(
+            `<input type="checkbox" x-model.boolean="agree" />`,
+            { agree: false },
+        );
+        const checkbox = root.querySelector("input") as HTMLInputElement;
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.agree).toBe(true); // 仍是布尔
+    });
+
+    test("radio 布尔对：勾选写布尔（value 经严格集转换）", async () => {
+        const { root, engine } = mount(
+            `<input type="radio" name="sw" value="true" x-model.boolean="enabled" />` +
+                `<input type="radio" name="sw" value="false" x-model.boolean="enabled" />`,
+            { enabled: "" },
+        );
+        const radios = root.querySelectorAll("input") as NodeListOf<HTMLInputElement>;
+
+        // 勾选"开启" → value="true" 经严格集 → 写入布尔 true（非字符串 "true"）
+        radios[0].checked = true;
+        radios[0].dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.enabled).toBe(true);
+
+        // 切到"关闭" → 写入布尔 false（非字符串 "false"）
+        radios[1].checked = true;
+        radios[1].dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.enabled).toBe(false);
+    });
+
+    test("radio 读方向注意：.boolean 仅写方向，布尔 state 需 get 变换才能匹配 value", () => {
+        // 读方向 display === el.value：true === "true" 不匹配（.boolean 不作用于读方向，Q5 决策）
+        // 要让布尔 state 驱动 radio 选中，须 get:'String(value)' 转字符串后再与 value 比较
+        const { root } = mount(
+            `<input type="radio" name="sw" value="true" x-model="enabled" x-model-options="{get:'String(value)'}" />`,
+            { enabled: true },
+        );
+        expect((root.querySelector("input") as HTMLInputElement).checked).toBe(true);
+    });
+
+    test('radio 值不在严格集：warn 一次 + 保留原值写回', async () => {
+        const { root, engine } = mount(
+            `<input type="radio" value="abc" x-model.boolean="choice" />`,
+            { choice: "" },
+        );
+        const radio = root.querySelector("input") as HTMLInputElement;
+        radio.checked = true;
+        radio.dispatchEvent(new Event("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.choice).toBe("abc"); // 保留原值
+    });
+
+    test("宿主选项回退：x-options={boolean:true} 元素级生效", async () => {
+        // 宿主选项挂在 x-model 元素自身（x-options 解析自指令宿主元素，非父容器）
+        const { root, engine } = mount(
+            `<input x-model="flag" x-options="{boolean:true}" />`,
+            { flag: false },
+        );
+        const input = root.querySelector("input") as HTMLInputElement;
+        input.value = "true";
+        input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        await nextTick();
+        expect(engine.state.flag).toBe(true);
+    });
+});
+
 describe("x-model radio value 缺失检测", () => {
     test("radio 无 value 属性 → warn + 跳过绑定", () => {
         // radio 默认 value="on"，应 warn 并跳过

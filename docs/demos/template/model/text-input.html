@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · text input 双向绑定</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result { background: #f5f5f5; padding: 0.75rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; margin-top: 1rem; white-space: pre-wrap; }
+        </style>
+    </head>
+
+    <body>
+        <!-- text input 双向绑定：读写 el.value（字符串） -->
+        <div class="demo-app section">
+            <h3 class="title is-5">text input</h3>
+            <p class="help" style="margin-bottom: 1rem;">
+                读方向：<code>el.value = String(state)</code>，写方向：<code>state = el.value</code>。
+                所有 text-like 控件（text / email / password / url / tel / search）统一此语义。
+            </p>
+
+            <div class="field">
+                <label class="label">用户名（text）</label>
+                <div class="control">
+                    <input class="input" type="text" x-model="form.username" placeholder="请输入用户名" />
+                </div>
+                <p class="help">值：<strong x-text="form.username || '（空）'"></strong></p>
+            </div>
+
+            <div class="field">
+                <label class="label">邮箱（email）</label>
+                <div class="control">
+                    <input class="input" type="email" x-model="form.email" placeholder="user@example.com" />
+                </div>
+                <p class="help">值：<strong x-text="form.email || '（空）'"></strong></p>
+            </div>
+
+            <div class="field">
+                <label class="label">密码（password）</label>
+                <div class="control">
+                    <input class="input" type="password" x-model="form.password" />
+                </div>
+                <p class="help">值：<strong x-text="form.password || '（空）'"></strong>（长度：<strong x-text="form.password.length + ''"></strong>）</p>
+            </div>
+
+            <div class="field">
+                <label class="label">数字（number + .number 修饰符）</label>
+                <div class="control">
+                    <input class="input" type="number" x-model.number="form.age" min="0" max="150" />
+                </div>
+                <p class="help">值类型：<strong x-text="typeof form.age"></strong>，值：<strong x-text="form.age"></strong></p>
+            </div>
+
+            <div class="field">
+                <label class="label">带修饰符（.trim .number）</label>
+                <div class="control">
+                    <input class="input" type="text" x-model.trim.number="form.code" placeholder="输入带空格的数字" />
+                </div>
+                <p class="help">自动 trim + 转 number，值：<strong x-text="form.code"></strong>，类型：<strong x-text="typeof form.code"></strong></p>
+            </div>
+
+            <div class="buttons" style="margin-top: 1rem;">
+                <button class="button is-primary is-light" type="button" @click="setAll">设置全部值（程序更新）</button>
+                <button class="button is-light" type="button" @click="reset">重置</button>
+            </div>
+
+            <div class="result" x-text="JSON.stringify(form, null, 2)"></div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    form: {
+                        username: "",
+                        email: "",
+                        password: "",
+                        age: 25,
+                        code: "",
+                    },
+                },
+                {
+                    actions: {
+                        setAll() {
+                            engine.state.form.username = "张三";
+                            engine.state.form.email = "zhangsan@example.com";
+                            engine.state.form.password = "secret123";
+                            engine.state.form.age = 30;
+                            engine.state.form.code = 42;
+                        },
+                        reset() {
+                            engine.state.form.username = "";
+                            engine.state.form.email = "";
+                            engine.state.form.password = "";
+                            engine.state.form.age = 25;
+                            engine.state.form.code = "";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

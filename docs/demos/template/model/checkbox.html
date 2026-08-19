@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · checkbox 单值布尔</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result { background: #f5f5f5; padding: 0.75rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; margin-top: 1rem; white-space: pre-wrap; }
+        </style>
+    </head>
+
+    <body>
+        <!-- checkbox 单值布尔：读写 el.checked（Boolean），value 属性不参与绑定 -->
+        <div class="demo-app section">
+            <h3 class="title is-5">checkbox 单值布尔</h3>
+            <p class="help" style="margin-bottom: 1rem;">
+                读方向：<code>el.checked = Boolean(state)</code>，写方向：<code>state = el.checked</code>（恒写布尔）。
+                非布尔 state 经 <code>Boolean()</code> 宽容转换。
+            </p>
+
+            <div class="field">
+                <div class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" x-model="form.agree" />
+                        我已阅读并同意用户协议
+                    </label>
+                </div>
+                <p class="help">agree = <strong x-text="form.agree"></strong>（类型：<strong x-text="typeof form.agree"></strong>）</p>
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" x-model="form.subscribe" />
+                        订阅邮件通知
+                    </label>
+                </div>
+                <p class="help">subscribe = <strong x-text="form.subscribe"></strong></p>
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" x-model="form.enableFeature" />
+                        启用高级功能
+                    </label>
+                </div>
+                <p class="help">enableFeature = <strong x-text="form.enableFeature"></strong></p>
+            </div>
+
+            <div class="buttons" style="margin-top: 1rem;">
+                <button class="button is-light" type="button" @click="toggleAll">全选 / 取消全选</button>
+                <button class="button is-light" type="button" @click="reset">重置</button>
+            </div>
+
+            <div class="result" x-text="JSON.stringify(form, null, 2)"></div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    form: {
+                        agree: false,
+                        subscribe: true,
+                        enableFeature: false,
+                    },
+                },
+                {
+                    actions: {
+                        toggleAll() {
+                            const allChecked = engine.state.form.agree && engine.state.form.subscribe && engine.state.form.enableFeature;
+                            engine.state.form.agree = !allChecked;
+                            engine.state.form.subscribe = !allChecked;
+                            engine.state.form.enableFeature = !allChecked;
+                        },
+                        reset() {
+                            engine.state.form.agree = false;
+                            engine.state.form.subscribe = true;
+                            engine.state.form.enableFeature = false;
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

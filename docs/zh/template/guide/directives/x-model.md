@@ -10,18 +10,14 @@
 ```
 
 ::: tip 适用控件
-首版仅支持 **text-like 控件**：`<input>`（除 checkbox/radio 外所有 type）+ `<textarea>`，统一读写 `el.value`。checkbox/radio/select（数组收集 / checked 语义）暂不支持，它们的「双向」是独立的收集语义，后续单独支持。
+支持 **text-like 控件**（`<input>` 非 checkbox/radio + `<textarea>`）、**checkbox 单值布尔** 和 **radio 单值选择**。select / checkbox 组 / radio 组收集暂不支持。
 :::
 
 ## 快速入门
 
-<demo html="template/model/basic.html" />
+<demo html="template/model/all-input-types.html" />
 
-```html
-<input x-model="user.name" />
-```
-
-`x-model="path"` 的 `path` 是状态路径（必填）。输入即写回状态、状态变化同步回输入框，无需手动监听 `input` 事件。
+`x-model="path"` 的 `path` 是状态路径（必填）。输入即写回状态、状态变化同步回输入框，无需手动监听 `input` 事件。上例覆盖了 text / number / email / password / textarea / checkbox / radio / select 的完整用法。
 
 ## 指南
 
@@ -36,11 +32,104 @@
 <input x-model="user.address.street" />
 ```
 
-### textarea
+### 控件类型
 
-`<textarea>` 同样支持，统一读写 `el.value`：
+x-model 支持三类控件，读写语义各不相同：
+
+| 控件 | 读方向（state→DOM） | 写方向（DOM→state） | 默认事件 |
+| --- | --- | --- | --- |
+| text-like | `el.value = String(state)` | `state = el.value` | `input` |
+| checkbox | `el.checked = Boolean(state)` | `state = el.checked`（布尔） | `input` |
+| radio | `el.checked = (state === el.value)` | `state = el.value`（仅勾选时） | `input` |
+
+#### text input
+
+所有 text-like 控件（`text` / `email` / `password` / `url` / `tel` / `search`）统一读写 `el.value`（字符串）：
+
+<demo html="template/model/text-input.html" />
+
+```html
+<input type="text" x-model="form.username" />
+<input type="email" x-model="form.email" />
+<input type="number" x-model.number="form.age" />
+```
+
+修饰符控制值转换：`.number` 写回前 `Number()` 转换，`.trim` 去除首尾空格。详见[修饰符](#修饰符)。
+
+#### textarea
+
+`<textarea>` 统一读写 `el.value`，用法与 text input 一致：
 
 <demo html="template/model/textarea.html" />
+
+```html
+<textarea x-model="form.bio" placeholder="自我介绍"></textarea>
+```
+
+#### checkbox 单值布尔
+
+`<input type="checkbox">` 读写 `el.checked`（布尔值），而非 `el.value`。
+
+<demo html="template/model/checkbox.html" />
+
+```html
+<input type="checkbox" x-model="form.agree" />
+<!-- 勾选 → state.form.agree = true -->
+<!-- 取消 → state.form.agree = false -->
+```
+
+**读方向**：`el.checked = Boolean(state)`。非布尔 state 经 `Boolean()` 宽容转换（`"yes"` → `true`，`null` → `false`）。
+
+**写方向**：`state = el.checked`（恒写布尔）。一旦用户操作过 checkbox，值就永远是布尔类型。
+
+::: tip checkbox 的 value 属性不参与绑定
+checkbox 的 `value` 属性仅用于表单提交值，不影响 `x-model` 绑定。`x-model` 始终读写 `el.checked`（布尔）。
+:::
+
+checkbox 与 `:value` 不冲突——`:value` 设置的是表单提交值，不与 `x-model` 竞写 `el.checked`：
+
+```html
+<!-- ✅ 允许：:value 设选项值，x-model 绑定 checked -->
+<input type="checkbox" x-model="form.agree" value="yes" />
+
+<!-- ❌ 报错：:checked 与 x-model 竞写 el.checked -->
+<input type="checkbox" x-model="form.agree" :checked="forceChecked" />
+```
+
+修饰符（`.trim` / `.number`）对 checkbox 无意义（空转，不报错）。
+
+#### radio 单值选择
+
+`<input type="radio">` 通过值匹配实现互斥选择——多个同名 radio 共享一个 state 值。
+
+<demo html="template/model/radio.html" />
+
+```html
+<input type="radio" name="gender" value="male" x-model="form.gender" />
+<input type="radio" name="gender" value="female" x-model="form.gender" />
+<!-- 选中 male → state.form.gender = "male" -->
+<!-- 选中 female → state.form.gender = "female"，male 自动取消 -->
+```
+
+**读方向**：`el.checked = (state === el.value)`。state 值与 radio 的 `value` 属性比较，匹配则选中。
+
+**写方向**：仅勾选时写 `state = el.value`（字符串），取消时不写（另一个 radio 会接管）。
+
+::: warning radio 必须有 value 属性
+radio 的 `value` 属性是绑定值的来源。如果缺少 `value`（HTML 默认 `"on"`），引擎会 warn 并跳过绑定。
+:::
+
+radio 与 `:value` 不冲突——`:value` 设置的是选项值，不与 `x-model` 竞写 `el.checked`：
+
+```html
+<!-- ✅ 允许：:value 设选项值 -->
+<input type="radio" value="male" x-model="form.gender" :value="'M'" />
+
+<!-- ❌ 报错：:checked 与 x-model 竞写 el.checked -->
+<input type="radio" value="male" x-model="form.gender" :checked="forceChecked" />
+```
+
+修饰符（`.trim` / `.number`）对 radio 无意义（空转，不报错）。
 
 ### 修饰符
 
@@ -304,8 +393,10 @@ AutoStore 的 `configManager` 为每个状态字段维护一份**字段元数据
 
 ## 注意事项
 
-- **`:value` 冲突**：`x-model` 与 `:value`/`x-bind:value` 作用于同一元素时，编译期报错（两者竞写 `input.value`）。`:value` 是单向 state→DOM，`x-model` 是双向，二者互斥。
-- **控件范围**：首版仅 text-like（`<input>` 除 checkbox/radio + `<textarea>`）。checkbox/radio/select 暂不支持。
+- **冲突检测（控件感知）**：text-like 查 `:value` 冲突（竞写 `el.value`），checkbox/radio 查 `:checked` 冲突（竞写 `el.checked`）。`:value` 对 checkbox/radio 放行（设选项值）。
+- **控件范围**：支持 text-like、checkbox 单值、radio 单值。select / checkbox 组 / radio 组收集暂不支持。
+- **radio 必须有 value 属性**：缺少 `value`（HTML 默认 `"on"`）时引擎 warn 并跳过绑定。
+- **checkbox 写入后值变布尔**：非布尔 state 经 `Boolean()` 宽容显示，但用户操作后写入的是布尔值。
 - **get/set 禁箭头函数**：配置值只能是字符串（relaxed-json 约束），箭头函数字面量会解析失败。
 - **动态改 `x-model` 属性值不支持**：运行时 `setAttribute("x-model", ...)` 改绑定值不生效（编译期解析，首版有意）。
 - **循环防护是内置的**：无需手动处理，写入经 flags 标识，read 回调自动跳过自身触发的回写。

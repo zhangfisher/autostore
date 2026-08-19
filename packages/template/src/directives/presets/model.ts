@@ -40,6 +40,19 @@ function detectControlKind(el: HTMLElement): ControlKind {
 }
 
 /**
+ * .boolean 修饰符的严格字符串集转换（ADR-0024 决策 3）。
+ *
+ * 仅认 `"true"/"false"/""` 三个字符串字面量，其余输入（"0"/"abc"/" True "）保留原值
+ * 不转换——镜像 .number 的 NaN 回退「不破坏」原则。空串 → false（空=否定，避免空串污染 state）。
+ */
+function toBooleanStrict(v: any): any {
+    if (v === "true") return true;
+    if (v === "false") return false;
+    if (v === "") return false;
+    return v;
+}
+
+/**
  * x-model：输入控件与状态的双向绑定（**Hybrid 指令**）。
  *
  * 双通道职责正交（ADR-0018）：
@@ -80,7 +93,11 @@ function detectControlKind(el: HTMLElement): ControlKind {
  * - `.change` → 改监听 `change`（失焦触发）；
  * - `.trim` → 写前 `trim()`；
  * - `.number` → 写前 `Number()`，`NaN` 回退原字符串（不破坏）。
- * 写回管道顺序：`el.value` →(.trim)→ (.number)→ `$value` → set/直写。
+ * - `.boolean` → 写前严格集转换：`"true"→true`、`"false"→false`、`""→false`，其余保留原值
+ *   （不破坏）。作用于读 `el.value` 的控件（text-like + radio）；checkbox 写方向恒布尔，冗余空转。
+ * 写回管道顺序：`el.value` →(.trim)→ (.number)→(.boolean)→ `$value` → set/直写。
+ * number/boolean 均为类型终态声明，**按书写序顺序执行**（`Object.keys(options)` 键序=书写序），
+ * 同写两个的冲突后果开发者自担（`.boolean.number` 可能得 `1`），不短路、不 warn。
  *
  * ## 防循环
  * 双向绑定的循环风险：onInput 写 state → read 回调写回 DOM。虽然程序设 `el.value` 不触发 input 事件
@@ -358,6 +375,8 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     private _initialValue: any = undefined;
     /** 只读降级 warn 去重（表达式/computed 无 set 时仅 warn 一次） */
     private _readonlyWarned = false;
+    /** radio 值不在 .boolean 严格集 warn 去重（仅 warn 一次，值保留原样写回） */
+    private _radioBooleanWarned = false;
     /** DOM→state 回调（箭头函数绑定 this，供 add/removeEventListener 同引用） */
     private readonly onInput = () => this._handleInput();
 
@@ -444,13 +463,15 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
      * input/change 事件处理：读 DOM 值 → 修饰符管道 → 写 state（flags 标识 + 防循环置位）。
      *
      * 按 ControlKind 分派读源（ADR-0023 决策 1）：
-     * - text-like：读 `el.value`，走 trim/number 修饰符管道；
-     * - checkbox：读 `el.checked`（恒写布尔），修饰符管道空转（.trim/.number 对布尔无意义）；
-     * - radio：仅勾选时写 `el.value`（字符串），取消时不写（另一个 radio 会接管）。
+     * - text-like：读 `el.value`，走 trim/number/boolean 修饰符管道；
+     * - checkbox：读 `el.checked`（恒写布尔），修饰符管道空转（类型转换对布尔无意义）；
+     * - radio：仅勾选时读 `el.value`（字符串），取消时不写（另一个 radio 会接管）；
+     *   值同样走修饰符管道（.boolean 对 radio 布尔对是主场景）。
      */
     private _handleInput() {
         if (!this.el) return;
         let v: any;
+        let usePipe = false; // text-like / radio 读 el.value 的才走管道
         if (this._controlKind === "checkbox") {
             // checkbox：读 el.checked，恒写布尔（ADR-0023 决策 2）
             v = (this.el as HTMLInputElement).checked;
@@ -458,18 +479,57 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             // radio：仅勾选时写 el.value（字符串），取消时不写（另一个 radio 会接管）
             if (!(this.el as HTMLInputElement).checked) return; // 取消态不写入
             v = (this.el as HTMLInputElement).value;
+            usePipe = true;
         } else {
             // text-like：读 el.value，走修饰符管道
             v = (this.el as HTMLInputElement).value;
-            if (this.getOption("trim") && typeof v === "string") v = v.trim();
-            if (this.getOption("number")) {
-                const n = Number(v);
-                v = Number.isNaN(n) ? v : n; // NaN 回退原字符串，不破坏
-            }
+            usePipe = true;
         }
+        if (usePipe) v = this._applyModifiers(v);
         // 防循环置位：本次写入触发的 read 回调将跳过回写
         this._selfWriting = true;
         this._writeToState(v);
+    }
+
+    /**
+     * 写方向修饰符管道：`el.value` →(.trim)→ (.number)→(.boolean)→ 写回。
+     *
+     * number/boolean 按书写序顺序执行（键序=书写序），不短路、不 warn——同写两个的冲突
+     * 后果开发者自担。.boolean 严格集未识别值在 radio 场景 warn 一次（模板静态声明的
+     * value 不在 {"true","false"} 集内是模板 bug，值得出声）；text 场景静默保留（用户输入不预设）。
+     *
+     * 键序来源：指令选项键在前（书写序）+ 宿主选项键在后（缺失才回退，ADR-0007 两层
+     * fallback 的顺序投影）——`getOption` 逐键查不到顺序，此处自聚合键序表。
+     */
+    private _applyModifiers(v: any): any {
+        if (this.getOption("trim") && typeof v === "string") v = v.trim();
+        const opts = this.options as Record<string, any> | undefined;
+        const host = this.binding?.hostOptions;
+        // 指令键（书写序）在前，宿主键（指令层缺失才回退）在后，去重
+        const keys = [...Object.keys(opts ?? {}), ...Object.keys(host ?? {})].filter(
+            (k, i, arr) => arr.indexOf(k) === i,
+        );
+        for (const key of keys) {
+            if (!this.getOption(key)) continue; // 值统一经 getOption（两层回退）
+            if (key === "number") {
+                const n = Number(v);
+                v = Number.isNaN(n) ? v : n; // NaN 回退原值，不破坏
+            } else if (key === "boolean") {
+                const converted = toBooleanStrict(v);
+                if (
+                    converted === v &&
+                    this._controlKind === "radio" &&
+                    !this._radioBooleanWarned
+                ) {
+                    this._radioBooleanWarned = true;
+                    this.engine.logger.warn(
+                        `x-model: radio value "${v}" 不在 .boolean 严格集 {"true","false",""} 内，保留原值写回`,
+                    );
+                }
+                v = converted;
+            }
+        }
+        return v;
     }
 
     /**
