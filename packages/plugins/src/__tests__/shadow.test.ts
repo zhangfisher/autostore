@@ -1,9 +1,9 @@
 /// <reference types="bun" />
 import { describe, test, expect } from "bun:test";
-import { asyncComputed, AutoStore, computed } from "autostore";
+import { AutoStore, computed } from "autostore";
 import type { AutoStoreOptions, Dict } from "autostore";
 import { shadow } from "../shadow";
-
+import { asyncComputed } from "../asyncpro";
 const delay = (ms: number = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**

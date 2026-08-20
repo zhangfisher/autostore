@@ -26,6 +26,7 @@ import type {
 import type { StateOperate } from "../store/types";
 import type { ComputedObject } from "./computedObject";
 import type { Dict } from "../types";
+import type { RefState } from "../plugins/refState";
 import { SyncComputedObject } from "./sync";
 
 export interface AsyncComputedObjects {
@@ -46,6 +47,12 @@ export interface ComputedGetterArgs {
      *
      */
     operate?: StateOperate;
+    /**
+     * 引用外部 refStore 的状态值
+     * @description
+     * 由 refState 插件在运行时注入
+     */
+    ref?: RefState;
 }
 
 export type ComputedGetter<Value, Scope = any> = (

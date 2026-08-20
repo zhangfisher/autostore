@@ -11,7 +11,7 @@
  *
  */
 
-import { IAutoStorePlugin } from "../plugin";
+import { IAutoStorePlugin } from "../plugins";
 
 export function installPlugin(plugin: IAutoStorePlugin) {
     if (globalThis.__AUTOSTORE_PLUGINS__) {

@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { AutoStore, configurable, ConfigManager, computed } from "autostore";
 import { delay } from "flex-tools/async/delay";
-import "../../src/refState";
 
 /**
  * configurable 的 ref 功能单元测试

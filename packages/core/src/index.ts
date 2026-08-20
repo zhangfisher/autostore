@@ -8,7 +8,7 @@ export * from "./observer";
 export * from "./errors";
 export * from "./consts";
 export * from "./schema";
-export * from "./plugin";
+export * from "./plugins";
 export * from "./scope";
 
 export * as FastEvent from "fastevent/lite";

@@ -27,11 +27,6 @@
             "types": "./dist/trace.d.ts",
             "import": "./dist/trace.js",
             "require": "./dist/trace.cjs"
-        },
-        "./refState": {
-            "types": "./dist/refState.d.ts",
-            "import": "./dist/refState.js",
-            "require": "./dist/refState.cjs"
         }
     },
     "scripts": {

@@ -4,13 +4,12 @@ import type { AnyObserverObject, ObserverType, ObserverContext } from "../observ
 import type { Dict } from "../types";
 import { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
-import type { ConfigManager, ConfigSource } from "../schema/manager";
+import type { ConfigManager } from "../schema/manager";
 import type { FastEventSubscriber, TransformedEvents } from "fastevent";
 import type { ObserverDescriptor } from "../observer/types";
 import type { CreateSandboxOptions } from "../utils/createSandbox";
 import type { ILogger } from "flex-tools";
-import { IAutoStorePlugin } from "../plugin";
-
+import { IAutoStorePlugin } from "../plugins";
 export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
 export interface StateValidatorFunction<State extends Dict> {

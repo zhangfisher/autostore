@@ -260,3 +260,59 @@ describe("x-bind @ 配置引用：冲突", () => {
         ).toThrow();
     });
 });
+
+// ── .invert 修饰符 × @ 配置绑定（ADR-0025）────────────────────────────────
+
+describe("x-bind .invert + @ 配置绑定", () => {
+    test(':disabled.invert="path@enable"：schema.enable 反向映射 disabled', async () => {
+        const { root, configManager } = mountWithConfig(
+            `<input :disabled.invert="order.price@enable"/>`,
+            { order: { price: cfg(1, { enable: false }) } },
+            { configKey: "app" },
+        );
+        const input = root.querySelector("input")!;
+        expect(input.disabled).toBe(true); // enable=false → !false=true → 禁用
+        (configManager.state as any)["app.order.price"].enable = true;
+        await nextTick();
+        expect(input.disabled).toBe(false); // enable=true → 可用
+        (configManager.state as any)["app.order.price"].enable = false;
+        await nextTick();
+        expect(input.disabled).toBe(true); // 响应式切回
+    });
+});
+
+describe("x-model 元数据注入：enable 联动复用 .invert（ADR-0025 修订 ADR-0020 决策 7）", () => {
+    test("schema.enable 静态布尔 → 自动注入 disabled（取反）", () => {
+        const { root } = mountWithConfig(`<input x-model="user.name"/>`, {
+            user: { name: cfg("zhang", { enable: false, placeholder: "输入" }) },
+        });
+        const input = root.querySelector("input")!;
+        expect(input.disabled).toBe(true); // enable=false → 禁用
+        expect(input.getAttribute("placeholder")).toBe("输入"); // 直传属性不受影响
+    });
+
+    test("schema.enable 翻转 → disabled 响应式切换（不再依赖专用注入器）", async () => {
+        const { root, configManager } = mountWithConfig(
+            `<input x-model="user.name"/>`,
+            { user: { name: cfg("zhang", { enable: true }) } },
+            { configKey: "app" },
+        );
+        const input = root.querySelector("input")!;
+        expect(input.disabled).toBe(false); // enable=true → 可用
+        (configManager.state as any)["app.user.name"].enable = false;
+        await nextTick();
+        expect(input.disabled).toBe(true); // 翻转联动
+    });
+
+    test("显式 :disabled 优先抑制合成（含 .invert 形态）", async () => {
+        const { root, store } = mountWithConfig(
+            `<input x-model="user.name" :disabled="locked"/>`,
+            { user: { name: cfg("zhang", { enable: false }) }, locked: true },
+        );
+        const input = root.querySelector("input")!;
+        expect(input.disabled).toBe(true); // 显式绑定生效
+        store.state.locked = false;
+        await nextTick();
+        expect(input.disabled).toBe(false); // 显式绑定驱动，schema.enable=false 被抑制
+    });
+});

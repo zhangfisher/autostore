@@ -1,7 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { AutoStore, computed } from "autostore";
 const delay = (ms = 100) => new Promise((r) => setTimeout(r, ms));
-import "../refState";
 
 /**
  * AutoStore refStore 功能单元测试

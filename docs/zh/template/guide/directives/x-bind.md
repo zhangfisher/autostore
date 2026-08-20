@@ -89,9 +89,36 @@
 
 详见[响应式 · 属性插值](../reactive.md#属性插值)。
 
+### 修饰符
+
+#### `.invert`
+
+对求值结果**取反**（`!value`），语义化用于**反向词汇映射**——状态词汇与 DOM 属性词汇语义相反的场景。状态绑定与 `@` 配置绑定均生效：
+
+```html
+<!-- 状态绑定：editable（可编辑）→ disabled（禁用），词汇反向 -->
+<button :disabled.invert="editable">提交</button>
+<!-- state.editable=false → !false=true → 禁用；editable=true → 解除 -->
+
+<!-- 配置绑定：schema.enable（true=可用）→ disabled，x-model 元数据注入即此形态 -->
+<input :disabled.invert="order.price@enable"/>
+<!-- schema.enable=true → 不禁用；enable=false → 禁用 -->
+
+<!-- 等价指令选项（ADR-0007：修饰符即指令选项） -->
+<input :disabled="order.price@enable" x-bind-options="{invert:true}"/>
+```
+
+**适用范围**：boolean 型属性（`disabled` / `readonly` / `hidden` / `selected` / `multiple`）。对非布尔属性无意义——任意值 `!` 后恒为布尔（字符串 `"x"` → `true` → `setAttribute(attr,"")`），引擎不禁止，但请遵守约定。
+
+**典型来源**：schema 元数据的 `enable`（正向词汇，与 core/React 表单生态对齐）映射 DOM `disabled`（反向词汇）——[x-model 字段元数据注入](./x-model.md#字段元数据)的 `enable → disabled` 反向即自动合成 `:disabled.invert="path@enable"` 实现。
+
 ## 配置
 
-`x-bind` 的指令值即要绑定的表达式，**无独立指令选项与修饰符**。
+`x-bind` 的指令值即要绑定的表达式。修饰符 `.invert`（值取反，见上文）；经 `x-bind-options` 声明的配置项：
+
+| 配置项   | 类型   | 说明                                       |
+| -------- | ------ | ------------------------------------------ |
+| `invert` | 布尔   | 同 `.invert` 修饰符：求值结果取反          |
 
 ::: info 关于指令配置体系
 指令选项 / 修饰符 / 宿主选项 / 两层回退的通用机制见[指令配置](../config.md)。

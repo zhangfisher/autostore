@@ -188,7 +188,7 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
             this.store.logger.warn(
                 () => `Async computed: ${this.toString()} is running, can't reentry`,
             );
-            emitStoreEvent(this.store, "observer:cancel", {
+            emitStoreEvent(this.store, `observer/${this.id}/cancel`, {
                 reason: "reentry",
                 observer: this,
             });
@@ -386,7 +386,7 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
                     // 如果有中止信号，则取消计算
                     if (ctx.hasAbort) throw new AbortError();
                     // 执行回调
-                    emitStoreEvent(this.store, "observer:run", {
+                    emitStoreEvent(this.store, `observer/${this.id}/run`, {
                         args: getterArgs,
                         observer: this,
                         scope,
@@ -427,18 +427,18 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
             }
             // 计算完成后触发事件
             if (ctx.hasAbort) {
-                emitStoreEvent(this.store, "observer:cancel", {
+                emitStoreEvent(this.store, `observer/${this.id}/cancel`, {
                     reason: "abort",
                     observer: this,
                 });
             } else if (ctx.hasError || ctx.hasTimeout) {
                 this.error = ctx.error;
-                emitStoreEvent(this.store, "observer:error", {
+                emitStoreEvent(this.store, `observer/${this.id}/error`, {
                     error: ctx.error,
                     observer: this,
                 });
             } else {
-                emitStoreEvent(this.store, "observer:done", {
+                emitStoreEvent(this.store, `observer/${this.id}/done`, {
                     value: computedResult,
                     observer: this,
                 });

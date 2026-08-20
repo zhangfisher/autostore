@@ -152,6 +152,44 @@ describe("x-bind 属性绑定", () => {
         await nextTick();
         expect(btn.disabled).toBe(false);
     });
+
+    test(".invert 修饰符：值取反（反向词汇映射，ADR-0025）", async () => {
+        // editable=true（可编辑）→ disabled 移除；editable=false → disabled 设置
+        const { root, store } = mount(`<button :disabled.invert="editable">提交</button>`, {
+            editable: false,
+        });
+        const btn = root.querySelector("button")!;
+        expect(btn.disabled).toBe(true); // !false = true → 禁用
+        store.state.editable = true;
+        await nextTick();
+        expect(btn.disabled).toBe(false); // !true = false → 解除
+        store.state.editable = false;
+        await nextTick();
+        expect(btn.disabled).toBe(true); // 切回禁用
+    });
+
+    test(".invert 对普通属性同样取反（布尔语义约定内使用）", async () => {
+        const { root, store } = mount(`<span :hidden.invert="visible"></span>`, {
+            visible: true,
+        });
+        const span = root.querySelector("span")!;
+        expect(span.hasAttribute("hidden")).toBe(false); // !true → 无 hidden
+        store.state.visible = false;
+        await nextTick();
+        expect(span.hasAttribute("hidden")).toBe(true); // !false → 有 hidden
+    });
+
+    test(".invert 经 x-bind-options={invert:true} 等价声明", async () => {
+        const { root, store } = mount(
+            `<button :disabled="editable" x-bind-options="{invert:true}">提交</button>`,
+            { editable: false },
+        );
+        const btn = root.querySelector("button")!;
+        expect(btn.disabled).toBe(true); // 修饰符与指令选项等价（ADR-0007）
+        store.state.editable = true;
+        await nextTick();
+        expect(btn.disabled).toBe(false);
+    });
 });
 
 describe("x-bind:class 在 x-for 内（localData 注入）", () => {

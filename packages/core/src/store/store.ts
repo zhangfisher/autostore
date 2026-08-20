@@ -78,6 +78,7 @@ import { forEachObject, getSnapshot, getVal, isFunction, setVal, splitPath } fro
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
 import { createLogger, ILogger } from "flex-tools/misc/logger";
 import { cascadeDestroy } from "../plugins/cascadeDestroy";
+import { refState } from "../plugins/refState";
 import { ObserverObjectBuilder, observers } from "./observers";
 import { isFuncDefine } from "../utils/isFuncDefine";
 import { getComputedObject } from "../utils/getComputedObject";
@@ -294,6 +295,7 @@ export class AutoStore<
         const plugins = this.options.plugins!;
         // 内置插件
         plugins.push(cascadeDestroy);
+        plugins.push(refState);
         const exts = globalThis.__AUTOSTORE_PLUGINS__;
         if (Array.isArray(exts)) {
             plugins.push(...exts);

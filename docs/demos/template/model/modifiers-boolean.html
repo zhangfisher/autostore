@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · .boolean 修饰符</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
+            .tag-type {
+                font-family: monospace;
+                margin-left: 0.35rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- .boolean 严格集转布尔："true"→true / "false"→false / ""→false / 其余保留原值 -->
+        <div class="demo-app section">
+            <h3 class="title is-5">.boolean：严格集转布尔</h3>
+            <p class="help" style="margin-bottom: 1rem">
+                仅认 <code>"true"</code> / <code>"false"</code> / <code>""</code>
+                三个字面量，其余输入保留原值不转换（不破坏原则）。
+            </p>
+
+            <!-- 场景一：radio 布尔对（主场景） -->
+            <div class="field">
+                <label class="label">高级模式（radio 布尔对）</label>
+                <div class="control">
+                    <label class="radio">
+                        <input
+                            type="radio"
+                            name="adv"
+                            value="true"
+                            x-model.boolean="form.advanced"
+                            x-model-options="{get:'String(value)'}"
+                        />
+                        开启
+                    </label>
+                    <label class="radio">
+                        <input
+                            type="radio"
+                            name="adv"
+                            value="false"
+                            x-model.boolean="form.advanced"
+                            x-model-options="{get:'String(value)'}"
+                        />
+                        关闭
+                    </label>
+                </div>
+                <p class="help">
+                    advanced = <strong x-text="form.advanced"></strong>（类型：<strong
+                        x-text="typeof form.advanced"
+                    ></strong
+                    >）—— 勾选写入布尔，非字符串
+                </p>
+            </div>
+
+            <!-- 场景二：text 输入三态 -->
+            <div class="field">
+                <label class="label">手动输入（试试 true / false / 空串 / abc）</label>
+                <div class="control">
+                    <input
+                        class="input"
+                        type="text"
+                        x-model.boolean="form.manual"
+                        placeholder='输入 "true" 或 "false"'
+                    />
+                </div>
+                <p class="help">
+                    manual = <strong x-text="form.manual"></strong>（类型：<strong
+                        x-text="typeof form.manual"
+                    ></strong
+                    >）—— 未识别串（如 "abc"）保留原值
+                </p>
+            </div>
+
+            <div class="result" x-text="JSON.stringify(form, null, 2)"></div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    form: {
+                        advanced: false, // 布尔初值
+                        manual: "",
+                    },
+                },
+                {},
+            );
+        </script>
+    </body>
+</html>

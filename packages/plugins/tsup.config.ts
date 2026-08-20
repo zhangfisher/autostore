@@ -27,6 +27,10 @@ export default defineConfig([
     {
         entry: ["src/refState.ts"],
         ...commonConfig,
+        // IIFE 全局产物（AutoStorePluginsSpaces.refState）供文档站 demo 直接引入；
+        // onSuccess 拷贝到 docs/public/plugins.js（与 template 包拷 template.js 同策略）
+        format: ["esm", "cjs", "iife"],
+        globalName: "AutoStorePluginsSpaces",
     },
     {
         entry: ["src/shadow.ts"],

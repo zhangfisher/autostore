@@ -32,6 +32,12 @@ const CONFIG_SEPARATOR = "@";
  * - boolean 型（`disabled` / `readonly` / `hidden` / `selected` / `multiple`）→ truthy `setAttribute` / falsy `removeAttribute`
  * - 普通 attribute → null/undefined/false `removeAttribute`，否则 `setAttribute(attr, String(value))`
  *
+ * ## `.invert` 修饰符（值取反，ADR-0025）
+ * `:attr.invert="expr"` 对**求值结果取反**（`!value`），语义化用于 boolean 型属性的**反向词汇映射**
+ * （如 schema `enable`（true=可用）→ DOM `disabled`）。状态绑定与配置绑定均生效；对非布尔属性
+ * 无意义（字符串 `!` 后恒 `true`），引擎不禁止、文档声明约定。x-model 元数据注入的
+ * `enable → disabled` 反向即经此实现（合成 `:disabled.invert="path@enable"`，ADR-0020 决策 7 修订）。
+ *
  * **求值抛错**：`scope.watch` 宽松求值返回 `undefined` → patch 普通 attr 分支 `removeAttribute`，不中断。
  *
  * **多实例**：singleton=false，同元素多个 `:attr` 各自独立；多个 `:class` 各维护 `lastApplied`，
@@ -71,6 +77,12 @@ const CONFIG_SEPARATOR = "@";
  * @example `:disabled` 等 boolean 型：truthy setAttribute / falsy removeAttribute
  * <button :disabled="locked">提交</button>
  * // state:{locked:true} → 禁用；locked=false → 解除（同此理：readonly / hidden / selected / multiple）
+ *
+ * @example `.invert` 值取反：反向词汇映射（enable=可用 → disabled=禁用）
+ * <button :disabled.invert="editable">提交</button>
+ * // state:{editable:true} → !true=false → 不禁用；editable=false → 禁用
+ * <input :disabled.invert="order.price@enable"/>
+ * // schema.enable=true（可用）→ disabled 移除；enable=false → disabled 设置
  *
  * @example `@` 配置引用：把 configManager 元数据响应式注入属性（见 ADR-0019）
  * <input :placeholder="order.price@placeholder"/>
@@ -113,9 +125,13 @@ export class BindDirective extends AutoTemplateDirectiveBase {
             this._bindConfig();
             return;
         }
+        // .invert 修饰符（ADR-0025）：求值结果取反，patch 前统一应用
+        const invert = this.getOption("invert");
         // watch 返回当前值做首渲；后续变化经 scheduler flush 回调 patch
-        const initial = this.binding.watch(this.value, ({ value }) => this.patch(value));
-        this.patch(initial);
+        const initial = this.binding.watch(this.value, ({ value }) =>
+            this.patch(invert ? !value : value),
+        );
+        this.patch(invert ? !initial : initial);
     }
 
     /**
@@ -159,10 +175,13 @@ export class BindDirective extends AutoTemplateDirectiveBase {
         const fullKey = joinPath(configKey ? [configKey, ...leftSegs] : leftSegs);
         // collectDependencies 自动追踪：getVal(schema, rightPath)，响应式系统记录 [fullKey, ...rightPath] 依赖路径（含嵌套）。
         // cm.state 类型是 AutoStoreConfigures（flat `.` 连接 key → schema 对象），用 Record cast 访问。
+        // .invert 修饰符（ADR-0025）：求值结果取反（enable→disabled 反向词汇映射的主场景）
+        const invert = this.getOption("invert");
         const cmState = cm.state as Record<string, any>;
         const read = () => {
             const schema = cmState[fullKey];
-            return schema == null ? undefined : getVal(schema, rightPath);
+            const v = schema == null ? undefined : getVal(schema, rightPath);
+            return invert ? !v : v;
         };
         let firstValue: any;
         const deps = cm.collectDependencies(() => {

@@ -28,21 +28,20 @@
 <demo html="template/model/nested.html" />
 
 ```html
-<input x-model="user.address.city" />
-<input x-model="user.address.street" />
+<input x-model="user.address.city" /> <input x-model="user.address.street" />
 ```
 
 ### 控件类型
 
 x-model 支持三类控件，读写语义各不相同：
 
-| 控件 | 读方向（state→DOM） | 写方向（DOM→state） | 默认事件 |
-| --- | --- | --- | --- |
-| text-like | `el.value = String(state)` | `state = el.value` | `input` |
-| checkbox | `el.checked = Boolean(state)` | `state = el.checked`（布尔） | `input` |
-| radio | `el.checked = (state === el.value)` | `state = el.value`（仅勾选时） | `input` |
+| 控件      | 读方向（state→DOM）                 | 写方向（DOM→state）            | 默认事件 |
+| --------- | ----------------------------------- | ------------------------------ | -------- |
+| text-like | `el.value = String(state)`          | `state = el.value`             | `input`  |
+| checkbox  | `el.checked = Boolean(state)`       | `state = el.checked`（布尔）   | `input`  |
+| radio     | `el.checked = (state === el.value)` | `state = el.value`（仅勾选时） | `input`  |
 
-#### text input
+#### input
 
 所有 text-like 控件（`text` / `email` / `password` / `url` / `tel` / `search`）统一读写 `el.value`（字符串）：
 
@@ -66,7 +65,7 @@ x-model 支持三类控件，读写语义各不相同：
 <textarea x-model="form.bio" placeholder="自我介绍"></textarea>
 ```
 
-#### checkbox 单值布尔
+#### checkbox
 
 `<input type="checkbox">` 读写 `el.checked`（布尔值），而非 `el.value`。
 
@@ -96,9 +95,9 @@ checkbox 与 `:value` 不冲突——`:value` 设置的是表单提交值，不�
 <input type="checkbox" x-model="form.agree" :checked="forceChecked" />
 ```
 
-修饰符（`.trim` / `.number`）对 checkbox 无意义（空转，不报错）。
+修饰符（`.trim` / `.number` / `.boolean`）对 checkbox 无意义（空转，不报错）——`.boolean` 尤其冗余：checkbox 写方向恒为布尔，无需转换。
 
-#### radio 单值选择
+#### radio
 
 `<input type="radio">` 通过值匹配实现互斥选择——多个同名 radio 共享一个 state 值。
 
@@ -133,15 +132,16 @@ radio 与 `:value` 不冲突——`:value` 设置的是选项值，不与 `x-mod
 
 ### 修饰符
 
-默认监听 `input` 事件（实时同步）。三个修饰符控制同步时机与值转换：
+默认监听 `input` 事件（实时同步）。四个修饰符控制同步时机与值转换：
 
-| 修饰符     | 等价配置                              | 说明                                                   |
-| ---------- | ------------------------------------- | ------------------------------------------------------ |
-| `.number`  | `x-model-options="{number:true}"`     | 写回前 `Number()`，`NaN` 回退原字符串（避免字符串污染）|
-| `.trim`    | `x-model-options="{trim:true}"`       | 写回前去除首尾空格                                     |
-| `.change`  | `x-model-options="{change:true}"`     | 监听 `change` 事件（失焦触发）而非 `input`（实时）     |
+| 修饰符     | 等价配置                           | 说明                                                    |
+| ---------- | ---------------------------------- | ------------------------------------------------------- |
+| `.number`  | `x-model-options="{number:true}"`  | 写回前 `Number()`，`NaN` 回退原字符串（避免字符串污染） |
+| `.trim`    | `x-model-options="{trim:true}"`    | 写回前去除首尾空格                                      |
+| `.boolean` | `x-model-options="{boolean:true}"` | 写回前严格集转布尔（见下）                              |
+| `.change`  | `x-model-options="{change:true}"`  | 监听 `change` 事件（失焦触发）而非 `input`（实时）      |
 
-#### `.number`：避免字符串污染计算属性
+#### `.number`
 
 不加 `.number` 时，`<input type="number">` 的值是字符串，`price * count` 会变成字符串拼接：
 
@@ -151,11 +151,39 @@ radio 与 `:value` 不冲突——`:value` 设置的是选项值，不与 `x-mod
 
 <demo html="template/model/modifiers-trim.html" />
 
+#### `.boolean`
+
+`el.value` 是字符串，`.boolean` 把写回值转为**布尔类型**。仅认三个字符串字面量（**严格集**，大小写敏感）：
+
+| 输入       | 写入 state                                                       |
+| ---------- | ---------------------------------------------------------------- |
+| `"true"`   | `true`                                                           |
+| `"false"`  | `false`                                                          |
+| `""`       | `false`                                                          |
+| 其他任意串 | **保留原值**（不转换，镜像 `.number` 的 NaN 回退「不破坏」原则） |
+
+<demo html="template/model/modifiers-boolean.html" />
+
+```html
+<!-- radio 布尔对：主场景 -->
+<input type="radio" name="sw" value="true" x-model.boolean="form.enabled" />
+<input type="radio" name="sw" value="false" x-model.boolean="form.enabled" />
+<!-- 勾选"开启" → state.form.enabled = true（布尔，非字符串 "true"） -->
+```
+
+**适用控件**：text-like 与 radio（读 `el.value` 的控件）；checkbox 写方向恒为布尔，`.boolean` 冗余空转（无害）。
+
+**注意（读方向不转换）**：`.boolean` 仅作用于**写方向**（DOM→state）。radio 读方向是 `state === el.value` 严格比较——布尔 `true` 与字符串 `"true"` 不相等，若要布尔 state 驱动 radio 选中态，需配 get 变换：`x-model-options="{get:'String(value)'}"`。
+
+**注意（与 `.number` 同写）**：`.number` / `.boolean` 都是类型终态声明，同写时**按书写序顺序执行、不短路不告警**——`x-model.boolean.number` 输入 `"true"` 先转布尔 `true`、再被 `Number(true)` 转成 `1`；`x-model.number.boolean` 则 `Number("true")=NaN` 回退原串后转得 `true`。冲突后果由开发者自担，请只写一个。
+
+radio 的 `value` 是模板静态声明，若不在严格集内（如 `value="abc"`），会 `warn` 一次并保留原值写回（提示模板 bug）；text 输入的未识别串静默保留（用户输入不预设）。
+
 #### `.change`
 
 <demo html="template/model/modifiers-change.html" />
 
-写回管道顺序：`el.value` →（`.trim`）→（`.number`）→ `$value` → set 或直写状态。
+写回管道顺序：`el.value` →（`.trim`）→（`.number` / `.boolean` 按书写序）→ `$value` → set 或直写状态。
 
 ### get / set 变换
 
@@ -279,6 +307,7 @@ action 可声明在 `<script type="actions">`（局部）或 `engine.actions`（
     <input x-model="count" x-model-options="{set:'count=$value'}" />
 </div>
 ```
+
 :::
 
 <demo html="template/model/data-bind.html" />
@@ -300,11 +329,14 @@ x-data 父子层经 `getContext` 的 parent 链层叠（子覆盖父同名键、
 
 ```html
 <div x-data="{ user: '张三', role: 'admin' }">
-    <input x-model="user" x-model-options="{set:'user=$value'}" /> <!-- 改父层 user -->
+    <input x-model="user" x-model-options="{set:'user=$value'}" />
+    <!-- 改父层 user -->
     <div x-data="{ user: '李四', score: 88 }">
-        <input x-model="user" x-model-options="{set:'user=$value'}" /> <!-- 改子层 user -->
+        <input x-model="user" x-model-options="{set:'user=$value'}" />
+        <!-- 改子层 user -->
         <input x-model.number="score" x-model-options="{set:'score=Number($value)||0'}" />
-        <span>{{ role }}</span> <!-- 继承父层 -->
+        <span>{{ role }}</span>
+        <!-- 继承父层 -->
     </div>
 </div>
 ```
@@ -351,27 +383,65 @@ AutoStore 的 `configManager` 为每个状态字段维护一份**字段元数据
 <demo html="template/model/schema-inject.html" />
 
 ```html
-<input x-model="form.username" />        <!-- 自动注入 placeholder/title/name -->
-<input x-model="form.email" />           <!-- 自动注入 readonly/required/name -->
-<input type="number" x-model="order.count" />  <!-- 自动注入 min/max/step -->
+<input x-model="form.username" />
+<!-- 自动注入 placeholder/title/name -->
+<input x-model="form.email" />
+<!-- 自动注入 readonly/required/name -->
+<input type="number" x-model="order.count" />
+<!-- 自动注入 min/max/step -->
 ```
 
 只要 schema 配了对应元数据，引擎按控件 type 自动合成：
 
-| 注入项                                                              | 来源                                          |
-| ------------------------------------------------------------------ | -------------------------------------------- |
-| `placeholder` / `title` / `pattern` / `minlength` / `maxlength`    | 通用白名单（所有 text-like 控件）              |
-| `required` / `readonly`                                            | 通用白名单（boolean）                         |
-| `disabled`                                                         | schema 的 `enable` **取反映射**               |
-| `min` / `max` / `step`                                             | numeric type（number/range/date 等）扩展      |
-| `name`                                                             | schema 有用元数据值；无则 `name=路径`；表达式场景跳过 |
+| 注入项                                                          | 来源                                                  |
+| --------------------------------------------------------------- | ----------------------------------------------------- |
+| `placeholder` / `title` / `pattern` / `minlength` / `maxlength` | 通用白名单（所有 text-like 控件）                     |
+| `required` / `readonly`                                         | 通用白名单（boolean）                                 |
+| `disabled`                                                      | schema 的 `enable` 经 `.invert` **取反映射**          |
+| `min` / `max` / `step`                                          | numeric type（number/range/date 等）扩展              |
+| `name`                                                          | schema 有用元数据值；无则 `name=路径`；表达式场景跳过 |
 
 **关键规则：**
 
 - **仅注入 schema 实际承载的属性**（动态交集），schema 没配的属性不注入。
 - **显式绑定优先**：用户显式写 `:placeholder="..."` 则该项不自动合成。
-- **`enable` 反向**：schema 的 `enable`（true=可用）映射到 `disabled` 时值取反（enable=false → 禁用）。改 `schema.enable` 会响应式切换 `disabled`。
+- **`enable` 反向**：自动合成 `:disabled.invert="path@enable"`（[x-bind `.invert` 修饰符](./x-bind.md#invert)），`enable`（true=可用）取反映射到 `disabled`。改 `schema.enable` 会响应式切换 `disabled`。
 - **`name` 默认路径**：schema 无 name 元数据时，`name` 自动取 `x-model` 的状态路径（如 `order.price`），方便表单提交；提供了 name 元数据则用元数据值。
+
+### 字段联动
+
+`schema.enable` 不止能配静态布尔——它可以是**计算属性**，引用其他字段的状态值。这样「一个字段的值控制另一个字段的可编辑性」这类**字段联动**就声明在 schema 里，模板侧仍然只写一行 `x-model`，无需手写 `:disabled` 表达式或事件监听。
+
+典型场景——IP 配置表单：勾选「DHCP 自动获取」时 IP 输入框应禁用（自动分配无需手填），取消勾选时恢复可编辑：
+
+<demo html="template/model/field-linkage.html" />
+
+```html
+<input type="checkbox" x-model="dhcp" />
+<!-- 只写 x-model：disabled 由 schema.enable 联动驱动 -->
+<input type="text" x-model="ip" />
+```
+
+```js
+const { configurable, computed } = AutoStoreSpaces;
+
+new AutoTemplateEngine(
+    el,
+    {
+        dhcp: true,
+        ip: configurable("192.168.1.1", {
+            label: "IP地址",
+            // 联动核心：enable 是计算属性，引用主 store 的 dhcp（取反——dhcp 开启则禁用手填）
+            enable: computed((scope, { ref }) => !ref("dhcp")),
+        }),
+    },
+    { storeOptions: { configManager, configKey: "network" } },
+);
+```
+
+dhcp 翻转 → `enable` 计算属性响应式重算 → 引擎自动注入的 `disabled`（enable 取反）随之切换，全程无模板侧代码。
+
+联动不限于 `enable`——`placeholder` / `required` / `readonly` 等 schema 元数据同样可以是计算属性，驱动对应注入属性的响应式变化。
 
 ## 配置
 

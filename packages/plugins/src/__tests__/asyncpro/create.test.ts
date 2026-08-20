@@ -15,7 +15,7 @@ describe("动态创建异步计算属性", () => {
                 },
                 ["price", "count"],
             );
-            store.on("observer:done", () => {
+            store.on(`observer/*/done`, () => {
                 expect(obj.value).toBe(6);
                 resolve();
             });

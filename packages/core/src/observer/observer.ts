@@ -17,6 +17,7 @@ import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/type
 import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "flex-tools/typecheck/isFunction";
 import { emitStoreEvent } from "../utils/emitStoreEvent";
+import { RefStateContext } from "../plugins/refState";
 
 export class ObserverObject<
     Value = any,
@@ -38,6 +39,7 @@ export class ObserverObject<
     protected _running: boolean = false; // 开始运行时为true
     store: AutoStore<any>;
     _shadowStore!: AutoStore<any>;
+    refStateContext!: RefStateContext;
 
     /**
      *  构造函数。

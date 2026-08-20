@@ -1,23 +1,17 @@
-import type {
-    ObserverObject,
-    ObjectKeyPaths,
-    GetTypeByPath,
-    Watcher,
-    AnyAutoStore,
-    Dict,
-    AnyObserverObject,
-    AutoStoreSubscriber,
-} from "autostore";
-import { getVal } from "autostore";
-import { installPlugin } from "./utils/installPlugin";
+import type { ObserverObject } from "../observer/observer";
+import type { AnyObserverObject } from "../observer/types";
+import type { ObjectKeyPaths, GetTypeByPath, AnyAutoStore } from "../types";
+import type { Watcher } from "../watch/types";
+import type { AutoStoreSubscriber } from "../store/types";
+import { getVal } from "../utils";
 
 /**
  * 用于扩展声明可扩展
- *declare module "@autostorejs/plugins" {
-    interface ConfigueableStores{
-       <store.id>: Store
+ *declare module "autostore" {
+       interface ConfigueableStores{
+          <store.id>: Store
+       }
     }
- }
  *
 */
 export interface RefStores {}
@@ -157,18 +151,21 @@ export function createRefState(
 
 export function refState(store: AnyAutoStore) {
     const subscribers: AutoStoreSubscriber[] = [];
+    // 事件名随 core 0457a1f（2026-08-07）改版：observer:created → observer/${id}/created。
+    // 事件按 observer id 命名，订阅侧用 * 通配段捕获所有 observer（FastLiteEvent 支持）。
     subscribers.push(
-        store.on("observer:created", ({ observer, context }) => {
+        store.on("observer/*/created", ({ observer, context }) => {
             createRefStateCtx(store, observer, context?.value);
         }),
     );
     subscribers.push(
-        store.on("observer:destroyed", (observer) => {
+        store.on("observer/*/destroyed", (observer) => {
             observer.refStateContext?.off();
         }),
     );
     subscribers.push(
-        store.on("observer:run", ({ observer, args }) => {
+        store.on("observer/*/run", ({ observer, args }) => {
+            if (!observer.refStateContext) return; // 未建 ref 上下文的 observer（无 refStore/_getRefStore）跳过
             if (!args.ref) {
                 args.ref = observer.refStateContext.ref;
             }
@@ -182,20 +179,3 @@ export function refState(store: AnyAutoStore) {
         }
     });
 }
-
-declare module "autostore" {
-    export interface AutoStore<State extends Dict, Options = unknown> {}
-    export interface ObserverObject {
-        refStateContext: RefStateContext;
-    }
-    export interface ObserverOptions<Value = any, Schema extends Dict = Dict> {
-        refStore?: AnyAutoStore | AnyAutoStore[];
-    }
-    export interface ComputedGetterArgs {
-        ref: RefState;
-    }
-    export interface AsyncComputedGetterArgs {
-        ref: RefState;
-    }
-}
-installPlugin(refState);

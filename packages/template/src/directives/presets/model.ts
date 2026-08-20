@@ -147,11 +147,11 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     // ── 元数据自动注入（ADR-0020）──────────────────────────────────────
     //
     // x-model 元素自动从 configManager schema 注入 input 原生属性。注入白名单按 input type
-    // 精准匹配（通用集 + type 扩展）。仅注入 schema 有的属性（动态交集）。enable→disabled 反向。
-    // name 特殊（无则路径、表达式跳过）。显式绑定优先抑制合成。
+    // 精准匹配（通用集 + type 扩展）。仅注入 schema 有的属性（动态交集）。enable→disabled 经
+    // `.invert` 修饰符反向（ADR-0025）。name 特殊（无则路径、表达式跳过）。显式绑定优先抑制合成。
 
     /**
-     * 通用注入白名单（所有 text-like input + textarea）。enable 经反向映射注入 disabled（特判）。
+     * 通用注入白名单（所有 text-like input + textarea）。enable 经 `.invert` 注入 disabled。
      * 这是 text-like 的完整白名单；checkbox 使用裁剪版 CHECKBOX_INJECT_ATTRS。
      */
     private static readonly COMMON_INJECT_ATTRS = [
@@ -159,7 +159,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         "title",
         "required",
         "readonly",
-        "enable", // → disabled 反向映射（特判）
+        "enable", // → disabled 反向（.invert 修饰符，ADR-0025）
         "pattern",
         "minlength",
         "maxlength",
@@ -172,7 +172,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     private static readonly CHECKBOX_INJECT_ATTRS = [
         "title",
         "required",
-        "enable", // → disabled 反向映射（特判）
+        "enable", // → disabled 反向（.invert 修饰符，ADR-0025）
     ] as const;
 
     /** 含 min/max/step 的 input type（number/range/date 类），扩展注入这三个数值约束属性。 */
@@ -195,7 +195,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
      *
      * - configManager 不存在 → 整体跳过（静默，决策 12）；
      * - 注入白名单 = 通用集 + type 扩展（决策 4）；仅注入 schema 有的属性（决策 5）；
-     * - enable → disabled 反向映射（决策 7）；name 特殊处理（决策 8）；
+     * - enable → disabled 反向映射（决策 7，ADR-0025 修订为合成 `:disabled.invert`）；name 特殊处理（决策 8）；
      * - 显式绑定优先抑制合成（决策 9）；无条件合成 + 三层降级兜底（决策 10）。
      */
     static synthesizeSchemaBindings(
@@ -247,19 +247,20 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         const isRadio = inputType === "radio";
 
         /** 合成一个 bind 指令实例（@ 配置引用）并 created，push 进 scope.directives */
-        const synth = (attr: string, schemaAttr: string) => {
+        const synth = (attr: string, schemaAttr: string, opts?: Record<string, any>) => {
             if (explicitAttrs.has(attr)) return; // 显式绑定优先
             const info: AutoDirectiveInfo = {
                 name: "bind",
                 attr,
                 value: `${configStatePath}@${schemaAttr}`,
+                ...(opts ? { options: opts } : {}),
             };
             const bind = new BindCls(engine, scope, info);
             bind.created();
             scope.directives.push(bind);
         };
 
-        // 1. 通用白名单：仅注入 schema 有的属性（enable 经反向特判）
+        // 1. 通用白名单：仅注入 schema 有的属性（enable 反向经 .invert，ADR-0025）
         // checkbox / radio 裁剪文本约束属性（ADR-0023 决策 5）
         const injectAttrs = isCheckbox || isRadio
             ? ModelDirective.CHECKBOX_INJECT_ATTRS
@@ -267,11 +268,9 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         for (const schemaAttr of injectAttrs) {
             if (!hasValue(schemaAttr as string)) continue;
             if (schemaAttr === "enable") {
-                // enable → disabled 反向映射（决策 7）：值取反。不走 BindDirective（直传语义），
-                // 用专用 patch + 自建 watcher，watcher 进 scope.watchers 由 scope.destroy 回收。
-                if (!explicitAttrs.has("disabled")) {
-                    ModelDirective._injectEnableInvert(engine, scope, el, configStatePath);
-                }
+                // enable → disabled 反向映射（决策 7，ADR-0025 修订为复用绑定）：
+                // 合成 `:disabled.invert="path@enable"`——取反由 BindDirective 的 .invert 修饰符承担
+                synth("disabled", "enable", { invert: true });
             } else {
                 synth(schemaAttr as string, schemaAttr as string);
             }
@@ -291,48 +290,6 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             scope,
             modelValue,
             schemaPresent ? schema : undefined,
-        );
-    }
-
-    /**
-     * enable→disabled 反向映射注入（ADR-0020 决策 7）。
-     *
-     * schema.enable 是 boolean（true=可用），DOM disabled 语义反向。读 schema.enable 取反 patch 到
-     * disabled，并 watch configManager 的该依赖路径，变化时重新取反 patch。watcher 进 scope.watchers
-     * 由 scope.destroy 统一回收。
-     */
-    private static _injectEnableInvert(
-        engine: AutoTemplateEngine,
-        scope: AutoTemplateScope,
-        el: HTMLElement,
-        configStatePath: string,
-    ): void {
-        const store = engine.store as any;
-        const cm = store.configManager;
-        const configKey = store.configKey;
-        const leftSegs = configStatePath.split(".");
-        const fullKey = (configKey ? [configKey, ...leftSegs] : leftSegs).join(".");
-        const cmState = cm.state as Record<string, any>;
-        const readInvert = (): boolean | undefined => {
-            const schema = cmState[fullKey];
-            if (schema == null) return undefined;
-            const enable = schema.enable;
-            return enable == null ? undefined : !enable;
-        };
-        // collectDependencies 自动追踪 schema.enable 依赖
-        let first: boolean | undefined;
-        const deps = cm.collectDependencies(() => {
-            first = readInvert();
-        }, "read");
-        // patch 取反值（disabled 属性：truthy setAttribute / falsy removeAttribute）
-        const patchDisabled = (val: boolean | undefined) => {
-            if (val) el.setAttribute("disabled", "");
-            else el.removeAttribute("disabled");
-        };
-        patchDisabled(first);
-        // watcher 订阅 enable 变化，回调经 scheduler 合并后取反 patch
-        scope.watchers.push(
-            cm.watch(deps, () => engine.scheduler.schedule(() => patchDisabled(readInvert()))),
         );
     }
 

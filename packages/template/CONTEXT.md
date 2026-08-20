@@ -103,12 +103,16 @@ x-model 元素自动从 configManager schema 合成 input 原生属性的隐式 
 _Avoid_: 字段属性注入（泛化）、自动绑定（歧义）
 
 **注入白名单 / Injection Whitelist**:
-元数据自动注入的候选属性集，按 input type 精准匹配：通用集（placeholder/title/required/readonly/enable/pattern/minlength/maxlength）+ numeric type 扩展（min/max/step）。仅注入 schema 实际承载的属性（动态交集）。不含 value/checked（x-model 自管）。
+元数据自动注入的候选属性集，按 input type 精准匹配：通用集（placeholder/title/required/readonly/enable/pattern/minlength/maxlength）+ numeric type 扩展（min/max/step）。仅注入 schema 实际承载的属性（动态交集）。不含 value/checked（x-model 自管）。enable 经 `.invert` 修饰符合成反向绑定（见「enable 反向映射」）。
 _Avoid_: schema 属性集（那是 schema 的，白名单是 input 原生属性的候选）
 
+**`.invert` 修饰符（x-bind，值取反）**:
+x-bind 的修饰符，对求值结果取反（`!value`），状态绑定与 `@` 配置绑定均生效。语义化为 boolean 型属性的反向词汇映射而生（schema `enable` → DOM `disabled`），非布尔属性约定不使用（引擎不强制）。enable 元数据注入即合成 `:disabled.invert="path@enable"`。详见 ADR-0025。
+_Avoid_: 反向绑定（泛化）、not 修饰符（与 JS 词汇混淆）
+
 **enable 反向映射 / enable Inversion**:
-schema 的 `enable`（boolean，true=可用）映射到 input 的 `disabled` 属性时**值取反**（enable=false → disabled）。不走普通 `@` 绑定（直传语义），用专用 patch + 自建 watcher。与 Field.tsx 的 enable 语义对齐。
-_Avoid_: disabled 绑定（语义反向，易误解）
+schema 的 `enable`（boolean，true=可用）映射到 input 的 `disabled` 属性时**值取反**（enable=false → disabled）。经绑定层的 `.invert` 修饰符实现（合成 `:disabled.invert="path@enable"`，ADR-0025）——与普通 `@` 绑定同一套依赖收集/订阅/patch，仅求值结果取反。与 Field.tsx 的 enable 语义对齐。
+_Avoid_: disabled 绑定（语义反向，易误解）、专用注入器（ADR-0020 决策 7 原实现，已由 ADR-0025 取代）
 
 **合成绑定 / Synthesized Binding**:
 compiler 在 scope.compile() 后、对含 x-model 的元素合成的隐式 BindDirective 实例（构造合成 AutoDirectiveInfo 喂给 createDirectives）。合成知识封装在 `ModelDirective.synthesizeSchemaBindings` 静态方法（compiler 只管调用时机）。

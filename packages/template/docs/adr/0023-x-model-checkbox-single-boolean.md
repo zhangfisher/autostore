@@ -1,8 +1,8 @@
 # ADR-0023：x-model 支持 checkbox（单值布尔）
 
 - **状态**：Accepted
-- **日期**：2026-08-17
-- **关联**：[ADR-0018](0018-x-model-two-way-binding.md)（阶段1 text-like）、[ADR-0020](0020-x-model-schema-auto-injection.md)（元数据自动注入）、[CONTEXT.md](../../CONTEXT.md)
+- **日期**：2026-08-17（决策 3 于 2026-08-20 修订）
+- **关联**：[ADR-0018](0018-x-model-two-way-binding.md)（阶段1 text-like）、[ADR-0020](0020-x-model-schema-auto-injection.md)（元数据自动注入）、[ADR-0024](0024-x-model-boolean-modifier.md)（.boolean 修饰符，含本决策 3 修订）、[CONTEXT.md](../../CONTEXT.md)
 
 ## 背景
 
@@ -23,9 +23,9 @@ ADR-0018 落了 `x-model` 阶段1（text-like 双向绑定），并把 checkbox/
 - 否决选项（C）Vue 式「`checked = (state === el.value)`」真值匹配：引入值匹配语义、超出「一个 bool 值」初衷，本期不做。
 - 否决选项（B）严格布尔（非布尔 warn 不绑）：字段类型不对就静默不工作，体验偏硬，不取。
 
-### 3. 默认事件：checkbox → `change`
+### 3. 默认事件：checkbox 维持 `input`（2026-08-20 修订）
 
-沿用 ADR-0018 决策框架：text-like 维持默认 `input`（实时）；checkbox/radio/select 默认 `change`（值已确定才写回）。`.change` 修饰符对 checkbox 冗余但无害。
+原决策为「checkbox/radio/select 默认 `change`（值已确定才写回）」，落地时实现与文档均按默认 `input`（实时）交付，且实际行为符合预期（checkbox/radio 的 input 事件在值确定后触发，无中间态）。经 ADR-0024（`.boolean` 修饰符）grilling 时复核，**修订本决策为：全控件统一默认 `input`**，`.change` 修饰符显式切换为失焦触发。理由：与实现/文档现状一致；避免「已交付行为再变更」的影响面；全控件统一默认比按控件分叉更可预测。
 
 ### 4. 冲突规则：控件感知
 

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 字段联动（dhcp 开关控制 IP 输入）</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 字段联动：dhcp=true（自动分配）→ ip 输入禁用；dhcp=false（手动）→ ip 可编辑。
+             联动声明在 schema.enable 计算属性里（!ref("dhcp")），x-model 自动注入 disabled -->
+        <div class="demo-app section">
+            <h3 class="title is-5">字段联动：dhcp 开关控制 IP 输入</h3>
+            <p class="help" style="margin-bottom: 1rem">
+                勾选 DHCP → IP 输入框自动禁用（自动分配无需手填）；取消勾选 → IP 恢复可编辑。
+                联动逻辑声明在 schema 的 <code>enable</code> 计算属性中，非模板事件。
+            </p>
+
+            <div class="field">
+                <div class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" x-model="dhcp" />
+                        自动获取 IP 地址（DHCP）
+                    </label>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">IP 地址</label>
+                <div class="control">
+                    <!-- 只写 x-model：placeholder/name 自动注入，disabled 由 schema.enable 反向驱动 -->
+                    <input class="input" type="text" x-model="ip" />
+                </div>
+                <p class="help">
+                    ip 输入框 <code>disabled</code> 状态由 schema
+                    <code>enable: computed((scope, { ref }) => !ref("dhcp"))</code> 联动
+                </p>
+            </div>
+
+            <div class="result" x-text="JSON.stringify({ dhcp: dhcp, ip: ip }, null, 2)"></div>
+        </div>
+
+        <script>
+            const { AutoStore, configurable, computed, ConfigManager } = AutoStoreSpaces;
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+
+            const cm = new ConfigManager(
+                { load: async () => ({}), save: async () => {} },
+                { autoload: false },
+            );
+
+            new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    dhcp: true,
+                    ip: configurable("192.168.1.1", {
+                        label: "IP地址",
+                        placeholder: "请输入 IP 地址",
+                        // 字段联动核心：enable 是计算属性，取引用主 store 的 dhcp（取反）
+                        // ref() 来自 @autostorejs/plugins/refState——dhcp 变化时 enable 响应式重算
+                        enable: computed((scope, { ref }) => !ref("dhcp")),
+                    }),
+                },
+                {
+                    // engine 接管裸状态时经 storeOptions 传 configManager
+                    storeOptions: { configManager: cm, configKey: "network" },
+                },
+            );
+        </script>
+    </body>
+</html>
