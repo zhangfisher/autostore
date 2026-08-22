@@ -81,7 +81,7 @@
 
 ### 正向桥（Forward Bridge）
 
-"模板元素 → scope"的映射，复用编译期 `templateScopeMap`（实例字段，半持久化），经 `compiler.getScopeByTemplate(el)` 访问。`patch(selector, updater)` 的 selector 对 `engine.template` 命中后，经正向桥定位 scope、取 `scope.el`（运行元素）。**仅含指令（Compile/Hybrid）或 `{{}}` 插值（合成 scope）的元素有正向桥**；纯静态裸元素无映射，需挂 `x-patch` 哨兵。
+"模板元素 → scope"的映射，复用编译期 `templateScopeMap`（实例字段，半持久化），经 `compiler.getScopeByTemplate(el)` 访问。`patch(selector, updater)` 的 selector 对 `engine.template` 命中后，经正向桥定位 scope、取 `scope.el`（运行元素）。**仅含指令（Compile/Hybrid）或 `{{}}` 插值（合成 scope）的元素有正向桥**；纯静态裸元素无映射，需挂 `x-scope` 哨兵。
 
 ### 补丁单元（Patch Unit）
 
@@ -101,9 +101,9 @@
 
 纯 Runtime 指令（`x-loading`）**不建 scope**，不在 patch 范围；但其 observer 通道（[ADR-0001](adr/0001-directive-kind-system.md)）**本就响应原生 DOM 变更**，无需 patch。故 patch 边界 = scope = scope 通道（Compile/Hybrid）指令，无遗漏。
 
-### x-patch（哨兵指令）
+### x-scope（结构占位指令）
 
-零副作用 Compile 指令，唯一作用是让裸元素成为 scope（进正向桥）、从而可被 `engine.patch` 定位。`created`/`compile`/`destroy` 全 no-op，不建 `_scopes[id]` 数据域、不注入 `data`。等效 `x-data="{}"` 但更轻、更语义化。用法：`<div id="x" x-patch></div>` → `engine.patch("#x", ...)`。
+零副作用 Compile 指令，唯一作用是让裸元素成为 scope（进正向桥）、从而可被 `engine.patch` 定位。`created`/`compile`/`destroy` 全 no-op，不建 `_scopes[id]` 数据域、不注入 `data`。等效 `x-data="{}"` 但更轻、更语义化。用法：`<div id="x" x-scope></div>` → `engine.patch("#x", ...)`。
 
 ## 事件总线（信号面）
 

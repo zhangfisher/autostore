@@ -3,6 +3,7 @@ import { isSimpleStatePath, type AutoTemplateScope } from "../../scope";
 import { setVal } from "autostore";
 import type { AutoTemplateActionContext } from "./on/types";
 import { createDirectiveOptions } from "../utils/createDirectiveOptions";
+import { resolveEmptyValues } from "../utils/emptyPlaceholder";
 import type { AutoDirectiveInfo } from "../types";
 import type { AutoTemplateEngine } from "../../engine";
 
@@ -19,24 +20,72 @@ const ACTION_RE = /^([A-Za-z_$][\w$]*)\s*(?:\(([\s\S]*)\))?$/;
  *
  * - `text`：`<input>`（除 checkbox/radio 外所有 type）+ `<textarea>`，读写 `el.value`；
  * - `checkbox`：`<input type="checkbox">`，读写 `el.checked`（布尔），ADR-0023 决策 2；
- * - `radio`：`<input type="radio">`，读 `el.checked = (state === el.value)`，写 `state = el.value`。
- *
- * select 为预留扩展点，本期未实现。
+ * - `radio`：`<input type="radio">`，读 `el.checked = (state === el.value)`，写 `state = el.value`；
+ * - `select`：`<select>`，单选读写 `el.value`、多选读写 selectedOptions（`string[]`），
+ *   默认事件 `change`（ADR-0026 决策 6），选项子树见 choices 三源（ADR-0026 决策 1）。
  */
-export type ControlKind = "text" | "checkbox" | "radio";
+export type ControlKind = "text" | "checkbox" | "radio" | "select";
 
 /**
  * 根据元素判定控件类别（ControlKind）。
  *
  * `<input type="checkbox">` → `checkbox`；`<input type="radio">` → `radio`；
- * 其余（input 非 checkbox/radio、textarea）→ `text`。select 暂归 text（未实现）。
+ * `<select>` → `select`；其余（input 非 checkbox/radio、textarea）→ `text`。
  */
 function detectControlKind(el: HTMLElement): ControlKind {
     if (el instanceof HTMLInputElement) {
         if (el.type === "checkbox") return "checkbox";
         if (el.type === "radio") return "radio";
     }
+    if (el instanceof HTMLSelectElement) return "select";
     return "text";
+}
+
+/** choices 项形态（ADR-0026 决策 5）：label/value 均可缺省，附加字段可作 group 分组键 */
+type ChoiceItem = { label?: string; value?: any; [k: string]: any };
+
+/**
+ * 判定 select 是否为静态选项模式（ADR-0026 决策 1）：
+ * 存在任一 `<option>`/`<optgroup>` 子元素即静态——两处 choices 整体忽略。
+ * 查 template（原模板，含手写子节点）；compile 期 el 是浅克隆、子节点未挂入，查 el 会漏判。
+ */
+function hasStaticOptions(template: HTMLElement | undefined): boolean {
+    if (!template) return false;
+    for (const child of template.children) {
+        if (child.tagName === "OPTION" || child.tagName === "OPTGROUP") return true;
+    }
+    return false;
+}
+
+/**
+ * 拼接 configManager 的 fullKey（复刻 configManager.add 的 joinPath）：
+ * `configKey` 前缀（空串不加）+ 状态路径段。供 synthesizeSchemaBindings（静态）与
+ * `_fullConfigKey`（实例）共用——fullKey 拼接规则只此一处真相源。
+ */
+function toFullConfigKey(store: any, statePath: string): string {
+    const segs = statePath.split(".");
+    return (store.configKey ? [store.configKey, ...segs] : segs).join(".");
+}
+
+/**
+ * `new Function` 编译产物缓存（性能审查发现 3）：键 = 完整源码串，值 = 编译函数。
+ *
+ * get/set/args 表达式在**每次输入事件**求值——无缓存时每敲一键编译一次（new Function
+ * 走解析+代码生成，成本高）。表达式字符串在实例生命周期内不变，且同表达式跨实例共享
+ * （同一模板克隆出的多个 x-for 项），故用**模块级** Map（引擎生命周期内单调增长、
+ * 以源码串为键天然去重；表达式来自开发者模板，数量有界，无泄漏之虞）。
+ */
+const compiledFnCache = new Map<string, Function>();
+
+/** 取编译产物（源码串为键），未命中则编译并缓存 */
+function compileFn(params: string, body: string): Function {
+    const key = `${params}||${body}`;
+    let fn = compiledFnCache.get(key);
+    if (!fn) {
+        fn = new Function(params, body);
+        compiledFnCache.set(key, fn);
+    }
+    return fn;
 }
 
 /**
@@ -64,7 +113,9 @@ function toBooleanStrict(v: any): any {
  * - text-like：`<input>`（除 checkbox/radio 外所有 type）+ `<textarea>`，统一读写 `el.value`。
  * - checkbox：`<input type="checkbox">`，读写 `el.checked`（布尔），ADR-0023 决策 2。
  * - radio：`<input type="radio">`，读 `el.checked = (state === el.value)`，写 `state = el.value`。
- * - select 延后。
+ * - select：`<select>`，单选 `string` / 多选（`.multiple`）`string[]`，默认事件 `change`；
+ *   选项子树三级优先：静态 `<option>` > `x-model-options.choices` > schema.choices（响应式
+ *   全量重建），`group` 选项按键分组到 `<optgroup>`。详见 ADR-0026。
  *
  * ## 读写方向（术语钉死）
  * - **getter（get）= state→DOM 变换**：把状态值加工成 DOM 显示值（如 `value.split('.')[0]`）。
@@ -89,13 +140,15 @@ function toBooleanStrict(v: any): any {
  *   **不抛错、不魔法猜左值**。
  *
  * ## 事件与修饰符
- * 默认监听 `input`；修饰符：
- * - `.change` → 改监听 `change`（失焦触发）；
+ * 默认监听 `input`（select 为 `change`，ADR-0026 决策 6）；修饰符：
+ * - `.change` → 改监听 `change`（失焦触发；select 上与默认同效，幂等）；
  * - `.trim` → 写前 `trim()`；
  * - `.number` → 写前 `Number()`，`NaN` 回退原字符串（不破坏）。
  * - `.boolean` → 写前严格集转换：`"true"→true`、`"false"→false`、`""→false`，其余保留原值
  *   （不破坏）。作用于读 `el.value` 的控件（text-like + radio）；checkbox 写方向恒布尔，冗余空转。
+ * - `.multiple` → select 多选（等价 `multiple` 属性；显式声明优先于 schema.multiple，ADR-0026 决策 2）。
  * 写回管道顺序：`el.value` →(.trim)→ (.number)→(.boolean)→ `$value` → set/直写。
+ * 多选（select multiple）数组**逐项**过管道（`["1","2"]`+.number → `[1,2]`，ADR-0026 决策 8）。
  * number/boolean 均为类型终态声明，**按书写序顺序执行**（`Object.keys(options)` 键序=书写序），
  * 同写两个的冲突后果开发者自担（`.boolean.number` 可能得 `1`），不短路、不 warn。
  *
@@ -175,6 +228,19 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         "enable", // → disabled 反向（.invert 修饰符，ADR-0025）
     ] as const;
 
+    /**
+     * select 注入白名单（ADR-0026 决策 7）：title/required/enable + size
+     * （AutoWidgetSelect 既有字段）。choices 不走属性注入，走选项子渲染（决策 1）；
+     * **multiple 不在此**——它是初始化期语义收敛（值形态 string↔string[] 随之切换），
+     * 由 `_initSelect` 唯一管理（决策 2），属性注入会与其双写竞争。
+     */
+    private static readonly SELECT_INJECT_ATTRS = [
+        "title",
+        "required",
+        "enable", // → disabled 反向（.invert 修饰符，ADR-0025）
+        "size",
+    ] as const;
+
     /** 含 min/max/step 的 input type（number/range/date 类），扩展注入这三个数值约束属性。 */
     private static readonly NUMERIC_TYPES = new Set([
         "number",
@@ -218,9 +284,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         const configStatePath = modelValue;
 
         // fullKey 复刻 configManager.add（与 ADR-0019 _bindConfig 同构）
-        const leftSegs = configStatePath.split(".");
-        const configKey = store.configKey;
-        const fullKey = (configKey ? [configKey, ...leftSegs] : leftSegs).join(".");
+        const fullKey = toFullConfigKey(store, configStatePath);
         const cmState = cm.state as Record<string, any>;
         const schema = cmState[fullKey];
         // schema 未注册 → 跳过 @ 属性合成（仅保留 name 简单路径注入）。
@@ -241,8 +305,9 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             if (d.info.name === "bind" && d.info.attr) explicitAttrs.add(d.info.attr);
         }
 
-        // input type（决定注入白名单 + 是否扩展 min/max/step）
-        const inputType = (el as HTMLInputElement).type ?? "text";
+        // input type（决定注入白名单 + 是否扩展 min/max/step）；select 走专属白名单（ADR-0026 决策 7）
+        const isSelect = el instanceof HTMLSelectElement;
+        const inputType = isSelect ? "" : ((el as HTMLInputElement).type ?? "text");
         const isCheckbox = inputType === "checkbox";
         const isRadio = inputType === "radio";
 
@@ -261,10 +326,13 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         };
 
         // 1. 通用白名单：仅注入 schema 有的属性（enable 反向经 .invert，ADR-0025）
-        // checkbox / radio 裁剪文本约束属性（ADR-0023 决策 5）
-        const injectAttrs = isCheckbox || isRadio
-            ? ModelDirective.CHECKBOX_INJECT_ATTRS
-            : ModelDirective.COMMON_INJECT_ATTRS;
+        // checkbox / radio 裁剪文本约束属性（ADR-0023 决策 5）；select 补 multiple/size（ADR-0026 决策 7）
+        const injectAttrs =
+            el instanceof HTMLSelectElement
+                ? ModelDirective.SELECT_INJECT_ATTRS
+                : isCheckbox || isRadio
+                  ? ModelDirective.CHECKBOX_INJECT_ATTRS
+                  : ModelDirective.COMMON_INJECT_ATTRS;
         for (const schemaAttr of injectAttrs) {
             if (!hasValue(schemaAttr as string)) continue;
             if (schemaAttr === "enable") {
@@ -276,7 +344,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             }
         }
 
-        // 2. type 扩展：min/max/step（仅 numeric type）
+        // 2. type 扩展：min/max/step（仅 numeric input type；select 的 inputType 为 "" 天然不含）
         if (ModelDirective.NUMERIC_TYPES.has(inputType)) {
             for (const extra of ["min", "max", "step"]) {
                 if (hasValue(extra)) synth(extra, extra);
@@ -326,7 +394,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     private _controlKind: ControlKind = "text";
     /** 防循环标志：onInput 触发的写入会让随之而来的 read 回调跳过回写（见类注释「防循环」） */
     private _selfWriting = false;
-    /** 当前监听的事件类型（mounted 时据 .change 修饰符决定："input" | "change"） */
+    /** 当前监听的事件类型（_attachEvent 时决定：text-like/checkbox/radio 默认 "input"、select "change"） */
     private _eventType?: "input" | "change";
     /** created 时 read 的初始值（compile 首渲用；undefined 表示未读到/无值） */
     private _initialValue: any = undefined;
@@ -334,6 +402,21 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     private _readonlyWarned = false;
     /** radio 值不在 .boolean 严格集 warn 去重（仅 warn 一次，值保留原样写回） */
     private _radioBooleanWarned = false;
+    /** select 类型不匹配 warn 去重（数组配单选/字符串配多选，仅 warn 一次后自然退化，ADR-0026 决策 3） */
+    private _selectMismatchWarned = false;
+    /** select choices 模式标志（_initSelect 判定；静态模式为 false，不做选项管理） */
+    private _selectChoices = false;
+    /** 空值回填判定集（ADR-0027）：默认集 + 用户附加，created 期经 resolveEmptyValues 解析缓存 */
+    private _emptyValues: any[] = [undefined, null, NaN];
+    /** schema.default 元数据（ADR-0027 决策 3 的第二级；created 期静态读取，模板 default 优先） */
+    private _schemaDefault: any = undefined;
+    /** schema.autoSelect 元数据（ADR-0028 决策 2 第二级；undefined=未声明走默认 true） */
+    private _schemaAutoSelect: boolean | undefined = undefined;
+    /**
+     * choices 渲染时记录的「default:true 第一项」的 option value（ADR-0028 选取依据）。
+     * 静态模式无 choices 项标记，恒 undefined（回退首项规则）。
+     */
+    private _defaultTrueValue: string | undefined = undefined;
     /** DOM→state 回调（箭头函数绑定 this，供 add/removeEventListener 同引用） */
     private readonly onInput = () => this._handleInput();
 
@@ -342,8 +425,8 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     override created() {
         // 判定控件类别（ADR-0023 ControlKind 分派）
         this._controlKind = detectControlKind(this.el);
-        // 冲突检测（控件感知，ADR-0023 决策 4）：
-        // - text-like：`:value` / `x-bind:value` 与 x-model 同元素 → 竞写 el.value，报错；
+        // 冲突检测（控件感知，ADR-0023 决策 4 / CONTEXT「控件感知冲突」）：
+        // - text-like / select：`:value` / `x-bind:value` 与 x-model 同元素 → 竞写 el.value，报错；
         // - checkbox / radio：`:checked` / `x-bind:checked` 与 x-model 同元素 → 竞写 el.checked，报错；
         //   `:value` 放行（设选项值，必需）。
         if (this._controlKind === "checkbox" || this._controlKind === "radio") {
@@ -377,19 +460,39 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         }
         const expr = String(this.value ?? "");
         if (!expr.trim()) return;
+        // 空值回填（ADR-0027）：判定集（默认集+附加）与 schema.default 在订阅前解析缓存
+        this._emptyValues = resolveEmptyValues(this.getOption("emptyValues"));
+        this._schemaDefault = this._readSchemaDefault();
+        // 自动选中（ADR-0028）：schema.autoSelect 第二级（模板显式声明优先），默认 true
+        this._schemaAutoSelect = this._readSchemaAutoSelect();
+        // select：选项子树先就绪（choices 渲染/静态直用），再建立读方向订阅——
+        // 否则首渲 writeToDom 时 option 尚不存在，选中无处落（ADR-0026 实现时序）
+        if (this._controlKind === "select") {
+            this._initSelect(this.el as HTMLSelectElement);
+        }
         // scope.watch：纯路径走精准订阅、表达式走 collectDependencies，自动注入 localData/data。
         // 返回当前值供 compile 首渲；后续变化经 scheduler 微任务合并后回调 writeToDom。
         this._initialValue = this.binding.watch(expr, ({ value }) => this.writeToDom(value));
     }
 
     override compile() {
-        // 首次 state→DOM 写入（state 作真相源）；undefined（路径不存在/求值失败）则跳过
-        if (this._initialValue !== undefined) this.writeToDom(this._initialValue);
-        else if (this.el) {
-            // state 路径不存在：不动 DOM（不回填，避免 DOM 污染 state 真相源），仅 warn
+        // 首次 state→DOM 写入（state 作真相源）。undefined（路径不存在/求值失败/状态字面 undefined）
+        // 经空值回填判定（ADR-0027）：有 default 回填显示；无 default 走 writeToDom 的控件空值
+        // 显示（text-like 空串 / select 首项）。仅当「无 default 且非 select」时保持 DOM 原值 + warn
+        if (this._initialValue !== undefined || this._resolveDefault() !== undefined || this._controlKind === "select") {
+            this.writeToDom(this._initialValue);
+        } else if (this.el) {
+            // state 路径不存在且无回填：不动 DOM（不回填，避免 DOM 污染 state 真相源），仅 warn
             this.engine.logger.warn(
                 `x-model: 绑定 "${this.value}" 初始值为 undefined（路径不存在或求值失败），保持 DOM 原值`,
             );
+        }
+        // select：编译期 el 是浅克隆（静态 option 由 transformElement 随后挂入），且编译产物
+        // 还会被 engine.compile 的 replaceChildren 搬运挂载——DOM 移动会重置 select 的选中
+        // 状态（happy-dom 实测；浏览器同险）。选中态应用统一推迟到挂载后的 microtask 重放
+        //（scheduler Set 去重，同 tick 多次只跑一次）。
+        if (this._controlKind === "select") {
+            this._scheduleSelectReplay();
         }
         // 挂 input/change 事件（compile 期 el 已存在；元素插入 DOM 后用户输入触发）
         this._attachEvent();
@@ -404,8 +507,10 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
 
     private _attachEvent() {
         if (!this.el) return;
-        // .change 修饰符 → 监听 change（失焦触发）；默认 input（实时）
-        this._eventType = this.getOption("change") ? "change" : "input";
+        // select 默认 change（ADR-0026 决策 6，无打字中间态）；其余默认 input（实时）；
+        // .change 修饰符显式切换（select 上与默认同效，幂等）
+        const defaultEvent = this._controlKind === "select" ? "change" : "input";
+        this._eventType = this.getOption("change") ? "change" : defaultEvent;
         this.el.addEventListener(this._eventType, this.onInput);
     }
 
@@ -416,19 +521,259 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         this._eventType = undefined;
     }
 
+    // ── select：选项子管理（ADR-0026）───────────────────────────────
+
+    /**
+     * select 初始化（created 期调用，先于读方向订阅）：
+     *
+     * 1. **multiple 收敛**（决策 2）：显式（静态属性 ≡ `.multiple` 修饰符 ≡ 指令/宿主选项，
+     *    任一为真即真）> schema.multiple（合成注入，静态属性已存在则跳过）。运行时唯一
+     *    真相源是 `el.multiple`，值语义（string / string[]）一律派生自它。
+     * 2. **选项源三级优先**（决策 1）：静态 `<option>`/`<optgroup>` > 模板 choices
+     *    （x-model-options/宿主选项）> schema.choices（响应式全量重建）。三源皆空 →
+     *    warn 一次，不生成。
+     */
+    /**
+     * x-model 绑定值对应的 configManager fullKey（`toFullConfigKey` 的实例便捷封装）。
+     * 绑定值非简单路径（表达式）或 configManager 缺席时返回 undefined。
+     */
+    private _fullConfigKey(): string | undefined {
+        const expr = String(this.value ?? "");
+        if (!isSimpleStatePath(expr)) return undefined;
+        const store = this.engine.store as any;
+        if (!store.configManager) return undefined;
+        return toFullConfigKey(store, expr);
+    }
+
+    private _initSelect(el: HTMLSelectElement): void {
+        const store = this.engine.store as any;
+        const cm = store.configManager;
+        const fullKey = this._fullConfigKey();
+
+        // multiple：显式任一为真即真——静态属性已在 el.multiple 上，修饰符/指令选项须落位
+        if (this.getOption("multiple") === true) el.multiple = true;
+        if (!el.multiple && cm && fullKey) {
+            // schema.multiple 收敛（静态属性不存在时才考虑；初始化期一次性读取——
+            // multiple 切换意味着值语义 string↔string[] 变更，运行时切换属罕见，YAGNI）
+            const schema = (cm.state as Record<string, any>)[fullKey];
+            if (schema?.multiple === true) el.multiple = true;
+        }
+
+        // 静态模式：模板手写 option/optgroup，两处 choices 整体忽略（含 schema 响应式）。
+        // 须查 binding.template（原模板）——compile 期 el 是浅克隆，静态子节点尚未挂入
+        if (hasStaticOptions(this.binding.template)) return;
+
+        // 模板 choices（x-model-options / 宿主选项）
+        const templateChoices = this.getOption("choices");
+        if (Array.isArray(templateChoices)) {
+            this._selectChoices = true;
+            this._renderChoices(el, templateChoices);
+            return;
+        }
+
+        // schema choices：configManager 响应式订阅，任何变更全量重建 + 重放选中（决策 1）
+        if (cm && fullKey) {
+            const cmState = cm.state as Record<string, any>;
+            const schema = cmState[fullKey];
+            if (schema != null) {
+                this._selectChoices = true;
+                // collectDependencies 深读 choices 的全部渲染字段（label/value/group）——
+                // 仅读数组引用收集不到项字段路径，单项 label 变更不会触发重建（实测）；
+                // 深读后收集 app.car.choices.0.label 等路径，任何字段变更触发全量重建（决策 1）
+                let first: any;
+                const deps = cm.collectDependencies(() => {
+                    first = (schema as any).choices;
+                    if (Array.isArray(first)) {
+                        const gKey = this.getOption("group");
+                        for (const item of first) {
+                            if (item == null || typeof item !== "object") continue;
+                            void item.label;
+                            void item.value;
+                            if (gKey) void item[gKey];
+                        }
+                    }
+                }, "read");
+                this._renderChoices(el, Array.isArray(first) ? first : []);
+                const rerender = () =>
+                    this._renderChoices(el, Array.isArray(schema.choices) ? schema.choices : []);
+                this.watchers.push(cm.watch(deps, () => this.engine.scheduler.schedule(rerender)));
+                return;
+            }
+        }
+
+        // 三源皆空：warn 一次，不生成
+        this.engine.logger.warn(
+            `x-model: <select x-model="${this.value}"> 无可选项（无静态 <option>、无 choices 配置、schema 无 choices），选项子树不生成`,
+        );
+    }
+
+    /**
+     * 全量重建 options 子树（无 diff，决策 1）并重放选中态。
+     *
+     * **group 分组**（决策 4）：`getOption("group")` 为字段名时按项的该字段值聚合到
+     * `<optgroup label>`——顺序遍历，无该字段的项渲染为顶层 `<option>`（可与组交错），
+     * 组按首次出现追加。group 仅作用于 choices 路径，静态手写不适用。
+     *
+     * choice 形态（决策 5）：缺 value → 省略属性走 HTML 原生回退（label 即 el.value）；
+     * 缺 label → 回退 `String(value)`；附加字段（如 aa:"x"）合法，作 group 键取值来源。
+     *
+     * 重建后经 `_scheduleSelectReplay` 推迟重放当前选中：编译期的「选项就绪晚于首渲」与
+     * 响应式变更场景共用同一条推迟路径（见 `_selectReplayFn` 注释）。
+     */
+    private _renderChoices(el: HTMLSelectElement, choices: ChoiceItem[]): void {
+        // 清空旧子树（含静态残留的空白文本）
+        while (el.firstChild) el.removeChild(el.firstChild);
+        const groupKey: string | undefined = this.getOption("group");
+        // 组按首次出现追加；顶层项直接 append（顺序遍历，可与组交错）
+        const groupEls = new Map<string, HTMLOptGroupElement>();
+        // 记录 default:true 第一项的 value（ADR-0028 选取依据；仅 choices 项可标记）
+        this._defaultTrueValue = undefined;
+        for (const item of choices) {
+            if (item == null || typeof item !== "object") continue;
+            const option = document.createElement("option");
+            // value 缺省 → 不设属性（HTML 原生回退：el.value === textContent）
+            if (item.value !== undefined && item.value !== null) {
+                option.value = String(item.value);
+            }
+            if (this._defaultTrueValue === undefined && item.default === true) {
+                this._defaultTrueValue = option.value;
+            }
+            option.textContent = item.label !== undefined && item.label !== null
+                ? String(item.label)
+                : String(item.value ?? "");
+            if (groupKey && item[groupKey] !== undefined && item[groupKey] !== null) {
+                const label = String(item[groupKey]);
+                let og = groupEls.get(label);
+                if (!og) {
+                    og = document.createElement("optgroup");
+                    og.label = label;
+                    groupEls.set(label, og);
+                    el.appendChild(og);
+                }
+                og.appendChild(option);
+            } else {
+                el.appendChild(option);
+            }
+        }
+        // 重放选中：值在集内 → 勾中；不在集内 → autoSelect 判定（ADR-0028 修订决策 3）。
+        // 统一走推迟重放：响应式变更时 el 已挂载，但复用同一路径保持行为一致
+        this._scheduleSelectReplay();
+    }
+
+    /** 读方向最近一次的显示值缓存（choices 重建后重放选中用；writeToDom 时更新） */
+    private _lastDisplayValue: any = undefined;
+
+    /**
+     * 推迟应用 select 选中态：缓存值不变，microtask 重放。
+     *
+     * 两类时序都必须推迟：① 编译期 el 是浅克隆（静态 option 随后才挂入）；② 编译产物经
+     * `engine.compile` 的 replaceChildren 搬运挂载，DOM 移动会重置 select 选中状态
+     * （happy-dom 实测，浏览器同险）。scheduler Set 按闭包引用去重——本方法固定复用
+     * 同一 `this._selectReplayFn`，同 tick 多次调度只跑一次，且总是取最新缓存值。
+     */
+    private _selectReplayFn = () => {
+        this._applySelectSelection(this._lastDisplayValue);
+    };
+
+    private _scheduleSelectReplay(): void {
+        this.engine.scheduler.schedule(this._selectReplayFn);
+    }
+
+    /**
+     * 应用 select 选中态（读方向写目标，严格 `===` 匹配，ADR-0026 决策 3 / Q11-a）。
+     *
+     * - 单选：`typeof display === "string"` 才写 `el.value`（option.value 恒字符串，字符串间
+     *   `===` 即浏览器原生匹配）；非字符串（数字/数组等）**不勾中任何项**（`selectedIndex=-1`），
+     *   warn 一次后自然退化——类型错误应出声，不参与自动选中（ADR-0028 决策 3）。
+     * - 多选：数组逐 option `selected = state.includes(option.value)`（严格 includes，非字符串
+     *   项恒不勾中）；非数组状态 warn 一次后恒不勾选。
+     * - **空值回填（ADR-0027 决策 5）**：display 为 undefined（空值且无 default）时单选回退
+     *   **首项默认**（渲染后第一个 option，含 optgroup 内首个）；多选回退 `[]`（全不勾）。
+     * - **自动选中（ADR-0028，默认开启）**：display 是字符串但不在渲染后的 options 值集内 →
+     *   选中 `default:true` 第一项（无则首项）并**回写 state**（与用户手选同一条 `_writeToState`
+     *   管道 + `_selfWriting` 置位，回写触发下游级联）；多选是**过滤式**（剔除数组中过期项回写）。
+     *   `autoSelect:false` 退回旧行为（不勾中不回写）。空选项集静默（无可选）。
+     */
+    private _applySelectSelection(display: any): void {
+        const el = this.el as HTMLSelectElement;
+        const autoSelect = this._resolveAutoSelect();
+        if (el.multiple) {
+            if (display != null && !Array.isArray(display) && !this._selectMismatchWarned) {
+                this._selectMismatchWarned = true;
+                this.engine.logger.warn(
+                    `x-model: <select multiple> 绑定 "${this.value}" 的状态为非数组（${typeof display}），勾选不生效。multiple 须配 string[] 状态。`,
+                );
+            }
+            const arr = Array.isArray(display) ? display : [];
+            // 收集渲染后的值集（autoSelect 过滤判定依据）
+            const optionValues = new Set<string>();
+            for (const option of el.options) optionValues.add(option.value);
+            const filtered = arr.filter((v) => typeof v === "string" && optionValues.has(v));
+            // 过滤式自动选中（ADR-0028 决策 4）：剔除过期项后回写；无变化不写
+            if (autoSelect && filtered.length !== arr.length) {
+                this._selfWriting = true;
+                this._writeToState(filtered);
+            }
+            for (const option of el.options) {
+                option.selected = filtered.includes(option.value);
+            }
+        } else {
+            if (typeof display !== "string" && !this._selectMismatchWarned && display !== undefined && display !== null) {
+                this._selectMismatchWarned = true;
+                this.engine.logger.warn(
+                    `x-model: 单选 <select> 绑定 "${this.value}" 的状态为非字符串（${Array.isArray(display) ? "array" : typeof display}），不勾中任何项。${Array.isArray(display) ? "多选请声明 .multiple 或 schema.multiple。" : "须配 string 状态或用 get 转换。"}`,
+                );
+            }
+            if (typeof display === "string") {
+                // 值在集内？
+                let inSet = false;
+                for (const option of el.options) {
+                    if (option.value === display) {
+                        inSet = true;
+                        break;
+                    }
+                }
+                if (inSet) {
+                    el.value = display;
+                } else if (autoSelect) {
+                    // 自动选中（ADR-0028 决策 1）：default:true 第一项 > 首项；选中并回写 state
+                    const pick = this._defaultTrueValue ?? el.options[0]?.value;
+                    if (pick !== undefined) {
+                        el.value = pick;
+                        this._selfWriting = true;
+                        this._writeToState(pick);
+                    }
+                    // 空选项集：pick undefined → 无可选，静默不动（决策 3）
+                } else {
+                    // autoSelect:false 旧行为（ADR-0026 决策 3 原样）：不勾中、不回写
+                    el.value = "";
+                }
+            } else if (display === undefined || display === null) {
+                // 空值回填·首项默认（ADR-0027 决策 5）：无 default 时空值勾中第一个 option
+                //（含 optgroup 内首个）——仅显示层，state 不回写
+                el.value = el.options[0]?.value ?? "";
+            } else {
+                // 严格匹配：非字符串（数字/数组等）→ -1（不勾中）
+                el.value = "";
+            }
+        }
+    }
+
     /**
      * input/change 事件处理：读 DOM 值 → 修饰符管道 → 写 state（flags 标识 + 防循环置位）。
      *
-     * 按 ControlKind 分派读源（ADR-0023 决策 1）：
+     * 按 ControlKind 分派读源（ADR-0023 决策 1 / ADR-0026 决策 3）：
      * - text-like：读 `el.value`，走 trim/number/boolean 修饰符管道；
      * - checkbox：读 `el.checked`（恒写布尔），修饰符管道空转（类型转换对布尔无意义）；
      * - radio：仅勾选时读 `el.value`（字符串），取消时不写（另一个 radio 会接管）；
-     *   值同样走修饰符管道（.boolean 对 radio 布尔对是主场景）。
+     *   值同样走修饰符管道（.boolean 对 radio 布尔对是主场景）；
+     * - select：单选读 `el.value`；多选读 selectedOptions 收集 `string[]`，数组逐项过管道
+     *   （ADR-0026 决策 8）。
      */
     private _handleInput() {
         if (!this.el) return;
         let v: any;
-        let usePipe = false; // text-like / radio 读 el.value 的才走管道
+        let usePipe = false; // text-like / radio / select 读字符串值的才走管道
         if (this._controlKind === "checkbox") {
             // checkbox：读 el.checked，恒写布尔（ADR-0023 决策 2）
             v = (this.el as HTMLInputElement).checked;
@@ -436,6 +781,19 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             // radio：仅勾选时写 el.value（字符串），取消时不写（另一个 radio 会接管）
             if (!(this.el as HTMLInputElement).checked) return; // 取消态不写入
             v = (this.el as HTMLInputElement).value;
+            usePipe = true;
+        } else if (this._controlKind === "select") {
+            const el = this.el as HTMLSelectElement;
+            if (el.multiple) {
+                // 多选：收集 selectedOptions 的 value 数组（决策 3）
+                v = Array.from(el.selectedOptions).map((o) => o.value);
+                // 数组逐项过管道（决策 8）
+                v = (v as string[]).map((item) => this._applyModifiers(item));
+                this._selfWriting = true;
+                this._writeToState(v);
+                return;
+            }
+            v = el.value;
             usePipe = true;
         } else {
             // text-like：读 el.value，走修饰符管道
@@ -457,16 +815,22 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
      *
      * 键序来源：指令选项键在前（书写序）+ 宿主选项键在后（缺失才回退，ADR-0007 两层
      * fallback 的顺序投影）——`getOption` 逐键查不到顺序，此处自聚合键序表。
+     * 键序表在实例生命周期内不变（指令/宿主选项编译期定格），缓存于 `_modifierKeys`，
+     * 免去每次输入事件的重聚合（性能审查发现 2）。
      */
+    private _modifierKeys: string[] | null = null;
+
     private _applyModifiers(v: any): any {
         if (this.getOption("trim") && typeof v === "string") v = v.trim();
-        const opts = this.options as Record<string, any> | undefined;
-        const host = this.binding?.hostOptions;
-        // 指令键（书写序）在前，宿主键（指令层缺失才回退）在后，去重
-        const keys = [...Object.keys(opts ?? {}), ...Object.keys(host ?? {})].filter(
-            (k, i, arr) => arr.indexOf(k) === i,
-        );
-        for (const key of keys) {
+        if (this._modifierKeys === null) {
+            const opts = this.options as Record<string, any> | undefined;
+            const host = this.binding?.hostOptions;
+            // 指令键（书写序）在前，宿主键（指令层缺失才回退）在后，去重
+            this._modifierKeys = [...Object.keys(opts ?? {}), ...Object.keys(host ?? {})].filter(
+                (k, i, arr) => arr.indexOf(k) === i,
+            );
+        }
+        for (const key of this._modifierKeys) {
             if (!this.getOption(key)) continue; // 值统一经 getOption（两层回退）
             if (key === "number") {
                 const n = Number(v);
@@ -523,12 +887,18 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     }
 
     /**
-     * 写 DOM（state→DOM 方向），含 get 变换与防循环跳过。
+     * 写 DOM（state→DOM 方向），含 get 变换、空值回填与防循环跳过。
      *
-     * 按 ControlKind 分派写目标（ADR-0023 决策 1）：
+     * 按 ControlKind 分派写目标（ADR-0023 决策 1 / ADR-0026 决策 3）：
      * - text-like：写 `el.value`；
      * - checkbox：写 `el.checked`（Boolean() coerce，ADR-0023 决策 2）；
-     * - radio：写 `el.checked = (display === el.value)`（值匹配，ADR 决策）。
+     * - radio：写 `el.checked = (display === el.value)`（值匹配，ADR 决策）；
+     * - select：经 `_applySelectSelection`（单选 String 写 el.value、多选逐 option 严格
+     *   `===` includes 勾选；类型不匹配 warn 一次后自然退化）。
+     *
+     * **空值回填（ADR-0027）**：get 变换后 display 落在 emptyValues 集内 → 显示 default
+     * 回填值（仅 text-like + select 参与；checkbox/radio 不参与）。每次读方向都判（无条件语义）。
+     * select 无 default 时回退首项默认（见 `_applySelectSelection`）。不回写 state。
      *
      * 防循环：`_selfWriting=true` 表示本次值变化由 onInput 触发 → 跳过回写（避免 getter 立即覆盖
      * 用户输入、避免冗余 DOM 写），重置标志后返回。其他场景（外部改 state、其他 x-model 实例写入）
@@ -537,12 +907,24 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     private writeToDom(stateValue: any) {
         if (this._selfWriting) {
             this._selfWriting = false;
+            // select：防循环跳过 DOM 回写，但**须刷新显示值缓存**——choices 重建后的
+            // 重放取 `_lastDisplayValue`，若不刷新会重放「自写之前的旧值」，与 state 分叉
+            //（实测：级联联动 + 自写 + 再联动的三段序列）。DOM 本身已是用户所选，无需重放。
+            if (this._controlKind === "select") this._lastDisplayValue = stateValue;
             return;
         }
         const getExpr = this.getOption("get");
         let display = stateValue;
         if (typeof getExpr === "string" && getExpr.trim() !== "") {
             display = this._evalGet(getExpr, stateValue);
+        }
+        // 空值回填（ADR-0027 决策 1/3/4）：仅 text-like + select 参与；判定在 get 之后
+        //（get 的产物是显示值）；default 取模板 > schema 两级，缓存判定后的显示值供重放
+        if (
+            (this._controlKind === "text" || this._controlKind === "select") &&
+            this._emptyValues.includes(display)
+        ) {
+            display = this._resolveDefault();
         }
         const el = this.el as HTMLInputElement | null;
         if (!el) return;
@@ -552,10 +934,57 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
         } else if (this._controlKind === "radio") {
             // radio：值匹配（state 值与 radio 的 value 属性比较）
             el.checked = display === el.value;
+        } else if (this._controlKind === "select") {
+            // select：缓存显示值（空值回填后的 default/undefined 标记），选中态推迟重放
+            this._lastDisplayValue = display;
+            this._scheduleSelectReplay();
         } else {
-            // text-like：写 el.value
+            // text-like：写 el.value（display 已过空值回填，undefined 即空串语义）
             el.value = display == null ? "" : String(display);
         }
+    }
+
+    /**
+     * 解析空值回填的 default（ADR-0027 决策 3）：模板 > schema 两级，静态值 only。
+     *
+     * - 模板：`getOption("default")`（`x-model-options="{default:...}"` / `x-options` 回退）；
+     * - schema：`configurable(v, {default: y})` 的 `default` 元数据（created 期静态读取缓存）；
+     * - 均无 → `undefined`（调用方按控件空值显示处理——text-like 空串、select 首项）。
+     */
+    private _resolveDefault(): any {
+        const tpl = this.getOption("default");
+        if (tpl !== undefined) return tpl;
+        return this._schemaDefault;
+    }
+
+    /** 静态读取 schema.default 元数据（configManager 缺席/表达式绑定/无 default 时 undefined） */
+    private _readSchemaDefault(): any {
+        const fullKey = this._fullConfigKey();
+        if (!fullKey) return undefined;
+        const cm = (this.engine.store as any).configManager;
+        const schema = (cm.state as Record<string, any>)[fullKey];
+        return schema?.default;
+    }
+
+    /** schema.autoSelect 元数据（ADR-0028 决策 2 第二级；undefined=未声明，由 _resolveAutoSelect 兜底） */
+    private _readSchemaAutoSelect(): boolean | undefined {
+        const fullKey = this._fullConfigKey();
+        if (!fullKey) return undefined;
+        const cm = (this.engine.store as any).configManager;
+        const schema = (cm.state as Record<string, any>)[fullKey];
+        const v = schema?.autoSelect;
+        return typeof v === "boolean" ? v : undefined;
+    }
+
+    /**
+     * 解析 autoSelect（ADR-0028 决策 2）：模板显式声明 > schema 元数据 > 默认 true。
+     * 模板侧 getOption 未声明时返回 undefined（两层回退穿透），与 boolean false 区分。
+     */
+    private _resolveAutoSelect(): boolean {
+        const tpl = this.getOption("autoSelect");
+        if (typeof tpl === "boolean") return tpl;
+        if (this._schemaAutoSelect !== undefined) return this._schemaAutoSelect;
+        return true;
     }
 
     /**
@@ -576,7 +1005,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             }
         }
         try {
-            return new Function("value", "scope", `with(scope){ return (${getExpr}); }`)(
+            return compileFn("value,scope", `with(scope){ return (${getExpr}); }`)(
                 value,
                 scopeCtx,
             );
@@ -605,7 +1034,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
             }
         }
         try {
-            new Function("$value", "scope", `with(scope){ ${setExpr} }`)($value, scopeCtx);
+            compileFn("$value,scope", `with(scope){ ${setExpr} }`)($value, scopeCtx);
         } catch (e: any) {
             this.engine.logger.warn(`x-model set "${setExpr}" 执行失败: ${e?.message ?? e}`);
         }
@@ -625,7 +1054,7 @@ export class ModelDirective extends AutoTemplateDirectiveBase {
     ): any[] {
         if (argsSrc == null || argsSrc.trim() === "") return [];
         try {
-            return new Function(injectName, "data", `with(data){return [${argsSrc}];}`)(
+            return compileFn(`${injectName},data`, `with(data){return [${argsSrc}];}`)(
                 injectVal,
                 scopeCtx,
             ) as any[];

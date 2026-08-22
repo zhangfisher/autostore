@@ -43,15 +43,15 @@
 
 - **运行时指令**（`x-loading`）：编译器「致盲」、**属性保留**在渲染 DOM，由 `MutationObserver` 在运行时驱动。响应式来源**只接受绝对路径**（运行时新增的 DOM 元素没有 scope 上下文）。
 
-#### 为什么需要 x-patch 哨兵？
+#### 为什么需要 x-scope 哨兵？
 
 `engine.patch(selector, updater)` 靠「模板元素 → scope」的正向桥定位运行元素。但**纯静态裸元素没有指令、没有插值，不会建 scope**，也就进不了正向桥——`patch` 找不到它。
 
-`x-patch` 就是为这种情况准备的零副作用哨兵指令：它让一个裸元素成为 scope、进入正向桥，从而能被 `patch` 定位，除此之外什么都不做。
+`x-scope` 就是为这种情况准备的零副作用哨兵指令：它让一个裸元素成为 scope、进入正向桥，从而能被 `patch` 定位，除此之外什么都不做。
 
 ```html
-<!-- 这个 div 原本是裸元素，加 x-patch 后即可被 engine.patch('#box', ...) 定位 -->
-<div id="box" x-patch></div>
+<!-- 这个 div 原本是裸元素，加 x-scope 后即可被 engine.patch('#box', ...) 定位 -->
+<div id="box" x-scope></div>
 ```
 
 详见[动态模板](./patch.md)。

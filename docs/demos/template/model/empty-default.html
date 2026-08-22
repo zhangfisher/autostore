@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 空值与默认值</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
+            .card + .card {
+                margin-top: 1rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 空值回填：emptyValues（默认 [undefined,null,NaN]+附加）判定，default（模板>schema）回填显示 -->
+        <div class="demo-app section">
+            <p class="help" style="margin-bottom: 1rem">
+                状态落在空值集内时回填控件<b>显示</b>（state 不动）。默认集
+                <code>[undefined, null, NaN]</code>，声明是附加；<code>default</code>
+                模板 > schema 两级；select 无 default 时勾首项（仅显示层）。
+            </p>
+
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">① text-like：空串显示 + default 回填</p>
+                </header>
+                <div class="card-content">
+                    <div class="field">
+                        <label class="label">昵称（state = null）</label>
+                        <div class="control">
+                            <!-- 空值显示空串（原 "null" 是强转意外，已修正） -->
+                            <input class="input" x-model="nickname" />
+                        </div>
+                        <p class="help">空值 → 空串显示</p>
+                    </div>
+                    <div class="field">
+                        <label class="label">备注（default 回填）</label>
+                        <div class="control">
+                            <input
+                                class="input"
+                                x-model="remark"
+                                x-model-options="{default:'未填写'}"
+                            />
+                        </div>
+                        <p class="help">state.remark 为空时显示「未填写」，输入后正常双向</p>
+                    </div>
+                    <div class="field">
+                        <label class="label">计数（emptyValues:[0] 附加）</label>
+                        <div class="control">
+                            <input
+                                class="input"
+                                x-model="count"
+                                x-model-options="{emptyValues:[0],default:'—'}"
+                            />
+                        </div>
+                        <p class="help">0 也算空（附加声明），显示「—」</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">② select：首项默认 + default 优先</p>
+                </header>
+                <div class="card-content">
+                    <div class="field">
+                        <label class="label">城市（state = undefined → 勾首项，不回写）</label>
+                        <div class="control">
+                            <div class="select">
+                                <select x-model="city">
+                                    <option value="hz">杭州</option>
+                                    <option value="nb">宁波</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="help">
+                            city = <strong x-text="city === undefined ? 'undefined（未回写）' : city"></strong>
+                        </p>
+                    </div>
+                    <div class="field">
+                        <label class="label">品牌（default 声明优先于首项）</label>
+                        <div class="control">
+                            <div class="select">
+                                <select
+                                    x-model="brand"
+                                    x-model-options="{default:'NIO',choices:[
+                                        {value:'ZEEKR',label:'极氪'},
+                                        {value:'NIO',label:'蔚来'},
+                                        {value:'XPENG',label:'小鹏'}
+                                    ]}"
+                                ></select>
+                            </div>
+                        </div>
+                        <p class="help">
+                            brand = <strong x-text="brand === undefined ? 'undefined' : brand"></strong>（显示「蔚来」）
+                        </p>
+                    </div>
+                    <div class="field">
+                        <label class="label">多选品牌（空值全不勾 + default 数组）</label>
+                        <div class="control">
+                            <div class="select is-multiple">
+                                <select
+                                    multiple
+                                    x-model="brands"
+                                    x-model-options="{default:['ZEEKR'],choices:[
+                                        {value:'ZEEKR',label:'极氪'},
+                                        {value:'NIO',label:'蔚来'}
+                                    ]}"
+                                ></select>
+                            </div>
+                        </div>
+                        <p class="help">
+                            brands =
+                            <strong x-text="JSON.stringify(brands)"></strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="buttons" style="margin-top: 1rem">
+                <button class="button is-primary is-light" type="button" @click="toEmpty">
+                    全部置空（观察回填弹回）
+                </button>
+                <button class="button is-light" type="button" @click="fill">
+                    填入实际值
+                </button>
+            </div>
+
+            <div
+                class="result"
+                x-text="JSON.stringify({ nickname, remark, count, city, brand, brands }, null, 2)"
+            ></div>
+        </div>
+
+        <script>
+            const { ConfigManager, configurable } = AutoStoreSpaces;
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+
+            const configManager = new ConfigManager(
+                { load: async () => ({}), save: async () => {} },
+                { autoload: false, global: false },
+            );
+
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    nickname: null,
+                    remark: undefined,
+                    count: 0,
+                    city: undefined,
+                    brand: null,
+                    brands: null,
+                    // schema.default 第二级示例：未用（本 demo 用模板级），留作对照
+                    tip: configurable(undefined, { default: "schema 级默认示例" }),
+                },
+                {
+                    storeOptions: { configManager, configKey: "demo" },
+                    actions: {
+                        toEmpty() {
+                            // 运行中变空 → 每次读方向都判（ADR-0027 决策 4），显示弹回回填值
+                            engine.state.nickname = undefined;
+                            engine.state.remark = null;
+                            engine.state.count = 0;
+                            engine.state.brand = undefined;
+                            engine.state.brands = null;
+                        },
+                        fill() {
+                            engine.state.nickname = "zhang";
+                            engine.state.remark = "有备注";
+                            engine.state.count = 5;
+                            engine.state.city = "hz";
+                            engine.state.brand = "ZEEKR";
+                            engine.state.brands = ["ZEEKR", "NIO"];
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

@@ -164,9 +164,9 @@ describe("engine.patch - 边界与守卫", () => {
     });
 });
 
-describe("engine.patch - 哨兵指令 x-patch", () => {
-    test("纯静态裸元素挂 x-patch 后建 scope，可 patch", () => {
-        const { root, engine } = mount(`<div id="app"><div id="ws" x-patch></div></div>`, {
+describe("engine.patch - 结构占位指令 x-scope", () => {
+    test("纯静态裸元素挂 x-scope 后建 scope，可 patch", () => {
+        const { root, engine } = mount(`<div id="app"><div id="ws" x-scope></div></div>`, {
             content: "hello",
         });
         engine.patch("#ws", (ws) => {

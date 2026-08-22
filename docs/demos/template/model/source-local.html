@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 数据来源：本地 x-data</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+
+    <body>
+        <!-- 来源一：本地 x-data——表单草稿/临时开关就近存放，不污染全局 store -->
+        <div class="demo-app section">
+            <h3 class="title is-5">来源一：本地 x-data</h3>
+            <div x-data="{ draft: '', urgent: false }">
+                <div class="field">
+                    <label class="label">草稿内容（本地字段 draft）</label>
+                    <div class="control">
+                        <input
+                            class="input"
+                            x-model="draft"
+                            x-model-options="{set:'draft=$value'}"
+                        />
+                    </div>
+                </div>
+                <label class="checkbox">
+                    <input
+                        type="checkbox"
+                        x-model="urgent"
+                        x-model-options="{set:'urgent=$value'}"
+                    />
+                    紧急（本地字段 urgent）
+                </label>
+                <p class="help">
+                    本地 draft = <strong x-text="draft || '（空）'"></strong>，
+                    urgent = <strong x-text="urgent"></strong>——不进全局 store
+                </p>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            // 全局 store 留空：draft/urgent 完全由本层 x-data 提供
+            new AutoTemplateEngine(document.querySelector(".demo-app"), {}, {});
+        </script>
+    </body>
+</html>

@@ -338,7 +338,7 @@ export class AutoTemplateCompiler {
      *
      * 供 `engine.patch` 经 selector（对 `engine.template` querySelector）定位 patch 目标的 scope，
      * 再取 `scope.el` 得运行元素。仅含指令或 `{{}}` 插值的元素（有 scope）能命中；
-     * 纯静态裸元素返回 undefined（需挂 `x-patch` 哨兵建 scope）。
+     * 纯静态裸元素返回 undefined（需挂 `x-scope` 哨兵建 scope）。
      */
     getScopeByTemplate(templateEl: HTMLElement): AutoTemplateScope | undefined {
         return this.templateScopeMap.get(templateEl);

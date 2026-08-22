@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 数据来源：三来源混用</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .box-outline {
+                border: 1px dashed #dbdbdb;
+                border-radius: 6px;
+                padding: 0.75rem;
+                margin-top: 0.5rem;
+            }
+            .tag-source {
+                margin-left: 0.4rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 三来源混用：一个表单同时取数——本地草稿 + 祖先分区值 + 全局正式数据，按 scope 链就近命中 -->
+        <div class="demo-app section">
+            <h3 class="title is-5">三来源混用</h3>
+            <p class="help" style="margin-bottom: 1rem">
+                同一表单的三个输入分别命中：本地 x-data（草稿）／ 祖先
+                x-data（分区共享）／ 全局状态（正式数据）。
+            </p>
+
+            <div class="box-outline" x-data="{ remark: '' }">
+                <!-- 本地：本卡片草稿 -->
+                <div class="field">
+                    <label class="label">
+                        备注草稿
+                        <span class="tag is-light is-small tag-source">本地 x-data</span>
+                    </label>
+                    <div class="control">
+                        <input
+                            class="input"
+                            x-model="remark"
+                            x-model-options="{set:'remark=$value'}"
+                        />
+                    </div>
+                </div>
+                <!-- 汇总行须在声明 remark 的容器内（scope 链就近解析） -->
+                <p class="help">
+                    本地 remark = <strong x-text="remark || '（空）'"></strong>；
+                    全局 user.name = <strong x-text="user.name"></strong>
+                    <!-- user.name 是全局状态，任何位置可见 -->
+                </p>
+
+                <div class="box-outline" x-data="{ section: 'basic' }">
+                    <!-- 祖先（对更深控件而言）：分区共享 -->
+                    <div class="field">
+                        <label class="label">
+                            分区
+                            <span class="tag is-info is-light is-small tag-source">祖先 x-data</span>
+                        </label>
+                        <div class="control">
+                            <div class="select">
+                                <select
+                                    x-model="section"
+                                    x-model-options="{set:'section=$value'}"
+                                >
+                                    <option value="basic">基础信息</option>
+                                    <option value="advanced">高级设置</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- section 的显示放在声明它的容器内 -->
+                    <p class="help">
+                        祖先 section = <strong x-text="section"></strong>（本容器及后代可见）
+                    </p>
+
+                    <!-- 全局：正式数据 -->
+                    <div class="field">
+                        <label class="label">
+                            用户名
+                            <span class="tag is-primary is-light is-small tag-source">全局状态</span>
+                        </label>
+                        <div class="control">
+                            <input class="input" x-model="user.name" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    // 全局正式数据（user 跨组件共享）
+                    user: { name: "zhang" },
+                },
+                {},
+            );
+        </script>
+    </body>
+</html>

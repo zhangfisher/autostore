@@ -137,7 +137,8 @@ export interface AutoWidgetSelect extends BaseInputAttributes {
     // select 的 value 在 multiple 模式下可以是数组
     value?: string | string[];
     defaultValue?: string | string[];
-    select?: {label:string,value:any}[]
+    // label/value 均可缺省（走 HTML 原生回退），附加字段可作模板 group 分组键（ADR-0026）
+    choices?: { label?: string; value?: any; default?: boolean; [k: string]: any }[];
 }
 
 // 映射类型，用于快速查找

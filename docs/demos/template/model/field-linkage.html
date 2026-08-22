@@ -71,7 +71,7 @@
                         label: "IP地址",
                         placeholder: "请输入 IP 地址",
                         // 字段联动核心：enable 是计算属性，取引用主 store 的 dhcp（取反）
-                        // ref() 来自 @autostorejs/plugins/refState——dhcp 变化时 enable 响应式重算
+                        // ref() 是 core 内置能力——dhcp 变化时 enable 响应式重算
                         enable: computed((scope, { ref }) => !ref("dhcp")),
                     }),
                 },

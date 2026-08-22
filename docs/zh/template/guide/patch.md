@@ -6,7 +6,7 @@
 
 ## 快速入门
 
-`#box` 是 `x-patch` 哨兵 scope。「重建子树」每次修改 `#box` 模板并触发子树重建（多出一个计数节点）；「只改 content」则走普通响应式，不重建结构。
+`#box` 是 `x-scope` 哨兵 scope。「重建子树」每次修改 `#box` 模板并触发子树重建（多出一个计数节点）；「只改 content」则走普通响应式，不重建结构。
 
 <demo html="template/patch/rebuild.html"/>
 
@@ -51,14 +51,14 @@ patch 只重建目标子树，**其余子树原封不动**——焦点、滚动�
 
 `patch` 靠「模板元素 → scope」的正向桥定位运行元素。只有**含指令或插值的元素**才会建 scope、进正向桥。
 
-纯静态裸元素（无指令、无插值）没有 scope，`patch` 找不到它——这时用 **`x-patch` 哨兵**让它成为 scope：
+纯静态裸元素（无指令、无插值）没有 scope，`patch` 找不到它——这时用 **`x-scope` 哨兵**让它成为 scope：
 
 ```html
-<!-- 这个 div 原本是裸元素，加 x-patch 后即可被 patch 定位 -->
-<div id="box" x-patch></div>
+<!-- 这个 div 原本是裸元素，加 x-scope 后即可被 patch 定位 -->
+<div id="box" x-scope></div>
 ```
 
-`x-patch` 是零副作用指令，唯一作用就是让元素进入正向桥、可被 `patch` 定位。
+`x-scope` 是零副作用指令，唯一作用就是让元素进入正向桥、可被 `patch` 定位。
 
 ### 动态区域限制
 

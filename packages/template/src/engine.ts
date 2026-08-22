@@ -425,7 +425,7 @@ export class AutoTemplateEngine<
      * 开发者在 `updater` 回调里就地修改 `engine.template` 的某个 scope 子树（回调入参即命中的
      * 模板元素），本方法据 `updater` 返回值决定重建范围，**只动 patch 目标子树，保留其余运行态**
      * （焦点/滚动/未提交输入）。selector 对 `engine.template` querySelector；命中须为 scope
-     * （含指令或 `{{}}` 插值的元素；纯静态裸元素需挂 `x-patch` 哨兵）。
+     * （含指令或 `{{}}` 插值的元素；纯静态裸元素需挂 `x-scope` 哨兵）。
      *
      * **返回四态**（判定用 `===`/`typeof`，`undefined != null` 严格区分）：
      * - `void`/`undefined` 或 `=== templateEl` → **子树重建**（复用 `recompileSubtree`）
@@ -459,7 +459,7 @@ export class AutoTemplateEngine<
         const scope = this.compiler.getScopeByTemplate(T);
         if (!scope) {
             this.logger.warn(
-                `engine.patch: "${selector}" 非 scope 元素（无指令/插值），需挂 x-patch`,
+                `engine.patch: "${selector}" 非 scope 元素（无指令/插值），需挂 x-scope`,
             );
             return this;
         }

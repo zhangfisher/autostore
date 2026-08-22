@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 数据来源：全局状态</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+
+    <body>
+        <!-- 来源三：全局状态——跨组件共享的正式数据，读写均走 store.state -->
+        <div class="demo-app section">
+            <h3 class="title is-5">来源三：全局状态</h3>
+            <div class="field">
+                <label class="label">用户名（全局 user.name）</label>
+                <div class="control">
+                    <input class="input" x-model="user.name" />
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">邮箱（全局 user.email）</label>
+                <div class="control">
+                    <input class="input" x-model="user.email" />
+                </div>
+            </div>
+            <p class="help">
+                user = <strong x-text="JSON.stringify(user)"></strong>——多组件共享同一份
+            </p>
+            <div class="buttons">
+                <button class="button is-light" @click="programSet">程序更新（模拟其他组件改动）</button>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    // 全局正式数据：任何组件改动全站同步
+                    user: { name: "zhang", email: "zhang@example.com" },
+                },
+                {
+                    actions: {
+                        programSet() {
+                            engine.state.user.name = "程序更新";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

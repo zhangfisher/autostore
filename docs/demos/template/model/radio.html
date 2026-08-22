@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
     <head>
         <meta charset="UTF-8" />
@@ -7,19 +7,36 @@
         <script src="/autostore/template.js"></script>
         <link rel="stylesheet" href="/autostore/bulma.min.css" />
         <style>
-            .radio-group { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-            .radio-group label { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
-            .result { background: #f5f5f5; padding: 0.75rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; margin-top: 1rem; white-space: pre-wrap; }
+            .radio-group {
+                display: flex;
+                gap: 1.5rem;
+                flex-wrap: wrap;
+            }
+            .radio-group label {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                cursor: pointer;
+            }
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
         </style>
     </head>
 
     <body>
         <!-- radio 单值选择：el.checked = (state === el.value)，勾选时 state = el.value -->
         <div class="demo-app section">
-            <h3 class="title is-5">radio 单值选择</h3>
-            <p class="help" style="margin-bottom: 1rem;">
-                读方向：<code>el.checked = (state === el.value)</code>，写方向：仅勾选时 <code>state = el.value</code>。
-                同名 radio 互斥，共享一个 state 值。必须声明 <code>value</code> 属性。
+            <p class="help" style="margin-bottom: 1rem">
+                读方向：<code>el.checked = (state === el.value)</code>，写方向：仅勾选时
+                <code>state = el.value</code>。 同名 radio 互斥，共享一个 state 值。必须声明
+                <code>value</code> 属性。
             </p>
 
             <div class="field">
@@ -45,15 +62,30 @@
                 <label class="label">学历</label>
                 <div class="radio-group">
                     <label class="radio">
-                        <input type="radio" name="education" value="high-school" x-model="form.education" />
+                        <input
+                            type="radio"
+                            name="education"
+                            value="high-school"
+                            x-model="form.education"
+                        />
                         高中
                     </label>
                     <label class="radio">
-                        <input type="radio" name="education" value="bachelor" x-model="form.education" />
+                        <input
+                            type="radio"
+                            name="education"
+                            value="bachelor"
+                            x-model="form.education"
+                        />
                         本科
                     </label>
                     <label class="radio">
-                        <input type="radio" name="education" value="master" x-model="form.education" />
+                        <input
+                            type="radio"
+                            name="education"
+                            value="master"
+                            x-model="form.education"
+                        />
                         硕士
                     </label>
                     <label class="radio">
@@ -64,8 +96,10 @@
                 <p class="help">education = <strong x-text="form.education"></strong></p>
             </div>
 
-            <div class="buttons" style="margin-top: 1rem;">
-                <button class="button is-primary is-light" type="button" @click="programSet">设置为「女 / 博士」（程序更新）</button>
+            <div class="buttons" style="margin-top: 1rem">
+                <button class="button is-primary is-light" type="button" @click="programSet">
+                    设置为「女 / 博士」（程序更新）
+                </button>
                 <button class="button is-light" type="button" @click="reset">重置</button>
             </div>
 

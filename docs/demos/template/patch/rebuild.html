@@ -9,12 +9,12 @@
     </head>
 
     <body>
-        <!-- #box 是 x-patch 哨兵 scope，可被 engine.patch 定位 -->
+        <!-- #box 是 x-scope 哨兵 scope，可被 engine.patch 定位 -->
         <div class="demo-app section">
             <div class="block">
                 当前 content：<span class="has-text-primary has-text-weight-semibold" x-text="content"></span>
             </div>
-            <div id="box" class="card" x-patch>
+            <div id="box" class="card" x-scope>
                 <div class="card-content"><p x-text="content"></p></div>
             </div>
             <div class="buttons">

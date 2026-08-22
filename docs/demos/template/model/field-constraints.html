@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 字段联动：约束与提示联动</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 字段联动·约束与提示：required/readonly/enable/placeholder 全部为计算属性 -->
+        <div class="demo-app section">
+            <h3 class="title is-5">字段联动：约束与提示联动</h3>
+            <p class="help" style="margin-bottom: 1rem">
+                schema 的 <code>required</code> / <code>enable</code> /
+                <code>placeholder</code> 均为计算属性——勾选「高级模式」后备注变必填、提示切换；
+                部署方式选 <code>docker</code> 时端口输入框启用并给出建议值提示，其余方式禁用。
+            </p>
+
+            <div class="field">
+                <label class="label">发布配置</label>
+                <label class="checkbox">
+                    <input type="checkbox" x-model="advanced" />
+                    高级模式（开启后备注必填）
+                </label>
+            </div>
+
+            <div class="field">
+                <label class="label">部署方式</label>
+                <div class="control">
+                    <div class="select">
+                        <select x-model="deploy">
+                            <option value="static">静态托管</option>
+                            <option value="node">Node 服务</option>
+                            <option value="docker">Docker 容器</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">
+                    备注（required + placeholder 联动，检查元素查看属性变化）
+                </label>
+                <div class="control">
+                    <!-- 只写 x-model：required/placeholder 由 schema 计算属性驱动 -->
+                    <input class="input" x-model="remark" />
+                </div>
+                <p class="help">
+                    required = <strong x-text="advanced ? '是' : '否'"></strong>（跟随高级模式）
+                </p>
+            </div>
+
+            <div class="field">
+                <label class="label">容器端口（enable 联动：仅 docker 可编辑）</label>
+                <div class="control">
+                    <input class="input" x-model.number="port" />
+                </div>
+                <p class="help">
+                    port = <strong x-text="port"></strong>（非 docker 部署时输入框禁用）
+                </p>
+            </div>
+
+            <div class="result" x-text="JSON.stringify({ advanced, deploy, remark, port }, null, 2)"></div>
+        </div>
+
+        <script>
+            const { ConfigManager, configurable, computed } = AutoStoreSpaces;
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+
+            const configManager = new ConfigManager(
+                { load: async () => ({}), save: async () => {} },
+                { autoload: false, global: false },
+            );
+
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    advanced: false,
+                    deploy: "static",
+                    remark: configurable("", {
+                        // required 联动：高级模式开启时必填
+                        required: computed((scope, { ref }) => ref("advanced")),
+                        // placeholder 联动：按 advanced 切换提示文案
+                        placeholder: computed((scope, { ref }) =>
+                            ref("advanced")
+                                ? "必填：说明高级配置原因"
+                                : "备注（可选）",
+                        ),
+                    }),
+                    port: configurable(8080, {
+                        // enable 联动：仅 docker 部署时可编辑（enable→disabled 取反注入）
+                        enable: computed((scope, { ref }) => ref("deploy") === "docker"),
+                        // placeholder 同步联动给出建议
+                        placeholder: computed((scope, { ref }) =>
+                            ref("deploy") === "docker"
+                                ? "容器内部端口，如 8080"
+                                : "仅 Docker 部署可编辑",
+                        ),
+                    }),
+                },
+                {
+                    storeOptions: { configManager, configKey: "deploy" },
+                    actions: {},
+                },
+            );
+        </script>
+    </body>
+</html>

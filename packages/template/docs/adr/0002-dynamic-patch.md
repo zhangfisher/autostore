@@ -28,7 +28,7 @@
 
 ### 2. 补丁边界 = scope（Compile/Hybrid 指令元素）
 
-`patch` 只接受**有 scope 的元素**作为目标——即模板中含指令的元素（经 `compileElement` 建 scope 并登记，`compiler.ts:113-118`）。裸元素不可直接 patch；需先挂哨兵指令 `x-patch`（见决策 6）成为 scope 锚——等效 `x-data="{}"` 但无副作用、更轻。
+`patch` 只接受**有 scope 的元素**作为目标——即模板中含指令的元素（经 `compileElement` 建 scope 并登记，`compiler.ts:113-118`）。裸元素不可直接 patch；需先挂哨兵指令 `x-scope`（见决策 6）成为 scope 锚——等效 `x-data="{}"` 但无副作用、更轻。
 
 **与 [ADR-0001] 通道划分的自洽**：scope 元素 = Compile/Hybrid 指令元素（走 scope 通道，靠订阅反应）；纯 Runtime 指令（`x-loading`）**不建 scope**，但其 observer 通道**本就响应原生 DOM 变更**（ADR-0001），无需 patch。故"patch 边界 = scope"恰好等价于"patch 只服务 scope 通道指令"，边界干净、无遗漏。
 
@@ -71,17 +71,17 @@ patch 目标若处于**动态区域**——其模板祖先链上存在 `ownsChil
 
 **检查 O(树深)**：patch 时沿 `templateEl.parentElement` 向上扫，命中 `WeakMap<模板el, scope>` 中带 `ownsChildren` 指令的 scope 即判定。
 
-### 6. 哨兵指令 `x-patch`（裸元素的 scope 锚）
+### 6. 哨兵指令 `x-scope`（裸元素的 scope 锚）
 
-裸元素（无指令）无法直接 patch。借用 `x-data="{}"` 语义不符（其声明响应式数据域、空域纯占位，且会建 `store.state._scopes[id]` 条目），故引入**零副作用哨兵指令 `x-patch`**：
+裸元素（无指令）无法直接 patch。借用 `x-data="{}"` 语义不符（其声明响应式数据域、空域纯占位，且会建 `store.state._scopes[id]` 条目），故引入**零副作用哨兵指令 `x-scope`**：
 
 - **kind = Compile**；`created`/`compile`/`destroy` 全 no-op；编译期属性剥除。
 - **唯一作用**：让 `hasDirectives(template)` 为 true → `compileElement` 建 scope（`compiler.ts:113-118`）→ 元素进正向桥 `WeakMap`，成为可 patch 锚。
 - **不建数据域**：无 `_scopes[id]` 条目、无 `dataScope`、不参与 `getContext` 层叠——比 `x-data="{}"` 更轻。
-- **命名**：与 `engine.patch` 同名，`patch('#x')` 时 `#x` 上挂 `x-patch`，心智一致。
+- **命名**：与 `engine.patch` 同名，`patch('#x')` 时 `#x` 上挂 `x-scope`，心智一致。
 
 ```html
-<div id="workspace" x-patch></div>
+<div id="workspace" x-scope></div>
 ```
 
 ```js
@@ -104,14 +104,14 @@ engine.patch("#workspace", () => '<p x-text="content"></p>');
 - ✅ 保留未改动子树运行态（增量核心价值）。
 - ✅ 与 [ADR-0001] 通道划分自洽：patch 管 scope 通道；**dispatcher 透明**——patch 插入/删除节点时 runtime 指令 mount/unmount 由 `RuntimeObserverDispatcher`（[ADR-0003]）的 MutationObserver 自动处理，patch 不直接操作。
 - ✅ **发 `engine/patch/before|after` 事件**（对齐 `compile`/`data`，经 `broadcast` 门控，无订阅零成本）。
-- ✅ **patch 边界 = 有 scope 的元素** = 含指令（Compile/Hybrid）**或**含 `{{}}` 插值（合成 scope，[ADR-0004]）；纯静态裸元素挂 `x-patch` 哨兵。
+- ✅ **patch 边界 = 有 scope 的元素** = 含指令（Compile/Hybrid）**或**含 `{{}}` 插值（合成 scope，[ADR-0004]）；纯静态裸元素挂 `x-scope` 哨兵。
 - ⚠️ `engine.scopes` 的 `WeakRef` entry destroy 后不自动清理（`_recompileSubtree` 同样未清，既存特性）；patch 高频替换放大堆积——本次不修。
 - ⚠️ updater 抛错 / 编译失败后，模板可能已变更但运行树未同步（未定义状态，文档声明）。
 
 ## 待决
 
 - ~~**scope 自身指令变更的处置**~~ → **已决**：`updater` 返回新节点（`!== templateEl`）触发"替换自身"重建，解锁改 scope 自身指令（决策 4）。
-- ~~**零副作用哨兵指令**~~ → **已决**：引入 `x-patch`（决策 6），等效 `x-data="{}"` 但无副作用、不建数据域。
+- ~~**零副作用哨兵指令**~~ → **已决**：引入 `x-scope`（决策 6），等效 `x-data="{}"` 但无副作用、不建数据域。
 - ~~**patch 非 scope 元素的行为**~~ → **已决（实现）**：warn 忽略，不抛错（低频误用，柔降级）。
 - ~~**动态区域内 patch**~~ → **已决（实现）**：拒绝（warn），不升级重建。
 - ~~**`updater` 抛错**~~ → **已决（实现）**：记 error 日志 + 不重建（模板可能已被部分修改，状态不一致属未定义）。

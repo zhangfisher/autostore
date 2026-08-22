@@ -46,14 +46,13 @@
 </div>
 ```
 
-### 与 x-data / x-patch 的关系
+### 与 x-data 的关系
 
-`x-scope` 与同优先级（priority = 200）的 `x-data`、零副作用的 `x-patch` 都「让元素建 scope」，但职责正交：
+`x-scope` 与同优先级（priority = 200）的 `x-data` 都「让元素建 scope」，但职责正交：
 
 | 指令 | 是否建数据域 | 职责 |
 | --- | --- | --- |
 | `x-data` | ✅ 注入局部响应式数据 | 为子树表达式提供就近的临时状态 |
-| `x-patch` | ❌ | 让纯静态裸元素进入正向桥，能被 `engine.patch` 定位 |
 | `x-scope` | ❌ | 为纯容器提供 scope 锚点（`x-component` 归属 + scope 链边界） |
 
 `x-scope` 等效于 `x-data="{}"`（空局部数据）的 scope 建立效果，但更轻、更语义化——明确表达「我只是个结构锚点，不携带任何数据」。

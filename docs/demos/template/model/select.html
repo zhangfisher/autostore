@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · select 选择</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
+            .card + .card {
+                margin-top: 1rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- select：选项源三级优先（静态 option > 模板 choices > schema choices 响应式） -->
+        <div class="demo-app section">
+            <p class="help" style="margin-bottom: 1rem">
+                选项源三级优先：静态 <code>&lt;option&gt;</code> ＞ 模板
+                <code>choices</code>（x-model-options）＞ schema <code>choices</code>（响应式）。
+                单选 state 为 <code>string</code>，多选（<code>.multiple</code>）为
+                <code>string[]</code>，默认事件 <code>change</code>。
+            </p>
+
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">① 静态 option（最优先）</p>
+                </header>
+                <div class="card-content">
+                    <div class="field">
+                        <label class="label">品牌（手写选项）</label>
+                        <div class="control">
+                            <div class="select">
+                                <select x-model="form.brand">
+                                    <option value="ZEEKR">极氪</option>
+                                    <option value="NIO">蔚来</option>
+                                    <option value="XPENG">小鹏</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="help">brand = <strong x-text="form.brand"></strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">② 模板 choices + group 分组</p>
+                </header>
+                <div class="card-content">
+                    <div class="field">
+                        <label class="label">车型（choices 按 category 字段分组）</label>
+                        <div class="control">
+                            <div class="select">
+                                <select
+                                    x-model="form.model"
+                                    x-model-options="{group:'category',choices:[
+                                        {value:'001',label:'极氪 001',category:'轿车'},
+                                        {value:'007',label:'极氪 007',category:'轿车'},
+                                        {value:'X9',label:'小鹏 X9',category:'MPV'},
+                                        {value:'ES6',label:'蔚来 ES6',category:'SUV'},
+                                        {value:'C11',label:'零跑 C11',category:'SUV'}
+                                    ]}"
+                                ></select>
+                            </div>
+                        </div>
+                        <p class="help">
+                            model = <strong x-text="form.model"></strong>（无 category
+                            字段的项会渲染为顶层选项）
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">③ schema choices（响应式动态选项）</p>
+                </header>
+                <div class="card-content">
+                    <div class="field">
+                        <label class="label">城市（选项来自 schema，动态增删）</label>
+                        <div class="control">
+                            <div class="select">
+                                <select x-model="form.city"></select>
+                            </div>
+                        </div>
+                        <p class="help">city = <strong x-text="form.city"></strong></p>
+                        <div class="buttons" style="margin-top: 0.5rem">
+                            <button
+                                class="button is-primary is-light is-small"
+                                type="button"
+                                @click="addCity"
+                            >
+                                添加城市
+                            </button>
+                            <button
+                                class="button is-light is-small"
+                                type="button"
+                                @click="removeCity"
+                            >
+                                删除首个城市
+                            </button>
+                            <button
+                                class="button is-light is-small"
+                                type="button"
+                                @click="renameCity"
+                            >
+                                改首个城市 label
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="field" style="margin-top: 1rem">
+                        <label class="label">多选品牌（.multiple，state 为 string[]）</label>
+                        <div class="control">
+                            <div class="select is-multiple">
+                                <select multiple x-model="form.brands"></select>
+                            </div>
+                        </div>
+                        <p class="help">
+                            brands =
+                            <strong x-text="JSON.stringify(form.brands)"></strong>（multiple 与 size
+                            由 schema 注入）
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result" x-text="JSON.stringify(form, null, 2)"></div>
+        </div>
+
+        <script>
+            const { ConfigManager, configurable } = AutoStoreSpaces;
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+
+            const configManager = new ConfigManager(
+                { load: async () => ({}), save: async () => {} },
+                { autoload: false, global: false },
+            );
+
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    form: {
+                        brand: "ZEEKR",
+                        model: "001",
+                        // schema choices：响应式，可运行时增删改（全量重建选项子树并保持选中）
+                        city: configurable("hz", {
+                            choices: [
+                                { value: "hz", label: "杭州" },
+                                { value: "sh", label: "上海" },
+                                { value: "bj", label: "北京" },
+                            ],
+                        }),
+                        // multiple/size 元数据（无显式声明时注入）+ choices
+                        brands: configurable(["ZEEKR", "NIO"], {
+                            multiple: true,
+                            size: 4,
+                            choices: [
+                                { value: "ZEEKR", label: "极氪" },
+                                { value: "NIO", label: "蔚来" },
+                                { value: "XPENG", label: "小鹏" },
+                                { value: "LEAPMOTOR", label: "零跑" },
+                            ],
+                        }),
+                    },
+                },
+                {
+                    // configKey：显式命名 schema 前缀（缺省时 core 自动生成随机 id，
+                    // action 侧按 "demo.form.city" 定位 schema 才稳定可寻址）
+                    storeOptions: { configManager, configKey: "demo" },
+                    actions: {
+                        addCity() {
+                            const schema = configManager.state["demo.form.city"];
+                            const cities = [
+                                { value: "sz", label: "深圳" },
+                                { value: "cd", label: "成都" },
+                                { value: "wh", label: "武汉" },
+                                { value: "xa", label: "西安" },
+                                { value: "cs", label: "长沙" },
+                            ];
+                            // 依次补入尚未收录的城市
+                            const existing = new Set(schema.choices.map((c) => c.value));
+                            const next = cities.find((c) => !existing.has(c.value));
+                            if (next) schema.choices = [...schema.choices, next];
+                        },
+                        removeCity() {
+                            const schema = configManager.state["demo.form.city"];
+                            if (schema.choices.length > 1) schema.choices = schema.choices.slice(1);
+                        },
+                        renameCity() {
+                            const schema = configManager.state["demo.form.city"];
+                            schema.choices[0].label = schema.choices[0].label + "（试点）";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 绑定表达式：双向与只读</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
+            .card + .card {
+                margin-top: 1rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 绑定表达式：① 双向（表达式+set 拆回多字段）② 只读（无 set/computed，输入不回写） -->
+        <div class="demo-app section">
+            <h3 class="title is-5">绑定表达式：双向绑定 与 只读绑定</h3>
+            <p class="help" style="margin-bottom: 1rem">
+                纯路径走快路径；含运算符/拼接即为表达式——配 <code>set</code> 可双向拆回，
+                无 <code>set</code>（或计算属性）自动只读降级（输入不回写，warn 一次）。
+            </p>
+
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">① 双向：表达式 + set 拆回多字段</p>
+                </header>
+                <div class="card-content">
+                    <div class="field">
+                        <label class="label">姓名（表达式组合显示，编辑拆回 first/last）</label>
+                        <div class="control">
+                            <input
+                                class="input"
+                                x-model="user.first + ',' + user.last"
+                                x-model-options="{set:'setName'}"
+                            />
+                        </div>
+                        <p class="help">
+                            user = <strong x-text="JSON.stringify(user)"></strong>
+                        </p>
+                    </div>
+                    <div class="field">
+                        <label class="label">单价（改我 → 上方表达式与只读合计联动刷新）</label>
+                        <div class="control">
+                            <input class="input" x-model.number="order.price" />
+                        </div>
+                        <div class="control" style="margin-top: 0.5rem">
+                            <input class="input" x-model.number="order.count" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">② 只读：表达式 / 计算属性（无 set）</p>
+                </header>
+                <div class="card-content">
+                    <div class="field">
+                        <label class="label">合计（表达式 price * count）</label>
+                        <div class="control">
+                            <input class="input" x-model="order.price * order.count" />
+                        </div>
+                        <p class="help">输入不会回写——派生值仅展示（warn 一次后静默）</p>
+                    </div>
+                    <div class="field">
+                        <label class="label">全名预览（计算属性 fullName）</label>
+                        <div class="control">
+                            <input class="input" x-model="user.fullName" />
+                        </div>
+                        <p class="help">
+                            computed 天然无 setter → 只读；改上方姓名输入框联动刷新
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="result"
+                x-text="JSON.stringify({ user: { first: user.first, last: user.last }, order: { price: order.price, count: order.count } }, null, 2)"
+            ></div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    user: {
+                        first: "张",
+                        last: "三",
+                        // 计算属性：读方向派生，无 setter → x-model 只读降级
+                        fullName: (scope) => scope.first + scope.last,
+                    },
+                    order: { price: 10, count: 2 },
+                },
+                {
+                    actions: {
+                        // set action：把「姓,名」输入拆回两个字段
+                        setName: function ($value) {
+                            const parts = $value.split(",");
+                            this.state.user.first = parts[0] ?? "";
+                            this.state.user.last = parts[1] ?? "";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>

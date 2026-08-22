@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 数据来源：祖先 x-data</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .box-outline {
+                border: 1px dashed #dbdbdb;
+                border-radius: 6px;
+                padding: 0.75rem;
+                margin-top: 0.5rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 来源二：祖先 x-data——本地未声明的键沿 parent 链就近继承 -->
+        <div class="demo-app section">
+            <h3 class="title is-5">来源二：祖先 x-data</h3>
+            <div class="box-outline" x-data="{ tenant: 'acme', tag: 'prod' }">
+                <p class="help">外层：tenant / tag</p>
+                <div class="box-outline" x-data="{ tag: '' }">
+                    <p class="help">内层：本地声明 tag（就近覆盖祖先同名键）</p>
+                    <div class="field">
+                        <label class="label">内层 tag（落到内层声明）</label>
+                        <div class="control">
+                            <input
+                                class="input"
+                                x-model="tag"
+                                x-model-options="{set:'tag=$value'}"
+                            />
+                        </div>
+                    </div>
+                    <p class="help">内层 tag = <strong x-text="tag || '（空）'"></strong></p>
+                    <div class="field">
+                        <label class="label">tenant（本地未声明 → 继承祖先）</label>
+                        <div class="control">
+                            <input
+                                class="input"
+                                x-model="tenant"
+                                x-model-options="{set:'tenant=$value'}"
+                            />
+                        </div>
+                    </div>
+                    <p class="help">tenant = <strong x-text="tenant"></strong>（写到祖先层）</p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            new AutoTemplateEngine(document.querySelector(".demo-app"), {}, {});
+        </script>
+    </body>
+</html>

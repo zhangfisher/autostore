@@ -24,7 +24,7 @@ AutoStore Template 引擎支持**初始化全量编译**与**值层面细粒度�
 5. 作为模板开发者,我想就地修改容器的子节点(不返回 / 返回同引用)并触发子树重编译,以便批量改动子内容。
 6. 作为模板开发者,我想 patch 后新插入的绑定(`x-text` / `{{}}`)仍然响应状态变化,以便动态内容保持响应式。
 7. 作为模板开发者,我想在含 `{{}}` 插值的裸元素上直接 patch(无需额外指令),以便任何已渲染的响应式区块都能动态更新。
-8. 作为模板开发者,我想用一个轻量的哨兵指令(`x-patch`)把纯静态裸元素变成可 patch 的锚点,以便在无指令无插值的容器上也能 patch,而不引入空的响应式数据域。
+8. 作为模板开发者,我想用一个轻量的哨兵指令(`x-scope`)把纯静态裸元素变成可 patch 的锚点,以便在无指令无插值的容器上也能 patch,而不引入空的响应式数据域。
 9. 作为模板开发者,我想用 CSS selector 命中 patch 目标,而不需要手动拿到模板元素引用,以便 API 简洁。
 10. 作为模板开发者,我想 patch 操作原子地完成「定位 + 改 + 同步」,以便不会漏调或传错元素。
 11. 作为模板开发者,我想 patch 同步完成(调用返回时 DOM 已更新),以便后续代码立即看到结果。
@@ -47,8 +47,8 @@ AutoStore Template 引擎支持**初始化全量编译**与**值层面细粒度�
   - 新 `Node`(`!== templateEl`)→ **替换自身**
   - `string`(HTML)→ **替换自身**(`<template>` 解析,可多节点;空串 = 删除)
   - `null` → **删除自身**
-- **patch 边界 = 有 scope 的元素**:含指令(Compile/Hybrid)**或**含 `{{}}` 插值(合成 scope,ADR-0004)的元素。纯 Runtime 指令(`x-loading`)不建 scope,但其 observer 通道(ADR-0003)本就响应原生 DOM 变更,不需 patch。**纯静态裸元素**(无指令无插值)需哨兵指令 `x-patch`。
-- **哨兵指令 `x-patch`**:零副作用 no-op Compile 指令,唯一作用是让裸元素建 scope 成为 patch 锚——等效 `x-data="{}"` 但**不建私有响应式域**(`_scopes[id]`)、更轻、更语义化。
+- **patch 边界 = 有 scope 的元素**:含指令(Compile/Hybrid)**或**含 `{{}}` 插值(合成 scope,ADR-0004)的元素。纯 Runtime 指令(`x-loading`)不建 scope,但其 observer 通道(ADR-0003)本就响应原生 DOM 变更,不需 patch。**纯静态裸元素**(无指令无插值)需哨兵指令 `x-scope`。
+- **哨兵指令 `x-scope`**:零副作用 no-op Compile 指令,唯一作用是让裸元素建 scope 成为 patch 锚——等效 `x-data="{}"` 但**不建私有响应式域**(`_scopes[id]`)、更轻、更语义化。
 - **正向桥**:「模板元素 → scope」复用编译期 `templateScopeMap`(实例字段,半持久化),经新增的公共访问方法查询。**无需新建 WeakMap、无需改全量编译的重置逻辑**(patch 走子树编译,不触发全量;全量重置后整树重建立即重填 map,一致)。
 - **子树重建**:复用现有「destroy 子 scope → 清空 DOM → 重编译子节点 → flushAll」管线(与 `engine.data` 子树重建同构)。
 - **替换自身顺序**(经评审验证):① 模板侧先替换(新节点进入模板树,`_linkParent` 沿新祖先链生效)→ ② destroy 旧 scope → ③ 编译新节点建新 scope → ④ 运行侧替换。
@@ -67,7 +67,7 @@ AutoStore Template 引擎支持**初始化全量编译**与**值层面细粒度�
 - **seam**:**单一 engine 级 seam**。`mount(html, state)` 构造引擎 → `engine.patch(selector, updater)` → `toEqualHTML` 断言运行树;响应式用例配合 `nextTick`;事件用例 `on` + 断言回调。与所有现有指令测试(`x-text`/`x-if`/`x-for`/`x-slot`)同构。零新 seam。
 - **被测面**:`AutoTemplateEngine.patch`(公开 API),经引擎级用例覆盖内部 compiler/scope/dispatcher 协作。
 - **prior art**:`x-text.test.ts`(绑定 + 响应式)、`e2e.test.ts`(scheduler/destroy)、`x-slot.test.ts`(结构指令 + 生命周期)、`core-scopes-contract.test.ts`(响应式契约)。复用 helpers 的 `mount`/`nextTick`、setup 的 `toEqualHTML` matcher、format 的归一。
-- **覆盖矩阵**:四态(子树重建 / 替换 Node / 替换字符串单节点 / 替换字符串多节点 / 删除 `null` / 空串 = 删除)+ 边界(纯静态裸元素拒绝、含插值裸元素可 patch、动态区域 `x-for` 拒绝、updater 抛错不重建)+ 哨兵(`x-patch`)+ 响应式(patch 后改 state 更新)+ 兄弟子树运行态保留 + 事件广播。
+- **覆盖矩阵**:四态(子树重建 / 替换 Node / 替换字符串单节点 / 替换字符串多节点 / 删除 `null` / 空串 = 删除)+ 边界(纯静态裸元素拒绝、含插值裸元素可 patch、动态区域 `x-for` 拒绝、updater 抛错不重建)+ 哨兵(`x-scope`)+ 响应式(patch 后改 state 更新)+ 兄弟子树运行态保留 + 事件广播。
 
 ## Out of Scope
 
@@ -75,14 +75,14 @@ AutoStore Template 引擎支持**初始化全量编译**与**值层面细粒度�
 - 隐式 MutationObserver 监听 `engine.template`(自动触发 patch)——不采用(显式 patch 更可预测)。
 - patch 返回的 HTML 字符串经 `engine.options.sanitizer` 消毒——fast-follow(参 ADR-0005/0006 待决)。
 - `engine.scopes` 的 WeakRef entry 在 destroy 后主动清理——既存特性(`_recompileSubtree` 同样未清),本次不修。
-- 零副作用的具名哨兵指令变体(如 `x-scope` / `x-ref`)——用 `x-patch`,不新增其他。
+- 零副作用的具名哨兵指令变体(如 `x-scope` / `x-ref`)——用 `x-scope`,不新增其他。
 - 跨 scope 批量 patch(一次 patch 多个独立 scope)——多次 `patch` 调用即可。
 - patch 运行树元素(非模板元素)入参——不支持(入参是 selector,对模板空间)。
 - 全量重编译的运行态保留——全量 `compile()` 仍整树重建;patch 是增量补充,不替代全量。
 
 ## Further Notes
 
-- 设计经多轮 `/grill-with-docs` 评审定稿,记录于 **ADR-0002**(动态 patch 机制)+ **glossary**(事实源方向 / 正向桥 / 补丁单元 / 动态区域 / `x-patch` 等术语)。
+- 设计经多轮 `/grill-with-docs` 评审定稿,记录于 **ADR-0002**(动态 patch 机制)+ **glossary**(事实源方向 / 正向桥 / 补丁单元 / 动态区域 / `x-scope` 等术语)。
 - 与 **ADR-0001**(指令类别 / 通道划分)、**ADR-0003**(事件总线 / `RuntimeObserverDispatcher`)、**ADR-0004**(响应式插值 / 合成 scope)、**ADR-0006**(`x-slot`,其威胁模型已把 `engine.patch` 列为 T2 结构重建机制之一)协同。
 - **已实现并验证**:16 个 patch 用例 + 415 全量回归通过;template 包类型检查干净(core 包错误为既有技术债,与本特性无关)。
 - **发布通道状态**:`gh` CLI 未安装、无 token、无 `setup-matt-pocock-skills` 配置,故本 spec 暂存为 repo 文件而非 issue。待 issue tracker 就绪,可据本文件创建 issue 并应用 `ready-for-agent` 标签。

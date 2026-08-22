@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-model · 字段联动：choices 三级级联</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .result {
+                background: #f5f5f5;
+                padding: 0.75rem;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-top: 1rem;
+                white-space: pre-wrap;
+            }
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- 字段联动·choices 三级级联：省 → 市 → 区县，逐级 computed choices 链式传导。
+             省级也改为 schema choices 驱动（x-for 渲染 option），支持运行时增删省 → 全链重渲染 -->
+        <div class="demo-app section">
+            <h3 class="title is-5">字段联动：choices 三级级联（省 → 市 → 区县）</h3>
+            <p class="help" style="margin-bottom: 1rem">
+                三级 select 的选项集全部由 <code>schema.choices</code> 驱动：市级引用
+                <code>province</code>，区县引用 <code>city</code>。切换省份 →
+                市值过期 → <b>自动选中</b>新选项集的 <code>default:true</code>
+                项或首项并<b>回写 state</b>（ADR-0028 autoSelect）→ 区县随之归位。
+                下方按钮可<b>动态增删省市县</b>——schema choices
+                响应式重渲染，选中保持或自动归位。
+            </p>
+
+            <div class="grid">
+                <div class="field">
+                    <label class="label">省份（schema choices，可动态增删）</label>
+                    <div class="control">
+                        <div class="select">
+                            <!-- 省级同样走 schema.choices：选项来自 store 的响应式 provincesData -->
+                            <select x-model="province"></select>
+                        </div>
+                    </div>
+                    <p class="help">province = <strong x-text="province"></strong></p>
+                </div>
+
+                <div class="field">
+                    <label class="label">城市（choices ← province）</label>
+                    <div class="control">
+                        <div class="select">
+                            <select x-model="city"></select>
+                        </div>
+                    </div>
+                    <p class="help">city = <strong x-text="city || '（未选中）'"></strong></p>
+                </div>
+
+                <div class="field">
+                    <label class="label">区县（choices ← city）</label>
+                    <div class="control">
+                        <div class="select">
+                            <select x-model="district"></select>
+                        </div>
+                    </div>
+                    <p class="help">district = <strong x-text="district || '（未选中）'"></strong></p>
+                </div>
+            </div>
+
+            <div class="buttons" style="margin-top: 1rem">
+                <button class="button is-primary is-light" type="button" @click="gotoGz">
+                    程序设置：广东·广州·天河区
+                </button>
+                <button class="button is-light" type="button" @click="reset">
+                    重置：福建·福州·鼓楼区
+                </button>
+            </div>
+
+            <hr style="margin: 1rem 0" />
+
+            <div class="buttons">
+                <span class="help" style="align-self: center; margin-right: 0.5rem"
+                    >动态数据（schema.choices 响应式重渲染）：</span
+                >
+                <button class="button is-info is-light is-small" type="button" @click="addProvince">
+                    +省（海南·海口·龙华区）
+                </button>
+                <button class="button is-info is-light is-small" type="button" @click="addCity">
+                    +市（福建·莆田·城厢区）
+                </button>
+                <button class="button is-info is-light is-small" type="button" @click="addDistrict">
+                    +区县（福州·马尾区）
+                </button>
+                <button class="button is-danger is-light is-small" type="button" @click="removeCurrentCity">
+                    −删当前市（city 从 choices 消失 → 自动重选）
+                </button>
+            </div>
+
+            <div
+                class="result"
+                x-text="JSON.stringify({ province, city, district }, null, 2)"
+            ></div>
+        </div>
+
+        <script>
+            const { ConfigManager, configurable, computed } = AutoStoreSpaces;
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+
+            const configManager = new ConfigManager(
+                { load: async () => ({}), save: async () => {} },
+                { autoload: false, global: false },
+            );
+
+
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                {
+                    // 选项数据放 store state（响应式）——action 改数据即触发全链重渲染
+                    provincesData: [
+                        { value: "fj", label: "福建" },
+                        { value: "zj", label: "浙江" },
+                        { value: "js", label: "江苏" },
+                        { value: "gd", label: "广东" },
+                    ],
+                    citiesData: {
+                        fj: [
+                            { value: "fz", label: "福州" },
+                            { value: "xm", label: "厦门" },
+                            { value: "qz", label: "泉州" },
+                        ],
+                        zj: [
+                            { value: "hz", label: "杭州" },
+                            { value: "nb", label: "宁波" },
+                            { value: "wz", label: "温州" },
+                        ],
+                        js: [
+                            { value: "nj", label: "南京" },
+                            { value: "sz", label: "苏州" },
+                        ],
+                        gd: [
+                            { value: "gz", label: "广州" },
+                            // default:true：切到广东后自动选中深圳（优先于首项广州）
+                            { value: "sz_gd", label: "深圳", default: true },
+                            { value: "dg", label: "东莞" },
+                        ],
+                    },
+                    districtsData: {
+                        fz: [
+                            { value: "gl_fz", label: "鼓楼区" },
+                            { value: "tj", label: "台江区" },
+                            { value: "cm", label: "仓山区" },
+                        ],
+                        xm: [
+                            { value: "sm", label: "思明区" },
+                            { value: "hl", label: "湖里区" },
+                            { value: "jc", label: "集美区" },
+                        ],
+                        qz: [
+                            { value: "fz_qz", label: "丰泽区" },
+                            { value: "lc", label: "鲤城区" },
+                        ],
+                        hz: [
+                            { value: "xh", label: "西湖区" },
+                            { value: "bh", label: "滨江区" },
+                            { value: "yh", label: "余杭区" },
+                        ],
+                        nb: [
+                            { value: "yz", label: "鄞州区" },
+                            { value: "hs", label: "海曙区" },
+                        ],
+                        wz: [{ value: "lh", label: "鹿城区" }, { value: "oz", label: "瓯海区" }],
+                        nj: [
+                            { value: "xw", label: "玄武区" },
+                            { value: "gl", label: "鼓楼区" },
+                            { value: "jq", label: "建邺区" },
+                        ],
+                        sz: [
+                            { value: "gs", label: "姑苏区" },
+                            { value: "id", label: "工业园区" },
+                            { value: "hx", label: "虎丘区" },
+                        ],
+                        gz: [
+                            { value: "th", label: "天河区" },
+                            { value: "by", label: "白云区" },
+                            { value: "yw", label: "越秀区" },
+                        ],
+                        sz_gd: [
+                            { value: "ns", label: "南山区" },
+                            { value: "ft", label: "福田区" },
+                            { value: "lh_sz", label: "罗湖区" },
+                        ],
+                        dg: [{ value: "nc", label: "南城街道" }],
+                    },
+                    // 零级：省级选项来自响应式的 provincesData（增删省 → 重渲染 + 值过期自动归位）
+                    province: configurable("fj", {
+                        choices: computed((scope, { ref }) => ref("provincesData") ?? []),
+                    }),
+                    // 一级联动：市级选项 = citiesData[province]（引用响应式数据，增删市触发重算）
+                    city: configurable("fz", {
+                        choices: computed((scope, { ref }) => ref("citiesData")[ref("province")] ?? []),
+                    }),
+                    // 二级级联：区县选项 = districtsData[city]（city 又被 province 联动）
+                    district: configurable("gl_fz", {
+                        choices: computed((scope, { ref }) => ref("districtsData")[ref("city")] ?? []),
+                    }),
+                },
+                {
+                    storeOptions: { configManager, configKey: "region" },
+                    actions: {
+                        gotoGz() {
+                            engine.state.province = "gd";
+                            engine.state.city = "gz";
+                            engine.state.district = "th";
+                        },
+                        reset() {
+                            engine.state.province = "fj";
+                            engine.state.city = "fz";
+                            engine.state.district = "gl_fz";
+                        },
+                        addProvince() {
+                            // 省级选项追加 + 新省的市与区县数据，然后切到新省
+                            // → 市自动选中（海口）→ 区县自动归位（龙华区）
+                            engine.state.provincesData = [
+                                ...engine.state.provincesData,
+                                { value: "hn", label: "海南" },
+                            ];
+                            engine.state.citiesData = {
+                                ...engine.state.citiesData,
+                                hn: [{ value: "hk_hn", label: "海口" }],
+                            };
+                            engine.state.districtsData = {
+                                ...engine.state.districtsData,
+                                hk_hn: [{ value: "lh_hn", label: "龙华区" }],
+                            };
+                            engine.state.province = "hn";
+                        },
+                        addCity() {
+                            // 福建追加莆田市（citiesData 替换触发 choices 重算）+ 区县数据
+                            engine.state.citiesData = {
+                                ...engine.state.citiesData,
+                                fj: [...engine.state.citiesData.fj, { value: "pt", label: "莆田" }],
+                            };
+                            engine.state.districtsData = {
+                                ...engine.state.districtsData,
+                                pt: [{ value: "cx", label: "城厢区" }],
+                            };
+                        },
+                        addDistrict() {
+                            // 福州追加马尾区（districtsData 替换触发重算，选中保持）
+                            engine.state.districtsData = {
+                                ...engine.state.districtsData,
+                                fz: [...engine.state.districtsData.fz, { value: "mw", label: "马尾区" }],
+                            };
+                        },
+                        removeCurrentCity() {
+                            // 删除当前选中市 → 值不在集 → autoSelect 自动重选 + 回写 → 区县归位
+                            const prov = engine.state.province;
+                            const city = engine.state.city;
+                            engine.state.citiesData = {
+                                ...engine.state.citiesData,
+                                [prov]: engine.state.citiesData[prov].filter(
+                                    (c) => c.value !== city,
+                                ),
+                            };
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>
