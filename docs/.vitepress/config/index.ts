@@ -281,7 +281,6 @@ export default defineConfig({
                         { text: "x-on", link: "/zh/template/guide/directives/x-on" },
                         { text: "x-loading", link: "/zh/template/guide/directives/x-loading" },
                         { text: "x-slot", link: "/zh/template/guide/directives/x-slot" },
-                        { text: "x-patch（已移除）", link: "/zh/template/guide/directives/x-patch" },
                         { text: "x-model", link: "/zh/template/guide/directives/x-model" },
                         { text: "x-switch", link: "/zh/template/guide/directives/x-switch" },
                         { text: "x-table", link: "/zh/template/guide/directives/x-table" },

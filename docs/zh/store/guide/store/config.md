@@ -1011,6 +1011,8 @@ AutoStoreConfigManager.state["shop.tax"].value;
 
 配置系统还提供`interface AutoStoreWidgets`类型用于扩展可用的`widget`，这主要用于渲染配置数据时使用。
 
+`autostore`已内置一组常用 widget（`text`/`number`/`select`/`checkbox` 等对应 HTML 原生 input 类型的配置类型）。通过`declare module`声明**同名接口**即可新增自定义 widget——注意内置键已存在，重复声明同名键会报类型错误，扩展时请声明**新的键名**。
+
 ```ts twoslash
 import {
     AutoStore,
@@ -1032,14 +1034,17 @@ const orderStore = new AutoStore(
         order: {
             price: configurable(99.9, {
                 label: "订单价格",
+                // 内置 widget：配置属性类型由 AutoWidgetNumber 提供
                 widget: "number",
                 min: 1,
                 max: 10,
+                step: 0.1,
                 validate: (value) => value > 0,
             }),
             vip: configurable(true, {
                 label: "VIP客户",
-                widget: "checkbox",
+                // 自定义 widget：配置属性类型由下方 declare module 提供
+                widget: "switch",
                 trueValue: "是",
                 falseValue: "否",
                 indeterminate: true,
@@ -1056,25 +1061,9 @@ type orderConfigurableState = ConfigurableState<typeof orderStore, "app">;
 // 扩展AutoStoreConfigures类型
 declare module "autostore" {
     interface AutoStoreConfigures extends orderConfigurableState {}
-    // 扩展widget类型，用于渲染场景
+    // 扩展widget类型，用于渲染场景（新增键，不与内置 widget 重名）
     interface AutoStoreWidgets {
-        number: {
-            max: number;
-            min: number;
-            step?: number;
-        };
-        text: {
-            maxLength?: number;
-            minLength?: number;
-            pattern?: RegExp | string;
-            rows?: number;
-            multiline?: boolean;
-        };
-        select: {
-            options: Array<{ label: string; value: any }>;
-            multiple?: boolean;
-        };
-        checkbox: {
+        switch: {
             trueValue?: string;
             falseValue?: string;
             indeterminate?: boolean;
@@ -1084,7 +1073,7 @@ declare module "autostore" {
 
 AutoStoreConfigManager.state;
 
-// 获取所有配置项的键类型（显示为字面量联合类型）
+// 获取所有配置项的键类型（显示为字面量联合类型，含内置 + 自定义）
 type AllWidgetNames = {
     [K in keyof AutoStoreWidgets]: K;
 }[keyof AutoStoreWidgets];
@@ -1093,13 +1082,13 @@ type AllWidgetNames = {
 type OrderPriceSchema = (typeof AutoStoreConfigManager.state)["app.order.price"];
 type SchemaKeys = keyof OrderPriceSchema;
 
-// {widget:'number',max:number,min:number,step?:number}
+// {widget:'number',max?:number,min?:number,step?:number}（AutoWidgetNumber 全部可选）
 AutoStoreConfigManager.state["app.order.price"].widget;
 AutoStoreConfigManager.state["app.order.price"].min;
 AutoStoreConfigManager.state["app.order.price"].max;
 AutoStoreConfigManager.state["app.order.price"].step;
 
-// {widget:'checkbox',trueValue?:string,falseValue?:string,indeterminate?:boolean}
+// {widget:'switch',trueValue?:string,falseValue?:string,indeterminate?:boolean}
 AutoStoreConfigManager.state["app.order.vip"].widget;
 AutoStoreConfigManager.state["app.order.vip"].trueValue;
 AutoStoreConfigManager.state["app.order.vip"].falseValue;

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>x-data · 指定挂载位置（mount）</title>
+        <script src="/autostore/template.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+    </head>
+
+    <body>
+        <!-- mount：把 x-data 的数据挂到全局状态树的任意位置。
+             声明子树内 {{count}} 直读；任意位置 {{ui.panel.count}} 全树可读；
+             this.count / engine.data() 直接写挂载容器（细粒度响应式）。 -->
+        <div class="demo-app section">
+            <!-- 块 A：mount:'ui.panel' —— 数据挂到 state.ui.panel（中间路径 ui 自动创建） -->
+            <div class="card" x-data="{ count: 0, tip: '点我 +1' }" x-data-options="{mount:'ui.panel'}">
+                <div class="card-content">
+                    <div class="heading has-text-grey">块 A · 声明处（mount:'ui.panel'）—— 子树内直读</div>
+                    <div class="block">
+                        直读 count = <b class="has-text-primary has-text-weight-semibold">{{count}}</b>｜
+                        tip = <b class="has-text-primary has-text-weight-semibold">{{tip}}</b>
+                    </div>
+                    <div class="buttons">
+                        <button class="button is-primary is-small" @click="bump">+1（this.count++）</button>
+                        <button class="button is-small is-light" @click="bumpOuter">改外部共享段 ui.lang</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 块 B：独立子树（未声明 x-data）—— 经全局路径 {{ui.panel.count}} 读到挂载数据 -->
+            <div class="card">
+                <div class="card-content">
+                    <div class="heading has-text-grey">块 B · 独立子树 —— 全路径 {{ui.panel.count}} 可读</div>
+                    <div class="block">
+                        ui.panel.count = <b class="has-text-primary has-text-weight-semibold">{{ui.panel.count}}</b>｜
+                        ui.panel.tip = <b class="has-text-primary has-text-weight-semibold">{{ui.panel.tip}}</b>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 块 C：mount 与既有数据 merge —— ui.lang 保留（容器是他家共享容器，旧键不动） -->
+            <div class="card" x-data="{ local: '我是默认私有域' }">
+                <div class="card-content">
+                    <div class="heading has-text-grey">块 C · 另一个 x-data（默认私有域）</div>
+                    <div class="block">
+                        私有 local = <b class="has-text-primary has-text-weight-semibold">{{local}}</b>｜
+                        读挂载容器：ui.panel.count = <b class="has-text-primary has-text-weight-semibold">{{ui.panel.count}}</b>｜
+                        读共享旧键：ui.lang = <b class="has-text-primary has-text-weight-semibold">{{ui.lang}}</b>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 块 D：x-if 控制块 A 的生死 —— 销毁时按 CAS 删自己写入的键、容器删空则向上回收 -->
+            <div class="card">
+                <div class="card-content">
+                    <div class="heading has-text-grey">块 D · 生命周期回收演示</div>
+                    <div class="block">
+                        <label class="checkbox">
+                            <input type="checkbox" x-model="showPanel" />
+                            挂载块 A（取消勾选 = 销毁块 A → ui.panel 随之回收）
+                        </label>
+                    </div>
+                    <div class="block">
+                        ui 树现状：
+                        <code x-text="JSON.stringify(engine ? engine.state.ui : '')"></code>
+                    </div>
+                    <div class="block has-text-grey is-size-7">
+                        勾选 → 编译块 A → ui.panel.count 出现；取消 → 销毁 → 键删空 → ui.panel 连同 ui 一并回收
+                        （ui.lang 若被块 A 写过也会回收；本例 ui.lang 由外部 state 预置，块 A 只写 count/tip，
+                        删除后 ui 恢复 {lang:'zh-CN'}）。
+                    </div>
+                    <template x-if="showPanel">
+                        <div class="notification is-primary is-light" x-data="{ fresh: '我是 x-if 子树里的 mount 数据' }" x-data-options="{mount:'ui.panel'}">
+                            {{fresh}}（挂到 ui.panel，随 x-if 销毁而回收）
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { AutoTemplateEngine } = AutoTemplateSpaces;
+            const engine = new AutoTemplateEngine(
+                document.querySelector(".demo-app"),
+                { showPanel: false, ui: { lang: "zh-CN" } },
+                {
+                    actions: {
+                        // path 模式下 this.count 直接写挂载容器（store.state.ui.panel.count），
+                        // 路径订阅自动驱动块 A/B/C 同步更新——与默认私有域的 this.data 体验完全一致
+                        bump: function () {
+                            this.data.count = this.data.count + 1;
+                        },
+                        // 挂载容器是共享容器：写同容器的其他键（ui.lang）同样全树生效
+                        bumpOuter: function () {
+                            engine.state.ui.lang = engine.state.ui.lang === "zh-CN" ? "en-US" : "zh-CN";
+                        },
+                    },
+                },
+            );
+        </script>
+    </body>
+</html>
