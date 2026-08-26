@@ -1,12 +1,12 @@
 import React from 'react';
-import { useStore, asyncComputed, delay } from '@autostorejs/react';
+import { useStore, computed, delay } from '@autostorejs/react';
 import { ColorBlock, Button, JsonView, Box } from 'x-react-components';
 
 export default () => {
     const { state, $, useAsyncState } = useStore({
         firstName: 'Zhang',
         lastName: 'Fisher',
-        fullName: asyncComputed(
+        fullName: computed(
             async (user) => {
                 await delay();
                 // 模拟产生错误

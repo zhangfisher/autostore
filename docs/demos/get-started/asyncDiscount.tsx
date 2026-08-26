@@ -1,6 +1,6 @@
 //docs\demos\get-started\asyncDiscount.tsx
 import React from 'react';
-import { createStore, delay, asyncComputed } from '@autostorejs/react';
+import { createStore, delay, computed } from '@autostorejs/react';
 import { Button, Table } from 'x-react-components';
 
 const { $, useReactive } = createStore({
@@ -14,7 +14,7 @@ const { $, useReactive } = createStore({
         },
     ],
     //  折扣 ：向后台请求折扣
-    discount: asyncComputed(
+    discount: computed(
         async (scope) => {
             // 如await fetch(`/api/discount?userId=1&total=${scope.total}....`)
             await delay(2000);
@@ -26,7 +26,7 @@ const { $, useReactive } = createStore({
         },
     ),
     // 总计
-    total: asyncComputed(
+    total: computed(
         async (scope) => {
             return (
                 scope.orders.reduce((acc: any, cur: any) => acc + cur.total, 0) *

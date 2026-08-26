@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStore, asyncComputed } from '@autostorejs/react';
+import { createStore, computed } from '@autostorejs/react';
 import { RichLabel, Box, ColorBlock, Button } from 'x-react-components';
 
 let count = 0;
@@ -10,13 +10,13 @@ const store = createStore({
         fullName: (user: any) => {
             return user.firstName + user.lastName + `${++count}`;
         },
-        fullName2: asyncComputed(
+        fullName2: computed(
             async (user) => {
                 return user.firstName + user.lastName + `${++count}`;
             },
             ['./firstName', './lastName'],
         ),
-        fullName3: asyncComputed(
+        fullName3: computed(
             async (user) => {
                 return user.firstName + user.lastName + `${++count}`;
             },

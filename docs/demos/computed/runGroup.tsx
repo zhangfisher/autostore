@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStore, asyncComputed, delay } from '@autostorejs/react';
+import { createStore, computed, delay } from '@autostorejs/react';
 import { ColorBlock, Button, Box } from 'x-react-components';
 
 const state = {
@@ -7,7 +7,7 @@ const state = {
         name: 'Zhang',
         count: 4,
         price: 100,
-        total1: asyncComputed(
+        total1: computed(
             async (book) => {
                 await delay();
                 return book.count * book.price;
@@ -15,7 +15,7 @@ const state = {
             [],
             { async: true, group: 'total' },
         ),
-        total2: asyncComputed(
+        total2: computed(
             async (book) => {
                 await delay();
                 return book.count * book.price;
@@ -23,7 +23,7 @@ const state = {
             [],
             { async: true, group: 'total' },
         ),
-        total3: asyncComputed(
+        total3: computed(
             async (book) => {
                 await delay();
                 return book.count * book.price;
@@ -31,7 +31,7 @@ const state = {
             [],
             { async: true, group: 'total' },
         ),
-        average1: asyncComputed(
+        average1: computed(
             async (book) => {
                 await delay();
                 return book.price / book.count;
@@ -39,7 +39,7 @@ const state = {
             [],
             { async: true, group: 'average' },
         ),
-        average2: asyncComputed(
+        average2: computed(
             async (book) => {
                 await delay();
                 return book.price / book.count;
@@ -47,7 +47,7 @@ const state = {
             [],
             { async: true, group: 'average' },
         ),
-        average3: asyncComputed(
+        average3: computed(
             async (book) => {
                 await delay();
                 return book.price / book.count;

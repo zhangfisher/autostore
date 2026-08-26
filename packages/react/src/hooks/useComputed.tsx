@@ -10,7 +10,7 @@
 import {
     type AsyncComputedValue,
     type ComputedOptions,
-    createAsyncComptuedValue,
+    createAsyncComputedValue,
     type Dict,
     type Watcher,
 } from 'autostore';
@@ -24,7 +24,7 @@ export function createUseComputed<State extends Dict>(store: ReactAutoStore<Stat
         const [value, setValue] = useState<AsyncComputedValue<any>>(() => {
             return computedObj?.async
                 ? computedObj.value
-                : createAsyncComptuedValue(computedObj?.value);
+                : createAsyncComputedValue(computedObj?.value);
         });
         useEffect(() => {
             let watcher: Watcher;
@@ -33,7 +33,7 @@ export function createUseComputed<State extends Dict>(store: ReactAutoStore<Stat
                     setValue(
                         computedObj?.async
                             ? computedObj.value
-                            : createAsyncComptuedValue(computedObj?.value),
+                            : createAsyncComputedValue(computedObj?.value),
                     );
                 });
             }

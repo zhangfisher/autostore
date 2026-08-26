@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStore, asyncComputed, computed } from '@autostorejs/react';
+import { createStore, computed } from '@autostorejs/react';
 import { Box, JsonView } from 'x-react-components';
 
 const store = createStore({
@@ -12,7 +12,7 @@ const store = createStore({
             },
             ['./price', './count'],
         ),
-        total2: asyncComputed(
+        total2: computed(
             async (scope) => {
                 return scope.price * scope.count;
             },

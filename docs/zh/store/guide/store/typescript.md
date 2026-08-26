@@ -66,7 +66,7 @@ type rawState = keyof typeof store.types.rawState;
 ## 计算属性类型
 
 ```ts twoslash
-import { AutoStore, computed, asyncComputed } from "autostore";
+import { AutoStore, computed } from "autostore";
 
 const store = new AutoStore({
     order: {
@@ -76,12 +76,6 @@ const store = new AutoStore({
             return scope.price * scope.count;
         }),
         asyncTotal: computed(
-            async (scope) => {
-                return scope.price * scope.count;
-            },
-            ["./price", "./count"],
-        ),
-        asyncTotalPro: asyncComputed(
             async (scope) => {
                 return scope.price * scope.count;
             },
@@ -97,8 +91,7 @@ type state = typeof store.state;
         price: number;
         count: number;
         total: number;
-        asyncTotal: number;
-        asyncTotalPro: AsyncComputedValue<number>;
+        asyncTotal: AsyncComputedValue<number>;
     };
 }*/
 type rawState = typeof store.types.rawState;
@@ -106,7 +99,7 @@ type rawState = typeof store.types.rawState;
 
 ## Scope类型
 
-由于`computed`、`watch`、`asyncComputed`均是独立的函数，并且`scope`是可以根据`scope`参数动态指定的，所以`scope`目前无法自动推断。
+由于`computed`、`watch`均是独立的函数，并且`scope`是可以根据`scope`参数动态指定的，所以`scope`目前无法自动推断。
 
 ## 类型工具
 
@@ -118,7 +111,7 @@ type rawState = typeof store.types.rawState;
 这是 `AutoStore` 类型系统的核心，用于推导计算后的状态类型。
 
 ```ts twoslash
-import { computed, asyncComputed, ComputedState } from "autostore";
+import { computed, ComputedState } from "autostore";
 const state = {
     order: {
         price: 100,
@@ -127,12 +120,6 @@ const state = {
             return scope.price * scope.count;
         }),
         asyncTotal: computed(
-            async (scope) => {
-                return scope.price * scope.count;
-            },
-            ["./price", "./count"],
-        ),
-        asyncTotalPro: asyncComputed(
             async (scope) => {
                 return scope.price * scope.count;
             },
@@ -148,8 +135,7 @@ type computedState = ComputedState<typeof state>;
         price: number;
         count: number;
         total: number;
-        asyncTotal: number;
-        asyncTotalPro: AsyncComputedValue<number>;
+        asyncTotal: AsyncComputedValue<number>;
     };
 }*/
 ```
@@ -159,16 +145,13 @@ type computedState = ComputedState<typeof state>;
 提取计算属性、监视属性等的返回值类型
 
 ```ts twoslash
-import { computed, asyncComputed, PickComputedResult, watch } from "autostore";
+import { computed, PickComputedResult, watch } from "autostore";
 // 同步计算
 type SyncResult = PickComputedResult<(scope: any) => string>; // string
 
-// 简单异步计算
+// 异步计算（computed + 异步 getter + 显式依赖）
 const asyncState = computed(async () => true, []);
 type AsyncResult = PickComputedResult<typeof asyncState>;
-// 增加异步计算
-const asyncStatePro = asyncComputed(async () => true, []);
-type AsyncResultPro = PickComputedResult<typeof asyncStatePro>;
 // watch
 const watchState = watch(() => "");
 type watchResult = PickComputedResult<typeof watchState>;
@@ -179,7 +162,7 @@ type watchResult = PickComputedResult<typeof watchState>;
 获取状态树中所有可能的路径字符串，用于类型安全的路径访问。别名`ObjectKeyPaths`
 
 ```ts twoslash
-import { computed, asyncComputed, StatePath } from "autostore";
+import { computed, StatePath } from "autostore";
 const state = {
     order: {
         price: 100,
@@ -193,22 +176,16 @@ const state = {
             },
             ["./price", "./count"],
         ),
-        asyncTotalPro: asyncComputed(
-            async (scope) => {
-                return scope.price * scope.count;
-            },
-            ["./price", "./count"],
-        ),
     },
 };
 type Paths = StatePath<typeof state>;
 /**
- type Paths = "order" | "order.price" | "order.count" 
- | "order.total" | "order.asyncTotal" | "order.asyncTotalPro" 
- | "order.asyncTotalPro.cancel" | "order.asyncTotalPro.loading" 
- | "order.asyncTotalPro.progress" | "order.asyncTotalPro.timeout" 
- | "order.asyncTotalPro.error" | "order.asyncTotalPro.retry" 
- | "order.asyncTotalPro.value" | "order.asyncTotalPro.run"
+ type Paths = "order" | "order.price" | "order.count"
+ | "order.total" | "order.asyncTotal"
+ | "order.asyncTotal.cancel" | "order.asyncTotal.loading"
+ | "order.asyncTotal.progress" | "order.asyncTotal.timeout"
+ | "order.asyncTotal.error" | "order.asyncTotal.retry"
+ | "order.asyncTotal.value" | "order.asyncTotal.run"
  */
 ```
 

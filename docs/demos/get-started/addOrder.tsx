@@ -1,6 +1,6 @@
 // docs\demos\get-started\addOrder.tsx
 import React from 'react';
-import { createStore, delay, asyncComputed, useForm } from '@autostorejs/react';
+import { createStore, delay, computed, useForm } from '@autostorejs/react';
 import { Input, Button, Loading, Table } from 'x-react-components';
 
 const calcOrderTotal = (scope: any) => Math.floor(scope.price * scope.count);
@@ -16,7 +16,7 @@ const store = createStore({
         },
     ],
     //  折扣 ：向后台请求折扣
-    discount: asyncComputed(
+    discount: computed(
         async (scope) => {
             await delay(2000);
             return parseFloat((0.5 + Math.random()).toFixed(2));
@@ -27,7 +27,7 @@ const store = createStore({
         },
     ),
     // 总计
-    total: asyncComputed(
+    total: computed(
         async (scope) => {
             await delay(2000);
             return (

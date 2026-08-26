@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStore, asyncComputed, ObserverScopeRef } from '@autostorejs/react';
+import { createStore, computed, ObserverScopeRef } from '@autostorejs/react';
 import { Button, JsonView, RichLabel, Table } from 'x-react-components';
 
 const { state, useAsyncReactive } = createStore({
@@ -7,7 +7,7 @@ const { state, useAsyncReactive } = createStore({
         bookName: 'Proficient in AutoStore',
         price: 100,
         count: 1,
-        total: asyncComputed(
+        total: computed(
             async ([count, price], { abortSignal }) => {
                 return new Promise<number>((resolve, reject) => {
                     const tmId = setTimeout(() => {

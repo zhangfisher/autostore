@@ -1,12 +1,12 @@
 import React from 'react';
-import { createStore, asyncComputed, delay } from '@autostorejs/react';
+import { createStore, computed, delay } from '@autostorejs/react';
 import { ColorBlock, Button } from 'x-react-components';
 
 const { state, $, computedObjects } = createStore({
     order: {
         price: 100,
         count: 3,
-        total: asyncComputed(
+        total: computed(
             async (order) => {
                 await delay(1000);
                 return order.price * order.count;

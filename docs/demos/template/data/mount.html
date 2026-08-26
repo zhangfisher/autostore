@@ -51,42 +51,50 @@
                 </div>
             </div>
 
-            <!-- 块 D：x-if 控制块 A 的生死 —— 销毁时按 CAS 删自己写入的键、容器删空则向上回收 -->
-            <div class="card">
+            <!-- 块 D：x-if 控制mount 块的生死 —— 每次挂载/销毁拍下 ui 树快照，回收过程一目了然 -->
+            <div class="card" x-data="{ snapshots: [] }">
                 <div class="card-content">
-                    <div class="heading has-text-grey">块 D · 生命周期回收演示</div>
+                    <div class="heading has-text-grey">块 D · 生命周期回收演示（勾选=挂载，取消=销毁回收）</div>
                     <div class="block">
                         <label class="checkbox">
-                            <input type="checkbox" x-model="showPanel" />
-                            挂载块 A（取消勾选 = 销毁块 A → ui.panel 随之回收）
+                            <input type="checkbox" x-model="showPanel" @change="snapshot" />
+                            挂载 mount 块（x-if 子树内 x-data mount:'ui.panel'）
                         </label>
                     </div>
                     <div class="block">
-                        ui 树现状：
-                        <code x-text="JSON.stringify(engine ? engine.state.ui : '')"></code>
+                        <span class="tag">ui 树实时值</span>
+                        <code class="ml-2" x-text="uiText()"></code>
                     </div>
-                    <div class="block has-text-grey is-size-7">
-                        勾选 → 编译块 A → ui.panel.count 出现；取消 → 销毁 → 键删空 → ui.panel 连同 ui 一并回收
-                        （ui.lang 若被块 A 写过也会回收；本例 ui.lang 由外部 state 预置，块 A 只写 count/tip，
-                        删除后 ui 恢复 {lang:'zh-CN'}）。
-                    </div>
-                    <template x-if="showPanel">
-                        <div class="notification is-primary is-light" x-data="{ fresh: '我是 x-if 子树里的 mount 数据' }" x-data-options="{mount:'ui.panel'}">
-                            {{fresh}}（挂到 ui.panel，随 x-if 销毁而回收）
+                    <div class="block">
+                        <span class="tag">事件快照（新→旧）</span>
+                        <div class="mt-2" x-for="snap of snapshots" style="display:flex; flex-direction:column; gap:4px">
+                            <div class="is-size-7">
+                                <span class="tag" :class="snap.mounted ? 'is-success' : 'is-danger'" x-text="snap.mounted ? '挂载' : '销毁'"></span>
+                                <code x-text="snap.tree"></code>
+                            </div>
                         </div>
-                    </template>
+                    </div>
                 </div>
             </div>
+
+            <!-- 块 D 的 x-if 子树：mount 数据随 x-if 销毁而回收 -->
+            <template x-if="showPanel">
+                <div class="notification is-primary is-light" x-data="{ fresh: 'mount 数据已挂入' }" x-data-options="{mount:'ui.panel'}">
+                    {{fresh}} —— 我挂在 ui.panel；上方取消勾选即销毁我 → ui.panel 键删空 → 容器连同 ui 向上回收
+                </div>
+            </template>
         </div>
 
         <script>
             const { AutoTemplateEngine } = AutoTemplateSpaces;
             const engine = new AutoTemplateEngine(
                 document.querySelector(".demo-app"),
+                // ui.lang 预置：演示「挂载容器是共享容器，他人旧键保留」；
+                // 块 A/x-if 子树只写 count/tip/fresh，销毁回收后 ui 恢复只剩 lang
                 { showPanel: false, ui: { lang: "zh-CN" } },
                 {
                     actions: {
-                        // path 模式下 this.count 直接写挂载容器（store.state.ui.panel.count），
+                        // path 模式下 this.data.count 直接写挂载容器（store.state.ui.panel.count），
                         // 路径订阅自动驱动块 A/B/C 同步更新——与默认私有域的 this.data 体验完全一致
                         bump: function () {
                             this.data.count = this.data.count + 1;
@@ -94,6 +102,16 @@
                         // 挂载容器是共享容器：写同容器的其他键（ui.lang）同样全树生效
                         bumpOuter: function () {
                             engine.state.ui.lang = engine.state.ui.lang === "zh-CN" ? "en-US" : "zh-CN";
+                        },
+                        // ui 树实时文本：容器被回收后 ui 可能只剩 lang 或整体消失，动态渲染
+                        uiText: function () {
+                            return JSON.stringify(engine.state.ui ?? "(已整体回收)");
+                        },
+                        // 快照：勾选（挂载）后 UI 已挂入，读到的树含 panel；取消（销毁）后读到的树已回收
+                        snapshot: function () {
+                            const mounted = !!engine.state.showPanel;
+                            const tree = JSON.stringify(engine.state.ui ?? {});
+                            this.data.snapshots = [{ mounted, tree }, ...this.data.snapshots].slice(0, 6);
                         },
                     },
                 },

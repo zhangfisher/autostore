@@ -1,5 +1,5 @@
 import React from 'react';
-import { delay, createStore, asyncComputed } from '@autostorejs/react';
+import { delay, createStore, computed } from '@autostorejs/react';
 import { Input, ColorBlock, JsonView, Box } from 'x-react-components';
 
 const store = createStore(
@@ -7,7 +7,7 @@ const store = createStore(
         user: {
             firstName: 'Zhang',
             lastName: 'fisher',
-            fullName: asyncComputed(
+            fullName: computed(
                 async (user) => {
                     await delay(1000); // 模拟异步计算
                     return user.firstName + ' ' + user.lastName;

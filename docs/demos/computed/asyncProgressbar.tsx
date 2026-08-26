@@ -1,5 +1,5 @@
 import React from 'react';
-import { delay, createStore, asyncComputed, ObserverScopeRef } from '@autostorejs/react';
+import { delay, createStore, computed, ObserverScopeRef } from '@autostorejs/react';
 import { Button, Table, Loading, RichLabel, JsonView } from 'x-react-components';
 
 const { state, useAsyncState } = createStore({
@@ -7,7 +7,7 @@ const { state, useAsyncState } = createStore({
         bookName: 'Proficient in AutoStore',
         price: 100,
         count: 1,
-        total: asyncComputed(
+        total: computed(
             async ([count, price], { getProgressbar }) => {
                 const progressbar = getProgressbar();
                 for (let i = 1; i <= 100; i++) {
