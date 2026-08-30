@@ -1,4 +1,3 @@
-import { PATH_DELIMITER } from "autostore";
 import { isRaw } from "../utils/isRaw";
 import { hookArrayMethods } from "./hookArray";
 import type { StateOperateType, StateValidator } from "./types";
@@ -10,6 +9,7 @@ import { markRaw } from "../utils/markRaw";
 import { isAllowCreatedObserver } from "../utils/isAllowCreatedObserver";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
+import { PATH_DELIMITER } from "../consts";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 
