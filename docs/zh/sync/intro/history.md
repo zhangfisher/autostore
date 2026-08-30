@@ -7,10 +7,6 @@
 -   `@autostorejs/syncer`: 用于`AutoStore`之间的同步
 -   `@autostorejs/devtools`: 调试工具库
 
-## @autostorejs/react
-
-<!--@include: ../../../../packages/react/CHANGELOG.md{3,}-->
-
 ## @autostorejs/syncer
 
 <!--@include: ../../../../packages/syncer/CHANGELOG.md{3,}-->
@@ -18,3 +14,7 @@
 ## autostore
 
 <!--@include: ../../../../packages/core/CHANGELOG.md{3,}-->
+
+## @autostorejs/react
+
+<!--@include: ../../../../packages/react/CHANGELOG.md{3,}-->

@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
--   10b205a: [feat] `refStore`参数现在支持传入多个`Store`，在`ref`函数中允许通过`ref("@<store.id>/<路径>")`方式引用。
+-   10b205a: [feat] `refStore`参数现在支持传入多个`Store`，在`ref`函数中允许通过`ref("@\<store.id>/\<路径>")`方式引用。
 
     ```ts
     const accountStore = new AutoStore(

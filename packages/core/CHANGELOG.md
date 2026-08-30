@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
--   10b205a: [feat] `refStore`参数现在支持传入多个`Store`，在`ref`函数中允许通过`ref("@<store.id>/<路径>")`方式引用。
+-   10b205a: [feat] `refStore`参数现在支持传入多个`Store`，在`ref`函数中允许通过`ref("@\<store.id>/\<路径>")`方式引用。
 
     ```ts
     const accountStore = new AutoStore(
@@ -240,7 +240,7 @@
 
 ### Patch Changes
 
--   [`5e2b1ab`](https://github.com/zhangfisher/autostore/commit/5e2b1ab7bae36a01c11adc077bb8bb221824512d) Thanks [@zhangfisher](https://github.com/zhangfisher)! - feat: support store.schemas.add(<path>,<schema>) method
+-   [`5e2b1ab`](https://github.com/zhangfisher/autostore/commit/5e2b1ab7bae36a01c11adc077bb8bb221824512d) Thanks [@zhangfisher](https://github.com/zhangfisher)! - feat: support store.schemas.add(\<path>,\<schema>) method
 
 ## 3.1.6
 
@@ -349,7 +349,7 @@
 
 ### Patch Changes
 
--   [`37e9870`](https://github.com/zhangfisher/autostore/commit/37e9870577c1da0ff90234072be9ca303d82a1db) Thanks [@zhangfisher](https://github.com/zhangfisher)! - add params<pathMap> for sync
+-   [`37e9870`](https://github.com/zhangfisher/autostore/commit/37e9870577c1da0ff90234072be9ca303d82a1db) Thanks [@zhangfisher](https://github.com/zhangfisher)! - add params\<pathMap> for sync
 
 ## 1.3.7
 

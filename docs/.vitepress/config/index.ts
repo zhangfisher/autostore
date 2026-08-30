@@ -83,7 +83,6 @@ export default defineConfig({
                         { text: "快速入门", link: "/zh/react/intro/get-started" },
                         { text: "示例", link: "/zh/react/intro/examples" },
                         { text: "常见问题", link: "/zh/react/intro/question" },
-                        { text: "更新历史", link: "/zh/react/intro/history" },
                     ],
                 },
                 {
