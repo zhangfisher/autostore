@@ -50,6 +50,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # 先构建工作区包：docs 依赖的 @autostorejs/plugins 等包 exports 只指向 dist/，
+      # 不构建则 Rollup 无法解析 "@autostorejs/plugins/asyncpro" 等子路径导入
+      - name: Build packages
+        run: bun run build
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Build with VitePress
