@@ -1,46 +1,47 @@
 {
-	"name": "@autostorejs/react",
-	"version": "4.2.2",
-	"description": "Very easy and elegant state management library for react",
-	"type": "module",
-	"main": "src/index.tsx",
-	"access": "public",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/zhangfisher/autostore.git"
-	},
-	"publishConfig": {
-		"exports": {
-			".": {
-				"types": "./dist/index.d.ts",
-				"require": "./dist/index.cjs",
-				"import": "./dist/index.js"
-			}
-		}
-	},
-	"scripts": {
-		"build": "tsup"
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"dependencies": {
-		"autostore": "workspace:*",
-		"flexstyled": "^2.1.2"
-	},
-	"devDependencies": {
-		"@swc/core": "^1.15.11",
-		"@types/node": "^24.12.0",
-		"terser": "^5.46.1",
-		"tsup": "^8.5.1",
-		"type-fest": "^5.4.3",
-		"typescript": "^6.0.2"
-	},
-	"peerDependencies": {
-		"react": "^19.2.4",
-		"@types/react": "^19.2.14"
-	},
-	"files": [
-		"dist"
-	]
+    "name": "@autostorejs/react",
+    "version": "4.2.2",
+    "description": "Very easy and elegant state management library for react",
+    "type": "module",
+    "main": "src/index.tsx",
+    "access": "public",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/zhangfisher/autostore.git"
+    },
+    "publishConfig": {
+        "exports": {
+            ".": {
+                "types": "./dist/index.d.ts",
+                "require": "./dist/index.cjs",
+                "import": "./dist/index.js"
+            }
+        }
+    },
+    "scripts": {
+        "build": "tsup"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "autostore": "workspace:*",
+        "@autostorejs/plugins": "workspace:*",
+        "flexstyled": "^2.1.2"
+    },
+    "devDependencies": {
+        "@swc/core": "^1.15.11",
+        "@types/node": "^24.12.0",
+        "terser": "^5.46.1",
+        "tsup": "^8.5.1",
+        "type-fest": "^5.4.3",
+        "typescript": "^6.0.2"
+    },
+    "peerDependencies": {
+        "react": "^19.2.4",
+        "@types/react": "^19.2.14"
+    },
+    "files": [
+        "dist"
+    ]
 }

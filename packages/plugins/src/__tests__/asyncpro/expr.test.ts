@@ -294,7 +294,7 @@ describe("异步计算属性测试", () => {
 
     test("异步计算属性应该支持进度条功能", async () => {
         const store = new AutoStore({
-            value: '```asyncComputed(async (scope,{getProgressbar})=>{const pbar = getProgressbar({max:100,min:0});for(let i=0;i<=100;i+=10){pbar.value(i);await new Promise(r=>setTimeout(r,1));}return "done"},[])```',
+            value: '```asyncComputed(async (scope,{getProgressbar})=>{const pbar = getProgressbar({max:100,min:0});for(let i=0;i<=100;i+=10){pbar.value(i);await new Promise(r=>setTimeout(r,10));}return "done"},[])```',
         });
 
         store.state.value; // 触发计算属性创建

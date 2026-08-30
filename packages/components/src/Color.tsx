@@ -89,7 +89,8 @@ const ColorStyle = styled<ColorProps>({
 
 export const Color:ReactFC<ColorProps> = (props:ColorProps)=>{
     const { id=Math.random().toString(36).slice(2), enable = true, style={},value, actions,...restProps } = props;
-    const label = props.label || props.name || props.id
+    // label 仅用于展示，name 仅用于表单绑定，二者职责分离不互相回退
+    const label = props.label
     const ref = useRef<HTMLInputElement>(null)
     return (
         <div         

@@ -99,7 +99,11 @@ export class ComputedObjects<State extends Dict = Dict> extends Map<string, Comp
         }
         if (descrioptor.options.async) {
             // 异步依赖是手工指定的：无 anchor 时必须是绝对路径；有 anchor 时允许相对路径
-            if (!hasAnchor && !isAbsolutePath(descrioptor.options.depends)) {
+            // 注意：空依赖([])是合法的（如useComputed(async getter)不指定依赖，仅首次执行，依赖变化不重算），
+            // isAbsolutePath([])会返回false，需要先排除空依赖场景
+            const deps = descrioptor.options.depends;
+            const hasRelativeDep = Array.isArray(deps) && deps.length > 0 && !isAbsolutePath(deps);
+            if (!hasAnchor && hasRelativeDep) {
                 throw new InvalidDependsError(
                     "The depends of the dynamic computed object must be absolute paths, or provide an anchor to enable relative paths",
                 );

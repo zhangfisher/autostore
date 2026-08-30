@@ -24,3 +24,7 @@ const clonedStore4 = originalStore.clone({
     sync: "forward",
 });
 ```
+
+<demo react="syncer/syncers/clone.tsx" />
+
+演示并排展示了三种克隆形态与原 `Store` 的实时对比：`mirrorClone`（全量双向）任何一侧修改都会互通；`forwardClone`（`entry: 'user'` + `forward`）只包含 `user` 子树且修改不回传；`snapshotClone`（`none`）只在克隆瞬间复制快照，之后完全独立。

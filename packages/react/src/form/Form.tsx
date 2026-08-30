@@ -112,9 +112,21 @@ export function createAutoFormComponent<State extends Dict>(
             // 3. 输入控件变更时的响应
             const onChange = (e: any) => {
                 const input = e.target;
+                // React对name等标准属性参与diff，重渲染会清除命令式设置(setAttribute)的name
+                // 因此当name丢失时，基于data-field-name/data-field标记从已注册字段中恢复
+                if (!input.name) {
+                    const fieldName =
+                        input.getAttribute('data-field-name') || input.getAttribute('data-field');
+                    const fieldInfo = Object.values(ctx.fields || {})
+                        .flat()
+                        .find((f) => f.inputs.includes(input));
+                    if (fieldInfo) {
+                        input.setAttribute('name', fieldName || fieldInfo.path);
+                    }
+                }
                 const path = input.name;
                 if (!path) {
-                    store.log('Input element does not have specified <name> attribute', 'warn');
+                    store.logger.warn('Input element does not have specified <name> attribute');
                     return;
                 }
                 const newVal = getInputValue(input, form);

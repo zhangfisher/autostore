@@ -93,7 +93,9 @@ export class AutoStoreSyncTransportBase<
         const isConnect = this.onConnect();
         if (isPromiseLike(isConnect)) {
             return isConnect.then(
-                () => {
+                (ok) => {
+                    // 连接被拒绝（onConnect 异步返回 false）：不置位、不发 connect 事件，保持未连接
+                    if (ok === false) return;
                     this.connected = true;
                     // 清除之前的 disconnect 保留消息（不触发监听器），然后发送 connect 事件并保留
                     this.clearRetained("disconnect");
@@ -106,7 +108,7 @@ export class AutoStoreSyncTransportBase<
                     throw error;
                 },
             );
-        } else {
+        } else if (isConnect !== false) {
             this.connected = true;
             // 清除之前的 disconnect 保留消息（不触发监听器），然后发送 connect 事件并保留
             this.clearRetained("disconnect");
@@ -114,6 +116,7 @@ export class AutoStoreSyncTransportBase<
             // 连接成功后，启动心跳检测
             this.startHeartbeat();
         }
+        // onConnect 同步返回 false：连接未就绪，保持未连接状态（不置位、不发 connect 事件）
     }
     /**
      * 本方法供子类重载用于创建连接

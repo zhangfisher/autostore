@@ -33,6 +33,10 @@ store1.count = 100  // 同步
 store1.user.name = 'Alice'  // 不同步
 ```
 
+<demo react="syncer/features/filter.tsx" />
+
+演示了「过滤敏感字段」这一最常见场景：左侧 `Store1` 修改 `name` 会同步到右侧 `Store2`，而修改 `password` / `token` 时右侧始终保持原值——`filter` 对这些路径返回了 `false`。
+
 ## 常见过滤场景
 
 ### 过滤敏感字段

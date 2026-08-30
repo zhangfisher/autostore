@@ -2,6 +2,7 @@ import {
     OBSERVER_DESCRIPTOR_FLAG,
     OBSERVER_TYPE_FLAG,
     normalizeDeps,
+    AsyncComputedValue,
     getDefaultComputedOptions,
 } from "autostore";
 import type { ComputedDepends } from "autostore";
@@ -10,7 +11,6 @@ import type {
     AsyncProComputedOptions,
     AsyncProComputedDescriptorBuilder,
     AsyncProComputedDescriptor,
-    AsyncComputedValue,
 } from "./types";
 
 /**

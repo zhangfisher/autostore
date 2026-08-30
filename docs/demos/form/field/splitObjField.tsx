@@ -21,11 +21,11 @@ export  default () => {
                     <ColorBlock name="isValid" value={valid}></ColorBlock>
                     <ColorBlock name="isDirty" value={dirty}></ColorBlock>
                     <Form>
-                        <div data-field-name="net">                                             
-                            <Input label='IP' data-field-part="ip" /> 
-                            <Input label="Gateway" data-field-part="gateway" />
-                            <Input label="Mask" data-field-part="mask"/>
-                            <Input label="DNS" data-field-part="dns"/>
+                        <div data-field-name="net">
+                            <Input name="net" label='IP' data-field-part="ip" />
+                            <Input name="net" label="Gateway" data-field-part="gateway" />
+                            <Input name="net" label="Mask" data-field-part="mask"/>
+                            <Input name="net" label="DNS" data-field-part="dns"/>
                         </div>
                     </Form>
                     <Button onClick={()=>reset()}>Reset</Button>

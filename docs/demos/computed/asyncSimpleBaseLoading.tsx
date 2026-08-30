@@ -26,10 +26,10 @@ const store = createStore(
 );
 const { useField, useReactive } = store;
 export default () => {
-    const state = useReactive();
+    const [state] = useReactive();
     const firstNameField = useField('user.firstName');
     const lastNameField = useField('user.lastName');
-    const [fullName, _, loading, error] = useReactive('user.fullName');
+    const [fullName, _, { loading, error }] = useReactive('user.fullName');
 
     return (
         <>

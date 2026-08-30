@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStore, computed, delay } from '@autostorejs/react';
+import { createStore, asyncComputed, delay } from '@autostorejs/react';
 import { ColorBlock, Button, Box, Table } from 'x-react-components';
 
 const state = {
@@ -7,7 +7,7 @@ const state = {
         name: 'Zhang',
         count: 4,
         price: 100,
-        total1: computed(
+        total1: asyncComputed(
             async (book) => {
                 await delay();
                 return book.count * book.price;
@@ -15,7 +15,7 @@ const state = {
             ['book.count', 'book.price'],
             { async: true, group: 'total' },
         ),
-        total2: computed(
+        total2: asyncComputed(
             async (book) => {
                 await delay();
                 return book.count * book.price;
@@ -23,7 +23,7 @@ const state = {
             ['book.count', 'book.price'],
             { async: true, group: 'total', initial: 100, enable: false },
         ),
-        total3: computed(
+        total3: asyncComputed(
             async (book) => {
                 await delay();
                 return book.count * book.price;

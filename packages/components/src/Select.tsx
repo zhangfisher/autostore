@@ -42,8 +42,8 @@ export const Select:React.FC<SelectProps> = (props)=>{
     const { items=[] } = props
 
 
-     // @ts-ignore
-    const label = props.label || props.name || props.id
+     // label 仅用于展示，name 仅用于表单绑定，二者职责分离不互相回退
+    const label = props.label
 
     return <div className={SelectStyle.className} style={SelectStyle.getStyle(props)}>
               { label ? <label>{label}</label> : null}

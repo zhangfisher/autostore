@@ -34,6 +34,10 @@ const syncer = new AutoStoreSyncer(store, {
 store.count = 100
 ```
 
+<demo react="syncer/transports/broadcastChannelTransport.tsx" />
+
+演示在同一页面内创建了两个接入相同频道的 `Store`，等价于两个标签页各运行一份代码：任一侧修改 `count` 或 `items`，另一侧实时同步。真实跨标签页场景中，每一侧就是一个独立的页面。
+
 ## 配置选项
 
 ```typescript

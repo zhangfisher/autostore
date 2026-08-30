@@ -1,12 +1,12 @@
 import React from 'react';
-import { createStore, delay, computed } from '@autostorejs/react';
-import { Button, ColorBlock } from 'x-react-components';
+import { createStore, delay, asyncComputed } from '@autostorejs/react';
+import { Button, ColorBlock, Loading, Box, JsonView } from 'x-react-components';
 
-const { state, $ } = createStore({
+const { state, $, useReactive, useAsyncReactive } = createStore({
     order: {
         price: 100,
         count: 1,
-        total: computed(
+        total: asyncComputed(
             async (order) => {
                 await delay(1000);
                 return order.price * order.count;
@@ -18,17 +18,19 @@ const { state, $ } = createStore({
 });
 
 export default () => {
+    const [rstate] = useReactive();
+    const total = useAsyncReactive('order.total');
     return (
         <div>
             <ColorBlock name="Price">{$('order.price')}</ColorBlock>
             <ColorBlock name="Count">{$('order.count')}</ColorBlock>
-            <ColorBlock name="Total" comment="1秒后更新">
+            <ColorBlock name="Total" comment={total.loading ? <Loading /> : '1秒后更新'}>
                 {$('order.total.value')}
             </ColorBlock>
-            <ColorBlock name="Total" comment="1秒后更新">
-                {$('order.total')}
-            </ColorBlock>
             <Button onClick={() => state.order.count++}>+Count</Button>
+            <Box title="state=">
+                <JsonView highlightKeys={['fullName']} data={rstate} />
+            </Box>
         </div>
     );
 };

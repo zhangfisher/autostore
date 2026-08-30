@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>心跳检测</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/syncer.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .log {
+                height: 220px;
+                overflow-y: auto;
+                font-size: 13px;
+            }
+            .tag-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="section">
+            <div class="block">
+                <span class="tag-dot" id="dot" style="background: #bbb"></span>
+                <strong id="status">未连接</strong>
+                <span class="tag is-light" id="hb-info">heartbeat = 1000ms</span>
+            </div>
+            <div class="block buttons">
+                <button class="button is-primary" id="btn-connect">建立连接（启用心跳）</button>
+                <button class="button is-warning" id="btn-kill">模拟对端失联（停止对端应答）</button>
+                <button class="button" id="btn-clear">清空日志</button>
+            </div>
+            <div class="block box log" id="log"></div>
+            <div class="notification is-info is-light">
+                心跳机制：每 1000ms 发送 <code>$ping</code>，对端自动回复 <code>$pong</code>；连续多次未收到 <code>$pong</code> 视为超时，传输器自动断开并触发 <code>timeout</code> 事件。
+            </div>
+        </div>
+
+        <script>
+            const { LocalTransport } = AutoStoreSyncer;
+            const logEl = document.querySelector('#log');
+            const dotEl = document.querySelector('#dot');
+            const statusEl = document.querySelector('#status');
+
+            function log(msg, color) {
+                const line = document.createElement('div');
+                const t = new Date().toLocaleTimeString();
+                line.innerHTML = `<span class="has-text-grey">${t}</span> <span style="color:${color || '#333'}">${msg}</span>`;
+                logEl.appendChild(line);
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+            function setStatus(connected, text, color) {
+                dotEl.style.background = color;
+                statusEl.textContent = text;
+            }
+
+            // 两个互相引用的本地传输器；t1 启用 1 秒心跳
+            let t1, t2;
+            let peerAlive = true;
+
+            document.querySelector('#btn-connect').onclick = () => {
+                if (t1 && t1.connected) return;
+                peerAlive = true;
+                t1 = new LocalTransport(() => t2, { heartbeat: 1000, debug: true });
+                t2 = new LocalTransport(() => t1, { debug: true });
+                t1.on('timeout', () => {
+                    setStatus(false, '心跳超时，已自动断开', 'red');
+                    log('⏰ timeout 事件触发：连续未收到 $pong，连接已断开', 'red');
+                });
+                t1.on('connect', () => setStatus(true, '已连接（心跳运行中）', '#2c8c5e'));
+                t1.on('disconnect', () => log('连接已断开', '#999'));
+                // debug 模式下每条消息触发 operate 事件，用于观察 ping/pong 流水
+                t1.on('operate', (op) => {
+                    if (op.type === '$ping') log('→ 发送 $ping', '#3273dc');
+                    if (op.type === '$pong') log('← 收到 $pong', '#2c8c5e');
+                });
+                t2.on('operate', (op) => {
+                    if (op.type === '$ping') log('  [对端] 收到 $ping，自动回复 $pong', '#999');
+                });
+                t1.connect();
+                t2.connect();
+                log('连接建立，心跳检测启动（interval=1000ms）', '#3273dc');
+            };
+
+            // 模拟对端失联：拦截对端的 onReceiveOperate，使其不再应答
+            document.querySelector('#btn-kill').onclick = () => {
+                if (!t2 || !t2.connected) {
+                    log('请先建立连接', '#999');
+                    return;
+                }
+                peerAlive = false;
+                const raw = t2.onReceiveOperate.bind(t2);
+                t2.onReceiveOperate = (op) => {
+                    if (op && op.type === '$ping') return true; // 收到 ping 但不处理（模拟失联）
+                    return raw(op);
+                };
+                log('💀 对端已停止应答，等待心跳超时...', 'orange');
+            };
+
+            document.querySelector('#btn-clear').onclick = () => (logEl.innerHTML = '');
+        </script>
+    </body>
+</html>

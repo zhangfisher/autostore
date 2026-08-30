@@ -157,10 +157,10 @@ function asyncComputed<Value = any, Scope = any>(
 
 - **在`useReactive`中直接返回响应式的`Loading`**
 
-`useReactive`的返回结果：`[计算结果，更新状态，加载状态，计算错误]`
+`useReactive`的返回结果：`[计算结果，更新状态，运行状态]`，其中运行状态是一个`{ loading, error, retry, timeout, progress }`对象
 
 ```ts {3}
-const [fullName, _, loading, error] = useReactive("user.fullName");
+const [fullName, _, { loading, error }] = useReactive("user.fullName");
 ```
 
 <demo react="computed/asyncSimpleBaseLoading.tsx"/>
@@ -213,6 +213,12 @@ const store = createStore(
 <demo react="computed/asyncLoading.tsx"/>
 
 - `useAsyncReactive`用来返回异步计算属性的状态数据。
+
+也可以直接从`useReactive`返回的第3个值中解构出响应式的`loading`、`retry`、`timeout`、`progress`：
+
+```ts
+const [total, setTotal, { loading, retry, timeout, progress }] = useReactive("order.total")
+```
 
 ### 执行进度
 

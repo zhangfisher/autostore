@@ -49,8 +49,9 @@ const SpinStyle = styled<SpinProps>({
 })
 
 
-export const Spin:React.FC<SpinProps> = (props)=>{    
-    const label = props.label  || props.name || props.id
+export const Spin:React.FC<SpinProps> = (props)=>{
+    // label 仅用于展示，name 仅用于表单绑定，二者职责分离不互相回退
+    const label = props.label
     const { onChange=()=>{} } = props
     const ref = useRef<HTMLInputElement>(null)
     

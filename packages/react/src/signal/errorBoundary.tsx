@@ -17,14 +17,14 @@ export function useErrorBoundary<State extends Dict>(
         // 当提供ErrorBoundary时
         let errorWatcher: Watcher | undefined;
         if (ErrorBoundary) {
-            errorWatcher = store.on('computed:error', ({ path, error }) => {
+            errorWatcher = store.on('observer/*/error', ({ observer, error }) => {
                 const strPath = Array.isArray(selector)
                     ? selector
                     : typeof selector === 'string'
                     ? selector.split(PATH_DELIMITER)
                     : null;
                 if (strPath) {
-                    if (isPathEq(path, strPath)) {
+                    if (isPathEq(observer.path, strPath)) {
                         setError(error);
                     }
                 }

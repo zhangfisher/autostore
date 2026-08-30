@@ -168,7 +168,10 @@ export class AutoStore<
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _logger?: ILogger;
     private _subscribers: FastEventSubscriber[] = [];
+    private _resetWatcher: Watcher | undefined;
+
     static observers: Record<string, ObserverObjectBuilder> = observers;
+    updatedState: Record<string, any> | undefined;
 
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
@@ -182,6 +185,7 @@ export class AutoStore<
                     enableValueExpr: true,
                     shadow: false,
                     cascadeDestroy: true,
+                    resetable: false,
                     plugins: [],
                 },
                 options,
@@ -210,6 +214,7 @@ export class AutoStore<
         this.silentUpdate = this.silentUpdate.bind(this);
         this.batchUpdate = this.batchUpdate.bind(this);
         this.collectDependencies = this.collectDependencies.bind(this);
+        this._enableReset();
         if (!this.options.lazy) forEachObject(this._data as any, this._onFirstEachState.bind(this));
         // @ts-expect-error
         if (this._options.debug && typeof globalThis.__AUTOSTORE_DEVTOOLS__ === "object") {
@@ -268,6 +273,43 @@ export class AutoStore<
             this._logger = this.options.logger || createLogger({ debug: this.options.debug });
         }
         return this._logger!;
+    }
+    get resetable() {
+        return this.options.resetable ?? false;
+    }
+    set resetable(value: boolean) {
+        if (value) {
+            // 已启用则直接返回，避免重复创建侦听器
+            if (this._resetWatcher) return;
+            this._enableReset();
+        } else {
+            // 关闭侦听器并清空记录
+            if (this._resetWatcher) {
+                this._resetWatcher.off();
+                this._resetWatcher = undefined;
+            }
+            this.updatedState = {};
+        }
+
+        // options 在 AutoStore 构造后必然存在，直接写入
+        this.options.resetable = value;
+    }
+    private _enableReset() {
+        // 初始化记录容器：路径 -> 首次变化前的旧值
+        this.updatedState = {};
+
+        // 创建侦听器并保存到实例
+        this._resetWatcher = this.watch(({ path, oldValue, type }) => {
+            if (path.length === 0) return;
+            if (type === "batch") return;
+
+            const pathKey = path.join(this.delimiter || ".");
+
+            // 只记录非计算属性（不以 # 开头）且未记录过的路径
+            if (!pathKey.startsWith("#") && this.updatedState && !(pathKey in this.updatedState)) {
+                this.updatedState[pathKey] = oldValue;
+            }
+        });
     }
     private _createSandbox() {
         if (this.options.enableValueExpr) {
@@ -634,7 +676,28 @@ export class AutoStore<
             return value;
         }
     }
+    reset(entry?: string): void {
+        if (!this.resetable || !this.updatedState) {
+            this.logger.warn("Resetable 未启用，请先执行 store.resetable = true");
+            return;
+        }
 
+        const updatedState = this.updatedState;
+        const delimiter = this.delimiter || ".";
+        const prefix = entry ? `${entry}${delimiter}` : "";
+
+        // 在批量更新内直接写状态树，避免逐次触发更新
+        // 说明：恢复写回会触发上面的侦听器，但路径已存在于 updatedState 中、不会被重复记录，
+        // 因此 reset 保持幂等，无需清空 updatedState。
+        this.batchUpdate((state: any) => {
+            for (const [pathKey, oldValue] of Object.entries(updatedState)) {
+                if (entry && !pathKey.startsWith(prefix)) continue;
+                setVal(state, splitPath(pathKey, delimiter), oldValue);
+            }
+        });
+        this.updatedState = {};
+        this.emit("reset", entry);
+    }
     createObserverObject(descriptor: AnyObserverDescriptor, context?: ObserverContext) {
         if (descriptor) {
             const builder = AutoStore.observers[descriptor.type];
@@ -883,6 +946,8 @@ export class AutoStore<
         this._operates.offAll();
         this.watchObjects.clear();
         this.computedObjects.clear();
+        this._resetWatcher?.off();
+        this._resetWatcher = undefined;
         this._subscribers.forEach((subscriber) => subscriber.off());
         // 通知 ConfigManager 注销当前 store 注册的配置项，
         // 打破 schema 对本 store 的强引用，使其可被 GC

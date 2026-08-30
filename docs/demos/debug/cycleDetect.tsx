@@ -25,7 +25,7 @@ export default ()=>{
     },{
       debug:true
     }) 
-  const [ data ] = store.useState()
+  const [ data ] = store.useReactive()
   return <div>
     <ColorBlock name="x">
         <Button onClick={()=>store.state.x--}>-</Button>

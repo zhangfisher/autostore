@@ -133,16 +133,16 @@ export interface AsyncProComputedOptions<
     retry?: number | [number, number];
 }
 
-export type AsyncComputedValue<Value = any> = {
-    loading: boolean;
-    progress: number; // 进度值
-    timeout: number; // 超时时间，单位ms，当启用超时时进行倒计时
-    error: any;
-    retry: number; // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试
-    value: Value; // 计算结果保存到此处
-    run: (options?: RuntimeComputedOptions) => void; // 重新执行任务
-    cancel: () => void; // 中止正在执行的异步计算
-};
+// export type AsyncComputedValue<Value = any> = {
+//     loading: boolean;
+//     progress: number; // 进度值
+//     timeout: number; // 超时时间，单位ms，当启用超时时进行倒计时
+//     error: any;
+//     retry: number; // 重试次数，当执行重试操作时，会进行倒计时，每次重试-1，直到为0时停止重试
+//     value: Value; // 计算结果保存到此处
+//     run: (options?: RuntimeComputedOptions) => void; // 重新执行任务
+//     cancel: () => void; // 中止正在执行的异步计算
+// };
 export type AsyncProRuntimeComputedOptions = AsyncProComputedOptions & {
     first?: boolean; // 当第一次运行时为true
     operate?: StateOperate; // 变化的依赖信息

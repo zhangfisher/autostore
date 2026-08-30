@@ -1,4 +1,5 @@
 import type { AsyncComputedValue } from "../computed";
+import type { RuntimeComputedOptions } from "../computed/types";
 import { isAsyncComputedValue } from "./isAsyncComputedValue";
 
 /**
@@ -23,7 +24,7 @@ export function createAsyncComputedValue<T = any>(
                 progress: 0,
                 timeout: 0,
                 error: null,
-                run: () => {},
+                run: (_options?: RuntimeComputedOptions) => {},
                 cancel: () => {},
             },
             other,

@@ -102,6 +102,39 @@ describe("本地Store同步", () => {
         expect(fromStore.state.order.total).toBe(10);
     });
 
+    test("watch连锁写入应同步到对端不被回声误判", async () => {
+        const store1 = new AutoStore({ count: 0, result: 0 });
+        const store2 = new AutoStore({ count: 0, result: 0 });
+        store1.sync(store2, { mode: "none" });
+        // store2 内 watch 监听到远程同步过来的 count 变化后连锁写入 result
+        // 该写入发生在应用远程操作的 update 栈内、继承了远程写入的 flags，
+        // 但写入路径（result）不是远程操作的目标路径，不应被判定为回声而吞掉
+        store2.watch(() => {
+            // biome-ignore lint: 连锁裸赋值正是回归点
+            (store2.state as any).result = (store2.state as any).count * 2;
+        });
+        store1.state.count = 3;
+        expect(store2.state.count).toBe(3);
+        expect(store2.state.result).toBe(6);
+        // 连锁写入的 result 应正常同步回 store1
+        expect(store1.state.result).toBe(6);
+    });
+
+    test("watch连锁写入仅转发非远程目标路径", async () => {
+        const store1 = new AutoStore({ data: { value: 1, derived: 0 } });
+        const store2 = new AutoStore({ data: { value: 1, derived: 0 } });
+        store1.sync(store2, { mode: "none" });
+        store2.watch(() => {
+            // biome-ignore lint: 连锁裸赋值
+            (store2.state as any).data.derived = (store2.state as any).data.value * 10;
+        });
+        store1.state.data.value = 5;
+        // 远程目标路径 value 已由同步写入；连锁写入的 derived 应转发回 store1
+        expect(store1.state.data.derived).toBe(50);
+        // 反向验证防循环：写入回环后值稳定，不无限增长
+        expect(store2.state.data.derived).toBe(50);
+    });
+
     test("将本地指定路径同步到其他store的指定路径", async () => {
         const fromStore = new AutoStore(
             {

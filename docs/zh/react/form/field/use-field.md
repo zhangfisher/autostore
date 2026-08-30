@@ -96,13 +96,44 @@ useField<Value>(
 
 ## 转换状态值
 
-通过指定`options.toState`参数，可以将`input`值转换后写入状态。
+`useField`内置了**类型驱动转换**机制：以状态值的原始类型为依据，自动将`input`输入值转换为对应类型后写入状态。
+
+<demo react="form/field/useFieldTypeConvert.tsx"
+  title="number/boolean/string 字段自动类型转换"
+/>
+
+**默认转换规则(`defaultToState`)**:
+
+| 状态类型 | 输入值 | 写入结果 |
+|---|---|---|
+| `number` | `'123'` / `'12.5'` | `123` / `12.5` |
+| `number` | `'abc'` / `''`(产物为`NaN`) | `0` |
+| `boolean` | `'true'` / `'false'` | `true` / `false` |
+| `boolean` | 其他值 | `Boolean(输入值)` |
+| `string` | 任意(含`'0123'`、`'true'`) | **原样保持字符串**，不做类型猜测 |
+| `undefined`/`null`/`NaN` | — | 按控件类型推断：`checkbox`→`boolean`、`number/range`→`number`、其余→`string` |
+
+- 空值字段(`undefined`/`null`/`NaN`)在首次输入时按控件类型推断，类型一经写入状态即自锁定，后续转换按状态类型进行。
+- **显示侧**(`defaultFromState`)：空值(`undefined`/`null`/`NaN`)显示为空字符串，其余原样返回。
+
+通过指定`options.toState`参数，可以**替换默认的写入转换**，将`input`值转换后写入状态。
 
 **下例中输入的字符会被转换为大写再更新到状态**
 
 <demo react="form/field/useFieldToState.tsx"
   title="将输入字符全部转换为大写"
 />
+
+通过指定`options.fromState`参数，可以**替换默认的显示转换**，将状态值转换为`input`显示值。返回`undefined`时保留原值(退出转换)。
+
+```ts
+const fieldVip = useField("user.vip",{
+    // 状态值 -> input 显示值
+    fromState:(value)=> value===true ? '是' : '否',
+    // input 值 -> 状态值(与 fromState 配对)
+    toState:(value)=> value==='是' ? true : false
+})
+```
 
 
 ## 配置字段
@@ -115,14 +146,16 @@ type UseFieldOptions<Value=any>={
     type?       : 'radio' | 'checkbox' | 'select' | 'textarea' | 'input'
     // 仅当type = radio或checkbox时有效时有效
     values?     : any[] 
-    toState?    : (value:string,options?:{path:string[] | undefined,part:number})=>Value    // 将数据更新到状态中时调用进行转换
+    toState?    : (value:any,options?:{path:string[] | undefined,part:number,stateValue?:any,event?:any})=>Value
+    fromState?  : (stateValue:any,options?:{path:string[] | undefined,part:number})=>any
 }
 ```
 
 - `name`:  可选的字段名称，用于标识字段。
 - `type`:  控件类型，支持`radio`、`checkbox`、`select`、`textarea`、`input`。
 - `values`:  仅当`type = radio`或`checkbox`时有效时有效，用于指定`radio`或`checkbox`的值。
-- `toState`:  用于将`input`值转换为状态值的函数。
+- `toState`:  将`input`原始值转换为状态值，默认实现见上表，可整体替换。
+- `fromState`:  将状态值转换为`input`显示值，默认实现为空值显示空字符串，可整体替换。
 
 
 

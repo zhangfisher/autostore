@@ -35,6 +35,10 @@ _Avoid_: fan-out, propagate
 在 `_peeping=true` 守卫下读取状态，抑制 `get` 操作事件，避免在监听器/广播回调内部读值引发无限循环。
 _Avoid_: silent read, peek
 
+**类型驱动转换（Type-Driven Conversion）**:
+useField 的 input↔状态双向类型转换，以**状态值的 `typeof`** 为依据（而非对输入做启发式猜测）：number 字段字符串转数字（NaN 视为空值写 0）、boolean 字段 `'true'/'false'` 转 boolean、string 字段原样保持（`'0123'` 不被污染）；状态值为空值（`undefined`/`null`/`NaN`）时按控件类型推断，类型一经写入即自锁定。转换逻辑是 `toState`/`fromState` 的**默认实现**，开发者传入自定义函数即整体替换。
+_Avoid_: 自动类型转换、类型强转（未体现“以状态类型为依据”）
+
 **响应式对象身份（Reactive Identity）**:
 从 store 读出的对象型状态是包装该原始对象的 Proxy（按 target 在 `proxyCache` 中缓存），其引用与原始对象永不相等。因此判别「当前状态是否为某对象」不能用 `===` 比较读出的值与原始引用——应以布尔/字符串等原始值作状态判据，或比较某个判别字段。
 _Avoid_: 对象引用、原始对象引用

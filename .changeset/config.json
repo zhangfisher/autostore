@@ -3,7 +3,15 @@
     "changelog": "@changesets/cli/changelog",
     "commit": true,
     "access": "public",
-    "fixed": [["autostore", "@autostorejs/react", "@autostorejs/syncer", "@autostorejs/devtools"]],
+    "fixed": [
+        [
+            "autostore",
+            "@autostorejs/react",
+            "@autostorejs/syncer",
+            "@autostorejs/plugins",
+            "@autostorejs/devtools"
+        ]
+    ],
     "linked": [],
     "baseBranch": "master",
     "updateInternalDependencies": "patch",
@@ -11,7 +19,6 @@
         "autostore-docs",
         "x-react-components",
         "@autostore-examples/benchmark",
-        "@autostore-examples/react",
-        "@autostorejs/template"
+        "@autostore-examples/react"
     ]
 }

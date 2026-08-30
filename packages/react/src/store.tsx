@@ -1,32 +1,30 @@
 import React from 'react';
 import { AutoStore, type Dict, type AutoStoreOptions } from 'autostore';
-import { createUseState } from './hooks/useState';
+import { createUseReactive } from './hooks/useReactive';
 import { createUseDeps } from './hooks/useDeps';
 import { createSignalComponent } from './signal';
 import type { SignalComponentType } from './signal/types';
 import { createUseField } from './form/useField';
 import type {
     UseDepsType,
-    UseStateType,
     UseWatchType,
     UseReactiveType,
     UseComputedObjectType,
-    UseAsyncStateType,
     UseAsyncReactiveType,
     UseComputedType,
     UseObserverObjectType,
 } from './hooks/types';
 import type { UseFieldType, UseFieldsType } from './form/types';
+import '@autostorejs/plugins/asyncpro';
 import { createUseWatch } from './hooks/useWatch';
 import { createUseFields } from './form/useFields';
 import { createUseComputed } from './hooks/useComputed';
-import { createUseAsyncState } from './hooks/useAsyncState';
+import { createUseAsyncReactive } from './hooks/useAsyncReactive';
 import { createUseComputedObject } from './hooks/useComputedObject';
 import { createUseObserverObject } from './hooks/useObserver';
 
 export class ReactAutoStore<State extends Dict> extends AutoStore<State> {
-    useState: UseStateType<State>;
-    useAsyncState: UseAsyncStateType<State>;
+    useReactive: UseReactiveType<State>;
     useAsyncReactive: UseAsyncReactiveType<State>;
     useDeps: UseDepsType<State>;
     $: SignalComponentType<State>;
@@ -34,7 +32,6 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State> {
     useWatch: UseWatchType<State>;
     useField: UseFieldType<State>;
     useFields: UseFieldsType<State>;
-    useReactive: UseReactiveType<State>;
     useObserverObject: UseObserverObjectType<State>;
     useComputedObject: UseComputedObjectType<State>;
     useComputed: UseComputedType<State>;
@@ -46,15 +43,14 @@ export class ReactAutoStore<State extends Dict> extends AutoStore<State> {
                 {
                     signalErrorBoundary: () => <>ERROR</>,
                     resetable: true,
+                    configManager: false,
                 },
                 options,
             ),
         );
         this.signal = this.$ = createSignalComponent(this).bind(this);
-        this.useState = createUseState(this).bind(this);
-        this.useReactive = this.useState;
-        this.useAsyncState = createUseAsyncState(this).bind(this);
-        this.useAsyncReactive = this.useAsyncState;
+        this.useReactive = createUseReactive(this).bind(this);
+        this.useAsyncReactive = createUseAsyncReactive(this).bind(this);
         this.useDeps = createUseDeps(this).bind(this);
         this.useWatch = createUseWatch(this).bind(this);
         this.useField = createUseField(this).bind(this);

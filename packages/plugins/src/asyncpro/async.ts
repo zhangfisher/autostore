@@ -14,11 +14,11 @@ import {
     ComputedObject,
     getValueScope,
     getError,
+    AsyncComputedValue,
 } from "autostore";
 import type { Dict, RuntimeComputedOptions, StateOperate } from "autostore";
 import { delay } from "flex-tools/async/delay";
 import type {
-    AsyncComputedValue,
     AsyncComputedProgressbar,
     AsyncProComputedGetterArgs,
     AsyncProRuntimeComputedOptions,
@@ -96,7 +96,7 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
 
     private createAsyncComputedValue() {
         return Object.assign({
-            [ASYNC_COMPUTED_VALUE]: true,
+            // [ASYNC_COMPUTED_VALUE]: true,
             loading: false,
             timeout: 0,
             retry: 0,
@@ -164,6 +164,9 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
             this.store.logger.warn(() => `Async computed <${this.toString()}> is disabled`);
             return;
         }
+        // 先记录上一次运行是否出错，再清除错误记录
+        // 用于在重新计算开始时清除状态中残留的旧error（ctx是本次新建的，读不到上次的错误）
+        const hadError = this.error !== undefined;
         this.error = undefined;
         this._firstRun = true;
         if (!first) {
@@ -196,7 +199,7 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
         }
         this._isRunning = true; // 即所依赖项的值
         try {
-            return await this.executeGetter(scope, finalComputedOptions);
+            return await this.executeGetter(scope, finalComputedOptions, hadError);
         } finally {
             this._isRunning = false;
         }
@@ -316,7 +319,11 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
      * 执行计算函数
      *
      */
-    private async executeGetter(scope: any, options: Required<AsyncProRuntimeComputedOptions>) {
+    private async executeGetter(
+        scope: any,
+        options: Required<AsyncProRuntimeComputedOptions>,
+        hadError = false,
+    ) {
         const { retry } = options;
         const [retryCount, retryInterval] = retry
             ? Array.isArray(retry)
@@ -367,7 +374,9 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
                     const initValue: Partial<AsyncComputedValue> = {
                         loading: true,
                     };
-                    if (ctx.hasError) initValue.error = null;
+                    // 上一次运行出错时，在开始计算前清除状态中残留的旧error
+                    // （ctx是本次新建的读不到上次错误，hadError由run()在清除this.error前捕获）
+                    if (hadError) initValue.error = null;
 
                     if (retryCount > 0) initValue.retry = i > 0 ? retryCount - i + 1 : 0;
 
@@ -393,11 +402,12 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
                     });
                     // 执行计算函数
                     computedResult = await this.getter.call(this, scope, getterArgs);
-
                     if (ctx.hasAbort) throw new AbortError();
                     if (!ctx.hasTimeout) {
                         if (options.raw) markRaw(computedResult);
                         afterUpdated.value = computedResult;
+                        // 计算成功时必须清除上一次的错误，否则旧的error会一直残留在状态中
+                        if (hadError) afterUpdated.error = null;
                         if (timeout.enable) afterUpdated.timeout = 0;
                     }
                 } catch (e: any) {

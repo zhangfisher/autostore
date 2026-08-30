@@ -1,13 +1,16 @@
 import React from 'react';
-import { delay, createStore, computed } from '@autostorejs/react';
-import { Input, ColorBlock, JsonView, Box } from 'x-react-components';
+import { delay, createStore } from '@autostorejs/react';
+import '@autostorejs/plugins/asyncpro';
+import { asyncComputed } from '@autostorejs/plugins/asyncpro';
+import { Input, ColorBlock, JsonView, Box, Button } from 'x-react-components';
 
 const store = createStore(
     {
         user: {
             firstName: 'Zhang',
             lastName: 'fisher',
-            fullName: computed(
+            // 高级异步计算属性：使用asyncComputed声明
+            fullName: asyncComputed(
                 async (user) => {
                     await delay(1000); // 模拟异步计算
                     return user.firstName + ' ' + user.lastName;
@@ -27,7 +30,7 @@ const store = createStore(
 );
 const { useAsyncReactive, useReactive, useField } = store;
 export default () => {
-    const state = useReactive();
+    const [state] = useReactive();
     const firstNameField = useField('user.firstName');
     const lastNameField = useField('user.lastName');
     const fullName = useAsyncReactive('user.fullName');
@@ -39,6 +42,18 @@ export default () => {
             <ColorBlock name="FullName" loading={fullName.loading}>
                 {fullName.value}
             </ColorBlock>
+            <Button
+                onClick={() => {
+                    store.state.user.firstName = store.state.user.firstName + '🔥';
+                }}>
+                Change FirstName
+            </Button>
+            <Button
+                onClick={() => {
+                    store.state.user.lastName = store.state.user.lastName + '❤️';
+                }}>
+                Change LastName
+            </Button>
             <Box title="state=">
                 <JsonView highlightKeys={['fullName']} data={state} />
             </Box>

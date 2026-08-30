@@ -21,26 +21,26 @@ export  default () => {
                     <Form>
                         <div data-field-name="net.ip">
                             <label>IP:</label>
-                            <div>                                
-                                <Input data-field-part="0" inline width={50} /> 
+                            <div>
+                                <Input name="net.ip" data-field-part="0" inline width={50} />
                                 <span>.</span>
-                                <Input data-field-part="1" inline width={50}/>
+                                <Input name="net.ip" data-field-part="1" inline width={50}/>
                                 <span>.</span>
-                                <Input data-field-part="2" inline width={50}/>
+                                <Input name="net.ip" data-field-part="2" inline width={50}/>
                                 <span>.</span>
-                                <Input data-field-part="3" inline width={50}/>
+                                <Input name="net.ip" data-field-part="3" inline width={50}/>
                             </div>
                         </div>
                         <div data-field-name="net.gateway">
                             <label>Gateway:</label>
-                            <div>                                
-                                <Input data-field-part="0" inline width={50} /> 
+                            <div>
+                                <Input name="net.gateway" data-field-part="0" inline width={50} />
                                 <span>.</span>
-                                <Input data-field-part="1" inline width={50}/>
+                                <Input name="net.gateway" data-field-part="1" inline width={50}/>
                                 <span>.</span>
-                                <Input data-field-part="2" inline width={50}/>
+                                <Input name="net.gateway" data-field-part="2" inline width={50}/>
                                 <span>.</span>
-                                <Input data-field-part="3" inline width={50}/>
+                                <Input name="net.gateway" data-field-part="3" inline width={50}/>
                             </div>
                         </div>
                     </Form>					

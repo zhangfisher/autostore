@@ -70,6 +70,10 @@ transport.onReceive((operate) => {
 })
 ```
 
+<demo html="syncer/features/heartbeat.html" />
+
+演示完整呈现心跳生命周期：点击「建立连接」后可看到每秒一次的 `$ping`/`$pong` 往返流水；点击「模拟对端失联」后对端停止应答，连续多次未收到 `$pong` 即触发 `timeout` 事件，传输器自动断开（状态指示灯变红）。
+
 ## 配置选项
 
 ```typescript

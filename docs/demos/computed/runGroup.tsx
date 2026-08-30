@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStore, computed, delay } from '@autostorejs/react';
+import { createStore, computed, asyncComputed, delay } from '@autostorejs/react';
 import { ColorBlock, Button, Box } from 'x-react-components';
 
 const state = {
@@ -15,7 +15,7 @@ const state = {
             [],
             { async: true, group: 'total' },
         ),
-        total2: computed(
+        total2: asyncComputed(
             async (book) => {
                 await delay();
                 return book.count * book.price;
@@ -23,7 +23,7 @@ const state = {
             [],
             { async: true, group: 'total' },
         ),
-        total3: computed(
+        total3: asyncComputed(
             async (book) => {
                 await delay();
                 return book.count * book.price;
@@ -31,7 +31,7 @@ const state = {
             [],
             { async: true, group: 'total' },
         ),
-        average1: computed(
+        average1: asyncComputed(
             async (book) => {
                 await delay();
                 return book.price / book.count;
@@ -39,7 +39,7 @@ const state = {
             [],
             { async: true, group: 'average' },
         ),
-        average2: computed(
+        average2: asyncComputed(
             async (book) => {
                 await delay();
                 return book.price / book.count;
@@ -47,7 +47,7 @@ const state = {
             [],
             { async: true, group: 'average' },
         ),
-        average3: computed(
+        average3: asyncComputed(
             async (book) => {
                 await delay();
                 return book.price / book.count;
@@ -61,21 +61,23 @@ const state = {
 const store = createStore(state);
 
 export default () => {
-    const [state] = store.useState();
+    const [state] = store.useReactive();
 
     return (
         <div>
             <Box title="Total Group">
-                <ColorBlock name="Total1" loading={state.book.total1.loading}>
-                    {state.book.total1.loading ? '计算中...' : state.book.total1.value}
-                </ColorBlock>
+                <ColorBlock name="Total1">{state.book.total1}</ColorBlock>
                 <ColorBlock name="Total2" loading={state.book.total2.loading}>
                     {state.book.total2.loading ? '计算中...' : state.book.total2.value}
                 </ColorBlock>
                 <ColorBlock name="Total3" loading={state.book.total3.loading}>
                     {state.book.total3.loading ? '计算中...' : state.book.total3.value}
                 </ColorBlock>
-                <Button onClick={() => store.computedObjects.runGroup('total')}>
+                <Button
+                    onClick={() => {
+                        store.state.book.price += 1;
+                        store.computedObjects.runGroup('total');
+                    }}>
                     执行组total计算函数
                 </Button>
             </Box>
@@ -92,7 +94,11 @@ export default () => {
                     {' '}
                     {state.book.average3.loading ? '计算中...' : state.book.average3.value}
                 </ColorBlock>
-                <Button onClick={() => store.computedObjects.runGroup('average')}>
+                <Button
+                    onClick={() => {
+                        store.state.book.price += 10;
+                        store.computedObjects.runGroup('average');
+                    }}>
                     执行组Average计算函数
                 </Button>
             </Box>

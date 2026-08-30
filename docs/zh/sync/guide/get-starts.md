@@ -22,6 +22,10 @@ store2.count = 200;
 console.log(store1.count); // 200
 ```
 
+<demo react="syncer/get-starts/localSync.tsx" />
+
+上例演示了两个 `Store` 的实时双向同步：左右两个面板分别展示两个 `Store` 的当前状态，在任一侧修改数据，另一侧立即更新。
+
 ## 跨标签页同步
 
 使用 `BroadcastChannelTransport` 实现跨标签页同步：
@@ -45,6 +49,10 @@ const syncer = new AutoStoreSyncer(store, {
 // 在任一标签页修改状态，其他标签页会自动同步
 store.count = 100;
 ```
+
+<demo react="syncer/get-starts/broadcastChannelSync.tsx" />
+
+点击演示中的「在新窗口打开」会启动第二个页面，两个窗口运行相同的代码并接入同一频道，任一窗口修改状态另一窗口实时同步；后打开的窗口会自动拉取最新状态。
 
 ## 与 WebWorker 同步
 
@@ -91,6 +99,10 @@ store.watch(() => {
 });
 ```
 
+<demo react="syncer/get-starts/workerSync.tsx" />
+
+演示中主线程与 `Worker` 线程各持有一个 `Store` 并双向同步：点击 `count++` 后，`Worker` 监听到变化计算 `result = count * 2` 并写回。左右双面板分别实时展示主线程与 `Worker` 内部的状态（`Worker` 通过独立消息上报快照），底部日志记录每一次跨线程的数据流动。
+
 ## 与 SharedWorker 同步
 
 - **主线程代码**
@@ -136,6 +148,10 @@ setInterval(() => {
     store.count++;
 }, 5000);
 ```
+
+<demo react="syncer/get-starts/sharedWorkerSync.tsx" />
+
+演示中 `SharedWorker` 内的 `Store` 每秒递增 `count` 并推送给客户端；客户端使用 `direction: 'backward'` 只接收不发送。左侧是本页客户端 `Store`，右侧实时展示 `SharedWorker` 内的服务端 `Store`——本地修改 `count` 后会被下一次推送覆盖，两侧对照即可直观看到单向同步的语义。
 
 ## 使用 BroadcastSyncer 实现 1-N 同步
 
@@ -194,6 +210,14 @@ const syncer = new AutoStoreWorkerSyncer(store, worker, {
     direction: "backward",
 });
 ```
+
+<demo react="syncer/get-starts/broadcast1toN.tsx" />
+
+演示了 `1-N` 广播：`SharedWorker` 内的 `AutoStoreBroadcastSyncer` 管理主 `Store`，任一客户端（本页或点击「在新窗口打开」的其他窗口）的修改都会先到达服务端主 `Store`，再广播给所有其他客户端。左右双面板分别展示本页客户端 `Store` 与服务端主 `Store` 的实时状态，`messageCount` 等计算属性在服务端原位计算并同步到各客户端。
+
+:::warning 提示
+声明接入频道的消息（`__channel`）必须先于创建 syncer 发送：syncer 构造时会立即发送初始 `$pull`，若声明在后，服务端分流器尚未将该端口注册到广播器，初始拉取会被丢弃。
+:::
 
 ## 使用 SwitchSyncer 实现 N-N 同步
 
@@ -264,3 +288,7 @@ const productSyncer = new AutoStoreWorkerSyncer(productStore, worker, {
     immediate: true,
 });
 ```
+
+<demo react="syncer/get-starts/switchNN.tsx" />
+
+演示了 `N-N` 交换同步：本页同时持有 `counterStore` 与 `chatStore` 两个本地 `Store`，分别通过 `peers` 选项对接 `SharedWorker` 内的 `counter-store` 与 `chat-store`。两个信道互不干扰——`count` 的变化只会在 `counterStore` 间流转，`chatStore` 完全不受影响。

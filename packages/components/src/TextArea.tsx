@@ -41,8 +41,8 @@ export const TextArea:React.FC<TextAreaProps> = (props)=>{
     // @ts-ignore
     const { id=Math.random().toString(36).slice(2)} = props
 
-     // @ts-ignore
-    const label = props.label || props.name || props.id
+     // label 仅用于展示，name 仅用于表单绑定，二者职责分离不互相回退
+    const label = props.label
     return <div 
             className={TextAreaStyle.className} 
             style={TextAreaStyle.getStyle(props)}

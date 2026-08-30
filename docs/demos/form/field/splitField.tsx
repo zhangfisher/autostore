@@ -20,14 +20,14 @@ export  default () => {
                     <Form>
                         <div data-field-name="net.ip">
                             <label>IP:</label>
-                            <div>                                
-                                <Input data-field-part="(\d{1,3})\.\d{1,3}\.\d{1,3}\.\d{1,3}" inline width={60} /> 
+                            <div>
+                                <Input name="net.ip" data-field-part="(\d{1,3})\.\d{1,3}\.\d{1,3}\.\d{1,3}" inline width={60} />
                                 <span>.</span>
-                                <Input data-field-part="\d{1,3}\.(\d{1,3})\.\d{1,3}\.\d{1,3}" inline width={60}/>
+                                <Input name="net.ip" data-field-part="\d{1,3}\.(\d{1,3})\.\d{1,3}\.\d{1,3}" inline width={60}/>
                                 <span>.</span>
-                                <Input data-field-part="\d{1,3}\.\d{1,3}\.(\d{1,3})\.\d{1,3}" inline width={60}/>
+                                <Input name="net.ip" data-field-part="\d{1,3}\.\d{1,3}\.(\d{1,3})\.\d{1,3}" inline width={60}/>
                                 <span>.</span>
-                                <Input data-field-part="\d{1,3}\.\d{1,3}\.\d{1,3}\.(\d{1,3})" inline width={60}/>
+                                <Input name="net.ip" data-field-part="\d{1,3}\.\d{1,3}\.\d{1,3}\.(\d{1,3})" inline width={60}/>
                             </div>
                         </div>
                     </Form>                    

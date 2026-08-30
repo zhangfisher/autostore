@@ -31,6 +31,10 @@ store1.count = 100
 console.log(store2.count) // 100
 ```
 
+<demo react="syncer/transports/localTransport.tsx" />
+
+演示还原了 `store.sync()` 内部的实现方式：两个 `LocalTransport` 互相引用对方，两侧各挂一个 `AutoStoreSyncer`。任一侧修改状态，操作经传输层直达对端，两侧面板实时保持一致。
+
 ## 使用 store.sync()
 
 更简单的方式是使用 `store.sync()` 方法，它会自动创建 LocalTransport：
@@ -45,6 +49,8 @@ const syncer = store1.sync(store2)
 store1.count = 100
 console.log(store2.count) // 100
 ```
+
+<demo react="syncer/get-starts/localSync.tsx" />
 
 ## 配置选项
 

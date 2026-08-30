@@ -1,13 +1,13 @@
 import React from 'react';
-import { delay, createStore, computed, ObserverScopeRef } from '@autostorejs/react';
+import { delay, createStore, asyncComputed, ObserverScopeRef } from '@autostorejs/react';
 import { Button, Table, Loading, RichLabel, JsonView } from 'x-react-components';
 
-const { state, useAsyncState } = createStore({
+const { state, useAsyncReactive } = createStore({
     order: {
         bookName: 'Proficient in AutoStore',
         price: 100,
         count: 1,
-        total: computed(
+        total: asyncComputed(
             async ([count, price], { getProgressbar }) => {
                 const progressbar = getProgressbar();
                 for (let i = 1; i <= 100; i++) {
@@ -24,7 +24,7 @@ const { state, useAsyncState } = createStore({
 });
 
 export default () => {
-    const total = useAsyncState('order.total');
+    const total = useAsyncReactive('order.total');
 
     return (
         <div>

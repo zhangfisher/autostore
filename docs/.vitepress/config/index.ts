@@ -19,16 +19,16 @@ export default defineConfig({
             { text: "核心库", link: "/zh/store/" },
             { text: "同步", link: "/zh/sync/" },
             { text: "React", link: "/zh/react/" },
-            { text: "模板", link: "/zh/template/" },
             { text: "开源推荐", link: "https://zhangfisher.github.io/repos/" },
         ],
         sidebar: {
             "/zh/store/": [
                 {
-                    text: "关于",
+                    text: "开始",
                     items: [
                         { text: "概念", link: "/zh/store/guide/store/about" },
                         { text: "安装", link: "/zh/store/guide/install" },
+                        { text: "更新历史", link: "/zh/store/guide/history" },
                     ],
                 },
                 {
@@ -76,17 +76,19 @@ export default defineConfig({
             ],
             "/zh/react/": [
                 {
-                    text: "关于",
+                    text: "开始",
                     collapsed: false,
                     items: [
                         { text: "安装", link: "/zh/react/intro/install" },
                         { text: "快速入门", link: "/zh/react/intro/get-started" },
                         { text: "示例", link: "/zh/react/intro/examples" },
                         { text: "常见问题", link: "/zh/react/intro/question" },
+                        { text: "更新历史", link: "/zh/react/intro/history" },
                     ],
                 },
                 {
                     text: "指南",
+                    collapsed: false,
                     items: [
                         {
                             text: "Store",
@@ -169,6 +171,10 @@ export default defineConfig({
                                             link: "/zh/react/form/field/use-fields",
                                         },
                                         {
+                                            text: "字段数据类型",
+                                            link: "/zh/react/form/field/data-type",
+                                        },
+                                        {
                                             text: "字段拆分",
                                             link: "/zh/react/form/field/split-field",
                                         },
@@ -202,12 +208,99 @@ export default defineConfig({
                         },
                     ],
                 },
+                {
+                    text: "API",
+                    items: [
+                        { text: "总览", link: "/zh/react/api/index" },
+                        {
+                            text: "Hooks",
+                            collapsed: false,
+                            items: [
+                                {
+                                    text: "useStore",
+                                    link: "/zh/react/api/hooks/use-store",
+                                },
+                                {
+                                    text: "useReactive",
+                                    link: "/zh/react/api/hooks/use-reactive",
+                                },
+                                {
+                                    text: "useAsyncReactive",
+                                    link: "/zh/react/api/hooks/use-async-reactive",
+                                },
+                                {
+                                    text: "useWatch",
+                                    link: "/zh/react/api/hooks/use-watch",
+                                },
+                                {
+                                    text: "useDeps",
+                                    link: "/zh/react/api/hooks/use-deps",
+                                },
+                                {
+                                    text: "useComputed",
+                                    link: "/zh/react/api/hooks/use-computed",
+                                },
+                                {
+                                    text: "useComputedObject",
+                                    link: "/zh/react/api/hooks/use-computed-object",
+                                },
+                            ],
+                        },
+                        {
+                            text: "表单 Hooks",
+                            collapsed: false,
+                            items: [
+                                {
+                                    text: "useForm",
+                                    link: "/zh/react/api/form/use-form",
+                                },
+                                {
+                                    text: "useField",
+                                    link: "/zh/react/api/form/use-field",
+                                },
+                                {
+                                    text: "useFields",
+                                    link: "/zh/react/api/form/use-fields",
+                                },
+                            ],
+                        },
+                        {
+                            text: "组件",
+                            collapsed: false,
+                            items: [
+                                {
+                                    text: "Signal 信号组件",
+                                    link: "/zh/react/api/components/signal",
+                                },
+                                {
+                                    text: "Form 表单组件",
+                                    link: "/zh/react/api/components/form",
+                                },
+                                {
+                                    text: "Field 字段组件",
+                                    link: "/zh/react/api/components/field",
+                                },
+                            ],
+                        },
+                        {
+                            text: "创建函数",
+                            collapsed: false,
+                            items: [
+                                {
+                                    text: "createStore",
+                                    link: "/zh/react/api/factory/create-store",
+                                },
+                            ],
+                        },
+                    ],
+                },
             ],
             "/zh/sync/": [
                 {
-                    text: "关于",
+                    text: "开始",
                     items: [
-                        { text: "安装", link: "/zh/sync/guide/install" },
+                        { text: "关于", link: "/zh/sync/intro/about" },
+                        { text: "安装", link: "/zh/sync/intro/install" },
                         { text: "快速入门", link: "/zh/sync/guide/get-starts" },
                     ],
                 },
@@ -240,54 +333,65 @@ export default defineConfig({
                         },
                     ],
                 },
-            ],
-            "/zh/template/": [
                 {
-                    text: "关于",
-                    link: "/zh/template/index",
+                    text: "特性",
                     items: [
-                        { text: "安装", link: "/zh/template/intro/install" },
-                        { text: "名词解释", link: "/zh/template/intro/glossary" },
-                        { text: "快速入门", link: "/zh/template/intro/get-started" },
-                        { text: "特征和优势", link: "/zh/template/intro/features" },
-                        { text: "常见问题", link: "/zh/template/intro/question" },
-                    ],
-                },
-                {
-                    text: "指南",
-                    items: [
-                        { text: "初始化", link: "/zh/template/guide/initial" },
-                        { text: "响应式", link: "/zh/template/guide/reactive" },
-                        { text: "动作", link: "/zh/template/guide/action" },
-                        { text: "指令类型", link: "/zh/template/guide/directive" },
-                        { text: "指令配置", link: "/zh/template/guide/config" },
-                        { text: "动态模板", link: "/zh/template/guide/patch" },
-                        { text: "组件", link: "/zh/template/guide/component" },
-                    ],
-                },
-                {
-                    text: "指令",
-                    items: [
-                        { text: "x-bind", link: "/zh/template/guide/directives/x-bind" },
-                        { text: "x-text", link: "/zh/template/guide/directives/x-text" },
-                        { text: "x-html", link: "/zh/template/guide/directives/x-html" },
-                        { text: "x-style", link: "/zh/template/guide/directives/x-style" },
-                        { text: "x-class", link: "/zh/template/guide/directives/x-class" },
-                        { text: "x-data", link: "/zh/template/guide/directives/x-data" },
-                        { text: "x-scope", link: "/zh/template/guide/directives/x-scope" },
-                        { text: "x-if", link: "/zh/template/guide/directives/x-if" },
-                        { text: "x-show", link: "/zh/template/guide/directives/x-show" },
-                        { text: "x-for", link: "/zh/template/guide/directives/x-for" },
-                        { text: "x-on", link: "/zh/template/guide/directives/x-on" },
-                        { text: "x-loading", link: "/zh/template/guide/directives/x-loading" },
-                        { text: "x-slot", link: "/zh/template/guide/directives/x-slot" },
-                        { text: "x-model", link: "/zh/template/guide/directives/x-model" },
-                        { text: "x-switch", link: "/zh/template/guide/directives/x-switch" },
-                        { text: "x-table", link: "/zh/template/guide/directives/x-table" },
-                        { text: "x-teleport", link: "/zh/template/guide/directives/x-teleport" },
                         {
-                            text: "x-transition",
-                            link: "/zh/template/guide/directives/x-transition",
+                            text: "同步方向",
+                            link: "/zh/sync/guide/features/direction",
+                        },
+                        {
+                            text: "过滤器",
+                            link: "/zh/sync/guide/features/filter",
+                        },
+                        {
+                            text: "路径映射",
+                            link: "/zh/sync/guide/features/path-map",
+                        },
+                        {
+                            text: "心跳检测",
+                            link: "/zh/sync/guide/features/heartbeat",
+                        },
+                        {
+                            text: "同步钩子",
+                            link: "/zh/sync/guide/features/hooks",
+                        },
+                        {
+                            text: "离线缓存",
+                            link: "/zh/sync/guide/features/cache",
+                        },
+                        {
+                            text: "调试模式",
+                            link: "/zh/sync/guide/features/debug",
+                        },
+                        {
+                            text: "自定义开发",
+                            link: "/zh/sync/guide/features/custom",
+                        },
+                    ],
+                },
+                {
+                    text: "传输器",
+                    items: [
+                        {
+                            text: "Transport 基类",
+                            link: "/zh/sync/guide/transports/base",
+                        },
+                        {
+                            text: "LocalTransport",
+                            link: "/zh/sync/guide/transports/local",
+                        },
+                        {
+                            text: "EventTransport",
+                            link: "/zh/sync/guide/transports/event",
+                        },
+                        {
+                            text: "WorkerTransport",
+                            link: "/zh/sync/guide/transports/worker",
+                        },
+                        {
+                            text: "BroadcastChannelTransport",
+                            link: "/zh/sync/guide/transports/broadcast-channel",
                         },
                     ],
                 },
@@ -346,6 +450,18 @@ export default defineConfig({
     vite: {
         build: {
             chunkSizeWarningLimit: 2000, // 将限制提高到 1000KB
+        },
+        // 修复 SSR 构建报错：floating-vue 被 VitePress 外置后加载了 bun 隔离的 vue@3.5.31 副本，
+        // 与应用本体的 vue@3.5.39 形成双 Vue 实例，导致其 provide/inject 跨实例失效
+        // （Cannot destructure property 'popperId' of 'undefined'）。
+        // 将该依赖链交回 Vite 打包并去重 vue，保证单一实例。
+        ssr: {
+            // 必须连同父级 @shikijs/vitepress-twoslash 一起打包：
+            // 若父级被外置，其内部 import "floating-vue" 是运行时 Node 解析，noExternal 不会生效
+            noExternal: ["@shikijs/vitepress-twoslash", "floating-vue", "vue-resize"],
+        },
+        resolve: {
+            dedupe: ["vue"],
         },
     },
 });

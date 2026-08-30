@@ -52,23 +52,28 @@ export function fieldToState<State extends Dict>(store:ReactAutoStore<State>,inp
     const stateValue = store.peep((state)=>getVal(state,path))
 
     const typedValue = toTypedValue(value,dataType)
-    
-    let newValue = toState.call(input,name,typedValue,stateValue,part)
 
-    if(part){        
-        if(Array.isArray(stateValue)){
+    let newValue = toState.call(input,name,typedValue,stateValue,part)
+    // 自定义toState返回了有效值时直接采用，交由开发者自行处理拆分与合并逻辑
+    const hasCustomToState = !!options.toState && newValue !== undefined
+
+    if(part){
+        if(hasCustomToState){
+            store.update((state) => { setVal(state, path, newValue); },{ peep: true });
+            return [name,newValue]
+        }else if(Array.isArray(stateValue)){
             stateValue[parseInt(part)]  = newValue
             return [`${name}.${part}`,newValue]
         }else if(typeof(stateValue) === "object"){
             stateValue[part] = newValue
             return [`${name}.${part}`,newValue]
         }else if(dataType==='string'){
-            newValue = replaceWithRegex(stateValue,part,value)       
-            store.update((state) => { setVal(state, path, newValue); },{ peep: true });    
-            return [name,newValue]   
+            newValue = replaceWithRegex(stateValue,part,value)
+            store.update((state) => { setVal(state, path, newValue); },{ peep: true });
+            return [name,newValue]
         }else{
-            store.update((state) => { setVal(state, path, newValue); },{ peep: true });    
-        }        
+            store.update((state) => { setVal(state, path, newValue); },{ peep: true });
+        }
     }else{
         store.update((state) => { setVal(state, path, newValue); },{ peep: true });
         return [name,newValue]

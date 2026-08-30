@@ -86,9 +86,9 @@ export default () => {
                 ]}>
                 <NewOrderForm>
                     <h5>新增订单</h5>
-                    <Input name="book"></Input>
-                    <Input name="price"></Input>
-                    <Input name="count"></Input>
+                    <Input name="book" label="书名"></Input>
+                    <Input name="price" label="单价"></Input>
+                    <Input name="count" label="数量"></Input>
                     <Button
                         onClick={() => {
                             store.state.orders.push({

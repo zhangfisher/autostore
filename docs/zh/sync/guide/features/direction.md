@@ -22,6 +22,10 @@ store2.user.name = 'Bob'
 console.log(store1.user.name) // 'Bob'
 ```
 
+<demo react="syncer/features/direction.tsx" />
+
+演示并排展示 `both` / `forward` / `backward` 三组同步对：分别在每组两侧点击 `count++`，观察只有符合方向定义的一侧会更新——`both` 双侧互通、`forward` 仅 `Store1 → Store2`、`backward` 仅 `Store2 → Store1`。
+
 ### forward - 仅前向同步
 
 数据只从本地 Store 同步到远程 Store：

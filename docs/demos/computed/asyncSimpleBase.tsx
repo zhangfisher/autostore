@@ -1,6 +1,6 @@
 import React from 'react';
 import { delay, createStore, computed } from '@autostorejs/react';
-import { Input, ColorBlock } from 'x-react-components';
+import { Input, ColorBlock, Box, JsonView, Button } from 'x-react-components';
 const store = createStore(
     {
         user: {
@@ -31,11 +31,11 @@ const store = createStore(
 );
 const { useField, useReactive } = store;
 export default () => {
+    const [state] = useReactive();
     const firstNameField = useField('user.firstName');
     const lastNameField = useField('user.lastName');
     const [loading] = useReactive('user.loading');
     const [fullName] = useReactive('user.fullName');
-    console.log('loading=', loading);
     return (
         <>
             <Input label="firstName" {...firstNameField} />
@@ -43,6 +43,22 @@ export default () => {
             <ColorBlock name="FullName" loading={loading}>
                 {fullName}
             </ColorBlock>
+
+            <Button
+                onClick={() => {
+                    store.state.user.firstName = store.state.user.firstName + '🔥';
+                }}>
+                Change FirstName
+            </Button>
+            <Button
+                onClick={() => {
+                    store.state.user.lastName = store.state.user.lastName + '❤️';
+                }}>
+                Change LastName
+            </Button>
+            <Box title="state=">
+                <JsonView highlightKeys={['fullName']} data={state} />
+            </Box>
         </>
     );
 };

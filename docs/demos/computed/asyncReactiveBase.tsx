@@ -1,12 +1,12 @@
 import React from 'react';
-import { delay, createStore, computed } from '@autostorejs/react';
+import { delay, createStore, asyncComputed } from '@autostorejs/react';
 import { Input, ColorBlock } from 'x-react-components';
-
+// 简单
 const { useAsyncReactive, useField } = createStore({
     user: {
         firstName: 'Zhang',
         lastName: 'fisher',
-        fullName: computed(
+        fullName: asyncComputed(
             async (user) => {
                 await delay(1000); // 模拟异步计算
                 return user.firstName + ' ' + user.lastName;

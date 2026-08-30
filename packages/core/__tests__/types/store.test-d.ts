@@ -119,11 +119,10 @@ describe("Store 选项类型", () => {
                     args.observer;
                 },
                 onObserverError: (args) => {
-                    // 注意：onObserverError 的字段名是 observerObject（非 observer）
-                    const check1: Expect<Equal<typeof args.observerObject.id, string>> = true;
-                    const check2: Expect<Equal<typeof args.observerObject.path, string[]>> = true;
+                    const check1: Expect<Equal<typeof args.observer.id, string>> = true;
+                    const check2: Expect<Equal<typeof args.observer.path, string[]>> = true;
                     args.error;
-                    args.observerObject;
+                    args.observer;
                 },
                 onObserverCancel: (args) => {
                     const check1: Expect<Equal<typeof args.observer.id, string>> = true;
@@ -143,10 +142,11 @@ describe("Store 选项类型", () => {
             },
             {
                 onObserverInitial: (args) => {
-                    // descriptor 上的 type/getter/options
-                    args.descriptor.type;
-                    args.descriptor.getter;
-                    args.descriptor.options;
+                    // payload 是 ObserverContext：path/value/parentPath/parent
+                    const check1: Expect<Equal<typeof args.path, string[]>> = true;
+                    const check2: Expect<Equal<typeof args.parentPath, string[]>> = true;
+                    args.value;
+                    args.parent;
                 },
                 onObserverCreated: (args) => {
                     const check1: Expect<Equal<typeof args.observer.id, string>> = true;

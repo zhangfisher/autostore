@@ -83,7 +83,7 @@ const { Form } = useForm({
 
 ```ts
 import { useForm } from "@autostorejs/react"
-const { 
+const {
   Form,
   state,
   useReactive,
@@ -91,17 +91,14 @@ const {
   watch,
   batchUpdate
   signal,
-  useState,    
-  useAsyncState,     
   useAsyncReactive,
-  useDeps,           
-  useWatch,          
-  bind,              
-  useField,          
-  useFields,         
-  useObserverObject, 
-  useComputedObject, 
-  useComputed,       
+  useDeps,
+  useWatch,
+  bind,
+  useField,
+  useFields,
+  useComputedObject,
+  useComputed,
   reset
 } = useForm({
   user:{

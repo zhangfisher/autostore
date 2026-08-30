@@ -36,8 +36,8 @@ export const CheckBox:React.FC<CheckBoxProps> = (props)=>{
     
     // @ts-ignore
     const { id=Math.random().toString(36).slice(2),labelPos='right',inline,...restProp } = props
-     // @ts-ignore
-    const label = props.label || props.name || props.id
+     // label 仅用于展示，name 仅用于表单绑定，二者职责分离不互相回退
+    const label = props.label
     return <div className={CheckBoxStyle.className} 
             style={CheckBoxStyle.getStyle(props)}
             data-field-name={props.name}

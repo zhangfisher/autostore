@@ -26,11 +26,26 @@ export type UseFieldBindings<Value> ={
 }
 
 export type UseFieldOptions<Value=any>={
-    name?       : string      // 可选的字段名称    
+    name?       : string      // 可选的字段名称
     type?       : 'radio' | 'checkbox' | 'select' | 'textarea' | 'input'
     // 仅当type = radio或checkbox时有效时有效
-    values?     : any[] 
-    toState?    : (value:string,options?:{path:string[] | undefined,part:number})=>Value            // 将数据更新到状态中时调用进行转换
+    values?     : any[]
+    /**
+     * 将 input 原始值转换为状态值，类型驱动转换的默认实现见 defaultToState
+     *
+     * - number:  字符串转数字，产物 NaN 视为空值写入 0
+     * - boolean: 'true'/'false' 转 boolean，其他值 Boolean() 化
+     * - string:  原样保持字符串(不做类型猜测，避免 '0123' 被污染)
+     * - 空值:    状态值为 undefined/null/NaN 时按控件类型推断类型默认值
+     */
+    toState?    : (value:any,options?:{path:string[] | undefined,part:number,stateValue?:any,event?:any})=>Value
+    /**
+     * 将状态值转换为 input 显示值，默认实现见 defaultFromState
+     *
+     * 空值(undefined/null/NaN)显示为空字符串，其余原样返回
+     * 返回 undefined 时保留原值(退出转换)
+     */
+    fromState?  : (stateValue:any,options?:{path:string[] | undefined,part:number})=>any
 }
 
 export type UseFieldGetter<Value,State extends Dict>= (state:ComputedState<State>)=>Value
@@ -81,19 +96,17 @@ export type AutoFormObject<State extends Dict>={
     submiting   : boolean
     submit      : (e?:any)=>Promise<any>
 } & Pick<ReactAutoStore<State>,
-    | 'id' | 'options' | 'operates'| 'peeping' | 'batching' | 'silenting'
-    | '$' |'signal'
+    | 'id' | 'options' | 'operates' | 'peeping' | 'batching' | 'silenting'
+    | '$' | 'signal'
     | 'useDeps'
-    | 'state' | 'useReactive' | 'useAsyncReactive' | 'useState' | 'useAsyncState'
-    | 'watch' | 'useWatch'  | 'watchObjects'
-    | 'useField' | 'useFields'  
-    | 'update' | 'batchUpdate' | 'silentUpdate' 
-    | 'peep' | 'collectDependencies' | 'trace'
-    | 'operates' | 'peeping' | 'batching' | 'silenting'        
-    | 'computedObjects' | 'useComputed' | 'useComputedObject'    
+    | 'state' | 'useReactive' | 'useAsyncReactive'
+    | 'watch' | 'useWatch' | 'watchObjects'
+    | 'useField' | 'useFields'
+    | 'update' | 'batchUpdate' | 'silentUpdate'
+    | 'peep' | 'collectDependencies'
+    | 'computedObjects' | 'useComputed' | 'useComputedObject'
     | 'reset' | 'resetable'
-    | 'useObserverObject' 
-    | 'log' | 'destroy' | 'getSnap'     
+    | 'destroy' | 'getSnap' | 'logger'
 >
 
 

@@ -44,6 +44,10 @@ store1.state.order.price = 10;
 console.log(store2.state.myorder.price); // 10
 ```
 
+<demo react="syncer/syncers/localSyncEntry.tsx" />
+
+演示中左侧 `Store1` 的 `order` 子树（含 `total` 计算属性）同步到右侧 `Store2` 的 `myorder` 子树：修改 `order.count` 时 `total` 重算后同步过去；而 `user` 子树因不在 `local` 路径内不参与同步，右侧修改 `myorder.price` 也会反向同步回左侧。
+
 ## 指南
 
 ### 同步模式
@@ -87,6 +91,10 @@ const syncer = store1.sync(store2, {
 store1.count = 100; // store2.count = 100
 store2.user.name = "Bob"; // store1.user.name = 'Bob'
 ```
+
+<demo react="syncer/syncers/syncModes.tsx" />
+
+演示以 `mode: "push"` 为例：建立同步的瞬间，初始值为 `count=100` 的 `Store1` 将全量状态推送到 `Store2`（`source` 字段被覆盖为 `store1`）。演示还提供 `push()` / `pull()` 按钮，可随时手动触发一次全量同步。
 
 ### 同步方向
 
@@ -271,6 +279,10 @@ store1.sync(store3, {
 此选项仅用于`1-N`、`N-N`同步时使用
 :::
 
+<demo react="syncer/syncers/peers.tsx" />
+
+演示中 `hub` 配置了 `peers: ["client-a"]`：只有客户端 A 的操作会被 `hub` 接受并应用，客户端 B、C 的消息虽然经过传输层到达，但因不在 `peers` 白名单内被直接忽略。
+
 ### 缓存机制
 
 当 同步器所使用的`Transport` 不可用时，操作会被缓存到内存中：
@@ -287,6 +299,10 @@ const syncer = store1.sync(store2, {
 // 当 transport 可用时，调用 flush() 发送缓存
 syncer.flush();
 ```
+
+<demo react="syncer/features/cache.tsx" />
+
+缓存机制的完整交互演示见[离线缓存](../features/cache.md)。
 
 ## 选项
 

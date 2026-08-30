@@ -97,6 +97,18 @@ export function useForm<State extends Dict>(): AutoFormObject<State> {
 
     const store = storeRef.current!;
 
+    // state 响应式化：初始为 store.state 引用，监听整树变化时生成新引用触发重渲染
+    const [state, setState] = useState(() => store.state);
+
+    useEffect(() => {
+        const watcher = store.watch(({ reply }) => {
+            if (reply) return; // 针对批量操作时的优化，批量结束时统一触发
+            // 浅拷贝生成新引用，嵌套对象仍是响应式 Proxy，读取时获得最新值
+            setState({ ...store.state });
+        });
+        return () => watcher.off();
+    }, []);
+
     const reset = useCallback(() => {
         setDirty(false);
         store.reset(opts.entry);
@@ -134,7 +146,7 @@ export function useForm<State extends Dict>(): AutoFormObject<State> {
     return {
         // oxlint-disable-next-line typescript/no-misused-spread
         ...store,
-        state: store.state,
+        state,
         Form: formComponentRef.current,
         Field: fieldComponentRef.current!,
         valid,

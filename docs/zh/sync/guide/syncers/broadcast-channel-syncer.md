@@ -49,6 +49,14 @@ const syncer = new AutoStoreBroadcastChannelSyncer(store, "my-store-channel");
 store.state.count++; // 会同步到其他页面
 ```
 
+<demo html="syncer/syncers/broadcastChannelIframe.html" />
+
+演示中的「页面 A / 页面 B」是两个独立的 `Store` 实例，接入同一 `BroadcastChannel` 频道后自动互相同步：在任一侧输入 `name` 或点击 `count++`，另一侧实时更新。真实跨标签页场景可参考下方 React 版演示。
+
+<demo react="syncer/get-starts/broadcastChannelSync.tsx" />
+
+React 版演示提供了「在新窗口打开」按钮——新窗口与本窗口运行相同代码、接入同一频道，构成真实的跨标签页同步。
+
 ## 完整示例
 
 参考 [packages/syncer/examples/worker-react/src/examples/broadcast-channel](https://github.com/zhangfisher/autostore/tree/main/packages/syncer/examples/worker-react/src/examples/broadcast-channel) 中的完整示例。

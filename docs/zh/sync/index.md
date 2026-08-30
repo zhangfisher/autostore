@@ -11,12 +11,20 @@
 - **过滤器**：支持同步数据过滤
 - **心跳检测**：支持连接心跳检测，自动断开超时连接
 - **操作缓存**：支持离线操作缓存，连接后自动同步
+- **双版本发布**：提供标准版与 `Lite` 版两个入口，按需引入控制体积
 
 ## 快速开始
 
 ```bash
 npm install @autostorejs/syncer
 ```
+
+`@autostorejs/syncer` 提供**标准版**与 **`Lite` 版**两个入口：
+
+- **标准版**：`import ... from "@autostorejs/syncer"`，包含全部 `Syncer` 与 `Transport`
+- **`Lite` 版**：`import ... from "@autostorejs/syncer/lite"`，仅包含核心同步能力（`AutoStoreSyncer` + `LocalTransport`），适合只需要同进程同步的场景
+
+详见[安装](./intro/install.md)。
 
 ## 使用场景
 

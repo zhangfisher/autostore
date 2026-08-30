@@ -13,6 +13,10 @@
 3. `SwitchSyncer` 根据 `operate.id` 自动路由消息到对应的 `store`
 4. `Store` 变化后，广播到订阅了该`store` 的其他`store`
 
+<demo react="syncer/get-starts/switchNN.tsx" />
+
+演示中本页的两个本地 `Store` 分别通过 `peers` 对接 `SharedWorker` 内的 `counter-store` 与 `chat-store`：点击 `counter.count++` 时消息经 `SwitchSyncer` 路由只作用于计数信道，`chatStore` 面板纹丝不动；发送聊天消息亦然——两个信道完全隔离，这就是按 `operate.id` 路由的 `N-N` 同步。
+
 ## 基本用法
 
 ### SharedWorker 服务端代码

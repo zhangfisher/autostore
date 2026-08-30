@@ -15,6 +15,7 @@ import {
 } from 'autostore';
 import type { ReactAutoStore } from '../store';
 import React, { type ComponentType, useEffect, useState } from 'react';
+import { wrapAsyncComputedValue } from '../utils/wrapAsyncComputedValue';
 import type { SignalComponentOptions, SignalComponentRender } from './types';
 
 /**
@@ -64,6 +65,31 @@ import type { SignalComponentOptions, SignalComponentRender } from './types';
  *
  *
  */
+/**
+ * 从 builder/getter 参数解析出 observer descriptor
+ *
+ * 支持的输入形态：
+ * - builder 直传：computed(...)/asyncComputed(...)/watch(...) 的返回值（带 OBSERVER_TYPE_FLAG）
+ * - 外层函数包裹：() => computed(...) / () => asyncComputed(...)，调用后得到 builder 或直接得到 descriptor
+ * - 裸 getter 函数：直接返回，由调用方走 computed() 包装
+ */
+function resolveDescriptor(
+    builder: ObserverDescriptorBuilder | ComputedGetter<any> | AsyncComputedGetter<any>,
+) {
+    // builder 直传：调用一次得到 descriptor
+    if (isObserverDescriptorBuilder(builder)) return (builder as any)();
+    // 包裹函数形态：() => computed(...) 恒为0参数，调用后得到 builder（computed 包裹）或 descriptor（asyncpro 等）
+    // 注意：裸 getter (scope)=>... 至少有1个参数，绝不能在此调用，
+    // 否则会以 scope=undefined 执行用户getter，访问scope.xxx时崩溃
+    if (typeof builder === 'function' && builder.length === 0) {
+        const unwrapped = (builder as any)();
+        if (isObserverDescriptorBuilder(unwrapped)) return unwrapped();
+        if (isObserverDescriptor(unwrapped)) return unwrapped;
+        // 调用结果是裸值说明是零参getter，回落到裸getter处理（多执行的一次无scope访问，无副作用）
+    }
+    return builder;
+}
+
 export function createDynamicRender<State extends Dict>(
     store: ReactAutoStore<State>,
     render: SignalComponentRender,
@@ -77,14 +103,18 @@ export function createDynamicRender<State extends Dict>(
         () => {
             const [error, setError] = useState<any>(null);
 
-            const descriptor = isObserverDescriptorBuilder(builder) ? builder() : builder;
+            const descriptor = resolveDescriptor(builder);
 
             // 创建一个计算对象
             const [observerObj] = useState(() => {
                 try {
                     if (isObserverDescriptor(descriptor)) {
                         descriptor.options.objectify = false; // 不保存到computedObjects
-                        if (descriptor.type === 'computed') {
+                        // 计算属性的type是 sync/async/asyncpro（computed()/asyncComputed() 生成的描述符），
+                        // 均路由到 computedObjects.create
+                        if (
+                            ['computed', 'sync', 'async', 'asyncpro'].includes(descriptor.type)
+                        ) {
                             return store.computedObjects.create(descriptor as any);
                         } else if (descriptor.type === 'watch') {
                             return store.watchObjects.create(descriptor as any);
@@ -101,17 +131,55 @@ export function createDynamicRender<State extends Dict>(
                 }
             });
             const [value, setValue] = useState<AsyncComputedValue>(() => {
-                return observerObj
-                    ? observerObj.async
-                        ? observerObj.value
-                        : { value: observerObj.value }
-                    : { value: '' };
+                if (!observerObj) return { value: '' } as AsyncComputedValue;
+                if (!observerObj.async) return { value: observerObj.value } as AsyncComputedValue;
+                // 简单异步(lite)：结果原位写入是标量，无loading/error字段，
+                // 此处包装为AsyncComputedValue形态并同步运行状态
+                if ((observerObj as any).lite) {
+                    return wrapAsyncComputedValue(observerObj.value, observerObj as any);
+                }
+                // 高级异步：值本身就是AsyncComputedValue对象，浅拷贝生成新引用
+                return { ...(observerObj.value as AsyncComputedValue) };
             });
 
             useEffect(() => {
                 // @ts-ignore
                 let watcher: Watcher = { off: () => {} };
+                const watchers: Watcher[] = [];
                 if (observerObj) {
+                    // 异步游离对象订阅observer生命周期事件：
+                    // - 简单异步(lite)：loading/error不在值上，仅存在于事件流中，必须订阅
+                    // - 高级异步(asyncpro)：游离时updateComputedValue直接emit到operates总线，
+                    //   与obj.watch监听的observer/updated顶层事件不匹配，也需要事件流兜底
+                    if (observerObj.async && !(observerObj as any).associated) {
+                        watchers.push(
+                            store.on(`observer/${observerObj.id}/run`, () => {
+                                setValue((prev: any) => ({ ...prev, loading: true }));
+                            }),
+                        );
+                        watchers.push(
+                            store.on(`observer/${observerObj.id}/done`, ({ value: newValue }: any) => {
+                                setValue((prev: any) => ({
+                                    ...prev,
+                                    loading: false,
+                                    error: null,
+                                    value: newValue,
+                                }));
+                            }),
+                        );
+                        watchers.push(
+                            store.on(`observer/${observerObj.id}/error`, ({ error: err }: any) => {
+                                setValue((prev: any) => ({ ...prev, loading: false, error: err }));
+                            }),
+                        );
+                        // 订阅前若首次计算已在飞行中(immediate的setTimeout(0)先于useEffect)，
+                        // run事件已错过，此处从计算对象同步一次，避免首帧loading丢失
+                        if (observerObj.running) {
+                            setValue((prev: any) =>
+                                prev.loading === true ? prev : { ...prev, loading: true },
+                            );
+                        }
+                    }
                     watcher = observerObj.watch(
                         (operate) => {
                             /** 什么要设置reply=true?
@@ -137,7 +205,12 @@ export function createDynamicRender<State extends Dict>(
                              */
                             if (operate.reply) return;
                             try {
-                                if (observerObj.type === 'computed') {
+                                // 计算对象的type是 sync/async/asyncpro（'computed'是旧类型名，保留兼容）
+                                if (
+                                    ['computed', 'sync', 'async', 'asyncpro'].includes(
+                                        observerObj.type,
+                                    )
+                                ) {
                                     if (observerObj.async) {
                                         const asyncObj =
                                             observerObj as unknown as AsyncComputedObject;
@@ -145,7 +218,15 @@ export function createDynamicRender<State extends Dict>(
                                             isPathEq(operate.path, asyncObj.path) ||
                                             isPathEq(operate.path.slice(0, -1), asyncObj.path)
                                         ) {
-                                            setValue({ ...asyncObj.value });
+                                            // 简单异步(lite)：值是原位标量，包装为AsyncComputedValue形态；
+                                            // 高级异步：值本身就是AsyncComputedValue对象，浅拷贝
+                                            if ((asyncObj as any).lite) {
+                                                setValue(
+                                                    wrapAsyncComputedValue(asyncObj.value, asyncObj),
+                                                );
+                                            } else {
+                                                setValue({ ...asyncObj.value });
+                                            }
                                         }
                                     } else {
                                         // @ts-ignore
@@ -167,7 +248,10 @@ export function createDynamicRender<State extends Dict>(
                         { operates: 'write' },
                     );
                 }
-                return () => watcher.off();
+                return () => {
+                    watcher.off();
+                    watchers.forEach((w) => w.off());
+                };
             }, [descriptor]);
 
             return <>{error ? <ErrorBoundary error={error} /> : render(value)}</>;

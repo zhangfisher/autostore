@@ -1,12 +1,15 @@
 import React from 'react';
-import { useStore, computed, delay } from '@autostorejs/react';
+import { useStore, delay } from '@autostorejs/react';
+import '@autostorejs/plugins/asyncpro';
+import { asyncComputed } from '@autostorejs/plugins/asyncpro';
 import { ColorBlock, Button, JsonView, Box } from 'x-react-components';
 
 export default () => {
-    const { state, $, useAsyncState } = useStore({
+    const { state, $, useAsyncReactive } = useStore({
         firstName: 'Zhang',
         lastName: 'Fisher',
-        fullName: computed(
+        // 高级异步计算属性：使用asyncComputed声明
+        fullName: asyncComputed(
             async (user) => {
                 await delay();
                 // 模拟产生错误
@@ -18,7 +21,7 @@ export default () => {
         triggerError: false,
     });
 
-    const fullName = useAsyncState('fullName');
+    const fullName = useAsyncReactive('fullName');
 
     return (
         <div>
@@ -28,8 +31,8 @@ export default () => {
                 {fullName.loading
                     ? '正在计算...'
                     : fullName.error
-                    ? `ERROR:${fullName.error}`
-                    : fullName.value}
+                      ? `ERROR:${fullName.error}`
+                      : fullName.value}
             </ColorBlock>
             <div>
                 <Button
@@ -45,14 +48,6 @@ export default () => {
                         state.lastName = state.lastName + '❤️';
                     }}>
                     Change LastName
-                </Button>
-            </div>
-            <div>
-                <Button
-                    onClick={() => {
-                        state.firstName = state.firstName + '🔥';
-                    }}>
-                    Change FirstName with Error
                 </Button>
                 <Button
                     onClick={() => {

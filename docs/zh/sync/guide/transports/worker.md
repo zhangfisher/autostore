@@ -89,6 +89,10 @@ const store = new AutoStore({
 const syncer = new AutoStoreSyncer(store, { transport })
 ```
 
+<demo react="syncer/transports/workerTransport.tsx" />
+
+演示中主线程手动创建 `WorkerTransport`（而非使用 `AutoStoreWorkerSyncer` 自动封装），`Worker` 端同样以 `self` 为参数创建对端传输器。主线程 `count++` 同步到 `Worker`，`Worker` 计算 `result = count * 3` 写回；演示还提供 `disconnect()` / `connect()` 按钮观察传输层断开重连后的同步恢复。
+
 ## 配置选项
 
 ```typescript

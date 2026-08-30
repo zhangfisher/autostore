@@ -1,4 +1,6 @@
 {
+    // 排除 dist：防止过期的构建产物（含旧的 declare module 增强）被卷入类型检查，与源码类声明冲突（TS2687）
+    "exclude": ["node_modules", "dist"],
     "compilerOptions": {
         "ignoreDeprecations": "6.0",
         /* Visit https://aka.ms/tsconfig to read more about this file */

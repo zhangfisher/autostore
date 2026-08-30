@@ -43,6 +43,10 @@ const syncer = new AutoStoreWorkerSyncer(store, self, {
 });
 ```
 
+<demo react="syncer/get-starts/workerSync.tsx" />
+
+演示中主线程与 `Worker` 内各持一个 `Store` 双向同步：主线程点击 `count++` 后状态同步到 `Worker`，`Worker` 内计算 `result = count * 2` 写回，主线程面板实时显示回写结果——一次修改可以看到双向的数据流动。
+
 ### 与 SharedWorker 同步
 
 **主线程代码：**
@@ -83,6 +87,10 @@ const syncer = new AutoStoreWorkerSyncer(store, self, {
     mode: "push",
 });
 ```
+
+<demo react="syncer/get-starts/sharedWorkerSync.tsx" />
+
+演示中 `SharedWorker` 内的 `Store` 作为权威数据源每秒递增推送，客户端以 `direction: 'backward'` 只接收更新；同一浏览器的其他标签页会连接到同一个 `SharedWorker`，因此能看到完全相同的值。
 
 ## 完整示例
 

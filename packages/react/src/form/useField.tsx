@@ -3,15 +3,16 @@ import { PATH_DELIMITER, setVal, Watcher, type Dict,  getDepends, noRepeat, isPa
 import { type ReactAutoStore } from '../store';
 import { useEffect, useState } from 'react';
 import { getValueBySelector } from '../utils/getValueBySelector';
-import { getInputValueFromEvent } from '../utils/getInputValueFromEvent'; 
-import { UseFieldGetter, UseFieldOptions, UseFieldSetter, UseFieldType } from './types'; 
+import { getRawInputValue } from '../utils/getRawInputValue';
+import { UseFieldGetter, UseFieldOptions, UseFieldSetter, UseFieldType } from './types';
+import { defaultToState, defaultFromState } from './fieldTypeConvert';
 import { isNumber } from "../utils/isNumber";
 
 export type UseFieldBinding = {
     checked?: boolean
     value: any
     onChange: (e: any) => void
-    name?: string 
+    name?: string
 }
 
 export function createFieldBinding<State extends Dict,Value=any>(
@@ -21,45 +22,54 @@ export function createFieldBinding<State extends Dict,Value=any>(
     value:any,
     fieldValue:any,
     setter:UseFieldSetter<Value,State> | undefined,
-    options:UseFieldOptions 
-){    
+    options:UseFieldOptions
+){
+    // 显示转换: 状态值 -> input 显示值(默认实现可被 options.fromState 替换)
+    const fromState = isFunction(options.fromState) ? options.fromState : defaultFromState
+    const displayValue = (()=>{
+        const converted = fromState(value,{path,part})
+        // 自定义 fromState 返回 undefined 时保留原值(退出转换)
+        return converted===undefined ? value : converted
+    })()
+    // 写入转换: input 原始值 -> 状态值(默认实现可被 options.toState 替换)
+    const toState = isFunction(options.toState) ? options.toState : defaultToState
+
     const getCheckedValue = (val:any)=>{
         if(options.type==='radio'){
             return fieldValue === val
         }else if(options.type==='checkbox'){
-            return Boolean(value)
+            return Boolean(displayValue)
         }
     }
-    
-    const fieldName = options.name ? options.name : (Array.isArray(path) ? path.join(PATH_DELIMITER) : path || '')        
+
+    const fieldName = options.name ? options.name : (Array.isArray(path) ? path.join(PATH_DELIMITER) : path || '')
 
     return new Proxy({
-        value,
+        value: displayValue,
         onChange:(e:any)=>{
-            let inputValue = getInputValueFromEvent(e)
-            if(isFunction(options.toState)){
-                inputValue = options.toState(inputValue,{path,part})
-            }
+            // 取未经类型转换的原始值，类型驱动转换由 toState 的默认实现进行
+            let inputValue = getRawInputValue(e)
+            inputValue = toState(inputValue,{path,part,stateValue:value,event:e})
             if(isFunction(setter)){
                 setter({value:inputValue,path,part},store.state);
             }else{
                 if(path){
                     store.update(state => setVal(state, path, inputValue));
                 }
-            }        
+            }
         },
         name: fieldName,
-        checked: getCheckedValue(value),
+        checked: getCheckedValue(displayValue),
         'data-field':true
     },{
-        get(target, key:string,receiver){             
+        get(target, key:string,receiver){
             if(isNumber(key) && options.type==='radio' && options.values){
                 const part = Number(key)
                 return createFieldBinding(store,path,part,options.values[part],value,setter,options)
             }
             return Reflect.get(target, key,receiver);
-        } 
-    })  
+        }
+    })
 }
 
 

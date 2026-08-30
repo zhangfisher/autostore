@@ -25,14 +25,14 @@ export interface UseReactiveType<State extends Dict> {
     <Path extends StatePaths<State> = StatePaths<State>>(selector: Path,async:boolean): UseReactiveResult<AsyncComputedValue<GetTypeByPath<State,Path>> ,State>
     <Value=any>(selector: string[]): UseReactiveResult<Value,State>
     <Value=any>(selector: ObjectKeyPaths<ComputedState<State>>,async:boolean): UseReactiveResult<AsyncComputedValue<Value>,State>
-    <Value=any,SetValue=any>(getter: UseReactiveGetter<Value,State>,setter?:UseReactiveSetter<SetValue,State>): UseStateComposeResult<Value,SetValue,State>
+    <Value=any,SetValue=any>(getter: UseReactiveGetter<Value,State>,setter?:UseReactiveSetter<SetValue,State>): UseReactiveComposeResult<Value,SetValue,State>
     (): UseReactiveResult<State,State>
 }
 ```
 
 ### 基础使用
 
-其使用方式与`React`的`useState`方法类似，返回一个`state`和`setState`的元组。
+其使用方式与`React`的`useState`方法类似，返回一个`[value,setValue,extras]`的三元组（`useReactive`早期版本名为`useState`，已更名）。
 
 ```tsx twoslash
 import { createStore } from "@autostorejs/react"
@@ -50,6 +50,29 @@ const [age,setAge] = useReactive('user.age')
 const [firstName,setFirstName] = useReactive(['user','firstName'])  
 
 ```   
+
+### 第3个返回值
+
+当`selector`指向的是一个异步计算属性时，第3个返回值`extras`提供了该计算属性的运行状态：
+
+```ts
+const [value, setValue, { loading, error, retry, timeout, progress }] = useReactive("user.fullName")
+```
+
+| 属性      | 类型              | 说明                                                         |
+| --------- | ----------------- | ------------------------------------------------------------ |
+| `loading` | `boolean`         | 是否正在计算中                                               |
+| `error`   | `Error \| null`   | 计算出错信息                                                 |
+| `retry`   | `number`          | 剩余重试次数（仅高级异步计算`asyncComputed`声明时响应式更新） |
+| `timeout` | `number`          | 超时倒计时`ms`（仅高级异步计算`asyncComputed`声明时响应式更新） |
+| `progress`| `number`          | 执行进度`0-100`（仅高级异步计算`asyncComputed`声明时响应式更新） |
+
+- 简单异步计算(`computed(async ...)`)：仅`loading`和`error`有效。
+- 高级异步计算(`asyncComputed`)：`retry`、`timeout`、`progress`均为响应式的，会随计算过程实时更新。
+
+:::warning 提示
+如果不需要异步运行状态，只解构前两个值即可，`const [value,setValue] = useReactive("user.age")`。
+:::
 
 **简单示例如下：**
 
@@ -100,8 +123,8 @@ setFullName(["Hello","Voerkai18n❤️"]) // [!code ++]
 <demo react="store/useReactiveGetSet.tsx" />
 
 
-:::warning 提示
-`useReactive`还有一个别名`useState`，但是由于`useState`与`React`内置名称相同，使用时经常需要重命名，所以在`AutoStore`中使用`useReactive`来代替。
+:::warning 命名说明
+早期版本中`useReactive`名为`useState`，由于`useState`与`React`内置名称相同，使用时经常需要重命名，已废弃并统一为`useReactive`。
 :::
 
 

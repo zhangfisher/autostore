@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BroadcastChannelSyncer · 跨标签页同步</title>
+        <script src="/autostore/autostore.js"></script>
+        <script src="/autostore/syncer.js"></script>
+        <link rel="stylesheet" href="/autostore/bulma.min.css" />
+        <style>
+            .panel {
+                border: 1px solid #dbdbdb;
+                border-radius: 6px;
+                padding: 12px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="section">
+            <div class="block notification is-info is-light">
+                页面 A / B 是两个独立的「浏览上下文」，各自创建 AutoStore 并通过
+                <code>AutoStoreBroadcastChannelSyncer</code> 接入同一频道，状态自动互相同步。
+            </div>
+            <div class="columns">
+                <div class="column">
+                    <div class="panel">
+                        <h5 class="title is-5">页面 A</h5>
+                        <div class="field">
+                            <label class="label">count = <strong id="count-a">0</strong></label>
+                        </div>
+                        <div class="field">
+                            <input class="input" id="name-a" placeholder="输入 name" />
+                        </div>
+                        <button class="button is-primary" id="inc-a">count++</button>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="panel">
+                        <h5 class="title is-5">页面 B</h5>
+                        <div class="field">
+                            <label class="label">count = <strong id="count-b">0</strong></label>
+                        </div>
+                        <div class="field">
+                            <input class="input" id="name-b" placeholder="输入 name" />
+                        </div>
+                        <button class="button is-primary" id="inc-b">count++</button>
+                    </div>
+                </div>
+            </div>
+            <div class="block">
+                当前共享状态：<code id="state-view">-</code>
+            </div>
+        </div>
+
+        <script>
+            const { AutoStore } = AutoStoreSpaces;
+            const { AutoStoreBroadcastChannelSyncer } = AutoStoreSyncer;
+
+            // 两个「页面」各自独立创建 store 并接入同一频道
+            function createPage(channel) {
+                const store = new AutoStore({ count: 0, name: '' });
+                new AutoStoreBroadcastChannelSyncer(store, channel);
+                return store;
+            }
+            const pageA = createPage('bc-demo-channel');
+            const pageB = createPage('bc-demo-channel');
+
+            function bind(store, { countEl, inputEl, incEl }) {
+                store.watch(() => {
+                    countEl.textContent = store.state.count;
+                    if (document.activeElement !== inputEl) inputEl.value = store.state.name;
+                    document.querySelector('#state-view').textContent = JSON.stringify(pageA.state);
+                });
+                incEl.addEventListener('click', () => (store.state.count = store.state.count + 1));
+                inputEl.addEventListener('input', () => (store.state.name = inputEl.value));
+            }
+            bind(pageA, {
+                countEl: document.querySelector('#count-a'),
+                inputEl: document.querySelector('#name-a'),
+                incEl: document.querySelector('#inc-a'),
+            });
+            bind(pageB, {
+                countEl: document.querySelector('#count-b'),
+                inputEl: document.querySelector('#name-b'),
+                incEl: document.querySelector('#inc-b'),
+            });
+            document.querySelector('#state-view').textContent = JSON.stringify(pageA.state);
+        </script>
+    </body>
+</html>

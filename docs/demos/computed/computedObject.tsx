@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStore, computed } from '@autostorejs/react';
+import { createStore, computed, asyncComputed } from '@autostorejs/react';
 import { RichLabel, Box, ColorBlock, Button } from 'x-react-components';
 
 let count = 0;
@@ -10,7 +10,7 @@ const store = createStore({
         fullName: (user: any) => {
             return user.firstName + user.lastName + `${++count}`;
         },
-        fullName2: computed(
+        fullName2: asyncComputed(
             async (user) => {
                 return user.firstName + user.lastName + `${++count}`;
             },
@@ -27,7 +27,7 @@ const store = createStore({
 });
 
 export default () => {
-    const [state] = store.useState();
+    const [state] = store.useReactive();
 
     return (
         <div>

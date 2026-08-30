@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStore, computed, ObserverScopeRef, delay } from '@autostorejs/react';
+import { createStore, asyncComputed, ObserverScopeRef, delay } from '@autostorejs/react';
 import { Button, Loading, JsonView, RichLabel, Table } from 'x-react-components';
 
 const { state, useAsyncReactive } = createStore({
@@ -7,7 +7,7 @@ const { state, useAsyncReactive } = createStore({
         bookName: 'Proficient in AutoStore',
         price: 100,
         count: 1,
-        total: computed(
+        total: asyncComputed(
             async () => {
                 await delay();
                 throw new Error('计算出错');

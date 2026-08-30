@@ -1,8 +1,15 @@
-import { defineConfig, Options } from "tsup";
+import { defineConfig } from "tsup";
 
-// import copy from "esbuild-copy-files-plugin";
-
-const commonConfig: Options = {
+// 单 config + 对象 entry：多 config 并发时各自的 clean 钩子会竞态删除
+// dist 下同一批 d.ts 文件（tsup 的 existsSync+unlinkSync 非原子），导致偶发 ENOENT 构建失败
+export default defineConfig({
+    // key 作为输出 basename：index.js / asyncpro.js / shadow.js / trace.js
+    entry: {
+        index: "src/index.ts",
+        asyncpro: "src/asyncpro/index.ts",
+        shadow: "src/shadow.ts",
+        trace: "src/trace.ts",
+    },
     format: ["esm", "cjs"],
     dts: true,
     splitting: false,
@@ -11,37 +18,4 @@ const commonConfig: Options = {
     treeshake: true,
     minify: true,
     noExternal: ["flex-tools", "type-fest"],
-};
-
-export default defineConfig([
-    {
-        entry: ["src/index.ts"],
-        ...commonConfig,
-    },
-    {
-        // 对象形式 entry：key 作为输出 basename，
-        // esm -> asyncpro.js / cjs -> asyncpro.cjs / dts -> asyncpro.d.ts
-        entry: { asyncpro: "src/asyncpro/index.ts" },
-        ...commonConfig,
-    },
-    {
-        entry: ["src/refState.ts"],
-        ...commonConfig,
-        // IIFE 全局产物（AutoStorePluginsSpaces.refState）供文档站 demo 直接引入；
-        // onSuccess 拷贝到 docs/public/plugins.js（与 template 包拷 template.js 同策略）
-        format: ["esm", "cjs", "iife"],
-        globalName: "AutoStorePluginsSpaces",
-    },
-    {
-        entry: ["src/shadow.ts"],
-        ...commonConfig,
-    },
-    {
-        entry: ["src/resetable.ts"],
-        ...commonConfig,
-    },
-    {
-        entry: ["src/trace.ts"],
-        ...commonConfig,
-    },
-]);
+});

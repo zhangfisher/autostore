@@ -43,8 +43,9 @@ export type ColorBlockProps = React.PropsWithChildren<
 	Pick<React.HTMLAttributes<HTMLElement>, "className" | "style"> & {
 		value?: any;
 		name?: string;
-		loading?: boolean;		
-		comment?: string;
+		loading?: boolean;
+		/** 备注：支持字符串或任意 React 节点（组件元素、JSX 等） */
+		comment?: React.ReactNode;
 		inline?: boolean
 	}
 >;

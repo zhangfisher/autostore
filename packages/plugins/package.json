@@ -1,6 +1,7 @@
 {
     "name": "@autostorejs/plugins",
     "type": "module",
+    "version": "4.2.2",
     "module": "src/index.ts",
     "exports": {
         ".": {
@@ -12,11 +13,6 @@
             "types": "./dist/asyncpro.d.ts",
             "import": "./dist/asyncpro.js",
             "require": "./dist/asyncpro.cjs"
-        },
-        "./resetable": {
-            "types": "./dist/resetable.d.ts",
-            "import": "./dist/resetable.js",
-            "require": "./dist/resetable.cjs"
         },
         "./shadow": {
             "types": "./dist/shadow.d.ts",

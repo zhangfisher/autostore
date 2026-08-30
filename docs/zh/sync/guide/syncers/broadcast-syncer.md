@@ -104,6 +104,10 @@ store.watch(() => {
 });
 ```
 
+<demo react="syncer/get-starts/broadcast1toN.tsx" />
+
+演示了 `1-N` 广播的工作机制：`SharedWorker` 内的广播器持有主 `Store`，本页与「在新窗口打开」的其他客户端都是对等的 `N` 端——任一客户端修改 `count` 或发送消息，操作先应用到服务端主 `Store`，再广播给其余所有客户端，两端的 `messageCount` 计算属性始终保持一致。
+
 ## 完整示例
 
 参考 [packages/syncer/examples/worker-react](https://github.com/zhangfisher/autostore/tree/main/packages/syncer/examples/worker-react) 中的完整示例。

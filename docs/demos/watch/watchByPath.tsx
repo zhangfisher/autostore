@@ -20,7 +20,7 @@ export default ()=>{
   const op = useStore({
     operates:'*'
   })
-  const [ops,setOps] = op.useState('operates')
+  const [ops,setOps] = op.useReactive('operates')
 
   useEffect(()=>{
     const watcher = watch("order.total",(operate)=>{      

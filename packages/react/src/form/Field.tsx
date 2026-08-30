@@ -206,13 +206,13 @@ export function createAutoFieldComponent<State extends Dict>(
     store: ReactAutoStore<State>,
     formCtx: React.MutableRefObject<AutoFormContext<State> | null>,
 ): AutoField<State> {
-    const { useAsyncState, useComputedObject } = store;
+    const { useAsyncReactive, useComputedObject } = store;
 
     return (props: any) => {
         const { name } = props;
         const prefix = `${name}.`;
 
-        const value = useAsyncState(name as any) as any;
+        const value = useAsyncReactive(name as any) as any;
 
         const validate = useComputedObject<boolean>(props.validate, {
             id: `${prefix}validate`,
@@ -298,13 +298,13 @@ export function createAutoFieldComponent<State extends Dict>(
                 value: value.value,
                 placeholder: placeholder ? placeholder.value : (props.placeholder ?? ''),
             };
-            const isValid = validate ? validate.val : (props.validate ?? true);
+            const isValid = validate ? validate.getValue() : (props.validate ?? true);
             renderProps.current = buildFieldRenderProps({
                 name,
                 validate: isValid,
-                required: required ? required.val : (props.required ?? false),
-                visible: visible ? visible.val : (props.visible ?? true),
-                readonly: readonly ? readonly.val : (props.readonly ?? false),
+                required: required ? required.getValue() : (props.required ?? false),
+                visible: visible ? visible.getValue() : (props.visible ?? true),
+                readonly: readonly ? readonly.getValue() : (props.readonly ?? false),
                 enable: enable ? enable.value : (props.enable ?? true),
                 select: select ? select.value : props.select,
                 help: help ? help.value : props.help,
@@ -335,8 +335,8 @@ export function createAutoFieldComponent<State extends Dict>(
             let count: number = 0;
             // 当validate字段校验失败时触发错误导致计算出错，此处可以捕获进行更新
             watchers.push(
-                store.on('computed:error', ({ path, error }) => {
-                    const [propKey, propObj] = getFieldPropObj(path);
+                store.on('observer/*/error', ({ observer, error }) => {
+                    const [propKey, propObj] = getFieldPropObj(observer.path);
                     if (propObj && propKey) {
                         Object.assign(renderProps.current!, { error: error.message });
                         formCtx.current?.validator!.updateInvalids(name, false);

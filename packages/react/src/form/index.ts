@@ -1,4 +1,5 @@
 export * from "./types"
 export * from "./useForm"
 export * from "./useField"
-export * from "./useFields" 
+export * from "./useFields"
+export * from "./fieldTypeConvert"
