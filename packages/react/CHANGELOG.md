@@ -1,5 +1,14 @@
 # @autostorejs/react
 
+## 4.3.1
+
+### Patch Changes
+
+-   06a6a5a: fix
+-   Updated dependencies [06a6a5a]
+    -   autostore@4.3.1
+    -   @autostorejs/plugins@4.3.1
+
 ## 4.3.0
 
 ### Minor Changes
