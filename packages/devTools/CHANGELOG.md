@@ -1,5 +1,11 @@
 # @autostorejs/devtools
 
+## 5.0.0
+
+### Minor Changes
+
+-   升级版本到 4.3.0
+
 ## 4.2.2
 
 ### Patch Changes
