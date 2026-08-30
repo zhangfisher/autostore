@@ -1,7 +1,7 @@
 {
     "name": "@autostorejs/plugins",
     "type": "module",
-    "version": "4.2.2",
+    "version": "4.3.0",
     "module": "src/index.ts",
     "exports": {
         ".": {
@@ -29,6 +29,7 @@
         "build": "tsup"
     },
     "dependencies": {
+        "autostore": "workspace:*",
         "flex-tools": "^1.6.6"
     },
     "devDependencies": {
@@ -38,7 +39,6 @@
         "tsup": "^8.5.1"
     },
     "peerDependencies": {
-        "autostore": "workspace:*",
         "typescript": "^5"
     }
 }
