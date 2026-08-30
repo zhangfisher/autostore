@@ -3,6 +3,12 @@
     "type": "module",
     "version": "4.3.0",
     "module": "src/index.ts",
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "dist"
+    ],
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
