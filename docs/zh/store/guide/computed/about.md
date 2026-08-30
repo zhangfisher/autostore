@@ -84,6 +84,15 @@ const { state } = new AutoStore({
 
 ## 异步计算
 
+异步计算属性分为两种：
+
+- **简单异步计算**：使用`computed`声明，计算完成后直接将结果值写入状态原位，开箱即用。
+- **高级异步计算**：使用`asyncComputed`声明，状态原位被替换为`AsyncComputedValue`对象，提供加载状态、执行进度、超时、倒计时、重试、可取消等高级特性。`asyncComputed`由`@autostorejs/plugins`提供，需要从该包导入：
+
+```ts
+import { asyncComputed } from "@autostorejs/plugins/asyncpro";
+```
+
 异步计算属性移花接木的过程如下：
 
 ```tsx
@@ -122,7 +131,7 @@ const { state } = new AutoStore({
 
 1. 根据`computed`声明结合状态上下文创建一个`AsyncComputedObject`对象,保存在`store.comnutedObjects`里面。
 2. 将`state.total`替换成计算结果。
-3. 异步计算还可以使用`asyncComputed`代替`computed`，创建功能更加强大的异步计算对象，此时`state.total`替换成`AsyncComputedValue`。
+3. 高级异步计算可以使用`asyncComputed`代替`computed`，创建功能更加强大的异步计算对象，此时`state.total`替换成`AsyncComputedValue`。
 
 ```ts
 state.total={

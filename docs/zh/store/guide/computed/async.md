@@ -115,6 +115,10 @@ function computed<Value = any, Scope = any>(
 
 `asyncComputed`和`computed`的函数签名基本一致，差别在于使用`asyncComputed`时，`getter`函数参数中缺少相关的高级特性控制参数，如`abortSignal`
 
+:::warning 注意
+`asyncComputed`用于声明高级异步计算属性，需要从`@autostorejs/plugins/asyncpro`导入。
+:::
+
 ### 异步计算函数
 
 `getter`参数（即异步计算函数）,其返回值将更新到状态中的`computed`声明的路径上，详见[介绍](./getter)。
@@ -279,7 +283,7 @@ const store = new AutoStore({
 ### 高级特性🔥
 
 :::warning 提示
-高级特性适用于使用`asyncComputed`声明的增强异步计算属性。
+高级特性适用于使用`asyncComputed`声明的增强异步计算属性。`asyncComputed`需要额外从`@autostorejs/plugins/asyncpro`导入。
 :::
 
 #### 加载状态
@@ -342,7 +346,7 @@ const store = new AutoStore({
 - 当执行出错时，会同步更新`AsyncComputedValue.retry`属性为重试次数。
 
 <demo react="computed/asyncRetry.tsx"/>
- 
+
 **说明**
 
 - 重试次数为`0`时，不会再次重试。重试次数为`N`时，实际会执行`N+1`次。
@@ -358,7 +362,7 @@ const store = new AutoStore({
 - 取消时可以调用`AsyncComputedObject.cancel()`方法来触发一个`AbortSignal`信号。如下例中调用`state.order.total.cancel()`
 
 <demo react="computed/asyncCancel.tsx"/>
-  
+
 **注意**：
 
 - `abortSignal`参数是一个`AbortSignal`对象，可以用来订阅`abort`信号或者传递给`fetch`或`axios`等。

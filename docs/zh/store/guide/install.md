@@ -1,6 +1,7 @@
 # 安装
 
 - `autostore`: 核心包
+- `@autostorejs/plugins`: 官方插件包，包括了`trace`、`shadow`、`asyncpro`等插件
 - `@autostorejs/devtools`: 使用`Redux DevTools`调试`AutoStore`
 - `@autostorejs/syncr`: 远程同步两个`AutoStore`
 
@@ -28,6 +29,34 @@ pnpm add autostore
 
 ```bash [bun]
 bun add autostore
+```
+
+:::
+
+## @autostorejs/plugins
+
+`@autostorejs/plugins`是官方插件包，包括了`trace`、`shadow`、`asyncpro`等插件：
+
+- `asyncpro`：提供`asyncComputed`高级异步计算属性，支持加载状态、执行进度、超时、倒计时、重试、可取消等特性，详见[异步计算](./computed/async)。
+- `shadow`：影子 store，在不污染原 store 的前提下派生额外的计算视图。
+- `trace`：跟踪函数内部的状态操作，用于调试。
+
+:::code-group
+
+```bash [npm]
+npm install  @autostorejs/plugins
+```
+
+```bash [yarn]
+yarn add @autostorejs/plugins
+```
+
+```bash [pnpm]
+pnpm add @autostorejs/plugins
+```
+
+```bash [bun]
+bun add @autostorejs/plugins
 ```
 
 :::
