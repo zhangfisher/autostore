@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoForm 双模式测试</title>
+    <script type="module">
+        // 导入核心依赖
+        import { AutoStore, configurable } from './dist/index.js';
+
+        // 暴露到全局作用域供 HTML 使用
+        window.AutoStore = AutoStore;
+        window.configurable = configurable;
+    </script>
+</head>
+<body>
+    <h1>AutoForm 双模式架构测试</h1>
+
+    <h2>模式 1：.state 属性（推荐）</h2>
+    <div id="test1">
+        <auto-form id="form1"></auto-form>
+    </div>
+
+    <h2>模式 2：.store 属性（兼容）</h2>
+    <div id="test2">
+        <auto-form id="form2"></auto-form>
+    </div>
+
+    <div id="status" style="background: #f0f0f0; padding: 10px; margin-top: 20px;">
+        <p>状态: <span id="statusText">初始化中...</span></p>
+        <pre id="debugInfo"></pre>
+    </div>
+
+    <script type="module">
+        import { AutoStore, configurable, ConfigManager } from './dist/index.js';
+
+        function updateStatus(message, debug) {
+            document.getElementById('statusText').textContent = message;
+            if (debug) {
+                document.getElementById('debugInfo').textContent = JSON.stringify(debug, null, 2);
+            }
+        }
+
+        try {
+            // 模式 1：使用 .state 属性
+            const form1 = document.getElementById('form1');
+            const userState = {
+                user: {
+                    name: configurable('', { title: '用户名' }),
+                    email: configurable('', { title: '邮箱' })
+                }
+            };
+            form1.state = userState;
+            form1.path = 'user';
+
+            updateStatus('✅ 模式 1 (.state) 设置完成', { userState });
+
+            // 模式 2：使用 .store 属性（需要 ConfigManager）
+            const configManager = new ConfigManager({ load: () => ({}) });
+            const store = new AutoStore({
+                admin: {
+                    username: configurable('admin', { title: '管理员用户名' }),
+                    password: configurable('', { title: '密码' })
+                }
+            }, { configManager });
+
+            const form2 = document.getElementById('form2');
+            form2.store = store;
+            form2.path = 'admin';
+
+            updateStatus('✅ 两种模式都设置成功！', {
+                mode1: 'state属性',
+                mode2: 'store属性 + configManager'
+            });
+
+            // 监听控制台日志
+            const originalLog = console.log;
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                const debugDiv = document.getElementById('debugInfo');
+                if (debugDiv) {
+                    debugDiv.textContent += '\n' + args.join(' ');
+                }
+            };
+
+        } catch (error) {
+            updateStatus('❌ 错误: ' + error.message, { error: error.stack });
+        }
+    </script>
+</body>
+</html>

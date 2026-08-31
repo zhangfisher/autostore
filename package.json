@@ -13,14 +13,14 @@
         "changeset": "changeset",
         "publish-packages": "bun run build && bun run scripts/apply-publish-config.js && changeset version && bun run scripts/update-workspace-deps.js && changeset publish && git checkout -- package.json packages/*/package.json",
         "only-publish-packages": "bun run build && bun run scripts/apply-publish-config.js && bun run scripts/update-workspace-deps.js && npm publish --workspaces && git checkout -- package.json packages/*/package.json",
-        "build": "turbo build --filter=autostore --filter=@autostorejs/plugins --filter=@autostorejs/syncer --filter=@autostorejs/devtools --filter=@autostorejs/react",
+        "build": "turbo build --filter=autostore --filter=@autostorejs/plugins --filter=@autostorejs/syncer --filter=@autostorejs/devtools --filter=@autostorejs/react --filter=@autostorejs/form",
         "docs:preview": "vitepress preview new-docs",
-        "sync": "cnpm sync autostore @autostorejs/plugins  @autostorejs/react @autostorejs/syncer @autostorejs/devtools",
+        "sync": "cnpm sync autostore @autostorejs/plugins  @autostorejs/react @autostorejs/syncer @autostorejs/devtools @autostorejs/form",
         "update:changelog": "cpx packages/core/CHANGELOG.md docs/zh/guide/intro/core.changelog.md",
         "lint": "oxlint",
         "lint:fix": "oxlint --fix",
         "publish-versions": "bun run scripts/publish-versions.js",
-        "download": "npm pack autostore @autostorejs/syncer @autostorejs/plugins  @autostorejs/react @autostorejs/devtools"
+        "download": "npm pack autostore @autostorejs/syncer @autostorejs/plugins  @autostorejs/react @autostorejs/devtools @autostorejs/form"
     },
     "keywords": [],
     "author": "zhangfisher",

@@ -19,6 +19,7 @@ export default defineConfig({
             { text: "核心库", link: "/zh/store/" },
             { text: "同步", link: "/zh/sync/" },
             { text: "React", link: "/zh/react/" },
+            { text: "Form", link: "/zh/form/" },
             { text: "开源推荐", link: "https://zhangfisher.github.io/repos/" },
         ],
         sidebar: {
