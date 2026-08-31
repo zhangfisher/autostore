@@ -15,7 +15,7 @@ import type { ObserverContext, ObserverDescriptor, ObserverOptions } from "./typ
 import type { StateOperate, UpdateOptions } from "../store/types";
 import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import { calcDependPaths } from "../utils/calcDependPaths";
-import { isFunction } from "flex-tools/typecheck/isFunction";
+import { isFunction } from "../utils/isFunction";
 import { emitStoreEvent } from "../utils/emitStoreEvent";
 import { RefStateContext } from "../plugins/refState";
 

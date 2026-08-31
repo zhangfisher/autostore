@@ -1,6 +1,9 @@
 {
     // 排除 dist：防止过期的构建产物（含旧的 declare module 增强）被卷入类型检查，与源码类声明冲突（TS2687）
-    "exclude": ["node_modules", "dist"],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ],
     "compilerOptions": {
         "ignoreDeprecations": "6.0",
         /* Visit https://aka.ms/tsconfig to read more about this file */
@@ -12,7 +15,7 @@
         // "disableSolutionSearching": true,                 /* Opt a project out of multi-project reference checking when editing. */
         // "disableReferencedProjectLoad": true,             /* Reduce the number of projects loaded automatically by TypeScript. */
         /* Language and Environment */
-        "target": "ES2022", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+        "target": "ES2020", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
         // "lib": [],                                        /* Specify a set of bundled library declaration files that describe the target runtime environment. */
         // "jsx": "preserve",                                /* Specify what JSX code is generated. */
         "experimentalDecorators": true, /* Enable experimental support for legacy experimental decorators. */
@@ -25,7 +28,7 @@
         // "useDefineForClassFields": true,                  /* Emit ECMAScript-standard-compliant class fields. */
         // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
         /* Modules */
-        "module": "ES2022", /* Specify what module code is generated. */
+        "module": "ES2020", /* Specify what module code is generated. */
         // "rootDir": "./",                                  /* Specify the root folder within your source files. */
         "moduleResolution": "Bundler", /* Specify how TypeScript looks up a file from a given module specifier. */
         // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */

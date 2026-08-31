@@ -1,4 +1,4 @@
-import "flex-tools/string/params";
+import "./utils/params";
 export * from "./store";
 export * from "./utils";
 export * from "./watch";
