@@ -3,9 +3,14 @@
     "type": "module",
     "version": "4.3.2",
     "module": "src/index.ts",
+    "access": "public",
     "publishConfig": {
         "access": "public"
-    },
+    },	
+    "repository": {
+		"type": "git",
+		"url": "git+https://github.com/zhangfisher/autostore.git"
+	},
     "files": [
         "dist"
     ],
