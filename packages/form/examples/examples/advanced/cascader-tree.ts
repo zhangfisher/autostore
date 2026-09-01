@@ -7,7 +7,9 @@ import { customElement, query } from 'lit/decorators.js';
 import { LitElement, html } from 'lit';
 import { AutoStore, configurable, delay } from 'autostore';
 import { cars, orgTree } from '../../shared/mock-data';
-import '@autostorejs/form';
+import '../../../src';
+
+
 
 @customElement('example-cascader-tree')
 class CascaderTreeExample extends LitElement {
@@ -18,7 +20,7 @@ class CascaderTreeExample extends LitElement {
 				label: '车型选择',
 				widget: 'cascader',
 				placeholder: '选择车型',
-				select: cars,
+				choices: cars,
 				icon: 'car',
 				help: '使用#分隔符：品牌#型号#配置',
 				delimiter: '#',
@@ -28,7 +30,7 @@ class CascaderTreeExample extends LitElement {
 				label: '行政区划',
 				widget: 'cascader',
 				placeholder: '选择地区',
-				select: async () => {
+				choices: async () => {
 					// 模拟异步加载
 					await delay(500);
 					return [
@@ -79,18 +81,21 @@ class CascaderTreeExample extends LitElement {
 	@query('auto-form')
 	formRef?: any;
 
+	/**
+	 * 内部 store（由 <auto-form> 创建，经 activeStore 代理访问）
+	 */
+	get store(): any {
+		return this.formRef?.activeStore;
+	}
+
 	connectedCallback(): void {
 		super.connectedCallback();
 
-		this.store.watch(() => {
-			console.log('用户选择:', this.store.state);
-};
-	}
-
-	updated() {
-		if (this.formRef && !this.formRef.store) {
-			this.formRef.store = this.store;
-		}
+		this.updateComplete.then(() => {
+			this.store?.watch(() => {
+				console.log('用户选择:', this.store.state);
+			});
+		});
 	}
 
 	render() {
@@ -104,7 +109,7 @@ class CascaderTreeExample extends LitElement {
 				</p>
 
 				<auto-form
-					data-name="user"
+					.state="${this.state}"
 					data-label="用户信息"
 					data-icon="organization"
 					style="min-height: 500px;"
@@ -160,7 +165,7 @@ class CascaderTreeExample extends LitElement {
 			state.user.car = '1#1-1';
 			state.user.address = '';
 			state.user.departments = [];
-};
+});
 	}
 
 	private _logSelection() {

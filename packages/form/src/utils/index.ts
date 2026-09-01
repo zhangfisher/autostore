@@ -6,3 +6,4 @@ export * from './toSchemaValue';
 export * from './toggleWrapper';
 export * from './registerIcons';
 export * from './changePrimaryColor';
+export * from './cloneSchemaState';

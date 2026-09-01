@@ -8,7 +8,27 @@ type SelectItem = {
 	value: any;
 	label: any;
 } & Record<string, any>;
-export type AutoFieldCheckboxGroupOptions = Required<any>;
+/**
+ * checkbox-group 复选组 widget 的配置类型
+ */
+export interface AutoFieldCheckboxGroupOptions {
+	/**
+	 * 候选项（或其异步提供者）
+	 */
+	choices?: any[] | string[] | (() => any[] | Promise<any[]>);
+	/**
+	 * 候选项取值字段名，默认 "value"
+	 */
+	valueKey?: string;
+	/**
+	 * 卡片模式
+	 */
+	card?: boolean;
+	/**
+	 * 选项宽度
+	 */
+	itemWidth?: string;
+}
 @tag("auto-field-checkbox-group")
 export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOptions> {
 	static styles = [
@@ -80,7 +100,7 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 &.card.selected {
                     & > .body {
                         border: 1px solid var(--sl-color-primary-500);
-                        background: color-mix(in srgb, var(--t-color-primary-5) 20%, transparent);
+                        background: color-mix(in srgb, var(--t-color-primary-5, var(--sl-color-primary-500)) 20%, transparent);
                         &:hover {
                             outline: 1px solid var(--sl-color-primary-500); 
                         }
@@ -127,7 +147,7 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
 	connectedCallback(): void {
 		super.connectedCallback();
 		this.valueKey = this.options.valueKey;
-		this.items = this.options.select.map((item: any, index: number) => {
+		this.items = this.options.choices.map((item: any, index: number) => {
 			const selectItem: any = {};
 			if (typeof item === "object") {
 				Object.assign(selectItem, item);
@@ -210,5 +230,10 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
 declare global {
 	interface HTMLElementTagNameMap {
 		"auto-field-checkbox-group": AutoFieldCheckboxGroup;
+	}
+}
+declare module "autostore" {
+	interface AutoStoreWidgets {
+		"checkbox-group": AutoFieldCheckboxGroupOptions;
 	}
 }

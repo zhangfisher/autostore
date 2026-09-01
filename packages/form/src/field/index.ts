@@ -578,12 +578,12 @@ export class AutoField<Options = unknown> extends LitElement {
 			: (this.options.path as string[]);
 	}
 updated(changedProperties: Map<string, any>) {
+		// schema 属性变化时重新生成 options/value（.schema 属性在
+		// connectedCallback 之后才提交，必须在此补偿初始化）
+		if (changedProperties.has("schema") && this.schema) {
+			this.updateOptions();
+		}
 		if (this.options.styles) {
-			// 检查schema属性是否变化
-			if (changedProperties.has("schema") && this.schema) {
-				this.updateOptions();
-			}
-			
 			applyCustomStyles(this.shadow as unknown as HTMLElement, this.options.styles);
 		}
 	}

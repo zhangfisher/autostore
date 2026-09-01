@@ -1,9 +1,27 @@
 import { state } from 'lit/decorators.js';
 import { AutoFieldInput } from './input';
-// 类型已内联
 import { tag } from '@/utils/tag';
-// 短信验证码
-export type AutoFieldVerifyCodeOptions = any;
+/**
+ * verifycode 短信验证码 widget 的配置类型
+ */
+export interface AutoFieldVerifyCodeOptions {
+    /**
+     * 发送验证码请求（点击发送按钮时调用）
+     */
+    onRequest?: () => void;
+    /**
+     * 发送按钮文字，默认 "发送验证码"
+     */
+    sendTips?: string;
+    /**
+     * 倒计时时长与步进：毫秒数或 [时长, 步进]，默认 60000
+     */
+    timeout?: number | [number, number];
+    /**
+     * 倒计时按钮文字模板（{timeout} 为剩余秒数占位），默认 "{timeout}秒后重发"
+     */
+    template?: string;
+}
 @tag('auto-field-verifycode')
 export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldVerifyCodeOptions> {
     static styles = [AutoFieldInput.styles];
@@ -81,5 +99,10 @@ export class AutoFieldVerifyCode extends AutoFieldInput<AutoFieldVerifyCodeOptio
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-verifycode': AutoFieldVerifyCode;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        verifycode: AutoFieldVerifyCodeOptions;
     }
 }

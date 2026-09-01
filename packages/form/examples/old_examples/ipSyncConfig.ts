@@ -50,7 +50,7 @@ class IPConfigSyncForm extends LitElement {
             //     widget: 'select',
             //     group: 'deviceSettings',
             //     clearable: false,
-            //     select: async () => {
+            //  choices: async () => {
             //         return [
             //             { id: 1, label: '默认', value: 1 },
             //             { id: 2, label: '摄像头2', value: 2 },
@@ -64,7 +64,7 @@ class IPConfigSyncForm extends LitElement {
             //     widget: 'select',
             //     group: 'deviceSettings',
             //     clearable: false,
-            //     select: async () => {
+            //  choices: async () => {
             //         return [
             //             { id: 1, label: '默认', value: 1 },
             //             { id: 2, label: '麦克风2', value: 2 },
@@ -78,7 +78,7 @@ class IPConfigSyncForm extends LitElement {
                 widget: 'select',
                 group: 'deviceSettings',
                 clearable: false,
-                select: async () => {
+                choices: async () => {
                     return [
                         { id: 1, label: '默认', value: 1 },
                         { id: 2, label: '扬声器2', value: 2 },

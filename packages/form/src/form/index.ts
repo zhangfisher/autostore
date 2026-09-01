@@ -32,6 +32,7 @@ import "@shoelace-style/shoelace/dist/components/icon-button/icon-button.js";
 import { LitElement, html } from "lit";
 import { property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { unsafeStatic, html as shtml } from "lit/static-html.js";
 import { pathStartsWith, AutoStore, type Dict, type AutoStoreStateSchema, ConfigManager } from "autostore";
 import { context, type AutoFormContext } from "../context";
 import { provide } from "@lit/context";
@@ -42,6 +43,7 @@ import styles from "./styles";
 import { applyClass } from "@/utils/applyClass";
 import "../components";
 import { registerIcons } from "@/utils";
+import { cloneSchemaState } from "@/utils/cloneSchemaState";
 import { SchemaAccessor } from "../schema/schemaAccessor";
 
 export class AutoForm extends LitElement {
@@ -61,6 +63,12 @@ export class AutoForm extends LitElement {
 	// 内部创建的 store 和 configManager（当使用 .state 属性时）
 	private internalStore?: AutoStore<Dict>;
 	private internalConfigManager?: ConfigManager;
+	// 已用于初始化内部 store 的 state 对象引用
+	// Lit 首次渲染时 .state 属性先于 connectedCallback 提交，会触发
+	// connectedCallback 和 shouldUpdate 双重初始化；而 AutoStore 建立响应式
+	// 时会原位消费 configurable() builder，第二次用同一对象建 store 拿到
+	// 0 个 schema。用引用相等跳过同对象重复初始化。
+	private _lastInitState?: Dict;
 
 	@state()
 	schemas: AutoStoreStateSchema[] = [];
@@ -215,7 +223,9 @@ export class AutoForm extends LitElement {
 
 		// 模式 1：使用 .state 属性（推荐）
 		if (this.state && !this.store) {
-			this._initializeInternalStore();
+			if (this._lastInitState !== this.state) {
+				this._initializeInternalStore();
+			}
 		}
 		// 模式 2：使用 .store 属性（需要确保有 configManager）
 		else if (this.store) {
@@ -243,10 +253,13 @@ export class AutoForm extends LitElement {
 		});
 
 		// 创建 AutoStore 并传入 ConfigManager
-		this.internalStore = new AutoStore(this.state, {
+		// 注意：AutoStore 建立响应式时会原位消费 state 对象中的 configurable()
+		// builder，因此传入深拷贝（函数保留引用），避免消费掉外部持有的原始定义对象
+		this.internalStore = new AutoStore(cloneSchemaState(this.state), {
 			configManager: this.internalConfigManager,
 			configKey: '', // 空字符串，configManager 专用于此 AutoForm
 		});
+		this._lastInitState = this.state;
 
 		// 使用内部 store
 		this._initializeWithStore(this.internalStore);
@@ -278,8 +291,9 @@ export class AutoForm extends LitElement {
 		// 初始化 SchemaAccessor
 		this.schemaAccessor = new SchemaAccessor(store);
 
-		// 设置初始上下文
-		this._initialContext();
+		// 设置初始上下文（传入实际使用的 store——内部模式下 this.store 属性为空，
+		// 直接读 this.store 会把 undefined 注入给字段，导致字段 options 永不初始化）
+		this._initialContext(store);
 
 		// 加载 schemas
 		this._loadSchemas();
@@ -288,6 +302,9 @@ export class AutoForm extends LitElement {
 	shouldUpdate(changedProperties: Map<string, any>) {
 		// .state 属性变化时重新初始化
 		if (changedProperties.has("state")) {
+			// 同一 state 对象引用的重复触发（Lit 首渲染期 connectedCallback 已初始化过）直接跳过
+			if (this._lastInitState === this.state) return true;
+
 			// 清理旧的内部资源
 			if (this.internalConfigManager) {
 				this.internalConfigManager.remove(this.internalStore!);
@@ -307,9 +324,9 @@ export class AutoForm extends LitElement {
 		return true;
 	}
 
-	_initialContext() {
+	_initialContext(store?: AutoStore<Dict>) {
 		Object.assign(this.context, {
-			store: this.store,
+			store: store || this.activeStore,
 			form: this,
 			labelPos: this.labelPos,
 			labelWidth: this.labelWidth,
@@ -459,16 +476,17 @@ export class AutoForm extends LitElement {
 
 	private _renderField(schema: AutoStoreStateSchema) {
 		const widget = schema.widget || 'input';
-		const tagName = `auto-field-${widget}`;
+		// Lit 不支持在标签名位置使用绑定。unsafeStatic 产生的静态片段
+		// 必须配合 static-html 导出的静态版 html 标签函数使用
+		const tag = unsafeStatic(`auto-field-${widget}`);
 
-		// 动态创建自定义元素
-		return html`
-			<${tagName}
+		return shtml`
+			<${tag}
 				.schema=${schema}
 				part="field"
 				exportparts="field-value,field-label,field-help"
 				size=${this.size}
-			></${tagName}>
+			></${tag}>
 		`;
 	}
 

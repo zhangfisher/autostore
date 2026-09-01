@@ -2,9 +2,21 @@ import { css, html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import { AutoField } from '@/field';
-// 类型已内联
 import { tag } from '@/utils/tag';
-export type AutoFieldCheckboxOptions = Required<any>;
+/**
+ * checkbox widget 的配置类型（core 的 AutoWidgetCheckbox 已声明 switchValues，
+ * 此接口保持同构以供 AutoField 泛型与 declare 复用）
+ */
+export interface AutoFieldCheckboxOptions {
+    /**
+     * 双值开关语义：[选中值, 未选中值]，默认 [true,false]
+     */
+    switchValues?: [any, any];
+    /**
+     * 复选框旁的说明文字
+     */
+    checkLabel?: string;
+}
 @tag('auto-field-checkbox')
 export class AutoFieldCheckbox extends AutoField<AutoFieldCheckboxOptions> {
     static styles = [
@@ -65,3 +77,5 @@ declare global {
         'auto-field-checkbox': AutoFieldCheckbox;
     }
 }
+// checkbox 是 core 已收录的键（AutoWidgetCheckbox 含 switchValues），按 ADR-0004 重叠键规则：
+// form 不重复 declare，专有字段已在 core 的 widget-types.ts 声明

@@ -2,7 +2,31 @@ import { css, html } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 import { AutoField } from "@/field";
 import { tag } from "@/utils/tag";
-export type AutoFieldPartsOptions = Required<any>;
+/**
+ * parts 分段输入 widget 的配置类型（如 IP 地址、验证码分段输入）
+ */
+export interface AutoFieldPartsOptions {
+	/**
+	 * 分段模板：每个字符一段，非占位字符原样渲染为分隔符，如 "0000" 或 "192.168.0.1"
+	 */
+	template?: string;
+	/**
+	 * 值中各段之间的连接符
+	 */
+	delimiter?: string;
+	/**
+	 * 输入字符的大小写约束，默认 "both"
+	 */
+	caseType?: "upper" | "lower" | "both";
+	/**
+	 * 输入值是否包含分隔符，默认 true
+	 */
+	includeDelimiter?: boolean;
+	/**
+	 * 允许输入的字符的正则约束（如 "[0-9]"）
+	 */
+	chars?: string;
+}
 @tag("auto-field-parts")
 export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
 	static styles = [
@@ -30,7 +54,7 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
                 background: none;
             }
             sl-input::part(input):focus {
-                background-color: var(--t-color-theme--1);
+                background-color: var(--t-color-theme--1, var(--sl-color-primary-100));
             }
         `,
 	] as any;
@@ -194,5 +218,10 @@ export class AutoFieldParts extends AutoField<AutoFieldPartsOptions> {
 declare global {
 	interface HTMLElementTagNameMap {
 		"auto-field-parts": AutoFieldParts;
+	}
+}
+declare module "autostore" {
+	interface AutoStoreWidgets {
+		parts: AutoFieldPartsOptions;
 	}
 }

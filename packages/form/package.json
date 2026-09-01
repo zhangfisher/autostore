@@ -23,11 +23,10 @@
     ],
     "scripts": {
         "dev": "vite",
-        "dev:example": "vite examples",
+        "dev:examples": "vite examples",
         "build": "tsup",
         "build:vite": "tsc && vite build",
-        "preview": "vite preview",
-        "example": "vite examples"
+        "preview": "vite preview"
     },
     "dependencies": {
         "@autostorejs/plugins": "workspace:*",

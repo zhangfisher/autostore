@@ -88,11 +88,11 @@ const store = new AutoStore(
 				}),
 			},
 		},
-		select: {
+		choices: {
 			layout: configurable("经典式", {
 				label: "懒加载",
 				widget: "select",
-				select: async () => {
+				choices: async () => {
 					return [
 						{ label: "简约风", tips: "极简设计，突出内容" },
 						{ label: "经典式", tips: "传统布局，平衡稳重" },
@@ -179,7 +179,7 @@ const store = new AutoStore(
 				label: "懒加载车型",
 				widget: "cascader",
 				placeholder: "选择车型",
-				select: lazyCars,
+				choices: lazyCars,
 				icon: "car",
 				help: "选择id",
 				delimiter: "#",
@@ -190,7 +190,7 @@ const store = new AutoStore(
 				label: "车型",
 				widget: "cascader",
 				placeholder: "选择车型",
-				select: cars,
+				choices: cars,
 				icon: "car",
 				help: "选择id",
 				delimiter: "#",
@@ -200,7 +200,7 @@ const store = new AutoStore(
 				label: "乡镇",
 				widget: "cascader",
 				placeholder: "选择行政地区",
-				select: areaData5,
+				choices: areaData5,
 				icon: "map-pin",
 				labelKey: "name",
 				valueKey: "name",
@@ -214,7 +214,7 @@ const store = new AutoStore(
 				label: "地区",
 				widget: "cascader",
 				placeholder: "选择行政地区",
-				select: areaData,
+				choices: areaData,
 				icon: "map-pin",
 				rootKey: "0",
 				labelKey: "n",
@@ -485,7 +485,7 @@ const store = new AutoStore(
 				label: "TCP标识",
 				widget: "checkbox-group",
 				group: "network",
-				select: [
+				choices: [
 					{ label: "URG", value: 1 },
 					{ label: "ACK", value: 2 },
 					{ label: "PSH", value: 4 },
@@ -524,7 +524,7 @@ const store = new AutoStore(
 				widget: "radio",
 				itemWidth: "33.33%",
 				card: true,
-				select: [
+				choices: [
 					{ label: "简约风", tips: "极简设计，突出内容" },
 					{ label: "经典式", tips: "传统布局，平衡稳重" },
 					{ label: "卡片集", tips: "模块化卡片，灵活组合" },
@@ -546,7 +546,7 @@ const store = new AutoStore(
 				valueKey: "label",
 				group: "b",
 				card: true,
-				select: [
+				choices: [
 					{ label: "简约风", icon: "globe", tips: "极简设计，突出内容" },
 					{ label: "经典式", icon: "user", tips: "传统布局，平衡稳重" },
 					{ label: "卡片集", icon: "phone", tips: "模块化卡片，灵活组合" },
@@ -576,7 +576,7 @@ const store = new AutoStore(
 				height: "250px",
 				showResults: true, // 是否显示结果框
 				renderItem: "<span>{label}</span><span>{price}</span>",
-				select: [
+				choices: [
 					{ id: 1, label: "手机", price: 1000, icon: "phone" },
 					{ id: 2, label: "电脑", price: 2000, icon: "laptop" },
 					{ id: 3, label: "手表", price: 3000, icon: "watch" },
@@ -675,12 +675,12 @@ const store = new AutoStore(
 				width: "50%",
 				required: true,
 			}),
-			sex: configurable("男", { label: "性别", widget: "radio", select: ["男", "女"] }),
+			sex: configurable("男", { label: "性别", widget: "radio", choices: ["男", "女"] }),
 			post: configurable("程序员", {
 				label: "职业",
 				widget: "select",
 				renderItem: (item) => `<span>${item.label}</span><span>${item.salary}</span>`,
-				select: [
+				choices: [
 					{ label: "程序员", icon: "square-code", salary: 8700 },
 					{ label: "教师", icon: "user-round-pen", salary: 6200 },
 					{ label: "医生", icon: "graduation-cap", salary: 12200 },
@@ -692,7 +692,7 @@ const store = new AutoStore(
 				label: "电脑配件",
 				multiple: true,
 				renderItem: "<span>{label}</span><span>{price}</span>",
-				select: [
+				choices: [
 					{ id: 1, label: "手机", price: 1000, icon: "phone" },
 					{ id: 2, label: "电脑", price: 2000, icon: "laptop" },
 					{ id: 3, label: "手表", price: 3000, icon: "watch" },
@@ -745,13 +745,13 @@ const store = new AutoStore(
 			tags: configurable(["测试"], {
 				label: "标签",
 				widget: "radio",
-				select: ["前端", "后端", "测试", "运维"],
+				choices: ["前端", "后端", "测试", "运维"],
 			}),
 			rating: configurable(1, { label: "评分", widget: "rating" }),
 			level: configurable(2, {
 				label: "级别",
 				widget: "radio-button",
-				select: [
+				choices: [
 					{ label: "初级", value: 1 },
 					{ label: "中级", value: 2 },
 					{ label: "高级", value: 3 },
@@ -774,7 +774,7 @@ const store = new AutoStore(
 				],
 				//
 				placeholder: "请选择版本",
-				select: [
+				choices: [
 					{ label: "1.0" },
 					{ label: "2.0" },
 					{ label: "3.0" },
@@ -798,7 +798,7 @@ const store = new AutoStore(
 				label: "证件类型",
 				widget: "radio",
 				valueKey: "label",
-				select: [
+				choices: [
 					{ label: "身份证", value: 1 },
 					{ label: "护照", value: 2 },
 					{ label: "军官证", value: 3 },

@@ -1,9 +1,24 @@
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
-// 类型已内联
 import { tag } from '@/utils/tag';
-export type AutoFieldRadioButtonOptions = Required<any>;
+/**
+ * radio-button 按钮式单选组 widget 的配置类型
+ */
+export interface AutoFieldRadioButtonOptions {
+    /**
+     * 候选项（或其异步提供者）
+     */
+    choices?: any[] | string[] | (() => any[] | Promise<any[]>);
+    /**
+     * 候选项取值字段名，默认 "value"
+     */
+    valueKey?: string;
+    /**
+     * 胶囊圆角外观
+     */
+    pill?: boolean;
+}
 @tag('auto-field-radio-button')
 export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions> {
     static styles = [
@@ -32,7 +47,7 @@ export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions>
         return html`<sl-radio-button value="${value}" ?pill=${this.options.pill} ?disabled=${!this.options.enable}>${item.label}</sl-radio-button>`;
     }
     renderInput() {
-        const items = this.getOptionValue('select', []).map((item: any, index: number) => {
+        const items = this.getOptionValue('choices', []).map((item: any, index: number) => {
             const selectItem: any = {};
             if (typeof item === 'object') {
                 Object.assign(selectItem, item);
@@ -51,5 +66,10 @@ export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions>
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-radio-button': AutoFieldRadioButton;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        'radio-button': AutoFieldRadioButtonOptions;
     }
 }

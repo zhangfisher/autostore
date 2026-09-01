@@ -95,7 +95,7 @@ export function schema<Value, W extends keyof AutoStoreWidgets>(
     initial: Value,
     schema: Omit<Computedable<AutoStateSchemaBase<Value>, Value>, "value" | "widget"> & {
         widget: W;
-    } & WidgetConfigPrecise<W>,
+    } & Computedable<WidgetConfigPrecise<W>>,
 ): SchemaDescriptorBuilder<Value, W>;
 // 不包含 widget 的配置，或者 widget 不匹配已知类型时的回退重载
 export function schema<Value>(

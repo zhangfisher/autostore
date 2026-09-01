@@ -2,9 +2,17 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
-// 类型已内联
 import { tag } from '@/utils/tag';
-export type AutoFieldTextAreaOptions = Required<any>;
+/**
+ * textarea 多行文本 widget 的配置类型（textarea 是 core 已收录键，
+ * core 的 AutoWidgetTextarea 已声明 rows/maxlength 等，此处同构不重复 declare）
+ */
+export interface AutoFieldTextAreaOptions {
+    minLength?: number;
+    maxLength?: number;
+    autocorrect?: string;
+    rows?: number;
+}
 @tag('auto-field-textarea')
 export class AutoFieldTextArea extends AutoField<AutoFieldTextAreaOptions> {
     static styles = [

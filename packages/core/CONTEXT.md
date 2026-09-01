@@ -40,3 +40,21 @@ _Avoid_: 范围
 
 **相对路径 (Relative path)**:
 相对于上下文所在位置解析的路径（`./` 指当前对象所在容器、`../` 指父对象）。只有在具备上下文时才能计算。
+
+### Schema 与 Widget
+
+**通用元数据 (Base metadata)**:
+schema 配置中与控件类型无关的字段（`label`/`help`/`choices`/`disabled` 等），由 `AutoStateSchemaBase` 统一声明。base 只收 HTML 标准词汇；判定某键是否通用，标准是"离开具体控件是否仍有意义"，不是出现频次。
+_Avoid_: 公共属性、公共字段
+
+**Widget 特有配置 (Widget config)**:
+schema 配置中由 `widget` 取值决定有效性的字段（如 `widget: "number"` 时的 `min/max/step`）。类型上通过 widget 键查 `AutoStoreWidgets` 表获得。
+_Avoid_: 控件属性、专属配置
+
+**Widget 键表 (Widget registry)**:
+`AutoStoreWidgets` 接口——widget 名到其特有配置类型的映射。core 收录 HTML input type 全集作为基础表；UI 包（如 form）通过模块扩展向其合并自有键。键名与运行时自定义元素 tag（`auto-field-<widget>`）一一对应。
+_Avoid_: 组件注册表
+
+**候选项 (Choices)**:
+选项类控件的数据源数组（`{label, value, default}` 或字符串）。`choices` 是唯一正名；`select` 作为配置键名已被废弃（与同名控件、单选行为多义冲突）。
+_Avoid_: select（作配置键名时）、options、items（作通用概念时）

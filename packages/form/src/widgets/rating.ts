@@ -1,9 +1,20 @@
 import { AutoField } from '@/field';
 import { html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/rating/rating.js';
-// 类型已内联
 import { tag } from '@/utils/tag';
-export type AutoFieldRatingOptions = Required<any>;
+/**
+ * rating 评分 widget 的配置类型
+ */
+export interface AutoFieldRatingOptions {
+    /**
+     * 最高星数，默认 5
+     */
+    max?: number;
+    /**
+     * 评分精度（如 0.5 支持半星），默认 1
+     */
+    precision?: number;
+}
 @tag('auto-field-rating')
 export class AutoFieldRating extends AutoField<AutoFieldRatingOptions> {
     getInitialOptions() {
@@ -36,5 +47,10 @@ export class AutoFieldRating extends AutoField<AutoFieldRatingOptions> {
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-rating': AutoFieldRating;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        rating: AutoFieldRatingOptions;
     }
 }

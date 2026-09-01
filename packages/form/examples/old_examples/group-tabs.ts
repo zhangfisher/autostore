@@ -33,7 +33,7 @@ const store2 = new AutoStore({
 	sex: configurable("male", {
 		label: "性别",
 		widget: "radio",
-		select: [
+		choices: [
 			{ label: "男", value: "male" },
 			{ label: "女", value: "female" },
 		],

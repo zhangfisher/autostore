@@ -10,7 +10,7 @@ class AddContacyForm extends LitElement {
 			label: "类型",
 			required: true,
 			widget: "radio",
-			select: [
+			choices: [
 				{
 					id: 1,
 					label: "个人",
@@ -64,7 +64,7 @@ class AddContacyForm extends LitElement {
 		// pid: configurable("a", {
 		// 	label: "部门",
 		// 	widget: "select",
-		// 	select: ["a", "b", "c"],
+		//  choices: ["a", "b", "c"],
 		// 	placeholder: "请选择所属部门",
 		// 	clearable: false,
 		// }),
@@ -72,7 +72,7 @@ class AddContacyForm extends LitElement {
 			label: "原属于该部门的用户",
 			labelPos: "top",
 			widget: "radio",
-			select: [
+			choices: [
 				{
 					id: 1,
 					label: "仍归属于该部门",
@@ -96,7 +96,7 @@ class AddContacyForm extends LitElement {
 		// 	widget: "select",
 		// 	clearable: false,
 		// 	placeholder: "请选择将所属用户迁移到",
-		// 	select: async () => {
+		//  choices: async () => {
 		// 		return [];
 		// 	},
 		// 	visible: (state: any) => {

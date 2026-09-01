@@ -1,8 +1,11 @@
 import { AutoField } from '@/field';
 import { tag } from '@/utils/tag';
-// 类型已内联
 import { css, html } from 'lit';
-export type AutoFieldIPAddressOptions = Required<any>;
+/**
+ * ipaddress 地址输入 widget 的配置类型
+ * （size 键是死配置——代码声明了默认值但从未读取，不上类型，ADR-0004）
+ */
+export interface AutoFieldIPAddressOptions {}
 @tag('auto-field-ipaddress')
 export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
     static styles = [
@@ -135,5 +138,10 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-ipaddress': AutoFieldIpAddress;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        ipaddress: AutoFieldIPAddressOptions;
     }
 }

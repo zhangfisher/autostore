@@ -8,7 +8,48 @@ import { scrollbar } from './../styles/utils';
 import { when } from 'lit/directives/when.js';
 import { tag } from '@/utils/tag';
 import { AsyncOptionState } from '@/controllers/asyncState';
-export type AutoFieldTreeSelectOptions = Required<any>;
+/**
+ * tree-select 树选择 widget 的配置类型
+ * （maxItems/minItems 是死配置——声明未读，不上类型，ADR-0004）
+ */
+export interface AutoFieldTreeSelectOptions {
+    /**
+     * 树形数据（或其异步提供者）
+     */
+    items?: TreeNodes | (() => TreeNodes | Promise<TreeNodes>);
+    /**
+     * 节点 id 字段名，默认 "id"
+     */
+    idKey?: string;
+    /**
+     * 节点取值字段名，默认 "value"
+     */
+    valueKey?: string;
+    /**
+     * 节点标签字段名，默认 "label"
+     */
+    labelKey?: string;
+    /**
+     * 是否多选
+     */
+    multiple?: boolean;
+    /**
+     * 初始展开层级
+     */
+    defaultExpandLevel?: number;
+    /**
+     * 只允许选择叶子节点
+     */
+    onlySelectLeaf?: boolean;
+    /**
+     * 是否在选择框中显示为路径（labelKey 组成）
+     */
+    showAsPath?: boolean;
+    /**
+     * 选中项变化回调
+     */
+    onSelectionChange?: (selection: TreeSelectedItem[]) => void;
+}
 export type TreeNode = {
     id?: string | number;
     label?: string;
@@ -194,5 +235,10 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-tree-select': AutoFieldTreeSelect;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        'tree-select': AutoFieldTreeSelectOptions;
     }
 }

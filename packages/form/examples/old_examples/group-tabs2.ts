@@ -23,7 +23,7 @@ class AutoFormExampleTabs2 extends LitElement {
 			sex: configurable("male", {
 				label: "性别",
 				widget: "radio",
-				select: [
+				choices: [
 					{ label: "男", value: "male" },
 					{ label: "女", value: "female" },
 				],
@@ -31,7 +31,7 @@ class AutoFormExampleTabs2 extends LitElement {
 			country: configurable("China", {
 				label: "国家",
 				widget: "select",
-				select: [
+				choices: [
 					{ label: "中国", value: "China" },
 					{ label: "美国", value: "America" },
 					{ label: "泰国", value: "Thailand" },

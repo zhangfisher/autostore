@@ -1,8 +1,10 @@
 import { overloads } from "@/styles/overloads";
+import { vars } from "@/form/vars";
 import { css } from "lit";
 
 export default css`
     ${overloads}
+    ${vars}
     :host {
         display: flex;
         position: relative;

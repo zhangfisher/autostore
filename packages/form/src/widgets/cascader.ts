@@ -7,7 +7,50 @@ import { state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
-export type AutoFieldCascaderOptions = Required<any>;
+/**
+ * cascader 级联选择 widget 的配置类型
+ */
+export interface AutoFieldCascaderOptions {
+	/**
+	 * 候选项：树形数据（childrenKey 嵌套）、平铺数据（idKey+rootKey 关联）或其异步提供者
+	 */
+	choices?:
+		| Record<string, any>[]
+		| Record<string, any>
+		| (() => Record<string, any>[] | Promise<Record<string, any>[]>);
+	/**
+	 * 节点 id 字段名，默认 "id"
+	 */
+	idKey?: string;
+	/**
+	 * 平铺数据中根节点标识值，默认 "$root"
+	 */
+	rootKey?: string;
+	/**
+	 * 节点标签字段名，默认 "label"
+	 */
+	labelKey?: string;
+	/**
+	 * 节点取值字段名（默认取 idKey）
+	 */
+	valueKey?: string;
+	/**
+	 * 子节点字段名，默认 "children"
+	 */
+	childrenKey?: string;
+	/**
+	 * 最大级联层级，默认 3
+	 */
+	maxLevel?: number;
+	/**
+	 * 值中各级的连接符
+	 */
+	delimiter?: string;
+	/**
+	 * 异步加载子节点：入参为当前节点，返回子节点数组
+	 */
+	onLoad?: (node: any) => Record<string, any>[] | Promise<Record<string, any>[]>;
+}
 @tag("auto-field-cascader")
 export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOptions> {
 	static styles = [
@@ -89,7 +132,7 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 			labelKey: "label",
 			maxLevel: 3,
 			childrenKey: "children",
-			select: {},
+			choices: {},
 		}) as AutoFieldCascaderOptions;
 		if (!opts.valueKey) opts.valueKey = opts.idKey;
 		if (!opts.idKey) opts.idKey = opts.labelKey;
@@ -98,13 +141,13 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 	connectedCallback(): void {
 		super.connectedCallback();
 		const isChildrenFmt =
-			typeof this.options.select === "object" && this.options.childrenKey in this.options.select;
+			typeof this.options.choices === "object" && this.options.childrenKey in this.options.choices;
 		// @ts-ignore
-		if (isChildrenFmt) this.options.rootKey = this.options.select[this.options.idKey];
+		if (isChildrenFmt) this.options.rootKey = this.options.choices[this.options.idKey];
 		this.data =
-			isChildrenFmt || Array.isArray(this.options.select)
-				? this._normalizeData(this.options.select as any)
-				: this.options.select;
+			isChildrenFmt || Array.isArray(this.options.choices)
+				? this._normalizeData(this.options.choices as any)
+				: this.options.choices;
 		this.selected = this._parseValues(this.value);
 		this.focusItems = Array.from({ length: this.options.maxLevel - 1 }).fill(null);
 	}
@@ -373,5 +416,10 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 declare global {
 	interface HTMLElementTagNameMap {
 		"auto-field-cascader": AutoFieldCascader;
+	}
+}
+declare module "autostore" {
+	interface AutoStoreWidgets {
+		cascader: AutoFieldCascaderOptions;
 	}
 }

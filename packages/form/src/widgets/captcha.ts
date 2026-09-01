@@ -1,9 +1,20 @@
 import { query, state } from 'lit/decorators.js';
 import { AutoFieldInput } from './input';
 import { css, html } from 'lit';
-// 类型已内联
 import { tag } from '@/utils/tag';
-export type AutoFieldCaptchaOptions = Required<any>;
+/**
+ * captcha 图片验证码 widget 的配置类型
+ */
+export interface AutoFieldCaptchaOptions {
+    /**
+     * 验证码图片地址（刷新时自动附加时间戳防缓存）
+     */
+    url?: string;
+    /**
+     * 刷新按钮提示文字，默认 "单击刷新验证码"
+     */
+    tips?: string;
+}
 @tag('auto-field-captcha')
 export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
     static styles = [
@@ -65,5 +76,10 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-captcha': AutoFieldCaptcha;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        captcha: AutoFieldCaptchaOptions;
     }
 }

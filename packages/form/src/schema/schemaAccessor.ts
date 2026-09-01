@@ -26,10 +26,8 @@ export class SchemaAccessor {
 	 */
 	getSchema(fieldPath: string[]): AutoStoreStateSchema | undefined {
 		const fullPath = this.getFullPath(fieldPath);
-		const descriptor = this.store.configManager?.state[fullPath];
-
-		// descriptor 结构: { type: "schema", getter: () => value, options: AutoStoreStateSchema }
-		return descriptor?.options;
+		// configManager.state[fullPath] 存的就是 schema options 本身
+		return this.store.configManager?.state[fullPath] as AutoStoreStateSchema | undefined;
 	}
 
 	/**
@@ -57,12 +55,12 @@ export class SchemaAccessor {
 		console.log('[SchemaAccessor] configManager.state keys:', Object.keys(configManager.state));
 
 		const schemas: Record<string, AutoStoreStateSchema> = {};
-		Object.entries(configManager.state).forEach(([key, descriptor]) => {
+		Object.entries(configManager.state).forEach(([key, schema]) => {
 			if (key.startsWith(keyPrefix)) {
 				const relativeKey = key.substring(keyPrefix.length);
-				// descriptor 结构: { type: "schema", getter: () => value, options: AutoStoreStateSchema }
-				// 我们需要返回 options 部分
-				schemas[relativeKey] = descriptor?.options;
+				// configManager.state[key] 存的就是 schema options 本身
+				// （ConfigManager.add 中 this.state[joinPath(configKey)] = descriptor.options）
+				schemas[relativeKey] = schema as AutoStoreStateSchema;
 				console.log(`[SchemaAccessor] ✅ 匹配: ${key} → ${relativeKey}`);
 			}
 		});

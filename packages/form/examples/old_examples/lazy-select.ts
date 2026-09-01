@@ -23,7 +23,7 @@ const store = new AutoStore({
 		showResults: true,
 		widget: "list",
 		multiple: true,
-		select: async () => {
+		choices: async () => {
 			await delay(1000);
 			return [
 				{ label: "中国", value: "China" },
@@ -45,8 +45,8 @@ const store = new AutoStore({
 			widget: "select",
 			group: "deviceSettings",
 			clearable: false,
-			// select:[{id:'234',label:'默认',value:'234'}]
-			select: async () => {
+			// choices:[{id:'234',label:'默认',value:'234'}]
+			choices: async () => {
 				return [
 					{ id: 1, label: "手机", price: 1000, icon: "phone" },
 					{ id: 2, label: "电脑", price: 2000, icon: "laptop" },
@@ -59,7 +59,7 @@ const store = new AutoStore({
 			widget: "select",
 			group: "deviceSettings",
 			clearable: false,
-			select: async () => {
+			choices: async () => {
 				return [
 					{ id: 1, label: "手机", price: 1000, icon: "phone" },
 					{ id: 2, label: "电脑", price: 2000, icon: "laptop" },
@@ -72,7 +72,7 @@ const store = new AutoStore({
 			widget: "select",
 			group: "deviceSettings",
 			clearable: false,
-			select: async () => {
+			choices: async () => {
 				return [
 					{ id: 1, label: "手机", price: 1000, icon: "phone" },
 					{ id: 2, label: "电脑", price: 2000, icon: "laptop" },
@@ -94,7 +94,7 @@ const store = new AutoStore({
 		renderItem: '<span>{label}</span><span style="color:red;">{price}</span>',
 		height: "250px",
 		showResults: true,
-		select: [
+		choices: [
 			{ id: 1, label: "手机", price: 1000, icon: "phone" },
 			{ id: 2, label: "电脑", price: 2000, icon: "laptop" },
 			{ id: 3, label: "手表", price: 3000, icon: "watch" },
@@ -137,7 +137,7 @@ const store = new AutoStore({
 	country: configurable("China", {
 		label: "国家",
 		widget: "select",
-		select: async () => {
+		choices: async () => {
 			await delay(3000);
 			return [
 				{ label: "中国", value: "China" },

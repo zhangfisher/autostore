@@ -21,7 +21,31 @@ const defaultColors = [
 	"#722ed1",
 	"#eb2f96",
 ];
-export type AutoFieldColorPickerOptions = Required<any>;
+/**
+ * colorpicker 取色器 widget 的配置类型
+ */
+export interface AutoFieldColorPickerOptions {
+	/**
+	 * 颜色值格式，默认 "hex"
+	 */
+	format?: "hex" | "rgb" | "hsl" | "hsv";
+	/**
+	 * 是否支持透明度调节，默认 false
+	 */
+	opacity?: boolean;
+	/**
+	 * 是否内联渲染（无弹出面板），默认 false
+	 */
+	inline?: boolean;
+	/**
+	 * 预设色板色值列表（分号分隔传给 sl-color-picker）
+	 */
+	swatches?: string[];
+	/**
+	 * 预设色快捷块列表（渲染在取色器旁）
+	 */
+	presets?: string[];
+}
 @tag("auto-field-colorpicker")
 export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions> {
 	static styles = [
@@ -137,5 +161,11 @@ export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions>
 declare global {
 	interface HTMLElementTagNameMap {
 		"auto-field-colorpicker": AutoFieldColorPicker;
+	}
+}
+declare module "autostore" {
+	interface AutoStoreWidgets {
+		// core 的 color 键是 HTML 原生 input type=color；form 的取色器是独立 widget
+		colorpicker: AutoFieldColorPickerOptions;
 	}
 }

@@ -1,10 +1,35 @@
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
-// 类型已内联到 AutoFieldInputOptions 中
 import { tag } from '@/utils/tag';
 export type InputType = 'number' | 'date' | 'time' | 'url' | 'password' | 'email' | 'search' | 'text' | 'datetime-local' | 'tel';
-export type AutoFieldInputOptions = Required<any>;
+/**
+ * input widget 的配置类型（core 已收录 number/text/email 等各 input type 的属性，
+ * 此处仅声明 input 特有的 inputType 分流与前后缀）
+ */
+export interface AutoFieldInputOptions {
+    /**
+     * 底层 HTML input type 分流（input widget 是泛型输入框，默认 text）
+     */
+    inputType?: InputType | 'input';
+    /**
+     * 值前缀：字符串值时自动在输入值前添加（toState/toInput 双向剥离）
+     */
+    prefix?: string;
+    /**
+     * 值后缀：字符串值时自动在输入值后添加（toState/toInput 双向剥离）
+     */
+    suffix?: string;
+    pattern?: string;
+    minLength?: number;
+    maxLength?: number;
+    max?: number | string;
+    min?: number | string;
+    autocorrect?: string;
+    spellcheck?: boolean;
+    filled?: boolean;
+    pill?: boolean;
+}
 @tag('auto-field-input')
 export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<AutoFieldInputOptions & Options> {
     static styles = [
@@ -195,5 +220,14 @@ export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<A
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-input': AutoFieldInput;
+    }
+}
+/**
+ * 向 core 的 Widget 键表合并 input 键（ADR-0004 模块扩展）
+ * core 不收录 input（它是 form 的"泛型输入框"抽象，经 inputType 分流到 HTML type）
+ */
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        input: AutoFieldInputOptions;
     }
 }

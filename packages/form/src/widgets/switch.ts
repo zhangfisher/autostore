@@ -2,9 +2,20 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/switch/switch.js';
-// 类型已内联
 import { tag } from '@/utils/tag';
-export type AutoFieldSwitchOptions = Required<any>;
+/**
+ * switch widget 的配置类型（开关语义与 checkbox 同构）
+ */
+export interface AutoFieldSwitchOptions {
+    /**
+     * 双值开关语义：[选中值, 未选中值]，默认 [true,false]
+     */
+    switchValues?: [any, any];
+    /**
+     * 开关旁的说明文字（缺省时取 switchValues 中非布尔值的一项）
+     */
+    checkLabel?: string;
+}
 @tag('auto-field-switch')
 export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
     static styles = [
@@ -64,5 +75,10 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-switch': AutoFieldSwitch;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        switch: AutoFieldSwitchOptions;
     }
 }

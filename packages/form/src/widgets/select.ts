@@ -8,7 +8,21 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { vars } from "@/form/vars";
 import { tag } from "@/utils/tag";
 import { AsyncOptionState } from "@/controllers/asyncState";
-export type AutoFieldSelectOptions = Required<any>;
+/**
+ * select 下拉选择 widget 的配置类型（select 是 core 已收录键，
+ * core 的 AutoWidgetSelect 已声明全部消费字段，此处同构不重复 declare）
+ */
+export interface AutoFieldSelectOptions {
+	multiple?: boolean;
+	choices?: any[] | string[] | (() => any[] | Promise<any[]>);
+	valueKey?: string;
+	labelKey?: string;
+	renderItem?: string | ((item: any) => any);
+	placement?: "top" | "bottom" | "right" | "left";
+	maxOptionsVisible?: number;
+	filled?: boolean;
+	pill?: boolean;
+}
 @tag("auto-field-select")
 export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
 	static styles = [
@@ -44,7 +58,7 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
 	] as any;
 	valueKey: string = "value";
 	labelKey: string = "label";
-	items = new AsyncOptionState<any[]>(this, "select", (items) => {
+	items = new AsyncOptionState<any[]>(this, "choices", (items) => {
 		if (!items || !Array.isArray(items)) return [];        
 		return items.map((item: any) => {
 			const selectItem: any = {};
@@ -64,7 +78,7 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
 		return {
 			valueKey: "value",
 			labelKey: "label",
-			select: [],
+			choices: [],
 			multiple: false,
 			clearable: true,
 			maxOptionsVisible: 0,

@@ -21,7 +21,8 @@ export const overloads = css`
     }
 
     sl-button{
-        --sl-color-primary-50: color-mix(in srgb, var(--t-color-primary-5) 20%, transparent);
+        /* ThemePro 未安装时回落 shoelace 官方 primary-50 */
+        --sl-color-primary-50: color-mix(in srgb, var(--t-color-primary-5, hsl(198.6 88.7% 48.4%)) 20%, transparent);
     }
     
 

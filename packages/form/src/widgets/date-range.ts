@@ -1,9 +1,22 @@
 import { queryAll } from 'lit/decorators.js';
-// 类型已内联
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import { tag } from '@/utils/tag';
-export type AutoFieldDateRangeOptions = Required<any>;
+/**
+ * date-range 日期范围 widget 的配置类型
+ */
+export interface AutoFieldDateRangeOptions {
+    /**
+     * 起止日期在值中的连接符（值为字符串时按此拆分），默认 ","
+     */
+    delimiter?: string;
+    /**
+     * 是否含时间（datetime-local 输入），默认 false
+     */
+    includeTime?: boolean;
+    filled?: boolean;
+    pill?: boolean;
+}
 @tag('auto-field-date-range')
 export class AutoFieldDateRange extends AutoField<AutoFieldDateRangeOptions> {
     static styles = [
@@ -86,5 +99,10 @@ export class AutoFieldDateRange extends AutoField<AutoFieldDateRangeOptions> {
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-date-range': AutoFieldDateRange;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        'date-range': AutoFieldDateRangeOptions;
     }
 }

@@ -39,17 +39,21 @@ export interface AutoStoreAction {
 }
 
 /**
- * 从 AutoStoreWidgets 提取 widget 键类型
- * 当 AutoStoreWidgets 为空接口时，回退到 string 类型
+ * Widget 键类型：AutoStoreWidgets 的全部键名
+ * UI 包（如 @autostorejs/form）通过 declare module "autostore" 合并自有键后自动扩展（ADR-0004）
  */
-type WidgetKeys<T> = keyof T extends never ? string : keyof T;
-
-export type AutoStoreWidgetTypes = WidgetKeys<AutoStoreWidgets>;
+export type AutoStoreWidgetTypes = keyof AutoStoreWidgets;
 
 /**
  * 从 AutoStoreWidgets 中提取指定 widget 的配置类型
  */
 export type WidgetConfig<W extends keyof AutoStoreWidgets> = AutoStoreWidgets[W];
+
+/**
+ * 候选项（choices）的类型：对象（label/value/default 可缺省，附加字段自由）或字符串
+ * base 的 choices 与各选项类 widget 接口共用此定义（单一事实来源）
+ */
+export type SchemaChoices = ({ label?: string; value?: any; default?: boolean; [k: string]: any } | string)[];
 
 /**
  * AutoStateSchema 基础接口（不包含 widget 特定配置）
@@ -95,7 +99,7 @@ export interface AutoStateSchemaBase<Value = any> {
      * 当校验出错时的无效提示信息
      *
      * 支持插值变量
-     * - 当前所有配置项的值，例如: invalidTips="{label}数据格式错误"
+     * - 当前所有配置项的值，例如: errorMessage="{label}数据格式错误"
      * - error: 错误信息，即错误对象的message属性
      * - errorStack: 错误堆栈信息,即错误对象的stack属性
      * - value: 错误值
@@ -108,9 +112,23 @@ export interface AutoStateSchemaBase<Value = any> {
      */
     datatype?: string;
     /**
-     * 是否启用
+     * 是否启用（业务级开关：整字段可用性）
+     * 与 HTML 原生输入态 disabled/readOnly 语义分层——后两者由 widget 属性透传
      */
     enable?: boolean;
+    /**
+     * HTML 原生输入态：禁用（透传到控件）
+     * 与 enable 的区别：enable 是业务级开关，disabled 是控件级输入态
+     */
+    disabled?: boolean;
+    /**
+     * HTML 原生输入态：只读（透传到控件）
+     */
+    readOnly?: boolean;
+    /**
+     * 是否显示清除按钮（输入行为：清除输入内容）
+     */
+    clearable?: boolean;
     /**
      * 配置项图标
      */
@@ -200,6 +218,11 @@ export interface AutoStateSchemaBase<Value = any> {
      * 动作
      */
     actions?: AutoStoreAction[];
+    /**
+     * 候选项（选项类控件的数据源）
+     * 唯一正名——`select` 作为配置键名已废弃（与同名控件、单选行为多义冲突，ADR-0004）
+     */
+    choices?: SchemaChoices;
 }
 
 /**
@@ -216,16 +239,15 @@ export type WidgetConfigPrecise<W extends keyof AutoStoreWidgets> = Pick<
 /**
  * 完整的 AutoStateSchema 类型，根据 widget 参数自动合并对应 widget 配置
  * 使用泛型参数 Widget 来实现类型安全的 widget 配置推断
+ * Widget 缺省（never）时仅含 base；指定时合并 WidgetConfigPrecise<Widget>
  */
 export type AutoStoreStateSchema<
     Value = any,
     Widget extends keyof AutoStoreWidgets = never,
-> = keyof AutoStoreWidgets extends never
+> = [Widget] extends [never]
     ? AutoStateSchemaBase<Value>
-    : [Widget] extends [never]
-      ? AutoStateSchemaBase<Value>
-      : AutoStateSchemaBase<Value> &
-            (Widget extends keyof AutoStoreWidgets ? WidgetConfigPrecise<Widget> : {});
+    : AutoStateSchemaBase<Value> &
+          (Widget extends keyof AutoStoreWidgets ? WidgetConfigPrecise<Widget> : {});
 
 // 让对象的成员值允许是ComputedBuilder，可计算值
 // 例外：函数类型的属性，如果名称以 on、to、render 开头，则不允许为 ComputedBuilder
@@ -265,11 +287,23 @@ export type IsSchemaDescriptorBuilder<T> = IsDescriptorBuilder<T, "schema">;
  * 返回对应的 SchemaDescriptorBuilder。
  * 泛型 V（约束于 Value）允许在调用时进一步收窄值类型，
  * 例如 s.array<number[]>([1,2]) 会得到 SchemaDescriptorBuilder<number[]>。
+ *
+ * 含 widget 的重载与 schema() 对齐：widget 字面量匹配 AutoStoreWidgets 键时
+ * 合并对应 widget 配置并保留 Widget 泛型（供 ConfigurableState 的
+ * ExtractWidgetFromBuilder 恢复类型信息，ADR-0004）
  */
-export type SchemaBuilderFactory<Value = any> = <V extends Value>(
-    initial: V,
-    options?: Omit<AutoStoreStateSchema<V>, "value" | "widget">,
-) => SchemaDescriptorBuilder<V>;
+export interface SchemaBuilderFactory<Value = any> {
+    <V extends Value>(
+        initial: V,
+        options?: Omit<ComputedableStateSchema<V>, "value" | "widget"> & { widget?: string },
+    ): SchemaDescriptorBuilder<V>;
+    <V extends Value, W extends keyof AutoStoreWidgets>(
+        initial: V,
+        options: Omit<Computedable<AutoStateSchemaBase<V>, V>, "value" | "widget"> & {
+            widget: W;
+        } & Computedable<WidgetConfigPrecise<W>>,
+    ): SchemaDescriptorBuilder<V, W>;
+}
 
 /**
  * 从 SchemaDescriptorBuilder 中提取 Widget 类型

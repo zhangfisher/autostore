@@ -10,10 +10,14 @@
             content="AutoStore Form 4.x 示例集合 - 响应式表单组件的所有功能演示"
         />
 
-        <!-- 脚本文件 -->
-        <script src="/node_modules/autostore/dist/index.global.js"></script>
-        <script src="/node_modules/@shoelace-style/shoelace/dist/shoelace.js"></script>
-        <script src="../dist/index.global.js"></script>
+        <!-- shoelace 主题令牌（--sl-* 全量定义）。
+             vite dev 模式下 /node_modules/... 路径会 SPA 回落成 index.html，
+             须走 @fs 绝对路径；shoelace 不发布 dist/shoelace.js 单文件包，
+             组件 JS 由示例模块按需 import -->
+        <link
+            rel="stylesheet"
+            href="/@fs/E:/Work/Code/autostore/packages/form/node_modules/@shoelace-style/shoelace/dist/themes/light.css?direct"
+        />
 
         <style>
             /* 全局样式 */

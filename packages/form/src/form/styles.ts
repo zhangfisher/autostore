@@ -1,7 +1,9 @@
 import { themeMap } from "@/styles/themeMap";
+import { vars } from "@/form/vars";
 import { css } from "lit";
-export default css`    
+export default css`
     ${themeMap}
+    ${vars}
     :host {
         display: flex;
         position: relative;

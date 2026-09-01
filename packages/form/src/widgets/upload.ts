@@ -58,7 +58,55 @@ type UploadFile = {
 	size?: number;
 	value: any;
 };
-export type AutoFieldUploadOptions = Required<any>;
+/**
+ * upload 上传 widget 的配置类型
+ */
+export interface AutoFieldUploadOptions {
+	/**
+	 * 允许的文件类型（MIME 或扩展名，如 ["image/jpeg",".png"]，"*" 通配）
+	 */
+	fileTypes?: string[];
+	/**
+	 * 上传接口地址
+	 */
+	url?: string;
+	/**
+	 * 是否多文件上传，默认 true
+	 */
+	multiple?: boolean;
+	/**
+	 * 上传请求中文件的表单字段名，默认 "files"
+	 */
+	fileFieldName?: string;
+	/**
+	 * 是否显示文件预览，默认 true
+	 */
+	preview?: boolean;
+	/**
+	 * 上传区域提示文字
+	 */
+	tips?: string;
+	/**
+	 * 上传结果解析：从响应中解析出文件列表
+	 */
+	onResolve?: (response: any) => any;
+	/**
+	 * 文件显示名生成
+	 */
+	onFileLabel?: (file: any) => string;
+	/**
+	 * 选择器形态："auto" | "button" | "rectangle"，默认 "auto"
+	 */
+	selector?: "auto" | "button" | "rectangle";
+	/**
+	 * 值只保留文件 url（默认 true；false 时保留完整文件对象）
+	 */
+	onlyFileUrl?: boolean;
+	/**
+	 * 删除文件回调（可在此调用服务器删除接口，返回 Promise 后才真正移除）
+	 */
+	onRemove?: (file: any) => any;
+}
 @tag("auto-field-upload")
 export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
 	static styles = [
@@ -672,5 +720,10 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
 declare global {
 	interface HTMLElementTagNameMap {
 		"auto-field-upload": AutoFieldUpload;
+	}
+}
+declare module "autostore" {
+	interface AutoStoreWidgets {
+		upload: AutoFieldUploadOptions;
 	}
 }

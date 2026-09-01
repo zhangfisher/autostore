@@ -20,7 +20,31 @@ const builtIns = [
 	"refresh",
 	"datetime",
 ];
-export type AutoFieldIconsOptions = Required<any>;
+/**
+ * icons 图标选择 widget 的配置类型
+ */
+export interface AutoFieldIconsOptions {
+	/**
+	 * 候选图标名列表（也接受逗号分隔字符串）
+	 */
+	icons?: string[] | string;
+	/**
+	 * 图标渲染尺寸，默认 "24px"
+	 */
+	size?: string;
+	/**
+	 * 是否多选
+	 */
+	multiple?: boolean;
+	/**
+	 * 是否以下拉面板展示（false 时平铺），默认 false
+	 */
+	dropdown?: boolean;
+	/**
+	 * 是否附带内置图标集，默认 true
+	 */
+	builtIn?: boolean;
+}
 @tag("auto-field-icons")
 export class AutoFieldIcons extends AutoDropdownField<AutoFieldIconsOptions> {
 	static styles = [
@@ -142,5 +166,10 @@ export class AutoFieldIcons extends AutoDropdownField<AutoFieldIconsOptions> {
 declare global {
 	interface HTMLElementTagNameMap {
 		"auto-field-icons": AutoFieldIcons;
+	}
+}
+declare module "autostore" {
+	interface AutoStoreWidgets {
+		icons: AutoFieldIconsOptions;
 	}
 }

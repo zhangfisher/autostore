@@ -2,9 +2,36 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from '@/field';
 import { html } from 'lit';
 import '@shoelace-style/shoelace/dist/components/qr-code/qr-code.js';
-// 类型已内联
 import { tag } from '@/utils/tag';
-export type AutoFieldQRCodeOptions = Required<any>;
+/**
+ * qrcode 二维码 widget 的配置类型
+ */
+export interface AutoFieldQRCodeOptions {
+    /**
+     * 前景色（码点颜色），默认 "black"
+     */
+    fill?: string;
+    /**
+     * 背景色，默认 "white"
+     */
+    background?: string;
+    /**
+     * 圆角半径，默认 0
+     */
+    radius?: number;
+    /**
+     * 纠错级别，默认 "L"
+     */
+    errorCorrection?: "L" | "M" | "Q" | "H";
+    /**
+     * 尺寸（px），默认 64
+     */
+    size?: number;
+    /**
+     * 悬停提示文字
+     */
+    tips?: string;
+}
 @tag('auto-field-qrcode')
 export class AutoFieldQRCode extends AutoField<AutoFieldQRCodeOptions> {
     getInitialOptions(): Record<string, any> {
@@ -37,5 +64,10 @@ export class AutoFieldQRCode extends AutoField<AutoFieldQRCodeOptions> {
 declare global {
     interface HTMLElementTagNameMap {
         'auto-field-qrcode': AutoFieldQRCode;
+    }
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        qrcode: AutoFieldQRCodeOptions;
     }
 }

@@ -4,7 +4,28 @@ import { styleMap } from "lit/directives/style-map.js";
 import "@shoelace-style/shoelace/dist/components/radio/radio.js";
 import "@shoelace-style/shoelace/dist/components/radio-group/radio-group.js";
 import { tag } from "@/utils/tag";
-export type AutoFieldRadioOptions = Required<any>;
+/**
+ * radio 单选组 widget 的配置类型（radio 是 core 已收录键，
+ * 此处接口与 core 的 AutoWidgetRadio 保持同构，不重复 declare）
+ */
+export interface AutoFieldRadioOptions {
+	/**
+	 * 候选项（或其异步提供者）
+	 */
+	choices?: any[] | string[] | (() => any[] | Promise<any[]>);
+	/**
+	 * 候选项取值字段名，默认 "value"
+	 */
+	valueKey?: string;
+	/**
+	 * 卡片模式
+	 */
+	card?: boolean;
+	/**
+	 * 选项宽度
+	 */
+	itemWidth?: string;
+}
 @tag("auto-field-radio")
 export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
 	static styles = [
@@ -107,7 +128,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
 	getInitialOptions(): Record<string, any> {
 		return {
 			card: false,
-			select: [],
+			choices: [],
 			valueKey: "value",
 		};
 	}
@@ -146,7 +167,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
         >`;
 	}
 	renderInput() {
-		const items = this.options.select.map((item: any) => {
+		const items = this.options.choices.map((item: any) => {
 			const selectItem: any = {};
 			if (typeof item === "object") {
 				Object.assign(selectItem, item);

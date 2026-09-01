@@ -28,7 +28,36 @@ export type AutoListOptions = {
 	labelKey: string; // 用于显示,默认为label
 	multiple: boolean;
 };
-export type AutoFieldListOptions = Required<any>;
+/**
+ * list 列表选择 widget 的配置类型
+ * （maxItems/minItems/itemTemplate 是死配置——声明未读，不上类型，ADR-0004）
+ */
+export interface AutoFieldListOptions {
+	/**
+	 * 候选项（或其异步提供者）
+	 */
+	choices?: ListItem[] | (() => ListItem[] | Promise<ListItem[]>);
+	/**
+	 * 候选项取值字段名，默认 "value"
+	 */
+	valueKey?: string;
+	/**
+	 * 候选项标签字段名，默认 "label"
+	 */
+	labelKey?: string;
+	/**
+	 * 是否多选，默认 false
+	 */
+	multiple?: boolean;
+	/**
+	 * 是否显示已选结果条，默认 false
+	 */
+	showResults?: boolean;
+	/**
+	 * 候选项渲染定制：字符串模板（{key} 插值）或函数
+	 */
+	renderItem?: string | ((item: any) => any);
+}
 @tag("auto-field-list")
 export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	static styles = [
@@ -107,7 +136,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 	labelKey: string = "label";
 	scrollbar = new ScrollbarController(this);
 	scrollbars: any[] = [];
-	items = new AsyncOptionState<any[]>(this, "select", (items) => {
+	items = new AsyncOptionState<any[]>(this, "choices", (items) => {
 		if (!items) return [];
 		items.forEach((item: any) => {
 			if (this.isItemSelected(item)) {
@@ -129,7 +158,7 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 			minItems: 0,
 			showResults: false,
 			itemTemplate: undefined,
-			select: [],
+			choices: [],
 		};
 	}
 	_createScrollbars() {
@@ -365,5 +394,10 @@ export class AutoFieldList extends AutoField<AutoFieldListOptions> {
 declare global {
 	interface HTMLElementTagNameMap {
 		"auto-field-list": AutoFieldList;
+	}
+}
+declare module "autostore" {
+	interface AutoStoreWidgets {
+		list: AutoFieldListOptions;
 	}
 }

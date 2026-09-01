@@ -1,7 +1,7 @@
 import { html } from 'lit';
 import { AutoField } from '@/field';
 import { tag } from '@/utils/tag';
-export type AutoFieldStepperOptions = {};
+export type AutoFieldCronOptions = {};
 @tag('auto-field-cron')
 export class AutoFieldCron extends AutoField {
     render() {
