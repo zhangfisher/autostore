@@ -122,12 +122,10 @@ class NetworkConfigExample extends LitElement {
 
                 <!-- 状态预览 -->
                 <div
-                    style="width: 300px; background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 1rem;"
+                    style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; min-height: 0;"
                 >
-                    <h4 style="margin: 0 0 1rem 0; color: #fff;">实时状态</h4>
-                    <pre
-                        id="viewjson"
-                        style="margin: 0; white-space: pre-wrap; font-size: 0.75rem; overflow-x: auto;"
+                    <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 0.875rem;">📋 实时状态</h4>
+                    <textarea id="state-viewer" readonly style="flex: 1; min-height: 0; background: #ffffff; color: #334155; border: 1px solid #e2e8f0; border-radius: 4px; padding: 0.5rem; font-family: monospace; font-size: 0.75rem; resize: none; overflow: auto;"></textarea>
                     ></pre>
                 </div>
             </div>

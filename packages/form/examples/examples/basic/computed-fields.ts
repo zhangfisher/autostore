@@ -7,6 +7,7 @@ import { customElement, query } from "lit/decorators.js";
 import { LitElement, html } from "lit";
 import { configurable, computed } from "autostore";
 import "../../../src";
+import "../../shared/form-props-panel";
 
 @customElement("example-computed-fields")
 class ComputedFieldsExample extends LitElement {
@@ -33,13 +34,10 @@ class ComputedFieldsExample extends LitElement {
                 step: 5,
                 help: "折扣百分比（%）",
             }),
-            // 计算属性：小计
             subtotal: computed((state) => state.order.price * state.order.quantity),
-            // 计算属性：折扣金额
             discountAmount: computed(
                 (state) => state.order.price * state.order.quantity * (state.order.discount / 100),
             ),
-            // 计算属性：总计
             total: computed(
                 (state) =>
                     state.order.price * state.order.quantity -
@@ -52,140 +50,49 @@ class ComputedFieldsExample extends LitElement {
     @query("auto-form")
     formRef?: any;
 
-    /**
-     * 内部 store（由 <auto-form> 创建，经 activeStore 代理访问）
-     */
+    @query("#state-viewer")
+    stateViewer?: any;
+
     get store(): any {
         return this.formRef?.activeStore;
     }
 
     connectedCallback(): void {
         super.connectedCallback();
-
-        // 等待表单渲染拿到内部 store 后再监听
         this.updateComplete.then(() => {
-            this.store?.watch(() => {
-                this._updateDisplay();
-            });
-            this._updateDisplay();
+            if (this.store) {
+                this.store.watch(() => {
+                    if (this.stateViewer) {
+                        this.stateViewer.value = JSON.stringify(this.store.state, null, 2);
+                    }
+                });
+                this._syncInitialState();
+            }
+            const propsPanel = this.shadowRoot?.querySelector("#props-panel") as any;
+            const form = this.shadowRoot?.querySelector("auto-form");
+            if (propsPanel && form) propsPanel.setTarget(form);
         });
-    }
-
-    private _updateDisplay() {
-        // 这里可以添加额外的UI更新逻辑
-        console.log("订单状态:", this.store.state);
     }
 
     render() {
         return html`
-            <div style="max-width: 700px; margin: 0 auto; padding: 1rem;">
-                <h3 style="margin: 0 0 1rem 0; color: var(--auto-primary);">计算属性示例</h3>
-                <p style="margin: 0 0 2rem 0; color: var(--auto-text-light);">
-                    演示自动计算字段、依赖关系和实时更新
-                </p>
-
-                <div
-                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;"
-                >
-                    <!-- 表单区域 -->
-                    <div>
-                        <auto-form
-                            .state="${this.state}"
-                            data-label="订单信息"
-                            data-icon="shopping-cart"
-                            style="min-height: 400px;"
-                        >
-                        </auto-form>
-
-                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                            <sl-button @click="${this._reset}" variant="neutral" size="small">
-                                <sl-icon name="refresh" slot="prefix"></sl-icon>
-                                重置
-                            </sl-button>
-                            <sl-button
-                                @click="${this._applyDiscount}"
-                                variant="success"
-                                size="small"
-                            >
-                                <sl-icon name="tag" slot="prefix"></sl-icon>
-                                应用20%折扣
-                            </sl-button>
-                        </div>
+            <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem; height: 100%;">
+                <div style="min-width: 0;">
+                    <h3 style="margin: 0 0 0.5rem 0; color: var(--auto-primary);">计算属性示例</h3>
+                    <p style="margin: 0 0 1.5rem 0; color: var(--auto-text-light); font-size: 0.9rem;">
+                        演示自动计算字段、依赖关系和实时更新
+                    </p>
+                    <auto-form .state="${this.state}" data-label="订单信息" data-icon="shopping-cart" style="min-height: 400px;"></auto-form>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <sl-button @click="${this._reset}" variant="neutral" size="small">重置</sl-button>
+                        <sl-button @click="${this._applyDiscount}" variant="success" size="small">应用20%折扣</sl-button>
                     </div>
-
-                    <!-- 计算结果显示 -->
-                    <div>
-                        <div
-                            style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
-                        >
-                            <h4 style="margin: 0 0 1rem 0; color: var(--auto-primary);">
-                                💰 实时计算结果
-                            </h4>
-
-                            <div
-                                style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--auto-border);"
-                            >
-                                <div
-                                    style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"
-                                >
-                                    <span>单价:</span>
-                                    <strong>¥${this.store.state.order.price}</strong>
-                                </div>
-                                <div
-                                    style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"
-                                >
-                                    <span>数量:</span>
-                                    <strong>${this.store.state.order.quantity}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span>小计:</span>
-                                    <strong style="color: var(--auto-primary);"
-                                        >¥${this.store.state.order.subtotal}</strong
-                                    >
-                                </div>
-                            </div>
-
-                            <div
-                                style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--auto-border);"
-                            >
-                                <div
-                                    style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;"
-                                >
-                                    <span>折扣:</span>
-                                    <strong>${this.store.state.order.discount}%</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span>折扣金额:</span>
-                                    <strong style="color: #e11d48;"
-                                        >-¥${this.store.state.order.discountAmount}</strong
-                                    >
-                                </div>
-                            </div>
-
-                            <div
-                                style="padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;"
-                            >
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center;"
-                                >
-                                    <span style="font-size: 1.1rem;">总计:</span>
-                                    <strong style="font-size: 1.5rem;"
-                                        >¥${this.store.state.order.total}</strong
-                                    >
-                                </div>
-                            </div>
-
-                            <div
-                                style="margin-top: 1rem; font-size: 0.875rem; color: var(--auto-text-light);"
-                            >
-                                <p style="margin: 0.5rem 0;">
-                                    💡 所有计算字段都会自动实时更新，无需手动计算
-                                </p>
-                                <p style="margin: 0;">
-                                    📝 当修改单价、数量或折扣时，相关字段会自动重新计算
-                                </p>
-                            </div>
-                        </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 1rem; min-width: 0;">
+                    <form-props-panel id="props-panel"></form-props-panel>
+                    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; min-height: 0;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 0.875rem;">📋 实时状态</h4>
+                        <textarea id="state-viewer" readonly style="flex: 1; min-height: 0; background: #ffffff; color: #334155; border: 1px solid #e2e8f0; border: none; padding: 0.5rem; font-family: monospace; font-size: 0.75rem; resize: none; overflow: auto;"></textarea>
                     </div>
                 </div>
             </div>
@@ -193,7 +100,8 @@ class ComputedFieldsExample extends LitElement {
     }
 
     private _reset() {
-        this.store.update((state) => {
+        if (!this.store) return;
+        this.store.update((state: any) => {
             state.order.price = 100;
             state.order.quantity = 1;
             state.order.discount = 0;
@@ -201,9 +109,16 @@ class ComputedFieldsExample extends LitElement {
     }
 
     private _applyDiscount() {
-        this.store.update((state) => {
+        if (!this.store) return;
+        this.store.update((state: any) => {
             state.order.discount = 20;
         });
+    }
+
+    private _syncInitialState() {
+        if (this.store && this.stateViewer) {
+            this.stateViewer.value = JSON.stringify(this.store.state, null, 2);
+        }
     }
 }
 

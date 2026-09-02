@@ -84,6 +84,10 @@ class DataSyncExample extends LitElement {
                     this.viewer.innerText = JSON.stringify(this.store.state, null, 2);
                 }
             });
+            // 初始显示
+            if (this.store && this.viewer) {
+                this.viewer.innerText = JSON.stringify(this.store.state, null, 2);
+            }
         });
 
         this.syncStore.watch(() => {
@@ -91,6 +95,10 @@ class DataSyncExample extends LitElement {
                 this.syncViewer.innerText = JSON.stringify(this.syncStore.state, null, 2);
             }
         });
+        // 初始显示
+        if (this.syncViewer) {
+            this.syncViewer.innerText = JSON.stringify(this.syncStore.state, null, 2);
+        }
 
         // 延迟初始化同步器，确保组件已渲染
         setTimeout(() => this._initSyncer(), 100);
@@ -178,7 +186,7 @@ class DataSyncExample extends LitElement {
                             <h5 style="margin: 0 0 0.5rem 0;">本地状态:</h5>
                             <pre
                                 id="viewjson"
-                                style="background: #1e293b; color: #e2e8f0; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap;"
+                                style="background: #ffffff; color: #334155; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap; font-family: monospace;"
                             ></pre>
                         </div>
                     </div>
@@ -201,7 +209,7 @@ class DataSyncExample extends LitElement {
                             <h5 style="margin: 0 0 0.5rem 0;">远程状态:</h5>
                             <pre
                                 id="syncjson"
-                                style="background: #1e293b; color: #e2e8f0; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap;"
+                                style="background: #ffffff; color: #334155; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap; font-family: monospace;"
                             ></pre>
                         </div>
 
