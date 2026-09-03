@@ -140,13 +140,6 @@ class WidgetSelectExample extends LitElement {
             </div>
         `;
     }
-}
-
-declare global {
-    interface HTMLElementTagNameMap {
-        "example-widget-select": WidgetSelectExample;
-    }
-}
 
     private _syncInitialState() {
         if (this.store && this.stateViewer) {
@@ -155,5 +148,10 @@ declare global {
     }
 }
 
-declare global { interface HTMLElementTagNameMap { "example-widget-select": WidgetSelectExample; } }
+declare global {
+    interface HTMLElementTagNameMap {
+        "example-widget-select": WidgetSelectExample;
+    }
+}
+
 export default WidgetSelectExample;
