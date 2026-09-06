@@ -1,8 +1,10 @@
 import { themeMap } from "@/styles/themeMap";
+import { darkTokens } from "@/styles/darkTokens";
 import { vars } from "@/form/vars";
 import { css } from "lit";
 export default css`
     ${themeMap}
+    ${darkTokens}
     ${vars}
     :host {
         display: flex;
@@ -21,10 +23,13 @@ export default css`
     /* 布局 */
     :host([layout='auto']) {
         & > .fields {
+            /* 字段间换行空白会产生 inline-block 间隙（约 4px），font-size:0 消除 */
+            font-size: 0;
             & > * {
                 width: 100%;
                 box-sizing: border-box;
                 display: inline-block;
+                font-size: initial;
             }
         }
     }

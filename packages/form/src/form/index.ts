@@ -33,13 +33,7 @@ import { LitElement, html } from "lit";
 import { property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { unsafeStatic, html as shtml } from "lit/static-html.js";
-import {
-    pathStartsWith,
-    AutoStore,
-    type Dict,
-    type AutoStoreStateSchema,
-    ConfigManager,
-} from "autostore";
+import { pathStartsWith, AutoStore, type Dict, type AutoStoreStateSchema } from "autostore";
 import { context, type AutoFormContext } from "../context";
 import { provide } from "@lit/context";
 import { ContextController } from "@/controllers/context";
@@ -51,6 +45,7 @@ import "../components";
 import { registerIcons } from "@/utils";
 import { cloneSchemaState } from "@/utils/cloneSchemaState";
 import { SchemaAccessor } from "../schema/schemaAccessor";
+import { FormConfigManager } from "../schema/formConfigManager";
 
 export class AutoForm extends LitElement {
     static seq: number = 0;
@@ -68,7 +63,7 @@ export class AutoForm extends LitElement {
 
     // 内部创建的 store 和 configManager（当使用 .state 属性时）
     private internalStore?: AutoStore<Dict>;
-    private internalConfigManager?: ConfigManager;
+    private internalConfigManager?: FormConfigManager;
     // 已用于初始化内部 store 的 state 对象引用
     // Lit 首次渲染时 .state 属性先于 connectedCallback 提交，会触发
     // connectedCallback 和 shouldUpdate 双重初始化；而 AutoStore 建立响应式
@@ -113,7 +108,7 @@ export class AutoForm extends LitElement {
      *
      *
      */
-    @property({ type: Boolean, reflect: true })
+    @property({ type: Boolean, reflect: true, attribute: "valid-at-init" })
     validAtInit: boolean = false;
 
     @property({ type: String, reflect: true })
@@ -153,8 +148,11 @@ export class AutoForm extends LitElement {
      *
      * - input:  输入时进行校验
      * - lost-focus: 失去焦点时进行校验
+     *
+     * 注意：Lit 默认 attribute 名是属性名纯小写（validat），
+     * 必须显式声明为 valid-at 才能匹配 <auto-form valid-at="...">
      */
-    @property({ type: String, reflect: true })
+    @property({ type: String, reflect: true, attribute: "valid-at" })
     validAt: "input" | "lost-focus" = "lost-focus";
 
     /**
@@ -177,11 +175,11 @@ export class AutoForm extends LitElement {
      * - top: 标签在上方
      * - left: 标签在左侧
      */
-    @property({ type: String, reflect: true })
-    labelPos: string = "top";
+    @property({ type: String, reflect: true, attribute: "label-pos" })
+    labelPos: "none" | "top" | "left" = "top";
 
-    @property({ type: String, reflect: true })
-    labelWidth?: string = "7em";
+    @property({ type: String, reflect: true, attribute: "label-width" })
+    labelWidth: string = "7em";
 
     @property({ type: Boolean, reflect: true })
     dark: boolean = false;
@@ -201,7 +199,7 @@ export class AutoForm extends LitElement {
     /**
      * 浏览模式下，值对齐方式，默认=right
      */
-    @property({ type: String, reflect: true })
+    @property({ type: String, reflect: true, attribute: "view-align" })
     viewAlign: "left" | "center" | "right" = "right";
 
     /**
@@ -251,10 +249,10 @@ export class AutoForm extends LitElement {
      * 初始化内部 AutoStore 和 ConfigManager（标准模式）
      */
     private _initializeInternalStore() {
-        console.log("[AutoForm] 使用标准模式：内部创建 AutoStore + ConfigManager");
-
         // 创建 ConfigManager（configKey='' 专用于此 AutoForm）
-        this.internalConfigManager = new ConfigManager({
+        // 使用 FormConfigManager：schema 中的 enable/visible/choices 等联动函数
+        // 不会被 ConfigManager 自身的响应式层消费成一次性计算结果
+        this.internalConfigManager = new FormConfigManager({
             load: () => ({}),
         });
 
@@ -334,7 +332,8 @@ export class AutoForm extends LitElement {
     }
 
     _initialContext(store?: AutoStore<Dict>) {
-        Object.assign(this.context, {
+        this.context = {
+            ...this.context,
             store: store || this.activeStore,
             form: this,
             labelPos: this.labelPos,
@@ -347,7 +346,13 @@ export class AutoForm extends LitElement {
             dirty: false,
             invalid: this._isValid(),
             validAtInit: this.validAtInit,
-        });
+            compact: this.compact,
+            readonly: this.readonly,
+            viewonly: this.viewonly,
+            size: this.size,
+            validAt: this.validAt,
+            layout: this.layout,
+        };
     }
 
     _isValid(): boolean {
@@ -375,14 +380,11 @@ export class AutoForm extends LitElement {
         }
 
         const allSchemas = this.schemaAccessor.getAllSchemas();
-        console.log("[AutoForm] Loaded schemas:", allSchemas);
 
         let schemaArray = Object.entries(allSchemas).map(([path, schema]) => ({
             ...schema,
             path: path.split("."), // 添加路径信息到 schema
         }));
-
-        console.log("[AutoForm] Schema array count:", schemaArray.length);
 
         // 应用过滤
         schemaArray = schemaArray.filter((schema) => this._matchesGroup(schema));
@@ -392,7 +394,6 @@ export class AutoForm extends LitElement {
         // 按顺序排序
         schemaArray.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-        console.log("[AutoForm] Final schemas count:", schemaArray.length);
         this.schemas = schemaArray;
         this.requestUpdate();
     }
@@ -453,7 +454,7 @@ export class AutoForm extends LitElement {
         ) as HTMLElement[];
         fields.forEach((field) => {
             if (field.tagName.startsWith("auto-field")) {
-                (field as any).invalidTips = undefined;
+                (field as any).errorMessage = undefined;
             }
         });
         this.requestUpdate();

@@ -1,4 +1,3 @@
-import { ScrollbarController } from "@/controllers";
 import { AutoField } from "@/field";
 import { AutoDropdownField } from "@/field/dropdown";
 import { tag } from "@/utils/tag";
@@ -56,7 +55,6 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 	static styles = [
 		AutoField.styles,
 		AutoDropdownField.styles,
-		ScrollbarController.styles,
 		css`
             .levels {
                 display: flex;
@@ -113,7 +111,6 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
             }
         `,
 	] as any;
-	scrollbar = new ScrollbarController(this);
 	@state()
 	active: boolean = false;
 	@state()
@@ -124,49 +121,108 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 	selected: any[] = [];
 	@state()
 	focusItems: any[] = [];
-	scrollbars: any[] = [];
 	getInitialOptions(): any {
-		const opts = Object.assign(super.getInitialOptions(), {
+		return Object.assign(super.getInitialOptions(), {
 			idKey: "id",
 			rootKey: "$root",
 			labelKey: "label",
 			maxLevel: 3,
 			childrenKey: "children",
 			choices: {},
-		}) as AutoFieldCascaderOptions;
+		});
+	}
+	getFieldOptions(): any {
+		const opts = super.getFieldOptions();
+		// valueKey 默认跟随 idKey：兜底必须在 schema 合并之后执行，
+		// 放在 getInitialOptions 里时永远读到默认值 "id"，自定义 idKey 不生效
 		if (!opts.valueKey) opts.valueKey = opts.idKey;
 		if (!opts.idKey) opts.idKey = opts.labelKey;
 		return opts;
 	}
+	/**
+	 * 将 children 嵌套节点（含 onLoad 返回的子树）递归注册进平铺索引 data
+	 */
+	_registerChildren(items: Record<string, any>[], level: number) {
+		items.forEach((item) => {
+			const children = (item as any)[this.options.childrenKey || "children"];
+			if (Array.isArray(children) && children.length > 0 && level < this.options.maxLevel) {
+				this._registerChildren(children, level + 1);
+			}
+		});
+		this._normalizeLevel(items, level);
+	}
+	/**
+	 * 将单层节点写入平铺索引：有子节点登记父->子映射，无子节点占位空数组
+	 */
+	_normalizeLevel(items: Record<string, any>[], level: number) {
+		items.forEach((item) => {
+			const id = (item as any)[this.options.idKey];
+			if (id === undefined || id === null) return;
+			const children = (item as any)[this.options.childrenKey || "children"];
+			if (Array.isArray(children) && children.length > 0 && level < this.options.maxLevel) {
+				this.data[id] = children;
+			} else {
+				this.data[id] = [];
+			}
+		});
+	}
 	connectedCallback(): void {
 		super.connectedCallback();
-		const isChildrenFmt =
-			typeof this.options.choices === "object" && this.options.childrenKey in this.options.choices;
-		// @ts-ignore
-		if (isChildrenFmt) this.options.rootKey = this.options.choices[this.options.idKey];
-		this.data =
-			isChildrenFmt || Array.isArray(this.options.choices)
-				? this._normalizeData(this.options.choices as any)
-				: this.options.choices;
+		this._initChoices();
 		this.selected = this._parseValues(this.value);
 		this.focusItems = Array.from({ length: this.options.maxLevel - 1 }).fill(null);
 	}
-	firstUpdated(): void {
-		this._createScrollbars();
+	/**
+	 * 初始化候选数据：
+	 * - 数组/children 嵌套对象：异步提供者返回结果前先置空，返回后规范化
+	 * - 平铺对象（idKey+rootKey 关联）：直接作为平铺索引使用
+	 */
+	private _initChoices() {
+		const choices = this.options.choices;
+		if (typeof choices === "function") {
+			// 异步提供者：调用并等待结果落地后规范化
+			this._applyAsyncChoices(choices());
+			return;
+		}
+		if (choices && typeof (choices as any).then === "function") {
+			// 联动求值已把函数提供者消费成 Promise，同样等待落地
+			this._applyAsyncChoices(choices as Promise<Record<string, any>[]>);
+			return;
+		}
+		const isChildrenFmt =
+			typeof choices === "object" && choices !== null && this.options.childrenKey in choices;
+		// @ts-ignore
+		if (isChildrenFmt) this.options.rootKey = (choices as any)[this.options.idKey];
+		this.data = isChildrenFmt || Array.isArray(choices) ? this._normalizeData(choices as any) : {};
 	}
-	disconnectedCallback(): void {
-		super.disconnectedCallback();
-		this._destoryScrollbars();
+	/**
+	 * 等待异步 choices 结果落地后规范化为平铺索引
+	 */
+	private _applyAsyncChoices(result: Record<string, any>[] | Promise<Record<string, any>[]>) {
+		this.data = {};
+		if (result && typeof (result as any).then === "function") {
+			(result as Promise<Record<string, any>[]>).then((items) => {
+				if (Array.isArray(items) && items.length > 0) {
+					this.data = this._normalizeData(items);
+					this._markRootLazy();
+					this.requestUpdate();
+				}
+			});
+		} else if (Array.isArray(result)) {
+			this.data = this._normalizeData(result);
+			this._markRootLazy();
+		}
 	}
-	_createScrollbars() {
-		const menus = this.shadowRoot?.querySelectorAll("sl-menu");
-		menus?.forEach((menu) => {
-			this.scrollbars.push(this.scrollbar.create(menu));
-		});
-	}
-	_destoryScrollbars() {
-		this.scrollbars?.forEach((scrollbar) => {
-			scrollbar.destroy();
+	/**
+	 * 异步模式下首级节点标记 idle：hover 时经 onLoad 按需加载子级。
+	 * 仅标记无 children 的节点，带子树的由 _registerChildren 递归处理
+	 */
+	private _markRootLazy() {
+		if (typeof this.options.onLoad !== "function") return;
+		(this.data[this.options.rootKey] || []).forEach((item: any) => {
+			if (item.lazy === undefined && !this._hasRegisteredChildren(item)) {
+				item.lazy = "idle";
+			}
 		});
 	}
 	/**
@@ -214,6 +270,9 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 		const target = e.detail.item;
 		const level = Number(target.dataset.level);
 		if (level !== this.options.maxLevel) return;
+		// 完整路径 = focusItems（1..maxLevel-1 级的 hover 路径）+ 被点击的叶子
+		// focusItems 长度为 maxLevel-1，不含叶子本身，须补上否则末级丢失
+		const path = [...this.focusItems.slice(0, level - 1), target.dataset.id];
 		const selected: any[] = [];
 		const getItemValue = (cid: any, pid: any) => {
 			const index = this.data[pid].findIndex((item: any) => {
@@ -224,8 +283,8 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 			}
 		};
 		let pid: any = this.options.rootKey;
-		for (let i = 0; i < this.focusItems.length; i++) {
-			const id = this.focusItems[i];
+		for (let i = 0; i < path.length; i++) {
+			const id = path[i];
 			const val = getItemValue(id, pid);
 			if (!val) return;
 			selected.push([id, ...val]);
@@ -246,7 +305,7 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 		};
 		let pid: any = this.options.rootKey;
 		for (let i = 0; i < ids.length; i++) {
-			const id = this.focusItems[i];
+			const id = ids[i];
 			const val = getItemValue(id, pid);
 			if (!val) return;
 			values.push(val);
@@ -264,35 +323,62 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 			return vals;
 		}
 	}
-	async _loadItem(target: HTMLElement, id: any, level: number) {
-		let hasError: any;
+	async _loadItem(id: any, level: number) {
+		const item = this._findItemById(id);
+		if (!item) return;
 		if (Array.isArray(this.data[id]) && this.data[id].length > 0) {
-			target.dataset.lazy = "done";
+			item.lazy = "done";
 			this.requestUpdate();
 			return;
 		}
+		// 未提供 onLoad 时无法加载子节点：立即结束 idle 状态，
+		// 否则 await undefined 抛 TypeError 且节点永远停在 loading
+		if (typeof this.options.onLoad !== "function") {
+			item.lazy = "done";
+			this.requestUpdate();
+			return;
+		}
+		item.lazy = "loading";
+		this.requestUpdate();
 		try {
-			target.dataset.lazy = "loading";
-			// [] as any
 			const items = await this.options.onLoad(id);
 			if (Array.isArray(items)) {
 				this.data[id] = items;
-				items.forEach((item) => {
-					if (item.lazy === undefined && level < this.options.maxLevel) {
-						item.lazy = true;
+				// onLoad 可能返回带 children 的子树（一次性多级），
+				// 递归注册全部层级；叶子节点标记 lazy 供下一级按需加载
+				this._registerChildren(items, level);
+				items.forEach((child) => {
+					if (
+						child.lazy === undefined &&
+						level < this.options.maxLevel - 1 &&
+						!this._hasRegisteredChildren(child)
+					) {
+						child.lazy = "idle";
 					}
-					this.data[item[this.options.idKey]] = [];
 				});
-				this.requestUpdate();
 			}
+			item.lazy = "done";
 		} catch (e) {
-			target.dataset.lazy = "true";
-			hasError = e;
+			// 加载失败回 idle 允许重试
+			item.lazy = "idle";
 		} finally {
-			if (!hasError) {
-				target.dataset.lazy = "done";
-			}
+			this.requestUpdate();
 		}
+	}
+	/** 按节点 id 在平铺索引中查找原始 item 对象（lazy 状态宿主） */
+	_findItemById(id: any) {
+		for (const items of Object.values(this.data) as any[][]) {
+			const found = items?.find(
+				(item) => String(item[this.options.idKey]) === String(id),
+			);
+			if (found) return found;
+		}
+		return undefined;
+	}
+	/** 节点是否已带（已注册的）children——带子树的节点不再标记 lazy */
+	_hasRegisteredChildren(item: Record<string, any>): boolean {
+		const children = (item as any)[this.options.childrenKey || "children"];
+		return Array.isArray(children) && children.length > 0;
 	}
 	_onItemMouseOverr(e: any) {
 		const target = e.target;
@@ -301,9 +387,10 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 		if (this.focusItems[level - 1] === id) return;
 		this._clearFocusItems(level);
 		target.classList.add("focused");
-		const lazy = target.dataset.lazy;
-		if (lazy === "idle") {
-			this._loadItem(target, id, level);
+		const item = this._findItemById(id);
+		// lazy 状态收在 item 对象上，idle 表示待按需加载子节点
+		if (item?.lazy === "idle") {
+			this._loadItem(id, level);
 		}
 		this.focusItems[level - 1] = id;
 		this.focusItems.forEach((_, index) => {
@@ -317,22 +404,22 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 		if (!items) return;
 		return html`<sl-menu class="level" @sl-select=${level === this.options.maxLevel ? this._onSelectItem.bind(this) : null}>
             ${repeat(items, (item) => {
-				const id = item[this.options.idKey];
 				const isSelected: boolean = this.selected[level - 1]?.[0] === item[this.options.idKey];
-				const isLazyIdle = item.lazy || (Array.isArray(this.data[id]) && this.data[id].length === 0);
+				// data-lazy 完全由 item.lazy 状态渲染（idle/loading/done），
+				// 不再手动改 DOM attribute——会被 Lit 重渲染覆盖导致 spinner 规则失配
 				return html` <sl-menu-item
                     type="checkbox"
                     data-level=${level}
                     data-id=${item[this.options.idKey]}
                     data-pid=${ifDefined(pid)}
-                    data-lazy=${ifDefined(isLazyIdle ? "idle" : undefined)}
+                    data-lazy=${ifDefined(item.lazy || undefined)}
                     @mouseover=${this._onItemMouseOverr.bind(this)}
                     ?checked=${isSelected}
                     class="${ifDefined(isSelected ? "selected" : undefined)}"
                 >
                     ${item[this.options.labelKey]}
                     ${when(level < this.options.maxLevel, () => {
-						return html`${when(item.lazy, () => html`<sl-spinner slot="suffix"></sl-spinner>`)}
+						return html`${when(item.lazy === "loading", () => html`<sl-spinner slot="suffix"></sl-spinner>`)}
                             <sl-icon library="system" name="chevron-right" slot="suffix"></sl-icon>`;
 					})}
                 </sl-menu-item>`;

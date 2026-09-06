@@ -9,7 +9,7 @@
  */
 
 import { customElement, query } from "lit/decorators.js";
-import { LitElement, PropertyValues, html } from "lit";
+import { LitElement, html } from "lit";
 import { AutoStore, configurable, delay } from "autostore";
 import { AutoStoreSyncer } from "@autostorejs/syncer";
 import "../../../src";
@@ -77,19 +77,6 @@ class DataSyncExample extends LitElement {
     connectedCallback(): void {
         super.connectedCallback();
 
-        // 等待表单渲染拿到内部 store 后再监听
-        this.updateComplete.then(() => {
-            this.store?.watch(() => {
-                if (this.viewer) {
-                    this.viewer.innerText = JSON.stringify(this.store.state, null, 2);
-                }
-            });
-            // 初始显示
-            if (this.store && this.viewer) {
-                this.viewer.innerText = JSON.stringify(this.store.state, null, 2);
-            }
-        });
-
         this.syncStore.watch(() => {
             if (this.syncViewer) {
                 this.syncViewer.innerText = JSON.stringify(this.syncStore.state, null, 2);
@@ -107,10 +94,6 @@ class DataSyncExample extends LitElement {
     //@ts-ignore
     @query("auto-form")
     formRef?: any;
-
-    //@ts-ignore
-    @query("#viewjson")
-    viewer?: any;
 
     //@ts-ignore
     @query("#syncjson")
@@ -182,13 +165,6 @@ class DataSyncExample extends LitElement {
                             >
                         </div>
 
-                        <div style="margin-top: 1rem;">
-                            <h5 style="margin: 0 0 0.5rem 0;">本地状态:</h5>
-                            <pre
-                                id="viewjson"
-                                style="background: #ffffff; color: #334155; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap; font-family: monospace;"
-                            ></pre>
-                        </div>
                     </div>
 
                     <!-- 同步表单 -->

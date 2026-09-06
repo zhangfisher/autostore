@@ -44,3 +44,4 @@ export * from "./getDefaultComputedOptions";
 export * from "./installPlugin";
 export * from "./isAutoStore";
 export * from "./getDefaultConfigManager";
+export * from "./params";

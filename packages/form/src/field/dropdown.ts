@@ -180,12 +180,13 @@ export class AutoDropdownField<Options = unknown> extends AutoField<Options & Au
             <div class="content">
                 ${this.renderBeforeActions(false)}
                 <span class="dropdown">
-                    <sl-dropdown          
+                    <sl-dropdown
                         size="${this.context.size}"
                         @sl-show="${() => { this.active = true }}"
                         @sl-after-hide="${() => { this.active = false }}"
                         sync="width"
                         distance="12"
+                        .containingElement="${this}"
                     >
                     ${this._renderSelection()}
                     ${this._renderContent()}

@@ -10,8 +10,8 @@
  */
 
 import { customElement, query } from "lit/decorators.js";
-import { LitElement, PropertyValues, html } from "lit";
-import { AutoStore, configurable } from "autostore";
+import { LitElement, html } from "lit";
+import { configurable } from "autostore";
 import "../../../src";
 
 @customElement("example-network-config")
@@ -55,27 +55,6 @@ class NetworkConfigExample extends LitElement {
         },
     };
 
-    connectedCallback(): void {
-        super.connectedCallback();
-
-        // 等待表单组件渲染完成，然后监听内部 store 状态变化
-        this.updateComplete.then(() => {
-            const form = this.shadowRoot?.querySelector("auto-form");
-            if (form && (form as any).activeStore) {
-                const store = (form as any).activeStore;
-                store.watch(() => {
-                    if (this.viewer) {
-                        this.viewer.innerText = JSON.stringify(store.state, null, 2);
-                    }
-                });
-                // 首次渲染后立即输出状态
-                if (this.viewer) {
-                    this.viewer.innerText = JSON.stringify(store.state, null, 2);
-                }
-            }
-        });
-    }
-
     /**
      * 内部 store（由 <auto-form .state> 创建，经 activeStore 代理访问）
      */
@@ -87,46 +66,25 @@ class NetworkConfigExample extends LitElement {
     @query("auto-form")
     formRef?: any;
 
-    @query("#viewjson")
-    viewer?: any;
-
     render() {
         return html`
-            <div style="display: flex; gap: 2rem; padding: 1rem;">
-                <!-- 表单区域 -->
-                <div style="flex: 1; min-width: 0;">
-                    <div style="margin-bottom: 1rem;">
-                        <h3 style="margin: 0 0 0.5rem 0; color: var(--auto-primary);">
-                            网络配置示例
-                        </h3>
-                        <p
-                            style="margin: 0 0 1rem 0; color: var(--auto-text-light); font-size: 0.9rem;"
-                        >
-                            演示IP地址配置、DHCP模式切换和数据转换功能
-                        </p>
-                    </div>
-
-                    <auto-form
-                        .state="${this.networkState}"
-                        path="network"
-                        style="min-height: 300px;"
+            <div>
+                <div style="margin-bottom: 1rem;">
+                    <h3 style="margin: 0 0 0.5rem 0; color: var(--auto-primary);">网络配置示例</h3>
+                    <p
+                        style="margin: 0 0 1rem 0; color: var(--auto-text-light); font-size: 0.9rem;"
                     >
-                    </auto-form>
-
-                    <!-- 操作按钮 -->
-                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                        <sl-button @click="${this._resetForm}">重置</sl-button>
-                        <sl-button @click="${this._logState}" variant="neutral">查看状态</sl-button>
-                    </div>
+                        演示IP地址配置、DHCP模式切换和数据转换功能
+                    </p>
                 </div>
 
-                <!-- 状态预览 -->
-                <div
-                    style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; min-height: 0;"
-                >
-                    <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 0.875rem;">📋 实时状态</h4>
-                    <textarea id="state-viewer" readonly style="flex: 1; min-height: 0; background: #ffffff; color: #334155; border: 1px solid #e2e8f0; border-radius: 4px; padding: 0.5rem; font-family: monospace; font-size: 0.75rem; resize: none; overflow: auto;"></textarea>
-                    ></pre>
+                <auto-form .state="${this.networkState}" path="network" style="min-height: 300px;">
+                </auto-form>
+
+                <!-- 操作按钮 -->
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <sl-button @click="${this._resetForm}">重置</sl-button>
+                    <sl-button @click="${this._logState}" variant="neutral">查看状态</sl-button>
                 </div>
             </div>
         `;

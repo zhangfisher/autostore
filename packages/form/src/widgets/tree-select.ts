@@ -90,7 +90,10 @@ export class AutoFieldTreeSelect<Options = unknown> extends AutoField<AutoFieldT
         `,
     ] as any;
     nodes = new AsyncOptionState<TreeNodes>(this, 'items', (nodes) => {
-        if(!nodes) return []        
+        if(!nodes) return []
+        // handle 在每次 host 更新时都会重跑（联动刷新），必须先重置再收集，
+        // 否则 selection 会被重复 push（tree-dropdown 的已选标签成倍叠加）
+        this.selection = [];
         this._forEachTree(nodes,(node: any, _path, _level, path) => {
             if (this.isItemSelected(node)) {
                 node.selected = true;

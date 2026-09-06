@@ -393,7 +393,7 @@
     --sl-input-icon-color: var(--auto-color);
     --sl-input-icon-color-hover: var(--auto-primary-color);
     --sl-input-icon-color-focus: var(--auto-primary-color);
-    --sl-input-placeholder-color: var(--auto-theme-color);
+    --sl-input-placeholder-color: var(--auto-disable-color);
     --sl-input-placeholder-color-disabled: var(--sl-color-neutral-400);
     --sl-input-spacing-small: var(--sl-spacing-small);
     --sl-input-spacing-medium: var(--sl-spacing-medium);

@@ -21,6 +21,7 @@ const presetIcons: Record<string, string> = {
 	menu: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 12h16"/><path d="M4 18h16"/><path d="M4 6h16"/></svg>`,
 };
 
+// presetIcons 统一存原始 SVG 字符串；dataURL 编码只在下方 defaultResolver 出口做一次
 const defaultResolver = (name: string) => {
 	if (name in presetIcons) {
 		return `data:image/svg+xml,${encodeURIComponent(presetIcons[name])}`;
@@ -37,26 +38,31 @@ const defaultMutator = (svg: any) => {
 
 /**
  * 注册图标库
- * @param url - 图标URL模板，必须包含'{name}'占位符
+ * @param url - 图标URL模板，必须包含'{name}'占位符；不传时保持当前图标源不变
  * @param icons - 本地SVG图标集合，键为图标名称，值为SVG字符串
- * @param options - 可选配置项，继承自IconLibrary(排除'name'和'resolver')
  * @throws 当url不包含'{name}'时抛出错误
  * @description
- * 1. 将本地SVG编码为dataURL格式
+ * 1. 本地图标存入预设表，解析时编码为dataURL（出口单次编码）
  * 2. 优先使用本地图标，未找到时回退到远程URL
  * 3. 自动为SVG添加fill和stroke-width属性
+ * 4. AutoForm/折叠分组等组件挂载时会以无参调用兜底安装解析器，
+ *    无参调用不会覆盖用户已注册的图标源和本地图标
  */
 export function registerIcons(
-	url: string = "https://unpkg.com/lucide-static@latest/icons/{name}.svg",
+	url?: string,
 	icons?: Record<string, string>,
 ) {
-	if (!url.includes("{name}")) {
+	const nextUrl = url ?? iconSourceUrl;
+	if (!nextUrl.includes("{name}")) {
 		throw new Error('icon url must include "{name}"');
 	}
-	iconSourceUrl = url;
+	iconSourceUrl = nextUrl;
 	if (icons) {
+		// presetIcons 统一存原始 SVG 字符串，编码只在 defaultResolver 出口做一次；
+		// 若在此处预编码，resolver 命中时会二次 encodeURIComponent（% → %25），
+		// fetch 拿到的 dataURL 正文不再是 <svg 开头，图标静默渲染为空
 		Object.entries(icons).forEach(([name, svg]) => {
-			presetIcons[name] = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+			presetIcons[name] = svg;
 		});
 	}
 	const iconLib = getIconLibrary("default")!;

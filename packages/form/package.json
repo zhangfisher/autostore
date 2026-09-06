@@ -5,17 +5,31 @@
     "type": "module",
     "exports": {
         ".": "./dist/index.js",
-        "./browser": "./dist/index.global.js"
+        "./core": "./dist/core.js",
+        "./browser": "./dist/index.global.js",
+        "./browser/core": "./dist/iife/core.global.js",
+        "./browser/widgets/*": "./dist/iife/widgets/*.global.js",
+        "./widgets/*": "./dist/widgets/*.js"
     },
     "publishConfig": {
         "access": "public",
         "main": "dist/index.js",
         "exports": {
             ".": {
-                "import": "./dist/index.js",
-                "require": "./dist/cjs"
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
             },
-            "./browser": "./dist/index.global.js"
+            "./core": {
+                "types": "./dist/core.d.ts",
+                "import": "./dist/core.js"
+            },
+            "./browser": "./dist/index.global.js",
+            "./browser/core": "./dist/iife/core.global.js",
+            "./browser/widgets/*": "./dist/iife/widgets/*.global.js",
+            "./widgets/*": {
+                "types": "./dist/widgets/*.d.ts",
+                "import": "./dist/widgets/*.js"
+            }
         }
     },
     "files": [
@@ -24,7 +38,7 @@
     "scripts": {
         "dev": "vite",
         "dev:examples": "vite examples",
-        "build": "tsup",
+        "build": "tsup && bun scripts/build-widget-iife.ts",
         "build:vite": "tsc && vite build",
         "preview": "vite preview"
     },
@@ -37,8 +51,9 @@
         "lit": "3.3.2"
     },
     "devDependencies": {
-        "autostore": "workspace:*",
         "@autostorejs/syncer": "workspace:*",
+        "autostore": "workspace:*",
+        "esbuild": "0.27.2",
         "esbuild-copy-files-plugin": "^1.2.1",
         "tsup": "^8.5.1",
         "typescript": "^6.0.2",

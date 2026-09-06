@@ -1,19 +1,20 @@
-import { tag } from '@/utils/tag';
-import { AutoFieldInput, type InputType } from './input';
-@tag('auto-field-url')
+import { tag } from "@/utils/tag";
+import { AutoFieldInput, type InputType } from "./input";
+
+@tag("auto-field-url")
 export class AutoFieldUrl extends AutoFieldInput {
     getInputType(): InputType {
-        return 'url';
+        return "url";
     }
     getFieldOptions() {
         if (!this.schema?.icon) {
-            this.schema!.icon = 'globe';
+            this.schema!.icon = "globe";
         }
         return super.getFieldOptions();
     }
 }
 declare global {
     interface HTMLElementTagNameMap {
-        'auto-field-url': AutoFieldUrl;
+        "auto-field-url": AutoFieldUrl;
     }
 }

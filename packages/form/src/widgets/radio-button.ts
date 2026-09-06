@@ -47,12 +47,14 @@ export class AutoFieldRadioButton extends AutoField<AutoFieldRadioButtonOptions>
         return html`<sl-radio-button value="${value}" ?pill=${this.options.pill} ?disabled=${!this.options.enable}>${item.label}</sl-radio-button>`;
     }
     renderInput() {
-        const items = this.getOptionValue('choices', []).map((item: any, index: number) => {
+        const items = this.getOptionValue('choices', []).map((item: any) => {
             const selectItem: any = {};
             if (typeof item === 'object') {
                 Object.assign(selectItem, item);
             } else {
-                Object.assign(selectItem, { label: item, value: index + 1 });
+                // 字符串选项的值取自身（如 "px"/"em"），与 radio/select 的
+                // 语义一致；index+1 会让选中的是序号而非选项内容
+                Object.assign(selectItem, { label: item, value: item });
             }
             return selectItem;
         });

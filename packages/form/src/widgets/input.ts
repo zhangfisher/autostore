@@ -155,9 +155,16 @@ export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<A
     }
     onInputChange(e: Event) {
         const event = e.type;
-        if (this.context.validAt === 'input' && event.includes('input')) {
+        if (event.includes('input')) {
+            // 任意校验时机下输入事件都到达 onFieldInput，由其内部分流：
+            // validAt=input 时立即校验，lost-focus 时仅清除旧错误
             this.onFieldInput();
         } else if (event.includes('change')) {
+            this.onFieldChange();
+        }
+    }
+    onInputBlur(_e: Event) {
+        if (this.context.validAt === 'lost-focus') {
             this.onFieldChange();
         }
     }
@@ -186,6 +193,7 @@ export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<A
                 ?autofocus=${this.options.autofocus}
                 @sl-input=${this.onInputChange.bind(this)}
                 @sl-change=${this.onInputChange.bind(this)}
+                @sl-blur=${this.onInputBlur.bind(this)}
                 spellcheck=${ifDefined(this.options.spellcheck)}
             >
                 ${this.renderActions()}${this.getPrefix()}${this.getSuffix()}</sl-input

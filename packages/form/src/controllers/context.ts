@@ -27,7 +27,9 @@ export class ContextController implements ReactiveController {
     //     // host.style.color = 'var(--sl-color-neutral-1000)';
     // }
     updateContext() {
-        Object.assign(this.host.context, {
+        // 必须创建新对象引用，@lit/context 通过引用来判断变更通知消费者
+        this.host.context = {
+            ...this.host.context,
             labelPos: this.host.labelPos,
             labelWidth: this.host.labelWidth,
             readonly: this.host.readonly,
@@ -40,7 +42,9 @@ export class ContextController implements ReactiveController {
             advanced: this.host.advanced,
             validAt: this.host.validAt,
             size: this.host.size,
-        });
+            dark: this.host.dark,
+            validAtInit: this.host.validAtInit,
+        };
     }
     hostUpdate() {
         if (this.host.tagName === 'AUTO-FORM') {

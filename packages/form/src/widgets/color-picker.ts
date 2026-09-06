@@ -59,6 +59,11 @@ export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions>
                 gap: 0.5em;
                 align-items: center;
             }
+            .preset-colors-container {
+                display: flex;
+                gap: 0.5em;
+                align-items: center;
+            }
             .color {
                 border: 2px solid white;
                 border-radius: 4px;
@@ -80,7 +85,7 @@ export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions>
                 border-radius: 4px;
                 display: inline-block;
                 cursor: pointer;
-                border: 3px solid #ffffff;
+                border: 1px solid var(--sl-input-border-color);
                 box-sizing: border-box;
                 box-shadow: var(--auto-shadow);
                 position: relative;
@@ -120,7 +125,6 @@ export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions>
 	}
 	renderInput() {
 		return html`
-            ${this._renderColors()}
             <sl-color-picker
                 name=${this.name}
                 data-path=${this.path}
@@ -136,22 +140,37 @@ export class AutoFieldColorPicker extends AutoField<AutoFieldColorPickerOptions>
                 @sl-input=${this.onFieldInput.bind(this)}
                 @sl-change=${this.onFieldChange.bind(this)}
             ></sl-color-picker>
+            ${this._renderColors()}
         `;
 	}
 	_onClickPresetColor(e: Event) {
-		// @ts-expect-error
-		this.input.value = (e.target as HTMLElement).dataset.color;
+		const color = (e.target as HTMLElement).dataset.color;
+		if (!color) return;
+		// 设置颜色选择器的值
+		this.input.value = color;
+		// 更新组件内部值以立即反映选中状态
+		this.value = color;
+		this.requestUpdate();
+		// 触发输入事件以更新表单状态
 		this.onFieldInput();
+		// 手动触发 sl-input 事件确保 shoelace 组件同步
+		this.input.dispatchEvent(new Event('sl-input', { bubbles: true, composed: true }));
+		// 手动触发 sl-change 事件确保 shoelace 组件同步
+		this.input.dispatchEvent(new Event('sl-change', { bubbles: true, composed: true }));
 	}
 	_renderColors() {
 		if (this.options.presets) {
-			return html`${repeat(
-				this.options.presets,
-				(color) => html`<span
-                data-color="${color}"
-                    @click=${this._onClickPresetColor}
-                    class="preset-color${this.value === color ? " selected" : ""}" style="background-color:${color};"></span>`,
-			)}`;
+			return html`<div class="preset-colors-container">
+                ${repeat(
+                    this.options.presets,
+                    (color) => html`<span
+                        data-color="${color}"
+                        @click=${this._onClickPresetColor}
+                        class="preset-color${this.value === color ? " selected" : ""}"
+                        style="background-color:${color};"
+                    ></span>`,
+                )}
+            </div>`;
 		}
 	}
 	renderView() {

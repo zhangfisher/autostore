@@ -17,4 +17,9 @@ export class ValidateError extends AutoStoreError {
      * - undefined - 使用 validate.onInvalid 的配置
      */
     onInvalid?: "pass" | "ignore" | "throw" | "throw-pass";
+    
+    constructor(message?: string) {
+        super(message);
+        this.name = "ValidateError";
+    }
 }

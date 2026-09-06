@@ -31,7 +31,7 @@ export default css`
         transition: background-color 0.2s ease;
         border-bottom:var(--auto-border);
         font: var(--auto-font);
-        background-color: var(--auto-title-bgcolor);
+        background-color: transparent;
         box-sizing: border-box;
         color: var(--auto-color);
     }
@@ -73,7 +73,7 @@ export default css`
     }
     .content {
         position: relative;
-        max-height: 0;
+        height: 0;
         padding: 0 15px;
         overflow: hidden;
         background-color: var(--auto-panel-bgcolor);
@@ -82,13 +82,14 @@ export default css`
         flex-direction: column;
         box-sizing: border-box;
         color: var(--auto-color);
-        transition: max-height 0.3s ease-out, padding 0.2s ease, opacity 0.2s ease,
-            visibility 0s 0.3s; /* 延迟visibility变化，确保在动画完成后才隐藏 */
+        /* 高度动画由组件 JS 以真实高度驱动（见 _animatePanel），
+           此处只保留 padding/visibility 的补间与延迟隐藏 */
+        transition: padding 0.18s ease, visibility 0s 0.18s; /* 延迟visibility变化，确保在动画完成后才隐藏 */
     }
     .content.active {
-        max-height: 2000px;
+        height: auto;
         padding: 15px;
-        transition: max-height 2s ease-out, padding 0.3s ease, visibility 0s; /* 立即改变visibility */
+        transition: padding 0.18s ease, visibility 0s; /* 立即改变visibility */
         visibility: visible;
         flex-grow: 1; /* 当指定高度时，内容区域配置flex-grow=1 */
         display: flex;

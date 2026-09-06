@@ -128,4 +128,9 @@ declare global {
     interface HTMLElementTagNameMap {
         'auto-field-tree-dropdown': AutoFieldTreeDropdown;
     }
-} 
+}
+declare module "autostore" {
+    interface AutoStoreWidgets {
+        'tree-dropdown': AutoFieldTreeDropdownOptions;
+    }
+}

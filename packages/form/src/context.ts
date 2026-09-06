@@ -3,7 +3,7 @@ import type { AutoStore, Dict } from 'autostore';
 import type { AutoForm } from './form';
 
 export type AutoFormContext = {
-    store: AutoStore<Dict>
+    store?: AutoStore<Dict>
     form: AutoForm
     labelPos?: 'none' | 'top' | 'left'
     labelWidth: string
@@ -20,6 +20,9 @@ export type AutoFormContext = {
     layout: 'auto' | 'row' | 'col'
     dirty: boolean
     validAtInit: boolean
+    group?: string
+    advanced?: boolean
+    icons?: string
 }
 
 export const context = createContext<AutoFormContext>('autoform');

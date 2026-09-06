@@ -85,6 +85,12 @@ export interface AutoWidgetCheckbox extends BaseInputAttributes {
      * form 的 checkbox/switch 实际消费的键
      */
     switchValues?: [any, any];
+    /**
+     * 双值选项：[选中项, 未选中项]，每项为 {label?,value} 对象或字符串
+     * form 的 checkbox/switch 实际消费的键（配置后优先于 switchValues，
+     * 取各项 value，显示当前项 label，无 label 则不显示）
+     */
+    choices?: ({ label?: string; value: any } | string)[];
 }
 
 export interface AutoWidgetRadio extends BaseInputAttributes {

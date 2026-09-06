@@ -126,4 +126,25 @@ const store12 = {
     }),
 };
 
-export { store1, store3, store5, store7, store9, store10, store11, store12 };
+// 测试13：cron 的配置键检查
+const store13 = {
+    schedule: configurable("", {
+        widget: "cron",
+        enableSeconds: true,
+        yearRange: [2026, 2036],
+        stepOptions: { minute: [1, 5, 15] },
+        defaultCron: "0 0 1 * * 2027",
+        panelMinWidth: 680,
+    }),
+};
+
+// 测试14：cron 的 enableSeconds 类型反例
+const store14 = {
+    schedule: configurable("", {
+        widget: "cron",
+        // @ts-expect-error enableSeconds 必须是 boolean
+        enableSeconds: "yes",
+    }),
+};
+
+export { store1, store3, store5, store7, store9, store10, store11, store12, store13, store14 };

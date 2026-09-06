@@ -22,8 +22,15 @@ import { tag } from '@/utils/tag';
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
+/** 表格列定义（fields 项） */
+export type AutoFieldTableColumn = {
+    label: string;
+    name: string;
+    widget?: string;
+    width?: string;
+};
 export type AutoFieldTableOptions = {
-    fields: any[];
+    fields: AutoFieldTableColumn[];
 };
 @tag('auto-field-table')
 export class AutoFieldTable extends AutoDropdownField<AutoFieldTableOptions> {
@@ -39,7 +46,7 @@ export class AutoFieldTable extends AutoDropdownField<AutoFieldTableOptions> {
     _renderHeader() {
         return html`
             <thead>
-                ${repeat(this.options.fields, (field) => {
+                ${repeat(this.options.fields, (field: AutoFieldTableColumn) => {
                     return html`<th
                         style=${styleMap({
                             width: field.width,
@@ -52,7 +59,7 @@ export class AutoFieldTable extends AutoDropdownField<AutoFieldTableOptions> {
         `;
     }
     _renderRow(row: Record<string, any>) {
-        return html` ${repeat(this.options.fields, (field) => {
+        return html` ${repeat(this.options.fields, (field: AutoFieldTableColumn) => {
             return html`<td>${row[field.name]}</td>`;
         })}`;
     }

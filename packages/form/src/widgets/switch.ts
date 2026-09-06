@@ -15,6 +15,11 @@ export interface AutoFieldSwitchOptions {
      * 开关旁的说明文字（缺省时取 switchValues 中非布尔值的一项）
      */
     checkLabel?: string;
+    /**
+     * 双值选项：[选中项, 未选中项]，每项为 {label?,value} 对象或字符串（字符串时 label 即 value）
+     * 配置后优先于 switchValues：切换值取各项 value，开关旁显示当前项 label（无 label 则不显示）
+     */
+    choices?: ({ label?: string; value: any } | string)[];
 }
 @tag('auto-field-switch')
 export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
@@ -33,7 +38,7 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
                 slot="value"
                 name="${this.name}"
                 data-path=${this.path}
-                value="${this.options.switchValues[0]}"
+                value="${this._getSwitchValues()[0]}"
                 .checked=${this._isChecked()}
                 ?disabled=${!this.options.enable}
                 size="${ifDefined(this.context.size)}"
@@ -45,13 +50,32 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
             >
         `;
     }
+    /**
+     * 归一化双值语义：配置 choices 时取 [选中项.value, 未选中项.value]，
+     * 否则回落 switchValues（单一取值通道，避免各处重复判断）
+     */
+    _getSwitchValues(): [any, any] {
+        const choices = this.options.choices;
+        if (Array.isArray(choices) && choices.length >= 2) {
+            return [
+                typeof choices[0] === 'object' ? choices[0].value : choices[0],
+                typeof choices[1] === 'object' ? choices[1].value : choices[1],
+            ];
+        }
+        return this.options.switchValues;
+    }
     getCheckLabel() {
         if (this.options.checkLabel) {
             return this.options.checkLabel;
-        } else {
-            const label = this.options.switchValues[this.value === this.options.switchValues[0] ? 0 : 1];
-            return typeof label === 'boolean' ? '' : label;
         }
+        const choices = this.options.choices;
+        if (Array.isArray(choices) && choices.length >= 2) {
+            // 显示当前项 label，无 label 则不显示
+            const current = choices[this._isChecked() ? 0 : 1];
+            return typeof current === 'object' ? (current.label ?? '') : '';
+        }
+        const label = this.options.switchValues[this.value === this.options.switchValues[0] ? 0 : 1];
+        return typeof label === 'boolean' ? '' : label;
     }
     getInitialOptions() {
         return {
@@ -59,14 +83,10 @@ export class AutoFieldSwitch extends AutoField<AutoFieldSwitchOptions> {
         };
     }
     _isChecked() {
-        if (typeof this.value === 'boolean') {
-            return this.options.switchValues[this.value ? 0 : 1];
-        } else {
-            return this.value === this.options.switchValues[0];
-        }
+        return this.value === this._getSwitchValues()[0];
     }
     getInputValue() {
-        return this.input.checked ? this.options.switchValues[0] : this.options.switchValues[1];
+        return this.input.checked ? this._getSwitchValues()[0] : this._getSwitchValues()[1];
     }
     renderView() {
         return html` <sl-switch class="viewonly" ?checked=${this._isChecked()}>${this.getCheckLabel()}</sl-switch> `;

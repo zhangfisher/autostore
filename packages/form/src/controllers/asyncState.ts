@@ -43,10 +43,14 @@ export type AsyncStateOptions = {
 };
 
 export class AsyncOptionState<V = any> implements ReactiveController {
-	host: HTMLElement;
+	host: any;
 	private _loading = false;
 	private _value: any;
-	private _ready: boolean = false; // 对于异步状态表示是否已加载数据
+	// 进行中的 Promise 加载序号：仅最新一次的结果允许写回（丢弃过期 resolve）
+	private _promiseSeq = 0;
+	// 已消费的 Promise 实例：hostUpdate 每轮重入 load，options 上的 Promise
+	// resolve 后仍在原地，若不记忆会对其反复 then → requestUpdate → 无限循环
+	private _consumedPromise: any = null;
 	/**
 	 *
 	 * @param host
@@ -71,20 +75,47 @@ export class AsyncOptionState<V = any> implements ReactiveController {
 	}
 
 	load() {
-		// @ts-expect-error
-		const schema = this.host.schema!;
-		const value = getVal(schema, this.path);
+		// 读 host.options 而非 host.schema：联动函数（如 choices:(state)=>...）
+		// 的求值结果写在 options 上，schema 上保留的是函数本身
+		const options = this.host.options!;
+		const value = getVal(options, this.path);
 		if (isAsyncComputedValue(value)) {
 			if (value.loading) {
 				this._loading = true;
 				this._value = this.handle(undefined);
 			} else {
-				this._ready = value.value !== undefined;
 				this._value = this.handle(value.value);
 				this._loading = false;
 			}
+		} else if (value instanceof Promise) {
+			// choices 为 async 函数时，AutoField._evalDynamicOptions 同步求值
+			// 得到裸 Promise 写入 options（无 value/loading 包装）。
+			// 先呈现 loading 态，resolve 后经 handle 写回并触发 host 重渲染；
+			// 同一 Promise 只消费一次（记忆实例），load 随 hostUpdate 重入时
+			// 直接跳过，避免对已 settle 的 Promise 反复 then 造成更新死循环
+			if (value !== this._consumedPromise) {
+				this._consumedPromise = value;
+				this._loading = true;
+				this._value = this.handle(undefined);
+				const seq = ++this._promiseSeq;
+				value.then(
+					(resolved) => {
+						if (seq !== this._promiseSeq) return;
+						this._value = this.handle(resolved);
+						this._loading = false;
+						this.host.requestUpdate();
+					},
+					(err) => {
+						if (seq !== this._promiseSeq) return;
+						this._value = this.handle(undefined);
+						this._loading = false;
+						console.error(`AsyncOptionState load <${Array.isArray(this.path) ? this.path.join(".") : this.path}> failed: ${err?.message || err}`);
+						this.host.requestUpdate();
+					},
+				);
+			}
 		} else {
-			this._ready = true;
+			this._consumedPromise = null;
 			this._value = this.handle(value);
 			this._loading = false;
 		}
@@ -120,9 +151,9 @@ export class AsyncOptionState<V = any> implements ReactiveController {
 	//     this.load()
 	// }
 	hostUpdate(): void {
-		if (!this._ready) {
-			this.load();
-		}
+		// 每次 host 更新均重新读取：联动依赖（如 country 变化触发 choices 重算）
+		// 写入 options 后，host 会 requestUpdate，这里随之刷新选项列表
+		this.load();
 	}
 
 	hostUpdated(): void {}

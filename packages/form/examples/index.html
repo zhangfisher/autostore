@@ -46,6 +46,8 @@
                 display: flex;
                 height: 100vh;
                 overflow: hidden;
+                /* 面板宽度单一数据源：aside 宽度与折叠按钮位置都引用此变量 */
+                --panel-w: 360px;
             }
 
             .main-content {
@@ -53,6 +55,7 @@
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
+                min-width: 0;
             }
 
             .content-area {
@@ -67,7 +70,12 @@
                 margin: 0 auto;
             }
 
-
+            /* 示例组件（自定义元素默认 display:inline，宽度随内容收缩）：
+               块化并占满 #example-content，避免 tab 内容宽窄不一时容器跟着跳变 */
+            #example-content > * {
+                display: block;
+                width: 100%;
+            }
 
             .example-content {
                 background: white;
@@ -75,6 +83,74 @@
                 padding: 2rem;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                 min-height: 400px;
+            }
+
+            /* 右侧固定面板：宽度由 --panel-w 驱动、100% 视口高、内部滚动，支持折叠与拖拽调宽 */
+            .props-panel-aside {
+                position: relative;
+                width: var(--panel-w);
+                flex-shrink: 0;
+                height: 100vh;
+                overflow-y: auto;
+                border-left: 1px solid var(--auto-border);
+                background: white;
+                box-sizing: border-box;
+                padding: 0rem;
+                transition:
+                    width 0.2s ease,
+                    padding 0.2s ease;
+            }
+            /* 折叠态：宽度经 --panel-w 归零，此处只收 padding/border */
+            .app-container.panel-collapsed .props-panel-aside {
+                padding: 0;
+                border-left: none;
+                overflow: hidden;
+            }
+            /* 拖拽调宽手柄：贴面板左缘 */
+            .panel-resizer {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 6px;
+                height: 100%;
+                cursor: col-resize;
+                z-index: 10;
+            }
+            .panel-resizer:hover,
+            .props-panel-aside.resizing .panel-resizer {
+                background: var(--auto-primary);
+                opacity: 0.6;
+            }
+            /* 拖拽过程中禁用宽度过渡，跟随鼠标 */
+            .props-panel-aside.resizing {
+                transition: none;
+            }
+            /* 折叠控制：圆形按钮骑在面板左边线垂直居中处，
+               折叠后随 --panel-w 归零贴至视口右缘，兼任展开按钮 */
+            .panel-toggle-fab {
+                position: fixed;
+                top: 50%;
+                right: var(--panel-w);
+                transform: translate(50%, -50%);
+                z-index: 40;
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                border: 1px solid var(--auto-border);
+                background: white;
+                color: var(--auto-text-light);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+                transition: right 0.2s ease;
+                font-size: 10px;
+            }
+            .panel-toggle-fab:hover {
+                color: var(--auto-primary);
+                border-color: var(--auto-primary);
             }
 
             .loading-state {
@@ -85,7 +161,14 @@
                 color: var(--auto-text-light);
             }
 
-            /* 响应式设计 */
+            /* 响应式设计：窄屏时隐藏右侧面板与折叠按钮 */
+            @media (max-width: 1200px) {
+                .props-panel-aside,
+                .panel-toggle-fab {
+                    display: none;
+                }
+            }
+
             @media (max-width: 768px) {
                 .content-area {
                     padding: 1rem;
@@ -115,22 +198,38 @@
 
             <!-- 主内容区 -->
             <div class="main-content">
-                <!-- 顶部标题栏 -->
-                <examples-header id="header"></examples-header>
-
-                <!-- 内容区域 -->
+                <!-- 内容区域。
+                     宽度约束链说明：.content-area 作为 flex column 的交叉轴 stretch
+                     本应恒定拉满，但示例组件是未定义 display 的自定义元素（默认
+                     inline，宽度 shrink-to-fit），若祖先出现 margin:0 auto / inline
+                     块级混杂，整条链会随当前 tab 内容宽度回缩，导致切换标签页时
+                     容器宽度跳变。因此此处必须：content-area 不加居中 margin、
+                     #example-content 块化 + width:100%、示例组件块化，
+                     居中统一由 #example-content 的 max-width + margin:auto 完成 -->
                 <div class="content-area">
-                    <div class="example-container">
-
-                        <div class="example-content" id="example-content">
-                            <div class="loading-state">
-                                <sl-spinner></sl-spinner>
-                                <span style="margin-left: 1rem">加载示例中...</span>
-                            </div>
+                    <div
+                        class="example-content"
+                        id="example-content"
+                        style="max-width: 720px; margin: 0 auto"
+                    >
+                        <div class="loading-state">
+                            <sl-spinner></sl-spinner>
+                            <span style="margin-left: 1rem">加载示例中...</span>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- 右侧属性面板（全局唯一，随示例切换自动绑定 auto-form，可折叠/拖拽调宽） -->
+            <aside class="props-panel-aside" id="props-panel-aside">
+                <div class="panel-resizer" id="panel-resizer" title="拖拽调节宽度"></div>
+                <form-props-panel id="global-props-panel"></form-props-panel>
+            </aside>
+
+            <!-- 折叠控制：骑面板左边线垂直居中，折叠后贴视口右缘 -->
+            <button class="panel-toggle-fab" id="panel-toggle" title="折叠面板" type="button">
+                <sl-icon name="chevron-right"></sl-icon>
+            </button>
         </div>
 
         <script type="module" src="/index.ts"></script>

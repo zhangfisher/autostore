@@ -167,7 +167,7 @@ class AutoFormLazySelect extends LitElement {
 		return html`<div
             style="padding: 1em; border: var(--auto-border);margin: 1em; position: relative"
         >
-            <auto-form labelpos="left"></auto-form>
+            <auto-form label-pos="left"></auto-form>
         </div>`;
 	}
 }

@@ -6,10 +6,10 @@ export default css`
     ${overloads}
     ${vars}
     :host {
-        display: flex;
+        display: inline-block;
+        vertical-align: top;
         position: relative;
         box-sizing: border-box;
-        display: block;
         & > .autofield {
             display: flex;
             position: relative;

@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { uploadApiPlugin } from './vite-plugin-upload';
 
 export default defineConfig({
 	root: '.', // 设置根目录为当前目录
-	plugins: [],
+	plugins: [uploadApiPlugin()],
 	build: {
 		outDir: 'dist',
 		emptyOutDir: false,

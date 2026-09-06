@@ -7,7 +7,7 @@ import { isFunction } from "../utils/isFunction";
 import type { AutoStoreOptions } from "../store/types";
 import type { Dict } from "../types";
 import { joinPath } from "../utils/joinPath";
-
+import { ValidateError } from "../errors";
 /**
  *
  * 配置管理器
@@ -317,14 +317,64 @@ export class ConfigManager extends AutoStore<
         });
     }
     private _installValidator(path: string, descriptor: SchemaDescriptor, store: AutoStore<any>) {
-        if (isFunction(descriptor.options.validate)) {
-            // 错误信息模板
+        // 处理 required 验证逻辑（仅当状态值是字符串时生效）
+        if (descriptor.options.required === true) {
+            const originalValidate = descriptor.options.validate;
+            // 如果 errorMessage 是默认的 "{error}"，则使用更友好的默认值
+            const rawErrorMessage = descriptor.options.errorMessage;
+            const requiredErrorMessage =
+                !rawErrorMessage || rawErrorMessage === "{error}"
+                    ? `{label}不能为空`
+                    : rawErrorMessage;
+
+            // 创建 required 验证函数
+            const requiredValidate = (value: any, oldValue: any, path: string[]) => {
+                // 仅当状态值是字符串时进行必填验证
+                if (typeof value === "string") {
+                    if (value.length === 0) {
+                        const err = new ValidateError(requiredErrorMessage);
+                        // 使用 throw-pass 行为：写入数据但同时抛出异常，确保 UI 能更新错误状态
+                        err.onInvalid = "throw-pass";
+                        throw err;
+                    }
+                }
+                // 如果有原始验证函数，调用它
+                if (isFunction(originalValidate)) {
+                    return originalValidate.call(this, value, oldValue, path);
+                }
+                return true;
+            };
+
+            // 设置错误信息模板
+            requiredValidate.getErrorMessage = (error: Error) => {
+                if (typeof requiredErrorMessage === "string") {
+                    return requiredErrorMessage.params({
+                        ...descriptor.options,
+                        error: error.message,
+                        errorStack: error.stack,
+                        path,
+                    });
+                }
+                return error.message;
+            };
+
+            // 获取 validationBehavior，用于指定校验失败时的默认行为
+            const onInvalid = descriptor.options.onInvalid;
+            if (onInvalid !== undefined) {
+                (requiredValidate as any).onInvalid = onInvalid;
+            }
+
+            // 注册验证函数
+            if (!store.options.validators) {
+                store.options.validators = {};
+            }
+            store.options.validators[path] = requiredValidate;
+        } else if (isFunction(descriptor.options.validate)) {
+            // 原有逻辑：处理自定义 validate 函数
             const template = descriptor.options.errorMessage;
-            // 将getErrorMessage 方法和validationBehavior添加到验证函数上，用于在isValidPass中使用
             // @ts-expect-error
             descriptor.options.validate.getErrorMessage = (error: Error) => {
                 if (typeof template === "string") {
-                    // 合并所有变量到同一个对象中，一次性完成插值
                     return template.params({
                         ...descriptor.options,
                         error: error.message,
@@ -334,13 +384,10 @@ export class ConfigManager extends AutoStore<
                 }
                 return error.message;
             };
-            // 获取 validationBehavior，用于指定校验失败时的默认行为
             const onInvalid = descriptor.options.onInvalid;
-            // 只有当 onInvalid 显式指定时才设置它
             if (onInvalid !== undefined) {
                 (descriptor.options.validate as any).onInvalid = onInvalid;
             }
-            // 注册验证函数，用于写入状态值时调用进行验证
             if (!store.options.validators) {
                 store.options.validators = {};
             }

@@ -7,6 +7,9 @@ export const scrollbar = css`
         scrollbar-width: thin;
         scrollbar-color: transparent transparent;
         transition: scrollbar-color 0.3s ease;
+        /* 常驻预留滚动条槽位：内容是否溢出都固定留白，
+           避免 tab 切换时滚动条出现/消失导致容器宽度跳变 */
+        scrollbar-gutter: stable;
     }
 
     /* Firefox - 悬停时显示 */

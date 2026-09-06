@@ -35,11 +35,6 @@ export class SchemaAccessor {
 	 * @returns 过滤后的 schemas 对象，键为相对路径
 	 */
 	getAllSchemas(): Record<string, AutoStoreStateSchema> {
-		console.log('[SchemaAccessor] 开始获取 schemas');
-		console.log('[SchemaAccessor] store.id:', this.store.id);
-		console.log('[SchemaAccessor] store.configKey:', (this.store as any).configKey);
-		console.log('[SchemaAccessor] store.options.configKey:', this.store.options.configKey);
-
 		const configManager = this.store.configManager;
 		if (!configManager) {
 			console.warn('[SchemaAccessor] configManager 不存在！');
@@ -50,10 +45,6 @@ export class SchemaAccessor {
 		const configKey = (this.store as any).configKey || '';
 		const keyPrefix = configKey ? `${configKey}.` : '';
 
-		console.log('[SchemaAccessor] 实际 configKey:', configKey);
-		console.log('[SchemaAccessor] keyPrefix:', keyPrefix);
-		console.log('[SchemaAccessor] configManager.state keys:', Object.keys(configManager.state));
-
 		const schemas: Record<string, AutoStoreStateSchema> = {};
 		Object.entries(configManager.state).forEach(([key, schema]) => {
 			if (key.startsWith(keyPrefix)) {
@@ -61,11 +52,9 @@ export class SchemaAccessor {
 				// configManager.state[key] 存的就是 schema options 本身
 				// （ConfigManager.add 中 this.state[joinPath(configKey)] = descriptor.options）
 				schemas[relativeKey] = schema as AutoStoreStateSchema;
-				console.log(`[SchemaAccessor] ✅ 匹配: ${key} → ${relativeKey}`);
 			}
 		});
 
-		console.log('[SchemaAccessor] 最终 schemas:', schemas);
 		return schemas;
 	}
 

@@ -34,6 +34,7 @@
 //             { text: "ColorPicker", link: "/zh/form/guide/fields/colorpicker" },
 //             { text: "Cascader", link: "/zh/form/guide/fields/cascader" },
 //             { text: "Switch", link: "/zh/form/guide/fields/switch" },
+//             { text: "Cron", link: "/zh/form/guide/fields/cron" },
 //             { text: "Radio", link: "/zh/form/guide/fields/radio" },
 //             { text: "RadioButton", link: "/zh/form/guide/fields/radio-button" },
 //             { text: "List", link: "/zh/form/guide/fields/list" },

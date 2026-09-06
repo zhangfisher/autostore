@@ -30,7 +30,7 @@ class AutoFormExampleTransform extends LitElement {
 	}
 	render() {
 		return html`<div style="display: flex;padding:1em;border: var(--auto-border);;margin:1em;" >
-            <auto-form path="transform"  validat="input" ></auto-form>
+            <auto-form path="transform"  valid-at="input" ></auto-form>
             <div id = "viewer" style = "border: var(--auto-border);border-left: none;width:20%;padding: 1em" ></div>
         </div>`;
 	}

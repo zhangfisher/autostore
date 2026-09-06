@@ -123,6 +123,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
                             minLength="1"
                             max="255"
                             min="0"
+                            ?disabled=${!this.options.enable}
                             @sl-input=${(e: Event) => this._onIpChange(index, e)}
                             @sl-change=${(e: Event) => this._onIpChange(index, e)}
                             @sl-focus=${this._onPartFocus.bind(this)}

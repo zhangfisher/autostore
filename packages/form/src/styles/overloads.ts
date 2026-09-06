@@ -7,7 +7,8 @@ export const overloads = css`
         color: var(--auto-color);
     }  
  
-    sl-input::part(input)::placeholder{
+    sl-input::part(input)::placeholder,
+    sl-textarea::part(textarea)::placeholder{
         color: var(--auto-disable-color);
     }
     sl-button::part(label){
