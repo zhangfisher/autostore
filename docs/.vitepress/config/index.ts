@@ -412,6 +412,7 @@ export default defineConfig({
                         { text: "校验", link: "/zh/form/guide/validate" },
                         { text: "提交表单", link: "/zh/form/guide/submit" },
                         { text: "图标", link: "/zh/form/guide/icons" },
+                        { text: "按需引入", link: "/zh/form/guide/on-demand" },
                     ],
                 },
                 {
