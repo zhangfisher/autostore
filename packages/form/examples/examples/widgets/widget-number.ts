@@ -78,12 +78,7 @@ class WidgetNumberExample extends LitElement {
                     演示数字输入框的各种参数配置
                 </p>
 
-                <auto-form
-                    .state="${this.state}"
-                    data-label="数字输入参数演示"
-                    style="min-height: 400px;"
-                >
-                </auto-form>
+                <auto-form .state="${this.state}" data-label="数字输入参数演示"> </auto-form>
 
                 <div
                     style="margin-top: 2rem; padding: 1rem; background: #f0f9ff; border-radius: 8px;"

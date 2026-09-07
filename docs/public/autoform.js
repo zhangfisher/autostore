@@ -188,7 +188,7 @@ Make sure to test your application with a production build as repeat registratio
 
             box-sizing: border-box;
             padding-right: 0px;
-            padding: calc(0.2 * var(--auto-spacing));
+            padding: calc(0.2 * var(--auto-spacing)); 
             & > .label {
                 display: flex;
                 color: var(--auto-color);
@@ -197,7 +197,7 @@ Make sure to test your application with a production build as repeat registratio
                     flex-grow: 1;
                     line-height: var(--auto-line-height);
                     &::after {
-                        content: '：';
+                        content: "：";
                     }
                 }
             }
@@ -285,7 +285,7 @@ Make sure to test your application with a production build as repeat registratio
         & > .autofield {
             flex-direction: row;
             & > .label {
-                flex-shrink: 0;
+                flex-shrink: 1;
             }
             & > .value {
                 flex-grow: 1;
@@ -327,12 +327,24 @@ Make sure to test your application with a production build as repeat registratio
     /* 网格线 */
     :host(.grid-border) {
         & > .autofield {
-            padding: calc(var(--auto-spacing) * 0.6) var(--auto-spacing);
+            padding: calc(var(--auto-spacing) * 0.5) var(--auto-spacing);
+        }
+    }
+    /* 非网格边框（none/outline）下字段水平内边距收窄，贴近紧凑排布 */
+    :host(:not(.grid-border)) {
+        & > .autofield {
+            padding-left: calc(var(--auto-spacing) * 0.2);
+            padding-right: calc(var(--auto-spacing) * 0.2);
         }
     }
     :host(.grid-border.compact) {
         & > .autofield {
             padding: calc(var(--auto-spacing) * 0.3) var(--auto-spacing);
+        }
+    }
+    :host(:not(.grid-border).compact) {
+        & > .autofield {
+            padding: calc(var(--auto-spacing) * 0.1);
         }
     }
     /* 布局 */
@@ -342,12 +354,6 @@ Make sure to test your application with a production build as repeat registratio
                 display: flex;
                 align-items: center;
             }
-        }
-    }
-    /* 紧凑模式 */
-    :host(.compact) {
-        & > .autofield {
-            padding: calc(var(--auto-spacing) * 0.1);
         }
     }
     /* 浏览视图  */
@@ -370,7 +376,7 @@ Make sure to test your application with a production build as repeat registratio
     :host(.readonly) {
         & > .autofield {
             & > .value:after {
-                content: ' ';
+                content: " ";
                 position: absolute;
                 top: 0px;
                 left: 0px;
@@ -5329,140 +5335,144 @@ Make sure to test your application with a production build as repeat registratio
                 background-color: var(--t-color-theme--1, var(--sl-color-primary-100));
             }
         `],exports.AutoFieldParts=v([T("auto-field-parts")],exports.AutoFieldParts);var ct=class extends I{constructor(){super(...arguments);this.active=false;}static{this.styles=[I.styles,x`
-            sl-dropdown{
-                width: 100%;                
-            } 
-            .placeholder{
-                color: var(--auto-border-color);                
-                flex-grow: 1; 
+            sl-dropdown {
+                width: 100%;
+                padding: 4px;
             }
-            :host>.autofield>.value>.content{
+            .placeholder {
+                color: var(--auto-border-color);
+                flex-grow: 1;
+            }
+            :host > .autofield > .value > .content {
                 display: flex;
-                flex-direction: row;                
+                flex-direction: row;
                 border: var(--auto-border);
                 font-size: var(--auto-font-size);
                 color: var(--auto-color);
-                border-radius: var(--auto-border-radius);    
+                border-radius: var(--auto-border-radius);
                 letter-spacing: var(--auto-letter-spacing);
-                background-color: var(--auto-input-bgcolor); 
+                background-color: var(--auto-input-bgcolor);
                 overflow-y: auto;
                 overflow-x: hidden;
                 align-items: anchor-center;
-                &>.dropdown{
+                & > .dropdown {
                     display: flex;
                     align-items: center;
                     flex-grow: 1;
-                    background-color: var(--auto-input-bgcolor);                    
-                    padding: calc(0.5 * var(--auto-padding));
+                    background-color: var(--auto-input-bgcolor);
+                    padding: calc(0.05 * var(--auto-padding));
                     box-sizing: border-box;
-                    &>sl-dropdown{
-                        &::slotted(*){
+                    & > sl-dropdown {
+                        &::slotted(*) {
                             align-items: center;
                         }
                     }
                 }
-                &>.actions{
+                & > .actions {
                     display: flex;
                     align-items: center;
-                    &>*::part(base){
+                    & > *::part(base) {
                         border: 0px;
                         border-radius: 0px;
                     }
                 }
-                &>.actions.before{                    
-                    &>*::part(base){
+                & > .actions.before {
+                    & > *::part(base) {
                         border-right: var(--auto-border);
                     }
                 }
-                &>.actions.after{
-                    &>*::part(base){
+                & > .actions.after {
+                    & > *::part(base) {
                         border-left: var(--auto-border);
                     }
                 }
             }
-            .selection{
+            .selection {
                 position: relative;
                 display: flex;
                 flex-direction: row;
                 align-items: center;
                 font-size: var(--auto-font-size);
-                color: var(--auto-text-color); 
-                border-radius: var(--sl-input-border-radius-medium);    
+                color: var(--auto-text-color);
+                border-radius: var(--sl-input-border-radius-medium);
                 letter-spacing: var(--sl-input-letter-spacing);
                 background-color: var(--sl-input-background-color);
-                height:var(--auto-line-height);
-                &>.select-value,&>.content{
-                    flex-grow: 1; 
+                height: var(--auto-line-height);
+                & > .select-value,
+                & > .content {
+                    flex-grow: 1;
                     display: flex;
                     align-items: center;
                     padding: 0 0.5em;
                 }
-                &>.suffix{
+                & > .suffix {
                     cursor: pointer;
                     padding-left: 0.5em;
                     padding-right: 0.5em;
                 }
-                sl-tag{
+                sl-tag {
                     margin-right: 0.5em;
-                    margin-top: 0.rem;
+                    margin-top: 0rem;
                     margin-bottom: 0.2em;
                 }
-                &>.icon{
+                & > .icon {
                     display: flex;
                     align-items: center;
                     font-size: var(--auto-font-size);
                     padding-left: 0.5em;
                 }
-            } 
-            .popoup-container{
+            }
+            .popoup-container {
                 min-height: 1em;
-                position: relative;                
-                &.dropdown{
+                position: relative;
+                &.dropdown {
                     border: var(--auto-border);
                     background-color: var(--sl-input-background-color);
                 }
-            }            
-            sl-icon.chevron{
+            }
+            sl-icon.chevron {
                 transition: all 0.2s ease-in;
-                &.active{
+                &.active {
                     transform: rotate(-180deg);
                 }
             }
-        `];}getInitialOptions(){return {dropdown:true}}_isEmpty(){return Array.isArray(this.value)?this.value.length===0:this.value.trim()===""}_renderSelection(){return f`<div class="selection" slot="trigger">                    
-                    ${F(this.options.icon,()=>f`<span class='icon'><sl-icon name="${this.options.icon}"></sl-icon></span>`)}
-                    ${F(this._isEmpty()&&this.options.placeholder,()=>f`<span class='placeholder'>${this.options.placeholder}</span>`,()=>f`<span class="select-value">
-                    ${this.renderSelection()}
-                </span>`)}
-                <span class='suffix'>
-                    <sl-icon 
-                        library="system" 
-                        class="chevron ${M({active:this.active})}" 
-                        name="chevron-down" 
-                        aria-hidden="true">
-                    </sl-icon>
-                </span>
-            </div>       `}_renderContent(){return f`<div class="popoup-container ${k(this.options.dropdown?"dropdown":void 0)}">
-            ${this.renderDropdown()}
-        </div>`}renderDropdown(){}renderSelection(t){return f`    
-        ${this.options.renderSelection?this.options.renderSelection(t||this.value,f):t||this.value}
-            `}renderInput(){return this.options.dropdown?f`
-            <div class="content">
-                ${this.renderBeforeActions(false)}
-                <span class="dropdown">
-                    <sl-dropdown
-                        size="${this.context.size}"
-                        @sl-show="${()=>{this.active=true;}}"
-                        @sl-after-hide="${()=>{this.active=false;}}"
-                        sync="width"
-                        distance="12"
-                        .containingElement="${this}"
-                    >
-                    ${this._renderSelection()}
-                    ${this._renderContent()}
-                </sl-dropdown>
+        `];}getInitialOptions(){return {dropdown:true}}_isEmpty(){return Array.isArray(this.value)?this.value.length===0:this.value.trim()===""}_renderSelection(){return f`<div class="selection" slot="trigger">
+            ${F(this.options.icon,()=>f`<span class="icon"
+                        ><sl-icon name="${this.options.icon}"></sl-icon
+                    ></span>`)}
+            ${F(this._isEmpty()&&this.options.placeholder,()=>f`<span class="placeholder">${this.options.placeholder}</span>`,()=>f`<span class="select-value"> ${this.renderSelection()} </span>`)}
+            <span class="suffix">
+                <sl-icon
+                    library="system"
+                    class="chevron ${M({active:this.active})}"
+                    name="chevron-down"
+                    aria-hidden="true"
+                >
+                </sl-icon>
             </span>
-            ${this.renderAfterActions(false)}
-            </div>
+        </div> `}_renderContent(){return f`<div
+            class="popoup-container ${k(this.options.dropdown?"dropdown":void 0)}"
+        >
+            ${this.renderDropdown()}
+        </div>`}renderDropdown(){}renderSelection(t){return f`
+            ${this.options.renderSelection?this.options.renderSelection(t||this.value,f):t||this.value}
+        `}renderInput(){return this.options.dropdown?f`
+                <div class="content">
+                    ${this.renderBeforeActions(false)}
+                    <span class="dropdown">
+                        <sl-dropdown
+                            size="${this.context.size}"
+                            @sl-show="${()=>{this.active=true;}}"
+                            @sl-after-hide="${()=>{this.active=false;}}"
+                            sync="width"
+                            distance="12"
+                            .containingElement="${this}"
+                        >
+                            ${this._renderSelection()} ${this._renderContent()}
+                        </sl-dropdown>
+                    </span>
+                    ${this.renderAfterActions(false)}
+                </div>
             `:f`${this._renderContent()}`}};v([$()],ct.prototype,"active",2);var sp=x`
   :host {
     display: block;
@@ -6251,8 +6261,11 @@ Make sure to test your application with a production build as repeat registratio
                 flex-wrap: wrap;
             }
         `],v([O(".selection>.select-value")],exports.AutoFieldCombine.prototype,"selection",2),exports.AutoFieldCombine=v([T("auto-field-combine")],exports.AutoFieldCombine);var td=["help","error","email","search","lock","user","globe","date","time","phone","copy","remove","refresh","datetime"];exports.AutoFieldIcons=class Je extends ct{constructor(){super(...arguments);this.multiple=false;this.active=false;this.selected=[];this.icons=[];}getInitialOptions(){return {icons:[],size:"24px",multiple:false,dropdown:false,builtIn:true}}connectedCallback(){super.connectedCallback(),this.icons=Array.isArray(this.options.icons)?this.options.icons:this.options.icons.split(","),this.options.builtIn&&td.forEach(t=>{this.icons.includes(t)||this.icons.push(t);}),this.selected=Array.isArray(this.value)?this.value:this.value.split(",");}updateOptions(){super.updateOptions(),this.multiple=this.options.multiple||false,this.multiple||(this.options.dropdown=true);}updated(t){super.updated(t),t.has("value")&&this.value!==void 0&&(this.selected=Array.isArray(this.value)?[...this.value]:String(this.value).split(",")),this.multiple?this.style.width!=="100%"&&(this.style.width="100%"):this.style.width&&(this.style.width="");}renderView(){return this.renderIcons(this.selected)}_isSelected(t){return this.options.multiple?this.selected.includes(t):this.selected[0]===t}_onClickIcon(t){if(!this.context.viewonly)if(this.options.multiple){let o=this.selected.findIndex(i=>i===t);this.selected=o>-1?this.selected.filter(i=>i!==t):[...this.selected,t],this.onFieldInput();}else {this.selected=[t],this.onFieldInput();let o=this.shadowRoot?.querySelector("sl-dropdown");o&&typeof o.hide=="function"&&o.hide();}}getInputValue(){return this.options.multiple?this.selected:this.selected[0]}renderIcons(t,o=true){return f`<div class="icons" style="font-size:${this.options.size}">
-            ${W(t,i=>{if(i!=="")return f`<span class="icon ${o&&this._isSelected(i)?"selected":void 0}" title="${i}" @click=${()=>this._onClickIcon(i)}
-                    ><sl-icon name="${i}" size="${this.options.size}"></sl-icon
+            ${W(t,i=>{if(i!=="")return f`<span
+                    class="icon ${o&&this._isSelected(i)?"selected":void 0}"
+                    title="${i}"
+                    @click=${()=>this._onClickIcon(i)}
+                    ><sl-icon name="${i}"></sl-icon
                 ></span>`})}
         </div>`}renderSelection(){return this.renderIcons(this.multiple?this.selected:this.selected.slice(0,1),false)}renderDropdown(){return this.renderIcons(this.icons)}};exports.AutoFieldIcons.styles=[I.styles,ct.styles,x`
             /* ============ 单选：收缩为单个图标 + 下拉箭头的宽度 ============ */
@@ -6268,6 +6281,7 @@ Make sure to test your application with a production build as repeat registratio
                         width: fit-content;
                         & > .dropdown {
                             flex-grow: 0;
+                            padding: 0px;
                             & > sl-dropdown {
                                 width: auto;
                             }
@@ -6277,7 +6291,7 @@ Make sure to test your application with a production build as repeat registratio
                 min-width: var(--auto-line-height);
                 /* 下拉面板不跟随触发器收缩（对冲 sl-dropdown 的 sync=width） */
                 .popoup-container {
-                    min-width: 200px;
+                    min-width: 180px;
                 }
             }
             /* ============ 多选：满宽展示 ============ */
@@ -8675,7 +8689,7 @@ Make sure to test your application with a production build as repeat registratio
     border-left: solid var(--width) var(--color);
     margin: 0 var(--spacing);
   }
-`;var ii=class extends z{constructor(){super(...arguments),this.vertical=false;}connectedCallback(){super.connectedCallback(),this.setAttribute("role","separator");}handleVerticalChange(){this.setAttribute("aria-orientation",this.vertical?"vertical":"horizontal");}};ii.styles=[L,Mp];p([h({type:Boolean,reflect:true})],ii.prototype,"vertical",2);p([R("vertical")],ii.prototype,"handleVerticalChange",1);ii.define("sl-divider");bt.define("sl-dropdown");Te.define("sl-spinner");mt.define("sl-icon-button");var Vs=class{constructor(r){this.store=r;}getFullPath(r){let t=this.store.options.configKey||"";return t?`${t}.${r.join(".")}`:r.join(".")}getSchema(r){let t=this.getFullPath(r);return this.store.configManager?.state[t]}getAllSchemas(){let r=this.store.configManager;if(!r)return console.warn("[SchemaAccessor] configManager \u4E0D\u5B58\u5728\uFF01"),{};let t=this.store.configKey||"",o=t?`${t}.`:"",i={};return Object.entries(r.state).forEach(([s,n])=>{if(s.startsWith(o)){let a=s.substring(o.length);i[a]=n;}}),i}getFieldValue(r){return et(this.store.state,r)}setFieldValue(r,t){let o=this.getFullPath(r),i=this.store.configManager?.state[o];i&&i.value!==void 0&&(i.value=t);}hasSchema(r){return !!this.getSchema(r)}getFieldError(r){let t=this.getFullPath(r);return this.store.configManager?.errors[t]}};var ad=/^(validate|on.+|to.+|render.+)$/,ld=new Set(["name","id","key","value","path","datatype"]);function zp(e,r=0){if(!(e===null||typeof e!="object"||r>2))for(let t of Object.keys(e)){let o=e[t];typeof o=="function"&&!ad.test(t)&&!ld.has(t)?at(o):zp(o,r+1);}}var Ds=class extends Ki{add(r,t,o){let i=Vi(o)?o():o;return zp(i.options),super.add(r,t,i)}};var it=class it extends dt{constructor(){super(...arguments);this.classs=new Ne(this);this.ctxController=new Nr(this);this.seq=++it.seq;this.context={};this.schemas=[];this.validAtInit=false;this.compact=false;this.validAt="lost-focus";this.border="grid";this.size="medium";this.labelPos="top";this.labelWidth="7em";this.dark=false;this.readonly=false;this.viewonly=false;this.viewAlign="right";this.layout="auto";}static{this.seq=0;}static{this.styles=Ls;}get activeStore(){return this.internalStore||this.store}get dirty(){return this.context.dirty}get invalid(){return this.context.invalid}connectedCallback(){if(super.connectedCallback(),this.state&&!this.store)this._lastInitState!==this.state&&this._initializeInternalStore();else if(this.store)this._validateExternalStore(),this._initializeWithStore(this.store);else {console.warn("[AutoForm] \u65E2\u6CA1\u6709 .state \u4E5F\u6CA1\u6709 .store \u5C5E\u6027\uFF0C\u65E0\u6CD5\u521D\u59CB\u5316");return}ar();}_initializeInternalStore(){this.internalConfigManager=new Ds({load:()=>({})}),this.internalStore=new cr(Ao(this.state),{configManager:this.internalConfigManager,configKey:"",resetable:true}),this._lastInitState=this.state,this._initializeWithStore(this.internalStore);}_validateExternalStore(){if(!this.store){console.error("[AutoForm] .store \u5C5E\u6027\u4E0D\u5B58\u5728");return}if(!this.store.configManager)throw console.error("[AutoForm] \u4F7F\u7528 .store \u5C5E\u6027\u65F6\uFF0Cstore \u5FC5\u987B\u6709 configManager\uFF01\u8BF7\u521B\u5EFA ConfigManager \u5E76\u4F20\u5165\uFF1Anew AutoStore(state, { configManager }) \u6216\u4F7F\u7528\u63A8\u8350\u7684 .state \u5C5E\u6027\u8BA9 AutoForm \u81EA\u52A8\u521B\u5EFA\u3002"),new Error("AutoForm requires store to have a configManager when using .store property")}_initializeWithStore(t){this.schemaAccessor=new Vs(t),this._initialContext(t),this._loadSchemas();}shouldUpdate(t){if(t.has("state")){if(this._lastInitState===this.state)return  true;this.internalConfigManager&&this.internalConfigManager.remove(this.internalStore),this._initializeInternalStore();}else t.has("store")&&this.store&&(this._validateExternalStore(),this._initializeWithStore(this.store));return  true}_initialContext(t){this.context={...this.context,store:t||this.activeStore,form:this,labelPos:this.labelPos,labelWidth:this.labelWidth,viewAlign:this.viewAlign,border:this.border,group:this.group,advanced:this.advanced,dark:this.dark,dirty:false,invalid:this._isValid(),validAtInit:this.validAtInit,compact:this.compact,readonly:this.readonly,viewonly:this.viewonly,size:this.size,validAt:this.validAt,layout:this.layout};}_isValid(){let t=this.store?.configManager;if(!t)return  false;if(this.path){let o=t.errors||{},i=this.path.split(".");return Object.keys(o).some(s=>Co(i,s.split(".")))}else return Object.keys(t.errors||{}).length>0}_loadSchemas(){if(!this.schemaAccessor){console.warn("[AutoForm] schemaAccessor not initialized");return}let t=this.schemaAccessor.getAllSchemas(),o=Object.entries(t).map(([i,s])=>({...s,path:i.split(".")}));o=o.filter(i=>this._matchesGroup(i)),o=o.filter(i=>this._matchesAdvanced(i)),o=o.filter(i=>this._matchesPath(i)),o.sort((i,s)=>(i.order||0)-(s.order||0)),this.schemas=o,this.requestUpdate();}_matchesGroup(t){if(!this.group)return  true;let o=(t.group||"").split(","),i=this.group.split(",");return o.some(s=>i.includes(s))}_matchesAdvanced(t){return !(this.advanced===false&&t.advanced)}_matchesPath(t){if(!this.path)return  true;let o=t.path||[];return this.path.split(",").map(s=>s.trim().split(".")).some(s=>o.length<s.length?false:s.every((n,a)=>o[a]===n))}bind(t){if(t){if(!t.configManager){console.error("[AutoForm] bind() \u65B9\u6CD5\u7684 store \u5FC5\u987B\u6709 configManager");return}this.store=t,this._initializeWithStore(t);}}clearErrors(){this.activeStore?.configManager&&this.activeStore?.update(()=>{}),Array.from(this.shadowRoot.querySelectorAll(".fields > *")).forEach(i=>{i.tagName.startsWith("auto-field")&&(i.errorMessage=void 0);}),this.requestUpdate();}render(){return this.classs.use(this.size,{dark:this.context.dark,[`${this.labelPos}-label`]:true,[`view-${this.viewAlign}`]:true,compact:this.compact,dirty:this.context.dirty,invalid:this.invalid}),f`
+`;var ii=class extends z{constructor(){super(...arguments),this.vertical=false;}connectedCallback(){super.connectedCallback(),this.setAttribute("role","separator");}handleVerticalChange(){this.setAttribute("aria-orientation",this.vertical?"vertical":"horizontal");}};ii.styles=[L,Mp];p([h({type:Boolean,reflect:true})],ii.prototype,"vertical",2);p([R("vertical")],ii.prototype,"handleVerticalChange",1);ii.define("sl-divider");bt.define("sl-dropdown");Te.define("sl-spinner");mt.define("sl-icon-button");var Vs=class{constructor(r){this.store=r;}getFullPath(r){let t=this.store.options.configKey||"";return t?`${t}.${r.join(".")}`:r.join(".")}getSchema(r){let t=this.getFullPath(r);return this.store.configManager?.state[t]}getAllSchemas(){let r=this.store.configManager;if(!r)return console.warn("[SchemaAccessor] configManager \u4E0D\u5B58\u5728\uFF01"),{};let t=this.store.configKey||"",o=t?`${t}.`:"",i={};return Object.entries(r.state).forEach(([s,n])=>{if(s.startsWith(o)){let a=s.substring(o.length);i[a]=n;}}),i}getFieldValue(r){return et(this.store.state,r)}setFieldValue(r,t){let o=this.getFullPath(r),i=this.store.configManager?.state[o];i&&i.value!==void 0&&(i.value=t);}hasSchema(r){return !!this.getSchema(r)}getFieldError(r){let t=this.getFullPath(r);return this.store.configManager?.errors[t]}};var ad=/^(validate|on.+|to.+|render.+)$/,ld=new Set(["name","id","key","value","path","datatype"]);function zp(e,r=0){if(!(e===null||typeof e!="object"||r>2))for(let t of Object.keys(e)){let o=e[t];typeof o=="function"&&!ad.test(t)&&!ld.has(t)?at(o):zp(o,r+1);}}var Ds=class extends Ki{add(r,t,o){let i=Vi(o)?o():o;return zp(i.options),super.add(r,t,i)}};var it=class it extends dt{constructor(){super(...arguments);this.classs=new Ne(this);this.ctxController=new Nr(this);this.seq=++it.seq;this.context={};this.schemas=[];this.validAtInit=false;this.compact=false;this.validAt="lost-focus";this.border="grid";this.size="medium";this.labelPos="top";this.labelWidth="7em";this.dark=false;this.readonly=false;this.viewonly=false;this.viewAlign="right";this.layout="auto";}static{this.seq=0;}static{this.styles=Ls;}get activeStore(){return this.internalStore||this.store}get dirty(){return this.context.dirty}get invalid(){return this.context.invalid}connectedCallback(){if(super.connectedCallback(),this.state&&!this.store)this._lastInitState!==this.state&&this._initializeInternalStore();else if(this.store)this._validateExternalStore(),this._initializeWithStore(this.store);else {console.warn("[AutoForm] \u65E2\u6CA1\u6709 .state \u4E5F\u6CA1\u6709 .store \u5C5E\u6027\uFF0C\u65E0\u6CD5\u521D\u59CB\u5316");return}ar();}_initializeInternalStore(){this.internalConfigManager=new Ds({load:()=>({})}),this.internalStore=new cr(Ao(this.state),{configManager:this.internalConfigManager,configKey:"",resetable:true}),this._lastInitState=this.state,this._initializeWithStore(this.internalStore);}_validateExternalStore(){if(!this.store){console.error("[AutoForm] .store \u5C5E\u6027\u4E0D\u5B58\u5728");return}if(!this.store.configManager)throw console.error("[AutoForm] \u4F7F\u7528 .store \u5C5E\u6027\u65F6\uFF0Cstore \u5FC5\u987B\u6709 configManager\uFF01\u8BF7\u521B\u5EFA ConfigManager \u5E76\u4F20\u5165\uFF1Anew AutoStore(state, { configManager }) \u6216\u4F7F\u7528\u63A8\u8350\u7684 .state \u5C5E\u6027\u8BA9 AutoForm \u81EA\u52A8\u521B\u5EFA\u3002"),new Error("AutoForm requires store to have a configManager when using .store property")}_initializeWithStore(t){this.schemaAccessor=new Vs(t),this._initialContext(t),this._loadSchemas();}shouldUpdate(t){if(t.has("state")){if(this._lastInitState===this.state)return  true;this.internalConfigManager&&this.internalConfigManager.remove(this.internalStore),this._initializeInternalStore();}else t.has("store")&&this.store&&(this._validateExternalStore(),this._initializeWithStore(this.store));return  true}_appearanceContext(){return {labelPos:this.labelPos,labelWidth:this.labelWidth,viewAlign:this.viewAlign,border:this.border,group:this.group,advanced:this.advanced,dark:this.dark,compact:this.compact,readonly:this.readonly,viewonly:this.viewonly,size:this.size,validAt:this.validAt,layout:this.layout}}willUpdate(t){Object.keys(this._appearanceContext()).some(o=>t.has(o))&&(this.context={...this.context,...this._appearanceContext()});}_initialContext(t){this.context={...this.context,...this._appearanceContext(),store:t||this.activeStore,form:this,dirty:false,invalid:this._isValid(),validAtInit:this.validAtInit};}_isValid(){let t=this.store?.configManager;if(!t)return  false;if(this.path){let o=t.errors||{},i=this.path.split(".");return Object.keys(o).some(s=>Co(i,s.split(".")))}else return Object.keys(t.errors||{}).length>0}_loadSchemas(){if(!this.schemaAccessor){console.warn("[AutoForm] schemaAccessor not initialized");return}let t=this.schemaAccessor.getAllSchemas(),o=Object.entries(t).map(([i,s])=>({...s,path:i.split(".")}));o=o.filter(i=>this._matchesGroup(i)),o=o.filter(i=>this._matchesAdvanced(i)),o=o.filter(i=>this._matchesPath(i)),o.sort((i,s)=>(i.order||0)-(s.order||0)),this.schemas=o,this.requestUpdate();}_matchesGroup(t){if(!this.group)return  true;let o=(t.group||"").split(","),i=this.group.split(",");return o.some(s=>i.includes(s))}_matchesAdvanced(t){return !(this.advanced===false&&t.advanced)}_matchesPath(t){if(!this.path)return  true;let o=t.path||[];return this.path.split(",").map(s=>s.trim().split(".")).some(s=>o.length<s.length?false:s.every((n,a)=>o[a]===n))}bind(t){if(t){if(!t.configManager){console.error("[AutoForm] bind() \u65B9\u6CD5\u7684 store \u5FC5\u987B\u6709 configManager");return}this.store=t,this._initializeWithStore(t);}}clearErrors(){this.activeStore?.configManager&&this.activeStore?.update(()=>{}),Array.from(this.shadowRoot.querySelectorAll(".fields > *")).forEach(i=>{i.tagName.startsWith("auto-field")&&(i.errorMessage=void 0);}),this.requestUpdate();}render(){return this.classs.use(this.size,{dark:this.context.dark,[`${this.labelPos}-label`]:true,[`view-${this.viewAlign}`]:true,compact:this.compact,dirty:this.context.dirty,invalid:this.invalid}),f`
             <div class="actions header"></div>
             <div class="fields">
                 ${W(this.schemas,(t,o)=>`field-${o}`,t=>this._renderField(t))}

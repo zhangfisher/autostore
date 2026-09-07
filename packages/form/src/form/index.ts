@@ -331,11 +331,11 @@ export class AutoForm extends LitElement {
         return true;
     }
 
-    _initialContext(store?: AutoStore<Dict>) {
-        this.context = {
-            ...this.context,
-            store: store || this.activeStore,
-            form: this,
+    /**
+     * 外观属性的 context 视图（_initialContext 与属性变化同步共用）
+     */
+    private _appearanceContext() {
+        return {
             labelPos: this.labelPos,
             labelWidth: this.labelWidth,
             viewAlign: this.viewAlign,
@@ -343,15 +343,32 @@ export class AutoForm extends LitElement {
             group: this.group,
             advanced: this.advanced,
             dark: this.dark,
-            dirty: false,
-            invalid: this._isValid(),
-            validAtInit: this.validAtInit,
             compact: this.compact,
             readonly: this.readonly,
             viewonly: this.viewonly,
             size: this.size,
             validAt: this.validAt,
             layout: this.layout,
+        };
+    }
+
+    willUpdate(changedProperties: Map<string, any>) {
+        // 外观属性变化时同步 context：@provide 只感知整体赋值，字段经
+        // @consume({subscribe:true}) 收到新 context 才会重刷 *-border 等宿主类名
+        if (Object.keys(this._appearanceContext()).some((key) => changedProperties.has(key))) {
+            this.context = { ...this.context, ...this._appearanceContext() };
+        }
+    }
+
+    _initialContext(store?: AutoStore<Dict>) {
+        this.context = {
+            ...this.context,
+            ...this._appearanceContext(),
+            store: store || this.activeStore,
+            form: this,
+            dirty: false,
+            invalid: this._isValid(),
+            validAtInit: this.validAtInit,
         };
     }
 

@@ -69,12 +69,7 @@ class WidgetIconsExample extends LitElement {
                     单选收缩为一个图标 + 下拉箭头；多选满宽展示
                 </p>
 
-                <auto-form
-                    .state="${this.state}"
-                    data-label="图标选择演示"
-                    style="min-height: 400px;"
-                >
-                </auto-form>
+                <auto-form .state="${this.state}" data-label="图标选择演示"> </auto-form>
 
                 <div
                     style="margin-top: 2rem; padding: 1rem; background: #f0f9ff; border-radius: 8px;"

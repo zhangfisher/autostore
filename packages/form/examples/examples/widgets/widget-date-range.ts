@@ -50,11 +50,7 @@ class WidgetDateRangeExample extends LitElement {
                 <p style="margin: 0 0 1.5rem 0; color: var(--auto-text-light); font-size: 0.9rem;">
                     演示日期范围选择器的各种参数配置
                 </p>
-                <auto-form
-                    .state="${this.state}"
-                    data-label="日期范围演示"
-                    style="min-height: 400px;"
-                ></auto-form>
+                <auto-form .state="${this.state}" data-label="日期范围演示"></auto-form>
             </div>
         `;
     }

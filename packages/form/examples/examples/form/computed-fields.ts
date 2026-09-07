@@ -64,7 +64,6 @@ class ComputedFieldsExample extends LitElement {
                     .state="${this.state}"
                     data-label="订单信息"
                     data-icon="shopping-cart"
-                    style="min-height: 400px;"
                 ></auto-form>
                 <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
                     <sl-button @click="${this._reset}" variant="neutral" size="small"

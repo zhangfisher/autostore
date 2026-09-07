@@ -82,11 +82,7 @@ class FieldWidthExample extends LitElement {
                 <p style="margin: 0 0 1.5rem 0; color: var(--auto-text-light); font-size: 0.9rem;">
                     通过 <code>width</code> 配置控制字段宽度，一行可展示多个字段
                 </p>
-                <auto-form
-                    .state="${this.state}"
-                    data-label="字段宽度参数演示"
-                    style="min-height: 400px;"
-                ></auto-form>
+                <auto-form .state="${this.state}" data-label="字段宽度参数演示"></auto-form>
                 <div
                     style="margin-top: 2rem; padding: 1rem; background: #f0f9ff; border-radius: 8px;"
                 >

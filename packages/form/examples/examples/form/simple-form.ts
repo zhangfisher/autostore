@@ -53,11 +53,7 @@ class SimpleFormExample extends LitElement {
                 <p style="margin: 0 0 1rem 0; color: var(--auto-text-light); font-size: 0.9rem;">
                     演示基本的表单字段创建、必填验证和状态绑定功能
                 </p>
-                <auto-form
-                    .state="${this.userState}"
-                    path="user"
-                    style="min-height: 400px;"
-                ></auto-form>
+                <auto-form .state="${this.userState}" path="user"></auto-form>
                 <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
                     <sl-button @click="${this._resetForm}" size="small">重置</sl-button>
                     <sl-button @click="${this._validateForm}" variant="neutral" size="small"

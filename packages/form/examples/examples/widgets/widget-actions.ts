@@ -176,11 +176,7 @@ class WidgetActionsExample extends LitElement {
                 <p style="margin: 0 0 1.5rem 0; color: var(--auto-text-light); font-size: 0.9rem;">
                     演示 beforeActions（前置按钮）和 afterActions（后置按钮）的各种用法
                 </p>
-                <auto-form
-                    .state="${this.state}"
-                    data-label="操作按钮演示"
-                    style="min-height: 400px;"
-                ></auto-form>
+                <auto-form .state="${this.state}" data-label="操作按钮演示"></auto-form>
             </div>
         `;
     }

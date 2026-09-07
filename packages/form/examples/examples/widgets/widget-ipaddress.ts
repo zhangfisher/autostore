@@ -55,7 +55,7 @@ class WidgetIpAddressExample extends LitElement {
                     <auto-form
                         .state="${this.state}"
                         data-label="IP地址演示"
-                        style="min-height: 400px;"
+                        
                     ></auto-form>
                 </div>
             </div>

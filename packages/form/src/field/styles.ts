@@ -18,7 +18,7 @@ export default css`
 
             box-sizing: border-box;
             padding-right: 0px;
-            padding: calc(0.2 * var(--auto-spacing));
+            padding: calc(0.2 * var(--auto-spacing)); 
             & > .label {
                 display: flex;
                 color: var(--auto-color);
@@ -27,7 +27,7 @@ export default css`
                     flex-grow: 1;
                     line-height: var(--auto-line-height);
                     &::after {
-                        content: '：';
+                        content: "：";
                     }
                 }
             }
@@ -115,7 +115,7 @@ export default css`
         & > .autofield {
             flex-direction: row;
             & > .label {
-                flex-shrink: 0;
+                flex-shrink: 1;
             }
             & > .value {
                 flex-grow: 1;
@@ -157,12 +157,24 @@ export default css`
     /* 网格线 */
     :host(.grid-border) {
         & > .autofield {
-            padding: calc(var(--auto-spacing) * 0.6) var(--auto-spacing);
+            padding: calc(var(--auto-spacing) * 0.5) var(--auto-spacing);
+        }
+    }
+    /* 非网格边框（none/outline）下字段水平内边距收窄，贴近紧凑排布 */
+    :host(:not(.grid-border)) {
+        & > .autofield {
+            padding-left: calc(var(--auto-spacing) * 0.2);
+            padding-right: calc(var(--auto-spacing) * 0.2);
         }
     }
     :host(.grid-border.compact) {
         & > .autofield {
             padding: calc(var(--auto-spacing) * 0.3) var(--auto-spacing);
+        }
+    }
+    :host(:not(.grid-border).compact) {
+        & > .autofield {
+            padding: calc(var(--auto-spacing) * 0.1);
         }
     }
     /* 布局 */
@@ -172,12 +184,6 @@ export default css`
                 display: flex;
                 align-items: center;
             }
-        }
-    }
-    /* 紧凑模式 */
-    :host(.compact) {
-        & > .autofield {
-            padding: calc(var(--auto-spacing) * 0.1);
         }
     }
     /* 浏览视图  */
@@ -200,7 +206,7 @@ export default css`
     :host(.readonly) {
         & > .autofield {
             & > .value:after {
-                content: ' ';
+                content: " ";
                 position: absolute;
                 top: 0px;
                 left: 0px;

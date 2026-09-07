@@ -73,7 +73,7 @@ class WidgetCheckboxExample extends LitElement {
                     <auto-form
                         .state="${this.state}"
                         data-label="复选框演示"
-                        style="min-height: 400px;"
+                        
                     ></auto-form>
 
                     <div

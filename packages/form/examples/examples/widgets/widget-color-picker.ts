@@ -48,11 +48,7 @@ class WidgetColorPickerExample extends LitElement {
                 <p style="margin: 0 0 1.5rem 0; color: var(--auto-text-light); font-size: 0.9rem;">
                     演示颜色选择器的各种参数配置
                 </p>
-                <auto-form
-                    .state="${this.state}"
-                    data-label="颜色选择器演示"
-                    style="min-height: 400px;"
-                ></auto-form>
+                <auto-form .state="${this.state}" data-label="颜色选择器演示"></auto-form>
             </div>
         `;
     }

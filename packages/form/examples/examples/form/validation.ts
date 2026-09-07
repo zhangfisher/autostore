@@ -123,11 +123,7 @@ class ValidationExample extends LitElement {
                     演示客户端验证、错误处理和必填字段验证
                 </p>
                 <div id="errors-container"></div>
-                <auto-form
-                    .state="${this.userState}"
-                    path="user"
-                    style="min-height: 400px;"
-                ></auto-form>
+                <auto-form .state="${this.userState}" path="user"></auto-form>
                 <!--
                     renderError: 字段内置的错误渲染方法，当验证失败时自动在字段下方显示红色错误提示
                     validAt: 控制校验时机 - 'lost-focus' 失焦时校验 | 'input' 输入时校验

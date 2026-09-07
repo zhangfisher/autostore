@@ -59,11 +59,7 @@ class FieldHelpExample extends LitElement {
                 <p style="margin: 0 0 1rem 0; color: var(--auto-text-light); font-size: 0.9rem;">
                     演示 renderHelp 功能，为字段添加帮助提示信息
                 </p>
-                <auto-form
-                    .state="${this.userState}"
-                    path="user"
-                    style="min-height: 400px;"
-                ></auto-form>
+                <auto-form .state="${this.userState}" path="user"></auto-form>
 
                 <div
                     style="margin-top: 1rem; padding: 1rem; background: #e8f4fd; border-radius: 8px; font-size: 0.875rem;"

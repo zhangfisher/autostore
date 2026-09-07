@@ -62,7 +62,7 @@ class WidgetRadioButtonExample extends LitElement {
                     <auto-form
                         .state="${this.state}"
                         data-label="单选按钮组演示"
-                        style="min-height: 400px;"
+                        
                     ></auto-form>
                 </div>
             </div>

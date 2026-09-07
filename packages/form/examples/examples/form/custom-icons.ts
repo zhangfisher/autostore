@@ -96,12 +96,7 @@ class CustomIconsExample extends LitElement {
                     通过 <code>registerIcons(url, icons)</code> 注册本地图标与远程图标源
                 </p>
 
-                <auto-form
-                    .state="${this.state}"
-                    data-label="自定义图标演示"
-                    style="min-height: 400px;"
-                >
-                </auto-form>
+                <auto-form .state="${this.state}" data-label="自定义图标演示"> </auto-form>
 
                 <div
                     style="margin-top: 2rem; padding: 1rem; background: #f0f9ff; border-radius: 8px;"
@@ -115,16 +110,16 @@ class CustomIconsExample extends LitElement {
                             <code>url</code> 是含 <code>{name}</code> 占位符的远程模板
                         </li>
                         <li>
-                            解析优先级：<strong>本地图标集（同名覆盖内置预设）&gt; 远程 URL</strong>。
-                            本地图标编码为 dataURL 直接渲染，离线可用
+                            解析优先级：<strong>本地图标集（同名覆盖内置预设）&gt; 远程 URL</strong
+                            >。 本地图标编码为 dataURL 直接渲染，离线可用
                         </li>
                         <li>
                             SVG 建议 <code>stroke="currentColor"</code>，图标自动跟随文字/主题颜色
                         </li>
                         <li>
                             注册后在配置中按名称引用：<code>icon: 'rocket'</code>（输入框前缀）、
-                            <code>icons: 'palette,rocket'</code>（图标选择候选集）、
-                            操作按钮的 <code>action.icon</code>
+                            <code>icons: 'palette,rocket'</code>（图标选择候选集）、 操作按钮的
+                            <code>action.icon</code>
                         </li>
                     </ol>
                 </div>

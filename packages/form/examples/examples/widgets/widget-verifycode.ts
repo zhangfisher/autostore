@@ -110,7 +110,7 @@ class WidgetVerifycodeExample extends LitElement {
                     <auto-form
                         .state="${this.state}"
                         data-label="验证码演示"
-                        style="min-height: 400px;"
+                        
                     ></auto-form>
                 </div>
             </div>

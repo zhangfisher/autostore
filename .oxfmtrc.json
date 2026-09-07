@@ -1,5 +1,8 @@
 {
     "$schema": "./node_modules/oxfmt/configuration_schema.json",
-    "ignorePatterns": [],
+    "ignorePatterns": [
+        // 手写嵌套 CSS 的排版层级刻意为之，保存时自动格式化会破坏且 oxfmt 处理该文件报错
+        "packages/form/src/field/styles.ts"
+    ],
     "tabWidth": 4
 }
