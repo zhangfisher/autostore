@@ -135,8 +135,8 @@ export function createTypeSchemaBuilder<Value = any>(
         if (typeof opts.validate !== "function") {
             opts.validate = isValid;
         }
-        if (!opts.invalidTips) {
-            opts.invalidTips = defaultTips;
+        if (!opts.errorMessage) {
+            opts.errorMessage = defaultTips;
         }
         return schema(initial, opts);
     };

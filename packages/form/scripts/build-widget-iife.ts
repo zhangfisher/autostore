@@ -18,7 +18,7 @@
 import { build } from "esbuild";
 import { gzip } from "zlib";
 import { promisify } from "node:util";
-import { readFileSync, mkdirSync, readdirSync } from "node:fs";
+import { readFileSync, mkdirSync, readdirSync, existsSync, copyFileSync } from "node:fs";
 import path from "node:path";
 
 const gzipPromise = promisify(gzip);
@@ -52,19 +52,31 @@ const LIT_GLOBALS: Record<string, string> = {
 };
 
 /**
- * 包内公共模块 → AutoFormCore.internals 成员名。
+ * 包内公共模块 → AutoFormCore 成员名（必须是命名空间成员，见 core-iife.ts）。
  * 这些模块已在 core chunk 内（core 入口图锚定），widget IIFE 不得重复打包，
  * 否则出现两份 AutoField 基类（不同的 LitElement 子类谱系，context 失联）。
+ * 注意：成员是 core-iife.ts 的命名空间导出（module.exports = ns 经 interop
+ * 属性复制后 named import 才可达），不能映射到裸类/函数。
  */
 const INTERNAL_GLOBALS: Record<string, string> = {
-    "@/field": "AutoField",
-    "@/field/dropdown": "AutoDropdownField",
-    "@/utils/tag": "tag",
-    "@/controllers/asyncState": "AsyncOptionState",
+    "@/field": "Field",
+    "@/field/dropdown": "FieldDropdown",
+    "@/utils/tag": "UtilsTag",
+    "@/controllers/asyncState": "ControllersAsyncState",
     "@/controllers": "Controllers",
-    "@/utils/renderWidget": "renderWidget",
-    "@/utils/getInputValue": "getInputValue",
-    "@/form/vars": "vars",
+    "@/utils/renderWidget": "UtilsRenderWidget",
+    "@/utils/getInputValue": "UtilsGetInputValue",
+    "@/form/vars": "FormVars",
+};
+
+/**
+ * autostore 运行时 → AutoFormCore.AutoStoreNS（core.global.js 捆绑副本，ADR-0006）。
+ * 现状 widget 对 autostore 的直接导入全是 type-only（产物中无实体引用），
+ * 此 shim 是防御性的：未来 widget 直接 import core 运行时值时不断链，
+ * 且必须桥接到 core 的捆绑副本——若随 widget 打包会出现两份 AutoStore 实现。
+ */
+const RUNTIME_GLOBALS: Record<string, string> = {
+    autostore: "AutoStoreNS",
 };
 
 /** 启动守卫：core 未先行加载时给出明确指引（ADR-0005：依赖契约显式化） */
@@ -78,7 +90,7 @@ async function main() {
         const specToBare: Record<string, string> = {};
         const preambleLines = ["var __core = window.AutoFormCore;"];
         let i = 0;
-        for (const [spec, member] of Object.entries({ ...LIT_GLOBALS, ...INTERNAL_GLOBALS })) {
+        for (const [spec, member] of Object.entries({ ...LIT_GLOBALS, ...INTERNAL_GLOBALS, ...RUNTIME_GLOBALS })) {
             const bare = `__af_ns${i++}`;
             specToBare[spec] = bare;
             preambleLines.push(`var ${bare} = __core.${member};`);
@@ -98,8 +110,9 @@ async function main() {
             // 源码内的 @/ 路径别名
             alias: { "@": path.resolve("src") },
             // shoelace 组件与全量产物同策略：external，由页面从 CDN/本地按需引入；
-            // 全量 autoform.js 也是 external（副作用 import 保留在产物头部）
-            external: ["@shoelace-style/shoelace/*", "autostore", "flex-tools"],
+            // 全量 autoform.js 也是 external（副作用 import 保留在产物头部）。
+            // autostore 不在 external：经 RUNTIME_GLOBALS shim 桥接到 core 捆绑副本（ADR-0006）
+            external: ["@shoelace-style/shoelace/*", "flex-tools"],
             banner: { js: `${GUARD}\n${preambleLines.join("\n")}` },
             plugins: [
                 {
@@ -109,7 +122,7 @@ async function main() {
                         // 改写为对 preamble 绑定的裸全局变量的 re-export。
                         // 成员访问经 esbuild 依赖分析静态展开，
                         // __af_nsN.xxx 中的 xxx 与模块导出名一致
-                        const allShims = { ...LIT_GLOBALS, ...INTERNAL_GLOBALS };
+                        const allShims = { ...LIT_GLOBALS, ...INTERNAL_GLOBALS, ...RUNTIME_GLOBALS };
                         const filterSrcs = Object.keys(allShims)
                             .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
                             .join("|");
@@ -141,6 +154,14 @@ async function main() {
     for (const [name, kb] of sizes.sort((a, b) => b[1] - a[1])) {
         const flag = kb > 8 ? "\x1b[31m" : "\x1b[32m";
         console.log(`  - ${name}: ${flag}${kb.toFixed(2)} kB\x1b[0m`);
+    }
+
+    // 复制到文档站点供 split demo 按需引用（core.global.js 已由 tsup onSuccess 复制）
+    const publicDir = path.resolve("../../docs/public/autoform");
+    mkdirSync(publicDir, { recursive: true });
+    for (const name of widgetFiles) {
+        const src = `dist/iife/widgets/${name}.global.js`;
+        if (existsSync(src)) copyFileSync(src, path.join(publicDir, `${name}.global.js`));
     }
 }
 

@@ -11,7 +11,6 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themepro/dist/red.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themepro/dist/blue.css" />
 
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
         <script src="/autostore/autoform.css"></script>
     </head>
@@ -28,8 +27,9 @@
         </div>
 
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#login');
+            form.state = {
                 user: {
                     username: configurable('<NAME>', {
                         label: '用户名',
@@ -47,9 +47,7 @@
                     }),
                     total: (order) => order.price * order.count,
                 },
-            });
-            const form = document.querySelector('#login');
-            form.bind(store);
+            };
         </script>
         <script>
             const themes = document.querySelector('.themes');

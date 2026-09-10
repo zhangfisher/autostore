@@ -25,7 +25,7 @@
     "type": "module",
     "scripts": {
         "test": "vitest",
-        "build": "tsup"
+        "build": "rm -rf dist && bun node_modules/tsup/dist/cli-default.js"
     },
     "keywords": [
         "autostore",

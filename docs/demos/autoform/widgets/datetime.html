@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -16,8 +15,9 @@
             <auto-form id="form"></auto-form>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
                 icon: configurable('2025-12-12T08:30', {
                     label: '前缀图标',
                     widget: 'datetime',
@@ -75,9 +75,7 @@
                         },
                     ],
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
+            };
         </script>
     </body>
 </html>

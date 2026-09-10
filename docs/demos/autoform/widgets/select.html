@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -17,13 +16,14 @@
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
                 post: configurable('程序员', {
                     label: '职业',
                     widget: 'select',
                     help: '单选',
-                    select: ['程序员', '教师', '医生', '律师', '其他'],
+                    choices: ['程序员', '教师', '医生', '律师', '其他'],
                 }),
                 products: configurable(['电脑'], {
                     label: '产品',
@@ -35,11 +35,11 @@
                     valueKey: 'label',
                     labelKey: 'label',
                     help: '多选',
-                    invalidTips: '至少选择两个产品',
+                    errorMessage: '至少选择两个产品',
                     renderItem: '<span>{label}</span><span style="color:red;">{price}</span>',
                     maxOptionsVisible: 5,
                     showResults: true,
-                    select: [
+                    choices: [
                         { id: 1, label: '手机', price: 1000, icon: 'phone' },
                         { id: 2, label: '电脑', price: 2000, icon: 'laptop' },
                         { id: 3, label: '手表', price: 3000, icon: 'watch' },
@@ -76,15 +76,17 @@
                         },
                     ],
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
-            const refreshViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state);
             };
-            store.watch(refreshViewer);
-            refreshViewer();
-        </script>
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const refreshViewer = () => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.innerHTML = JSON.stringify(store.state);
+                };
+                store.watch(refreshViewer);
+                refreshViewer();
+        
+            });
+</script>
     </body>
 </html>

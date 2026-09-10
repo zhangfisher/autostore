@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
         <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
     </head>
@@ -20,8 +19,9 @@
         </div>
 
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#login');
+            form.state = {
                 login: {
                     username: configurable('', {
                         label: '用户名',
@@ -29,7 +29,7 @@
                         onValidate: (value) => {
                             return value.length > 5;
                         },
-                        invalidTips: '用户名长度必须大于5',
+                        errorMessage: '用户名长度必须大于5',
                     }),
                     password: configurable('', {
                         label: '密码',
@@ -38,7 +38,7 @@
                         onValidate: (value) => {
                             return value.length > 5;
                         },
-                        invalidTips: '密码长度必须大于5',
+                        errorMessage: '密码长度必须大于5',
                     }),
                     captcha: configurable('', {
                         label: '验证码',
@@ -51,13 +51,14 @@
                         widget: 'switch',
                     }),
                 },
-            });
-            const form = document.querySelector('#login');
-            form.bind(store);
-            store.watch(() => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.data = Object.assign({}, store.state);
-                jsonViewer.expandAll();
+            };
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                store.watch(() => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.data = Object.assign({}, store.state);
+                    jsonViewer.expandAll();
+                });
             });
         </script>
     </body>

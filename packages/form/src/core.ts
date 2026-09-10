@@ -29,3 +29,10 @@ export type { AutoFieldInputOptions } from "./widgets/input";
 // 导出 asyncpro 异步计算功能
 export { asyncComputed } from "@autostorejs/plugins/asyncpro";
 export { AsyncFieldHandler } from "./utils/asyncFieldHandler";
+
+// ADR-0006：重导出 autostore 全量 API。
+// ./core 出口与 core.global.js（IIFE，捆绑副本）与主入口行为对齐；
+// ESM 形态下 autostore 保持 external，不引入第二副本。
+export * from "autostore";
+// star-star 同名冲突消歧（与 index.ts 同理，form 版本显式优先）
+export type { MutableRecord } from "./types";

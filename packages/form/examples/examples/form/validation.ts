@@ -14,6 +14,7 @@ class ValidationExample extends LitElement {
         user: {
             username: configurable("", {
                 label: "用户名",
+                widget: "input",
                 required: true,
                 minLength: 3,
                 maxLength: 20,

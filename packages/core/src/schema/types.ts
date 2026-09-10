@@ -25,6 +25,28 @@ export interface AutoStoreConfigures {}
 
 // 公共属性接口（不包含事件处理器）
 
+/**
+ * action 点击回调的上下文（form 的字段按钮在点击时注入）
+ */
+export interface AutoStoreActionContext {
+    /**
+     * 被点击的 action 对象
+     */
+    action: AutoStoreAction;
+    /**
+     * 当前字段 schema
+     */
+    options: any;
+    /**
+     * 原生点击事件
+     */
+    event: any;
+    /**
+     * 更新当前字段状态值
+     */
+    update: (value: any) => void;
+}
+
 export interface AutoStoreAction {
     id?: string;
     label?: string;
@@ -35,7 +57,46 @@ export interface AutoStoreAction {
     checked?: boolean;
     tooltip?: string;
     value?: any;
-    onClick?: (action: AutoStoreAction) => void;
+    /**
+     * 渲染位置：before 前置按钮组 / after 后置按钮组（默认）
+     */
+    pos?: "before" | "after";
+    /**
+     * 渲染形态：button 按钮（默认）/ dropdown 下拉菜单 / image 图片
+     */
+    type?: "button" | "dropdown" | "image";
+    /**
+     * dropdown 形态的菜单项（"-" 渲染为分割线）
+     */
+    items?: (AutoStoreAction | "-")[];
+    /**
+     * 选中菜单项后是否将其 label/icon 同步到触发按钮
+     */
+    syncMenu?: boolean;
+    /**
+     * 按钮视觉变体（透传 UI 库 variant，如 primary/default/text）
+     */
+    variant?: string;
+    /**
+     * 按钮尺寸（透传 UI 库 size）
+     */
+    size?: string;
+    /**
+     * 下拉触发按钮是否显示箭头
+     */
+    caret?: boolean;
+    /**
+     * image 形态的图片地址
+     */
+    url?: string;
+    /**
+     * 悬停提示（form 的字段按钮以 tips 作为 title 渲染）
+     */
+    tips?: string;
+    /**
+     * 点击回调：参数为当前字段输入值与上下文（含 update 快捷更新字段值）
+     */
+    onClick?: (value: any, ctx: AutoStoreActionContext) => void;
 }
 
 /**
@@ -50,10 +111,16 @@ export type AutoStoreWidgetTypes = keyof AutoStoreWidgets;
 export type WidgetConfig<W extends keyof AutoStoreWidgets> = AutoStoreWidgets[W];
 
 /**
- * 候选项（choices）的类型：对象（label/value/default 可缺省，附加字段自由）或字符串
+ * 候选项（choices）的单项类型：对象（label/value/default 可缺省，附加字段自由）、字符串或数字
+ * （字符串 "-" 渲染为分割线；数字作为裸选项值由选项类组件归一化为 {label,value}）
+ */
+export type SchemaChoiceItem = { label?: string; value?: any; default?: boolean; [k: string]: any } | string | number;
+/**
+ * 候选项（choices）的类型：候选项数组，或返回（可能异步）候选项数组的提供者函数
+ * （form 的选项类组件经 AsyncOptionState 消费异步提供者，加载期间呈现 loading）
  * base 的 choices 与各选项类 widget 接口共用此定义（单一事实来源）
  */
-export type SchemaChoices = ({ label?: string; value?: any; default?: boolean; [k: string]: any } | string)[];
+export type SchemaChoices = SchemaChoiceItem[] | (() => SchemaChoiceItem[] | Promise<SchemaChoiceItem[]>);
 
 /**
  * AutoStateSchema 基础接口（不包含 widget 特定配置）

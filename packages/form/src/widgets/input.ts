@@ -25,6 +25,10 @@ export interface AutoFieldInputOptions {
     maxLength?: number;
     max?: number | string;
     min?: number | string;
+    /**
+     * 步长（透传到原生 input type=number，键盘 ↑/↓ 步进）
+     */
+    step?: number;
     autocorrect?: string;
     spellcheck?: boolean;
     filled?: boolean;
@@ -187,6 +191,7 @@ export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<A
                 maxLength=${ifDefined(this.options.maxLength)}
                 max=${ifDefined(this.options.max)}
                 min=${ifDefined(this.options.min)}
+                step=${ifDefined(this.options.step)}
                 ?disabled=${!this.options.enable}
                 .autocorrect=${this.options.autocorrect}
                 .autocomplete=${this.options.autocomplete}

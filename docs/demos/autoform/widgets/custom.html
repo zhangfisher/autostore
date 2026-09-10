@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -17,9 +16,10 @@
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 4em"></div>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
+            const { configurable } = AutoForm;
 
-            const store = new AutoStore({
+            const form = document.querySelector('#form');
+            form.state = {
                 email: configurable('admin@autostore.com', {
                     label: '电子邮件',
                     widget: 'custom',
@@ -104,15 +104,16 @@
                         return [...mail.split('@'), checkText === '已订阅'];
                     },
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
-            const refreshViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state);
             };
-            store.watch(refreshViewer);
-            refreshViewer();
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const refreshViewer = () => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.innerHTML = JSON.stringify(store.state);
+                };
+                store.watch(refreshViewer);
+                refreshViewer();
+            });
         </script>
     </body>
 </html>

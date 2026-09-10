@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
         <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
     </head>
@@ -26,8 +25,9 @@
         </div>
 
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
+            const { configurable } = AutoForm;
+            // 同一份状态定义：三个表单各自绑定，数据互不干扰
+            const makeState = () => ({
                 user: {
                     username: configurable('<NAME>', {
                         label: '用户名',
@@ -46,14 +46,9 @@
                     total: (order) => order.price * order.count,
                 },
             });
-            const autoForm = document.querySelector('#auto');
-            autoForm.bind(store);
-
-            const rowForm = document.querySelector('#row');
-            rowForm.bind(store);
-
-            const colForm = document.querySelector('#col');
-            colForm.bind(store);
+            document.querySelector('#auto').state = makeState();
+            document.querySelector('#row').state = makeState();
+            document.querySelector('#col').state = makeState();
         </script>
     </body>
 </html>

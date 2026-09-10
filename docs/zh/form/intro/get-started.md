@@ -39,49 +39,54 @@
 </html>
 ```
 
-以上我们直接从`jsdeslivrer`引入了`AutoForm`和`AutoStore`的代码，当然你也可以安装到了本地再引入。
+以上我们直接从`jsdelivr`引入了`AutoForm`和`AutoStore`的代码，当然你也可以安装到本地再引入。
 
 ## 第 2 步：定义数据
 
-接下来我们定义一个`AutoStore`实例，用于管理表单数据。
+接下来我们定义表单数据。将状态定义对象直接赋值给`auto-form`组件的`state`属性，`AutoForm`内部会自动创建`AutoStore`实例来管理表单数据。
 
 ```html
 <script type="module">
-    const { AutoStore } = AutoStoreSpace
-    const store = new AutoStore({
+    const loginForm = document.querySelector('#login');
+    loginForm.state = {
         username: 'admin',
-        password: '<PASSWORD>'
+        password: '<PASSWORD>',
         captcha: '图片验证码',
-        remember: true// 记住密码
-    })
+        remember: true, // 记住密码
+    };
 </script>
 ```
 
-以上代码创建一个`AutoStore`对象用于保存表单收集的数据，当表单字段更新时会自动进行双向同步。
+以上代码会在`AutoForm`内部自动创建一个`AutoStore`对象用于保存表单收集的数据，当表单字段更新时会自动进行双向同步。
 
 ## 第 3 步：配置字段
 
-以上我们定义了一个`AutoStore`用来存储表单数据，接下来，我们需要告诉`AutoForm`该如何渲染每个字段。
+以上我们定义了表单数据，接下来，我们需要告诉`AutoForm`该如何渲染每个字段。
 此时需要引入`configurable`函数。
 
 ```html
 <script type="module">
-    const { AutoStore, configurable } = AutoStoreSpaces;
-    const store = new AutoStore({
+    const { configurable } = AutoStoreSpaces;
+    const loginForm = document.querySelector('#login');
+    loginForm.state = {
         username: configurable('', {
             label: '用户名',
             placeholder: '请输入用户名',
-            onValidate: (value) => {
+            required: true,
+            validate: (value) => {
                 return value.length > 5;
             },
+            errorMessage: '用户名长度必须大于5',
         }),
         password: configurable('', {
             label: '密码',
             widget: 'password',
             placeholder: '请输入密码',
-            onValidate: (value) => {
+            required: true,
+            validate: (value) => {
                 return value.length > 5;
             },
+            errorMessage: '密码长度必须大于5',
         }),
         captcha: configurable('', {
             label: '验证码',
@@ -93,34 +98,50 @@
             label: '记住我',
             widget: 'switch',
         }),
-    });
+    };
 </script>
 ```
 
 -   `configurable`函数用于告诉`AutoStore`的状态树中哪里可以配置以及如何配置等。
 -   `widget`参数用于决定如何渲染。
+-   `validate`函数返回`true`表示校验通过，返回`false`表示校验失败。
+-   `errorMessage`用于指定校验失败时显示的错误信息。
 
-## 第 4 步：创建表单
+## 第 4 步：访问表单数据
 
-接下来，我们创建一个`AutoForm`组件，将`AutoStore`实例绑定到`AutoForm`上，即可完成表单的渲染。
+`state`属性赋值后，可以通过表单元素的`activeStore`属性访问内部创建的`AutoStore`实例。
 
-```html {7,10,13}
-<html lang="en">
-    <head>
-        <!-- .... -->
-    </head>
-    <body>
-        <!-- 创建表单元素 -->
-        <auto-form id="login"></auto-form>
-        <script type="module">
-            // 创建响应式数据管理对象
-            const store = new AutoStore({...})
-            const loginForm = document.querySelector('#login');
-            // 绑定表单元素
-            loginForm.bind(store);
-        </script>
-    </body>
-</html>
+注意：`state`赋值后`AutoForm`需要异步完成初始化，请在`updateComplete`之后再访问`activeStore`。
+
+```html
+<script type="module">
+    const loginForm = document.querySelector('#login');
+    loginForm.state = {...};
+    loginForm.updateComplete.then(() => {
+        // 内部创建的 AutoStore 实例
+        const store = loginForm.activeStore;
+        // 监听表单数据变化
+        store.watch(() => {
+            console.log(store.state);
+        });
+    });
+</script>
+```
+
+## 第 5 步：提交表单
+
+表单创建完成后，可以通过`submit`方法提交表单：
+
+```javascript
+form.submit((values, errors) => {
+    if (errors) {
+        console.log('表单校验失败', errors);
+    } else {
+        // values是一个对象，包含表单所有字段的值
+        // 可以自行处理表单数据
+        console.log('表单校验成功', values);
+    }
+});
 ```
 
 ## 小结

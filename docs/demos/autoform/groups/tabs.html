@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -32,8 +31,9 @@
             <auto-form name="advanced" group="advanced" icon="airplay" label="高级设置"></auto-form>
         </auto-form-tabs>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
+            const { configurable } = AutoForm;
+            const form = document.querySelector('auto-form-tabs');
+            const state = {
                 user: {
                     name: configurable('Bob', {
                         label: '姓名',
@@ -45,7 +45,7 @@
                     sex: configurable('male', {
                         label: '性别',
                         widget: 'radio',
-                        select: [
+                        choices: [
                             { label: '男', value: 'male' },
                             { label: '女', value: 'female' },
                         ],
@@ -53,7 +53,7 @@
                     country: configurable('China', {
                         label: '国家',
                         widget: 'select',
-                        select: [
+                        choices: [
                             { label: '中国', value: 'China' },
                             { label: '美国', value: 'America' },
                             { label: '泰国', value: 'Thailand' },
@@ -137,10 +137,11 @@
                         group: 'advanced',
                     }),
                 },
+            };
+            // 将状态定义分别赋给每个子表单
+            form.querySelectorAll("auto-form").forEach((subForm) => {
+                subForm.state = state;
             });
-            const form = document.querySelector('auto-form-tabs');
-            form.bind(store);
-         
             const dirEl= document.querySelector("#direction")
             dirEl.addEventListener('change', (e) => {  
                 const input = e.target

@@ -21,6 +21,7 @@ import exampleCustomIcons from "./examples/form/custom-icons";
 // 基础组件
 import exampleWidgetText from "./examples/widgets/widget-text";
 import exampleWidgetNumber from "./examples/widgets/widget-number";
+import exampleWidgetStepper from "./examples/widgets/widget-stepper";
 import exampleWidgetPassword from "./examples/widgets/widget-password";
 import exampleWidgetEmail from "./examples/widgets/widget-email";
 import exampleWidgetPhone from "./examples/widgets/widget-phone";
@@ -72,6 +73,7 @@ const exampleModules: Record<string, any> = {
     // 基础组件
     "widget-text": exampleWidgetText,
     "widget-number": exampleWidgetNumber,
+    "widget-stepper": exampleWidgetStepper,
     "widget-password": exampleWidgetPassword,
     "widget-email": exampleWidgetEmail,
     "widget-phone": exampleWidgetPhone,

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden; padding: 1em 0px">
+        <div style="display: flex">
+            <auto-form id="form"></auto-form>
+        </div>
+        <script>
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
+                count: configurable(1, {
+                    label: '基础步进',
+                    widget: 'stepper',
+                    help: 'step=1（默认）',
+                }),
+                age: configurable(25, {
+                    label: '范围限制',
+                    widget: 'stepper',
+                    min: 1,
+                    max: 120,
+                    help: '到达边界时按钮禁用',
+                }),
+                price: configurable(9.99, {
+                    label: '小数精度',
+                    widget: 'stepper',
+                    min: 0,
+                    step: 0.01,
+                    help: 'step=0.01，自动保留 2 位小数',
+                }),
+                weight: configurable(50, {
+                    label: '单位前后缀',
+                    widget: 'stepper',
+                    min: 0,
+                    max: 200,
+                    step: 5,
+                    prefix: '≈',
+                    suffix: 'kg',
+                    help: "prefix='≈'，suffix='kg'，状态值始终是数字",
+                }),
+                budget: configurable(1000, {
+                    label: '货币前缀',
+                    widget: 'stepper',
+                    min: 0,
+                    step: 100,
+                    prefix: '¥',
+                    help: "prefix='¥'",
+                }),
+            };
+        </script>
+    </body>
+</html>

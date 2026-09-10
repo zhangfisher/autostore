@@ -11,7 +11,10 @@ export default defineConfig([
         dts: { resolve: true },
         splitting: true,
         sourcemap: true,
-        clean: true,
+        // 注意：lite 的 outDir(dist/lite) 嵌套在本 config 的 dist 内，
+        // 两 config 并发 clean 的 glob 范围重叠会竞态删文件（ENOENT/段错误）。
+        // 目录预清空由 package.json 的 build 脚本（rm -rf dist）在 tsup 启动前串行完成
+        clean: false,
         treeshake: true,
         minify: true,
         noExternal: ["flex-tools"],
@@ -28,7 +31,7 @@ export default defineConfig([
         dts: { resolve: true },
         splitting: true,
         sourcemap: true,
-        clean: true,
+        clean: false, // 同上：预清空由 build 脚本统一负责，避免与主 config 的 clean 竞态
         treeshake: true,
         minify: true,
         noExternal: ["flex-tools"],

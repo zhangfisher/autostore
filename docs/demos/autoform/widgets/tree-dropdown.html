@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -17,7 +16,7 @@
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
+            const { configurable } = AutoForm;
             const orgTree = {
                 id: 1,
                 label: '集团公司',
@@ -56,7 +55,8 @@
                 ],
             };
 
-            const store = new AutoStore({
+            const form = document.querySelector('#form');
+            form.state = {
                 depts: configurable(['产品部'], {
                     label: '部门',
                     widget: 'tree-dropdown',
@@ -92,15 +92,17 @@
                     showAsPath: true,
                     items: orgTree,
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
-            const refreshViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state);
             };
-            store.watch(refreshViewer);
-            refreshViewer();
-        </script>
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const refreshViewer = () => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.innerHTML = JSON.stringify(store.state);
+                };
+                store.watch(refreshViewer);
+                refreshViewer();
+        
+            });
+</script>
     </body>
 </html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden">
+        <div style="display: flex; gap: 1em">
+            <auto-form id="form" valid-at="input"></auto-form>
+            <div style="display: flex; flex-direction: column; gap: 0.5em; min-width: 24em">
+                <div style="font-weight: bold">validate 事件日志</div>
+                <pre id="logger" style="border: 1px solid #ccc; padding: 1em; margin: 0; font-size: 12px"></pre>
+            </div>
+        </div>
+
+        <script>
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
+                username: configurable('', {
+                    label: '用户名',
+                    help: '长度大于等于6',
+                    validate: (value) => {
+                        if (value.length < 6) {
+                            throw new Error('用户名长度必须大于等于6');
+                        }
+                        return true;
+                    },
+                }),
+            };
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const lines = [];
+                store.on('validate', ({ path, newValue, oldValue, error }) => {
+                    lines.unshift(
+                        `${path.join('.')} = ${JSON.stringify(newValue)}` +
+                            (error ? `  ✗ ${error.message}` : '  ✓ 校验通过'),
+                    );
+                    if (lines.length > 10) lines.pop();
+                    document.getElementById('logger').innerHTML = lines.join('\n');
+                });
+            });
+        </script>
+    </body>
+</html>

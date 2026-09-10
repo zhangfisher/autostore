@@ -240,6 +240,13 @@ export class AutoFieldCascader extends AutoDropdownField<AutoFieldCascaderOption
 			// 添加到结果对象
 			if (children && Array.isArray(children) && children.length > 0) {
 				result[id] = children;
+				if (root) {
+					// 树形根对象：额外写入 $root 别名。_initChoices 虽会把 rootKey
+					// 改写为根 id，但 AutoField.updated 会在 schema 提交后重建整个
+					// options 对象，rootKey 回落为默认 "$root"——没有别名时
+					// data[rootKey] 落空，首级菜单渲染为空
+					result.$root = children;
+				}
 				children.forEach((item) => {
 					handleNode(item);
 				});

@@ -38,7 +38,7 @@ const store = new AutoStore({
 
 **支持的字段组件**：
 
-`captcha`,`checkbox-group`,`checkbox`,`color-picker`,`combine`,`custom`,`date`,`email`,`input`,`ipaddress`,`list`,`number`,`parts`,`password`,`phone`,`qrcode`,`radio-button`,`radio`,`range`,`rating`,`search`,`select`,`switch`,`textarea`,`time`,`tree-dropdown`,`tree-select`,`upload`,`url`,`verifycode`
+`captcha`,`checkbox-group`,`checkbox`,`color-picker`,`combine`,`custom`,`cascader`,`cron`,`date`,`date-range`,`datetime`,`email`,`input`,`ipaddress`,`list`,`number`,`parts`,`password`,`phone`,`qrcode`,`radio-button`,`radio`,`range`,`rating`,`search`,`select`,`switch`,`textarea`,`time`,`tree-dropdown`,`tree-select`,`upload`,`url`,`verifycode`
 
 ### 字段帮助
 
@@ -84,18 +84,19 @@ const store = new AutoStore({
 export type SchemaWidgetShareOptions<Value, State> = {
     name?: string;
     required?: boolean;
-    visible?: boolean;
-    enable?: boolean;
+    visible?: boolean | ((state: State) => boolean);
+    enable?: boolean | ((state: State) => boolean);
+    readOnly?: boolean;
     description?: string;
     size?: string | number;
     icon?: string;
     // 用于验证
-    invalidTips?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
-    onValidate?: (newValue: Value, oldValue: Value, path: string) => boolean;
+    errorMessage?: string | ((e: Error, path: string, newValue: Value, oldValue: Value) => string);
+    validate?: (newValue: Value, oldValue: Value, path: string) => boolean;
     onFail?: 'pass' | 'throw' | 'ignore' | 'throw-pass';
     // 提供一些元数据
     label?: string;
-    labelPos?: string;
+    labelPos?: 'top' | 'left';
     // 帮助信息可以增加一个链接，如"至少需要增加(http://www.baidu.com)"
     help?: string;
     placeholder?: string;
@@ -107,7 +108,8 @@ export type SchemaWidgetShareOptions<Value, State> = {
     divider?: boolean; // 是否在前面显示一条分割线
     viewAlign?: 'left' | 'center' | 'right'; // viewonly模式下显示方式
     tips?: string;
-    select?: (SchemaWidgetSelectItem<Value> | string | number)[];
+    prefix?: (SchemaWidgetAction | string)[]; // 前缀
+    suffix?: (SchemaWidgetAction | string)[]; // 后缀
     // 转换数据
     toView?: (value: any) => any;
     toState?: (value: any) => any;

@@ -188,6 +188,13 @@ export const examplesList: ExampleCategory[] = [
                         tags: ["基础", "输入"],
                     },
                     {
+                        id: "widget-stepper",
+                        title: "步进器(stepper)",
+                        description: "步进器组件，+/- 按钮步进，支持步长、范围、小数精度和单位前后缀",
+                        difficulty: "beginner",
+                        tags: ["基础", "输入"],
+                    },
+                    {
                         id: "widget-range",
                         title: "范围滑块(range)",
                         description: "范围滑块组件，支持最小值、最大值和步长",

@@ -15,6 +15,7 @@ class WidgetTextExample extends LitElement {
             name: configurable("", { label: "用户名", placeholder: "请输入用户名" }),
             requiredName: configurable("", {
                 label: "真实姓名",
+                widget: "input",
                 required: true,
                 placeholder: "请输入真实姓名",
                 maxLength: 20,
@@ -34,12 +35,14 @@ class WidgetTextExample extends LitElement {
             }),
             prefixField: configurable("", {
                 label: "用户名",
+                widget: "input",
                 placeholder: "请输入",
                 prefix: "@",
                 help: "输入时自动添加 @ 前缀",
             }),
             shortField: configurable("", {
                 label: "短文本",
+                widget: "input",
                 placeholder: "最多10个字符",
                 maxLength: 10,
                 help: "限制最大输入长度",

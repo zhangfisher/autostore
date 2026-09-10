@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden">
+        <div style="display: flex; gap: 2em">
+            <auto-form id="formInput" valid-at="input"></auto-form>
+            <auto-form id="formBlur" valid-at="lost-focus"></auto-form>
+        </div>
+
+        <script>
+            const { configurable } = AutoForm;
+
+            const state = {
+                username: configurable('', {
+                    label: '用户名',
+                    help: '长度大于等于6',
+                    validate: (value) => value.length >= 6,
+                    errorMessage: '用户名长度必须大于等于6',
+                }),
+            };
+
+            const formInput = document.querySelector('#formInput');
+            formInput.state = state;
+
+            const formBlur = document.querySelector('#formBlur');
+            formBlur.state = {
+                username: configurable('', {
+                    label: '用户名',
+                    help: '长度大于等于6',
+                    validate: (value) => value.length >= 6,
+                    errorMessage: '用户名长度必须大于等于6',
+                }),
+            };
+        </script>
+    </body>
+</html>

@@ -97,19 +97,18 @@ import '@autostorejs/form'; //   [!code ++]
 
 接下来，我们就可以使用`auto-form`组件来创建表单了。
 
-在你的代码中创建`auto-form`组件，然后绑定`store`实例，就可以创建一个表单了。
+在你的代码中创建`auto-form`组件，然后将状态定义对象赋值给`state`属性，`AutoForm`内部会自动创建`AutoStore`实例，就可以创建一个表单了。
 
 在`html`中，可以直接使用`auto-form`组件来创建表单：
 
-```html {11}
+```html
 <script>
-    const { AutoStore, configurable } = AutoStoreSpaces;
-    const store = new AutoStore({
-        // [!code ++]
-        // 表单状态数据  // [!code ++]
-    }); // [!code ++]
+    const { configurable } = AutoStoreSpaces;
     const form = document.querySelector('#login');
-    form.bind(store);
+    // 将状态定义直接赋值给 state 属性（推荐方式）
+    form.state = {
+        // 表单状态数据
+    };
 </script>
 
 <auto-form id="login"></auto-form>
@@ -144,36 +143,53 @@ import '@autostorejs/form'; //   [!code ++]
 
 ### 绑定数据
 
-`auto-form`组件提供了`bind`方法，用于绑定`AutoStore`实例。
-`AutoStore`实例本质上是一个经过`proxy`封装的`JSON`对象，会在读写对象进触发事件，为表单提供响应式支持。
+`auto-form`组件推荐通过`state`属性传入状态定义对象，`AutoForm`内部会自动创建`AutoStore`实例和`ConfigManager`。
+`AutoStore`实例本质上是一个经过`proxy`封装的`JSON`对象，会在读写对象时触发事件，为表单提供响应式支持。
 
 ```html
 <script>
-    const { AutoStore, configurable } = AutoStoreSpaces;
-    const store = new AutoStore({...});
+    const { configurable } = AutoStoreSpaces;
     const form = document.querySelector('#login');
-    form.bind(store); // [!code ++]
+    form.state = { // [!code ++]
+        // 表单状态数据
+    };
 </script>
 
-<auto-form id="login"></auto-form> // [!code ++]
+<auto-form id="login"></auto-form>
 ```
 
-当执行`bind`方法后，就在`AutoStore`和`AutoForm`之间创建起**双向同步**关系，
+`state`赋值后，可以在`updateComplete`之后通过`activeStore`属性访问内部创建的`AutoStore`实例：
+
+```html
+<script>
+    const form = document.querySelector('#login');
+    form.updateComplete.then(() => {
+        const store = form.activeStore; // [!code ++]
+        store.watch(() => {
+            console.log(store.state);
+        });
+    });
+</script>
+```
+
+当`state`赋值后，就在`AutoStore`和`AutoForm`之间创建起**双向同步**关系，
 
 -   当`AutoStore`中的数据发生变化时，`AutoForm`会自动更新表单数据。
 -   当`AutoForm`中的数据发生变化时，`AutoStore`会自动更新`AutoStore`中的数据。
 
 ### 主题
 
-`AutoForm`使用[ThemePro](https://zhangfisher.github.io/themepro/)用为主题方案，可以提供灵活实时的动态主题
+`AutoForm`使用[ThemePro](https://zhangfisher.github.io/themepro/)作为主题方案，可以提供灵活实时的动态主题
 
-```tsx
-<link href="https://cdn.jsdelivr.net/npm/@autostorejs/form/index.css" />
-<link href="https://cdn.jsdelivr.net/npm/@autostorejs/form/themes/dark.css" />
-<link href="https://cdn.jsdelivr.net/npm/@autostorejs/form/themes/red.css" />
-<link href="https://cdn.jsdelivr.net/npm/@autostorejs/form/themes/blue.css" />
+```html
+<!-- 引入 AutoForm 样式 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/index.css" />
+<!-- 引入主题样式 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/dark.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/red.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/blue.css" />
 
-<auto-form></auto-frm>     // [!code ++]
+<auto-form></auto-form>     // [!code ++]
 ```
 
 <demo html="autoform/form/dark.html"/>
@@ -217,13 +233,13 @@ import '@autostorejs/form'; //   [!code ++]
 
 ### CSS::Part
 
-`auto-form`是一个`WebComponent`组件，内部组件被渲染在一个`shodow DOM`中，无法在外部进行样式控制。
+`auto-form`是一个`WebComponent`组件，内部组件被渲染在一个`shadow DOM`中，无法在外部进行样式控制。
 
 `auto-form`暴露了一些`CSS::Part`，允许通过进行样式控制。
 
 例如，我们要控制`字段label`样式，可以通过`::part(field-label)`来进行样式控制。
 
-```html
+```css
 auto-form::part(field-label) { color: red; }
 ```
 
@@ -254,7 +270,8 @@ auto-form::part(field-label) { color: red; }
 -   `group='' || group='*'`表示显示所有组。
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         username: configurable('NAME', {
             label: '用户名',
@@ -276,9 +293,7 @@ const store = new AutoStore({
         }),
         total: (order) => order.price * order.count,
     },
-});
-const form = document.querySelector('#login');
-form.bind(store);
+};
 ```
 
 以上我们为配置字段指定了一个组名称，然后在渲染表单时，可以指定要渲染的组。
@@ -290,7 +305,8 @@ form.bind(store);
 可以通过`path`参数指定要显示某个路径下的字段。
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         username: configurable('NAME', {
             label: '用户名'
@@ -308,7 +324,7 @@ const store = new AutoStore({
         }),
         total: (order) => order.price * order.count,
     },
-});
+};
 <auto-form path="user"></auto-form> // [!code ++]
 <auto-form path="order"></auto-form> // [!code ++]
 <auto-form path="user,order"></auto-form> // [!code ++]
@@ -387,4 +403,31 @@ const store = new AutoStore({
 
 ### 重置表单
 
-可以通过`reset`方法重置表单。
+可以通过`reset`方法重置表单到初始状态。
+
+```javascript
+const form = document.querySelector('#login');
+form.state = {...};
+
+// 重置表单
+form.reset();
+```
+
+### 提交表单
+
+可以通过`submit`方法提交表单，该方法会触发回调，返回表单数据和错误信息：
+
+```javascript
+form.submit((values, errors) => {
+    if (errors) {
+        console.log('表单校验失败', errors);
+    } else {
+        // values是一个对象，包含表单所有字段的值
+        console.log('表单校验成功', values);
+    }
+});
+```
+
+:::warning 提示
+`submit`方法不会刷新页面，而是触发回调，让开发者自行处理表单数据。
+:::

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden">
+        <div style="display: flex">
+            <auto-form id="form" valid-at="input"></auto-form>
+        </div>
+
+        <script>
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
+                username: configurable('', {
+                    label: '用户名',
+                    help: '返回 false 表示校验失败',
+                    validate: (value) => value.length >= 6,
+                    errorMessage: '用户名长度必须大于等于6',
+                }),
+                password: configurable('', {
+                    label: '密码',
+                    help: '抛出 Error 提供精确错误信息',
+                    validate: (value) => {
+                        if (value.length < 6) {
+                            throw new Error('密码至少需要6位');
+                        }
+                        if (!/[0-9]/.test(value)) {
+                            throw new Error('密码必须包含数字');
+                        }
+                        return true;
+                    },
+                }),
+            };
+        </script>
+    </body>
+</html>

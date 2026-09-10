@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -17,9 +16,10 @@
             <auto-form id="form" validat="input"></auto-form>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
+            const { configurable } = AutoForm;
 
-            const store = new AutoStore({
+            const form = document.querySelector('#form');
+            form.state = {
                 icons: configurable('admin@autostore.com', {
                     label: '默认图标',
                     widget: 'icons',
@@ -44,15 +44,17 @@
                     multiple: true,
                     icons: 'award,apple,alarm-clock,aperture,cassette-tape,chart-spline,combine,image,ear,lock,map,plus',
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
-            const refreshViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state);
             };
-            store.watch(refreshViewer);
-            refreshViewer();
-        </script>
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const refreshViewer = () => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.innerHTML = JSON.stringify(store.state);
+                };
+                store.watch(refreshViewer);
+                refreshViewer();
+        
+            });
+</script>
     </body>
 </html>

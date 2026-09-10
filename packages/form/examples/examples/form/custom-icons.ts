@@ -70,7 +70,6 @@ class CustomIconsExample extends LitElement {
                 widget: "input",
                 icon: "user",
                 actions: [
-                    // @ts-expect-error pos/type 是 form 层动作扩展键，core AutoStoreAction 未收录
                     { icon: "palette", label: "调色", pos: "before" },
                     { icon: "heart", label: "收藏" },
                     { icon: "rocket", label: "部署" },

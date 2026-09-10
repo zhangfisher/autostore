@@ -56,13 +56,32 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
             parseInt(bits[3] || '0'),
         ];
     }
+    /**
+     * 净化单段输入：仅保留数字，值超过 255 时截断
+     * （sl-input 为 text 类型，min/max 属性不生效，须在输入事件中手动约束）
+     */
+    _restrictSegment(input: HTMLInputElement) {
+        const digits = (input.value || '').replace(/\D/g, '');
+        const clamped = digits === '' ? '' : String(Math.min(parseInt(digits, 10), 255));
+        if (clamped !== input.value) {
+            input.value = clamped;
+        }
+    }
     _onIpChange(_: number, e: Event) {
+        const input = e.target as HTMLInputElement;
+        // 先净化再写入状态，保证状态中的每段都是 0-255 的数字
+        this._restrictSegment(input);
+        // 提交（失焦）时空段回填 0，避免输入框显示空而状态已是 0
+        if (e.type === 'sl-change' && input.value === '') {
+            input.value = '0';
+        }
         this.onFieldChange();
         this._isLastInput(e);
     }
     getInputValue() {
         const inputs = Array.from(this.shadow.querySelectorAll('sl-input'));
-        return inputs.map((input) => input.value).join('.');
+        // 输入中途的空段按 0 处理，保证状态始终是完整的四段 IP
+        return inputs.map((input) => input.value || '0').join('.');
     }
     _isLastInput(e: Event) {
         const input = e.target as HTMLInputElement;
@@ -81,10 +100,11 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
         e.preventDefault(); // 阻止默认粘贴行为
         const input = e.target as HTMLInputElement;
         const clipboardData = e.clipboardData?.getData('text/plain') || '';
-        // 验证是否为有效的IP地址格式
+        // 验证是否为有效的IP地址格式（格式 + 每段 0-255）
         const ipRegex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
         const match = clipboardData.match(ipRegex);
-        if (!match) return; // 如果不是IP格式则忽略
+        const isValidRange = match?.slice(1).every((seg) => parseInt(seg, 10) <= 255);
+        if (!match || !isValidRange) return; // 如果不是合法IP则忽略
         // 获取当前输入框和后续的输入框
         const inputs: HTMLInputElement[] = [];
         let currentElement: Element | null | undefined = input;
@@ -120,9 +140,7 @@ export class AutoFieldIpAddress extends AutoField<AutoFieldIPAddressOptions> {
                             defaultValue="0"
                             size=${this.context.size}
                             maxLength="3"
-                            minLength="1"
-                            max="255"
-                            min="0"
+                            inputmode="numeric"
                             ?disabled=${!this.options.enable}
                             @sl-input=${(e: Event) => this._onIpChange(index, e)}
                             @sl-change=${(e: Event) => this._onIpChange(index, e)}

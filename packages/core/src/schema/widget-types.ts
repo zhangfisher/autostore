@@ -58,12 +58,22 @@ export interface AutoWidgetEmail extends BaseInputAttributes {
 export interface AutoWidgetPassword extends BaseInputAttributes {
     maxlength?: number;
     minlength?: number;
+    /**
+     * form 的 password 组件继承泛型输入框实现，以 camelCase 读取长度限制
+     */
+    minLength?: number;
+    maxLength?: number;
     pattern?: string;
 }
 
 export interface AutoWidgetSearch extends BaseInputAttributes {
     maxlength?: number;
     minlength?: number;
+    /**
+     * form 的 search 组件继承泛型输入框实现，以 camelCase 读取长度限制
+     */
+    minLength?: number;
+    maxLength?: number;
     pattern?: string;
 }
 
@@ -164,6 +174,11 @@ export interface AutoWidgetImage extends BaseInputAttributes {
 export interface AutoWidgetTextarea extends BaseInputAttributes {
     maxlength?: number;
     minlength?: number;
+    /**
+     * form 的 textarea 组件以 camelCase 读取长度限制
+     */
+    minLength?: number;
+    maxLength?: number;
     rows?: number;
     cols?: number;
     wrap?: "hard" | "soft" | "off";

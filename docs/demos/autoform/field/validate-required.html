@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden">
+        <div style="display: flex">
+            <auto-form id="form"></auto-form>
+        </div>
+
+        <script>
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
+                user: {
+                    // 未指定 errorMessage，使用默认错误信息：{label}不能为空
+                    name: configurable('', {
+                        label: '姓名',
+                        required: true,
+                    }),
+                    // 自定义必填错误信息
+                    email: configurable('', {
+                        label: '邮箱',
+                        required: true,
+                        errorMessage: '请填写{label}，否则无法注册',
+                    }),
+                },
+            };
+        </script>
+    </body>
+</html>

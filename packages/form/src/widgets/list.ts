@@ -16,7 +16,7 @@ import { tag } from "@/utils/tag";
 import { classMap } from "lit/directives/class-map.js";
 import { AsyncOptionState } from "@/controllers/asyncState";
 export type ListItem = {
-	id: any;
+	id?: any;
 	value?: any;
 	label?: string;
 	icon?: string;

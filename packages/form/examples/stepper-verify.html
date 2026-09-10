@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>stepper-verify</title>
+        <!-- headless dump-dom 验证页：结果写入 #results，exit 判读靠 grep -->
+        <script type="module">
+            import { configurable } from "autostore";
+            import "../src";
+
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+            const results = [];
+            const assert = (name, cond, detail = "") => results.push({ name, pass: !!cond, detail: String(detail) });
+
+            customElements.whenDefined("auto-form").then(async () => {
+                try {
+                    const dbg = (window.__dbg = []);
+                    const state = {
+                        basicCount: configurable(0, { label: "基础", widget: "stepper" }),
+                        age: configurable(25, { label: "年龄", widget: "stepper", min: 1, max: 120 }),
+                        price: configurable(9.99, { label: "价格", widget: "stepper", min: 0, step: 0.01 }),
+                        weight: configurable(50, { label: "重量", widget: "stepper", min: 0, max: 200, step: 5, prefix: "≈", suffix: "kg" }),
+                        readonlyCount: configurable(42, { label: "只读", widget: "stepper", readOnly: true }),
+                    };
+                    const container = document.getElementById("app");
+                    const form = document.createElement("auto-form");
+                    form.state = state;
+                    container.appendChild(form);
+                    await sleep(600);
+                    // 调试信息：表单内部 schema 数量与 store 初始化状态
+                    dbg.push(`schemas=${form.schemas?.length}`);
+                    dbg.push(`internalStore=${!!form.activeStore}`);
+                    dbg.push(`cmStateKeys=${Object.keys(form.activeStore?.configManager?.state || {}).length}`);
+
+                    const getField = (p) => [...form.shadowRoot.querySelectorAll("auto-field-stepper")].find((el) => el.path === p);
+                    const getVal = (p) => form.activeStore.state[p];
+                    const clickStep = async (field, dir) => {
+                        const btns = field.shadowRoot.querySelectorAll("sl-button.stepper-btn");
+                        (dir === "+" ? btns[btns.length - 1] : btns[0]).click();
+                        await field.updateComplete;
+                        await sleep(50);
+                    };
+
+                    // 场景1：基础步进
+                    let f = getField("basicCount");
+                    assert("基础-字段渲染", !!f);
+                    await clickStep(f, "+");
+                    await clickStep(f, "+");
+                    assert("基础-两次+为2", getVal("basicCount") === 2, getVal("basicCount"));
+                    await clickStep(f, "-");
+                    assert("基础-一次-为1", getVal("basicCount") === 1, getVal("basicCount"));
+                    assert("基础-state是number", typeof getVal("basicCount") === "number", typeof getVal("basicCount"));
+
+                    // 场景2：边界
+                    f = getField("age");
+                    for (let i = 0; i < 40; i++) await clickStep(f, "-");
+                    assert("边界-min处clamp=1", getVal("age") === 1, getVal("age"));
+                    let mBtn = f.shadowRoot.querySelectorAll("sl-button.stepper-btn")[0];
+                    assert("边界-min时-禁用", mBtn.disabled === true, String(mBtn.disabled));
+                    await clickStep(f, "+");
+                    assert("边界-恢复步进=2", getVal("age") === 2, getVal("age"));
+
+                    // 场景3：精度
+                    f = getField("price");
+                    for (let i = 0; i < 3; i++) await clickStep(f, "+");
+                    assert("精度-9.99+3步=10.02", getVal("price") === 10.02, getVal("price"));
+                    // 浮点误差修复：0.1 + 0.01 应精确得 0.11（非 0.11000000000000001）
+                    form.activeStore.update((state) => {
+                        state.price = 0.1;
+                    });
+                    await f.updateComplete;
+                    await sleep(200);
+                    await clickStep(f, "+");
+                    assert("精度-浮点误差修复", getVal("price") === 0.11, getVal("price"));
+
+                    // 场景4：单位（断言取 trim，避开 lit 注释锚点空白）
+                    f = getField("weight");
+                    const slInput = f.shadowRoot.querySelector("sl-input");
+                    const pfx = slInput.querySelector('[slot="prefix"]:not(.actions)');
+                    const sfx = slInput.querySelector('[slot="suffix"]:not(.actions)');
+                    assert("单位-prefix≈", pfx && pfx.textContent.trim() === "≈", pfx ? pfx.textContent.trim() : "null");
+                    assert("单位-suffix=kg", sfx && sfx.textContent.trim() === "kg", sfx ? sfx.textContent.trim() : "null");
+                    // 布局顺序：− 在 prefix 槽内居首，+ 在 suffix 槽内居末
+                    const pfxAll = [...slInput.querySelectorAll('[slot="prefix"]')];
+                    const sfxAll = [...slInput.querySelectorAll('[slot="suffix"]')];
+                    assert(
+                        "布局-−在所有前缀之前",
+                        pfxAll[0]?.classList?.contains("actions"),
+                        pfxAll.map((e) => e.className || e.tagName).join(","),
+                    );
+                    assert(
+                        "布局-+在所有后缀之后",
+                        sfxAll[sfxAll.length - 1]?.classList?.contains("actions"),
+                        sfxAll.map((e) => e.className || e.tagName).join(","),
+                    );
+                    await clickStep(f, "+");
+                    assert("单位-state纯number=55", getVal("weight") === 55, getVal("weight"));
+
+                    // 图标渲染（本地 preset SVG，无网络依赖）
+                    const icons = f.shadowRoot.querySelectorAll("sl-button.stepper-btn sl-icon");
+                    let iconOk = 0;
+                    for (const ic of icons) {
+                        await ic.updateComplete;
+                        if (ic.renderRoot && ic.renderRoot.querySelector("svg")) iconOk++;
+                    }
+                    assert("图标-SVG已渲染", iconOk === 2, `${iconOk}/2`);
+
+                    // 场景5：只读
+                    f = getField("readonlyCount");
+                    const rb = f.shadowRoot.querySelectorAll("sl-button.stepper-btn");
+                    assert("只读-双按钮禁用", rb[0].disabled && rb[1].disabled, `${rb[0].disabled},${rb[1].disabled}`);
+                } catch (e) {
+                    assert("脚本异常", false, e.message);
+                }
+                const failed = results.filter((r) => !r.pass);
+                document.getElementById("results").textContent =
+                    `RESULT ${results.length - failed.length}/${results.length}\n` +
+                    results.map((r) => `${r.pass ? "PASS" : "FAIL"} ${r.name}${r.pass ? "" : ` (${r.detail})`}`).join("\n") +
+                    `\nDBG ${(window.__dbg || []).join(" | ")}`;
+            });
+        </script>
+    </head>
+    <body>
+        <div id="app"></div>
+        <pre id="results">PENDING</pre>
+    </body>
+</html>

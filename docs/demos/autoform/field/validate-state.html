@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AutoStore</title>
+        <link rel="stylesheet" href="/autostore/autoform.dark.css" />
+        <link rel="stylesheet" href="/autostore/autoform.light.css" />
+        <script src="/autostore/autoform.js"></script>
+    </head>
+
+    <body style="overflow: hidden">
+        <div style="display: flex; gap: 1em">
+            <auto-form id="form" valid-at="input"></auto-form>
+            <div style="display: flex; flex-direction: column; gap: 0.5em; min-width: 22em">
+                <div style="font-weight: bold">store.errors</div>
+                <pre id="viewer" style="border: 1px solid #ccc; padding: 1em; margin: 0"></pre>
+                <button onclick="doSubmit()">submit</button>
+                <button onclick="doClear()">clearErrors</button>
+                <div id="result" style="font-size: 12px; white-space: pre-wrap"></div>
+            </div>
+        </div>
+
+        <script>
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
+                username: configurable('', {
+                    label: '用户名',
+                    validate: (value) => value.length >= 6,
+                    errorMessage: '用户名长度必须大于等于6',
+                    // pass: 错误值也写入，errors 中持续可见
+                    onInvalid: 'pass',
+                }),
+                age: configurable(20, {
+                    label: '年龄',
+                    widget: 'number',
+                    validate: (value) => value >= 18,
+                    errorMessage: '年龄必须大于等于18',
+                    onInvalid: 'pass',
+                }),
+            };
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const update = () => {
+                    document.getElementById('viewer').innerHTML = JSON.stringify(
+                        store.errors,
+                        null,
+                        2,
+                    );
+                };
+                store.watch(() => update());
+                update();
+
+                window.doSubmit = () => {
+                    form.submit((values, errors) => {
+                        document.getElementById('result').innerHTML =
+                            `values: ${JSON.stringify(values)}\nerrors: ${JSON.stringify(errors)}`;
+                    });
+                };
+                window.doClear = () => {
+                    form.clearErrors();
+                    update();
+                };
+            });
+        </script>
+    </body>
+</html>

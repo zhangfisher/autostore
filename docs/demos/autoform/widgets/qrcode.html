@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -16,8 +15,9 @@
             <auto-form id="form"></auto-form>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
                 AutoStore: configurable('www.voerkai18n.com', {
                     label: '二维码',
                     widget: 'qrcode',
@@ -29,9 +29,7 @@
                     fill: 'deeppink',
                     background: 'white',
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
+            };
         </script>
     </body>
 </html>

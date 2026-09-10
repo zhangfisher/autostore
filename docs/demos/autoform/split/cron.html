@@ -6,7 +6,6 @@
         <title>AutoStore — 按需引入（core + cron 双 script）</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <!-- 按需引入：先 core（lit 单例宿主 + AutoFormCore 命名空间），后 widget 产物 -->
         <script src="/autostore/autoform/core.global.js"></script>
         <script src="/autostore/autoform/cron.global.js"></script>
@@ -18,8 +17,9 @@
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
+            const { configurable } = AutoFormCore;
+            const form = document.getElementById('form');
+            form.state = {
                 basic: configurable('', {
                     label: '执行周期',
                     widget: 'cron',
@@ -29,17 +29,22 @@
                 plain: configurable('默认 input 字段', {
                     label: '普通输入',
                 }),
-            });
-            const form = document.getElementById('form');
-            form.state = store.state;
-            window.formviewer = (operate) => {
-                document.getElementById('viewer').innerHTML = JSON.stringify(store.snapshot(false), null, 2);
             };
-            store.watch('**', (operate) => {
-                if (operate.reply) return;
-                window.formviewer(operate);
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                window.formviewer = (operate) => {
+                    document.getElementById('viewer').innerHTML = JSON.stringify(
+                        store.getSnap({ reserveAsync: false }),
+                        null,
+                        2,
+                    );
+                };
+                store.watch('**', (operate) => {
+                    if (operate.reply) return;
+                    window.formviewer(operate);
+                });
+                window.formviewer();
             });
-            window.formviewer();
-        </script>
+</script>
     </body>
 </html>

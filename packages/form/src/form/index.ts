@@ -50,6 +50,12 @@ import { FormConfigManager } from "../schema/formConfigManager";
 export class AutoForm extends LitElement {
     static seq: number = 0;
     static styles = styles;
+    constructor() {
+        super();
+        // 构造期安装图标库解析器：早于任何渲染，覆盖所有初始化路径
+        // （.state 迟到赋值时 connectedCallback 的早退分支不会执行 registerIcons）
+        registerIcons();
+    }
     classs = new HostClasses(this);
     ctxController = new ContextController(this);
     seq: number = ++AutoForm.seq;
@@ -241,8 +247,6 @@ export class AutoForm extends LitElement {
             console.warn("[AutoForm] 既没有 .state 也没有 .store 属性，无法初始化");
             return;
         }
-
-        registerIcons();
     }
 
     /**
@@ -357,6 +361,16 @@ export class AutoForm extends LitElement {
         // @consume({subscribe:true}) 收到新 context 才会重刷 *-border 等宿主类名
         if (Object.keys(this._appearanceContext()).some((key) => changedProperties.has(key))) {
             this.context = { ...this.context, ...this._appearanceContext() };
+        }
+        // 异源副本守卫（ADR-0006）：IIFE 捆绑副本与页面其它 autostore 实例
+        // （如独立加载的 autostore.js）互为异源，跨副本的 instanceof/Symbol
+        // 判别会静默失效——显式 warn 优于静默功能退化。
+        // 正道是用本包重导出的 API（如 AutoForm.AutoStore）创建 store。
+        if (changedProperties.has("store") && this.store && !(this.store instanceof AutoStore)) {
+            console.warn(
+                "[autoform] .store 传入的实例来自另一份 autostore 实现，跨副本的 Symbol/instanceof 判别会失效。" +
+                    "请改用本包重导出的 AutoForm.AutoStore 创建实例（见 ADR-0006）。",
+            );
         }
     }
 

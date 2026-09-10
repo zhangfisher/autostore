@@ -64,15 +64,19 @@ UI 无法可视化表达的合法 cron 片段（`L`、`W`、`#`、混合式如 `
 _Avoid_: 不支持的表达式、非法表达式（它们是合法的，只是不可视化）
 
 **全量产物（Full Bundle）**:
-`@autostorejs/form` 的单一完整产物：表单框架与全部 widget 打包在一起，引入即完成全部 widget 注册。是主入口的默认形态，兼容一切消费方式。
+`@autostorejs/form` 的单一完整产物：表单框架、全部 widget 与 autostore 运行时打包在一起，引入即完成全部 widget 注册。是主入口的默认形态，兼容一切消费方式。IIFE 形态下单 script 即拿到完整生态（`AutoForm` 命名空间同时承载 autostore 全量 API）。
 _Avoid_: 完整包、单体包
+
+**捆绑副本（Bundled Runtime）**:
+IIFE 产物内嵌的 autostore 实现。与页面上的其它 autostore 实例（如独立加载的 autostore.js）互为异源——跨副本的 instanceof 与 Symbol 身份判别会静默失效。浏览器场景的正道是使用重导出的 API（`AutoForm.configurable` 等）：与捆绑副本同源，天然兼容。
+_Avoid_: 内置 store（副本是整个 autostore 运行时，不只是 store 对象）
 
 **按需产物（Split Bundles）**:
 与全量产物并存的拆分形态：由一个 core 产物加若干 widget 产物组成，消费者按 `schema.widget` 实际所需引入。类型层的 widget 键合并与运行时引入严格对齐——引了什么，类型才认什么。
 _Avoid_: 分包、tree-shaking 产物（前者泛指任意拆包，后者是 bundler 机制名）
 
 **core 产物（Core Bundle）**:
-按需引入的最小前置：表单框架、公共基类、图标注册，以及默认 widget（input）。input 随 core 走是因为它是「未声明 widget 时的隐式取值」这一契约的一部分，不随 core 发货会把最常见的静默失败埋给用户。IIFE 场景下它同时是 lit 单例的宿主（`AutoFormCore` 命名空间），必须先于任何 widget 产物加载。
+按需引入的最小前置：表单框架、公共基类、图标注册、默认 widget（input），以及捆绑的 autostore 运行时（平铺 API + `AutoStoreNS` 命名空间）。input 随 core 走是因为它是「未声明 widget 时的隐式取值」这一契约的一部分，不随 core 发货会把最常见的静默失败埋给用户。IIFE 场景下它同时是 lit 单例的宿主（`AutoFormCore` 命名空间），必须先于任何 widget 产物加载。
 _Avoid_: 基础包、框架包
 
 **widget 产物（Widget Bundle）**:

@@ -47,37 +47,64 @@ const splitEntries: Record<string, string> = {
  * 由 src/core-iife.ts re-export）与公开 API 汇集到 window.AutoFormCore。
  * widget IIFE 的 preamble 绑定 __core.lit / __core.litDirectives['repeat'] 等
  * 成员路径，与 scripts/build-widget-iife.ts 的 LIT_GLOBALS 表一一对应。
+ *
+ * 两个必须注意的点（esbuild 把 footer 注入到 IIFE 闭包内部末尾）：
+ * 1. 前导分号：上一语句若以 '}' 结尾（函数声明），无分号时
+ *    '}(function(){...})()' 会被解析为对上一个函数的调用（ASI 陷阱），
+ *    运行时抛 TypeError 且 footer 永不执行。
+ * 2. 引用闭包参数 exports 而非外层全局名 AutoFormCoreExports：
+ *    footer 位于闭包 return 之前，外层 var 此时尚未被赋值（闭包没执行完），
+ *    读它只会拿到 undefined；闭包参数 exports 在此已填充完毕。
  */
-const CORE_IIFE_FOOTER = `
-;(function(){
-    window.AutoFormCore = AutoFormCoreExports;
+const CORE_IIFE_FOOTER = `;void(function(){
+    window.AutoFormCore = exports;
 })();
 `;
 
 export default defineConfig([
     // ==============================================================
-    // 1. 全量产物：主入口 ESM + 全量 IIFE（./browser）
-    //    导出清单与体积是回归红线，勿在此项增删入口
+    // 1a. 全量 ESM（主入口 ./）：autostore 与 @autostorejs/plugins 保持
+    //     external，re-export 解析到消费者自装的同一份单例（ADR-0006）
     // ==============================================================
     {
         entry: { index: FULL_ENTRY },
-        format: ["esm", "iife"],
+        format: ["esm"],
         dts: { resolve: true },
         splitting: true,
         sourcemap: true,
-        globalName: "AutoForm",
-        clean: true, // 只在首个 config 清目录，后续 config 追加产物
+        // 注意：多 config 共享同一 dist 时禁用 tsup 的 clean——
+        // 各 config 并发启动，clean 的 existsSync+unlinkSync 非原子会互相竞态删文件（ENOENT/段错误）。
+        // 目录预清空由 package.json 的 build 脚本（rm -rf dist）在 tsup 启动前串行完成
+        clean: false,
         treeshake: true,
         minify: true,
         noExternal: ["flex-tools", "lit", "@lit/context"],
         onSuccess: async () => {
             const esmFile = readFileSync("dist/index.js");
-            const iifeFile = readFileSync("dist/index.global.js");
             const esmCompressed = await gzipPromise(esmFile);
+            console.log(`\x1b[33m[full-esm] Gzipped size: \x1b[32m${(esmCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
+        },
+    },
+
+    // ==============================================================
+    // 1b. 全量 IIFE（./browser）：捆绑 autostore + 全量重导出（ADR-0006）
+    //     单 script 即拿到 form + widget + autostore 完整生态；
+    //     noExternal 显式声明捆绑意图，不依赖平台的 format 级默认行为。
+    //     导出清单 = form 全量 ∪ autostore 全量（回归红线，快照见 ADR-0006）
+    // ==============================================================
+    {
+        entry: { index: FULL_ENTRY },
+        format: ["iife"],
+        sourcemap: true,
+        globalName: "AutoForm",
+        clean: false,
+        treeshake: true,
+        minify: true,
+        noExternal: ["flex-tools", "lit", "@lit/context", "autostore", "@autostorejs/plugins"],
+        onSuccess: async () => {
+            const iifeFile = readFileSync("dist/index.global.js");
             const iifeCompressed = await gzipPromise(iifeFile);
-            console.log(`\x1b[33m[full] Gzipped size: \x1b[0m`);
-            console.log(`  - esm: \x1b[32m${(esmCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
-            console.log(`  - iife: \x1b[32m${(iifeCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
+            console.log(`\x1b[33m[full-iife] Gzipped size: \x1b[32m${(iifeCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
 
             // 复制文件到文档站点（44 个 demo 依赖此链路）
             fs.copyFileSync(path.resolve("./dist/index.global.js"), path.resolve("../../docs/public/autoform.js"));
@@ -119,7 +146,9 @@ export default defineConfig([
     // ==============================================================
     // 3. split IIFE：core.global.js（lit 宿主 + AutoFormCore 命名空间）
     //    入口用 core-iife.ts：额外 re-export lit 系命名空间到 exports，
-    //    尾部脚本把 exports 挂为 window.AutoFormCore（widget IIFE 消费）
+    //    尾部脚本把 exports 挂为 window.AutoFormCore（widget IIFE 消费）。
+    //    ADR-0006：autostore 随包捆绑（平铺 API + AutoStoreNS 命名空间），
+    //    split 场景同样单（双）script 化，去掉 autostore.js 前置标签
     // ==============================================================
     {
         entry: { core: "src/core-iife.ts" },
@@ -129,7 +158,7 @@ export default defineConfig([
         sourcemap: true,
         treeshake: true,
         minify: true,
-        noExternal: ["flex-tools", "lit", "@lit/context", "@autostorejs/plugins"],
+        noExternal: ["flex-tools", "lit", "@lit/context", "@autostorejs/plugins", "autostore"],
         esbuildOptions(options) {
             options.footer = { js: CORE_IIFE_FOOTER };
         },
@@ -139,6 +168,7 @@ export default defineConfig([
             console.log(`\x1b[33m[split-iife] core Gzipped: \x1b[32m${(coreCompressed.length / 1024).toFixed(2)} kB\x1b[0m`);
 
             // 复制到文档站点供 split demo 消费
+            // （widget 产物由 scripts/build-widget-iife.ts 产出后自行复制，晚于 tsup）
             fs.mkdirSync(path.resolve("../../docs/public/autoform"), { recursive: true });
             fs.copyFileSync(path.resolve("./dist/iife/core.global.js"), path.resolve("../../docs/public/autoform/core.global.js"));
         },

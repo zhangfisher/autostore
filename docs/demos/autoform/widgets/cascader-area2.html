@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -20,13 +19,14 @@
             async function load() {
                 const res = await fetch('/autostore/area2.json');
                 const data = await res.json();
-                const { AutoStore, configurable } = AutoStoreSpaces;
-                const store = new AutoStore({
+                const { configurable } = AutoForm;
+                const form = document.querySelector('#form');
+                form.state = {
                     address: configurable('泉州市/丰泽区', {
                         label: '乡镇',
                         widget: 'cascader',
                         placeholder: '选择行政地区',
-                        select: data,
+                        choices: data,
                         icon: 'map-pin',
                         labelKey: 'name',
                         valueKey: 'name',
@@ -34,10 +34,9 @@
                         delimiter: '/',
                         maxLevel: 4,
                     }),
-                });
-                const form = document.querySelector('#form');
-                form.bind(store);
-                return store;
+                };
+                await form.updateComplete;
+                return form.activeStore;
             }
             load().then((store) => {
                 const refreshViewer = () => {

@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -17,7 +16,7 @@
             <auto-form id="form" validat="input"></auto-form>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
+            const { configurable } = AutoForm;
             const cars = {
                 label: '汽车',
                 id: '0',
@@ -101,12 +100,13 @@
                     },
                 ],
             };
-            const store = new AutoStore({
+            const form = document.querySelector('#form');
+            form.state = {
                 car: configurable('', {
                     label: '车型',
                     widget: 'cascader',
                     placeholder: '选择车型',
-                    select: cars,
+                    choices: cars,
                     icon: 'car',
                     valueKey: 'label',
                     delimiter: '/',
@@ -115,7 +115,7 @@
                     label: '车型',
                     widget: 'cascader',
                     placeholder: '选择车型',
-                    select: cars,
+                    choices: cars,
                     icon: 'car',
                     help: '数组类型',
                     valueKey: 'label',
@@ -124,7 +124,7 @@
                     label: '车型',
                     widget: 'cascader',
                     placeholder: '选择车型',
-                    select: cars,
+                    choices: cars,
                     icon: 'car',
                     help: '选择id',
                     delimiter: '#',
@@ -133,20 +133,22 @@
                     label: '车型',
                     widget: 'cascader',
                     placeholder: '选择车型',
-                    select: cars,
+                    choices: cars,
                     icon: 'car',
                     valueKey: 'label',
                     dropdown: false,
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
-            const refreshViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state).replaceAll(',"car', ',<p></p>"car');
             };
-            store.watch(refreshViewer);
-            refreshViewer();
-        </script>
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const refreshViewer = () => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.innerHTML = JSON.stringify(store.state).replaceAll(',"car', ',<p></p>"car');
+                };
+                store.watch(refreshViewer);
+                refreshViewer();
+        
+            });
+</script>
     </body>
 </html>

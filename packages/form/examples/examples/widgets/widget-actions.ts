@@ -20,7 +20,7 @@ class WidgetActionsExample extends LitElement {
                     {
                         label: "清空",
                         icon: "x",
-                        onClick: (value: any, { update }: any) => {
+                        onClick: (_value: any, { update }: any) => {
                             update("");
                         },
                     },
@@ -80,6 +80,7 @@ class WidgetActionsExample extends LitElement {
             // 示例3：前后都有操作按钮
             phone: configurable("", {
                 label: "手机号码",
+                widget: "input",
                 placeholder: "请输入手机号码",
                 prefix: "+86",
                 actions: [

@@ -7,59 +7,75 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
     <body style="overflow: hidden">
         <div style="display: flex">
-            <auto-form id="form" validAtInit validat="input"></auto-form>
-            <div id="viewer" style="border: 1px solid #ccc; padding: 1em"></div>
+            <auto-form id="form" valid-at="input"></auto-form>
+            <div style="display: flex; flex-direction: column; gap: 0.5em; min-width: 14em">
+                <div style="font-weight: bold">store.state</div>
+                <pre id="viewer" style="border: 1px solid #ccc; padding: 1em; margin: 0"></pre>
+            </div>
         </div>
 
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
-            const store = new AutoStore({
-                a: configurable('12345', {
+            const { configurable } = AutoForm;
+            const form = document.querySelector('#form');
+            form.state = {
+                a: configurable('', {
                     label: 'A:用户名',
                     help: 'pass: 放行写入',
-                    onValidate: (value) => value.length >= 6,
-                    invalidTips: '用户名长度必须大于等于6',
-                    onFail: 'pass',
+                    validate: (value) => value.length >= 6,
+                    errorMessage: '用户名长度必须大于等于6',
+                    onInvalid: 'pass',
                 }),
-                b: configurable('12345', {
+                b: configurable('', {
                     label: 'B:用户名',
-                    help: 'throw: 触发错误',
-                    onValidate: (value) => value.length >= 6,
-                    invalidTips: '用户名长度必须大于等于6',
-                    onFail: 'throw',
+                    help: 'throw: 抛出错误，不写入',
+                    validate: (value) => value.length >= 6,
+                    errorMessage: '用户名长度必须大于等于6',
+                    onInvalid: 'throw',
                 }),
-                c: configurable('12345', {
+                c: configurable('', {
                     label: 'C:用户名',
-                    help: 'ignore: 忽略错误不写入',
-                    onValidate: (value) => value.length >= 6,
-                    invalidTips: '用户名长度必须大于等于6',
-                    onFail: 'ignore',
+                    help: 'ignore: 静默忽略，不写入',
+                    validate: (value) => value.length >= 6,
+                    errorMessage: '用户名长度必须大于等于6',
+                    onInvalid: 'ignore',
                 }),
-                d: configurable('12345', {
+                d: configurable('', {
                     label: 'D:用户名',
-                    help: 'throw-pass: 触发错误且写入',
-                    onValidate: (value) => value.length >= 6,
-                    invalidTips: '用户名长度必须大于等于6',
-                    onFail: 'throw-pass',
+                    help: 'throw-pass: 写入同时抛出错误',
+                    validate: (value) => value.length >= 6,
+                    errorMessage: '用户名长度必须大于等于6',
+                    onInvalid: 'throw-pass',
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
-
-            const updateJsonViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state, null, 2);
+                e: configurable('', {
+                    label: 'E:用户名',
+                    help: 'ValidateError.onInvalid 覆盖配置',
+                    validate: (value) => {
+                        if (value.length < 6) {
+                            const err = new AutoForm.ValidateError('用户名长度必须大于等于6');
+                            // 动态指定本次校验失败的行为，优先级高于 onInvalid 配置
+                            err.onInvalid = 'pass';
+                            throw err;
+                        }
+                        return true;
+                    },
+                }),
             };
-            store.watch(() => {
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const updateJsonViewer = () => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.innerHTML = JSON.stringify(store.state, null, 2);
+                };
+                store.watch(() => {
+                    updateJsonViewer();
+                });
                 updateJsonViewer();
             });
-            updateJsonViewer();
         </script>
     </body>
 </html>

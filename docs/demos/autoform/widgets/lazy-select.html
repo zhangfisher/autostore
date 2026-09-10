@@ -7,7 +7,6 @@
         <title>AutoStore</title>
         <link rel="stylesheet" href="/autostore/autoform.dark.css" />
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
-        <script src="/autostore/autostore.js"></script>
         <script src="/autostore/autoform.js"></script>
     </head>
 
@@ -17,9 +16,10 @@
             <div id="viewer" style="padding: 1em; border: 1px solid #ccc; margin-top: 1em"></div>
         </div>
         <script>
-            const { AutoStore, configurable } = AutoStoreSpaces;
+            const { configurable } = AutoForm;
             const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-            const store = new AutoStore({
+            const form = document.querySelector('#form');
+            form.state = {
                 products: configurable(['电脑'], {
                     label: '产品',
                     onValidate: (value) => {
@@ -30,11 +30,11 @@
                     valueKey: 'label',
                     labelKey: 'label',
                     help: '多选',
-                    invalidTips: '至少选择两个产品',
+                    errorMessage: '至少选择两个产品',
                     renderItem: '<span>{label}</span><span style="color:red;">{price}</span>',
                     maxOptionsVisible: 5,
                     showResults: true,
-                    select: async () => {
+                    choices: async () => {
                         await delay(5000);
                         return [
                             { id: 1, label: '手机', price: 1000, icon: 'phone' },
@@ -74,15 +74,17 @@
                         },
                     ],
                 }),
-            });
-            const form = document.querySelector('#form');
-            form.bind(store);
-            const refreshViewer = () => {
-                const jsonViewer = document.getElementById('viewer');
-                jsonViewer.innerHTML = JSON.stringify(store.state);
             };
-            store.watch(refreshViewer);
-            refreshViewer();
-        </script>
+            form.updateComplete.then(() => {
+                const store = form.activeStore;
+                const refreshViewer = () => {
+                    const jsonViewer = document.getElementById('viewer');
+                    jsonViewer.innerHTML = JSON.stringify(store.state);
+                };
+                store.watch(refreshViewer);
+                refreshViewer();
+        
+            });
+</script>
     </body>
 </html>

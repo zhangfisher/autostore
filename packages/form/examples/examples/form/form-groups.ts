@@ -7,6 +7,8 @@
  *   各自创建 store，切换分组不丢值由字段级响应式同步保证）
  * - 每个表单用 group 属性只渲染 schema 中声明了对应 group 的字段
  * - tabs/collapse 容器读取子表单的 name/label/icon 属性生成分组导航
+ * - data-actions 在分组头部渲染图标按钮（仅 collapse 模式支持），
+ *   点击冒泡 action-click 事件（detail.name 为图标名）
  */
 
 import { customElement, state } from "lit/decorators.js";
@@ -16,11 +18,12 @@ import type { Watcher } from "autostore";
 import "../../../src";
 
 // 分组导航定义：name 同时是 tabs/collapse 的 active 匹配键
+// actions：折叠面板头部的图标按钮（格式 `图标名:提示,图标名:提示`，仅 collapse 模式渲染）
 const GROUPS = [
-    { name: "basic", label: "基础信息", icon: "user" },
-    { name: "work", label: "工作信息", icon: "globe" },
-    { name: "skills", label: "技能特长", icon: "copy" },
-    { name: "settings", label: "偏好设置", icon: "bell" },
+    { name: "basic", label: "基础信息", icon: "user", actions: "user:查看资料,copy:复制资料" },
+    { name: "work", label: "工作信息", icon: "globe", actions: "save:保存工作信息" },
+    { name: "skills", label: "技能特长", icon: "copy", actions: "" },
+    { name: "settings", label: "偏好设置", icon: "bell", actions: "bell:通知设置,refresh:重置偏好" },
 ];
 
 // 标签页方向选项
@@ -127,6 +130,10 @@ class FormGroupsExample extends LitElement {
     /** 折叠面板手风琴模式：同时只展开一个面板（仅 collapse 模式） */
     accordion = false;
 
+    /** 最近一次 action-click 的描述（由分组头部图标按钮触发，仅 collapse 模式） */
+    @state()
+    lastAction = "";
+
     /** 第一个分组表单的实时状态 JSON（由 watch 订阅刷新） */
     @state()
     stateJson = "";
@@ -155,7 +162,8 @@ class FormGroupsExample extends LitElement {
         });
     }
 
-    /** 渲染四个分组表单：传入共享状态定义，各自按 group 过滤字段 */
+    /** 渲染四个分组表单：传入共享状态定义，各自按 group 过滤字段
+     *  data-actions 仅 collapse 模式消费（tabs 忽略该属性） */
     private _renderGroupForms() {
         return GROUPS.map(
             (g) => html`<auto-form
@@ -164,6 +172,7 @@ class FormGroupsExample extends LitElement {
                 group="${g.name}"
                 label="${g.label}"
                 icon="${g.icon}"
+                data-actions="${g.actions}"
             ></auto-form>`,
         );
     }
@@ -181,6 +190,17 @@ class FormGroupsExample extends LitElement {
     private _onAccordionChange(e: Event) {
         this.accordion = (e.target as HTMLInputElement).checked;
         this.requestUpdate();
+    }
+
+    /** 分组头部图标按钮点击：action-click 冒泡到 collapse 容器，detail.name 为图标名 */
+    private _onActionClick(e: Event) {
+        const { name } = (e as CustomEvent<{ name: string }>).detail;
+        const group = GROUPS.find((g) => g.actions.split(",").some((a) => a.split(":")[0] === name));
+        const title = group?.actions
+            .split(",")
+            .find((a) => a.split(":")[0] === name)
+            ?.split(":")[1];
+        this.lastAction = `${group?.label ?? name} → ${title ?? name}（icon: ${name}）`;
     }
 
     private _reset() {
@@ -202,7 +222,8 @@ class FormGroupsExample extends LitElement {
             <div>
                 <h3 style="margin: 0 0 0.5rem 0; color: var(--auto-primary);">表单分组示例</h3>
                 <p style="margin: 0 0 1rem 0; color: var(--auto-text-light); font-size: 0.9rem;">
-                    4 个分组表单通过 .state 传入同一份状态定义：切换分组、修改任意字段，下方实时状态同步更新
+                    4 个分组表单通过 .state 传入同一份状态定义：切换分组、修改任意字段，下方实时状态同步更新；
+                    折叠面板模式下各分组头部带 data-actions 图标按钮，点击触发 action-click
                 </p>
 
                 <div
@@ -264,18 +285,26 @@ class FormGroupsExample extends LitElement {
                               active="basic,settings"
                               ?accordion="${this.accordion}"
                               style="height: 480px;"
+                              @action-click="${this._onActionClick}"
                           >
                               ${this._renderGroupForms()}
                           </auto-form-collapse>
                       `}
 
-                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center;">
                     <sl-button @click="${this._reset}" variant="neutral" size="small"
                         >重置</sl-button
                     >
                     <sl-button @click="${this._submit}" variant="primary" size="small"
                         >提交</sl-button
                     >
+                    ${!isTabs && this.lastAction
+                        ? html`<span
+                              style="font-size: 0.8rem; color: var(--auto-text-light); margin-left: 0.5rem;"
+                          >
+                              action-click：${this.lastAction}
+                          </span>`
+                        : ""}
                 </div>
             </div>
         `;

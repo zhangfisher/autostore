@@ -38,7 +38,7 @@
     "scripts": {
         "dev": "vite",
         "dev:examples": "vite examples",
-        "build": "tsup && bun scripts/build-widget-iife.ts",
+        "build": "rm -rf dist && bun node_modules/tsup/dist/cli-default.js && bun scripts/build-widget-iife.ts",
         "build:vite": "tsc && vite build",
         "preview": "vite preview"
     },
