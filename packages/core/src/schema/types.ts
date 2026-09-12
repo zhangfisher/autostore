@@ -7,6 +7,8 @@ import type { AutoStoreWidgets } from "./widget-types";
 
 // 重新导出 AutoStoreWidgets 供外部使用
 export type { AutoStoreWidgets } from "./widget-types";
+// 文本输入系共享配置词汇（ADR-0005），UI 包的 input 系组件类型反向引用以保持词汇同步
+export type { AutoWidgetInputExtras } from "./widget-types";
 
 /**
  * 用于保存所有配置项的类型

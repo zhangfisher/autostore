@@ -43,32 +43,45 @@ const test3 = new AutoStore(
     { configManager, configKey: "test3" },
 );
 
-// 测试4：正确的 text widget 配置（内置字段名为 maxlength/minlength）
+// 测试4：正确的 text widget 配置（字段词汇统一 camelCase，ADR-0005）
 const test4 = new AutoStore(
     {
         field: configurable("test", {
             label: "测试",
             widget: "text",
-            maxlength: 100,
-            minlength: 1,
+            maxLength: 100,
+            minLength: 1,
             pattern: "^[a-z]+$",
         }),
     },
     { configManager, configKey: "test4" },
 );
 
-// 测试5：错误的 text widget 配置 - maxlength 类型错误（真反例）
+// 测试5：错误的 text widget 配置 - maxLength 类型错误（真反例）
 const test5 = new AutoStore(
     {
         field: configurable("test", {
             label: "测试",
             widget: "text",
-            // @ts-expect-error maxlength 必须是 number
-            maxlength: "100",
-            minlength: 1,
+            // @ts-expect-error maxLength 必须是 number
+            maxLength: "100",
+            minLength: 1,
         }),
     },
     { configManager, configKey: "test5" },
+);
+
+// 测试5b：HTML 小写形态已删除（ADR-0005 词汇收敛，真反例）
+const test5b = new AutoStore(
+    {
+        field: configurable("test", {
+            label: "测试",
+            widget: "text",
+            // @ts-expect-error 小写 maxlength 已删除，统一使用 maxLength
+            maxlength: 100,
+        }),
+    },
+    { configManager, configKey: "test5b" },
 );
 
 // 测试6：text widget 配置 - 字段都是可选的
@@ -215,4 +228,144 @@ const test14 = new AutoStore(
         }),
     },
     { configManager, configKey: "test14" },
+);
+
+// ---- 以下为重叠键词汇矩阵断言（ADR-0005：收录判据 = 实现消费 ∩ widget 语义）----
+
+// 测试15：password 收文本系共享词汇（AutoWidgetInputExtras）
+const test15 = new AutoStore(
+    {
+        field: configurable("secret", {
+            widget: "password",
+            pattern: "^[a-zA-Z0-9]+$",
+            minLength: 6,
+            maxLength: 20,
+            prefix: "pw:",
+            filled: true,
+            pill: true,
+            spellcheck: false,
+        }),
+    },
+    { configManager, configKey: "test15" },
+);
+
+// 测试15b：password 不收数值系字段（HTML password 不支持 max/min/step，真反例）
+const test15b = new AutoStore(
+    {
+        field: configurable("secret", {
+            widget: "password",
+            // @ts-expect-error password 不收 max（HTML 不支持，静默无效字段不进类型）
+            max: 100,
+        }),
+    },
+    { configManager, configKey: "test15b" },
+);
+
+// 测试15c：search 同为文本系（Extras 全量可用）
+const test15c = new AutoStore(
+    {
+        field: configurable("kw", {
+            widget: "search",
+            minLength: 2,
+            prefix: "@",
+        }),
+    },
+    { configManager, configKey: "test15c" },
+);
+
+// 测试16：number 只收装饰字段，不收文本系校验字段（真反例）
+const test16 = new AutoStore(
+    {
+        field: configurable(100, {
+            widget: "number",
+            max: 100,
+            filled: true,
+            pill: true,
+        }),
+    },
+    { configManager, configKey: "test16" },
+);
+
+const test16b = new AutoStore(
+    {
+        field: configurable(100, {
+            widget: "number",
+            // @ts-expect-error number 不收 pattern（HTML number 无 pattern 语义）
+            pattern: "^\\d+$",
+        }),
+    },
+    { configManager, configKey: "test16b" },
+);
+
+const test16c = new AutoStore(
+    {
+        field: configurable(100, {
+            widget: "number",
+            // @ts-expect-error number 不收 prefix（拼接会把 number 值污染为 string）
+            prefix: "¥",
+        }),
+    },
+    { configManager, configKey: "test16c" },
+);
+
+// 测试17：date 收装饰与前后缀（值是 string，拼接实现有效），不收文本校验字段
+const test17 = new AutoStore(
+    {
+        field: configurable("2026-09-10", {
+            widget: "date",
+            max: "2026-12-31",
+            prefix: "D:",
+            filled: true,
+        }),
+    },
+    { configManager, configKey: "test17" },
+);
+
+const test17b = new AutoStore(
+    {
+        field: configurable("2026-09-10", {
+            widget: "date",
+            // @ts-expect-error date 不收 pattern（HTML date 无 pattern 语义）
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+        }),
+    },
+    { configManager, configKey: "test17b" },
+);
+
+// 测试18：checkbox 收 checkLabel（form 实际消费的勾选文案）
+const test18 = new AutoStore(
+    {
+        field: configurable(true, {
+            widget: "checkbox",
+            checkLabel: "我已阅读并同意",
+            switchValues: [true, false],
+        }),
+    },
+    { configManager, configKey: "test18" },
+);
+
+// 测试19：email/tel/url/textarea 的 camelCase 词汇
+const test19 = new AutoStore(
+    {
+        email: configurable("a@b.com", {
+            widget: "email",
+            multiple: true,
+            maxLength: 50,
+        }),
+        tel: configurable("13800138000", {
+            widget: "tel",
+            maxLength: 11,
+            pattern: "^1[3-9]\\d{9}$",
+        }),
+        url: configurable("https://example.com", {
+            widget: "url",
+            suffix: ".com",
+        }),
+        remark: configurable("备注", {
+            widget: "textarea",
+            maxLength: 500,
+            rows: 4,
+        }),
+    },
+    { configManager, configKey: "test19" },
 );

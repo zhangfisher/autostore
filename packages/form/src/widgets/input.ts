@@ -2,37 +2,25 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { AutoField } from '@/field';
 import { css, html } from 'lit';
 import { tag } from '@/utils/tag';
+import type { AutoWidgetInputExtras } from 'autostore';
 export type InputType = 'number' | 'date' | 'time' | 'url' | 'password' | 'email' | 'search' | 'text' | 'datetime-local' | 'tel';
 /**
  * input widget 的配置类型（core 已收录 number/text/email 等各 input type 的属性，
- * 此处仅声明 input 特有的 inputType 分流与前后缀）
+ * 文本系共享词汇（minLength/maxLength/pattern/prefix/suffix/filled/pill/spellcheck/autocorrect）
+ * 统一在 core 的 AutoWidgetInputExtras 声明，此处反向引用保持词汇同步（ADR-0005）；
+ * input 是泛型输入框（经 inputType 分流到任意 HTML type），故同时保留数值系字段）
  */
-export interface AutoFieldInputOptions {
+export interface AutoFieldInputOptions extends AutoWidgetInputExtras {
     /**
      * 底层 HTML input type 分流（input widget 是泛型输入框，默认 text）
      */
     inputType?: InputType | 'input';
-    /**
-     * 值前缀：字符串值时自动在输入值前添加（toState/toInput 双向剥离）
-     */
-    prefix?: string;
-    /**
-     * 值后缀：字符串值时自动在输入值后添加（toState/toInput 双向剥离）
-     */
-    suffix?: string;
-    pattern?: string;
-    minLength?: number;
-    maxLength?: number;
     max?: number | string;
     min?: number | string;
     /**
      * 步长（透传到原生 input type=number，键盘 ↑/↓ 步进）
      */
     step?: number;
-    autocorrect?: string;
-    spellcheck?: boolean;
-    filled?: boolean;
-    pill?: boolean;
 }
 @tag('auto-field-input')
 export class AutoFieldInput<Options = AutoFieldInputOptions> extends AutoField<AutoFieldInputOptions & Options> {

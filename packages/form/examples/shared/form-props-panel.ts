@@ -140,7 +140,7 @@ export class FormPropsPanel extends LitElement {
         }
     `;
 
-    @property({ type: String }) border: string = "grid";
+    @property({ type: String }) border: string = "none";
     @property({ type: String }) size: string = "medium";
     @property({ type: String }) validAt: string = "lost-focus";
     @property({ type: Boolean }) compact: boolean = false;

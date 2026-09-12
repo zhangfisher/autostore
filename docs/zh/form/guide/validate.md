@@ -330,10 +330,25 @@ form.clearErrors(); // 清除所有字段的错误显示
 
 ### 全局校验
 
-除在`configurable`中声明校验外，创建`AutoStore`时也可以配置全局校验，作用于所有（或指定路径的）状态写入：
+除在`configurable`中声明校验外，`AutoStore`还支持配置全局校验，作用于所有（或指定路径的）状态写入。
+
+:::warning 提示
+全局校验选项属于`AutoStore`的创建参数，而通过`state`属性使用`AutoForm`时，内部自动创建的`AutoStore`不会携带这些选项。
+因此需要配置全局校验时，须自行创建带`configManager`的`AutoStore`实例，然后通过`store`属性接入表单。
+:::
 
 ```ts
+import { AutoStore, ConfigManager, configurable } from 'autostore';
+
+const state = {
+    user: {
+        username: configurable(''),
+    },
+};
+
 const store = new AutoStore(state, {
+    // 外部 store 接入 AutoForm 时必须提供 configManager
+    configManager: new ConfigManager({ load: () => ({}) }),
     // 全局校验函数：未在 configurable 中声明 validate 的状态均使用此函数
     validate: (newValue, oldValue, path) => {
         return true;
@@ -348,4 +363,6 @@ const store = new AutoStore(state, {
 });
 ```
 
-使用`<auto-form .store=${store}>`接入外部`store`时，全局校验配置同样生效。
+```html
+<auto-form .store=${store}></auto-form>
+```

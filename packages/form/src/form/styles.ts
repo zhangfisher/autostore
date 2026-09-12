@@ -21,7 +21,7 @@ export default css`
         }
     }
     /* 布局 */
-    :host([layout='auto']) {
+    :host([layout="auto"]) {
         & > .fields {
             /* 字段间换行空白会产生 inline-block 间隙（约 4px），font-size:0 消除 */
             font-size: 0;
@@ -33,7 +33,7 @@ export default css`
             }
         }
     }
-    :host([layout='row']) {
+    :host([layout="row"]) {
         & > .fields {
             display: flex;
             flex-direction: row;
@@ -43,7 +43,7 @@ export default css`
             }
         }
     }
-    :host([layout='col']) {
+    :host([layout="col"]) {
         & > .fields {
             display: flex;
             flex-direction: column;
@@ -51,7 +51,7 @@ export default css`
     }
 
     /* 网格线 */
-    :host([border='none']) {
+    :host([border="none"]) {
         border: none;
         & > .fields {
             & > * {
@@ -59,7 +59,7 @@ export default css`
             }
         }
     }
-    :host([border='outline']) {
+    :host([border="outline"]) {
         border: 1px solid var(--sl-input-border-color);
         & > .fields {
             & > * {
@@ -67,7 +67,7 @@ export default css`
             }
         }
     }
-    :host([border='grid']) {
+    :host([border="grid"]) {
         border: 1px solid var(--sl-input-border-color);
         border-left: none;
         & > .fields > :last-child {

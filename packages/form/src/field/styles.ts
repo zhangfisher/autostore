@@ -40,7 +40,7 @@ export default css`
                 display: flex;
                 align-items: center;
                 font-size: calc(var(--auto-font-size) * 0.9);
-                color: var(--auto-secondary-color);
+                color: var(--auto-gray-color);
                 padding: calc(var(--auto-spacing) * 0.3) 0px;
                 & a {
                     text-decoration: none;
@@ -163,8 +163,7 @@ export default css`
     /* 非网格边框（none/outline）下字段水平内边距收窄，贴近紧凑排布 */
     :host(:not(.grid-border)) {
         & > .autofield {
-            padding-left: calc(var(--auto-spacing) * 0.2);
-            padding-right: calc(var(--auto-spacing) * 0.2);
+            padding: calc(var(--auto-spacing) * 0.1) var(--auto-spacing);
         }
     }
     :host(.grid-border.compact) {
@@ -174,7 +173,7 @@ export default css`
     }
     :host(:not(.grid-border).compact) {
         & > .autofield {
-            padding: calc(var(--auto-spacing) * 0.1);
+            padding: calc(var(--auto-spacing) * 0.2);
         }
     }
     /* 布局 */

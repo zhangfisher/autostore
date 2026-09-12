@@ -21,17 +21,18 @@
 
 ### 声明字段
 
-在`AutoStore`状态使用`configurable`方法声明字段，
+在状态数据中使用`configurable`方法声明字段，
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         username: configurable('NAME', {
             label: '用户名'，
             widget: 'input'  // [!code ++]
         })
     },
-});
+};
 ```
 
 使用`configurable`声明状态中的某个状态值可配置时，可通过`widget`参数指定要渲染的字段组件类型。
@@ -45,7 +46,8 @@ const store = new AutoStore({
 字段可以通过`help`参数指定额外的帮助信息。
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         username: configurable('NAME', {
             label: '用户名'，
@@ -58,7 +60,7 @@ const store = new AutoStore({
             help: '密码至少6位(https://zhangfisher.github.io/voerka-i18n/)' //  [!code ++]
         })
     },
-});
+};
 ```
 
 **帮助信息可以在未尾`(<url>)`启用超链接**
@@ -70,13 +72,14 @@ const store = new AutoStore({
 使用`configurable`函数声明一个状态的值可配置，即字段，可以传入多个字段属性。
 
 ```ts {3-5}
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         username: configurable('<默认值>', {
             // ... 字段参数或属性
         }
-    })
-```
+    }
+};
 
 字段支持以下通用属性：
 
@@ -138,7 +141,8 @@ export type SchemaWidgetShareOptions<Value, State> = {
 `toView`方法用于自定义浏览视图。
 
 ```ts {5-9}
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         age: configurable(18, {
             label: '年龄'，
@@ -149,7 +153,7 @@ const store = new AutoStore({
             }
         })
     }
-});
+};
 ```
 
 <demo html="autoform/field/toView.html"/>
@@ -159,7 +163,8 @@ const store = new AutoStore({
 `required`参数用于指定字段是否必填。必填字段显示红色`*`号。
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         name: configurable('', {
             label: '姓名'，
@@ -170,7 +175,7 @@ const store = new AutoStore({
             required:true  // [!code ++]
         })
     }
-});
+};
 ```
 
 <demo html="autoform/field/required.html"/>
@@ -185,7 +190,8 @@ const store = new AutoStore({
 **例如：** 在下例状态中，sex 字段为`1`或`0`，在输入时，需要渲染为`男`或`女`，则可以如下配置：
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         sex: configurable(0, {
             label: '性别'，
@@ -197,7 +203,7 @@ const store = new AutoStore({
             }
         })
     },
-});
+};
 ```
 
 <demo html="autoform/field/toTransform.html"/>
@@ -235,7 +241,8 @@ styles = {
 用于扩展字段的样式，如`{"<选择器>":"样式"}`
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     product: {
         name: configurable("voerkai18n", {
             label: '产品名称',
@@ -253,7 +260,7 @@ const store = new AutoStore({
             }
         })
     },
-});
+};
 ```
 
 <demo html="autoform/field/styles.html"/>
@@ -271,12 +278,13 @@ const store = new AutoStore({
 
 **例如**：在 `IP`地址配置表单中，当启用 `DHCP` 时，IP 地址和子网掩码字段被禁用或隐藏，当禁用 `DHCP` 时，IP 地址和子网掩码字段必须填写。
 
-字段联动的核心原理是基于`AutoStore`，当创建`AutoStore`实例时会扫描收集所有被`configurable`修饰的状态字段，并使用`AutoStore.shadow()`方法创建一个`Shadow AutoStore`对象，用于存储所有可配置数据。
+字段联动的核心原理是基于`AutoStore`，当`AutoForm`内部创建`AutoStore`实例时会扫描收集所有被`configurable`修饰的状态字段，并使用`AutoStore.shadow()`方法创建一个`Shadow AutoStore`对象，用于存储所有可配置数据。
 
 **例如：**
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user:{
         username:configurable('',{...}),
         password:configurable('',{...}),
@@ -284,10 +292,10 @@ const store = new AutoStore({
         sex:configurable(1,{...}),
         vip:configurable(false,{...}),
     }
-})
+}
 ```
 
-上述代码在创建`AutoStore`实例时，会同时收集状态树中所有被`configurable`修饰的状态字段，然后在内部创建一个`Shadow AutoStore`，
+上述状态数据在`AutoForm`内部创建`AutoStore`实例时，会同时收集状态树中所有被`configurable`修饰的状态字段，然后在内部创建一个`Shadow AutoStore`，
 
 内部伪代码如下：
 
@@ -321,7 +329,8 @@ store.schmeas.store===shadowStore
 **在下例中，`ip`字段和`mask`字段的显示和隐藏，`gateway`字段的启用和禁用，都是通过`Shadow AutoStore`对象实例中的计算属性来控制的。**
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
         network: {
             dhcp: configurable(false, {
                 label: '自动获取IP地址'
@@ -343,7 +352,7 @@ const store = new AutoStore({
                 enable: (state)=>!state.network.dhcp//[!code ++]
             }),
         },
-    });
+    };
 ```
 
 **`enable: (state)=>!state.network.dhcp`的作用就是创建一个计算属性，依赖于`state.network.dhcp`，当`state.network.dhcp`的值发生变化时，该计算属性会重新计算，从而触发字段组件的重新渲染。**

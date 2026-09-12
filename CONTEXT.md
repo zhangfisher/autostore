@@ -43,6 +43,10 @@ _Avoid_: 自动类型转换、类型强转（未体现“以状态类型为依�
 从 store 读出的对象型状态是包装该原始对象的 Proxy（按 target 在 `proxyCache` 中缓存），其引用与原始对象永不相等。因此判别「当前状态是否为某对象」不能用 `===` 比较读出的值与原始引用——应以布尔/字符串等原始值作状态判据，或比较某个判别字段。
 _Avoid_: 对象引用、原始对象引用
 
+**双值选项对（Pair Choices）**:
+checkbox/switch 控件上 `choices` 键的专属语义：`[选中项, 未选中项]` 恰好两项、顺序有义——勾选时状态取第一项 value 并显示其 label，未勾选取第二项。它是 boolean 开关的双值化修饰，不是数据源。与选项类控件（select/radio/list/…）同键名的「候选项列表」语义无关。
+_Avoid_: 候选项、多选项（那是 select/radio 的 choices 语义；checkbox 的 choices 是开关档位，写 3 项会被静默忽略）
+
 **Cron 方言（Cron Dialect）**:
 `@autostorejs/form` cron widget 编辑的定制 cron 表达式：默认 **6 字段 `分 时 日 月 周 年`**，秒字段由配置属性启用（启用后为 7 字段 `秒 分 时 日 月 周 年`），表达式格式恒定，不因秒/年是否启用而增删字段。
 _Avoid_: 标准 5 字段 crontab、Quartz 7 字段（本方言均不是）

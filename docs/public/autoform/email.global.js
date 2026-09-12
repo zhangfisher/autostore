@@ -18,7 +18,7 @@ var __af_ns14 = __core.UtilsRenderWidget;
 var __af_ns15 = __core.UtilsGetInputValue;
 var __af_ns16 = __core.FormVars;
 var __af_ns17 = __core.AutoStoreNS;
-"use strict";var AutoFormWidgets=AutoFormWidgets||{};AutoFormWidgets.Email=(()=>{var W=Object.create;var c=Object.defineProperty;var _=Object.getOwnPropertyDescriptor;var E=Object.getOwnPropertyNames;var P=Object.getPrototypeOf,q=Object.prototype.hasOwnProperty;var m=(i,e)=>()=>(e||i((e={exports:{}}).exports,e),e.exports),z=(i,e)=>{for(var n in e)c(i,n,{get:e[n],enumerable:!0})},$=(i,e,n,t)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of E(e))!q.call(i,r)&&r!==n&&c(i,r,{get:()=>e[r],enumerable:!(t=_(e,r))||t.enumerable});return i};var d=(i,e,n)=>(n=i!=null?W(P(i)):{},$(e||!i||!i.__esModule?c(n,"default",{value:i,enumerable:!0}):n,i)),B=i=>$(c({},"__esModule",{value:!0}),i),b=(i,e,n,t)=>{for(var r=t>1?void 0:t?_(e,n):e,s=i.length-1,l;s>=0;s--)(l=i[s])&&(r=(t?l(e,n,r):l(r))||r);return t&&r&&c(e,n,r),r};var y=m((N,I)=>{I.exports=__af_ns11});var T=m((R,v)=>{v.exports=__af_ns3});var C=m((j,A)=>{A.exports=__af_ns9});var L=m((G,O)=>{O.exports=__af_ns0});var D={};z(D,{AutoFieldEmail:()=>f});var F=d(y(),1);var p=d(T(),1),x=d(C(),1),g=d(L(),1),k=d(y(),1);var u=class extends x.AutoField{constructor(){super(...arguments);this._prefix="";this._suffix=""}connectedCallback(){super.connectedCallback(),this._initPrefixAndSuffix()}getInputType(){return this.options.inputType||"input"}getInitialOptions(){return{inputType:"input"}}getPrefix(){if(this.options.icon)return g.html`<sl-icon name="${this.options.icon}" slot="prefix"></sl-icon>`}renderDropdown(){}_initPrefixAndSuffix(){let n=r=>r.map(s=>typeof s=="string"?s:s.value||s.label),t=(r,s,l=!0)=>{if(Array.isArray(s)&&s.length>0){let S=n(s),h=-1;S.some((o,M)=>{if(l&&this.value.startsWith(o)||!l&&this.value.endsWith(o))return l?(this._prefix=o,this.value=this.value.substring(o.length)):(this._suffix=o,this.value=this.value.substring(0,this.value.length-o.length)),h=M,!0});let w=h===-1?"?":typeof s[h]=="string"?s[h]:s[h].label,a={type:s.length===1?"button":"dropdown",label:w,caret:!l};a.type==="dropdown"?a.items=s.map(o=>(o==="-"||(o=typeof o=="string"?{label:o}:o,o.onClick=()=>{l?this._prefix=o.value??o.label:this._suffix=o.value??o.label,this.onFieldChange()}),o)):typeof s[0]=="string"?a.label=s[0]:Object.assign(a,s[0]),a.syncMenu=!0,a.pos=l?"before":"after",l?r.splice(0,0,a):r.push(a)}};this.options.prefix&&t(this.beforeActions,this.options.prefix),this.options.suffix&&t(this.afterActions,this.options.suffix,!1)}onInputChange(n){let t=n.type;t.includes("input")?this.onFieldInput():t.includes("change")&&this.onFieldChange()}onInputBlur(n){this.context.validAt==="lost-focus"&&this.onFieldChange()}renderInput(){return g.html`
+"use strict";var AutoFormWidgets=AutoFormWidgets||{};AutoFormWidgets.Email=(()=>{var w=Object.create;var c=Object.defineProperty;var _=Object.getOwnPropertyDescriptor;var M=Object.getOwnPropertyNames;var P=Object.getPrototypeOf,q=Object.prototype.hasOwnProperty;var m=(i,e)=>()=>(e||i((e={exports:{}}).exports,e),e.exports),z=(i,e)=>{for(var n in e)c(i,n,{get:e[n],enumerable:!0})},$=(i,e,n,t)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of M(e))!q.call(i,r)&&r!==n&&c(i,r,{get:()=>e[r],enumerable:!(t=_(e,r))||t.enumerable});return i};var d=(i,e,n)=>(n=i!=null?w(P(i)):{},$(e||!i||!i.__esModule?c(n,"default",{value:i,enumerable:!0}):n,i)),B=i=>$(c({},"__esModule",{value:!0}),i),b=(i,e,n,t)=>{for(var r=t>1?void 0:t?_(e,n):e,s=i.length-1,p;s>=0;s--)(p=i[s])&&(r=(t?p(e,n,r):p(r))||r);return t&&r&&c(e,n,r),r};var y=m((N,I)=>{I.exports=__af_ns11});var T=m((R,v)=>{v.exports=__af_ns3});var C=m((j,A)=>{A.exports=__af_ns9});var L=m((G,O)=>{O.exports=__af_ns0});var D={};z(D,{AutoFieldEmail:()=>f});var F=d(y(),1);var l=d(T(),1),x=d(C(),1),g=d(L(),1),k=d(y(),1);var u=class extends x.AutoField{constructor(){super(...arguments);this._prefix="";this._suffix=""}connectedCallback(){super.connectedCallback(),this._initPrefixAndSuffix()}getInputType(){return this.options.inputType||"input"}getInitialOptions(){return{inputType:"input"}}getPrefix(){if(this.options.icon)return g.html`<sl-icon name="${this.options.icon}" slot="prefix"></sl-icon>`}renderDropdown(){}_initPrefixAndSuffix(){let n=r=>r.map(s=>typeof s=="string"?s:s.value||s.label),t=(r,s,p=!0)=>{if(Array.isArray(s)&&s.length>0){let W=n(s),h=-1;W.some((o,S)=>{if(p&&this.value.startsWith(o)||!p&&this.value.endsWith(o))return p?(this._prefix=o,this.value=this.value.substring(o.length)):(this._suffix=o,this.value=this.value.substring(0,this.value.length-o.length)),h=S,!0});let E=h===-1?"?":typeof s[h]=="string"?s[h]:s[h].label,a={type:s.length===1?"button":"dropdown",label:E,caret:!p};a.type==="dropdown"?a.items=s.map(o=>(o==="-"||(o=typeof o=="string"?{label:o}:o,o.onClick=()=>{p?this._prefix=o.value??o.label:this._suffix=o.value??o.label,this.onFieldChange()}),o)):typeof s[0]=="string"?a.label=s[0]:Object.assign(a,s[0]),a.syncMenu=!0,a.pos=p?"before":"after",p?r.splice(0,0,a):r.push(a)}};this.options.prefix&&t(this.beforeActions,this.options.prefix),this.options.suffix&&t(this.afterActions,this.options.suffix,!1)}onInputChange(n){let t=n.type;t.includes("input")?this.onFieldInput():t.includes("change")&&this.onFieldChange()}onInputBlur(n){this.context.validAt==="lost-focus"&&this.onFieldChange()}renderInput(){return g.html`
             <sl-input
                 slot="value"
                 type="${this.getInputType()}"
@@ -30,13 +30,13 @@ var __af_ns17 = __core.AutoStoreNS;
                 ?clearable=${this.options.clearable}
                 ?required=${this.options.required}
                 size=${this.context.size}
-                placeholder=${(0,p.ifDefined)(this.options.placeholder)}
-                pattern=${(0,p.ifDefined)(this.options.pattern)}
-                minLength=${(0,p.ifDefined)(this.options.minLength)}
-                maxLength=${(0,p.ifDefined)(this.options.maxLength)}
-                max=${(0,p.ifDefined)(this.options.max)}
-                min=${(0,p.ifDefined)(this.options.min)}
-                step=${(0,p.ifDefined)(this.options.step)}
+                placeholder=${(0,l.ifDefined)(this.options.placeholder)}
+                pattern=${(0,l.ifDefined)(this.options.pattern)}
+                minLength=${(0,l.ifDefined)(this.options.minLength)}
+                maxLength=${(0,l.ifDefined)(this.options.maxLength)}
+                max=${(0,l.ifDefined)(this.options.max)}
+                min=${(0,l.ifDefined)(this.options.min)}
+                step=${(0,l.ifDefined)(this.options.step)}
                 ?disabled=${!this.options.enable}
                 .autocorrect=${this.options.autocorrect}
                 .autocomplete=${this.options.autocomplete}
@@ -44,7 +44,7 @@ var __af_ns17 = __core.AutoStoreNS;
                 @sl-input=${this.onInputChange.bind(this)}
                 @sl-change=${this.onInputChange.bind(this)}
                 @sl-blur=${this.onInputBlur.bind(this)}
-                spellcheck=${(0,p.ifDefined)(this.options.spellcheck)}
+                spellcheck=${(0,l.ifDefined)(this.options.spellcheck)}
             >
                 ${this.renderActions()}${this.getPrefix()}${this.getSuffix()}</sl-input
             >

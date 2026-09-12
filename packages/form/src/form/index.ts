@@ -41,6 +41,7 @@ import { HostClasses } from "@/controllers/hostClasss";
 import "../field";
 import styles from "./styles";
 import { applyClass } from "@/utils/applyClass";
+import { getVal, setVal } from "@/utils";
 import "../components";
 import { registerIcons } from "@/utils";
 import { cloneSchemaState } from "@/utils/cloneSchemaState";
@@ -166,7 +167,7 @@ export class AutoForm extends LitElement {
      * border:  none | outline | grid
      */
     @property({ type: String, reflect: true })
-    border: "none" | "outline" | "grid" = "grid";
+    border: "none" | "outline" | "grid" = "none";
 
     /**
      * 显示网络
@@ -332,6 +333,12 @@ export class AutoForm extends LitElement {
             }
         }
 
+        // group/path/advanced 是 schemas 的过滤条件，过滤逻辑只在 _loadSchemas
+        // 中执行一次，动态变化时必须重新加载，否则字段列表不会更新
+        if (["group", "path", "advanced"].some((key) => changedProperties.has(key))) {
+            this._loadSchemas();
+        }
+
         return true;
     }
 
@@ -426,14 +433,42 @@ export class AutoForm extends LitElement {
         schemaArray.sort((a, b) => (a.order || 0) - (b.order || 0));
 
         this.schemas = schemaArray;
+        // 需赶在首次渲染前写入 errors，字段 updateOptions 读 getFieldError 才能拿到初始错误
+        if (this.validAtInit) this._validateAtInit();
         this.requestUpdate();
+    }
+
+    /**
+     * 触发一次初始校验（validAtInit）
+     *
+     * core 建立响应式时初始值经 Reflect.set 直写原始对象，绕过了 set 拦截中的
+     * 校验逻辑，因此首次渲染时 configManager.errors 为空，字段读不到初始错误。
+     * 通过同值重写触发校验：isValidPass 先于值比较执行，同值写入不会派发
+     * 变更通知（val !== oldValue 才 notify），无额外副作用。
+     */
+    private _validateAtInit() {
+        const store = this.activeStore;
+        if (!store) return;
+        for (const schema of this.schemas) {
+            const path = (schema as any).path as string[] | undefined;
+            if (!path || path.length === 0) continue;
+            try {
+                const value = getVal(store.state, path);
+                setVal(store.state, path, value);
+            } catch {
+                // 校验失败：错误信息已由 core 写入 configManager.errors / store.errors
+            }
+        }
     }
 
     private _matchesGroup(schema: AutoStoreStateSchema): boolean {
         if (!this.group) return true;
 
-        const fieldGroups = (schema.group || "").split(",");
         const groups = this.group.split(",");
+        // * 是通配符，匹配所有字段
+        if (groups.includes("*")) return true;
+
+        const fieldGroups = (schema.group || "").split(",");
         return fieldGroups.some((g) => groups.includes(g));
     }
 

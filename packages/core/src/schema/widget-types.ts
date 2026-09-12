@@ -9,6 +9,12 @@
  * 注意：本表定位是"widget 配置类型"而非"HTML 属性镜像"——
  * 重叠组件（form 也实现的同名 widget）被 form 实际消费的配置字段
  * 补写进本表对应接口（interface 同名成员无法被模块扩展增强）。
+ *
+ * 字段词汇统一 camelCase（ADR-0005）：form 组件以 camelCase 读取配置，
+ * HTML 小写形态（maxlength/minlength）已删除——发布类型中收窄的
+ * 公开词汇，schema 配置层面已验证零使用。
+ * 字段收录判据：实现消费 ∩ widget 语义——HTML 明确不支持或破坏值类型的
+ * 字段不收（如 number 不收 pattern/prefix）。
  */
 import type { SchemaChoices } from "./types";
 
@@ -34,62 +40,90 @@ export interface BaseInputAttributes {
     tabIndex?: number;
 }
 
+/**
+ * 文本输入系 widget 的共享配置词汇（camelCase，ADR-0005）
+ *
+ * 来自 form 泛型输入框（auto-field-input）的实际消费词汇。
+ * 文本系重叠键（text/tel/password/search/email/url）extends 本接口；
+ * 数值/日期系（number/date）只收其中对自身语义有效的装饰字段
+ * （filled/pill 及 date 的 prefix/suffix），不 extends——长度/正则/拼写
+ * 等文本校验字段对它们静默无效（收录判据：实现消费 ∩ widget 语义）。
+ */
+export interface AutoWidgetInputExtras {
+    /**
+     * 最小长度限制
+     */
+    minLength?: number;
+    /**
+     * 最大长度限制
+     */
+    maxLength?: number;
+    /**
+     * 校验正则（HTML pattern）
+     */
+    pattern?: string;
+    /**
+     * 值前缀：字符串值自动拼接（form 的 toState/toInput 双向剥离）
+     */
+    prefix?: string;
+    /**
+     * 值后缀：字符串值自动拼接（form 的 toState/toInput 双向剥离）
+     */
+    suffix?: string;
+    /**
+     * 填充态外观（form 透传 Shoelace filled）
+     */
+    filled?: boolean;
+    /**
+     * 胶囊圆角外观（form 透传 Shoelace pill）
+     */
+    pill?: boolean;
+    /**
+     * 拼写检查
+     */
+    spellcheck?: boolean;
+    /**
+     * 自动更正（Safari 私有属性透传）
+     */
+    autocorrect?: string;
+}
+
 // 各个 input type 的专属属性拆分为独立的 interface
 
-export interface AutoWidgetText extends BaseInputAttributes {
-    maxlength?: number;
-    minlength?: number;
-    pattern?: string;
-}
+export interface AutoWidgetText extends BaseInputAttributes, AutoWidgetInputExtras {}
 
 export interface AutoWidgetNumber extends BaseInputAttributes {
     max?: number;
     min?: number;
     step?: number;
+    /**
+     * 填充态外观（form 透传 Shoelace filled）
+     */
+    filled?: boolean;
+    /**
+     * 胶囊圆角外观（form 透传 Shoelace pill）
+     */
+    pill?: boolean;
 }
 
-export interface AutoWidgetEmail extends BaseInputAttributes {
-    maxlength?: number;
-    minlength?: number;
-    pattern?: string;
+export interface AutoWidgetEmail extends BaseInputAttributes, AutoWidgetInputExtras {
     multiple?: boolean;
 }
 
-export interface AutoWidgetPassword extends BaseInputAttributes {
-    maxlength?: number;
-    minlength?: number;
-    /**
-     * form 的 password 组件继承泛型输入框实现，以 camelCase 读取长度限制
-     */
-    minLength?: number;
-    maxLength?: number;
-    pattern?: string;
-}
+export interface AutoWidgetPassword extends BaseInputAttributes, AutoWidgetInputExtras {}
 
-export interface AutoWidgetSearch extends BaseInputAttributes {
-    maxlength?: number;
-    minlength?: number;
-    /**
-     * form 的 search 组件继承泛型输入框实现，以 camelCase 读取长度限制
-     */
-    minLength?: number;
-    maxLength?: number;
-    pattern?: string;
-}
+export interface AutoWidgetSearch extends BaseInputAttributes, AutoWidgetInputExtras {}
 
-export interface AutoWidgetTel extends BaseInputAttributes {
-    maxlength?: number;
-    minlength?: number;
-    pattern?: string;
-}
+export interface AutoWidgetTel extends BaseInputAttributes, AutoWidgetInputExtras {}
 
-export interface AutoWidgetUrl extends BaseInputAttributes {
-    maxlength?: number;
-    minlength?: number;
-    pattern?: string;
-}
+export interface AutoWidgetUrl extends BaseInputAttributes, AutoWidgetInputExtras {}
 
 export interface AutoWidgetCheckbox extends BaseInputAttributes {
+    /**
+     * 勾选框旁的显示文案（不配置时显示 label）
+     * form 的 checkbox/switch 实际消费的键
+     */
+    checkLabel?: string;
     /**
      * 双值开关语义：[选中值, 未选中值]，如 ["yes","no"]（默认 [true,false]）
      * form 的 checkbox/switch 实际消费的键
@@ -134,6 +168,22 @@ export interface AutoWidgetDate extends BaseInputAttributes {
     max?: string;
     min?: string;
     step?: number;
+    /**
+     * 值前缀：日期字符串值自动拼接（form 的 toState/toInput 双向剥离）
+     */
+    prefix?: string;
+    /**
+     * 值后缀：日期字符串值自动拼接（form 的 toState/toInput 双向剥离）
+     */
+    suffix?: string;
+    /**
+     * 填充态外观（form 透传 Shoelace filled）
+     */
+    filled?: boolean;
+    /**
+     * 胶囊圆角外观（form 透传 Shoelace pill）
+     */
+    pill?: boolean;
 }
 
 export interface AutoWidgetDateTimeLocal extends BaseInputAttributes {
@@ -172,11 +222,6 @@ export interface AutoWidgetImage extends BaseInputAttributes {
 }
 
 export interface AutoWidgetTextarea extends BaseInputAttributes {
-    maxlength?: number;
-    minlength?: number;
-    /**
-     * form 的 textarea 组件以 camelCase 读取长度限制
-     */
     minLength?: number;
     maxLength?: number;
     rows?: number;

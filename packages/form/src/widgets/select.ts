@@ -82,7 +82,7 @@ export class AutoFieldSelect extends AutoField<AutoFieldSelectOptions> {
 			multiple: false,
 			clearable: true,
 			maxOptionsVisible: 0,
-			placement: "top",
+			placement: "bottom",
 		};
 	}
 	_renderItem(item: any) {

@@ -9,13 +9,25 @@
         <link rel="stylesheet" href="/autostore/autoform.light.css" />
         <script src="/autostore/autoform.js"></script>
         <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+        <style>
+            /* json-viewer 亮色主题：透明背景融入页面 */
+            json-viewer {
+                --background-color: transparent;
+                --color: #4e5969;
+                --property-color: #881391;
+                --string-color: #998000;
+                --number-color: #1a1aa6;
+                --boolean-color: #0b6bcb;
+                --null-color: #a4a5a8;
+                --preview-color: #8c959f;
+                width: 100%;
+            }
+        </style>
     </head>
 
     <body>
-        <div style="display: flex">
-            <auto-form id="login"></auto-form>
-            <json-viewer id="viewer" style="width: 40%; padding: 1em"></json-viewer>
-        </div>
+        <json-viewer id="viewer"></json-viewer>
+        <auto-form id="login"></auto-form>
         <div>
             <button id="updateCount" style="border: 1px solid gray; padding: 1em; margin-top: 1em">Change order.count</button>
         </div>
@@ -25,7 +37,9 @@
             const form = document.querySelector('#login');
             form.state = {
                 user: {
-                    username: configurable('<NAME>'),
+                    username: configurable('<NAME>', {
+                        icon: 'user',
+                    }),
                     password: configurable('<PASSWORD>'),
                 },
                 order: {

@@ -6,12 +6,16 @@
 
 创建一个`AutoForm`的基本方式如下：
 
-### 第 1 步: 创建`AutoStore`实例
+:::warning 提示
+使用`AutoForm`不需要手动创建`AutoStore`实例，只需要定义状态数据并赋值给`auto-form`组件的`state`属性，`AutoForm`内部会自动创建`AutoStore`实例。
+:::
 
-创建一个`AutoStore`实例，用于存储表单数据。`AutoStore`实例内部维护了一个经过`Proxy`代理的`JSON`对象，用于存储表单数据。
+### 第 1 步: 定义状态数据
+
+首先定义表单的状态数据。状态数据本质上是一个普通的`JSON`对象，最终会被收集到`AutoForm`内部自动创建的`AutoStore`实例中。
 
 ```ts
-const store = new AutoStore({
+const state = {
     user: {
         username: 'NAME',
         password: 'PASSWORD',
@@ -21,20 +25,20 @@ const store = new AutoStore({
         count: 1,
         total: (order) => order.price * order.count,
     },
-});
+};
 ```
 
 :::warning 提示
-可以创建任意复杂的`AutoStore`。
+状态数据可以任意复杂，包括嵌套对象和计算属性。
 :::
 
 ### 第 2 步: 声明字段
 
-接下来，我们使用`configurable`函数来声明，`AutoStore`的状态树中的哪些字段中是可配置的。
+接下来，我们使用`configurable`函数来声明，状态树中的哪些字段中是可配置的。
 
-```ts {4-5,8-9}
-import { AutoStore, configurable } from 'autostore';
-const store = new AutoStore({
+```ts {2-3,6-7,12}
+import { configurable } from 'autostore';
+const state = {
     user: {
         username: configurable('NAME'),
         password: configurable('PASSWORD'),
@@ -44,7 +48,7 @@ const store = new AutoStore({
         count: configurable(1),
         total: (order) => order.price * order.count,
     },
-});
+};
 ```
 
 在一个嵌套的对象树中，我们可以使用`configurable`函数来声明哪些字段是可配置的。
@@ -80,7 +84,7 @@ const store = new AutoStore({
 **也可以像普通代码一样，在你的`ts/js`文件中引入**
 
 ```ts
-import { AutoStore } from 'autostore';
+import { configurable } from 'autostore';
 import '@autostorejs/form/dist/themes/light.css';
 
 // 只需要导入即可
@@ -97,7 +101,7 @@ import '@autostorejs/form'; //   [!code ++]
 
 接下来，我们就可以使用`auto-form`组件来创建表单了。
 
-在你的代码中创建`auto-form`组件，然后将状态定义对象赋值给`state`属性，`AutoForm`内部会自动创建`AutoStore`实例，就可以创建一个表单了。
+在你的代码中创建`auto-form`组件，然后将第 1、2 步定义的状态数据赋值给`state`属性，`AutoForm`内部会自动创建`AutoStore`实例和`ConfigManager`，就可以创建一个表单了。
 
 在`html`中，可以直接使用`auto-form`组件来创建表单：
 
@@ -107,7 +111,17 @@ import '@autostorejs/form'; //   [!code ++]
     const form = document.querySelector('#login');
     // 将状态定义直接赋值给 state 属性（推荐方式）
     form.state = {
-        // 表单状态数据
+        user: {
+            username: configurable('NAME', {
+                icon: 'user', // [!code ++]
+            }),
+            password: configurable('PASSWORD'),
+        },
+        order: {
+            price: configurable(100),
+            count: configurable(1),
+            total: (order) => order.price * order.count,
+        },
     };
 </script>
 
@@ -127,7 +141,7 @@ import '@autostorejs/form'; //   [!code ++]
 <demo html="autoform/form/create.html"/>
 
 :::warning 提示
-修改表单数据后，`store.state`数据会同步更新，两者双向绑定关系，即修改`store.state`也会同步到表单中。
+修改表单数据后，`AutoStore`中的数据会同步更新，两者是双向绑定关系，即修改`form.activeStore.state`也会同步到表单中。
 :::
 
 ### 小结
@@ -177,27 +191,6 @@ import '@autostorejs/form'; //   [!code ++]
 -   当`AutoStore`中的数据发生变化时，`AutoForm`会自动更新表单数据。
 -   当`AutoForm`中的数据发生变化时，`AutoStore`会自动更新`AutoStore`中的数据。
 
-### 主题
-
-`AutoForm`使用[ThemePro](https://zhangfisher.github.io/themepro/)作为主题方案，可以提供灵活实时的动态主题
-
-```html
-<!-- 引入 AutoForm 样式 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/index.css" />
-<!-- 引入主题样式 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/dark.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/red.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@autostorejs/form/dist/themes/blue.css" />
-
-<auto-form></auto-form>     // [!code ++]
-```
-
-<demo html="autoform/form/dark.html"/>
-
-:::warning 提示
-除了预设的`light`、`dark`、`blue`、`red`共四种颜色的主题外，还可以动态生成主题。
-详见[ThemePro](https://zhangfisher.github.io/themepro/)介绍。
-:::
 
 ### 尺寸
 
@@ -216,7 +209,12 @@ import '@autostorejs/form'; //   [!code ++]
 
 ### 网格线
 
-默认`AutoForm`会显示字段网格分割线，也可以控制不显示。
+默认`AutoForm`不显示网格线，可以通过`border`参数控制：
+
+-   `none`: 不显示网格线（默认）
+-   `outline`: 仅显示表单外边框
+-   `grid`: 显示字段网格分割线
+
 <demo html="autoform/form/border.html"/>
 
 ### 浏览模式
@@ -337,7 +335,8 @@ form.state = {
 `AutoForm`可以通过`order`参数对字段进行排序，可以指定字段的顺序。按`order`参数值从小到大排列。
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         username: configurable('NAME', {
             label: '用户名',
@@ -348,7 +347,7 @@ const store = new AutoStore({
             order: 1, // [!code ++]
         }),
     },
-});
+};
 ```
 
 <demo html="autoform/form/order.html"/>
@@ -370,7 +369,8 @@ const store = new AutoStore({
 `advanced`参数用于标识这是一个高级选项字段，当`advanced`时才会显示字段。
 
 ```ts
-const store = new AutoStore({
+const form = document.querySelector('#login');
+form.state = {
     user: {
         username: configurable('NAME', {
             label: '用户名',
@@ -380,7 +380,7 @@ const store = new AutoStore({
             label: '密码'
         }),
     }
-});
+};
 // 默认显示所有字段，包括advanced字段
 <auto-form ></auto-form> // [!code ++]
 // 显示所有字段，但不显示advanced字段

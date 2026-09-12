@@ -20,7 +20,6 @@ import styles from "./styles";
 import { toSchemaValue } from "@/utils/toSchemaValue";
 import { repeat } from "lit/directives/repeat.js";
 import { ContextController } from "@/controllers/context";
-// import type { RequiredKeys } from "flex-tools/types"; // 暂时未使用
 import { styleMap } from "lit/directives/style-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -400,8 +399,7 @@ export class AutoField<Options = unknown> extends LitElement {
             }
             return html`<div class="label" part="field-label" style="${ifDefined(styleMap(style))}">
                 <span class="title">
-                    ${this.getLabel()}
-                    ${when(ctx.viewonly, () => this.renderHelp(true))}
+                    ${this.getLabel()} ${when(ctx.viewonly, () => this.renderHelp(true))}
                     ${this._renderRequiredOption()}
                 </span>
                 ${when(labelPos === "top" && !ctx.viewonly, () => this.renderHelp())}
@@ -437,9 +435,7 @@ export class AutoField<Options = unknown> extends LitElement {
     // 输入即校验（validAt=input）走 _updateFieldValue；失焦校验模式下输入不
     // 触发校验，只清除旧错误，待失焦时再校验
     onFieldInput = () =>
-        this.context.validAt === "input"
-            ? this._updateFieldValue()
-            : this.clearError();
+        this.context.validAt === "input" ? this._updateFieldValue() : this.clearError();
 
     /**
      * 当schmeaOption发生变化时
@@ -683,7 +679,8 @@ export class AutoField<Options = unknown> extends LitElement {
     renderValue() {
         const labelPos = this.options.labelPos || this.context.labelPos;
         return html`
-            ${this.renderInput()} ${when(this.context.viewonly || labelPos === "left", () => this.renderHelp())}
+            ${this.renderInput()}
+            ${when(this.context.viewonly || labelPos === "left", () => this.renderHelp())}
             ${this.renderError()}
         `;
     }
@@ -707,8 +704,7 @@ export class AutoField<Options = unknown> extends LitElement {
         const labelPos = (this.options as any).labelPos
             ? (this.options as any).labelPos
             : ctx.labelPos;
-        this.classs.use(ctx.size, {
-            [`${ctx.border}-border`]: true,
+        const fieldClasss = {
             error: this.isShowError(),
             "left-label": labelPos === "left" || ctx.viewonly,
             "top-label": labelPos === "top" && !ctx.viewonly,
@@ -720,7 +716,9 @@ export class AutoField<Options = unknown> extends LitElement {
             hidden: !this.options.visible,
             [`view-${ctx.viewAlign}`]: true,
             [`${ctx.layout}-layout`]: true,
-        });
+        };
+        fieldClasss[`${ctx.border}-border`] = true;
+        this.classs.use(ctx.size, fieldClasss);
         // 字段宽度：写到宿主元素 inline style 才能覆盖表单 .fields > * 的 width:100%，
         // 未设置 width 时清空，避免字段切换 schema 后残留旧宽度
         if (this.options.width) {
@@ -729,7 +727,7 @@ export class AutoField<Options = unknown> extends LitElement {
             this.style.width = "";
         }
         return html`
-            <div class="autofield">
+            <div class="autofield" part="autofield">
                 ${this.options.divider ? html`<sl-divider></sl-divider>` : null}
                 ${this.renderLabel()}
                 <div class="value" part="field-value">
