@@ -2,6 +2,10 @@
     "name": "@autostorejs/form",
     "version": "4.4.0",
     "description": "form webcomponent for autostore",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/zhangfisher/autostore.git"
+    },
     "type": "module",
     "exports": {
         ".": "./dist/index.js",
