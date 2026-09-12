@@ -9,7 +9,8 @@
             "@autostorejs/react",
             "@autostorejs/syncer",
             "@autostorejs/plugins",
-            "@autostorejs/devtools"
+            "@autostorejs/devtools",
+            "@autostorejs/form"
         ]
     ],
     "linked": [],

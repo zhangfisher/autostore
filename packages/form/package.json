@@ -1,6 +1,6 @@
 {
     "name": "@autostorejs/form",
-    "version": "4.3.2",
+    "version": "4.4.0",
     "description": "form webcomponent for autostore",
     "type": "module",
     "exports": {
@@ -47,12 +47,12 @@
         "@iconify-json/lucide": "^1.2.86",
         "@lit/context": "^1.1.6",
         "@shoelace-style/shoelace": "^2.20.1",
+        "autostore": "workspace:*",
         "flex-tools": "^1.6.4",
         "lit": "3.3.2"
     },
     "devDependencies": {
         "@autostorejs/syncer": "workspace:*",
-        "autostore": "workspace:*",
         "esbuild": "0.27.2",
         "esbuild-copy-files-plugin": "^1.2.1",
         "tsup": "^8.5.1",
@@ -61,8 +61,5 @@
         "vite-plugin-cp": "^6.0.3",
         "vite-plugin-mock-dev-server": "^2.0.1",
         "zlib": "^1.0.5"
-    },
-    "peerDependencies": {
-        "autostore": "workspace:*"
     }
 }

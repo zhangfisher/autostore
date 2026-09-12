@@ -126,7 +126,7 @@
     },
     "packages/core": {
       "name": "autostore",
-      "version": "4.3.2",
+      "version": "4.4.0",
       "dependencies": {
         "fastevent": "^2.7.0",
         "flex-tools": "^1.6.4",
@@ -144,7 +144,7 @@
     },
     "packages/devTools": {
       "name": "@autostorejs/devtools",
-      "version": "4.3.2",
+      "version": "4.4.0",
       "dependencies": {
         "redux": "^5.0.1",
       },
@@ -155,18 +155,18 @@
     },
     "packages/form": {
       "name": "@autostorejs/form",
-      "version": "4.3.2",
+      "version": "4.4.0",
       "dependencies": {
         "@autostorejs/plugins": "workspace:*",
         "@iconify-json/lucide": "^1.2.86",
         "@lit/context": "^1.1.6",
         "@shoelace-style/shoelace": "^2.20.1",
+        "autostore": "workspace:*",
         "flex-tools": "^1.6.4",
         "lit": "3.3.2",
       },
       "devDependencies": {
         "@autostorejs/syncer": "workspace:*",
-        "autostore": "workspace:*",
         "esbuild": "0.27.2",
         "esbuild-copy-files-plugin": "^1.2.1",
         "tsup": "^8.5.1",
@@ -176,13 +176,10 @@
         "vite-plugin-mock-dev-server": "^2.0.1",
         "zlib": "^1.0.5",
       },
-      "peerDependencies": {
-        "autostore": "workspace:*",
-      },
     },
     "packages/plugins": {
       "name": "@autostorejs/plugins",
-      "version": "4.3.2",
+      "version": "4.4.0",
       "dependencies": {
         "autostore": "workspace:*",
         "flex-tools": "^1.6.6",
@@ -199,7 +196,7 @@
     },
     "packages/react": {
       "name": "@autostorejs/react",
-      "version": "4.3.2",
+      "version": "4.4.0",
       "dependencies": {
         "@autostorejs/plugins": "workspace:*",
         "autostore": "workspace:*",
@@ -220,7 +217,7 @@
     },
     "packages/syncer": {
       "name": "@autostorejs/syncer",
-      "version": "4.3.2",
+      "version": "4.4.0",
       "dependencies": {
         "autostore": "workspace:*",
         "flex-tools": "^1.6.3",
@@ -840,7 +837,7 @@
 
     "@types/body-parser": ["@types/body-parser@1.19.6", "https://registry.npmmirror.com/@types/body-parser/-/body-parser-1.19.6.tgz", { "dependencies": { "@types/connect": "*", "@types/node": "*" } }, "sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g=="],
 
-    "@types/bun": ["@types/bun@1.4.1", "", { "dependencies": { "bun-types": "1.4.1" } }, "sha512-0AVGiTXGajf1rgKom3N+c5L7CBxuoyyv1i44M0nX4UDK0G/fnRAMiri93nHuVPIb429KKtAgj7HatVmmOjeQLA=="],
+    "@types/bun": ["@types/bun@1.4.2", "", { "dependencies": { "bun-types": "1.4.2" } }, "sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ=="],
 
     "@types/chai": ["@types/chai@5.2.3", "https://registry.npmmirror.com/@types/chai/-/chai-5.2.3.tgz", { "dependencies": { "@types/deep-eql": "*", "assertion-error": "^2.0.1" } }, "sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA=="],
 
@@ -1080,7 +1077,7 @@
 
     "buffer-from": ["buffer-from@1.1.2", "https://registry.npmmirror.com/buffer-from/-/buffer-from-1.1.2.tgz", {}, "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ=="],
 
-    "bun-types": ["bun-types@1.4.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-loKuVrAFZKfEv+JvWkHRS9GW5IqLuLRjVXN9p+vZvBN86O5hf/pBZQ5hSoyipsrMmWObZBDvWnlmKvjKTM0PdA=="],
+    "bun-types": ["bun-types@1.4.2", "", { "dependencies": { "@types/node": "*" } }, "sha512-bxV1FgK7yBIzjRe5zBozIM4Bem11ZJcCXSrjWRG3YWLt8yFDePu4cLjpebO8OvPeIE9trbyPF4fuj3Cia4Fj3w=="],
 
     "bundle-require": ["bundle-require@5.1.0", "https://registry.npmmirror.com/bundle-require/-/bundle-require-5.1.0.tgz", { "dependencies": { "load-tsconfig": "^0.2.3" }, "peerDependencies": { "esbuild": ">=0.18" } }, "sha512-3WrrOuZiyaaZPWiEt4G3+IffISVC9HYlWueJEBWED4ZH4aIAC2PnkdnuRrR94M+w6yGWn4AglWtJtBI8YqvgoA=="],
 

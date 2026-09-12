@@ -1,16 +1,16 @@
 {
     "name": "@autostorejs/plugins",
     "type": "module",
-    "version": "4.3.2",
+    "version": "4.4.0",
     "module": "src/index.ts",
     "access": "public",
     "publishConfig": {
         "access": "public"
-    },	
+    },
     "repository": {
-		"type": "git",
-		"url": "git+https://github.com/zhangfisher/autostore.git"
-	},
+        "type": "git",
+        "url": "git+https://github.com/zhangfisher/autostore.git"
+    },
     "files": [
         "dist"
     ],
