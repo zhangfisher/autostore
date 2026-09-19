@@ -34,9 +34,11 @@ export default defineConfig({
                 },
                 {
                     text: "指南",
+                    collapsed:false,
                     items: [
                         { text: "创建", link: "/zh/store/guide/store/create" },
-                        { text: "状态更新", link: "/zh/store/guide/store/read-write" },
+                        { text: "更新状态", link: "/zh/store/guide/store/read-write" },
+                        { text: "监听变化", link: "/zh/store/guide/store/watch" },
                         { text: "事件", link: "/zh/store/guide/store/events" },
                         { text: "批量更新", link: "/zh/store/guide/store/batchUpdate" },
                         {
@@ -74,6 +76,13 @@ export default defineConfig({
                         { text: "Typescript", link: "/zh/store/guide/store/typescript" },
                     ],
                 },
+                {
+                    text: "API",                    
+                    collapsed: false,
+                    items:[
+                        { text: "AutoStore",link:"/zh/store/api/store"}
+                    ]                     
+                }
             ],
             "/zh/react/": [
                 {
@@ -298,6 +307,7 @@ export default defineConfig({
             "/zh/sync/": [
                 {
                     text: "开始",
+                    collapsed:false,
                     items: [
                         { text: "关于", link: "/zh/sync/intro/about" },
                         { text: "安装", link: "/zh/sync/intro/install" },
@@ -306,6 +316,7 @@ export default defineConfig({
                 },
                 {
                     text: "指南",
+                    collapsed:false,
                     items: [
                         {
                             text: "Syncer",
@@ -406,6 +417,7 @@ export default defineConfig({
                 },
                 {
                     text: "指南",
+                    collapsed:false,
                     items: [
                         { text: "表单", link: "/zh/form/guide/form" },
                         { text: "字段", link: "/zh/form/guide/field" },
@@ -417,6 +429,7 @@ export default defineConfig({
                 },
                 {
                     text: "字段",
+                    collapsed:false,
                     items: [
                         { text: "Input", link: "/zh/form/guide/fields/input" },
                         { text: "Number", link: "/zh/form/guide/fields/number" },
