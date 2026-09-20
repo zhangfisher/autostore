@@ -25,10 +25,10 @@
  *  - fastevent/lite v2.6.1 已修复 once + onAny 共存时监听器移除 bug，可安全使用 onAny。
  */
 
-import type { ObserverObject } from "../observer/observer";
-import type { StateOperate } from "../store/types";
-import { AnyAutoStore } from "../types";
-import { pathStartsWith } from "../utils/pathStartsWith";
+import type { ObserverObject } from "autostore/src/observer/observer";
+import type { StateOperate } from "autostore/src/store/types";
+import { AnyAutoStore } from "autostore/src/types";
+import { installPlugin, pathStartsWith } from "autostore"
 
 /**
  * 为 store 装配「级联销毁观察对象」特性。
@@ -94,3 +94,6 @@ export function cascadeDestroy(store: AnyAutoStore): (() => void) | undefined {
         pendingPaths = [];
     });
 }
+
+
+installPlugin(cascadeDestroy)

@@ -161,17 +161,13 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
 
         // 1. 检查是否计算被禁用, 注意，仅点非初始化时才检查计算开关，因为第一次运行需要收集依赖，这样才能在后续运行时，随时启用/禁用计算属性
         if (this.isDisable(options?.enable)) {
-            this.store.logger.warn(() => `Async computed <${this.toString()}> is disabled`);
             return;
         }
         // 先记录上一次运行是否出错，再清除错误记录
         // 用于在重新计算开始时清除状态中残留的旧error（ctx是本次新建的，读不到上次的错误）
         const hadError = this.error !== undefined;
         this.error = undefined;
-        this._firstRun = true;
-        if (!first) {
-            this.store.logger.info(() => `Run async computed for : ${this.toString()}`);
-        }
+        this._firstRun = true; 
 
         // 2. 合成最终的配置参数
         const finalComputedOptions = (
@@ -187,10 +183,7 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
         );
         // 4. 检查是否有重入
         const { reentry } = finalComputedOptions;
-        if (this._isRunning && !reentry) {
-            this.store.logger.warn(
-                () => `Async computed: ${this.toString()} is running, can't reentry`,
-            );
+        if (this._isRunning && !reentry) { 
             emitStoreEvent(this.store, `observer/${this.id}/cancel`, {
                 reason: "reentry",
                 observer: this,
@@ -500,12 +493,6 @@ export class AsyncProComputedObject<Value = any, Scope = any> extends ComputedOb
         });
     }
     protected onDependsChange(params: StateOperate) {
-        this.store.logger.debug(
-            () =>
-                `AsyncComputed<${this.id}> is running by depends ${params.type}/${params.path.join(
-                    ".",
-                )} operate `,
-        );
         this.run({
             operate: params,
             first: !this._firstRun,

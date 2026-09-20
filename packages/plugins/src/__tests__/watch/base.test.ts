@@ -1,7 +1,10 @@
+// oxlint-disable no-unused-expressions
+import { AutoStore } from "autostore";
 import { describe, test, expect, mock } from "bun:test";
-import { watch } from "../../src/watch/watch";
-import { AutoStore } from "../../src";
-import { WatchObject } from "../../src/watch/watchObject";
+import { watch } from "../../watch/watch";
+import { WatchObject } from "../../watch/watchObject";
+
+import "../../watch"
 
 describe("watch功能测试", () => {
     describe("静态声明watch", () => {

@@ -88,4 +88,8 @@ export class ComputedObject<
     run(_?: RuntimeComputedOptions): any {
         throw new Error("Method not implemented.");
     }
+    detach(): void {
+        super.detach()
+        this.store.computedObjects.delete(this.id)
+    } 
 }

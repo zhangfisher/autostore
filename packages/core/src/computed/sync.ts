@@ -49,11 +49,7 @@ export class SyncComputedObject<Value = any, Scope = any> extends ComputedObject
         if (!first && this.isDisable(options?.enable)) {
             this.store.logger.warn(`Sync computed <${this.toString()}> is disabled`);
             return;
-        }
-
-        if (!first) {
-            this.store.logger.debug(`Run sync computed for : ${this.toString()}`);
-        }
+        } 
 
         // 2. 合成最终的配置参数
         const finalComputedOptions = (

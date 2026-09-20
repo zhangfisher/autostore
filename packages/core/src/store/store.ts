@@ -52,20 +52,20 @@
 
 import { ComputedObjects } from "../computed/computedObjects";
 import { GLOBAL_CONFIG_MANAGER, PATH_DELIMITER } from "../consts";
-import type { Dict, ObjectKeyPaths, StatePath } from "../types";
+import type { Dict,  StatePath } from "../types";
 import { getId } from "../utils/getId";
 import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
 import type { AutoStoreEvents } from "./types";
 import { BATCH_UPDATE_EVENT } from "../consts";
 import { createReactiveObject } from "./reactive";
-import { WatchObjects } from "../watch/watchObjects";
+// import { WatchObjects } from "../watch/watchObjects";
 import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
 import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor";
 import { isMatchOperates } from "../utils/isMatchOperates";
 import type { GetTypeByPath } from "../types";
-import { TimeoutError } from "../errors";
+// import { TimeoutError } from "../errors";
 import type { AnyObserverDescriptor, ObserverContext } from "../observer/types";
 import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent";
 import { FastLiteEvent } from "fastevent/lite";
@@ -76,12 +76,11 @@ import { configurable, schema } from "../schema/schema";
 import type { ConfigManager } from "../schema/manager";
 import { forEachObject, getSnapshot, getVal, isFunction, setVal, splitPath } from "../utils";
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
-import { createLogger, ILogger } from "flex-tools/misc/logger";
-import { cascadeDestroy } from "../plugins/cascadeDestroy";
+import { ILogger } from "flex-tools/misc/logger";
 import { refState } from "../plugins/refState";
 import { ObserverObjectBuilder, observers } from "./observers";
 import { isFuncDefine } from "../utils/isFuncDefine";
-import { getComputedObject } from "../utils/getComputedObject";
+// import { getComputedObject } from "../utils/getComputedObject";
 import { silence } from "../utils/silence";
 import { createEmptyLogger } from "../utils/createEmptyLogger";
 
@@ -150,7 +149,7 @@ export class AutoStore<
     private _data: ComputedState<State>;
     private _errors?: Record<string, string>;
     public computedObjects: ComputedObjects<State>;
-    public watchObjects: WatchObjects<State>;
+    // public watchObjects: WatchObjects<State>;
     protected _operates = new FastLiteEvent<StateChangeEvents>({
         delimiter: ".",
         transform: (message: any) => {
@@ -201,7 +200,7 @@ export class AutoStore<
         this._createSandbox();
         this._createConfigManager();
         this.computedObjects = new ComputedObjects<State>(this);
-        this.watchObjects = new WatchObjects<State>(this);
+        // this.watchObjects = new WatchObjects<State>(this);
         this._subscribeHooks();
         this._installPlugins();
         this._data = createReactiveObject.call(this as any, state || {}, {
@@ -337,7 +336,6 @@ export class AutoStore<
     private _installPlugins() {
         const plugins = this.options.plugins!;
         // 内置插件
-        plugins.push(cascadeDestroy);
         plugins.push(refState);
         const exts = globalThis.__AUTOSTORE_PLUGINS__;
         if (Array.isArray(exts)) {
@@ -462,7 +460,7 @@ export class AutoStore<
         // observer 后代路径集合（按 this.delimiter 连接），命中即跳过
         const observerPaths = new Set<string>();
         this.computedObjects.forEach((c) => observerPaths.add(c.path.join(this.delimiter)));
-        this.watchObjects.forEach((w) => observerPaths.add(w.path.join(this.delimiter)));
+        // this.watchObjects.forEach((w) => observerPaths.add(w.path.join(this.delimiter)));
 
         const parentPath = params.path;
         const t = params.type;
@@ -945,7 +943,7 @@ export class AutoStore<
     destroy() {
         this.offAll();
         this._operates.offAll();
-        this.watchObjects.clear();
+        // this.watchObjects.clear();
         this.computedObjects.clear();
         this._resetWatcher?.off();
         this._resetWatcher = undefined;

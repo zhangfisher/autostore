@@ -31,11 +31,11 @@ export const observers: Record<string, any> = {
         store.computedObjects.set(computedObj.id, computedObj);
         return computedObj;
     },
-    watch: (store: AnyAutoStore, descriptor: AnyObserverDescriptor, context: ObserverContext) => {
-        const watchObj = new WatchObject(store, descriptor, context);
-        store.watchObjects.set(watchObj.id, watchObj);
-        return watchObj;
-    },
+    // watch: (store: AnyAutoStore, descriptor: AnyObserverDescriptor, context: ObserverContext) => {
+    //     const watchObj = new WatchObject(store, descriptor, context);
+    //     store.watchObjects.set(watchObj.id, watchObj);
+    //     return watchObj;
+    // },
     schema: (store: AnyAutoStore, descriptor: AnyObserverDescriptor, context: ObserverContext) => {
         if (store.options.configManager) {
             const { path, value } = context;

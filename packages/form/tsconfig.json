@@ -28,6 +28,9 @@
         "noUncheckedSideEffectImports": true,
         "ignoreDeprecations": "6.0",
         "baseUrl": "./",
+        "types": [
+            "bun"
+        ],
         "paths": {
             "@/*": [
                 "src/*"

@@ -14,7 +14,7 @@
 import { IAutoStorePlugin } from "../plugins";
 
 export function installPlugin(plugin: IAutoStorePlugin) {
-    if (globalThis.__AUTOSTORE_PLUGINS__) {
+    if (!globalThis.__AUTOSTORE_PLUGINS__) {
         globalThis.__AUTOSTORE_PLUGINS__ = [];
     }
     if (typeof plugin === "function" && !globalThis.__AUTOSTORE_PLUGINS__.includes(plugin)) {

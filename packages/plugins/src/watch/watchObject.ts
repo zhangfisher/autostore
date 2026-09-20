@@ -1,11 +1,7 @@
 import type { WatchOptions, WatchDescriptor } from "./types";
-import type { Dict } from "../types";
-import { isEq } from "../utils/isEq";
-import type { AutoStore } from "../store/store";
-import type { ComputedContext } from "../computed/types";
-import { ObserverObject } from "../observer/observer";
-import { markRaw } from "../utils";
-import { emitStoreEvent } from "../utils/emitStoreEvent";
+import type { AutoStore,Dict } from "autostore";
+import { emitStoreEvent,markRaw,ObserverObject,isEq } from "autostore";
+import type { ComputedContext } from "autostore";
 
 export class WatchObject<Value = any> extends ObserverObject<Value, WatchOptions<Value>> {
     private _cache?: Dict;

@@ -9,6 +9,7 @@ export default defineConfig({
         asyncpro: "src/asyncpro/index.ts",
         shadow: "src/shadow.ts",
         trace: "src/trace.ts",
+        cascadeDestroy: "src/cascadeDestroy.ts",
     },
     format: ["esm", "cjs"],
     dts: true,

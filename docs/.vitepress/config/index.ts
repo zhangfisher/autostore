@@ -77,6 +77,17 @@ export default defineConfig({
                     ],
                 },
                 {
+                    text: "Plugins",                    
+                    collapsed: false,
+                    items:[
+                        { text: "asyncpro",link:"/zh/store/plugins/asyncpro"},
+                        { text: "watch",link:"/zh/store/plugins/watch"},
+                        { text: "shadow",link:"/zh/store/plugins/shadow"},
+                        { text: "cascadeDestroy",link:"/zh/store/plugins/cascadeDestroy"},
+                        { text: "trace",link:"/zh/store/plugins/trace"} 
+                    ]                     
+                },
+                {
                     text: "API",                    
                     collapsed: false,
                     items:[

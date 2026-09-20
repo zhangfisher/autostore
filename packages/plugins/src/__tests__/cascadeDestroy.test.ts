@@ -1,5 +1,8 @@
 import { describe, test, expect } from "bun:test";
-import { AutoStore, computed, watch } from "../src";
+import { AutoStore, computed } from "autostore";
+import "../watch"
+import "../cascadeDestroy"
+import { watch } from "../watch/watch";
 
 /**
  * 级联销毁观察对象特性（cascadeDestroy）测试

@@ -313,13 +313,7 @@ export class ObserverObject<
                 this.store.watch(this.getDepends(), this.onDependsChange.bind(this), {
                     operates: "write",
                 }),
-            );
-            this.store.logger.debug(
-                () =>
-                    `${this.toString()} subscribed to ${this.depends!.map((depends) =>
-                        depends.join(this.store.options.delimiter),
-                    ).join(",")}`,
-            );
+            ); 
             this._attached = true;
         }
     }
@@ -331,7 +325,6 @@ export class ObserverObject<
         // this._refStateCtx?.off();
         this._attached = false;
         this._subscribers = [];
-        this.store.watchObjects.delete(this.id);
     }
     /**
      * 销毁当前观察对象：解除依赖订阅、从所属集合移除并触发生命周期事件。
@@ -350,7 +343,7 @@ export class ObserverObject<
         this.store.off(`observer:set:${this.id}`);
         // 4. 从两个集合移除：用原生 Map.delete，避免与集合 delete（已路由到 destroy）互相递归
         Map.prototype.delete.call(this.store.computedObjects, this.id);
-        Map.prototype.delete.call(this.store.watchObjects, this.id);
+        if((this.store as any).watchObjects) Map.prototype.delete.call((this.store as any).watchObjects, this.id);
         emitStoreEvent(this.store, `observer/${this.id}/destroyed`, this);
     }
     /**

@@ -1,6 +1,6 @@
 import type { ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
-import type { AnyObserverObject, ObserverType, ObserverContext } from "../observer/types";
+import type { AnyObserverObject, ObserverType, ObserverContext, AnyObserverDescriptor } from "../observer/types";
 import type { Dict } from "../types";
 import { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
@@ -386,19 +386,16 @@ export type AutoStoreEvents = TransformedEvents<
         validate: { path: string[]; newValue: any; oldValue: any; error: string | undefined };
         /**
          *
-         * 创建observer实例前
-         *
-         *  observer/${id}/initial
-         *  observer/${id}/initial
+         * 创建observer实例前  
          */
-        "observer/initial": ObserverContext;
+        "observer/initial": ObserverContext; 
         // "observer:created": { observer: AnyObserverObject; context?: ObserverContext };
         // "observer:run": { args: Record<string, any>; scope: any; observer: AnyObserverObject };
         // "observer:done": { value: any; observer: AnyObserverObject };
         // "observer:cancel": { reason: string; observer: AnyObserverObject };
         // "observer:error": { error: Error; observer: AnyObserverObject };
         // "observer:destroyed": AnyObserverObject;
-    } & {
+    }   & {
         [key: `observer/${string}/created`]: {
             observer: AnyObserverObject;
             context?: ObserverContext;

@@ -56,10 +56,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         }
         this.error = undefined;
         this._firstRun = true;
-        if (!first) {
-            this.store.logger.debug(() => `Run async computed for : ${this.toString()}`);
-        }
-
+ 
         // 2. 合成最终的配置参数
         const finalComputedOptions = (options
             ? Object.assign({ first }, this.options, options)
@@ -174,12 +171,7 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         });
     }
     protected onDependsChange(params: StateOperate) {
-        this.store.logger.debug(
-            () =>
-                `AsyncComputed<${this.id}> is running by depends ${params.type}/${params.path.join(
-                    ".",
-                )} operate `,
-        );
+
         this.run({
             operate: params,
             first: !this._firstRun,

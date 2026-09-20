@@ -346,23 +346,23 @@ describe("enableValueExpr 和 createSandbox 组合测试", () => {
                 a: 1,
                 b: 2,
                 sum: "```computed((s)=>s.a+s.b)```",
-                watcher: '```watch(()=>{return "watched"},(p)=>p.length>0,{initial:"initial"})```',
+                // watcher: '```watch(()=>{return "watched"},(p)=>p.length>0,{initial:"initial"})```',
             },
             { debug: true },
         );
 
         // 读取值以触发对象创建
         const sum = store.state.sum;
-        const watcher = store.state.watcher;
+        // const watcher = store.state.watcher;
 
         // 应该能够访问这些函数
         // 类型断言：字符串表达式在运行时被解析为计算属性的返回值
         expect(sum as unknown as number).toBe(3);
         expect(store.computedObjects.size).toBe(1);
         // watch 返回 initial 值
-        expect(watcher).toBe("initial");
+        // expect(watcher).toBe("initial");
         // watch 对象应该被创建
-        expect(store.watchObjects.size).toBe(1);
+        // expect(store.watchObjects.size).toBe(1);
     });
 
     test("解析过程会触发 computed:created 事件", () => {

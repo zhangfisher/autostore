@@ -57,6 +57,7 @@
     },
     "devDependencies": {
         "@autostorejs/syncer": "workspace:*",
+        "@types/bun": "^1.4.2",
         "esbuild": "0.27.2",
         "esbuild-copy-files-plugin": "^1.2.1",
         "tsup": "^8.5.1",
