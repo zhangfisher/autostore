@@ -83,6 +83,7 @@ import { ObserverObjectBuilder, observers } from "./observers";
 import { isFuncDefine } from "../utils/isFuncDefine";
 import { getComputedObject } from "../utils/getComputedObject";
 import { silence } from "../utils/silence";
+import { createEmptyLogger } from "../utils/createEmptyLogger";
 
 /** 后代广播派生时，用于探测路径是否存在的哨兵值 */
 const BROADCAST_SENTINEL = Symbol("autostore.broadcast");
@@ -270,7 +271,7 @@ export class AutoStore<
     }
     get logger() {
         if (!this._logger) {
-            this._logger = this.options.logger || createLogger({ debug: this.options.debug });
+            this._logger = this.options.logger || createEmptyLogger(this.options.debug);
         }
         return this._logger!;
     }

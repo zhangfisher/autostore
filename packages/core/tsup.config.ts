@@ -19,6 +19,7 @@ export default defineConfig({
 	treeshake: true,
 	minify: true,
 	noExternal: ["flex-tools", "type-fest"],
+    metafile:true,
 	onSuccess: async () => {
 		const cjsFile = readFileSync("dist/index.cjs");
 		const esmFile = readFileSync("dist/index.js");

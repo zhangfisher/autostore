@@ -126,34 +126,34 @@ export function schema<Value>(
 
 export const configurable = schema;
 
-export function createTypeSchemaBuilder<Value = any>(
-    isValid: (val: any) => boolean,
-    defaultTips: string,
-): SchemaBuilderFactory<Value> {
-    const typeSchema = function (initial: Value, options?: any) {
-        const opts = Object.assign({}, options);
-        if (typeof opts.validate !== "function") {
-            opts.validate = isValid;
-        }
-        if (!opts.errorMessage) {
-            opts.errorMessage = defaultTips;
-        }
-        return schema(initial, opts);
-    };
-    return typeSchema as unknown as SchemaBuilderFactory<Value>;
-}
+// export function createTypeSchemaBuilder<Value = any>(
+//     isValid: (val: any) => boolean,
+//     defaultTips: string,
+// ): SchemaBuilderFactory<Value> {
+//     const typeSchema = function (initial: Value, options?: any) {
+//         const opts = Object.assign({}, options);
+//         if (typeof opts.validate !== "function") {
+//             opts.validate = isValid;
+//         }
+//         if (!opts.errorMessage) {
+//             opts.errorMessage = defaultTips;
+//         }
+//         return schema(initial, opts);
+//     };
+//     return typeSchema as unknown as SchemaBuilderFactory<Value>;
+// }
 
-export const schemas = {
-    number: createTypeSchemaBuilder<number>((val) => typeof val === "number", "must be a number"),
-    string: createTypeSchemaBuilder<string>((val) => typeof val === "string", "must be a string"),
-    boolean: createTypeSchemaBuilder<boolean>(
-        (val) => typeof val === "boolean",
-        "must be a boolean",
-    ),
-    date: createTypeSchemaBuilder<Date>((val) => val instanceof Date, "must be a date"),
-    bigint: createTypeSchemaBuilder<bigint>((val) => typeof val === "bigint", "must be a bigint"),
-    array: createTypeSchemaBuilder<any[]>((val) => Array.isArray(val), "must be an array"),
-    object: createTypeSchemaBuilder<object>((val) => typeof val === "object", "must be an object"),
-};
+// export const schemas = {
+//     number: createTypeSchemaBuilder<number>((val) => typeof val === "number", "must be a number"),
+//     string: createTypeSchemaBuilder<string>((val) => typeof val === "string", "must be a string"),
+//     boolean: createTypeSchemaBuilder<boolean>(
+//         (val) => typeof val === "boolean",
+//         "must be a boolean",
+//     ),
+//     date: createTypeSchemaBuilder<Date>((val) => val instanceof Date, "must be a date"),
+//     bigint: createTypeSchemaBuilder<bigint>((val) => typeof val === "bigint", "must be a bigint"),
+//     array: createTypeSchemaBuilder<any[]>((val) => Array.isArray(val), "must be an array"),
+//     object: createTypeSchemaBuilder<object>((val) => typeof val === "object", "must be an object"),
+// };
 
-export const s = schemas;
+// export const s = schemas;
