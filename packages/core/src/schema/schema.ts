@@ -35,7 +35,6 @@ import type {
     AutoStoreWidgets,
     Computedable,
     ComputedableStateSchema,
-    SchemaBuilderFactory,
     SchemaDescriptorBuilder,
     WidgetConfigPrecise,
 } from "./types";

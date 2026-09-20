@@ -975,60 +975,60 @@ export class AutoStore<
         }) as GetTypeByPath<ComputedState<State>, Entry>;
     }
 
-    /**
-     *
-     * 获取指定路径的值
-     *
-     * eg.
-     *  store.get("user.name")
-     *  await store.get("user.async")
-     *
-     * @param path
-     * @param options
-     * @param options.defaultValue - 默认值，如果指定则当指定路径不存在时返回默认值
-     * @param options.waitAsyncDone - 如果异步计算正在进行中，则等待异步计算结束再返回
-     * @param options.timeout - 当等待异步计算时的超时时间
-     *
-     *
-     */
-    get<T extends ObjectKeyPaths<State>>(
-        path: T,
-        options?: {
-            defaultValue?: any;
-            waitAsyncDone?: boolean;
-            timeout?: number;
-        },
-    ) {
-        const { defaultValue, timeout = 0, waitAsyncDone = false } = Object.assign({}, options);
-        const keyPath = Array.isArray(path) ? path : splitPath(path, this.delimiter);
-        const val = getVal(this.state, keyPath, defaultValue);
-        const computedObject = getComputedObject(this, path);
-        if (computedObject) {
-            if (computedObject.async && computedObject.running && waitAsyncDone) {
-                return new Promise((resolve, reject) => {
-                    let tmId: any, subscriber: any;
-                    if (timeout > 0) {
-                        tmId = setTimeout(() => {
-                            subscriber?.off();
-                            reject(new TimeoutError());
-                        }, timeout);
-                    }
-                    subscriber = computedObject.watch(
-                        () => {
-                            clearTimeout(tmId);
-                            subscriber?.off();
-                            resolve(computedObject.getValue());
-                        },
-                        { once: true },
-                    );
-                });
-            } else {
-                return computedObject.getValue();
-            }
-        } else {
-            return val;
-        }
-    }
+    // /**
+    //  *
+    //  * 获取指定路径的值
+    //  *
+    //  * eg.
+    //  *  store.get("user.name")
+    //  *  await store.get("user.async")
+    //  *
+    //  * @param path
+    //  * @param options
+    //  * @param options.defaultValue - 默认值，如果指定则当指定路径不存在时返回默认值
+    //  * @param options.waitAsyncDone - 如果异步计算正在进行中，则等待异步计算结束再返回
+    //  * @param options.timeout - 当等待异步计算时的超时时间
+    //  *
+    //  *
+    //  */
+    // get<T extends ObjectKeyPaths<State>>(
+    //     path: T,
+    //     options?: {
+    //         defaultValue?: any;
+    //         waitAsyncDone?: boolean;
+    //         timeout?: number;
+    //     },
+    // ) {
+    //     const { defaultValue, timeout = 0, waitAsyncDone = false } = Object.assign({}, options);
+    //     const keyPath = Array.isArray(path) ? path : splitPath(path, this.delimiter);
+    //     const val = getVal(this.state, keyPath, defaultValue);
+    //     const computedObject = getComputedObject(this, path);
+    //     if (computedObject) {
+    //         if (computedObject.async && computedObject.running && waitAsyncDone) {
+    //             return new Promise((resolve, reject) => {
+    //                 let tmId: any, subscriber: any;
+    //                 if (timeout > 0) {
+    //                     tmId = setTimeout(() => {
+    //                         subscriber?.off();
+    //                         reject(new TimeoutError());
+    //                     }, timeout);
+    //                 }
+    //                 subscriber = computedObject.watch(
+    //                     () => {
+    //                         clearTimeout(tmId);
+    //                         subscriber?.off();
+    //                         resolve(computedObject.getValue());
+    //                     },
+    //                     { once: true },
+    //                 );
+    //             });
+    //         } else {
+    //             return computedObject.getValue();
+    //         }
+    //     } else {
+    //         return val;
+    //     }
+    // }
     toString() {
         return `AutoStore<${this.id}>`;
     }

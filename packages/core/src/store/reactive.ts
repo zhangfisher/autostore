@@ -30,6 +30,47 @@ type CreateReactiveObjectOptions = {
 };
 
 /**
+ * 计算 configKey 路径
+ */
+function computeConfigKey(store: AutoStore<any>, pathKey: string): string {
+    const configKeyArg = store.options.configKey;
+    return configKeyArg && configKeyArg.length > 0
+        ? `${store.options.configKey}.${pathKey}`
+        : pathKey;
+}
+
+/**
+ * 记录验证错误到 configManager 和 store.errors
+ */
+function recordError(store: AutoStore<any>, configKey: string, pathKey: string, errMsg: string) {
+    if (store.configManager) {
+        const errors = store.configManager.errors;
+        if (errors) {
+            errors[configKey] = errMsg;
+        }
+        if (configKey in store.configManager.state) {
+            (store.configManager.state as any)[configKey].errorMessage = errMsg;
+        }
+    }
+    store.errors[pathKey] = errMsg;
+}
+
+/**
+ * 清除验证错误
+ */
+function clearError(store: AutoStore<any>, configKey: string, pathKey: string) {
+    if (store.configManager) {
+        delete store.configManager.errors[configKey];
+        if (configKey in store.configManager.state) {
+            (store.configManager.state as any)[configKey].errorMessage = null;
+        }
+    }
+    if (store.errors) {
+        delete store.errors[pathKey];
+    }
+}
+
+/**
  * 获取指定路径的验证函数
  *
  * @param this - AutoStore 实例
@@ -39,7 +80,7 @@ type CreateReactiveObjectOptions = {
 function getValidate(this: AutoStore<any>, path: string[]): StateValidator<any> | undefined {
     // 优先在 validators 中查找匹配的验证函数
     if (this.options.validators) {
-        const pathString = path.join(this.options.delimiter || ".");
+        const pathString = path.join(this.options.delimiter);
 
         // 查找完全匹配的验证器
         if (this.options.validators[pathString]) {
@@ -77,44 +118,18 @@ function isValidPass(
     let isPass: boolean | Error = true;
     let error: any;
     const pathKey = path.join(PATH_DELIMITER);
-    const configKey = (
-        this.options.configKey && this.options.configKey.trim().length > 0
-            ? `${this.options.configKey.trim()}/${pathKey}`
-            : pathKey
-    ).replaceAll("/", ".");
+    const configKey = computeConfigKey(this, pathKey);
     try {
         const isValid = validate!.call(this, newValue, oldValue, path);
         if (isValid === false) {
-            // 返回 false 时，代表校验出错，因此应抛出一个错误
-            // 但是无法提供更精确的错误信息
             throw new ValidateError();
         }
-        // 校验成功，删除该路径的错误记录
-        if (this.configManager) {
-            delete this.configManager.errors[configKey];
-            if (configKey in this.configManager.state) {
-                (this.configManager.state as any)[configKey].errorMessage = null;
-            }
-        }
-        if (this.errors) {
-            delete this.errors[pathKey];
-        }
+        clearError(this, configKey, pathKey);
     } catch (e: any) {
         error = e;
-        // 读取错误信息
         const errMsg = validate.getErrorMessage?.(e) || e.message || e.stack;
-        if (this.configManager) {
-            const errors = this.configManager?.errors;
-            if (errors) {
-                errors[configKey] = errMsg;
-            }
-            if (configKey in this.configManager.state) {
-                (this.configManager.state as any)[configKey].errorMessage = errMsg;
-            }
-        }
-        this.errors[pathKey] = errMsg;
+        recordError(this, configKey, pathKey, errMsg);
         // 优先级：behavior 参数 > e.behavior > validate.onInvalid > this.options.onInvalid
-        // 这样可以确保 configurable 中配置的 onInvalid 优先生效
         const finalBehavior =
             behavior || e.onInvalid || validate.onInvalid || this.options.onInvalid || "throw";
 
@@ -129,12 +144,12 @@ function isValidPass(
             throw e;
         }
     } finally {
-        this.emit("validate", {
-            path,
-            newValue,
-            oldValue,
-            error,
-        });
+            this.emit("validate", {
+                path,
+                newValue,
+                oldValue,
+                error,
+            });
     }
     return isPass;
 }
@@ -144,7 +159,7 @@ function createProxy(
     target: any,
     parentPath: string[],
     proxyCache: WeakMap<any, any>,
-    isComputedCreating: Map<any, any>,
+    isComputedCreating: Set<string>,
     options: CreateReactiveObjectOptions,
 ): any {
     if (isRaw(target)) return target;
@@ -186,7 +201,6 @@ function createProxy(
                         const pathKey = path.join(".");
                         try {
                             if (isComputedCreating.has(pathKey)) {
-                                // 如果已经创建过计算属性，则直接返回
                                 const cylePaths = [...isComputedCreating.keys(), pathKey];
                                 isComputedCreating.clear();
                                 throw new CyleDependError(
@@ -195,14 +209,13 @@ function createProxy(
                                     )}`,
                                 );
                             }
-                            isComputedCreating.set(pathKey, true);
+                            isComputedCreating.add(pathKey);
                             const result = options.createObserverObject(
                                 path,
                                 value,
                                 parentPath,
                                 obj,
-                            ); // 如果值是一个函数，则创建一个计算属性或Watch对象
-                            // 如果返回的不是函数（比如是 schema builder 返回的 initialValue），则将其设置到对象中
+                            );
                             if (typeof result !== "function") {
                                 Reflect.set(obj, key, result, receiver);
                             }
@@ -231,24 +244,21 @@ function createProxy(
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
             const path = [...parentPath, String(key)];
-            const [val, schema] = getSchemaValue(value);
+            const isObj = typeof value === "object" && value !== null;
+            const [val, schema] = isObj ? getSchemaValue(value) : [value, undefined];
             const isValid = isValidPass.call(this, proxyObj, path, val, oldValue, schema);
             if (isValid) {
                 const success = Reflect.set(obj, key, val, receiver);
                 if (key === __NOTIFY__) return true;
 
-                // 写入成功后，检查是否是配置项，如果是则调用 ConfigManager.onUpdate通知配置系统进行更新
-                // 配置系统不使用订阅方式是因为直接调用onUpdate更高效
-                const pathKey = path.join(PATH_DELIMITER || ".");
-                const configKeyArg = this.options.configKey;
-                const configKey =
-                    configKeyArg && configKeyArg.length > 0
-                        ? `${this.options.configKey}.${pathKey}`
-                        : pathKey;
-                if (success && this.configManager && this.configurabled.has(pathKey)) {
-                    setTimeout(() => {
-                        this.configManager?.onUpdate(this, configKey, val);
-                    }, 0);
+                if (success && this.configManager) {
+                    const pathKey = path.join(PATH_DELIMITER);
+                    if (this.configurabled.has(pathKey)) {
+                        const configKey = computeConfigKey(this, pathKey);
+                        setTimeout(() => {
+                            this.configManager?.onUpdate(this, configKey, val);
+                        }, 0);
+                    }
                 }
 
                 if (success && !schema?.slient && key !== __NOTIFY__ && val !== oldValue) {
@@ -307,7 +317,7 @@ export function createReactiveObject<State extends Dict>(
     state: State,
     options?: CreateReactiveObjectOptions,
 ): ComputedState<State> {
-    const isComputedCreating = new Map();
+    const isComputedCreating = new Set<string>();
     const proxyCache = new WeakMap();
     return createProxy.call(
         this,
