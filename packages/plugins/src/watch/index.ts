@@ -32,6 +32,7 @@ import {installPlugin,AutoStore  } from "autostore";
 import type { AnyAutoStore, Dict, AnyObserverDescriptor, ObserverContext, } from "autostore";
 import { WatchObject } from "./watchObject";
 import { WatchObjects } from "./watchObjects";
+import { watch } from "./watch";
 
 
 
@@ -50,12 +51,16 @@ export function watchDescriptor(store: AnyAutoStore) {
         store.watchObjects.set(watchObj.id, watchObj as any);
         return watchObj;
     } 
+    AutoStore.sandboxVars['watch']=watch
 }
 
 
 declare module "autostore" {
     export interface AutoStore<State extends Dict, Options = unknown> {
         watchObjects:WatchObjects<any>
+    }
+    export interface ObserverObjects {
+        watch: WatchObject;
     }
 }
 

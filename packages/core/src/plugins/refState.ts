@@ -1,8 +1,7 @@
 import type { ObserverObject } from "../observer/observer";
 import type { AnyObserverObject } from "../observer/types";
 import type { ObjectKeyPaths, GetTypeByPath, AnyAutoStore } from "../types";
-import type { Watcher } from "../watch/types";
-import type { AutoStoreSubscriber } from "../store/types";
+import type { Watcher,AutoStoreSubscriber } from "../store/types";
 import { getVal } from "../utils";
 
 /**

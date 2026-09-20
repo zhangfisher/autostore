@@ -5,12 +5,9 @@ import type {
     ComputedGetter,
 } from "../computed/types";
 import type { AnyAutoStore, Dict } from "../types";
-import { WatchObject } from "../watch";
-import type { WatchDescriptorBuilder } from "../watch/types";
 import type { ObserverObject } from "./observer";
 
-export interface ObserverObjects {
-    watch: WatchObject;
+export interface ObserverObjects { 
     schema: any;
     sync: SyncComputedObject;
     async: AsyncComputedObject;
@@ -208,6 +205,6 @@ export type ObserverBuilder<Value = any, Scope = any> =
     | ComputedDescriptorBuilder<Value, Scope>
     | ComputedGetter<Value, Scope>
     | AsyncComputedGetter<Value, Scope>
-    | WatchDescriptorBuilder<Value>;
+    // | WatchDescriptorBuilder<Value>;
 
 export type AnyObserverObject = ObserverObject<any, any>;

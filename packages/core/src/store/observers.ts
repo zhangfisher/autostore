@@ -4,7 +4,6 @@ import { SyncComputedObject } from "../computed/sync";
 import { AnyObserverDescriptor, AnyObserverObject, ObserverContext } from "../observer/types";
 import { AnyAutoStore } from "../types";
 import { joinPath } from "../utils/joinPath";
-import { WatchObject } from "../watch/watchObject";
 
 export type ObserverObjectBuilder = (
     store: AnyAutoStore,

@@ -59,6 +59,7 @@ export function asyncpro(store: AnyAutoStore) {
     // 注意：必须追加而非整体覆盖 context
     // 否则会丢失用户在 sandbox.context 中自定义注入的变量（如测试中的 data 等）
     store.options.sandbox.context.asyncComputed = asyncComputed;
+    AutoStore.sandboxVars['asyncComputed']=asyncComputed
 }
 
 installPlugin(asyncpro);

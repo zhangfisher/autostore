@@ -53,25 +53,21 @@
 import { ComputedObjects } from "../computed/computedObjects";
 import { GLOBAL_CONFIG_MANAGER, PATH_DELIMITER } from "../consts";
 import type { Dict,  StatePath } from "../types";
-import { getId } from "../utils/getId";
-import type { Watcher, WatchListener, WatchListenerOptions } from "../watch/types";
-import type { AutoStoreEvents } from "./types";
+import { getId } from "../utils/getId"; 
+import type { AutoStoreEvents, Watcher, WatchListener, WatchListenerOptions } from "./types";
 import { BATCH_UPDATE_EVENT } from "../consts";
 import { createReactiveObject } from "./reactive";
-// import { WatchObjects } from "../watch/watchObjects";
 import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
 import { isPromise } from "../utils/isPromise";
 import { getObserverDescriptor } from "../utils/getObserverDescriptor";
 import { isMatchOperates } from "../utils/isMatchOperates";
 import type { GetTypeByPath } from "../types";
-// import { TimeoutError } from "../errors";
 import type { AnyObserverDescriptor, ObserverContext } from "../observer/types";
 import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent";
 import { FastLiteEvent } from "fastevent/lite";
 import { createSandbox } from "../utils/createSandbox";
 import { computed } from "../computed/computed";
-import { watch } from "../watch/watch";
 import { configurable, schema } from "../schema/schema";
 import type { ConfigManager } from "../schema/manager";
 import { forEachObject, getSnapshot, getVal, isFunction, setVal, splitPath } from "../utils";
@@ -80,9 +76,9 @@ import { ILogger } from "flex-tools/misc/logger";
 import { refState } from "../plugins/refState";
 import { ObserverObjectBuilder, observers } from "./observers";
 import { isFuncDefine } from "../utils/isFuncDefine";
-// import { getComputedObject } from "../utils/getComputedObject";
 import { silence } from "../utils/silence";
 import { createEmptyLogger } from "../utils/createEmptyLogger";
+import { sandboxVars } from "./sandboxVars";
 
 /** 后代广播派生时，用于探测路径是否存在的哨兵值 */
 const BROADCAST_SENTINEL = Symbol("autostore.broadcast");
@@ -171,6 +167,7 @@ export class AutoStore<
     private _resetWatcher: Watcher | undefined;
 
     static observers: Record<string, ObserverObjectBuilder> = observers;
+    static sandboxVars:Record<string,any>=sandboxVars
     updatedState: Record<string, any> | undefined;
 
     constructor(state?: State, options?: AutoStoreOptions<State>) {
@@ -318,12 +315,7 @@ export class AutoStore<
                 : createSandbox;
 
             this._safeEval = sandbox(
-                {
-                    computed,
-                    watch,
-                    configurable,
-                    schema,
-                },
+                AutoStore.sandboxVars,
                 {
                     onError: (e: Error, code: string) => {
                         this.logger.error(e);
