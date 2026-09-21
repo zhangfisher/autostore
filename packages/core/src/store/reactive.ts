@@ -1,4 +1,5 @@
 import { isRaw } from "../utils/isRaw";
+import { isShallow } from "../decorators/shallow";
 import { hookArrayMethods } from "./hookArray";
 import type { StateOperateType, StateValidator } from "./types";
 import { ValidateError } from "../errors";
@@ -168,6 +169,8 @@ function createProxy(
     if (proxyCache.has(target)) {
         return proxyCache.get(target);
     }
+    // 浅响应(Shallow): 标记对象仅创建一层代理，get 陷阱照常产生事件，但子值不再递归代理
+    const isShallowTarget = isShallow(target);
     const proxyObj = new Proxy(target, {
         get: (obj, key, receiver) => {
             const value = Reflect.get(obj, key, receiver);
@@ -223,6 +226,10 @@ function createProxy(
                 parentPath,
                 parent: obj,
             });
+            // 浅响应: 直接返回原始子值，不再递归创建代理
+            if (isShallowTarget) {
+                return value;
+            }
             return createProxy.call(this, value, path, proxyCache, options);
         },
         set: (obj, key, value, receiver) => {

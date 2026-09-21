@@ -58,6 +58,7 @@ export default defineConfig({
                             ],
                         }, 
                         { text: "数据校验", link: "/zh/store/guide/store/validate" },
+                        { text: "浅响应", link: "/zh/store/guide/store/shallow" },
                         { text: "RefStore", link: "/zh/store/guide/store/refStore" },
                         { text: "配置系统", link: "/zh/store/guide/store/config" },
                         { text: "选项", link: "/zh/store/guide/store/options" },

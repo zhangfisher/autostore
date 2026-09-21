@@ -179,3 +179,44 @@ type WidgetConfigTests = [
     Expect<Equal<typeof numberSchema.max, number | undefined>>,
     Expect<Equal<typeof numberSchema.step, number | undefined>>,
 ];
+
+/**
+ * shallow 浅响应类型测试
+ * 验证 ComputedState 对 shallow 标记值的短路分发与单层转换(见 ADR-0006)
+ */
+import { shallow } from "../src/decorators/shallow";
+import type { ShallowState } from "../src/types/";
+
+const shallowState = {
+    a: shallow({
+        b: 1,
+        c: { c1: 1 },
+        total: (scope: { b: number }) => scope.b * 2,
+    }),
+    x: [1, 2, 3],
+};
+type ShallowS = ComputedState<typeof shallowState>;
+
+type shallowCases = [
+    // 标记对象直接成员: 函数 → 计算结果, 普通值原样
+    Expect<Equal<ShallowS["a"]["b"], number>>,
+    Expect<Equal<ShallowS["a"]["total"], number>>,
+    // 嵌套成员不递归: 原样保留(与运行时读出 raw 一致)
+    Expect<Equal<ShallowS["a"]["c"], { c1: number }>>,
+    // 标记仅作用于被标记对象: 普通路径照常
+    Expect<Equal<ShallowS["x"], number[]>>,
+    // ShallowState 独立使用: 函数成员转计算结果
+    Expect<
+        Equal<
+            ShallowState<{ n: number; f: (scope: any) => string }>,
+            { n: number; f: string }
+        >
+    >,
+];
+
+// 运行时冒烟: shallow 值可正常进入状态树
+const shallowStore = new AutoStore(shallowState);
+shallowStore.state.a.b;
+shallowStore.state.a.total;
+shallowStore.state.a.c.c1;
+shallowStore.state.x[1];

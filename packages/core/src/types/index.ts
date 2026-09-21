@@ -2,6 +2,7 @@ import type { AsyncComputedGetter, ComputedGetter } from "../computed";
 import type { ObserverDescriptorBuilder } from "../observer/types";
 import type { AutoStore } from "../store";
 import type { RawObject } from "../utils";
+import type { ShallowObject } from "../decorators/shallow";
 import type { Get, Paths, UnionToIntersection } from "type-fest";
 
 /**
@@ -145,7 +146,32 @@ export type PickComputedResult<T> =
  * // }
  * ```
  */
-export type ComputedState<T> = T extends unknown[]
+/**
+ * 浅响应状态类型
+ *
+ * 对 ShallowObject 的成员做**单层**转换：函数成员(计算属性)转换为计算结果类型，
+ * 其余成员(含嵌套对象/数组)保持原样——与浅代理"直接成员照常处理、不再递归代理"的
+ * 运行时语义严格一致(见 ADR-0006)。
+ *
+ * @template T - 被 shallow() 标记的对象类型
+ * @example
+ * ```ts
+ * type State = ShallowState<{
+ *   b: number;
+ *   total: (scope: { b: number }) => number;
+ * }>;
+ * // 结果类型: { b: number; total: number } —— 嵌套对象不会被继续转换
+ * ```
+ */
+export type ShallowState<T> = {
+    [K in keyof T]: T[K] extends (...args: any[]) => any
+        ? PickComputedResult<T[K]>
+        : T[K];
+};
+
+export type ComputedState<T> = T extends ShallowObject<infer U>
+    ? ShallowState<U>
+    : T extends unknown[]
     ? ComputedState<T[number]>[]
     : T extends RawObject<T>
       ? T
