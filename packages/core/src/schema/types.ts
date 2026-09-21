@@ -1,6 +1,6 @@
 import type { ComputedBuilder } from "../computed/types";
 import { IsDescriptorBuilder, ObserverDescriptor, ObserverDescriptorBuilder } from "../observer";
-import { AutoStore } from "../store/store";
+import type { AutoStore } from "../store/store";
 import { StoreRawStateType } from "../store/types";
 import { ComputedState, GetTypeByPath, OptionalKeys, RequiredKeys, StatePath } from "../types";
 import type { AutoStoreWidgets } from "./widget-types";

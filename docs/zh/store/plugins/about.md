@@ -23,8 +23,11 @@ type IAutoStorePlugin = (store: AnyAutoStore) => void;
 | :---: | :--- | :--- |
 | `shadow` | 影子 Store，基于原 Store 派生计算视图 | `@autostorejs/plugins/shadow` |
 | `asyncpro` | 增强型异步计算属性 | `@autostorejs/plugins/asyncpro` |
+| `createComputed` | 动态创建计算属性 | `@autostorejs/plugins/createComputed` |
+| `manualComputed` | 手动执行计算函数（分组/条件执行） | `@autostorejs/plugins/manualComputed` |
 | `trace` | 状态操作跟踪调试 | `@autostorejs/plugins/trace` |
 | `cascadeDestroy` | 级联销毁观察对象 | `@autostorejs/plugins` |
+| `cycleDetect` | 循环依赖检测 | `@autostorejs/plugins/cycleDetect` |
 
 ## 引入方式
 

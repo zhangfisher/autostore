@@ -7,7 +7,7 @@
 ```ts
 type StateTracker= {
     stop:()=>void,
-    start(isStop?:(operate:StateOperate)=>boolean):Promise<StateOperate[]>
+    start(isStop?:(operate:StateOperate)=>boolean, timeout?:number):Promise<StateOperate[]>
 }
 function trace(fn: ()=>any,operates?:WatchListenerOptions['operates']):StateTracker 
 ```

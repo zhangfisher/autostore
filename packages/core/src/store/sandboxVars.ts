@@ -1,5 +1,5 @@
 import { computed } from "../computed/computed";
-import { configurable,schema } from "../schema";
+import { configurable,schema } from "../schema/schema";
 
 
 /**

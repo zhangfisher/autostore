@@ -34,6 +34,31 @@
             "types": "./dist/trace.d.ts",
             "import": "./dist/trace.js",
             "require": "./dist/trace.cjs"
+        },
+        "./cycleDetect": {
+            "types": "./dist/cycleDetect.d.ts",
+            "import": "./dist/cycleDetect.js",
+            "require": "./dist/cycleDetect.cjs"
+        },
+        "./watch": {
+            "types": "./dist/watch.d.ts",
+            "import": "./dist/watch.js",
+            "require": "./dist/watch.cjs"
+        },
+        "./manualComputed": {
+            "types": "./dist/manualComputed.d.ts",
+            "import": "./dist/manualComputed.js",
+            "require": "./dist/manualComputed.cjs"
+        },
+        "./createComputed": {
+            "types": "./dist/createComputed.d.ts",
+            "import": "./dist/createComputed.js",
+            "require": "./dist/createComputed.cjs"
+        },
+        "./cascadeDestroy": {
+            "types": "./dist/cascadeDestroy.d.ts",
+            "import": "./dist/cascadeDestroy.js",
+            "require": "./dist/cascadeDestroy.cjs"
         }
     },
     "scripts": {

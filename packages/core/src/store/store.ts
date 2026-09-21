@@ -68,7 +68,6 @@ import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent
 import { FastLiteEvent } from "fastevent/lite";
 import { createSandbox } from "../utils/createSandbox";
 import { computed } from "../computed/computed";
-import { configurable, schema } from "../schema/schema";
 import type { ConfigManager } from "../schema/manager";
 import { forEachObject, getSnapshot, getVal, isFunction, setVal, splitPath } from "../utils";
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
@@ -181,7 +180,6 @@ export class AutoStore<
                     lazy: false,
                     enableValueExpr: true,
                     shadow: false,
-                    cascadeDestroy: true,
                     resetable: false,
                     plugins: [],
                 },

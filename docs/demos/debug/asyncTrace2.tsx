@@ -22,7 +22,7 @@ export default ()=>{
     })   
     tracker.start().then(ops=>{
       ops.forEach(operate=>{
-        ref.current.insertAdjacentHTML("beforeend",`<p style='margin:2px;'}>
+        ref.current.insertAdjacentHTML("beforeend",`<p style='margin:2px;'>
         ${operate.type} ${operate.path.join('.')}</p>`)
       })
     })

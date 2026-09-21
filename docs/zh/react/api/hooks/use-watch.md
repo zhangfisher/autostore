@@ -46,7 +46,6 @@ interface UseWatchType<State extends Dict> {
 | `once` | `boolean` | 仅监听一次 |
 | `filters` | `function[]` | 操作过滤器 |
 
-（完整选项与`watch`一致，参见[监视选项](/zh/store/guide/watch/about)。）
 
 **返回值：** `[value, setValue]`
 

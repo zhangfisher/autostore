@@ -36,12 +36,8 @@ import { installPlugin, pathStartsWith } from "autostore"
  * - 由 AutoStore 在 subscribeCallbacks 中调用一次（早于响应树构建，不会漏观察者）。
  * - 返回卸载函数供 store.destroy() 调用；全局关闭（cascadeDestroy === false）时返回 undefined。
  */
-export function cascadeDestroy(store: AnyAutoStore): (() => void) | undefined {
-    if (store.options.cascadeDestroy === false) return;
-
-    /** 单个观察者的级联开关：单个 options 覆盖全局，默认 true */
-    const isCascadeEnabled = (obj: ObserverObject): boolean =>
-        ((obj.options as any).cascadeDestroy ?? store.options.cascadeDestroy ?? true) === true;
+export function cascadeDestroy(store: AnyAutoStore) {
+   
 
     /**
      * 删除路径是否命中观察者：覆盖其挂载路径（仅 associated）或任一依赖的前缀。
@@ -69,13 +65,16 @@ export function cascadeDestroy(store: AnyAutoStore): (() => void) | undefined {
         // 直接遍历：destroy 仅删除当前 observer 自身，Map 迭代器对"删除当前项"规范安全，
         // 销毁又是低风险操作，无需数组快照的额外开销。
         for (const obj of store.computedObjects.values()) {
-            if (obj.destroyed || !isCascadeEnabled(obj) || !matchAny(obj)) continue;
+            if (obj.destroyed ||  !matchAny(obj)) continue;
             store.computedObjects.delete(obj.id);
         }
-        for (const obj of store.watchObjects.values()) {
-            if (obj.destroyed || !isCascadeEnabled(obj) || !matchAny(obj)) continue;
-            store.watchObjects.delete(obj.id);
+        if((store as any).watchObjects){
+            for (const obj of (store as any).watchObjects.values()) {
+                if (obj.destroyed || !matchAny(obj)) continue;
+                (store as any).watchObjects.delete(obj.id);
+            }
         }
+        
     };
     // watch("**") 注册到 operates.onAny，收到所有写操作；仅处理 delete。
     const watcher = store.watch(

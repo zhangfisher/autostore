@@ -2,7 +2,7 @@ import type { ComputedScope } from "../computed/types";
 import type { ObserverObject } from "../observer/observer";
 import type { AnyObserverObject, ObserverType, ObserverContext } from "../observer/types";
 import type { Dict } from "../types";
-import { AutoStore } from "./store";
+import type { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
 import type { ConfigManager } from "../schema/manager";
 import type { FastEventSubscriber, TransformedEvents } from "fastevent";
@@ -197,10 +197,6 @@ export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<Sta
      * 计算函数是否允许重入
      */
     reentry?: boolean;
-    /**
-     * 当观察对象的依赖项或自身挂载路径被删除时是否级联销毁（cascade destroy），默认 true。
-     */
-    cascadeDestroy?: boolean;
 
     /**
      *

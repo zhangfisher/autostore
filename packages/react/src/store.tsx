@@ -16,6 +16,7 @@ import type {
 } from './hooks/types';
 import type { UseFieldType, UseFieldsType } from './form/types';
 import '@autostorejs/plugins/asyncpro';
+import '@autostorejs/plugins/trace';
 import { createUseWatch } from './hooks/useWatch';
 import { createUseFields } from './form/useFields';
 import { createUseComputed } from './hooks/useComputed';

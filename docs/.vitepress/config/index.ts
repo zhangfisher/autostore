@@ -61,27 +61,31 @@ export default defineConfig({
                         { text: "RefStore", link: "/zh/store/guide/store/refStore" },
                         { text: "配置系统", link: "/zh/store/guide/store/config" },
                         { text: "选项", link: "/zh/store/guide/store/options" },
-                        { text: "Typescript", link: "/zh/store/guide/store/typescript" },
+                        // { text: "Typescript", link: "/zh/store/guide/store/typescript" },
                     ],
                 },
                 {
                     text: "插件",                    
                     collapsed: false,
                     items:[
+                        { text: "watch",
+                        collapsed: true,
+                        items: [
+                            { text: "关于", link: "/zh/store/plugins/watch/about" },
+                            { text: "全局监视", link: "/zh/store/plugins/watch/store-watch" },
+                            { text: "状态内监视", link: "/zh/store/plugins/watch/watch" },
+                            { text: "useWatch", link: "/zh/store/plugins/watch/use-watch" },
+                            { text: "监视对象", link: "/zh/store/plugins/watch/objects" },
+                        ]},
                         { text: "关于",link:"/zh/store/plugins/about"},
                         { text: "asyncpro",link:"/zh/store/plugins/asyncpro"},
-                        { text: "watch",
-                            collapsed: true,
-                            items: [
-                                { text: "关于", link: "/zh/store/plugins/watch/about" },
-                                { text: "全局监视", link: "/zh/store/plugins/watch/store-watch" },
-                                { text: "状态内监视", link: "/zh/store/plugins/watch/watch" },
-                                { text: "useWatch", link: "/zh/store/plugins/watch/use-watch" },
-                                { text: "监视对象", link: "/zh/store/plugins/watch/objects" },
-                            ]},
+                        { text: "createComputed",link:"/zh/store/plugins/createComputed"},
+                        { text: "manualComputed",link:"/zh/store/plugins/manualComputed"},
+                      
                         { text: "shadow",link:"/zh/store/plugins/shadow"},
                         { text: "cascadeDestroy",link:"/zh/store/plugins/cascadeDestroy"},
-                        { text: "trace",link:"/zh/store/plugins/trace"} 
+                        { text: "trace",link:"/zh/store/plugins/trace"},
+                        { text: "cycleDetect",link:"/zh/store/plugins/cycleDetect"} 
                     ]                     
                 },
                 {
@@ -512,20 +516,20 @@ export default defineConfig({
             });
         },
         // 版本兼容性问题：@shikijs/vitepress-twoslash v4.0.1 与 VitePress 内置 shiki v2.5.0 类型不匹配
-        codeTransformers: [
-            transformerTwoslash({
-                throws: false,
-                errorRendering: "hover",
-                explicitTrigger: true,
-                twoslashOptions: {
-                    compilerOptions: {
-                        ignoreDeprecations: "6.0",
-                    },
-                },
-            }),
-        ] as any,
-        // @ts-ignore
-        languages: ["js", "jsx", "ts", "tsx"],
+        // codeTransformers: [
+        //     transformerTwoslash({
+        //         throws: false,
+        //         errorRendering: "hover",
+        //         explicitTrigger: true,
+        //         twoslashOptions: {
+        //             compilerOptions: {
+        //                 ignoreDeprecations: "6.0",
+        //             },
+        //         },
+        //     }),
+        // ] as any,
+        // // @ts-ignore
+        // languages: ["js", "jsx", "ts", "tsx"],
     },
     // @ts-ignore
     build: {
@@ -535,7 +539,7 @@ export default defineConfig({
                 manualChunks: {
                     // 将较大的依赖项分组到单独的块中
                     vendor: ["vue", "vue-router"],
-                    shiki: ["shiki", "@shikijs/vitepress-twoslash"],
+                    // shiki: ["shiki", "@shikijs/vitepress-twoslash"],
                 },
             },
         },
@@ -551,7 +555,7 @@ export default defineConfig({
         ssr: {
             // 必须连同父级 @shikijs/vitepress-twoslash 一起打包：
             // 若父级被外置，其内部 import "floating-vue" 是运行时 Node 解析，noExternal 不会生效
-            noExternal: ["@shikijs/vitepress-twoslash", "floating-vue", "vue-resize"],
+            // noExternal: ["@shikijs/vitepress-twoslash", "floating-vue", "vue-resize"],
         },
         resolve: {
             dedupe: ["vue"],

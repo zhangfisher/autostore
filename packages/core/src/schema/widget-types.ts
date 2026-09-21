@@ -263,13 +263,17 @@ export interface AutoWidgetSelect extends BaseInputAttributes {
      */
     maxOptionsVisible?: number;
     /**
-     * 填充态外观（form 透传 Shoelace filled）
+     * 填充态外观 
      */
     filled?: boolean;
     /**
-     * 胶囊圆角外观（form 透传 Shoelace pill）
+     * 胶囊圆角外观 
      */
     pill?: boolean;
+}
+
+export interface AutoWidgetComboBox extends BaseInputAttributes{
+    choices?: SchemaChoices;
 }
 
 // 映射类型，用于快速查找
@@ -320,5 +324,6 @@ export interface AutoStoreWidgets {
     image: AutoWidgetImage;
     textarea: AutoWidgetTextarea;
     select: AutoWidgetSelect;
+    combobox: AutoWidgetComboBox;
     "datetime-local": AutoWidgetDateTimeLocal;
 }

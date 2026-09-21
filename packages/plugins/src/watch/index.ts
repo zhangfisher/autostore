@@ -65,3 +65,10 @@ declare module "autostore" {
 }
 
 installPlugin(watchDescriptor);
+
+
+export * from "./types"
+export * from "./watch"
+export * from "./watchObject"
+export * from "./watchObjects"
+export * from "./utils"

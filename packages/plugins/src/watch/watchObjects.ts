@@ -1,11 +1,10 @@
-import type { AutoStore,Dict } from "autostore";
+import type { AutoStore,Dict, Watcher } from "autostore";
 import type { WatchObject } from "./watchObject";
 import { getVal, isObserverDescriptor } from "autostore";
 import type {
     WatchDependFilter,
     WatchDescriptor,
     WatchDescriptorBuilder,
-    Watcher,
     WatchGetter,
     WatchOptions,
 } from "./types";

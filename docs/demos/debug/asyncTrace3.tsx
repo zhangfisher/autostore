@@ -25,7 +25,7 @@ export default ()=>{
         return op.type=='set' && op.path.length===2 && op.path[0] === 'd' && op.path[1] === 'value'
     }).then(ops=>{
       ops.forEach(operate=>{
-        ref.current.insertAdjacentHTML("beforeend",`<p style='margin:2px;'}>
+        ref.current.insertAdjacentHTML("beforeend",`<p style='margin:2px;'>
         ${operate.type} ${operate.path.join('.')}</p>`)
       })
     })

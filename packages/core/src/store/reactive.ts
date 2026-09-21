@@ -1,7 +1,7 @@
 import { isRaw } from "../utils/isRaw";
 import { hookArrayMethods } from "./hookArray";
 import type { StateOperateType, StateValidator } from "./types";
-import { CyleDependError, ValidateError } from "../errors";
+import { ValidateError } from "../errors";
 import type { ComputedState, Dict } from "../types";
 import type { AutoStore } from "./store";
 import { isNumber } from "../utils/isNumber";
@@ -159,7 +159,6 @@ function createProxy(
     target: any,
     parentPath: string[],
     proxyCache: WeakMap<any, any>,
-    isComputedCreating: Set<string>,
     options: CreateReactiveObjectOptions,
 ): any {
     if (isRaw(target)) return target;
@@ -185,7 +184,7 @@ function createProxy(
                             parentPath,
                         );
                     }
-                    if (!isRaw(value) && Object.hasOwn(obj, key)) {
+                        if (!isRaw(value) && Object.hasOwn(obj, key)) {
                         // 拦截
                         const isCreated = isAllowCreatedObserver(
                             this,
@@ -198,31 +197,16 @@ function createProxy(
                             markRaw(value);
                             return value;
                         }
-                        const pathKey = path.join(".");
-                        try {
-                            if (isComputedCreating.has(pathKey)) {
-                                const cylePaths = [...isComputedCreating.keys(), pathKey];
-                                isComputedCreating.clear();
-                                throw new CyleDependError(
-                                    `Find circular dependency at <"${pathKey}">, steps: ${cylePaths.join(
-                                        " -> ",
-                                    )}`,
-                                );
-                            }
-                            isComputedCreating.add(pathKey);
-                            const result = options.createObserverObject(
-                                path,
-                                value,
-                                parentPath,
-                                obj,
-                            );
-                            if (typeof result !== "function") {
-                                Reflect.set(obj, key, result, receiver);
-                            }
-                            return result;
-                        } finally {
-                            isComputedCreating.delete(pathKey);
+                        const result = options.createObserverObject(
+                            path,
+                            value,
+                            parentPath,
+                            obj,
+                        );
+                        if (typeof result !== "function") {
+                            Reflect.set(obj, key, result, receiver);
                         }
+                        return result;
                     } else {
                         return value;
                     }
@@ -239,7 +223,7 @@ function createProxy(
                 parentPath,
                 parent: obj,
             });
-            return createProxy.call(this, value, path, proxyCache, isComputedCreating, options);
+            return createProxy.call(this, value, path, proxyCache, options);
         },
         set: (obj, key, value, receiver) => {
             const oldValue = Reflect.get(obj, key, receiver);
@@ -317,14 +301,12 @@ export function createReactiveObject<State extends Dict>(
     state: State,
     options?: CreateReactiveObjectOptions,
 ): ComputedState<State> {
-    const isComputedCreating = new Set<string>();
     const proxyCache = new WeakMap();
     return createProxy.call(
         this,
         state,
         [],
         proxyCache,
-        isComputedCreating,
         options!,
     ) as ComputedState<State>;
 }

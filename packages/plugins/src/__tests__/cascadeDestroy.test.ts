@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { AutoStore, computed } from "autostore";
+import { AutoStore } from "autostore";
 import "../watch"
 import "../cascadeDestroy"
 import { watch } from "../watch/watch";
@@ -42,43 +42,7 @@ describe("cascadeDestroy 级联销毁观察对象", () => {
         expect(c!.destroyed).toBe(true);
     });
 
-    test("全局 cascadeDestroy=false 时不会自动销毁", async () => {
-        const store = new AutoStore(
-            {
-                a: 1,
-                c: (scope: any) => scope.a,
-            },
-            { cascadeDestroy: false },
-        );
-        void store.state.c;
-        const c = store.computedObjects.find(["c"]);
-        expect(c).toBeDefined();
-        delete (store.state as any).a;
-        await flush();
-        expect(store.computedObjects.find(["c"])).toBeDefined();
-        expect(c!.destroyed).toBe(false);
-    });
-
-    test("单个观察对象 cascadeDestroy=false 覆盖全局", async () => {
-        const store = new AutoStore({
-            a: 1,
-            d: 2,
-            // c 关闭自动销毁
-            c: computed((scope: any) => scope.a + scope.d, { cascadeDestroy: false }),
-            // e 正常（继承全局 true）
-            e: (scope: any) => scope.a + scope.d,
-        });
-        void store.state.c;
-        void store.state.e;
-        delete (store.state as any).a;
-        await flush();
-        // c 保留
-        expect(store.computedObjects.find(["c"])).toBeDefined();
-        expect(store.computedObjects.find(["c"])!.destroyed).toBe(false);
-        // e 被销毁
-        expect(store.computedObjects.find(["e"])).toBeUndefined();
-    });
-
+ 
     test("祖先路径删除会销毁后代依赖的观察对象", async () => {
         const store = new AutoStore({
             user: { name: "zhang" },

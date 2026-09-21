@@ -12,11 +12,14 @@ import type {
     SyncComputedObject,
     WatchListenerOptions,
     GetTypeByPath,
+    StateOperate,
+} from "autostore";
+
+import type {    
     WatchObject,
     WatchDescriptorBuilder,
     WatchOptions,
-    StateOperate,
-} from "autostore";
+} from "@autostorejs/plugins/watch"
 
 export type StateGetter<State extends Dict, Value = any> = (state: ComputedState<State>) => Value;
 
