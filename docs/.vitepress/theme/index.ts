@@ -7,12 +7,8 @@ import "./style.css";
 import { LiteTree } from "@lite-tree/vue";
 import "@lite-tree/icons/filetypes.css";
 import Tree from "./Tree.vue";
-
-// @noErrors: true
-// .vitepress/theme/index.ts
-import TwoslashFloatingVue from "@shikijs/vitepress-twoslash/client";
-
-import "@shikijs/vitepress-twoslash/style.css";
+ 
+// import "@shikijs/vitepress-twoslash/style.css";
 
 export default {
     extends: DefaultTheme,
@@ -26,6 +22,6 @@ export default {
         app.component("LiteTree", LiteTree);
         app.component("Tree", Tree);
         // @ts-ignore
-        app.use(TwoslashFloatingVue);
+        // app.use(TwoslashFloatingVue);
     },
 } satisfies Theme;
