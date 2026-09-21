@@ -1,5 +1,11 @@
 # @autostorejs/syncer
 
+## 4.6.0
+
+### Patch Changes
+
+-   autostore@4.6.0
+
 ## 4.5.0
 
 ### Minor Changes
