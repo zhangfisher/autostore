@@ -153,7 +153,12 @@ export type PickComputedResult<T> =
  * 其余成员(含嵌套对象/数组)保持原样——与浅代理"直接成员照常处理、不再递归代理"的
  * 运行时语义严格一致(见 ADR-0006)。
  *
+ * `Deep` 与 shallow() 的 deep 参数对应(0|1)：`Deep=1` 时成员(数组成员除外,其元素
+ * 读出即 raw)再下钻一层做同样的单层转换——成员的函数成员转为计算结果类型，孙级起
+ * 原样保留，与运行时"根+成员两层浅代理、孙级读出即 raw"严格一致(见 ADR-0007)。
+ *
  * @template T - 被 shallow() 标记的对象类型
+ * @template Deep - 向下转换层数,0|1,默认 0
  * @example
  * ```ts
  * type State = ShallowState<{
@@ -163,14 +168,18 @@ export type PickComputedResult<T> =
  * // 结果类型: { b: number; total: number } —— 嵌套对象不会被继续转换
  * ```
  */
-export type ShallowState<T> = {
+export type ShallowState<T, Deep extends 0 | 1 = 0> = {
     [K in keyof T]: T[K] extends (...args: any[]) => any
         ? PickComputedResult<T[K]>
-        : T[K];
+        : Deep extends 1
+          ? T[K] extends readonly any[]
+            ? T[K]
+            : ShallowState<T[K], 0>
+          : T[K];
 };
 
-export type ComputedState<T> = T extends ShallowObject<infer U>
-    ? ShallowState<U>
+export type ComputedState<T> = T extends ShallowObject<infer U, infer Deep>
+    ? ShallowState<U, Deep>
     : T extends unknown[]
     ? ComputedState<T[number]>[]
     : T extends RawObject<T>

@@ -4,8 +4,10 @@ import { describe, test, expect } from "bun:test";
 import { AutoStore, ComputedObject } from "autostore";
 import { delay } from "flex-tools/async/delay";
 import "../../asyncpro";
+import "../../manualComputed"
 import { AsyncProComputedObject } from "../../asyncpro/async";
 import { asyncComputed } from "../../asyncpro/asyncComputed";
+
 
 describe("所有异步计算基础功能", () => {
     describe("异步计算的基础功能", () => {

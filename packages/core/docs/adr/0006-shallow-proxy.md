@@ -43,3 +43,7 @@
 - **`markRaw` 的字符串 flag 序列化泄漏为存量行为**，本次不治。
 - **类型层对齐**：`ComputedState` 顶部新增 `ShallowObject` 短路分支（置于数组分支之前），分发到新工具类型 `ShallowState<T>`——对成员做**单层**转换（函数成员 → `PickComputedResult`，其余原样保留、不递归），与浅代理"直接成员照常处理、不再递归"的运行时语义严格一致。浅对象内的计算属性函数在类型上映射为计算结果类型，而非停留在函数类型。短路置于顶层一处即可覆盖属性值/数组元素等所有递归入口（递归均经 `ComputedState` 自身）。对齐 `RawObject`（markRaw）的既有短路先例，但规避其被数组分支抢先的隐患。
 - 性能验证设施：`packages/core/bench/reactive-bench.ts`（`bun run bench`），含基线存档。
+
+## 后续
+
+`deep` 参数化（根+成员两层浅代理、孙级 raw）见 ADR-0007；本决策的一层语义即彼处的 `deep=0`。

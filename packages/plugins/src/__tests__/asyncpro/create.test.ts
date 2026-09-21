@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { AutoStore, AsyncComputedObject } from "autostore";
 import "../../asyncpro";
-
+import "../../createComputed"
 describe("动态创建异步计算属性", () => {
     test("创建异步计算属性提供默认值", () => {
         return new Promise<void>((resolve) => {

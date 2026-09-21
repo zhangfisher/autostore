@@ -1,5 +1,4 @@
 import { isRaw } from "../utils/isRaw";
-import { isShallow } from "../decorators/shallow";
 import { hookArrayMethods } from "./hookArray";
 import type { StateOperateType, StateValidator } from "./types";
 import { ValidateError } from "../errors";
@@ -10,7 +9,7 @@ import { markRaw } from "../utils/markRaw";
 import { isAllowCreatedObserver } from "../utils/isAllowCreatedObserver";
 import { isPathMatched } from "../utils/isPathMatched";
 import { getSchemaValue, ValueSchema } from "../utils/withSchema";
-import { PATH_DELIMITER } from "../consts";
+import { PATH_DELIMITER, SHALLOW_PROXY_FLAG } from "../consts";
 
 const __NOTIFY__ = Symbol("__NOTIFY__");
 
@@ -169,8 +168,11 @@ function createProxy(
     if (proxyCache.has(target)) {
         return proxyCache.get(target);
     }
-    // 浅响应(Shallow): 标记对象仅创建一层代理，get 陷阱照常产生事件，但子值不再递归代理
-    const isShallowTarget = isShallow(target);
+    // 浅响应(Shallow): 标记对象仅创建一层浅代理，get 陷阱照常产生事件
+    // 标记值为剩余浅层数(ADR-0007): 0=仅本层(成员读出即 raw)、1=成员也浅代理(孙级起 raw)
+    // 旧布尔 true(混布旧副本)视为 0；未标记为 undefined
+    const shallowFlag = (target as any)[SHALLOW_PROXY_FLAG];
+    const shallowDeep = shallowFlag === 1 ? 1 : shallowFlag === true || shallowFlag === 0 ? 0 : undefined;
     const proxyObj = new Proxy(target, {
         get: (obj, key, receiver) => {
             const value = Reflect.get(obj, key, receiver);
@@ -226,8 +228,23 @@ function createProxy(
                 parentPath,
                 parent: obj,
             });
-            // 浅响应: 直接返回原始子值，不再递归创建代理
-            if (isShallowTarget) {
+            // 浅响应 deep=1: 成员首次读取时惰性下戳 0 再建代理——浅标记跟随数据走，
+            // 之后 push/set 进来的新成员同样生效；仅在未标记时下戳(先到先得,全局语义)
+            if (
+                shallowDeep === 1 &&
+                typeof value === "object" &&
+                value !== null &&
+                !isRaw(value)
+            ) {
+                try {
+                    if ((value as any)[SHALLOW_PROXY_FLAG] === undefined) {
+                        (value as any)[SHALLOW_PROXY_FLAG] = 0;
+                    }
+                } catch {} // frozen 成员下戳静默失败 → 走深代理(降级方向与 ADR-0006 一致)
+                return createProxy.call(this, value, path, proxyCache, options);
+            }
+            // 浅响应 deep=0: 直接返回原始子值，不再递归创建代理
+            if (shallowDeep !== undefined) {
                 return value;
             }
             return createProxy.call(this, value, path, proxyCache, options);

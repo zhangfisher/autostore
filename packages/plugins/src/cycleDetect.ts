@@ -3,24 +3,29 @@
  *
  * 为 AutoStore 注入循环依赖检测能力：
  *   - 构造阶段：检测 observer 创建期间的同步循环依赖
- *   - 执行阶段：检测同步/异步计算属性 getter 执行期间的循环依赖
+ *   - 执行阶段：检测同步计算属性 getter 执行期间的循环依赖
  *
  * 检测覆盖：
  *   - 同步静态计算属性（构造期间 getter 执行）
- *   - 异步静态计算属性（run() 期间 getter 执行）
  *   - 动态创建的计算属性（computedObjects.create）
  *   - watch 对象不参与循环检测
  *
+ * 异步计算属性不参与循环依赖检测：
+ *   - 异步 getter 的执行链路存在 await 边界，依赖变化触发的重算由 core 的
+ *     重入保护(_running + cancel 事件)兜底，不会产生同步无限递归
+ *   - 循环检测错误记录在 observer.error 上(onObserverError 可监听)，
+ *     不会中断 store 构造
+ *
  * @example
  *
- * import { AutoStore, computed } from "autostore";
+ * import { AutoStore } from "autostore";
  * import { cycleDetect } from "@autostorejs/plugins";
  *
  * cycleDetect();  // 全局安装，对后续所有 store 生效
  *
  * const store = new AutoStore({
- *     a: computed((scope) => scope.b, ["./b"]),
- *     b: computed((scope) => scope.a, ["./a"]),  // throws CyleDependError
+ *     a: (scope) => scope.b,
+ *     b: (scope) => scope.a,  // b 的 observer.error 为 CyleDependError
  * });
  */
 import { CyleDependError, installPlugin } from "autostore";
@@ -32,8 +37,8 @@ import type { AnyAutoStore, Dict } from "autostore";
  * Key: getter 函数引用
  * Value: 路径信息（用于错误消息）
  *
- * 用于检测同步/异步计算属性执行期间的循环依赖：
- * 当 getter A 执行期间访问 getter B，B 又访问 A，
+ * 用于检测同步计算属性执行期间的循环依赖：
+ * 当 getter A 执行期间（嵌套调用链上）再次进入同一 getter A，
  * 通过此表可检测到 A 仍在执行中。
  */
 const activeGetters = new Map<Function, string>();
@@ -94,7 +99,8 @@ function installCyclicDetection(store: AnyAutoStore) {
             const result = originalHandle(path, value, parentPath, parent);
 
             // ========== 阶段 2：getter 执行期间检测 ==========
-            // 包装 run() 方法，检测同步/异步计算属性执行期间的循环
+            // 包装 run() 方法，检测同步计算属性执行期间的循环
+            // 异步计算属性不参与检测(见文件头说明)
             // result 是 observerObj.initial，但我们需要 observer 对象本身
             // 通过 store.computedObjects 查找刚创建的 observer
             if (pathKey && store.computedObjects) {
@@ -123,63 +129,40 @@ function installCyclicDetection(store: AnyAutoStore) {
  * 包装 observer 的 run() 方法
  *
  * 在 getter 执行期间追踪活跃的 getter 函数，
- * 检测同步/异步计算属性执行期间的循环依赖。
+ * 检测同步计算属性执行期间的循环依赖。
+ *
+ * 异步计算属性不包装：检测错误在事件总线链路上同步抛出时无法进入
+ * observer 错误处理流程，而异步重入已由 core 的 _running 重入保护兜底。
  */
 function wrapRunMethod(observer: any, pathKey: string) {
+    // 异步计算属性不参与循环检测
+    if (observer.async === true) return;
+
     const originalRun = observer.run.bind(observer);
 
-    // 判断是否为异步计算（async computed 的 getter 返回 Promise）
-    const isAsync = observer.async === true;
+    // 同步计算：run() 同步执行
+    observer.run = function (this: any, options?: any) {
+        const getter = this.getter;
+        if (!getter) {
+            return originalRun(options);
+        }
 
-    if (isAsync) {
-        // 异步计算：run() 返回 Promise
-        observer.run = async function (this: any, options?: any) {
-            const getter = this.getter;
-            if (!getter) {
-                return originalRun(options);
-            }
+        // 检测同步 getter 执行期间循环
+        if (activeGetters.has(getter)) {
+            const prevPath = activeGetters.get(getter);
+            throw new CyleDependError(
+                `Find circular dependency at <"${pathKey}">, steps: ${prevPath} -> ${pathKey}`,
+            );
+        }
 
-            // 检测异步 getter 执行期间循环
-            if (activeGetters.has(getter)) {
-                const prevPath = activeGetters.get(getter);
-                throw new CyleDependError(
-                    `Find circular dependency at <"${pathKey}">, steps: ${prevPath} -> ${pathKey}`,
-                );
-            }
-
-            // 标记活跃
-            activeGetters.set(getter, pathKey);
-            try {
-                return await originalRun(options);
-            } finally {
-                activeGetters.delete(getter);
-            }
-        };
-    } else {
-        // 同步计算：run() 同步执行
-        observer.run = function (this: any, options?: any) {
-            const getter = this.getter;
-            if (!getter) {
-                return originalRun(options);
-            }
-
-            // 检测同步 getter 执行期间循环
-            if (activeGetters.has(getter)) {
-                const prevPath = activeGetters.get(getter);
-                throw new CyleDependError(
-                    `Find circular dependency at <"${pathKey}">, steps: ${prevPath} -> ${pathKey}`,
-                );
-            }
-
-            // 标记活跃
-            activeGetters.set(getter, pathKey);
-            try {
-                return originalRun(options);
-            } finally {
-                activeGetters.delete(getter);
-            }
-        };
-    }
+        // 标记活跃
+        activeGetters.set(getter, pathKey);
+        try {
+            return originalRun(options);
+        } finally {
+            activeGetters.delete(getter);
+        }
+    };
 }
 
 declare module "autostore" {

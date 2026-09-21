@@ -220,3 +220,57 @@ shallowStore.state.a.b;
 shallowStore.state.a.total;
 shallowStore.state.a.c.c1;
 shallowStore.state.x[1];
+
+/**
+ * shallow deep=1 类型测试
+ * 验证根+成员两层浅代理的类型映射(见 ADR-0007):
+ * 成员的函数成员 → 计算结果类型, 孙级原样保留
+ */
+const shallowDeepState = {
+    // 数组根: 元素(成员)获得浅代理
+    items: shallow(
+        [
+            {
+                id: 1,
+                meta: { x: 1 },
+                total: (scope: { id: number }) => scope.id * 2,
+            },
+        ],
+        1,
+    ),
+    // 对象根: 成员对象再下钻一层
+    obj: shallow(
+        { row: { id: 1, label: (scope: { id: number }) => `#${scope.id}` } },
+        1,
+    ),
+};
+type ShallowDeepS = ComputedState<typeof shallowDeepState>;
+
+// 对象根且成员为数组: 数组元素(孙级)读出即 raw
+const shallowDeepObjArr = {
+    a: shallow({ list: [{ id: 1, f: (scope: any) => "x" }] }, 1),
+};
+
+type shallowDeepCases = [
+    // 数组根: 元素的函数成员 → 计算结果
+    Expect<Equal<ShallowDeepS["items"][number]["total"], number>>,
+    // 数组根: 元素的嵌套对象(孙级)原样保留
+    Expect<Equal<ShallowDeepS["items"][number]["meta"], { x: number }>>,
+    // 对象根: 成员对象的函数成员 → 计算结果
+    Expect<Equal<ShallowDeepS["obj"]["row"]["label"], string>>,
+    // 对象根: 成员对象的普通成员(孙级)原样保留
+    Expect<Equal<ShallowDeepS["obj"]["row"]["id"], number>>,
+    // 对象根: 成员为数组时其元素(孙级)读出即 raw, 函数成员保持函数类型
+    // (泛型推断保留字面量返回类型 "x", 不拓宽)
+    Expect<
+        Equal<
+            ComputedState<typeof shallowDeepObjArr>["a"]["list"][number]["f"],
+            (scope: any) => "x"
+        >
+    >,
+];
+
+// 运行时冒烟: deep=1 值可正常进入状态树
+const shallowDeepStore = new AutoStore(shallowDeepState);
+shallowDeepStore.state.items[0].total;
+shallowDeepStore.state.obj.row.label;
