@@ -1,5 +1,11 @@
 # autostore
 
+## 4.6.1
+
+### Patch Changes
+
+-   cceb22f: 增加 shallow 到 sandboxVars
+
 ## 4.6.0
 
 ## 4.5.0
