@@ -1,5 +1,6 @@
 import { computed } from "../computed/computed";
 import { configurable,schema } from "../schema/schema";
+import { shallow } from "../decorators";
 
 
 /**
@@ -8,6 +9,6 @@ import { configurable,schema } from "../schema/schema";
 export const  sandboxVars={
     computed,
     configurable,
-    schema
-    
+    schema,
+    shallow,
 }
