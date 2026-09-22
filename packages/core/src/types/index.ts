@@ -414,3 +414,9 @@ export type OptionalKeys<T> = {
 export type RequiredKeys<T> = {
     [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
 }[keyof T];
+
+
+declare  global {         
+    var __AUTOSTORE_DEVTOOLS__:any[]
+    var __AUTOSTORE_INSTANCES__: WeakRef<AnyAutoStore>[]
+}

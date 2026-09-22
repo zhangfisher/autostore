@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoStore Viewer</title>
+    <link rel="stylesheet" href="./src/index.css" />
+    <script type="module" src="/src/autostore-viewer.ts"></script>
+  </head>
+  <body>
+    <h1>AutoStore Viewer Demo</h1>
+    <autostore-viewer id="viewer1"></autostore-viewer>
+    <script type="module">
+      import { AutoStore } from 'autostore'
+
+      // 创建示例store
+      const store = new AutoStore({
+        user: {
+          firstName: 'zhang',
+          lastName: 'san',
+          age: 25,
+          address: {
+            city: 'Beijing',
+            street: 'Main Street',
+            zip: '100000'
+          },
+          hobbies: ['reading', 'gaming', 'coding'],
+          get fullName() {
+            return `${this.firstName} ${this.lastName}`
+          }
+        },
+        products: [
+          { id: 1, name: 'Laptop', price: 999.99 },
+          { id: 2, name: 'Phone', price: 699.99 },
+          { id: 3, name: 'Tablet', price: 499.99 }
+        ],
+        settings: {
+          theme: 'dark',
+          language: 'zh-CN',
+          notifications: true,
+          maxItems: 100,
+          version: '1.0.0'
+        },
+        isReady: true,
+        count: 42,
+        description: 'This is a demo store'
+      })
+
+      // 绑定到viewer
+      document.getElementById('viewer1').store = store
+    </script>
+  </body>
+</html>

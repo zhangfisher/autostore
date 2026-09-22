@@ -215,7 +215,12 @@ export class AutoStore<
         if (this._options.debug && typeof globalThis.__AUTOSTORE_DEVTOOLS__ === "object") {
             // @ts-expect-error
             globalThis.__AUTOSTORE_DEVTOOLS__.add(this);
+        }        
+        if(!Array.isArray(globalThis.__AUTOSTORE_INSTANCES__)) {            
+            globalThis.__AUTOSTORE_INSTANCES__= []
         }
+        globalThis.__AUTOSTORE_INSTANCES__.push(new WeakRef(this))
+        
         this.emit("load", this);
     }
     get id() {

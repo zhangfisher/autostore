@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoStore Viewer Demo</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        padding: 24px;
+        background: #f5f5f5;
+        color: #333;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #1a1a1a; color: #e5e5e5; }
+      }
+      h1 { margin-bottom: 24px; }
+      h2 { margin: 24px 0 12px; font-size: 1.1em; }
+      .demo-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      @media (prefers-color-scheme: dark) {
+        .demo-section { background: #2a2a2a; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+      }
+      autostore-viewer {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .info { color: #6b7280; font-size: 0.9em; margin-bottom: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>AutoStore Viewer 演示</h1>
+
+    <div class="demo-section">
+      <h2>1. 基础对象展示</h2>
+      <p class="info">展示嵌套对象、数组、字符串、数字、布尔等基本类型</p>
+      <autostore-viewer id="viewer1"></autostore-viewer>
+    </div>
+
+    <div class="demo-section">
+      <h2>2. 计算属性</h2>
+      <p class="info">使用 σ 图标标识计算属性，显示计算结果</p>
+      <autostore-viewer id="viewer2"></autostore-viewer>
+    </div>
+
+    <div class="demo-section">
+      <h2>3. 函数与 markRaw</h2>
+      <p class="info">使用函数图标标识普通函数，使用特殊图标标识 markRaw 对象</p>
+      <autostore-viewer id="viewer3"></autostore-viewer>
+    </div>
+
+    <div class="demo-section">
+      <h2>4. 通过 store-id 属性绑定</h2>
+      <p class="info">通过 store-id 属性从全局注册表中查找并绑定 store</p>
+      <autostore-viewer store-id="demo-store"></autostore-viewer>
+    </div>
+
+    <div class="demo-section">
+      <h2>5. 通过 store 属性绑定</h2>
+      <p class="info">通过 store 属性直接绑定 store 实例</p>
+      <autostore-viewer id="viewer5"></autostore-viewer>
+    </div>
+
+    <script type="module" src="./src/autostore-viewer.ts"></script>
+    <script type="module">
+      import { AutoStore, computed, markRaw } from 'autostore'
+
+      // 创建示例 1：基础对象
+      const store1 = new AutoStore({
+        user: {
+          firstName: '张',
+          lastName: '三',
+          age: 25,
+          email: 'zhangsan@example.com',
+          isActive: true,
+          address: {
+            city: '北京',
+            street: '朝阳路',
+            zip: '100000',
+            coordinates: {
+              lat: 39.9042,
+              lng: 116.4074
+            }
+          },
+          hobbies: ['阅读', '编程', '游泳'],
+          scores: [95, 88, 92, 78]
+        },
+        meta: {
+          version: '1.0.0',
+          createdAt: '2024-01-01',
+          tags: ['demo', 'test', 'example']
+        }
+      })
+
+      // 创建示例 2：计算属性
+      const store2 = new AutoStore({
+        price: 100,
+        quantity: 3,
+        discount: 0.1,
+        totalPrice: computed((scope) => {
+          return scope.price * scope.quantity * (1 - scope.discount)
+        }),
+        formattedPrice: computed((scope) => {
+          return `¥${scope.totalPrice.toFixed(2)}`
+        }),
+        getSummary: () => {
+          return '这是一个计算属性函数'
+        }
+      })
+
+      // 创建示例 3：函数与 markRaw
+      const store3 = new AutoStore({
+        name: '测试对象',
+        regularFunction: () => {
+          console.log('普通函数')
+        },
+        asyncFunction: async () => {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          return '异步结果'
+        },
+        rawData: markRaw({
+          nested: '不会被代理',
+          deep: {
+            value: '深度嵌套'
+          }
+        }),
+        normalObject: {
+          nested: '普通对象会被代理',
+          deep: {
+            value: '深度嵌套'
+          }
+        }
+      })
+
+      // 创建示例 4：通过全局注册表绑定
+      const store4 = new AutoStore({
+        message: '这个 store 通过 store-id 属性绑定',
+        count: 100,
+        items: ['项目1', '项目2', '项目3']
+      }, { id: 'demo-store' })
+
+      // 创建示例 5：通过 store 属性绑定
+      const store5 = new AutoStore({
+        data: '通过 store 属性直接绑定',
+        items: [1, 2, 3, 4, 5],
+        nested: {
+          level1: {
+            level2: {
+              value: '深层嵌套值'
+            }
+          }
+        }
+      })
+
+      // 绑定到各个 viewer
+      document.getElementById('viewer1').store = store1
+      document.getElementById('viewer2').store = store2
+      document.getElementById('viewer3').store = store3
+      document.getElementById('viewer5').store = store5
+    </script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "@autostorejs/viewer",
+ "version": "4.6.1",
+ "module": "src/index.ts",
+"access": "public",
+"publishConfig": {
+    "access": "public"
+},
+"repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangfisher/autostore.git"
+},
+"files": [
+    "dist"
+],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lit": "^3.3.3",
+    "autostore": "workspace:*",
+    "flex-tools": "^1.6.6"
+},
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}
