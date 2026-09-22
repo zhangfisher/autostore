@@ -1,66 +1,37 @@
-import { LitElement, css, html, nothing } from 'lit'
+import { LitElement, html, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
-import { ICONS, type IconKey } from './icons'
+import { ICONS } from './icons'
+import { viewerStyles } from './styles'
+import { formatValue } from './utils/formatValue'
+import { getNodeIconKey } from './utils/getNodeIconKey'
+import { getObjectKeyCount } from './utils/getObjectKeyCount'
+import { isInternalKey } from './utils/isInternalKey'
+import { Editable } from './editable'
+import { isComputed } from 'autostore'
+import type { TreeNode, TreeNodeType } from './types'
 import type { AutoStore } from 'autostore'
-
-// 树节点类型定义
-interface TreeNode {
-  key: string | number
-  value: any
-  type: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'function' | 'computed' | 'markRaw' | 'other'
-  expanded: boolean
-  childCount: number
-  path: string[]
-  children: TreeNode[]
-}
-
-// 根据值类型获取图标键（考虑computed和markRaw）
-function getNodeIconKey(node: TreeNode): IconKey {
-  if (node.type === 'computed') return 'computed'
-  if (node.type === 'markRaw') return 'markRaw'
-  if (node.type === 'function') return 'function'
-  if (node.type === 'array') return 'array'
-  if (node.type === 'object') return 'object'
-  if (node.type === 'string') return 'string'
-  if (node.type === 'number') return 'number'
-  if (node.type === 'boolean') return 'boolean'
-  return 'default'
-}
-
-// 获取对象的键数量
-function getObjectKeyCount(value: any): number {
-  if (value === null || value === undefined) return 0
-  if (Array.isArray(value)) return value.length
-  if (typeof value === 'object') {
-    // 检查是否是markRaw对象
-    if (value['__AS_SKIP_PROXY__']) return 0
-    return Object.keys(value).length
-  }
-  return 0
-}
-
-// 格式化值显示
-function formatValue(value: any, type: TreeNode['type']): string {
-  if (value === null) return 'null'
-  if (value === undefined) return 'undefined'
-  switch (type) {
-    case 'string': return `"${value}"`
-    case 'number': return String(value)
-    case 'boolean': return value ? 'true' : 'false'
-    case 'function': return 'ƒ()'
-    case 'computed': return 'ƒ()'
-    case 'markRaw': return '{...}'
-    case 'object': return '{...}'
-    case 'array': return `[${value.length}]`
-    default: return String(value)
-  }
-}
 
 @customElement('autostore-viewer')
 export class AutostoreViewer extends LitElement {
   // 属性声明
   @property({ type: String, attribute: 'store-id' })
   storeId: string = ''
+
+  // 初始展开深度（小于该深度的节点默认展开，0 表示全部折叠）
+  @property({ type: Number, attribute: 'expand-depth' })
+  expandDepth: number = 3
+
+  // 是否显示子节点数量徽章
+  @property({ type: Boolean, attribute: 'show-count' })
+  showCount: boolean = true
+
+  // 是否显示折叠占位符 {...} / [...]
+  @property({ type: Boolean, attribute: 'show-hint' })
+  showHint: boolean = true
+
+  // 是否显示计算属性节点（默认不显示）
+  @property({ type: Boolean, attribute: 'show-computed' })
+  showComputed: boolean = false
 
   // 响应式状态
   @state()
@@ -69,161 +40,25 @@ export class AutostoreViewer extends LitElement {
   @state()
   private _treeNodes: TreeNode[] = []
 
+  // 行内编辑器（见 editable.ts）
+  private _editable = new Editable(
+    { requestUpdate: () => this.requestUpdate() },
+    (path) => this._getStateByPath(path),
+    () => this._store,
+  )
+
   // 用于保存store watcher
   private _storeWatcher: any = null
 
-  // 初始展开深度
-  private _initialExpandDepth = 3
+  // 用于保存observer事件订阅（异步计算完成通知）
+  private _observerWatcher: any = null
 
-  // CSS样式
-  static styles = css`
-    :host {
-      --viewer-icon-size: 16px;
-      --viewer-font-size: 1em;
-      --viewer-bg: #ffffff;
-      --viewer-text: #333333;
-      --viewer-border: #e5e7eb;
-      --viewer-hover-bg: #f3f4f6;
-      --viewer-badge-bg: #e5e7eb;
-      --viewer-badge-text: #6b7280;
-      --viewer-indent-size: 20px;
+  // store-id 绑定重试（store 可能晚于组件挂载创建）
+  private _bindRetryCount = 0
+  private _bindRetryTimer: any = null
 
-      display: block;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: var(--viewer-font-size);
-      color: var(--viewer-text);
-      background: var(--viewer-bg);
-      border: 1px solid var(--viewer-border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :host {
-        --viewer-bg: #1f2937;
-        --viewer-text: #f9fafb;
-        --viewer-border: #374151;
-        --viewer-hover-bg: #374151;
-        --viewer-badge-bg: #4b5563;
-        --viewer-badge-text: #d1d5db;
-      }
-    }
-
-    .tree-node {
-      display: flex;
-      align-items: center;
-      padding: 4px 8px;
-      cursor: pointer;
-      user-select: none;
-      transition: background-color 0.15s ease;
-      min-height: 32px;
-    }
-
-    .tree-node:hover {
-      background: var(--viewer-hover-bg);
-    }
-
-    .node-content {
-      display: flex;
-      align-items: center;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .expand-icon {
-      width: var(--viewer-icon-size);
-      height: var(--viewer-icon-size);
-      flex-shrink: 0;
-      transition: transform 0.2s ease;
-      margin-right: 4px;
-    }
-
-    .expand-icon.expanded {
-      transform: rotate(90deg);
-    }
-
-    .type-icon {
-      width: var(--viewer-icon-size);
-      height: var(--viewer-icon-size);
-      flex-shrink: 0;
-      margin-right: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .type-icon svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    .node-key {
-      font-weight: 500;
-      margin-right: 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .child-count {
-      background: var(--viewer-badge-bg);
-      color: var(--viewer-badge-text);
-      font-size: 0.75em;
-      padding: 1px 6px;
-      border-radius: 10px;
-      margin-right: 6px;
-      white-space: nowrap;
-      font-weight: 500;
-    }
-
-    .node-value {
-      color: #6b7280;
-      font-family: ui-monospace, monospace;
-      font-size: 0.9em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex-shrink: 1;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .node-value {
-        color: #9ca3af;
-      }
-    }
-
-    .node-children {
-      overflow: hidden;
-      transition: max-height 0.2s ease-out;
-    }
-
-    .node-children.collapsed {
-      max-height: 0 !important;
-    }
-
-    .node-children.expanded {
-      max-height: none;
-    }
-
-    .node-children .tree-node {
-      padding-left: 20px;
-    }
-
-    .loading {
-      padding: 16px;
-      text-align: center;
-      color: var(--viewer-badge-text);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .expand-icon {
-        transition: none;
-      }
-      .node-children {
-        transition: none;
-      }
-    }
-  `;
+  // CSS样式（提取自 styles.ts）
+  static styles = viewerStyles;
 
   // 连接到DOM时
   connectedCallback() {
@@ -235,12 +70,27 @@ export class AutostoreViewer extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback()
     this._unbindStore()
+    if (this._bindRetryTimer) {
+      clearTimeout(this._bindRetryTimer)
+      this._bindRetryTimer = null
+    }
+    this._bindRetryCount = 0
   }
 
   // 属性变更回调
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has('storeId')) {
       this._tryBindStore()
+    }
+    // 影响树结构的属性须重建（showCount/showHint 仅影响渲染，无需重建）
+    if ((changedProperties.has('expandDepth') || changedProperties.has('showComputed')) && this._store) {
+      this._buildTree()
+    }
+    // 进入编辑状态时聚焦输入框并全选
+    if (this._editable.editingPath) {
+      const input = this.renderRoot.querySelector<HTMLInputElement>('.edit-input')
+      input?.focus()
+      if (input && (input.type === 'text' || input.type === 'number')) input.select()
     }
   }
 
@@ -269,6 +119,16 @@ export class AutostoreViewer extends LitElement {
             return
           }
         }
+      }
+      // store 可能晚于组件挂载创建，延迟重试若干次
+      if (this._bindRetryCount < 10) {
+        this._bindRetryCount++
+        if (this._bindRetryTimer) clearTimeout(this._bindRetryTimer)
+        this._bindRetryTimer = setTimeout(() => {
+          this._bindRetryTimer = null
+          this._tryBindStore()
+        }, 500)
+        return
       }
       console.warn(`autostore-viewer: Store with id "${this.storeId}" not found`)
     }
@@ -302,9 +162,23 @@ export class AutostoreViewer extends LitElement {
 
     // 监听所有状态变化
     this._storeWatcher = this._store.watch('*', (operate: any) => {
-      // 重新构建受影响的节点
-      this._updateTreeNode(operate.path, operate.value)
+      if (operate.type === 'delete') {
+        // 删除操作：从树中移除对应节点
+        this._removeTreeNode(operate.path)
+      } else {
+        // 重新构建受影响的节点
+        this._updateTreeNode(operate.path, operate.value)
+      }
       this.requestUpdate()
+    })
+
+    // 异步计算结果经 peep 静默回写，watch('*') 收不到通知，须订阅 observer 完成事件
+    this._observerWatcher = (this._store as any).on?.('observer/*/done', (args: any) => {
+      const observer = args?.observer ?? args
+      if (observer?.path) {
+        this._updateTreeNode(observer.path, observer.value)
+        this.requestUpdate()
+      }
     })
   }
 
@@ -313,6 +187,10 @@ export class AutostoreViewer extends LitElement {
     if (this._storeWatcher) {
       this._storeWatcher.off?.()
       this._storeWatcher = null
+    }
+    if (this._observerWatcher) {
+      this._observerWatcher.off?.()
+      this._observerWatcher = null
     }
   }
 
@@ -331,14 +209,6 @@ export class AutostoreViewer extends LitElement {
   private _buildNodes(state: any, parentPath: string[], depth: number): TreeNode[] {
     if (state === null || state === undefined) return []
 
-    // 检查是否是markRaw对象（需要特殊处理）
-    const isMarkRawObj = state['__AS_SKIP_PROXY__'] === true
-
-    if (isMarkRawObj) {
-      // markRaw对象不展开子节点
-      return []
-    }
-
     const nodes: TreeNode[] = []
 
     // 检查是否是数组
@@ -346,9 +216,10 @@ export class AutostoreViewer extends LitElement {
       for (let i = 0; i < state.length; i++) {
         const value = state[i]
         const path = [...parentPath, String(i)]
-        const type = this._detectType(value)
-        const isObject = type === 'object' || type === 'array'
-        const expanded = depth < this._initialExpandDepth
+        const type = this._detectType(value, path)
+        if (!this.showComputed && type === 'computed') continue
+        const isObject = this._isExpandableType(type)
+        const expanded = depth < this.expandDepth
 
         const node: TreeNode = {
           key: i,
@@ -364,15 +235,17 @@ export class AutostoreViewer extends LitElement {
       return nodes
     }
 
-    // 检查是否是普通对象
+    // 检查是否是普通对象（含markRaw对象，其内部为原始值可正常遍历）
     if (typeof state === 'object') {
-      const keys = Object.keys(state)
+      // 过滤 AutoStore 内部标记键（如 markRaw 的 __AS_SKIP_PROXY__）
+      const keys = Object.keys(state).filter(key => !isInternalKey(key))
       for (const key of keys) {
         const value = state[key]
         const path = [...parentPath, key]
-        const type = this._detectType(value)
-        const isObject = type === 'object' || type === 'array'
-        const expanded = depth < this._initialExpandDepth
+        const type = this._detectType(value, path)
+        if (!this.showComputed && type === 'computed') continue
+        const isObject = this._isExpandableType(type)
+        const expanded = depth < this.expandDepth
 
         const node: TreeNode = {
           key,
@@ -390,8 +263,17 @@ export class AutostoreViewer extends LitElement {
     return nodes
   }
 
+  // 可展开的节点类型（对象/数组/markRaw对象）
+  private _isExpandableType(type: TreeNodeType): boolean {
+    return type === 'object' || type === 'array' || type === 'markRaw'
+  }
+
   // 检测值类型（考虑store的原始值）
-  private _detectType(value: any): TreeNode['type'] {
+  private _detectType(value: any, path?: string[]): TreeNodeType {
+    // 计算属性判定优先：state[key] 经 Proxy 拦截返回的是计算结果，
+    // 无法从值识别，须按路径查询（core 公开 API）
+    if (path && this._store && isComputed(this._store, path)) return 'computed'
+
     if (value === null || value === undefined) return 'other'
     if (Array.isArray(value)) return 'array'
 
@@ -422,11 +304,12 @@ export class AutostoreViewer extends LitElement {
         if (node.path.length === path.length &&
             node.path.every((p, i) => p === path[i])) {
           // 找到节点，更新值
-          const type = this._detectType(value)
+          const type = this._detectType(value, path)
+          const expandable = this._isExpandableType(type)
           node.value = value
           node.type = type
-          node.childCount = (type === 'object' || type === 'array') ? getObjectKeyCount(value) : 0
-          if (type === 'object' || type === 'array') {
+          node.childCount = expandable ? getObjectKeyCount(value) : 0
+          if (expandable) {
             node.children = this._buildNodes(value, path, 0)
           }
           return true
@@ -448,15 +331,55 @@ export class AutostoreViewer extends LitElement {
     this.requestUpdate()
   }
 
+  // 按路径读取 state 值
+  private _getStateByPath(path: string[]): any {
+    let obj: any = this._store?.state
+    for (const p of path) obj = obj?.[p]
+    return obj
+  }
+
+  // 删除节点对应的键
+  private _deleteNode(e: Event, node: TreeNode) {
+    e.stopPropagation()
+    const parent = this._getStateByPath(node.path.slice(0, -1))
+    const key = node.path[node.path.length - 1]
+    if (parent) delete parent[key]
+  }
+
+  // 从树中移除指定路径的节点
+  private _removeTreeNode(path: string[]) {
+    const isSamePath = (nodePath: string[]) =>
+      nodePath.length === path.length && nodePath.every((p, i) => p === path[i])
+    const removeFrom = (nodes: TreeNode[]): boolean => {
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i]
+        if (isSamePath(node.path)) {
+          nodes.splice(i, 1)
+          return true
+        }
+        // 仅沿祖先链递归查找
+        if (node.path.length < path.length && node.path.every((p, i) => p === path[i])) {
+          if (removeFrom(node.children)) {
+            node.childCount = Math.max(0, node.childCount - 1)
+            return true
+          }
+        }
+      }
+      return false
+    }
+    removeFrom(this._treeNodes)
+  }
+
   // 渲染节点
   private _renderNode(node: TreeNode): any {
     const iconKey = getNodeIconKey(node)
     const iconHtml = ICONS[iconKey]
     const chevronHtml = ICONS.chevron
-    const isExpandable = node.type === 'object' || node.type === 'array'
+    const isExpandable = this._isExpandableType(node.type)
+    const isEditing = this._editable.isEditing(node)
 
     return html`
-      <div class="tree-node" @click=${() => this._toggleExpand(node)}>
+      <div class="tree-node ${isEditing ? 'editing' : ''}" @click=${() => this._toggleExpand(node)}>
         <div class="node-content">
           ${isExpandable ? html`
             <span class="expand-icon ${node.expanded ? 'expanded' : ''}">
@@ -469,12 +392,24 @@ export class AutostoreViewer extends LitElement {
           `}
           <span class="type-icon">${iconHtml}</span>
           <span class="node-key">${node.key}</span>
-          ${node.childCount > 0 ? html`
+          ${this.showHint && isExpandable && !node.expanded && !isEditing ? html`
+            <span class="collapsed-hint">${node.type === 'array' ? '[...]' : '{...}'}</span>
+          ` : nothing}
+          ${this.showCount && node.childCount > 0 && !isEditing ? html`
             <span class="child-count">${node.childCount}</span>
           ` : nothing}
-          ${!isExpandable ? html`
-            <span class="node-value">${formatValue(node.value, node.type)}</span>
-          ` : nothing}
+          ${isEditing ? this._editable.renderEditor(node) : html`
+            <span class="node-value">${!isExpandable ? formatValue(node.value, node.type) : nothing}</span>
+          `}
+          <span class="node-tools">
+            ${isEditing ? html`
+              <span class="node-tool" title="取消 (Esc)" @click=${(e: Event) => { e.stopPropagation(); this._editable.cancel() }}>${ICONS.no}</span>
+              <span class="node-tool" title="确认 (Enter)" @click=${(e: Event) => { e.stopPropagation(); this._editable.confirm(node) }}>${ICONS.yes}</span>
+            ` : html`
+              <span class="node-tool" title="编辑" @click=${(e: Event) => { e.stopPropagation(); this._editable.start(node) }}>${ICONS.edit}</span>
+              <span class="node-tool" title="删除" @click=${(e: Event) => this._deleteNode(e, node)}>${ICONS.trash}</span>
+            `}
+          </span>
         </div>
       </div>
       ${isExpandable && node.expanded && node.children.length > 0 ? html`

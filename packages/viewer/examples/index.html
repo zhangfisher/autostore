@@ -19,60 +19,162 @@
       @media (prefers-color-scheme: dark) {
         body { background: #1a1a1a; color: #e5e5e5; }
       }
-      h1 { margin-bottom: 24px; }
-      h2 { margin: 24px 0 12px; font-size: 1.1em; }
-      .demo-section {
+      h1 { margin-bottom: 20px; }
+
+      /* 显示选项控制面板 */
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
         background: white;
-        border-radius: 12px;
-        padding: 20px;
+        border-radius: 8px;
+        padding: 12px 16px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        font-size: 0.9em;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .controls-label { color: #6b7280; }
+      .controls label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
       }
       @media (prefers-color-scheme: dark) {
-        .demo-section { background: #2a2a2a; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .controls { background: #2a2a2a; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
       }
+
+      /* TABS 导航 */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 0;
+        flex-wrap: wrap;
+      }
+      .tab {
+        appearance: none;
+        border: 1px solid transparent;
+        border-bottom: none;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-size: 0.95em;
+        padding: 10px 18px;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        opacity: 0.7;
+      }
+      .tab:hover { opacity: 1; background: rgba(0, 0, 0, 0.04); }
+      .tab.active {
+        opacity: 1;
+        font-weight: 600;
+        background: white;
+        border-color: #e5e7eb;
+        /* 用白色背景盖住容器上边框，形成选中态 */
+        position: relative;
+        top: 1px;
+      }
+      @media (prefers-color-scheme: dark) {
+        .tabs { border-bottom-color: #374151; }
+        .tab:hover { background: rgba(255, 255, 255, 0.06); }
+        .tab.active { background: #2a2a2a; border-color: #374151; }
+      }
+
+      /* TABS 面板 */
+      .tab-panel {
+        display: none;
+        background: white;
+        border-radius: 0 12px 12px 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .tab-panel.active { display: block; }
+      @media (prefers-color-scheme: dark) {
+        .tab-panel { background: #2a2a2a; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+      }
+      .info { color: #6b7280; font-size: 0.9em; margin-bottom: 12px; }
       autostore-viewer {
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         overflow: hidden;
       }
-      .info { color: #6b7280; font-size: 0.9em; margin-bottom: 12px; }
     </style>
   </head>
   <body>
     <h1>AutoStore Viewer 演示</h1>
 
-    <div class="demo-section">
-      <h2>1. 基础对象展示</h2>
+    <!-- 显示选项控制面板 -->
+    <div class="controls">
+      <span class="controls-label">显示选项：</span>
+      <label><input type="checkbox" id="ctl-count" checked /> 子节点数量</label>
+      <label><input type="checkbox" id="ctl-hint" checked /> {...} / [...] 标识</label>
+      <label><input type="checkbox" id="ctl-computed" /> 计算属性</label>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" data-panel="panel-basic">基础对象</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="panel-computed">计算属性</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="panel-func">函数与 markRaw</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="panel-store-id">store-id 绑定</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="panel-store">store 属性绑定</button>
+    </div>
+
+    <section class="tab-panel active" id="panel-basic">
       <p class="info">展示嵌套对象、数组、字符串、数字、布尔等基本类型</p>
       <autostore-viewer id="viewer1"></autostore-viewer>
-    </div>
+    </section>
 
-    <div class="demo-section">
-      <h2>2. 计算属性</h2>
+    <section class="tab-panel" id="panel-computed">
       <p class="info">使用 σ 图标标识计算属性，显示计算结果</p>
       <autostore-viewer id="viewer2"></autostore-viewer>
-    </div>
+    </section>
 
-    <div class="demo-section">
-      <h2>3. 函数与 markRaw</h2>
-      <p class="info">使用函数图标标识普通函数，使用特殊图标标识 markRaw 对象</p>
+    <section class="tab-panel" id="panel-func">
+      <p class="info">状态树中的函数即同步计算属性（σ 图标）；异步计算使用 computed() 包装；markRaw 对象使用特殊图标并完整展开</p>
       <autostore-viewer id="viewer3"></autostore-viewer>
-    </div>
+    </section>
 
-    <div class="demo-section">
-      <h2>4. 通过 store-id 属性绑定</h2>
+    <section class="tab-panel" id="panel-store-id">
       <p class="info">通过 store-id 属性从全局注册表中查找并绑定 store</p>
       <autostore-viewer store-id="demo-store"></autostore-viewer>
-    </div>
+    </section>
 
-    <div class="demo-section">
-      <h2>5. 通过 store 属性绑定</h2>
+    <section class="tab-panel" id="panel-store">
       <p class="info">通过 store 属性直接绑定 store 实例</p>
       <autostore-viewer id="viewer5"></autostore-viewer>
-    </div>
+    </section>
 
-    <script type="module" src="./src/autostore-viewer.ts"></script>
+    <script>
+      // TABS 切换
+      document.querySelectorAll('.tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach((b) => {
+            b.classList.toggle('active', b === btn)
+            b.setAttribute('aria-selected', b === btn ? 'true' : 'false')
+          })
+          document.querySelectorAll('.tab-panel').forEach((p) => {
+            p.classList.toggle('active', p.id === btn.dataset.panel)
+          })
+        })
+      })
+
+      // 显示选项控制面板：作用于所有 viewer
+      const ctlCount = document.getElementById('ctl-count')
+      const ctlHint = document.getElementById('ctl-hint')
+      const ctlComputed = document.getElementById('ctl-computed')
+      const applyControls = () => {
+        document.querySelectorAll('autostore-viewer').forEach((viewer) => {
+          viewer.showCount = ctlCount.checked
+          viewer.showHint = ctlHint.checked
+          viewer.showComputed = ctlComputed.checked
+        })
+      }
+      ;[ctlCount, ctlHint, ctlComputed].forEach((c) => c.addEventListener('change', applyControls))
+    </script>
+
+    <script type="module" src="../src/autostore-viewer.ts"></script>
     <script type="module">
       import { AutoStore, computed, markRaw } from 'autostore'
 
@@ -125,10 +227,11 @@
         regularFunction: () => {
           console.log('普通函数')
         },
-        asyncFunction: async () => {
+        // 异步计算属性：使用 computed() 包装（空依赖=仅首次执行）
+        asyncFunction: computed(async () => {
           await new Promise(resolve => setTimeout(resolve, 1000))
           return '异步结果'
-        },
+        }, []),
         rawData: markRaw({
           nested: '不会被代理',
           deep: {
@@ -168,6 +271,9 @@
       document.getElementById('viewer2').store = store2
       document.getElementById('viewer3').store = store3
       document.getElementById('viewer5').store = store5
+
+      // store-id 绑定依赖全局注册表（WeakRef 不阻止 GC），挂到全局保持 store4 存活
+      globalThis.__DEMO_STORE__ = store4
     </script>
   </body>
 </html>

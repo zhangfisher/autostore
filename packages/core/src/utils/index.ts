@@ -43,3 +43,4 @@ export * from "./getDefaultComputedOptions";
 export * from "./isAutoStore";
 export * from "./getDefaultConfigManager";
 export * from "./params";
+export * from  "./isComputed"
