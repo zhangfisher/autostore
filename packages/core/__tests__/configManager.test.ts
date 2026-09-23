@@ -12,6 +12,7 @@
 
 import { describe, test, expect, beforeEach } from "bun:test";
 import { AutoStore, ConfigManager, configurable } from "../src";
+import { delay } from "flex-tools/async/delay";
 
 /**
  * 辅助函数：验证配置项是否正确注册到 ConfigManager
@@ -1468,6 +1469,173 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
             // 验证值恢复为默认值
             expect(orderStore.state.order.price).toBe(99.9);
         });
+    });
+});
+
+describe("ConfigManager - 嵌套 configurable 级联注册", () => {
+    let configManager: ConfigManager;
+    let configState: any;
+
+    beforeEach(() => {
+        configManager = new ConfigManager({ load: () => ({}) }, { autoload: false });
+        configState = configManager.state as any;
+    });
+
+    test("嵌套 configurable 无需访问即全部注册（外部 ConfigManager 实例）", () => {
+        const store = new AutoStore(
+            {
+                network: configurable(
+                    {
+                        dhcp: configurable(true, { label: "自动获取IP地址" }),
+                        ip: configurable("192.168.1.1", { label: "IP地址" }),
+                    },
+                    { label: "网络" },
+                ),
+            },
+            { configManager, id: "network" },
+        );
+        // 全程未访问 store.state，三个配置项均已注册
+        assertConfigRegistered(configManager, store, [
+            "network",
+            "network.dhcp",
+            "network.ip",
+        ]);
+        expect(configState["network.network.dhcp"].value).toBe(true);
+        expect(configState["network.network.ip"].value).toBe("192.168.1.1");
+        expect(configState["network.network"].label).toBe("网络");
+    });
+
+    test("configManager=true 时异步补注册后嵌套项全部存在", async () => {
+        const store = new AutoStore(
+            {
+                network: configurable({
+                    dhcp: configurable(true, {}),
+                    ip: configurable("192.168.1.1", {}),
+                }),
+            },
+            { configManager: true },
+        );
+        // 等待动态 import 完成 createSelfConfigManager 补注册
+        await delay(10);
+        const cm = store.configManager!;
+        expect(cm).toBeDefined();
+        // 内置 configManager 的 configKey 置空，键名无前缀
+        expect("network" in cm.state).toBe(true);
+        expect("network.dhcp" in cm.state).toBe(true);
+        expect("network.ip" in cm.state).toBe(true);
+    });
+
+    test("深层混合嵌套（普通对象层与 configurable 层交替）全部注册", () => {
+        const store = new AutoStore(
+            {
+                a: {
+                    b: configurable(
+                        {
+                            m: {
+                                n: configurable(2, {}),
+                            },
+                        },
+                        {},
+                    ),
+                },
+            },
+            { configManager, id: "app" },
+        );
+        assertConfigRegistered(configManager, store, ["a.b", "a.b.m.n"]);
+        expect(configState["app.a.b.m.n"].value).toBe(2);
+    });
+
+    test("数组内的 configurable 项按索引路径注册", () => {
+        const store = new AutoStore(
+            {
+                list: configurable([configurable("a", {}), configurable("b", {})], {}),
+            },
+            { configManager, id: "app" },
+        );
+        assertConfigRegistered(configManager, store, ["list", "list.0", "list.1"]);
+        expect(configState["app.list.1"].value).toBe("b");
+    });
+
+    test("重复访问已级联注册的嵌套项不会重复注册", () => {
+        const store = new AutoStore(
+            {
+                network: configurable({
+                    dhcp: configurable(true, {}),
+                }),
+            },
+            { configManager, id: "network" },
+        );
+        const sizeBefore = configManager.size;
+        // 首次访问：get 陷阱与级联注册双路到达同一路径
+        expect((store.state as any).network.dhcp).toBe(true);
+        expect(configManager.size).toBe(sizeBefore);
+        // 读写与注册均正常（守卫防止二次 defineProperty 崩溃）
+        (store.state as any).network.dhcp = false;
+        expect(configState["network.network.dhcp"].value).toBe(false);
+    });
+
+    test("级联注册后修改嵌套项触发 autosave", async () => {
+        const saved: Record<string, any> = {};
+        const cm = new ConfigManager(
+            {
+                load: () => ({}),
+                save: (values: Record<string, any>) => Object.assign(saved, values),
+            },
+            { autoload: false, autosave: true },
+        );
+        const store = new AutoStore(
+            {
+                network: configurable({
+                    dhcp: configurable(true, {}),
+                }),
+            },
+            { configManager: cm, id: "network" },
+        );
+        (store.state as any).network.dhcp = false;
+        await delay(10);
+        expect(saved["network.network.dhcp"]).toBe(false);
+    });
+
+    test("级联注册的嵌套项可接收 load 加载的值", async () => {
+        const cm = new ConfigManager(
+            { load: () => ({ "app.list.0": "loaded" }) },
+            { autoload: false },
+        );
+        new AutoStore(
+            { list: configurable([configurable("init", {})]) },
+            { configManager: cm, id: "app" },
+        );
+        await cm.load();
+        expect((cm.state as any)["app.list.0"].value).toBe("loaded");
+    });
+
+    test("initial 循环引用时级联扫描不死循环", () => {
+        const inner: any = {};
+        const outer: any = { child: configurable(inner, {}) };
+        inner.parent = outer; // 容器环：inner → outer → child(builder) → inner
+        const store = new AutoStore(
+            { loop: configurable(outer, {}) },
+            { configManager, id: "app" },
+        );
+        assertConfigRegistered(configManager, store, ["loop", "loop.child"]);
+        // 同一 builder 经环路径二次到达（loop.child.parent.child）被共享 descriptor
+        // 判重拦截，不得注册、更不得把初始值写进状态树（否则真值环导致遍历死循环）
+        expect("app.loop.child.parent.child" in configState).toBe(false);
+    });
+
+    test("store.destroy 后 configManager 中嵌套项被清除", () => {
+        const store = new AutoStore(
+            {
+                network: configurable({
+                    dhcp: configurable(true, {}),
+                }),
+            },
+            { configManager, id: "network" },
+        );
+        expect("network.network.dhcp" in configState).toBe(true);
+        store.destroy();
+        expect("network.network" in configState).toBe(false);
+        expect("network.network.dhcp" in configState).toBe(false);
     });
 });
 

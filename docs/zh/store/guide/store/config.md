@@ -7,6 +7,7 @@
 - **集中化管理** - 所有模块的可配置项自动注册到全局配置管理器，统一加载、保存和遍历
 - **响应式元数据** - 配置元数据（如 `enable`、`required`、`visible`）支持计算属性，可与其他配置项或状态值联动
 - **声明式配置** - 通过 `configurable()` 函数在状态定义处直接声明可配置项及其校验规则、标签等元数据
+- **嵌套级联注册** - `configurable()` 初始值为对象/数组时，其中嵌套的可配置项自动级联注册，无需访问状态即可在配置管理器中遍历全部配置项
 - **双向同步** - 配置变更自动同步到各业务模块，模块内变更自动触发保存到持久层
 - **灵活的存储抽象** - 通过 `load/save` 函数抽象配置源，支持 localStorage、API、文件等任意存储后端
 - **完整的校验系统** - 内置校验函数、错误信息模板、多种失败处理策略（`throw`/`ignore`/`pass`）
@@ -282,6 +283,50 @@ function configurable<Value>(
 :::warning 提示
 `configurable`还有一个别名`schema`
 :::
+
+### 嵌套 configurable
+
+`configurable`的初始值可以是对象或数组，其中的成员也可以继续使用`configurable`声明，`AutoStore`会自动**级联注册**所有嵌套的可配置项。
+
+```ts
+const netStore = new AutoStore(
+    {
+        network: configurable(
+            {
+                dhcp: configurable(true, {
+                    label: "自动获取IP地址",
+                }),
+                ip: configurable("192.168.1.1", {
+                    label: "IP地址",
+                    enable: (scope: any) => {
+                        return scope["network.dhcp"].value;
+                    },
+                }),
+            },
+            { label: "网络" },
+        ),
+    },
+    { configManager, id: "network" },
+);
+
+// 无需访问store.state，所有嵌套的可配置项均已注册到配置管理器
+expect("network.network" in configManager.state).toBe(true);
+expect("network.network.dhcp" in configManager.state).toBe(true);
+expect("network.network.ip" in configManager.state).toBe(true);
+expect(configManager.state["network.network.dhcp"].value).toBe(true);
+```
+
+- 上例中外层`network`本身是一个可配置项（初始值为对象），其内部成员`dhcp`、`ip`也是可配置项。
+- 实例化时无需访问状态，`dhcp`、`ip`即被自动注册到配置管理器，键名为`configKey`前缀 + 完整路径（如`network.network.dhcp`）。
+- 外层配置项的`value`指向初始值对象本身，其内部的可配置项成员在注册后原位生效。
+
+嵌套注册支持以下场景：
+
+- **普通对象层与`configurable`层任意交替**，无论嵌套多深均会全部注册
+- **数组**：初始值为数组时按索引路径注册，如`list.0`、`list.1`
+- **循环引用**：初始值对象存在循环引用时会自动终止扫描，不会死循环
+- 同一个`configurable`只会注册一次，重复访问不会重复注册
+- 嵌套可配置项的值读写、校验、自动保存、`destroy`注销与普通可配置项完全一致
 
 ### 绑定配置管理器
 

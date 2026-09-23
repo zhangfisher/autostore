@@ -8,6 +8,7 @@ import { getObjectKeyCount } from './utils/getObjectKeyCount'
 import { isInternalKey } from './utils/isInternalKey'
 import { Editable } from './editable'
 import { joinPath } from './utils/joinPath'
+import { deleteNodeValue } from './utils/deleteNodeValue'
 import { isComputed } from 'autostore'
 import type { TreeNode, TreeNodeType } from './types'
 import type { AutoStore } from 'autostore'
@@ -34,9 +35,13 @@ export class AutostoreViewer extends LitElement {
   @property({ type: Boolean, attribute: 'show-computed' })
   showComputed: boolean = false
 
-  // 是否启用行内编辑与删除（默认只读展示）
+  // 是否启用行内编辑（默认只读展示）
   @property({ type: Boolean, attribute: 'editable' })
   editable: boolean = false
+
+  // 是否允许删除节点（默认不允许；根节点不可删除）
+  @property({ type: Boolean, attribute: 'allow-delete' })
+  allowDelete: boolean = false
 
   // 响应式状态
   @state()
@@ -176,6 +181,10 @@ export class AutostoreViewer extends LitElement {
       if (operate.type === 'delete') {
         // 删除操作：从树中移除对应节点
         this._removeTreeNode(operate.path)
+      } else if (operate.type === 'insert' || operate.type === 'remove') {
+        // 数组聚合操作：value 是被插入/删除的元素而非剩余数组，
+        // 须从 state 读取真实值重建该容器子树
+        this._updateTreeNode(operate.path, this._getStateByPath(operate.path))
       } else {
         // 重新构建受影响的节点
         this._updateTreeNode(operate.path, operate.value)
@@ -388,8 +397,7 @@ export class AutostoreViewer extends LitElement {
   private _deleteNode(e: Event, node: TreeNode) {
     e.stopPropagation()
     const parent = this._getStateByPath(node.path.slice(0, -1))
-    const key = node.path[node.path.length - 1]
-    if (parent) delete parent[key]
+    if (parent) deleteNodeValue(parent, node.path[node.path.length - 1])
   }
 
   // 从树中移除指定路径的节点
@@ -463,7 +471,7 @@ export class AutostoreViewer extends LitElement {
               ${canEdit ? html`
                 <span class="node-tool" title="编辑" @click=${(e: Event) => { e.stopPropagation(); this._editable.start(node) }}>${ICONS.edit}</span>
               ` : nothing}
-              ${this.editable ? html`
+              ${this.allowDelete && node.path.length > 0 ? html`
                 <span class="node-tool" title="删除" @click=${(e: Event) => this._deleteNode(e, node)}>${ICONS.trash}</span>
               ` : nothing}
             `}

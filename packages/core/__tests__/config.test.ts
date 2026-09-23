@@ -1749,8 +1749,39 @@ describe("configurable 嵌套测试", () => {
                 })
             },
             { configManager, id: "network" });
-        
-        
-        
+
+        // 无需访问 store.state，所有 configurable 项均已级联注册
+        // configKey 前缀为 store.id("network")，故键名为 network.network.*
+        assertConfigRegistered(configManager, netStore, [
+            "network",
+            "network.dhcp",
+            "network.ip",
+        ]);
+        expect(configState["network.network.dhcp"].value).toBe(true);
+        expect(configState["network.network.ip"].value).toBe("192.168.1.1");
+        expect(configState["network.network"].label).toBe("网络");
+    })
+    test("默认管理器对象嵌套configurable", async () => {
+        const netStore = new AutoStore({
+            network:configurable({                
+                    dhcp: configurable(true, {
+                        label: "自动获取IP地址",
+                    }),
+                    ip: configurable("192.168.1.1", {
+                        label: "IP地址",
+                        enable: (scope: any) => {
+                            return scope["network.dhcp"].value;
+                        },
+                    }),
+                },{
+                    label:"网络"
+                })
+            },
+            { configManager:true, id: "network" });
+        await delay(1) 
+        const configState = netStore.configManager.state as any 
+        expect(configState["network.dhcp"].value).toBe(true);
+        expect(configState["network.ip"].value).toBe("192.168.1.1");
+        expect(configState["network"].label).toBe("网络");
     })
 })
