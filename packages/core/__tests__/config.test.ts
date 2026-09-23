@@ -1717,3 +1717,40 @@ describe("ConfigManager 和 configurable 集成测试", () => {
         });
     });
 });
+describe("configurable 嵌套测试", () => {
+  let configManager: ConfigManager;
+    let configState: any;
+
+    beforeEach(() => {
+        // 每个测试前创建一个新的 ConfigManager
+        configManager = new ConfigManager();
+        configState = configManager.state as any;
+    });
+
+    afterEach(() => {
+        // 每个测试后清理 ConfigManager
+        configManager = null as any;
+    });
+
+    test("对象嵌套configurable", () => {
+        const netStore = new AutoStore({
+            network:configurable({                
+                    dhcp: configurable(true, {
+                        label: "自动获取IP地址",
+                    }),
+                    ip: configurable("192.168.1.1", {
+                        label: "IP地址",
+                        enable: (scope: any) => {
+                            return scope["network.dhcp"].value;
+                        },
+                    }),
+                },{
+                    label:"网络"
+                })
+            },
+            { configManager, id: "network" });
+        
+        
+        
+    })
+})

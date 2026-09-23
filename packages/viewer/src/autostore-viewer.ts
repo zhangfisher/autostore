@@ -7,6 +7,7 @@ import { getNodeIconKey } from './utils/getNodeIconKey'
 import { getObjectKeyCount } from './utils/getObjectKeyCount'
 import { isInternalKey } from './utils/isInternalKey'
 import { Editable } from './editable'
+import { joinPath } from './utils/joinPath'
 import { isComputed } from 'autostore'
 import type { TreeNode, TreeNodeType } from './types'
 import type { AutoStore } from 'autostore'
@@ -33,6 +34,10 @@ export class AutostoreViewer extends LitElement {
   @property({ type: Boolean, attribute: 'show-computed' })
   showComputed: boolean = false
 
+  // 是否启用行内编辑与删除（默认只读展示）
+  @property({ type: Boolean, attribute: 'editable' })
+  editable: boolean = false
+
   // 响应式状态
   @state()
   private _store: AutoStore<any> | null = null
@@ -45,6 +50,8 @@ export class AutostoreViewer extends LitElement {
     { requestUpdate: () => this.requestUpdate() },
     (path) => this._getStateByPath(path),
     () => this._store,
+    (node) => this._findNextEditableSibling(node),
+    (path) => this._getNodeByPath(path),
   )
 
   // 用于保存store watcher
@@ -85,6 +92,10 @@ export class AutostoreViewer extends LitElement {
     // 影响树结构的属性须重建（showCount/showHint 仅影响渲染，无需重建）
     if ((changedProperties.has('expandDepth') || changedProperties.has('showComputed')) && this._store) {
       this._buildTree()
+    }
+    // 关闭编辑能力时立即退出编辑状态
+    if (changedProperties.has('editable') && !this.editable && this._editable.editingPath) {
+      this._editable.cancel()
     }
     // 进入编辑状态时聚焦输入框并全选
     if (this._editable.editingPath) {
@@ -268,6 +279,41 @@ export class AutostoreViewer extends LitElement {
     return type === 'object' || type === 'array' || type === 'markRaw'
   }
 
+  // 判断节点是否可编辑：仅无子节点的原始值类型（容器/computed/function 均不可编辑）
+  private _isEditableNode(node: TreeNode): boolean {
+    return (
+      !this._isExpandableType(node.type) &&
+      (node.type === 'string' || node.type === 'number' || node.type === 'boolean' || node.type === 'other')
+    )
+  }
+
+  // 按路径在树中查找节点
+  private _getNodeByPath(path: string[]): TreeNode | null {
+    let nodes = this._treeNodes
+    let found: TreeNode | null = null
+    for (const p of path) {
+      found = nodes.find((n) => String(n.key) === p) ?? null
+      if (!found) return null
+      nodes = found.children
+    }
+    return found
+  }
+
+  // 查找同级中当前节点之后的第一个可编辑节点（末尾返回 null）
+  private _findNextEditableSibling(node: TreeNode): TreeNode | null {
+    let siblings = this._treeNodes
+    if (node.path.length > 0) {
+      const parent = this._getNodeByPath(node.path.slice(0, -1))
+      if (!parent) return null
+      siblings = parent.children
+    }
+    const idx = siblings.indexOf(node)
+    for (let i = idx + 1; i < siblings.length; i++) {
+      if (this._isEditableNode(siblings[i])) return siblings[i]
+    }
+    return null
+  }
+
   // 检测值类型（考虑store的原始值）
   private _detectType(value: any, path?: string[]): TreeNodeType {
     // 计算属性判定优先：state[key] 经 Proxy 拦截返回的是计算结果，
@@ -377,9 +423,14 @@ export class AutostoreViewer extends LitElement {
     const chevronHtml = ICONS.chevron
     const isExpandable = this._isExpandableType(node.type)
     const isEditing = this._editable.isEditing(node)
+    const canEdit = this.editable && this._isEditableNode(node)
 
     return html`
-      <div class="tree-node ${isEditing ? 'editing' : ''}" @click=${() => this._toggleExpand(node)}>
+      <div
+        class="tree-node ${isEditing ? 'editing' : ''}"
+        data-path=${joinPath(node.path)}
+        @click=${() => this._toggleExpand(node)}
+      >
         <div class="node-content">
           ${isExpandable ? html`
             <span class="expand-icon ${node.expanded ? 'expanded' : ''}">
@@ -399,15 +450,22 @@ export class AutostoreViewer extends LitElement {
             <span class="child-count">${node.childCount}</span>
           ` : nothing}
           ${isEditing ? this._editable.renderEditor(node) : html`
-            <span class="node-value">${!isExpandable ? formatValue(node.value, node.type) : nothing}</span>
+            <span
+              class="node-value"
+              @dblclick=${canEdit ? () => this._editable.start(node) : nothing}
+            >${!isExpandable ? formatValue(node.value, node.type) : nothing}</span>
           `}
           <span class="node-tools">
             ${isEditing ? html`
               <span class="node-tool" title="取消 (Esc)" @click=${(e: Event) => { e.stopPropagation(); this._editable.cancel() }}>${ICONS.no}</span>
-              <span class="node-tool" title="确认 (Enter)" @click=${(e: Event) => { e.stopPropagation(); this._editable.confirm(node) }}>${ICONS.yes}</span>
+              <span class="node-tool" title="确认 (Enter)" @pointerdown=${(e: Event) => { e.stopPropagation(); this._editable.confirm() }}>${ICONS.yes}</span>
             ` : html`
-              <span class="node-tool" title="编辑" @click=${(e: Event) => { e.stopPropagation(); this._editable.start(node) }}>${ICONS.edit}</span>
-              <span class="node-tool" title="删除" @click=${(e: Event) => this._deleteNode(e, node)}>${ICONS.trash}</span>
+              ${canEdit ? html`
+                <span class="node-tool" title="编辑" @click=${(e: Event) => { e.stopPropagation(); this._editable.start(node) }}>${ICONS.edit}</span>
+              ` : nothing}
+              ${this.editable ? html`
+                <span class="node-tool" title="删除" @click=${(e: Event) => this._deleteNode(e, node)}>${ICONS.trash}</span>
+              ` : nothing}
             `}
           </span>
         </div>

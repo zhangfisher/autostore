@@ -4,7 +4,7 @@ import type { AnyObserverObject, ObserverType, ObserverContext } from "../observ
 import type { Dict } from "../types";
 import type { AutoStore } from "./store";
 import type { AutoStoreStateSchema } from "../schema/types";
-import type { ConfigManager } from "../schema/manager";
+import type { ConfigManager, ConfigSource } from "../schema/manager";
 import type { FastEventSubscriber, TransformedEvents } from "fastevent";
 import type { ObserverDescriptor } from "../observer/types";
 import type { CreateSandboxOptions } from "../utils/createSandbox";
@@ -253,11 +253,11 @@ export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<Sta
     /**
      * 提供一个配置管理器对象
      */
-    configManager?: ConfigManager | false;
+    configManager?: ConfigManager | boolean | ConfigSource
     /**
      * 为当前Store的所有配置项均指定一个统一的前缀
      */
-    configKey?: string;
+    configKey?: string 
     /**
      *
      * 当启用时，如果值是一个字符串，并且以```xxx```形式，代表这是一个表达式

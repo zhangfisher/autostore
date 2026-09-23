@@ -107,9 +107,9 @@ export function schema<Value>(
 ): any {
     const args = parseSchemaArgs([initial, schema]);
     const value = initial;
-    if (typeof value === "object") {
-        markRaw(value);
-    }
+    // if (typeof value === "object") {
+    //      markRaw(value);
+    // }
     args.options.datatype = Array.isArray(value) ? "array" : typeof value;
     if (!args.options.errorMessage) {
         args.options.errorMessage = "{error}";

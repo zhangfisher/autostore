@@ -51,7 +51,6 @@ export class AsyncComputedObject<Value = any, Scope = any> extends ComputedObjec
         const { first } = options ?? {};
 
         if (this.isDisable(options?.enable)) {
-            this.store.logger.warn(() => `Async computed <${this.toString()}> is disabled`);
             return;
         }
         this.error = undefined;

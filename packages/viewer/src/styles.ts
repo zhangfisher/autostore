@@ -27,7 +27,7 @@ export const viewerStyles = css`
     :host {
       --viewer-bg: #1f2937;
       --viewer-text: #f9fafb;
-      --viewer-border: #374151;
+      --viewer-border: #636363;
       --viewer-hover-bg: #374151;
       --viewer-badge-bg: #4b5563;
       --viewer-badge-text: #d1d5db;
@@ -180,8 +180,9 @@ export const viewerStyles = css`
     min-width: 0;
     flex-grow: 1;
     background: var(--viewer-bg);
-    color: var(--viewer-text);
+    color: var(--viewer-text);    
     outline: none;
+    padding: 4px;
   }
 
   .edit-input:focus {

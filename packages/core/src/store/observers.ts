@@ -3,7 +3,7 @@ import { AsyncComputedObject } from "../computed/async";
 import { SyncComputedObject } from "../computed/sync";
 import { AnyObserverDescriptor, AnyObserverObject, ObserverContext } from "../observer/types";
 import { AnyAutoStore } from "../types";
-import { joinPath } from "../utils/joinPath";
+import { addConfigueableItem } from "../schema/utils";
 
 export type ObserverObjectBuilder = (
     store: AnyAutoStore,
@@ -31,14 +31,25 @@ export const observers: Record<string, any> = {
         return computedObj;
     },
     schema: (store: AnyAutoStore, descriptor: AnyObserverDescriptor, context: ObserverContext) => {
-        if (store.options.configManager) {
-            const { path, value } = context;
-            const val = store.configManager.add(store, path, value);
-            store.configurabled.add(joinPath(path));
+        if (typeof store.options.configManager === 'object') {
             return {
-                initial: val,
+                initial:addConfigueableItem(store,descriptor,context),
             };
         } else {
+            // 自动指定配置管理器
+            // configManager继承自AutoStore,实例化AutoStore时会导致循环依赖问题
+            // 所以需要先将configurable项先存入临时
+            const configManager = store.options.configManager
+            const isConfigSource:boolean=typeof(configManager)==='object' && 'load' in configManager
+            if(configManager===true || isConfigSource){
+                // @ts-expect-error                
+                if(!store._tmp_schemas){
+                    // @ts-expect-error
+                    store._tmp_schemas=[]
+                }
+                // @ts-expect-error
+                store._tmp_schemas.push([descriptor,context])
+            }
             return {
                 initial: descriptor.getter(),
             };

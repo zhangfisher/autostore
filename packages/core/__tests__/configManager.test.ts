@@ -1231,4 +1231,244 @@ describe("ConfigManager - source、load、save 和 reset 功能", () => {
             expect(orderStore.configManager).toBeUndefined();
         });
     });
+
+    describe("AutoStoreOptions.configManager - ConfigSource 类型", () => {
+        let mockSource: {
+            data: Record<string, any>;
+            loadCallCount: number;
+            saveCallCount: number;
+            saveHistory: Record<string, any>[];
+        };
+
+        beforeEach(() => {
+            mockSource = {
+                data: {},
+                loadCallCount: 0,
+                saveCallCount: 0,
+                saveHistory: [],
+            };
+        });
+
+        test("configManager 为 ConfigSource 时应该自动创建 ConfigManager", async () => {
+            const configSource = {
+                load: async () => {
+                    mockSource.loadCallCount++;
+                    return { ...mockSource.data };
+                },
+                save: async (values: Record<string, any>) => {
+                    mockSource.saveCallCount++;
+                    mockSource.saveHistory.push({ ...values });
+                    Object.assign(mockSource.data, values);
+                },
+            };
+
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: 99.9,
+                    },
+                },
+                {
+                    configManager: configSource,
+                    configKey: "app",
+                },
+            );
+
+            // 等待异步创建 ConfigManager
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 应该自动创建 ConfigManager
+            expect(orderStore.configManager).toBeDefined();
+            
+            // 注意：当前实现中，ConfigSource 不会自动注册配置项（需要手动调用 add）
+            // 因此 configKey 不会被使用，配置项也不会自动加载/保存
+            // 这是当前实现的限制
+        });
+
+        test("configManager 为 ConfigSource 时修改状态不会触发自动 save（配置项未注册）", async () => {
+            const configSource = {
+                load: async () => ({}),
+                save: async (values: Record<string, any>) => {
+                    mockSource.saveCallCount++;
+                    mockSource.saveHistory.push({ ...values });
+                    Object.assign(mockSource.data, values);
+                },
+            };
+
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: 99.9,
+                    },
+                },
+                {
+                    configManager: configSource,
+                    configKey: "app",
+                },
+            );
+
+            // 等待异步创建 ConfigManager
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 修改状态
+            orderStore.state.order.price = 199.9;
+
+            // 等待异步保存
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 验证 save 未被调用（因为配置项未通过 configurable 注册）
+            expect(mockSource.saveCallCount).toBe(0);
+        });
+
+        test("configManager 为 ConfigSource 且包含 reset 方法时可以调用 reset", async () => {
+            let resetCalled = false;
+            const configSource = {
+                load: async () => ({}),
+                save: async (values: Record<string, any>) => {
+                    Object.assign(mockSource.data, values);
+                },
+                reset: () => {
+                    resetCalled = true;
+                },
+            };
+
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: 99.9,
+                    },
+                },
+                {
+                    configManager: configSource,
+                    configKey: "app",
+                },
+            );
+
+            // 等待异步创建 ConfigManager
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 修改状态
+            orderStore.state.order.price = 199.9;
+
+            // 调用 reset (注意：reset 是异步方法)
+            await orderStore.configManager!.reset();
+
+            // 验证 reset 方法被调用
+            expect(resetCalled).toBe(true);
+        });
+    });
+
+    describe("AutoStoreOptions.configManager - true 类型", () => {
+        let mockSource: {
+            data: Record<string, any>;
+            loadCallCount: number;
+            saveCallCount: number;
+            saveHistory: Record<string, any>[];
+        };
+
+        beforeEach(() => {
+            mockSource = {
+                data: {},
+                loadCallCount: 0,
+                saveCallCount: 0,
+                saveHistory: [],
+            };
+        });
+
+        test("configManager=true 时应该自动创建默认 ConfigManager", async () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: 99.9,
+                    },
+                },
+                {
+                    configManager: true,
+                    configKey: "app",
+                },
+            );
+
+            // 等待异步创建 ConfigManager
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 应该自动创建 ConfigManager
+            expect(orderStore.configManager).toBeDefined();
+
+            // 注意：当前实现中，configManager=true 时会将 configKey 设置为空字符串
+            // 因此配置项的键不会带有前缀
+        });
+
+        test("configManager=true 时修改状态应该触发自动保存（键不带前缀）", async () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                        quantity: configurable(10, {}),
+                    },
+                },
+                {
+                    configManager: true,
+                    configKey: "app",
+                },
+            );
+
+            // 等待异步创建 ConfigManager 并注册配置项
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 修改状态
+            orderStore.state.order.price = 199.9;
+            orderStore.state.order.quantity = 50;
+
+            // 等待自动保存
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 通过 peep 验证内部存储的值（注意：configKey 被设为空字符串，所以键是 "order.price" 而不是 "app.order.price"）
+            // ConfigManager 的 state 存储的是 descriptor.options，值通过 .value 访问
+            const savedPrice = orderStore.configManager!.peep((state:any) => state["order.price"].value);
+            const savedQuantity = orderStore.configManager!.peep((state:any) => state["order.quantity"].value);
+
+            expect(savedPrice).toBe(199.9);
+            expect(savedQuantity).toBe(50);
+        });
+
+        test("configManager=true 时应该支持 load 和 reset", async () => {
+            const orderStore = new AutoStore(
+                {
+                    order: {
+                        price: configurable(99.9, {}),
+                    },
+                },
+                {
+                    configManager: true,
+                    configKey: "app",
+                },
+            );
+
+            // 等待异步创建 ConfigManager 并注册配置项
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 注意：默认 ConfigManager 的 source 是内部的 localConfigSource
+            // 验证初始值
+            const initialPrice = orderStore.configManager!.peep((state:any) => state["order.price"].value);
+            expect(initialPrice).toBe(99.9);
+
+            // 修改配置
+            orderStore.state.order.price = 399.9;
+
+            // 等待自动保存
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            // 验证值已更新
+            const updatedPrice = orderStore.configManager!.peep((state:any) => state["order.price"].value);
+            expect(updatedPrice).toBe(399.9);
+
+            // 调用 reset 恢复默认值 (reset 是异步方法)
+            await orderStore.configManager!.reset();
+
+            // 验证值恢复为默认值
+            expect(orderStore.state.order.price).toBe(99.9);
+        });
+    });
 });
+
+

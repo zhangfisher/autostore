@@ -67,7 +67,6 @@ import type { AnyObserverDescriptor, ObserverContext } from "../observer/types";
 import type { FastEvent, FastEventSubscriber, FastEventOptions } from "fastevent";
 import { FastLiteEvent } from "fastevent/lite";
 import { createSandbox } from "../utils/createSandbox";
-import { computed } from "../computed/computed";
 import type { ConfigManager } from "../schema/manager";
 import { forEachObject, getSnapshot, getVal, isFunction, setVal, splitPath } from "../utils";
 import type { AutoStoreOptions, StateChangeEvents, StateOperate, UpdateOptions } from "./types";
@@ -78,41 +77,8 @@ import { isFuncDefine } from "../utils/isFuncDefine";
 import { silence } from "../utils/silence";
 import { createEmptyLogger } from "../utils/createEmptyLogger";
 import { sandboxVars } from "./sandboxVars";
-
-/** 后代广播派生时，用于探测路径是否存在的哨兵值 */
-const BROADCAST_SENTINEL = Symbol("autostore.broadcast");
-
-/**
- * 判断一个值是否为可下钻的结构化值：普通对象 {} / Map / Array。
- * 显式排除 Set（第一阶段范围），以及 Date/RegExp/类实例/observer 对象等非纯对象。
- */
-function isBroadcastableValue(value: any): boolean {
-    if (value == null || typeof value !== "object") return false;
-    if (value instanceof Set) return false; // Set 暂不纳入下钻
-    if (Array.isArray(value) || value instanceof Map) return true;
-    // 普通对象：原型为 null 或 Object.prototype（排除类实例、observer 对象等）
-    const proto = Object.getPrototypeOf(value);
-    return proto === null || proto === Object.prototype;
-}
-
-/**
- * 判断一个 operate 是否应触发后代广播。
- * 仅处理 set / delete / update(set 陷阱) 且值为结构化值的情形；
- * insert/remove/fill 等数组方法产生的 operate（带 indexs、value 为增量数组、含移位语义）
- * 留待后续阶段。详见 ADR-0001。
- */
-function shouldBroadcastOperate(params: StateOperate): boolean {
-    const t = params.type;
-    if (t === "set" || t === "delete") {
-        return isBroadcastableValue(params.value);
-    }
-    if (t === "update") {
-        // set 陷阱产生的 arr[i] = 结构化值：indexs 为空、value 为单个结构化值。
-        // fill 产生的 update 带 indexs 且 value 为数组，不在本阶段处理。
-        return (!params.indexs || params.indexs.length === 0) && isBroadcastableValue(params.value);
-    }
-    return false;
-}
+import { BROADCAST_SENTINEL, shouldBroadcastOperate } from "../utils/shouldBroadcastOperate";
+import { createSelfConfigManager } from "../schema/utils";
 
 /**
  * 按 depth 将一条监听路径展开为订阅集。
@@ -163,12 +129,12 @@ export class AutoStore<
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _logger?: ILogger;
     private _subscribers: FastEventSubscriber[] = [];
-    private _resetWatcher: Watcher | undefined;
+    private _resetWatcher: Watcher | undefined;    
 
     static observers: Record<string, ObserverObjectBuilder> = observers;
     static sandboxVars:Record<string,any>=sandboxVars
     updatedState: Record<string, any> | undefined;
-
+    
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
             Object.assign(
@@ -180,7 +146,8 @@ export class AutoStore<
                     lazy: false,
                     enableValueExpr: true,
                     shadow: false,
-                    resetable: false,
+                    configManager:true,
+                    resetable: true,
                     plugins: [],
                 },
                 options,
@@ -195,20 +162,12 @@ export class AutoStore<
         this._createSandbox();
         this._createConfigManager();
         this.computedObjects = new ComputedObjects<State>(this);
-        // this.watchObjects = new WatchObjects<State>(this);
         this._subscribeHooks();
         this._installPlugins();
         this._data = createReactiveObject.call(this as any, state || {}, {
             notify: this._notify.bind(this),
             createObserverObject: this.handleReactiveObject.bind(this),
         }) as ComputedState<State>;
-        this.getSnap = this.getSnap.bind(this);
-        this.watch = this.watch.bind(this);
-        this.update = this.update.bind(this);
-        this.peep = this.peep.bind(this);
-        this.silentUpdate = this.silentUpdate.bind(this);
-        this.batchUpdate = this.batchUpdate.bind(this);
-        this.collectDependencies = this.collectDependencies.bind(this);
         this._enableReset();
         if (!this.options.lazy) forEachObject(this._data as any, this._onFirstEachState.bind(this));
         // @ts-expect-error
@@ -263,7 +222,7 @@ export class AutoStore<
         return this._peeping;
     }
     get configManager() {
-        return this._configManager!;
+        return this._configManager as ConfigManager;
     }
     get configKey() {
         return this.options.configKey === undefined ? this.id : this.options.configKey;
@@ -349,6 +308,7 @@ export class AutoStore<
     }
     private _createConfigManager() {
         const configManager = this.options.configManager;
+        const isConfigSource:boolean=typeof(configManager)==='object' && 'load' in configManager
         // 只在 configKey 为 undefined 时设置为 store.id
         // 如果 configKey 为空字符串，则保持不变（不添加前缀）
         if (this.options.configKey === undefined) this.options.configKey = this.id;
@@ -356,6 +316,13 @@ export class AutoStore<
         if (configManager && typeof configManager === "object" && "add" in configManager) {
             this._configManager = configManager as ConfigManager;
             // @ts-ignore
+        }  else if (configManager === true  || isConfigSource) {
+            import('../schema/manager').then((module) => {
+                // 内置配置管理器不需要configKey
+                this.options.configKey=''
+                this._configManager = new module.ConfigManager(configManager as any || {});
+                createSelfConfigManager(this);
+            });
         } else if (globalThis[GLOBAL_CONFIG_MANAGER] && configManager !== false) {
             // @ts-ignore
             this._configManager = globalThis[GLOBAL_CONFIG_MANAGER];

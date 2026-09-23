@@ -54,7 +54,9 @@ export class ConfigManager extends AutoStore<
     ConfigManagerOptions<AutoStoreConfigures>
 > {
     dirtyValues: Record<string, any> = {};
+    source:ConfigSource
     private _reseting: boolean = false;
+
     /**
      * load 进行中计数器（支持并发 load）
      * load 主动写入配置值期间 >0，此时 onUpdate 应抑制 save，
@@ -64,7 +66,7 @@ export class ConfigManager extends AutoStore<
      */
     private _loadingCount: number = 0;
     constructor(
-        public source: ConfigSource,
+        source?: ConfigSource,
         options?: ConfigManagerOptions<AutoStoreConfigures>,
     ) {
         const finalOptions = Object.assign(
@@ -78,7 +80,7 @@ export class ConfigManager extends AutoStore<
             options,
         ) as any;
         super({} as any, finalOptions);
-
+        this.source = source || { load:()=>({})}
         // 处理 global 选项，将实例挂载到 globalThis
         if (finalOptions.global !== false) {
             const globalKey =
@@ -106,6 +108,7 @@ export class ConfigManager extends AutoStore<
      * @param {Record<string, any>} data - 要加载的数据对象，键值对形式
      */
     async load() {
+        if(!this.source.load) return 
         const values = await this.source.load();
         this._loadingCount++;
         let hasSchemaWrite = false;
