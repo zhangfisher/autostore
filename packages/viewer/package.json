@@ -1,30 +1,41 @@
 {
   "name": "@autostorejs/viewer",
- "version": "4.6.1",
- "module": "src/index.ts",
-"access": "public",
-"publishConfig": {
+  "version": "4.6.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./browser": "./dist/index.global.js"
+  },
+  "access": "public",
+  "publishConfig": {
     "access": "public"
-},
-"repository": {
+  },
+  "repository": {
     "type": "git",
     "url": "git+https://github.com/zhangfisher/autostore.git"
-},
-"files": [
+  },
+  "files": [
     "dist"
-],
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build && vite build -c vite.config.iife.ts",
     "preview": "vite preview"
   },
   "dependencies": {
     "lit": "^3.3.3",
     "autostore": "workspace:*",
     "flex-tools": "^1.6.6"
-},
+  },
   "devDependencies": {
     "typescript": "~6.0.2",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "vite-plugin-dts": "^5.1.1"
   }
 }

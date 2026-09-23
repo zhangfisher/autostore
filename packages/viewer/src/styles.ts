@@ -12,6 +12,7 @@ export const viewerStyles = css`
     --viewer-badge-bg: #e5e7eb;
     --viewer-badge-text: #6b7280;
     --viewer-indent-size: 20px;
+    --viewer-required-color: #dc2626;
 
     display: block;
     font-family: system-ui, -apple-system, sans-serif;
@@ -83,12 +84,48 @@ export const viewerStyles = css`
     height: 100%;
   }
 
+  /* 标签区：key + 折叠提示 + 数量徽章；left 模式下吃统一列宽（由 JS 测量写入 --viewer-key-width） */
+  .node-label {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-right: 6px;
+    overflow: hidden;
+    width: var(--viewer-key-width, auto);
+  }
+
   .node-key {
     font-weight: 500;
     margin-right: 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* 作为 .node-label 的 flex 子项，允许收缩以吸收列宽截断 */
+    min-width: 0;
+  }
+
+  /* 徽章不参与截断，超限时只截 key */
+  .collapsed-hint,
+  .child-count {
+    flex-shrink: 0;
+  }
+
+  /* schema required 标记：label 后红色星号，列宽截断时永不被切 */
+  .required-mark {
+    color: var(--viewer-required-color);
+    flex-shrink: 0;
+    margin-left: 2px;
+    margin-right: 4px;
+    font-weight: 500;
+  }
+
+  /* right 模式：标签区内容自适应、value 右对齐（CSS 覆盖，JS 无需清理列宽变量） */
+  :host([value-align='right']) .node-label {
+    width: auto;
+  }
+
+  :host([value-align='right']) .node-value {
+    text-align: right;
   }
 
   .child-count {
@@ -211,6 +248,21 @@ export const viewerStyles = css`
 
   .node-children .tree-node {
     padding-left: 20px;
+  }
+
+  /* 离屏宽度探针：复用真实样式类测文本自然宽，inline-block 才有布局盒 */
+  .measure-probe {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+    white-space: nowrap;
+  }
+
+  .measure-probe span {
+    display: inline-block;
+    width: auto;
   }
 
   .loading {

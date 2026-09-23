@@ -5,7 +5,7 @@ export function formatValue(value: any, type: TreeNodeType): string {
   if (value === null) return 'null'
   if (value === undefined) return 'undefined'
   switch (type) {
-    case 'string': return `"${value}"`
+    case 'string': return String(value)
     case 'number': return String(value)
     case 'boolean': return value ? 'true' : 'false'
     case 'function': return 'ƒ()'
@@ -14,7 +14,7 @@ export function formatValue(value: any, type: TreeNodeType): string {
       if (value === null || value === undefined) return String(value)
       if (Array.isArray(value)) return `[${value.length}]`
       if (typeof value === 'object') return '{...}'
-      if (typeof value === 'string') return `"${value}"`
+      if (typeof value === 'string') return String(value)
       return String(value)
     }
     case 'markRaw': return '{...}'

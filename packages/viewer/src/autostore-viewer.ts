@@ -1,6 +1,6 @@
 import { LitElement, html, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
-import { ICONS } from './icons'
+import { iconHtml, iconSprite } from './icons'
 import { viewerStyles } from './styles'
 import { formatValue } from './utils/formatValue'
 import { getNodeIconKey } from './utils/getNodeIconKey'
@@ -11,7 +11,7 @@ import { joinPath } from './utils/joinPath'
 import { deleteNodeValue } from './utils/deleteNodeValue'
 import { isComputed } from 'autostore'
 import type { TreeNode, TreeNodeType } from './types'
-import type { AutoStore } from 'autostore'
+import type { AutoStore, AutoStoreStateSchema } from 'autostore'
 
 @customElement('autostore-viewer')
 export class AutostoreViewer extends LitElement {
@@ -43,6 +43,19 @@ export class AutostoreViewer extends LitElement {
   @property({ type: Boolean, attribute: 'allow-delete' })
   allowDelete: boolean = false
 
+  // value 对齐方式：left=标签区统一列宽、value 左对齐（默认）；right=value 右对齐
+  // reflect 用于 :host([value-align='right']) 样式分支
+  @property({ type: String, attribute: 'value-align', reflect: true })
+  valueAlign: 'left' | 'right' = 'left'
+
+  // 标签区（key+hint+count）统一列宽上限（px），超出部分截断显示 ...
+  @property({ type: Number, attribute: 'max-key-width' })
+  maxKeyWidth: number = 240
+
+  // 是否启用 schema 元数据显示（label 替换 key、required 红星、help 提示、choices 标签）
+  @property({ type: Boolean, attribute: 'show-schema' })
+  showSchema: boolean = false
+
   // 响应式状态
   @state()
   private _store: AutoStore<any> | null = null
@@ -69,6 +82,23 @@ export class AutostoreViewer extends LitElement {
   private _bindRetryCount = 0
   private _bindRetryTimer: any = null
 
+  // configManager 就绪轮询（默认 configManager:true 走异步 import 创建，晚于同步首渲染）
+  private _cmReadyTimer: any = null
+  private _cmReadyRetries = 0
+
+  // 标签区统一列宽当前值（脏检查缓存，值未变不写样式避免无效失效）
+  private _labelWidth: string = 'auto'
+
+  // 标签区列宽测量帧句柄（rAF 合并多次更新）
+  private _measureHandle: number | null = null
+
+  // 宿主不可见（如隐藏 tab 面板）时测量不可信的延时重试句柄与计数
+  private _measureRetryTimer: any = null
+  private _measureRetryCount = 0
+
+  // 宿主尺寸监听（隐藏容器如 tab 面板内测量无效，变可见后须重测）
+  private _resizeObserver: ResizeObserver | null = null
+
   // CSS样式（提取自 styles.ts）
   static styles = viewerStyles;
 
@@ -76,6 +106,16 @@ export class AutostoreViewer extends LitElement {
   connectedCallback() {
     super.connectedCallback()
     this._tryBindStore()
+    // tab 面板等容器以 display:none 隐藏时探针无布局盒（测量全 0 不可信），
+    // ResizeObserver 在隐藏期 contentRect 为 0 天然过滤，变可见（尺寸非 0）后触发重测；
+    // 回调发生在 layout 之后，同步测量即可取到有效布局，rAF 再兜底一次
+    this._resizeObserver = new ResizeObserver((entries) => {
+      if (entries.some((entry) => entry.contentRect.width > 0 || entry.contentRect.height > 0)) {
+        this._measureLabelWidth()
+        this._scheduleMeasureLabelWidth()
+      }
+    })
+    this._resizeObserver.observe(this)
   }
 
   // 断开DOM时
@@ -86,7 +126,23 @@ export class AutostoreViewer extends LitElement {
       clearTimeout(this._bindRetryTimer)
       this._bindRetryTimer = null
     }
+    if (this._measureHandle !== null) {
+      cancelAnimationFrame(this._measureHandle)
+      this._measureHandle = null
+    }
+    if (this._cmReadyTimer) {
+      clearTimeout(this._cmReadyTimer)
+      this._cmReadyTimer = null
+    }
+    if (this._measureRetryTimer) {
+      clearTimeout(this._measureRetryTimer)
+      this._measureRetryTimer = null
+    }
+    this._measureRetryCount = 0
+    this._resizeObserver?.disconnect()
+    this._resizeObserver = null
     this._bindRetryCount = 0
+    this._cmReadyRetries = 0
   }
 
   // 属性变更回调
@@ -107,6 +163,170 @@ export class AutostoreViewer extends LitElement {
       const input = this.renderRoot.querySelector<HTMLInputElement>('.edit-input')
       input?.focus()
       if (input && (input.type === 'text' || input.type === 'number')) input.select()
+    }
+    // left 模式下重算标签区列宽：仅树结构/相关属性变化时触发。
+    // 测量基于全量树数据（含折叠子树）与展开态解耦，展开/折叠不重算，避免列宽跳动
+    if (
+      !this._isRightAlign() &&
+      this._store &&
+      (changedProperties.has('_treeNodes') ||
+        changedProperties.has('showCount') ||
+        changedProperties.has('showHint') ||
+        changedProperties.has('valueAlign') ||
+        changedProperties.has('maxKeyWidth') ||
+        changedProperties.has('showSchema'))
+    ) {
+      this._scheduleMeasureLabelWidth()
+    }
+    // 默认 configManager:true 经异步 import 创建并注册 schema，晚于同步首渲染，
+    // 须限时轮询就绪后重渲染（label 替换改变标签区文本，须一并重测列宽）
+    if (this.showSchema && this._store && !this._store.configManager && this._cmReadyRetries < 20) {
+      this._cmReadyRetries++
+      this._cmReadyTimer = setTimeout(() => {
+        this._cmReadyTimer = null
+        this.requestUpdate()
+        if (this._store?.configManager) {
+          this._cmReadyRetries = 0
+          if (!this._isRightAlign()) this._scheduleMeasureLabelWidth()
+        }
+      }, 100)
+    }
+  }
+
+  // 是否处于右对齐模式（非法值一律按 left 处理）
+  private _isRightAlign(): boolean {
+    return this.valueAlign === 'right'
+  }
+
+  // 读取节点路径对应的 schema 元数据（对齐 ConfigManager.add 的 key 拼法：仅显式 options.configKey 参与前缀，不回落 id）
+  private _getSchema(node: TreeNode): AutoStoreStateSchema | undefined {
+    if (!this.showSchema) return undefined
+    const configManager = (this._store as any)?.configManager
+    if (!configManager) return undefined
+    const configKey = this._store!.options?.configKey
+    const fullKey = (configKey ? `${configKey}.` : '') + joinPath(node.path)
+    return configManager.state[fullKey] as AutoStoreStateSchema | undefined
+  }
+
+  // 调度标签区列宽测量（rAF 合并同一帧内的多次更新）
+  private _scheduleMeasureLabelWidth() {
+    if (this._measureHandle !== null) return
+    this._measureHandle = requestAnimationFrame(() => {
+      this._measureHandle = null
+      this._measureLabelWidth()
+    })
+  }
+
+  // 计算标签区（key+hint+count）统一列宽：基于全量树数据（含折叠子树）而非可见 DOM，
+  // 与展开态解耦以保证列宽稳定不跳动。文本宽度用离屏探针（复用真实样式类）批量测量，
+  // 一次写入、一次批量读取，避免逐节点强制回流
+  private _measureLabelWidth() {
+    if (this._isRightAlign() || !this._store) return
+    const probe = this.renderRoot.querySelector<HTMLElement>('.measure-probe')
+    if (!probe) return
+
+    // 收集全树节点的标签区组成（与渲染条件保持一致；show-schema 时 label+红星参与宽度）
+    const entries: { key: string; required: boolean; hint: string; count: string }[] = []
+    const collect = (nodes: TreeNode[]) => {
+      for (const node of nodes) {
+        const expandable = this._isExpandableType(node.type)
+        const schema = this._getSchema(node)
+        entries.push({
+          key: schema?.label ?? String(node.key),
+          required: schema?.required === true,
+          hint: this.showHint && expandable ? (node.type === 'array' ? '[...]' : '{...}') : '',
+          count: this.showCount && node.childCount > 0 ? String(node.childCount) : '',
+        })
+        if (node.children.length > 0) collect(node.children)
+      }
+    }
+    collect(this._treeNodes)
+
+    // 唯一（类别, 文本）建探针 span，一次 fragment 写入后批量读宽
+    const kindClass = { key: 'node-key', required: 'required-mark', hint: 'collapsed-hint', count: 'child-count' } as const
+    const spans = new Map<string, HTMLElement>()
+    const frag = document.createDocumentFragment()
+    const ensureSpan = (kind: keyof typeof kindClass, text: string) => {
+      const cacheKey = `${kind}:${text}`
+      let el = spans.get(cacheKey)
+      if (!el) {
+        el = document.createElement('span')
+        el.className = kindClass[kind]
+        el.textContent = text
+        frag.appendChild(el)
+        spans.set(cacheKey, el)
+      }
+      return el
+    }
+    for (const entry of entries) {
+      if (entry.key) ensureSpan('key', entry.key)
+      if (entry.required) ensureSpan('required', '*')
+      if (entry.hint) ensureSpan('hint', entry.hint)
+      if (entry.count) ensureSpan('count', entry.count)
+    }
+
+    if (entries.length === 0) {
+      // 空树回落 auto
+      if (this._labelWidth !== 'auto') {
+        this._labelWidth = 'auto'
+        this.style.setProperty('--viewer-key-width', 'auto')
+      }
+      return
+    }
+
+    probe.appendChild(frag)
+    // 布局盒标记须在读取宽度时同步跟踪（探针清空后元素脱离文档，offsetWidth 恒为 0）
+    let anyLayout = false
+    const widthOf = (el: HTMLElement) => {
+      if (el.offsetWidth > 0) anyLayout = true
+      const cs = getComputedStyle(el)
+      return el.offsetWidth + parseFloat(cs.marginLeft) + parseFloat(cs.marginRight)
+    }
+    const widthCache = new Map<string, number>()
+    const cachedWidth = (kind: keyof typeof kindClass, text: string) => {
+      const cacheKey = `${kind}:${text}`
+      let w = widthCache.get(cacheKey)
+      if (w === undefined) {
+        w = widthOf(spans.get(cacheKey)!)
+        widthCache.set(cacheKey, w)
+      }
+      return w
+    }
+    let max = 0
+    for (const entry of entries) {
+      let width = 0
+      if (entry.key) width += cachedWidth('key', entry.key)
+      if (entry.required) width += cachedWidth('required', '*')
+      if (entry.hint) width += cachedWidth('hint', entry.hint)
+      if (entry.count) width += cachedWidth('count', entry.count)
+      if (width > max) max = width
+    }
+    probe.textContent = ''
+    // 探针无一有布局盒：宿主处于 display:none 容器（如隐藏 tab 面板）中，
+    // offsetWidth 虽全为 0 但 margin 仍会累加出非零 max，须按布局盒判定不可信，
+    // 跳过写入以免列宽被压没；延时轮询重试直至可见（ResizeObserver 之外的环境无关兜底）
+    if (!anyLayout) {
+      if (this._measureRetryTimer === null && this._measureRetryCount < 150) {
+        this._measureRetryCount++
+        this._measureRetryTimer = setTimeout(() => {
+          this._measureRetryTimer = null
+          this._measureLabelWidth()
+        }, 200)
+      }
+      return
+    }
+    // 测得有效布局，停止重试
+    if (this._measureRetryTimer) {
+      clearTimeout(this._measureRetryTimer)
+      this._measureRetryTimer = null
+    }
+    this._measureRetryCount = 0
+
+    // 超限由 maxKeyWidth 钳制（超出行的 key 截断显示 ...）
+    const width = `${Math.min(max, this.maxKeyWidth)}px`
+    if (width !== this._labelWidth) {
+      this._labelWidth = width
+      this.style.setProperty('--viewer-key-width', width)
     }
   }
 
@@ -189,6 +409,8 @@ export class AutostoreViewer extends LitElement {
         // 重新构建受影响的节点
         this._updateTreeNode(operate.path, operate.value)
       }
+      // 树结构原地变更（不换 _treeNodes 引用），须显式调度列宽重算
+      this._scheduleMeasureLabelWidth()
       this.requestUpdate()
     })
 
@@ -197,6 +419,7 @@ export class AutostoreViewer extends LitElement {
       const observer = args?.observer ?? args
       if (observer?.path) {
         this._updateTreeNode(observer.path, observer.value)
+        this._scheduleMeasureLabelWidth()
         this.requestUpdate()
       }
     })
@@ -427,52 +650,72 @@ export class AutostoreViewer extends LitElement {
   // 渲染节点
   private _renderNode(node: TreeNode): any {
     const iconKey = getNodeIconKey(node)
-    const iconHtml = ICONS[iconKey]
-    const chevronHtml = ICONS.chevron
     const isExpandable = this._isExpandableType(node.type)
     const isEditing = this._editable.isEditing(node)
     const canEdit = this.editable && this._isEditableNode(node)
+    // schema 元数据（show-schema 开启时按路径读取，无则逐节点回落原渲染）
+    const schema = this._getSchema(node)
+    // label 完全替换 key 显示
+    const displayKey = schema?.label ?? node.key
+    const required = schema?.required === true
+    // help 仅 string 生效，挂整行 title
+    const help = typeof schema?.help === 'string' ? schema.help : undefined
+    // choices 严格相等匹配后显示层替换为匹配项 label（匹配不到/无 label 回落原值；编辑态显示原值）
+    const choices = Array.isArray(schema?.choices) ? schema!.choices : undefined
+    const choiceLabel = choices?.find((c) => {
+      const item = typeof c === 'object' && c !== null ? c : { value: c }
+      return item.value === node.value
+    })
+    const displayValue = !isExpandable
+      ? (typeof choiceLabel === 'object' && choiceLabel !== null && typeof choiceLabel.label === 'string'
+          ? choiceLabel.label
+          : formatValue(node.value, node.type))
+      : nothing
 
     return html`
       <div
         class="tree-node ${isEditing ? 'editing' : ''}"
         data-path=${joinPath(node.path)}
+        title=${help ?? nothing}
         @click=${() => this._toggleExpand(node)}
       >
         <div class="node-content">
           ${isExpandable ? html`
             <span class="expand-icon ${node.expanded ? 'expanded' : ''}">
-              ${chevronHtml}
+              ${iconHtml('chevron')}
             </span>
           ` : html`
             <span class="expand-icon" style="visibility: hidden;">
-              ${chevronHtml}
+              ${iconHtml('chevron')}
             </span>
           `}
-          <span class="type-icon">${iconHtml}</span>
-          <span class="node-key">${node.key}</span>
-          ${this.showHint && isExpandable && !node.expanded && !isEditing ? html`
-            <span class="collapsed-hint">${node.type === 'array' ? '[...]' : '{...}'}</span>
-          ` : nothing}
-          ${this.showCount && node.childCount > 0 && !isEditing ? html`
-            <span class="child-count">${node.childCount}</span>
-          ` : nothing}
+          <span class="type-icon">${iconHtml(iconKey)}</span>
+          <span class="node-label">
+            <span class="node-key">${displayKey}</span>
+            ${required ? html`<span class="required-mark">*</span>` : nothing}
+            ${this.showHint && isExpandable && !node.expanded && !isEditing ? html`
+              <span class="collapsed-hint">${node.type === 'array' ? '[...]' : '{...}'}</span>
+            ` : nothing}
+            ${this.showCount && node.childCount > 0 && !isEditing ? html`
+              <span class="child-count">${node.childCount}</span>
+            ` : nothing}
+          </span>
           ${isEditing ? this._editable.renderEditor(node) : html`
             <span
               class="node-value"
               @dblclick=${canEdit ? () => this._editable.start(node) : nothing}
-            >${!isExpandable ? formatValue(node.value, node.type) : nothing}</span>
+            >${displayValue}</span>
           `}
           <span class="node-tools">
             ${isEditing ? html`
-              <span class="node-tool" title="取消 (Esc)" @click=${(e: Event) => { e.stopPropagation(); this._editable.cancel() }}>${ICONS.no}</span>
-              <span class="node-tool" title="确认 (Enter)" @pointerdown=${(e: Event) => { e.stopPropagation(); this._editable.confirm() }}>${ICONS.yes}</span>
+              <span class="node-tool" title="取消 (Esc)" @click=${(e: Event) => { e.stopPropagation(); this._editable.cancel() }}>${iconHtml('no')}</span>
+              <span class="node-tool" title="确认 (Enter)" @pointerdown=${(e: Event) => { e.stopPropagation(); this._editable.confirm() }}>${iconHtml('yes')}</span>
             ` : html`
               ${canEdit ? html`
-                <span class="node-tool" title="编辑" @click=${(e: Event) => { e.stopPropagation(); this._editable.start(node) }}>${ICONS.edit}</span>
+                <span class="node-tool" title="编辑" @click=${(e: Event) => { e.stopPropagation(); this._editable.start(node) }}>${iconHtml('edit')}</span>
               ` : nothing}
               ${this.allowDelete && node.path.length > 0 ? html`
-                <span class="node-tool" title="删除" @click=${(e: Event) => this._deleteNode(e, node)}>${ICONS.trash}</span>
+                <span class="node-tool" title="删除" @click=${(e: Event) => this._deleteNode(e, node)}>${iconHtml('trash')}</span>
               ` : nothing}
             `}
           </span>
@@ -493,9 +736,13 @@ export class AutostoreViewer extends LitElement {
     }
 
     return html`
+      <!-- 图标 sprite：<symbol> 定义只此一份，节点处的 iconHtml() 通过 <use> 引用 -->
+      ${iconSprite}
       <div class="tree-container">
         ${this._treeNodes.map(node => this._renderNode(node))}
       </div>
+      <!-- 离屏宽度探针：复用真实样式类测量文本自然宽，见 _measureLabelWidth -->
+      <div class="measure-probe" aria-hidden="true"></div>
     `
   }
 }

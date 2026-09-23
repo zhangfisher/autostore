@@ -113,6 +113,15 @@
       <label><input type="checkbox" id="ctl-computed" /> 计算属性</label>
       <label><input type="checkbox" id="ctl-editable" /> 启用编辑</label>
       <label><input type="checkbox" id="ctl-allow-delete" /> 允许删除</label>
+      <label><input type="checkbox" id="ctl-show-schema" /> Schema 元数据</label>
+      <label>
+        value 对齐：
+        <select id="ctl-value-align">
+          <option value="left" selected>left（标签区统一列宽）</option>
+          <option value="right">right（value 右对齐）</option>
+        </select>
+      </label>
+      <label>key 列宽上限：<input type="number" id="ctl-max-key-width" value="240" min="40" step="10" style="width: 5em" /> px</label>
     </div>
 
     <div class="tabs" role="tablist">
@@ -174,6 +183,9 @@
       const ctlComputed = document.getElementById('ctl-computed')
       const ctlEditable = document.getElementById('ctl-editable')
       const ctlAllowDelete = document.getElementById('ctl-allow-delete')
+      const ctlShowSchema = document.getElementById('ctl-show-schema')
+      const ctlValueAlign = document.getElementById('ctl-value-align')
+      const ctlMaxKeyWidth = document.getElementById('ctl-max-key-width')
       const applyControls = () => {
         document.querySelectorAll('autostore-viewer').forEach((viewer) => {
           viewer.showCount = ctlCount.checked
@@ -181,9 +193,12 @@
           viewer.showComputed = ctlComputed.checked
           viewer.editable = ctlEditable.checked
           viewer.allowDelete = ctlAllowDelete.checked
+          viewer.showSchema = ctlShowSchema.checked
+          viewer.valueAlign = ctlValueAlign.value
+          viewer.maxKeyWidth = Number(ctlMaxKeyWidth.value) || 240
         })
       }
-      ;[ctlCount, ctlHint, ctlComputed, ctlEditable, ctlAllowDelete].forEach((c) => c.addEventListener('change', applyControls))
+      ;[ctlCount, ctlHint, ctlComputed, ctlEditable, ctlAllowDelete, ctlShowSchema, ctlValueAlign, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
     </script>
 
     <script type="module" src="../src/autostore-viewer.ts"></script>
@@ -281,7 +296,7 @@
       // 创建示例 6：docker run 命令行参数（分组 + configurable schema）
       const store6 = new AutoStore({
         // —— 基础参数 ——
-        basic: {
+        basic: configurable({
           name: configurable('my-container', {
             label: '容器名称',
             group: '基础',
@@ -327,7 +342,9 @@
             placeholder: 'docker-entrypoint.sh',
             order: 4
           })
-        },
+        },{
+            label:"基础"
+        }),
 
         // —— 网络参数 ——
         network: {
