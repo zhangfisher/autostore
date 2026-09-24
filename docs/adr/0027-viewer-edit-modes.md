@@ -14,3 +14,11 @@ viewer 原以布尔 `editable` 表达"可编辑/只读"两态。本决策引入 
 - **常驻叶子的值类 operate 冻结树更新**（控件即真相，防委托写回重置光标）；结构类 insert/remove/delete 照常。
 - per-path 错误 Map 驱动行下红色错误条；node-tools 的「编辑」按钮在 edit 模式隐藏，copy/delete 照常。
 - 模式切离 edit 清常驻错误；切到 view 退出 click-edit 编辑状态。
+
+## 追加决策：容器整体编辑的文本形态钩子（toInput/toState）与子项校验回溯（itemValidate）
+
+**转换钩子**：容器 JSON 整体编辑（jsonMode）消费 core schema 既有词汇 `toInput`（状态值 → 编辑文本，textarea 初值，抛错回落 JSON 化）与 `toState`（编辑文本 → 状态值，替代 `JSON.parse`；校验预演与写回两处同步接入，抛错 message 优先显示）。toState 产物**跳过 JSON 路径的值类型比对**——类型把关交给 `validate` 链（如 IP 列表 split 后由数组校验把关）。仅 jsonMode 生效；叶子编辑不接（YAGNI）。
+
+**子项校验回溯**：容器 `validate` 约束「整体值」，但实际编辑粒度常是「逐项」（展开数组后双击某项）——子项自身路径无 schema，整体校验被绕过。引入 core schema 新词汇 `itemValidate?: (item, index) => boolean`（容器声明逐项约束）；编辑链在**子项自身 schema 无 validate** 时经 `findItemRule` 沿祖先向上找第一个 `itemValidate`（父级起向上；祖先仅有整体 validate 不拦子项）。规则评估集中于 `computeValueError`（新增 `itemRule` 入参，errorMessage 复用容器声明），click-edit 状态机（start 快照 `editItemRule`）与 edit 常驻委托两路径同源接入。仅编辑校验链回溯——显示链（label/icon）仍按子项自身路径取 schema。
+
+由 dns 字段（DNS 服务器 IP 列表）驱动：容器行编辑 = IP 列表文本（toInput join / toState split）+ 整体 validate；子项行编辑 = itemValidate 逐项 IPv4。

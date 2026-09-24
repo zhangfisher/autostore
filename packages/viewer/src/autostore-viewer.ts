@@ -11,14 +11,13 @@ import { getObjectKeyCount } from './utils/getObjectKeyCount'
 import { isInternalKey } from './utils/isInternalKey'
 import { Editable } from './editable'
 import { toRenderable } from './utils/toRenderable'
-import { getWidgetModule } from './widgets/registry'
+import { getWidgetModule, getModuleByPlanKind } from './widgets/registry'
 import { resolveEditorPlan } from './edit-plan'
 import { joinPath } from './utils/joinPath'
 import { deleteNodeValue } from './utils/deleteNodeValue'
 import { splitPath } from './utils/splitPath'
-import { computeValueError, convertValue } from './utils/value-io'
+import { computeValueError, convertValue, findItemRule } from './utils/value-io'
 import { resolvePair } from './edit-plan'
-import { inputModule } from './widgets/input'
 import { isComputed } from 'autostore'
 import type { TreeNode, TreeNodeType } from './types'
 import type { AutoStore, AutoStoreStateSchema } from 'autostore'
@@ -59,6 +58,22 @@ export class AutostoreViewer extends LitElement {
   // reflect 用于 :host([value-align='right']) 样式分支
   @property({ type: String, attribute: 'value-align', reflect: true })
   valueAlign: 'left' | 'right' = 'left'
+
+  // 网格线显示模式（ADR-0028）：0=无（默认）；1=水平线（每同级组末行无线）；
+  // 2=key/value 间垂直线（伪元素 underlay，锚定子级行 value 左缘）；3=水平+垂直
+  // reflect 用于 :host([grid='1'|'2'|'3']) 样式分支；非法值无选择器匹配，天然等效 0
+  @property({ type: String, reflect: true })
+  grid: '0' | '1' | '2' | '3' = '0'
+
+  // key 列背景带（grid=2/3 时生效）：垂直线伪元素铺 hover 色淡底，形成 key 列高亮带（ADR-0028 决策六）
+  // reflect 用于 :host([grid-band]) 样式门控
+  @property({ type: Boolean, attribute: 'grid-band', reflect: true })
+  gridBand: boolean = false
+
+  // 根级分组背景（ADR-0028 决策七）：顶层含子节点的行（分组行）常驻固定背景色；
+  // reflect 用于 :host([root-bg]) 样式门控
+  @property({ type: Boolean, attribute: 'root-bg', reflect: true })
+  rootBg: boolean = false
 
   // 标签区（key+hint+count）统一列宽上限（px），超出部分截断显示 ...
   @property({ type: Number, attribute: 'max-key-width' })
@@ -182,7 +197,9 @@ export class AutostoreViewer extends LitElement {
     const plan = resolveEditorPlan(node, schema ?? {}, '')
     const raw = this._extractControlValue(e.target as HTMLInputElement, plan, schema)
     if (raw === undefined) return
-    const error = computeValueError({ raw, schema, plan, valueType: node.type, oldValue: node.value, path: node.path })
+    // 子项自身 schema 无 validate 时回溯祖先 itemValidate（容器逐项约束）
+    const itemRule = typeof schema?.validate === 'function' ? null : findItemRule(node.path, (p) => this._getSchemaByPath(p))
+    const error = computeValueError({ raw, schema, plan, valueType: node.type, oldValue: node.value, path: node.path, itemRule })
     const key = joinPath(node.path)
     if (error !== null) {
       if (this._inlineErrors.get(key) !== error) {
@@ -196,7 +213,7 @@ export class AutostoreViewer extends LitElement {
       this.requestUpdate()
     }
     const parent = this._getStateByPath(node.path.slice(0, -1))
-    if (parent) parent[node.path[node.path.length - 1]] = convertValue(raw, node.type, plan)
+    if (parent) parent[node.path[node.path.length - 1]] = convertValue(raw, node.type, plan, schema)
   }
 
   // edit 常驻：Enter = 焦点转移到树序下一个可编辑控件（textarea 的 Enter 为换行）
@@ -1034,8 +1051,8 @@ export class AutostoreViewer extends LitElement {
         setValue: () => {},
         onKeydown: () => {},
       }
-      const module = getWidgetModule(raw.widget)
-      const content = module?.toRender?.(ctx) ?? inputModule.toRender!(ctx)
+      const module = getWidgetModule(raw.widget) ?? getModuleByPlanKind(plan.kind)
+      const content = module.toRender!(ctx)
       return this._editorShell(node, content, error)
     }
     return this._editable.renderEditor(node)
@@ -1057,8 +1074,12 @@ export class AutostoreViewer extends LitElement {
     >${content}${errorPart}</div>`
   }
 
-  // 渲染节点
-  private _renderNode(node: TreeNode): any {
+  // 渲染节点；全局最后可见行（.last-row，grid=1 仅末行不画底线，ADR-0028 决策二修订）；
+  // 根级分组行（.root-group，顶层且含子节点，root-bg 常驻底色，ADR-0028 决策七）；
+  // depth=嵌套深度（行恒满宽、缩进经 --row-depth 在行内容上产生，hover 整行高亮）
+  private _renderNode(node: TreeNode, depth = 0): any {
+    const isLast = node === this._lastVisibleNode
+    const isRootGroup = node.path.length === 1 && node.children.length > 0
     const isExpandable = this._isExpandableType(node.type)
     const isEditing = this._isNodeEditing(node)
     const canEdit = this.mode !== 'view' && this._isEditableNode(node)
@@ -1089,7 +1110,8 @@ export class AutostoreViewer extends LitElement {
 
     return html`
       <div
-        class="tree-node ${isEditing ? 'editing' : ''}"
+        class="tree-node ${isEditing ? 'editing' : ''} ${isLast ? 'last-row' : ''} ${isRootGroup ? 'root-group' : ''}"
+        style=${depth > 0 ? `--row-depth:${depth}` : nothing}
         data-path=${joinPath(node.path)}
         title=${help ?? nothing}
         @click=${() => this._toggleExpand(node)}
@@ -1136,10 +1158,22 @@ export class AutostoreViewer extends LitElement {
       </div>
       ${isExpandable && node.expanded && node.children.length > 0 ? html`
         <div class="node-children expanded">
-          ${node.children.map(child => this._renderNode(child))}
+          ${node.children.map((child) => this._renderNode(child, depth + 1))}
         </div>
       ` : nothing}
     `
+  }
+
+  // 全局最后可见行：沿末项的展开链下钻（折叠或叶子即止），
+  // 供 grid=1 水平线仅末行无线判定（ADR-0028 决策二修订）
+  private _lastVisibleNode: TreeNode | null = null
+
+  private _findLastVisible(nodes: TreeNode[]): TreeNode {
+    const last = nodes[nodes.length - 1]
+    if (this._isExpandableType(last.type) && last.expanded && last.children.length > 0) {
+      return this._findLastVisible(last.children)
+    }
+    return last
   }
 
   // 主渲染
@@ -1147,6 +1181,7 @@ export class AutostoreViewer extends LitElement {
     if (!this._store) {
       return html`<div class="loading">未绑定 Store</div>`
     }
+    this._lastVisibleNode = this._treeNodes.length > 0 ? this._findLastVisible(this._treeNodes) : null
 
     return html`
       <!-- 动态图标 sprite：置于内置 sprite 之前，同 id 时 <use> 按文档序命中前者（自定义覆盖内置，ADR-0024） -->
@@ -1155,7 +1190,7 @@ export class AutostoreViewer extends LitElement {
       ${iconSprite}
       <slot name="icons" @slotchange=${this._onSlotChange} style="display: none;"></slot>
       <div class="tree-container">
-        ${this._treeNodes.map(node => this._renderNode(node))}
+        ${this._treeNodes.map((node) => this._renderNode(node))}
       </div>
       ${this._toastText ? html`
         <div class="toast ${this._toastFading ? 'fading' : ''}">${this._toastText}</div>

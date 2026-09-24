@@ -3,10 +3,9 @@ import type { TreeNode } from './types'
 import type { AutoStore } from 'autostore'
 import { resolveEditorPlan } from './edit-plan'
 import type { EditorPlan } from './edit-plan'
-import { computeValueError, convertValue } from './utils/value-io'
+import { computeValueError, convertValue, findItemRule, type ItemRule } from './utils/value-io'
 import type { WidgetRenderContext } from './widgets/types'
-import { getWidgetModule } from './widgets/registry'
-import { inputModule } from './widgets/input'
+import { getWidgetModule, getModuleByPlanKind } from './widgets/registry'
 
 // 行内编辑器宿主接口：编辑状态变化时通知重渲染
 export interface EditableHost {
@@ -48,6 +47,9 @@ export class Editable {
 
   // 进入编辑时快照的 schema 元数据（编辑期间 schema 变更不影响本次编辑）
   editSchema: Record<string, any> | undefined = undefined
+
+  // 容器逐项校验规则（祖先 itemValidate 回溯；自身 schema 带 validate 时不回溯）
+  editItemRule: ItemRule | null = null
 
   // 由 schema.widget 与节点类型解析的渲染方案（start 时解析一次）
   editPlan: EditorPlan | null = null
@@ -105,6 +107,8 @@ export class Editable {
     this.editingPath = [...node.path]
     this.editOldValue = node.value
     this.editSchema = this._getSchemaByPath(node.path)
+    this.editItemRule =
+      typeof this.editSchema?.validate === 'function' ? null : findItemRule(node.path, this._getSchemaByPath)
     this.editError = null
     this._editSeq++
     const groupId = `asv-edit-${this._editSeq}-${Math.random().toString(36).slice(2, 7)}`
@@ -121,6 +125,7 @@ export class Editable {
     this.editType = null
     this.editOldValue = null
     this.editSchema = undefined
+    this.editItemRule = null
     this.editPlan = null
     this.editError = null
     this._syncNode(path)
@@ -163,12 +168,12 @@ export class Editable {
   }
 
   // 渲染编辑器：外层容器统一 focusout 失焦判定，纵向排列控件与错误；
-  // 控件渲染分发到 widget 模块 toRender，无模块实现（未声明/未知 widget）时
-  // 回落 input 家族编辑器（ADR-0026）
+  // 控件渲染分发：widget 显式声明按声明取模块，未声明按 plan.kind 兜底
+  // （容器未声明→textarea/jsonMode、boolean 叶子→checkbox），渲染以决策产物为准（ADR-0026）
   renderEditor(node: TreeNode): any {
     const ctx = this._buildRenderContext(node)
-    const module = getWidgetModule(this.editSchema?.widget)
-    const content = module?.toRender?.(ctx) ?? inputModule.toRender!(ctx)
+    const module = getWidgetModule(this.editSchema?.widget) ?? getModuleByPlanKind(this.editPlan!.kind)
+    const content = module.toRender!(ctx)
     return html`
       <div class="edit-editor" @focusout=${(e: FocusEvent) => this._onFocusOut(e, node)}>
         ${content}
@@ -220,11 +225,12 @@ export class Editable {
       valueType: this.editType,
       oldValue: this.editOldValue,
       path: this.editingPath ?? [],
+      itemRule: this.editItemRule,
     })
   }
 
   private _convert(raw: any): any {
-    return convertValue(raw, this.editType, this.editPlan)
+    return convertValue(raw, this.editType, this.editPlan, this.editSchema)
   }
 
   // 写入 store：值已通过校验

@@ -1,5 +1,5 @@
 import { test, expect } from 'bun:test'
-import { resolveEditorPlan, normalizeChoices } from '../src/edit-plan'
+import { resolveEditorPlan, normalizeChoices, resolveCheckLabel } from '../src/edit-plan'
 import type { TreeNode } from '../src/types'
 
 const mkNode = (value: any, type: TreeNode['type']): TreeNode => ({
@@ -141,4 +141,36 @@ test('候选项规范化：字符串项 value=label=自身，对象项缺省 lab
     { value: 'b', label: 'b' },
   ])
   expect(normalizeChoices(undefined)).toEqual([])
+})
+
+// 勾选框旁文案决策链与 form checkbox 的 getCheckLabel 同构：
+// checkLabel > choices 当前项 label > switchValues 当前值项 > 无文案
+test('勾选框文案：checkLabel 优先级最高，空串回落后续决策', () => {
+  const schema = { choices: [{ label: '开', value: 'on' }, { label: '关', value: 'off' }] }
+  expect(resolveCheckLabel('on', { ...schema, checkLabel: '固定文案' })).toBe('固定文案')
+  expect(resolveCheckLabel('on', { ...schema, checkLabel: '' })).toBe('开')
+})
+
+test('勾选框文案：choices 恰两项显示勾选态对应项 label', () => {
+  const schema = { choices: [{ label: '开', value: 'on' }, { label: '关', value: 'off' }] }
+  expect(resolveCheckLabel('on', schema)).toBe('开')
+  expect(resolveCheckLabel('off', schema)).toBe('关')
+  // 对象项缺 label 不显示；字符串项不显示
+  expect(resolveCheckLabel('on', { choices: [{ value: 'on' }, { label: '关', value: 'off' }] })).toBe('')
+  expect(resolveCheckLabel('on', { choices: ['on', 'off'] })).toBe('')
+  // 三项不构成双值档位，静默回落（判据与 resolvePair 一致）
+  expect(resolveCheckLabel(true, { choices: [{ label: 'a', value: 1 }, { label: 'b', value: 2 }, { label: 'c', value: 3 }] })).toBe('')
+})
+
+test('勾选框文案：switchValues 显示当前值项，boolean 档不显示', () => {
+  expect(resolveCheckLabel('yes', { switchValues: ['yes', 'no'] })).toBe('yes')
+  expect(resolveCheckLabel('no', { switchValues: ['yes', 'no'] })).toBe('no')
+  expect(resolveCheckLabel(true, { switchValues: [true, false] })).toBe('')
+  expect(resolveCheckLabel(false, { switchValues: [true, false] })).toBe('')
+})
+
+test('勾选框文案：无 schema / 无配置不显示', () => {
+  expect(resolveCheckLabel(true, undefined)).toBe('')
+  expect(resolveCheckLabel(true, {})).toBe('')
+  expect(resolveCheckLabel(false, {})).toBe('')
 })

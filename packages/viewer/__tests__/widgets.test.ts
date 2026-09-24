@@ -1,7 +1,8 @@
 import { test, expect } from 'bun:test'
 import { html, nothing } from 'lit'
 import { toRenderable } from '../src/utils/toRenderable'
-import { isColorLike, toView as inputToView } from '../src/widgets/input'
+import { toView as colorToView, isColorLike } from '../src/widgets/color'
+import { inputModule } from '../src/widgets/input'
 import { isCheckboxChecked, toView as checkboxToView } from '../src/widgets/checkbox'
 import { getWidgetModule } from '../src/widgets/registry'
 import { resolveEditorPlan } from '../src/edit-plan'
@@ -74,11 +75,13 @@ test('isColorLike：hex/rgb/hsl/color() 为真，命名色与普通字符串为�
 })
 
 test('widget=color 查看态：颜色值渲染色块，非颜色值回落 null', () => {
-  expect(inputToView(makeCtx('color', '#3b82f6'))).not.toBeNull()
-  expect(inputToView(makeCtx('color', 'not-a-color'))).toBeNull()
-  // 非 color 家族无默认查看
-  expect(inputToView(makeCtx('text', '#3b82f6'))).toBeNull()
-  expect(inputToView(makeCtx('number', 5))).toBeNull()
+  expect(colorToView(makeCtx('color', '#3b82f6'))).not.toBeNull()
+  expect(colorToView(makeCtx('color', 'not-a-color'))).toBeNull()
+})
+
+test('color 渲染门控由 registry 分发承担：input 家族模块无 toView（查看回落 choices/formatValue）', () => {
+  // @ts-expect-error 模块未实现 toView 是分发层的回落依据
+  expect(inputModule.toView).toBeUndefined()
 })
 
 test('widget=checkbox 查看态：恒渲染只读勾选框，勾选态按双值档位判定', () => {

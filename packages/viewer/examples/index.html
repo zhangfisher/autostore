@@ -139,6 +139,17 @@
           <option value="right">Right</option>
         </select>
       </label>
+      <label>
+        网格线：
+        <select id="ctl-grid">
+          <option value="0" selected>无</option>
+          <option value="1">水平线</option>
+          <option value="2">垂直线</option>
+          <option value="3">水平+垂直</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="ctl-grid-band" /> key 列背景带</label>
+      <label><input type="checkbox" id="ctl-root-bg" /> 根级分组背景</label>
       <label>key 列宽上限：<input type="number" id="ctl-max-key-width" value="240" min="40" step="10" style="width: 5em" /> px</label>
     </div>
 
@@ -225,6 +236,9 @@
       const ctlDisableSchema = document.getElementById('ctl-disable-schema')
       const ctlIconModify = document.getElementById('ctl-icon-modify')
       const ctlValueAlign = document.getElementById('ctl-value-align')
+      const ctlGrid = document.getElementById('ctl-grid')
+      const ctlGridBand = document.getElementById('ctl-grid-band')
+      const ctlRootBg = document.getElementById('ctl-root-bg')
       const ctlMaxKeyWidth = document.getElementById('ctl-max-key-width')
       const applyControls = () => {
         document.querySelectorAll('autostore-viewer').forEach((viewer) => {
@@ -237,10 +251,13 @@
           // 仅影响后续新拉取的图标（已注册/负缓存不变，ADR-0024）
           viewer.iconModify = ctlIconModify.value
           viewer.valueAlign = ctlValueAlign.value
+          viewer.grid = ctlGrid.value
+          viewer.gridBand = ctlGridBand.checked
+          viewer.rootBg = ctlRootBg.checked
           viewer.maxKeyWidth = Number(ctlMaxKeyWidth.value) || 240
         })
       }
-      ;[ctlCount, ctlHint, ctlComputed, ctlMode, ctlAllowDelete, ctlDisableSchema, ctlIconModify, ctlValueAlign, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
+      ;[ctlCount, ctlHint, ctlComputed, ctlMode, ctlAllowDelete, ctlDisableSchema, ctlIconModify, ctlValueAlign, ctlGrid, ctlGridBand, ctlRootBg, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
     </script>
 
     <script type="module" src="../src/autostore-viewer.ts"></script>
@@ -441,9 +458,19 @@
             label: 'DNS 服务器',
             icon: "dns",
             group: '网络',
-            widget: 'text',
-            help: 'docker run --dns',
-            order: 13
+            help: 'docker run --dns；双击整行进入 IP 列表编辑（换行/逗号/分号/空格分隔，自动解析为数组）；展开后逐项编辑同样校验 IPv4',
+            order: 13,
+            // 整体校验（容器行编辑写回时把关）
+            validate: (val) =>
+              Array.isArray(val) &&
+              val.length > 0 &&
+              val.every((item) => /^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/.test(item)),
+            // 逐项校验（子项自身无 schema 时沿祖先回溯命中）
+            itemValidate: (item) => /^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/.test(item),
+            errorMessage: '{label}每项须为合法 IPv4 地址（0-255 四段，如 8.8.8.8）',
+            // 容器整体编辑的文本形态：数组 ⇄ 分隔文本（viewer 编辑链经 toInput/toState 消费）
+            toInput: (val) => (Array.isArray(val) ? val.join('\n') : String(val ?? '')),
+            toState: (text) => String(text).split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean),
           })
         },{icon:"lan", label:"网络"}),
 
@@ -791,13 +818,25 @@
           mode: configurable('on', {
             label: '开关',
             widget: 'checkbox',
-            help: '带双值选项对的复选框（勾选=on / 取消=off）',
+            help: '带双值选项对的复选框（勾选=on / 取消=off，勾选框旁显示当前项 label）',
             choices: [
               { label: '开', value: 'on' },
               { label: '关', value: 'off' },
             ],
           }),
-          agree: configurable(false, { label: '同意条款', widget: 'checkbox', help: '普通 boolean 复选框' }),
+          boost: configurable('yes', {
+            label: '加速',
+            widget: 'checkbox',
+            switchValues: ['yes', 'no'],
+            help: 'switchValues 双值档位：勾选写回 yes / 取消写回 no，勾选框旁显示当前值（字符串项才有文案，boolean 档不显示）',
+          }),
+          autoSave: configurable(false, {
+            label: '自动保存',
+            widget: 'checkbox',
+            checkLabel: '开启后自动写入',
+            help: 'checkLabel 固定文案：查看/编辑两态均显示在勾选框旁，优先级高于 choices/switchValues',
+          }),
+          agree: configurable(false, { label: '同意条款', widget: 'checkbox', help: '普通 boolean 复选框（无任何文案）' }),
         },
 
         // —— 校验演示 ——

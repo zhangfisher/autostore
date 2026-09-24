@@ -54,6 +54,7 @@ function markRawSchema(schema: any) {
             if (
                 isFunction(value) &&
                 (key === "validate" ||
+                    key === "itemValidate" ||
                     key.startsWith("on") ||
                     key.startsWith("render") ||
                     key.startsWith("to"))

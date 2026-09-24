@@ -111,6 +111,24 @@ export const resolvePair = (schema: Record<string, any> | undefined): [NormChoic
   return [norm[0], norm[1]]
 }
 
+// 勾选框旁文案（与 form checkbox 的 getCheckLabel 决策链同构）：
+// checkLabel > choices 当前项 label（字符串项/对象项缺 label 不显示）> switchValues 当前值项（boolean 不显示）；
+// 值档位判定经 resolvePair 归一化取 value，文案按来源原始形态区分（switchValues 无文案语义）
+export function resolveCheckLabel(value: unknown, schema: Record<string, any> | undefined): string {
+  if (!schema) return ''
+  if (typeof schema.checkLabel === 'string' && schema.checkLabel !== '') return schema.checkLabel
+  // choices 恰好两项（判据与 resolvePair 一致）：显示勾选态对应项 label
+  if (Array.isArray(schema.choices) && schema.choices.length === 2) {
+    const pair = resolvePair(schema)
+    const item = schema.choices[value === pair![0].value ? 0 : 1]
+    return typeof item === 'object' && item !== null ? String(item.label ?? '') : ''
+  }
+  // switchValues 当前值项（默认 [true,false]，boolean 项无文案）
+  const sw = (Array.isArray(schema.switchValues) ? schema.switchValues : [true, false]) as [any, any]
+  const current = value === sw[0] ? sw[0] : sw[1]
+  return typeof current === 'boolean' ? '' : String(current)
+}
+
 const makePlan = (
   kind: EditorPlan['kind'],
   groupId: string,

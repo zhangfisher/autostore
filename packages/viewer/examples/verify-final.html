@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>final verify</title></head>
+  <body>
+    <pre id="result">PENDING</pre>
+    <script type="module">
+      const { AutoStore, configurable } = await import('autostore')
+      await import('../src/autostore-viewer.ts')
+      const IPV4 = /^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/
+      const store = new AutoStore({
+        network: configurable({
+          dns: configurable(['8.8.8.8', '114.114.114.114'], {
+            label: 'DNS 服务器',
+            validate: (val) => Array.isArray(val) && val.length > 0 && val.every((i) => IPV4.test(i)),
+            itemValidate: (item) => IPV4.test(item),
+            errorMessage: '{label}每项须为合法 IPv4',
+            toInput: (val) => (Array.isArray(val) ? val.join('\n') : String(val ?? '')),
+            toState: (text) => String(text).split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean),
+          }),
+        }),
+      })
+      for (let i = 0; i < 50 && !store.configManager; i++) await new Promise((r) => setTimeout(r, 100))
+      const out = []
+      const check = (name, cond) => out.push((cond ? 'PASS ' : 'FAIL ') + name)
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      const rowOf = (p, v) => v.shadowRoot.querySelector(`.tree-node[data-path="${p}"]`)
+      const errOf = (p, v) => rowOf(p, v)?.querySelector('.edit-error')?.textContent ?? null
+      try {
+        // —— dns 校验与解析 ——
+        const v = document.createElement('autostore-viewer')
+        v.mode = 'click-edit'
+        v.expandDepth = 2
+        v.store = store
+        document.body.appendChild(v)
+        await wait(400)
+        rowOf('network.dns.0', v).querySelector('.node-value').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(150)
+        const setVal = (p, vv, el) => { el.value = vv; el.dispatchEvent(new Event('input', { bubbles: true })) }
+        setVal('network.dns.0', '999.1.1.1', rowOf('network.dns.0', v).querySelector('input'))
+        await wait(150)
+        check('子项非法 IP：拦截且文案正确', errOf('network.dns.0', v) === 'DNS 服务器每项须为合法 IPv4' && store.state.network.dns[0] === '8.8.8.8')
+        rowOf('network.dns', v).querySelector('.node-value').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(150)
+        const ta = rowOf('network.dns', v).querySelector('textarea')
+        check('容器：textarea + toInput 初值', ta != null && ta.value === '8.8.8.8\n114.114.114.114')
+        ta.value = '8.8.4.4 999.1.1.1'
+        ta.dispatchEvent(new Event('input', { bubbles: true }))
+        await wait(150)
+        check('容器非法列表：整体 validate 拒绝且文案正确', errOf('network.dns', v) === 'DNS 服务器每项须为合法 IPv4' && JSON.stringify(store.state.network.dns) === '["8.8.8.8","114.114.114.114"]')
+        ta.value = '8.8.4.4, 9.9.9.9'
+        ta.dispatchEvent(new Event('input', { bubbles: true }))
+        await wait(150)
+        check('容器合法列表：toState 解析写回', JSON.stringify(store.state.network.dns) === '["8.8.4.4","9.9.9.9"]')
+
+        // —— 递归缩进（用户报告：level2 与 level1 缩进相同）——
+        const storeN = new AutoStore({ nested: { level1: { level2: { deep: 'x' } }, other: 1 } })
+        for (let i = 0; i < 50 && !storeN.configManager; i++) await new Promise((r) => setTimeout(r, 100))
+        const vn = document.createElement('autostore-viewer')
+        vn.expandDepth = 5
+        vn.store = storeN
+        document.body.appendChild(vn)
+        await wait(400)
+        const leftOf = (p) => rowOf(p, vn).querySelector('.node-key').getBoundingClientRect().left
+        const l1 = leftOf('nested.level1'), l2 = leftOf('nested.level1.level2'), l3 = leftOf('nested.level1.level2.deep')
+        out.push('DEBUG 缩进: level1=' + l1.toFixed(1) + ' level2=' + l2.toFixed(1) + ' level3=' + l3.toFixed(1))
+        check('递归缩进：level2 深于 level1', l2 - l1 >= 11)
+        check('递归缩进：level3 深于 level2', l3 - l2 >= 11)
+
+        // —— grid=2 垂直线锚定回归（一级子行起点 20px 不变）——
+        vn.setAttribute('grid', '2')
+        await wait(200)
+        const container = vn.shadowRoot.querySelector('.tree-container')
+        const cs = getComputedStyle(container, '::before')
+        const cRect = container.getBoundingClientRect()
+        const childVal = vn.shadowRoot.querySelector('.node-children > .tree-node .node-value')
+        const fs = parseFloat(getComputedStyle(container).fontSize)
+        const expected = childVal.getBoundingClientRect().left - cRect.left - 6 - fs + 1
+        const actual = parseFloat(cs.width) + parseFloat(cs.borderRightWidth)
+        check('垂直线锚定回归（期望' + expected.toFixed(1) + ' 实测' + actual.toFixed(1) + '）', Math.abs(expected - actual) <= 1.5)
+      } catch (e) {
+        out.push('FAIL 异常: ' + e.message)
+      }
+      document.getElementById('result').textContent = out.join('\n')
+    </script>
+  </body>
+</html>

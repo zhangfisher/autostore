@@ -2,6 +2,7 @@
 // input 家族与 combobox/hidden/image 共享 input 模块（同一套 input 模板）
 import type { WidgetModule } from './types'
 import { inputModule } from './input'
+import { colorModule } from './color'
 import { checkboxModule } from './checkbox'
 import { textareaModule } from './textarea'
 import { selectModule } from './select'
@@ -20,7 +21,7 @@ const MODULES: Record<string, WidgetModule> = {
   month: inputModule,
   time: inputModule,
   week: inputModule,
-  color: inputModule,
+  color: colorModule,
   range: inputModule,
   file: inputModule,
   combobox: inputModule,
@@ -36,4 +37,18 @@ const MODULES: Record<string, WidgetModule> = {
 export function getWidgetModule(widget: string | undefined): WidgetModule | null {
   if (!widget) return null
   return MODULES[widget] ?? null
+}
+
+// 按 plan.kind 兜底取模块：plan 是 widget 决策链的产物（容器未声明→textarea/jsonMode、
+// boolean 叶子未声明→checkbox 等），渲染分发以产物为准，防止决策与渲染脱节
+const KIND_MODULES: Record<string, WidgetModule> = {
+  input: inputModule,
+  textarea: textareaModule,
+  select: selectModule,
+  radio: radioModule,
+  checkbox: checkboxModule,
+}
+
+export function getModuleByPlanKind(kind: string): WidgetModule {
+  return KIND_MODULES[kind] ?? inputModule
 }

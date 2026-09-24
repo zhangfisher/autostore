@@ -1,20 +1,8 @@
 // input 家族 widget：text/number/email/password/search/tel/url/date/datetime-local/
-// month/time/week/color/range/file（plan.kind=input）与 combobox（text input + datalist）
+// month/time/week/range/file（plan.kind=input）与 combobox（text input + datalist）
+// color 的查看态色块特例已拆至 color.ts；input 家族无查看特例，查看回落 choices/formatValue
 import { html, nothing, type TemplateResult } from 'lit'
 import type { WidgetModule, WidgetRenderContext } from './types'
-
-// 颜色值格式判定（仅格式，不做命名色表）：#hex / rgb() / hsl() / color()
-export function isColorLike(value: unknown): boolean {
-  return typeof value === 'string' && /^\s*(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|color\()/.test(value)
-}
-
-// 查看态：仅 widget=color 提供默认渲染（宽 3em × 高 1em 条形色块，title=值，ADR-0025）；
-// 非颜色格式值回落 null（宿主走 choices/formatValue）；其余 input 家族无默认查看
-export function toView(ctx: WidgetRenderContext): TemplateResult | null {
-  if (ctx.plan.inputType !== 'color') return null
-  if (!isColorLike(ctx.value)) return null
-  return html`<span class="to-view-color" style=${`background:${ctx.value}`} title=${String(ctx.value)}></span>`
-}
 
 // 编辑态：标准 input（原生属性透传 + combobox datalist）
 export function toRender(ctx: WidgetRenderContext): TemplateResult {
@@ -53,4 +41,4 @@ function renderDatalist(plan: WidgetRenderContext['plan']): TemplateResult {
   </datalist>`
 }
 
-export const inputModule: WidgetModule = { toView, toRender }
+export const inputModule: WidgetModule = { toRender }

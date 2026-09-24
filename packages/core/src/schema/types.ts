@@ -268,6 +268,13 @@ export interface AutoStateSchemaBase<Value = any> {
      */
     validate?: (value: Value, oldValue: Value, path: string[]) => boolean;
     /**
+     * 容器（对象/数组）对子项的校验函数：子项自身无 schema 校验时向上回溯命中（如数组每项须为合法 IP）
+     * @param item 子项值
+     * @param index 子项索引（对象为键名）
+     * @returns
+     */
+    itemValidate?: (item: any, index: number | string) => boolean;
+    /**
      * 在视图模式下的渲染函数
      */
     toView?: (value: Value) => any;
