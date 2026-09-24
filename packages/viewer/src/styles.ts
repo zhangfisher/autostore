@@ -3,7 +3,7 @@ import { css } from 'lit'
 // autostore-viewer 组件样式
 export const viewerStyles = css`
   :host {
-    --viewer-icon-size: 16px;
+    --viewer-icon-size: 24px;
     --viewer-font-size: 1em;
     --viewer-bg: #ffffff;
     --viewer-text: #333333;
@@ -15,6 +15,7 @@ export const viewerStyles = css`
     --viewer-required-color: #dc2626;
 
     display: block;
+    position: relative;
     font-family: system-ui, -apple-system, sans-serif;
     font-size: var(--viewer-font-size);
     color: var(--viewer-text);
@@ -162,6 +163,8 @@ export const viewerStyles = css`
     text-overflow: ellipsis;
     flex-grow: 1;
     min-width: 0;
+    /* 空值时保留可交互高度：node-value 是双击进入编辑的触发区，高度为 0 将无法响应 */
+    min-height: 1em;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -233,6 +236,72 @@ export const viewerStyles = css`
     cursor: pointer;
   }
 
+  /* 编辑器容器：所有编辑控件的公共宿主（统一 focusout 失焦判定）；
+     纵向排列控件与错误条（错误显示在 node-value 内的控件下方） */
+  .edit-editor {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex-grow: 1;
+    min-width: 0;
+  }
+
+  /* 多行编辑器：整体编辑 JSON 与 widget=textarea */
+  .edit-textarea {
+    min-height: 72px;
+    resize: vertical;
+    line-height: 1.4;
+  }
+
+  /* radio 组：行内平铺可换行；纵排容器中不随 stretch 拉满宽 */
+  .edit-radio-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    flex-grow: 1;
+    min-width: 0;
+    align-self: flex-start;
+  }
+
+  .edit-radio-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .edit-radio {
+    cursor: pointer;
+  }
+
+  /* 校验错误：控件下方红色文字，无背景 */
+  .edit-error {
+    color: var(--viewer-required-color);
+    font-size: 0.85em;
+    padding-top: 2px;
+    cursor: default;
+    user-select: text;
+  }
+
+  /* widget=color 默认查看渲染：条形色块（ADR-0025） */
+  .to-view-color {
+    display: inline-block;
+    width: 3em;
+    height: 1em;
+    border: 1px solid var(--viewer-border);
+    border-radius: 4px;
+    padding: 4px;
+    vertical-align: middle;
+  }
+
+  /* widget=checkbox 默认查看渲染：只读勾选框，disabled 但保持正常视觉 */
+  .to-view-checkbox:disabled {
+    opacity: 1;
+    cursor: default;
+  }
+
   .node-children {
     overflow: hidden;
     transition: max-height 0.2s ease-out;
@@ -269,6 +338,39 @@ export const viewerStyles = css`
     padding: 16px;
     text-align: center;
     color: var(--viewer-badge-text);
+  }
+
+  /* toast：组件右上方浮层，2s 后经 .fading 淡隐（transition opacity） */
+  .toast {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: #1f2937;
+    color: #f9fafb;
+    font-size: 0.85em;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .toast.fading {
+    opacity: 0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .toast {
+      background: #e5e7eb;
+      color: #1f2937;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast {
+      transition: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

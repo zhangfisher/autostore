@@ -51,6 +51,22 @@ _Avoid_: 非响应式（那是 markRaw）、局部响应式、部分代理；dee
 checkbox/switch 控件上 `choices` 键的专属语义：`[选中项, 未选中项]` 恰好两项、顺序有义——勾选时状态取第一项 value 并显示其 label，未勾选取第二项。它是 boolean 开关的双值化修饰，不是数据源。与选项类控件（select/radio/list/…）同键名的「候选项列表」语义无关。
 _Avoid_: 候选项、多选项（那是 select/radio 的 choices 语义；checkbox 的 choices 是开关档位，写 3 项会被静默忽略）
 
+**整体编辑（Whole-object Edit）**:
+查看器行内编辑对**所有对象/数组节点**（含 configurable 容器与 markRaw 对象）的默认编辑形态：以 JSON 文本在多行文本域中整块读写（缩进 2 序列化，解析失败即校验报错且暂不写入，输入合法即整体替换写回）。configurable 容器照常渲染子节点，整容器与各成员均可编辑——整体编辑与成员编辑并存；声明 schema.widget 的容器按声明控件渲染。computed/function 叶子无编辑语义，不可编辑。
+_Avoid_: JSON 编辑（那是形态不是规则）、批量编辑（那是跨节点操作）
+
+**图标注册链（Icon Resolution Chain）**:
+查看器节点图标的解析顺序：**slot 自定义 > 内置 > icon-url 拉取**。同名时自定义覆盖内置；未知名经 icon-url 模板批量拉取（一次请求多个，`not_found` 与请求失败均负缓存——会话内不重试，节点回落类型图标）。`schema.icon` 是节点身份视觉，不受 disable-schema 开关影响。icon-modify 仅给远程请求名追加风格后缀（home → home-outline），引用名不变。
+_Avoid_: 图标下载、图标热替换（拉取结果注册后即与内置同权，非运行时替换机制）
+
+**编辑模式（Edit Modes）**:
+查看器的三态编辑模式：**view**（只读）/ **click-edit**（双击值或点编辑按钮进入，单状态机管理）/ **edit**（叶子成员常驻编辑控件）。edit 常驻的值写回走**根事件委托**（控件不绑节点级监听），校验链与 click-edit 状态机共用；容器保持双击 JSON 整体编辑；常驻叶子的值类更新冻结树刷新，blur 不退出。
+_Avoid_: 行内编辑（click-edit 与 edit 都是行内形态，模式名不描述形态）
+
+**值渲染钩子（Value Renderers）**:
+查看器对 schema.toView/toRender 的渲染契约：**toView 管看、toRender 管改**——查看态 toView(value) 替代默认文本（优先于 choices 标签与格式化），编辑态 toRender(value) 替代默认编辑控件，值写回由自定义控件自理。返回三态（lit 模板 / HTML 字符串 / Node），受 disable-schema 门控，抛错回落默认渲染。widget=color/checkbox 有内置默认查看渲染（色块 / 只读勾选框）。
+_Avoid_: 自定义组件（toRender 是值级渲染钩子，非组件注册机制）
+
 **Cron 方言（Cron Dialect）**:
 `@autostorejs/form` cron widget 编辑的定制 cron 表达式：默认 **6 字段 `分 时 日 月 周 年`**，秒字段由配置属性启用（启用后为 7 字段 `秒 分 时 日 月 周 年`），表达式格式恒定，不因秒/年是否启用而增删字段。
 _Avoid_: 标准 5 字段 crontab、Quartz 7 字段（本方言均不是）

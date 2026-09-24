@@ -5,6 +5,11 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build -c vite.config.iife.ts",
+    "preview": "vite preview"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -23,11 +28,6 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build && vite build -c vite.config.iife.ts",
-    "preview": "vite preview"
-  },
   "dependencies": {
     "lit": "^3.3.3",
     "autostore": "workspace:*",

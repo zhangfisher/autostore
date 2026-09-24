@@ -84,6 +84,10 @@ export const iconSprite = svg`
 `
 
 // 渲染图标引用壳：<svg><use href="#asv-xxx"/></svg>，尺寸由容器 CSS 控制（.expand-icon/.type-icon/.node-tool svg）
-export function iconHtml(key: IconKey): SVGTemplateResult {
+// key 放宽为 string：动态图标（slot 自定义/icon-url 拉取）与内置图标同一引用机制（ADR-0024）
+export function iconHtml(key: string): SVGTemplateResult {
   return svg`<svg aria-hidden="true"><use href="${'#' + iconId(key)}"/></svg>`
 }
+
+// 内置图标名清单：动态图标注册链的"已存在"基线（slot/拉取命中判定用）
+export const BUILTIN_ICON_KEYS: string[] = [...Object.keys(STROKE_ICONS), ...Object.keys(FILL_ICONS)]

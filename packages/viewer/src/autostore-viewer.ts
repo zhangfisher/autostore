@@ -1,14 +1,24 @@
 import { LitElement, html, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
-import { iconHtml, iconSprite } from './icons'
+import { BUILTIN_ICON_KEYS, iconHtml, iconSprite } from './icons'
+import { IconsRegistry } from './icons-registry'
+import type { ParsedIcon } from './icons-registry'
+import type { WidgetRenderContext } from './widgets/types'
 import { viewerStyles } from './styles'
 import { formatValue } from './utils/formatValue'
 import { getNodeIconKey } from './utils/getNodeIconKey'
 import { getObjectKeyCount } from './utils/getObjectKeyCount'
 import { isInternalKey } from './utils/isInternalKey'
 import { Editable } from './editable'
+import { toRenderable } from './utils/toRenderable'
+import { getWidgetModule } from './widgets/registry'
+import { resolveEditorPlan } from './edit-plan'
 import { joinPath } from './utils/joinPath'
 import { deleteNodeValue } from './utils/deleteNodeValue'
+import { splitPath } from './utils/splitPath'
+import { computeValueError, convertValue } from './utils/value-io'
+import { resolvePair } from './edit-plan'
+import { inputModule } from './widgets/input'
 import { isComputed } from 'autostore'
 import type { TreeNode, TreeNodeType } from './types'
 import type { AutoStore, AutoStoreStateSchema } from 'autostore'
@@ -35,9 +45,11 @@ export class AutostoreViewer extends LitElement {
   @property({ type: Boolean, attribute: 'show-computed' })
   showComputed: boolean = false
 
-  // 是否启用行内编辑（默认只读展示）
-  @property({ type: Boolean, attribute: 'editable' })
-  editable: boolean = false
+  // 编辑模式（ADR-0027）：
+  // view：只读；edit：叶子成员常驻编辑控件（值写回走根事件委托），容器保持双击 JSON 编辑；
+  // click-edit：双击值/点击编辑按钮进入编辑（默认 view）
+  @property({ type: String, attribute: 'mode' })
+  mode: 'view' | 'edit' | 'click-edit' = 'view'
 
   // 是否允许删除节点（默认不允许；根节点不可删除）
   @property({ type: Boolean, attribute: 'allow-delete' })
@@ -50,11 +62,83 @@ export class AutostoreViewer extends LitElement {
 
   // 标签区（key+hint+count）统一列宽上限（px），超出部分截断显示 ...
   @property({ type: Number, attribute: 'max-key-width' })
-  maxKeyWidth: number = 240
+  maxKeyWidth: number = 300
 
-  // 是否启用 schema 元数据显示（label 替换 key、required 红星、help 提示、choices 标签）
-  @property({ type: Boolean, attribute: 'show-schema' })
-  showSchema: boolean = false
+  // 是否禁用 schema 元数据显示（label 替换 key、required 红星、help 提示、choices 标签）
+  // schema 默认生效；禁用仅关闭显示，编辑（widget 决策/校验/整体编辑判定）与 schema.icon 仍读取 schema
+  @property({ type: Boolean, attribute: 'disable-schema' })
+  disableSchema: boolean = false
+
+  // 动态图标批量拉取 URL 模板：{names} 占位符替换为逗号分隔的图标名；
+  // 置空禁用拉取（未知名恒回落类型图标）；变更仅影响后续新批次
+  @property({ type: String, attribute: 'icon-url' })
+  iconUrl: string = 'https://api.iconify.design/material-symbols-light.json?icons={names}'
+
+  // 远程拉取的风格后缀（rounded/sharp/outline/outline-rounded/outline-sharp）：
+  // 仅追加到远程请求名（home → home-outline），schema.icon 引用名不变；空 = 不处理
+  @property({ type: String, attribute: 'icon-modify' })
+  iconModify: string = ''
+
+  // 动态图标注册表：命中链 slot 自定义 > 内置 > icon-url 拉取（ADR-0024）
+  private _registry = new IconsRegistry(
+    () => this.iconUrl || null,
+    (icons) => {
+      // 拉取命中：构造真实 SVG 命名空间的 symbol 入队注入
+      for (const icon of icons) this._queueDynamicSymbol(icon.name, this._buildSymbol(icon))
+      this.requestUpdate()
+    },
+    () => this.iconModify,
+  )
+
+  // 动态 symbol 注入队列（name → 元素）：updated 时统一 append 到动态 sprite 容器。
+  // 不用 unsafeSVG——lit 的 html/unsafeSVG 以 HTML 命名空间解析字符串，
+  // symbol 必须经 createElementNS 构造为 SVG 命名空间元素 <use> 才能引用
+  private _dynamicQueue = new Map<string, SVGSymbolElement>()
+
+  // SVG 命名空间（createElementNS 构造 symbol 必需）
+  private static SVG_NS = 'http://www.w3.org/2000/svg'
+
+  // 由解析数据构造 <symbol id="asv-{name}" viewBox="0 0 {w} {h}">{body}</symbol>
+  private _buildSymbol(icon: ParsedIcon): SVGSymbolElement {
+    const symbol = document.createElementNS(AutostoreViewer.SVG_NS, 'symbol') as SVGSymbolElement
+    symbol.setAttribute('id', `asv-${icon.name}`)
+    symbol.setAttribute('viewBox', `0 0 ${icon.width} ${icon.height}`)
+    symbol.innerHTML = icon.body
+    return symbol
+  }
+
+  // 由 slot 提取的 symbol 重建为 SVG 命名空间元素：
+  // template content 经 HTML 解析器创建的 <symbol> 是 HTML 命名空间元素，
+  // cloneNode 不改变命名空间，append 后 <use> 无法引用；
+  // 以属性复制 + innerHTML 经 SVG 上下文重建（与拉取构造同机制，ADR-0024）
+  private _rebuildSymbol(name: string, source: SVGSymbolElement): SVGSymbolElement {
+    const symbol = document.createElementNS(AutostoreViewer.SVG_NS, 'symbol') as SVGSymbolElement
+    for (const attr of Array.from(source.attributes)) {
+      if (attr.name !== 'id') symbol.setAttribute(attr.name, attr.value)
+    }
+    symbol.setAttribute('id', `asv-${name}`)
+    symbol.innerHTML = source.innerHTML
+    return symbol
+  }
+
+  // slot 自定义图标：深拷贝入队（template content 中的元素不可直接持有）
+  private _queueDynamicSymbol(name: string, symbol: SVGSymbolElement) {
+    this._dynamicQueue.set(name, symbol)
+  }
+
+  // 注入队列：append 到动态 sprite 容器（容器置于内置 sprite 之前，
+  // 同 id 时 <use> 按文档序命中前者，实现"自定义覆盖内置"；
+  // 同名重新注入先移除旧节点，防同 id 重复累积）
+  private _flushDynamicSymbols() {
+    if (this._dynamicQueue.size === 0) return
+    const container = this.renderRoot.querySelector('.dynamic-sprite')
+    if (!container) return
+    for (const [name, symbol] of this._dynamicQueue) {
+      container.querySelector(`symbol[id="asv-${name}"]`)?.remove()
+      container.appendChild(symbol)
+      this._dynamicQueue.delete(name)
+    }
+  }
 
   // 响应式状态
   @state()
@@ -63,14 +147,111 @@ export class AutostoreViewer extends LitElement {
   @state()
   private _treeNodes: TreeNode[] = []
 
-  // 行内编辑器（见 editable.ts）
+  // 行内编辑器（见 editable.ts，即时生效模式）
   private _editable = new Editable(
     { requestUpdate: () => this.requestUpdate() },
     (path) => this._getStateByPath(path),
     () => this._store,
     (node) => this._findNextEditableSibling(node),
     (path) => this._getNodeByPath(path),
+    (path) => this._getSchemaByPath(path),
+    // 编辑期间该节点树更新被冻结（watch 回调跳过），退出/链式切换时经此回填
+    (path) => {
+      this._updateTreeNode(path, this._getStateByPath(path))
+      this._scheduleMeasureLabelWidth()
+    },
   )
+
+  // 已聚焦的编辑路径（仅路径变化时聚焦/全选，错误条等重渲染不得抢焦点）
+  private _focusedEditPath: string | null = null
+
+  // edit 常驻模式的 per-path 校验错误（非响应式，变更处手动 requestUpdate）
+  private _inlineErrors = new Map<string, string>()
+
+  // edit 常驻模式的根事件委托（控件不绑 per-node 监听，写回/键盘统一在此处理，ADR-0027）
+  private _onDelegatedInput = (e: Event) => {
+    if (this.mode !== 'edit') return
+    const target = e.target as HTMLElement
+    const row = target instanceof Element ? target.closest('.tree-node') as HTMLElement | null : null
+    const pathAttr = row?.dataset.path
+    if (!pathAttr) return
+    const node = this._getNodeByPath(splitPath(pathAttr))
+    // 仅常驻编辑的叶子；容器 JSON 编辑与 click-edit 由 Editable 状态机处理
+    if (!node || this._isExpandableType(node.type) || !this._isEditableNode(node)) return
+    const schema = this._getSchemaByPath(node.path) as Record<string, any> | undefined
+    const plan = resolveEditorPlan(node, schema ?? {}, '')
+    const raw = this._extractControlValue(e.target as HTMLInputElement, plan, schema)
+    if (raw === undefined) return
+    const error = computeValueError({ raw, schema, plan, valueType: node.type, oldValue: node.value, path: node.path })
+    const key = joinPath(node.path)
+    if (error !== null) {
+      if (this._inlineErrors.get(key) !== error) {
+        this._inlineErrors.set(key, error)
+        this.requestUpdate()
+      }
+      return
+    }
+    if (this._inlineErrors.has(key)) {
+      this._inlineErrors.delete(key)
+      this.requestUpdate()
+    }
+    const parent = this._getStateByPath(node.path.slice(0, -1))
+    if (parent) parent[node.path[node.path.length - 1]] = convertValue(raw, node.type, plan)
+  }
+
+  // edit 常驻：Enter = 焦点转移到树序下一个可编辑控件（textarea 的 Enter 为换行）
+  private _onDelegatedKeydown = (e: KeyboardEvent) => {
+    if (this.mode !== 'edit') return
+    if (e.isComposing || e.keyCode === 229) return
+    if (e.key !== 'Enter') return
+    const target = e.target as HTMLElement
+    if (target.tagName === 'TEXTAREA' || !target.classList.contains('edit-input')) return
+    const controls = Array.from(
+      this.renderRoot.querySelectorAll<HTMLInputElement>('.tree-node .edit-editor .edit-input:not(:disabled)'),
+    )
+    const next = controls[controls.indexOf(target) + 1]
+    if (next) {
+      next.focus()
+      if (next.type === 'text' || next.type === 'number') next.select()
+    }
+  }
+
+  // per-kind 从控件提取待写值（checkbox 双值档位/select 下标取原值/radio/文本原样）
+  private _extractControlValue(
+    el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+    plan: ReturnType<typeof resolveEditorPlan>,
+    schema: Record<string, any> | undefined,
+  ): any {
+    switch (plan.kind) {
+      case 'checkbox': {
+        const pair = resolvePair(schema)
+        const checked = (el as HTMLInputElement).checked
+        return pair ? (checked ? pair[0].value : pair[1].value) : checked
+      }
+      case 'select': {
+        const sel = el as HTMLSelectElement
+        if (plan.multiple) {
+          return Array.from(sel.selectedOptions, (o) => plan.choices[Number(o.value)].value)
+        }
+        return plan.choices[sel.selectedIndex]?.value
+      }
+      case 'radio': {
+        return plan.choices[Number((el as HTMLInputElement).value)]?.value
+      }
+      default:
+        return (el as HTMLInputElement).value
+    }
+  }
+
+  // toast 文案与淡隐态（2s 自动淡隐，见 _showToast）
+  @state()
+  private _toastText: string | null = null
+
+  @state()
+  private _toastFading: boolean = false
+
+  // toast 定时句柄（重复触发与新组件断开时清理）
+  private _toastTimers: any[] = []
 
   // 用于保存store watcher
   private _storeWatcher: any = null
@@ -101,6 +282,19 @@ export class AutostoreViewer extends LitElement {
 
   // CSS样式（提取自 styles.ts）
   static styles = viewerStyles;
+
+  // edit 常驻模式的根事件委托监听（控件不绑 per-node 监听）
+  firstUpdated() {
+    this.renderRoot.addEventListener('input', this._onDelegatedInput)
+    this.renderRoot.addEventListener('change', this._onDelegatedInput)
+    this.renderRoot.addEventListener('keydown', this._onDelegatedKeydown)
+  }
+
+  constructor() {
+    super()
+    // 内置图标为注册链"已存在"基线：slot 同名覆盖、拉取跳过（ADR-0024）
+    this._registry.markRegistered(BUILTIN_ICON_KEYS)
+  }
 
   // 连接到DOM时
   connectedCallback() {
@@ -143,6 +337,10 @@ export class AutostoreViewer extends LitElement {
     this._resizeObserver = null
     this._bindRetryCount = 0
     this._cmReadyRetries = 0
+    this._clearToastTimers()
+    this.renderRoot?.removeEventListener('input', this._onDelegatedInput)
+    this.renderRoot?.removeEventListener('change', this._onDelegatedInput)
+    this.renderRoot?.removeEventListener('keydown', this._onDelegatedKeydown)
   }
 
   // 属性变更回调
@@ -154,16 +352,26 @@ export class AutostoreViewer extends LitElement {
     if ((changedProperties.has('expandDepth') || changedProperties.has('showComputed')) && this._store) {
       this._buildTree()
     }
-    // 关闭编辑能力时立即退出编辑状态
-    if (changedProperties.has('editable') && !this.editable && this._editable.editingPath) {
-      this._editable.cancel()
+    // 切离 edit 模式时清常驻错误；切离全部编辑模式时退出 click-edit 编辑状态
+    if (changedProperties.has('mode')) {
+      if (this._inlineErrors.size > 0) this._inlineErrors.clear()
+      if (this.mode === 'view' && this._editable.editingPath) this._editable.exit()
     }
-    // 进入编辑状态时聚焦输入框并全选
+    // 进入编辑状态时聚焦输入框并全选（仅路径变化时执行：
+    // 校验错误条渲染等重渲染不得抢焦点，也不得触发全选导致输入内容被整体替换）
     if (this._editable.editingPath) {
-      const input = this.renderRoot.querySelector<HTMLInputElement>('.edit-input')
-      input?.focus()
-      if (input && (input.type === 'text' || input.type === 'number')) input.select()
+      const pathKey = joinPath(this._editable.editingPath)
+      if (this._focusedEditPath !== pathKey) {
+        this._focusedEditPath = pathKey
+        const input = this.renderRoot.querySelector<HTMLInputElement>('.edit-input')
+        input?.focus()
+        if (input && (input.type === 'text' || input.type === 'number')) input.select()
+      }
+    } else {
+      this._focusedEditPath = null
     }
+    // 动态图标注入：动态 sprite 容器随渲染就绪后统一 append（slotchange/拉取命中入队）
+    this._flushDynamicSymbols()
     // left 模式下重算标签区列宽：仅树结构/相关属性变化时触发。
     // 测量基于全量树数据（含折叠子树）与展开态解耦，展开/折叠不重算，避免列宽跳动
     if (
@@ -174,19 +382,26 @@ export class AutostoreViewer extends LitElement {
         changedProperties.has('showHint') ||
         changedProperties.has('valueAlign') ||
         changedProperties.has('maxKeyWidth') ||
-        changedProperties.has('showSchema'))
+        changedProperties.has('disableSchema'))
     ) {
       this._scheduleMeasureLabelWidth()
     }
     // 默认 configManager:true 经异步 import 创建并注册 schema，晚于同步首渲染，
-    // 须限时轮询就绪后重渲染（label 替换改变标签区文本，须一并重测列宽）
-    if (this.showSchema && this._store && !this._store.configManager && this._cmReadyRetries < 20) {
+    // 须限时轮询就绪后处理：label 替换经重渲染生效（render 期读取）；
+    // 折叠/整体编辑判定在 build 期读取 schema，须重建树；列宽一并重测
+    if (
+      (!this.disableSchema || this.mode !== 'view') &&
+      this._store &&
+      !this._store.configManager &&
+      this._cmReadyRetries < 20
+    ) {
       this._cmReadyRetries++
       this._cmReadyTimer = setTimeout(() => {
         this._cmReadyTimer = null
         this.requestUpdate()
         if (this._store?.configManager) {
           this._cmReadyRetries = 0
+          this._buildTree()
           if (!this._isRightAlign()) this._scheduleMeasureLabelWidth()
         }
       }, 100)
@@ -198,14 +413,19 @@ export class AutostoreViewer extends LitElement {
     return this.valueAlign === 'right'
   }
 
-  // 读取节点路径对应的 schema 元数据（对齐 ConfigManager.add 的 key 拼法：仅显式 options.configKey 参与前缀，不回落 id）
-  private _getSchema(node: TreeNode): AutoStoreStateSchema | undefined {
-    if (!this.showSchema) return undefined
+  // 按路径读取 schema 元数据（对齐 ConfigManager.add 的 key 拼法：仅显式 options.configKey 参与前缀，不回落 id）
+  // 独立于 disable-schema 显示开关：编辑（widget 决策/校验）与整体编辑判定始终读取
+  private _getSchemaByPath(path: string[]): AutoStoreStateSchema | undefined {
     const configManager = (this._store as any)?.configManager
     if (!configManager) return undefined
     const configKey = this._store!.options?.configKey
-    const fullKey = (configKey ? `${configKey}.` : '') + joinPath(node.path)
+    const fullKey = (configKey ? `${configKey}.` : '') + joinPath(path)
     return configManager.state[fullKey] as AutoStoreStateSchema | undefined
+  }
+
+  // 读取节点对应的 schema 元数据（展示用途须由调用方以 disableSchema 门控）
+  private _getSchema(node: TreeNode): AutoStoreStateSchema | undefined {
+    return this._getSchemaByPath(node.path)
   }
 
   // 调度标签区列宽测量（rAF 合并同一帧内的多次更新）
@@ -225,12 +445,13 @@ export class AutostoreViewer extends LitElement {
     const probe = this.renderRoot.querySelector<HTMLElement>('.measure-probe')
     if (!probe) return
 
-    // 收集全树节点的标签区组成（与渲染条件保持一致；show-schema 时 label+红星参与宽度）
+    // 收集全树节点的标签区组成（与渲染条件保持一致；未禁用 schema 显示时 label+红星参与宽度）
     const entries: { key: string; required: boolean; hint: string; count: string }[] = []
     const collect = (nodes: TreeNode[]) => {
       for (const node of nodes) {
         const expandable = this._isExpandableType(node.type)
-        const schema = this._getSchema(node)
+        // 展示词汇（label/required）在未禁用 schema 显示时参与列宽
+        const schema = !this.disableSchema ? this._getSchema(node) : undefined
         entries.push({
           key: schema?.label ?? String(node.key),
           required: schema?.required === true,
@@ -323,7 +544,7 @@ export class AutostoreViewer extends LitElement {
     this._measureRetryCount = 0
 
     // 超限由 maxKeyWidth 钳制（超出行的 key 截断显示 ...）
-    const width = `${Math.min(max, this.maxKeyWidth)}px`
+    const width = `${Math.min(max+16, this.maxKeyWidth)}px`
     if (width !== this._labelWidth) {
       this._labelWidth = width
       this.style.setProperty('--viewer-key-width', width)
@@ -398,6 +619,23 @@ export class AutostoreViewer extends LitElement {
 
     // 监听所有状态变化
     this._storeWatcher = this._store.watch('*', (operate: any) => {
+      // 即时生效：编辑节点的自写入操作已反映在控件中，跳过树重建以免重置输入光标；
+      // 退出/链式切换时经 _syncNode 回填（编辑期间该节点的外部更新也在退出时一并收敛）
+      const editing = this._editable.editingPath
+      if (
+        editing &&
+        Array.isArray(operate?.path) &&
+        operate.path.length === editing.length &&
+        operate.path.every((p: any, i: number) => p === editing[i])
+      ) {
+        return
+      }
+      // edit 常驻：叶子值类写入同样冻结树更新（控件即真相），防委托写回重置光标；
+      // 结构类 operate（insert/remove/delete）照常处理
+      if (this.mode === 'edit' && operate?.type === 'set' && Array.isArray(operate.path)) {
+        const node = this._getNodeByPath(operate.path)
+        if (node && !this._isExpandableType(node.type) && this._isEditableNode(node)) return
+      }
       if (operate.type === 'delete') {
         // 删除操作：从树中移除对应节点
         this._removeTreeNode(operate.path)
@@ -511,12 +749,11 @@ export class AutostoreViewer extends LitElement {
     return type === 'object' || type === 'array' || type === 'markRaw'
   }
 
-  // 判断节点是否可编辑：仅无子节点的原始值类型（容器/computed/function 均不可编辑）
+  // 判断节点是否可编辑：所有容器（对象/数组/markRaw）均以 JSON 整体编辑；
+  // 叶子中 computed/function 无编辑语义不可编辑，其余原始值类型可编辑
   private _isEditableNode(node: TreeNode): boolean {
-    return (
-      !this._isExpandableType(node.type) &&
-      (node.type === 'string' || node.type === 'number' || node.type === 'boolean' || node.type === 'other')
-    )
+    if (this._isExpandableType(node.type)) return true
+    return node.type === 'string' || node.type === 'number' || node.type === 'boolean' || node.type === 'other'
   }
 
   // 按路径在树中查找节点
@@ -609,6 +846,33 @@ export class AutostoreViewer extends LitElement {
     this.requestUpdate()
   }
 
+  // 提取 slot 自定义图标：template[slot=icons] 的 content 中与直接子元素中的 <symbol>；
+  // slotchange 动态触发，重新提取沿用同名覆盖策略（后注册者生效）
+  private _onSlotChange(e: Event) {
+    const slot = e.currentTarget as HTMLSlotElement
+    const symbols: SVGSymbolElement[] = []
+    for (const node of slot.assignedNodes()) {
+      if (node instanceof HTMLTemplateElement) {
+        symbols.push(...node.content.querySelectorAll('symbol'))
+      } else if (node instanceof Element) {
+        if (node.tagName.toLowerCase() === 'symbol') symbols.push(node as SVGSymbolElement)
+        else symbols.push(...node.querySelectorAll('symbol'))
+      }
+    }
+    const names: string[] = []
+    for (const symbol of symbols) {
+      // id 规范化：asv- 前缀可带可不带（引用名一律不含前缀）
+      let name = symbol.id || ''
+      if (name.startsWith('asv-')) name = name.slice(4)
+      if (!name) continue
+      // 重建为 SVG 命名空间元素（HTML 命名空间的 symbol 无法被 <use> 引用）
+      this._queueDynamicSymbol(name, this._rebuildSymbol(name, symbol))
+      names.push(name)
+    }
+    this._registry.markRegistered(names)
+    this.requestUpdate()
+  }
+
   // 按路径读取 state 值
   private _getStateByPath(path: string[]): any {
     let obj: any = this._store?.state
@@ -621,6 +885,60 @@ export class AutostoreViewer extends LitElement {
     e.stopPropagation()
     const parent = this._getStateByPath(node.path.slice(0, -1))
     if (parent) deleteNodeValue(parent, node.path[node.path.length - 1])
+  }
+
+  // toast：组件右上方显示，2s 后自动淡隐（0.3s 过渡后移除）
+  private _showToast(text: string) {
+    this._clearToastTimers()
+    this._toastText = text
+    this._toastFading = false
+    this._toastTimers = [
+      setTimeout(() => {
+        this._toastFading = true
+      }, 1500),
+      setTimeout(() => {
+        this._toastText = null
+        this._toastFading = false
+      }, 1600),
+    ]
+  }
+
+  private _clearToastTimers() {
+    this._toastTimers.forEach(clearTimeout)
+    this._toastTimers = []
+  }
+
+  // 复制节点值：容器序列化为 JSON（缩进 2），原始值转字符串
+  private async _copyNode(node: TreeNode) {
+    let text: string
+    try {
+      const value = node.value
+      text = value !== null && typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '')
+      await this._writeClipboard(text)
+      this._showToast('copied!')
+    } catch {
+      this._showToast('copy failed')
+    }
+  }
+
+  // 剪贴板写入：优先异步 Clipboard API，非安全上下文回落 execCommand
+  private _writeClipboard(text: string): Promise<void> {
+    if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text)
+    return new Promise<void>((resolve, reject) => {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      try {
+        document.execCommand('copy') ? resolve() : reject(new Error('copy failed'))
+      } catch (e) {
+        reject(e as Error)
+      } finally {
+        textarea.remove()
+      }
+    })
   }
 
   // 从树中移除指定路径的节点
@@ -647,14 +965,115 @@ export class AutostoreViewer extends LitElement {
     removeFrom(this._treeNodes)
   }
 
+  // 节点是否处于编辑呈现：click-edit=状态机判定；edit=叶子常驻、容器以状态机判定（双击 JSON）
+  private _isNodeEditing(node: TreeNode): boolean {
+    if (this.mode === 'edit') {
+      if (this._isExpandableType(node.type)) return this._editable.isEditing(node)
+      return this._isEditableNode(node)
+    }
+    return this._editable.isEditing(node)
+  }
+
+  // 非编辑态 node-value 渲染：toView > widget 模块 toView > choices label > formatValue
+  // toView 属展示词汇，受 disable-schema 门控；抛错回落默认渲染（ADR-0025/0026）
+  private _renderNodeValue(node: TreeNode, schema: AutoStoreStateSchema | undefined, choiceLabel: any): any {
+    if (schema && typeof schema.toView === 'function') {
+      try {
+        return toRenderable(schema.toView(node.value))
+      } catch (e) {
+        console.warn('[autostore-viewer] toView 执行失败，回落默认渲染', e)
+      }
+    }
+    const module = getWidgetModule(schema?.widget)
+    if (module?.toView) {
+      try {
+        const view = module.toView(this._buildViewContext(node, schema))
+        if (view) return view
+      } catch (e) {
+        console.warn('[autostore-viewer] widget toView 执行失败，回落默认渲染', e)
+      }
+    }
+    if (choiceLabel && typeof choiceLabel.label === 'string') return choiceLabel.label
+    return formatValue(node.value, node.type)
+  }
+
+  // 查看态渲染上下文（plan 现场解析；无编辑控制面）
+  private _buildViewContext(node: TreeNode, schema: AutoStoreStateSchema | undefined): WidgetRenderContext {
+    const raw = (schema ?? {}) as Record<string, any>
+    return {
+      value: node.value,
+      schema: raw,
+      plan: resolveEditorPlan(node, raw, ''),
+      node,
+      setValue: () => {},
+      onKeydown: () => {},
+    }
+  }
+
+  // 编辑态渲染：edit 常驻叶子走 widget toRender（写回走根委托，ADR-0027）；
+  // 其余（click-edit 全部 / edit 容器双击）走 Editable 状态机；
+  // schema.toRender 优先（自定义控件自理写回）；抛错回落默认渲染
+  private _renderEditingValue(node: TreeNode, schema: AutoStoreStateSchema | undefined): any {
+    const error = this.mode === 'edit' ? (this._inlineErrors.get(joinPath(node.path)) ?? null) : null
+    if (schema && typeof schema.toRender === 'function') {
+      try {
+        return this._editorShell(node, toRenderable(schema.toRender(node.value)), error)
+      } catch (e) {
+        console.warn('[autostore-viewer] toRender 执行失败，回落默认编辑器', e)
+      }
+    }
+    if (this.mode === 'edit' && !this._isExpandableType(node.type)) {
+      const raw = (schema ?? {}) as Record<string, any>
+      const plan = resolveEditorPlan(node, raw, '')
+      // 常驻控件的回调为 no-op：写回/键盘经根事件委托统一处理
+      const ctx: WidgetRenderContext = {
+        value: node.value,
+        schema: raw,
+        plan,
+        node,
+        setValue: () => {},
+        onKeydown: () => {},
+      }
+      const module = getWidgetModule(raw.widget)
+      const content = module?.toRender?.(ctx) ?? inputModule.toRender!(ctx)
+      return this._editorShell(node, content, error)
+    }
+    return this._editable.renderEditor(node)
+  }
+
+  // 编辑器外壳：edit 常驻模式 blur 不退出（不绑 focusout）；其余失焦退出（Q4a）
+  private _editorShell(node: TreeNode, content: any, error: string | null): any {
+    const errorPart = error ? html`<div class="edit-error">${error}</div>` : nothing
+    if (this.mode === 'edit') {
+      return html`<div class="edit-editor">${content}${errorPart}</div>`
+    }
+    return html`<div
+      class="edit-editor"
+      @focusout=${(e: FocusEvent) => {
+        const container = e.currentTarget as HTMLElement
+        if (container.contains(e.relatedTarget as Node)) return
+        this._editable.onBlur(node)
+      }}
+    >${content}${errorPart}</div>`
+  }
+
   // 渲染节点
   private _renderNode(node: TreeNode): any {
-    const iconKey = getNodeIconKey(node)
     const isExpandable = this._isExpandableType(node.type)
-    const isEditing = this._editable.isEditing(node)
-    const canEdit = this.editable && this._isEditableNode(node)
-    // schema 元数据（show-schema 开启时按路径读取，无则逐节点回落原渲染）
-    const schema = this._getSchema(node)
+    const isEditing = this._isNodeEditing(node)
+    const canEdit = this.mode !== 'view' && this._isEditableNode(node)
+    // schema 展示词汇（label/required/help/choices 标签）在未禁用 schema 显示时生效；
+    // 编辑态与 schema.icon 的读取始终生效（图标为节点身份，不受 disable-schema 门控）
+    const rawSchema = this._getSchema(node)
+    const schema = !this.disableSchema ? rawSchema : undefined
+    // schema.icon 命中链：slot 自定义 > 内置 > icon-url 拉取（ADR-0024）；
+    // 未加载/负缓存回落类型图标，缺失时攒批拉取，注册完成后经 onLoaded 重渲染替换
+    const schemaIcon = typeof rawSchema?.icon === 'string' && rawSchema.icon !== '' ? rawSchema.icon : undefined
+    let iconKey = getNodeIconKey(node)
+    if (schemaIcon) {
+      if (this._registry.has(schemaIcon)) iconKey = schemaIcon
+      else this._registry.request([schemaIcon])
+    }
     // label 完全替换 key 显示
     const displayKey = schema?.label ?? node.key
     const required = schema?.required === true
@@ -666,11 +1085,7 @@ export class AutostoreViewer extends LitElement {
       const item = typeof c === 'object' && c !== null ? c : { value: c }
       return item.value === node.value
     })
-    const displayValue = !isExpandable
-      ? (typeof choiceLabel === 'object' && choiceLabel !== null && typeof choiceLabel.label === 'string'
-          ? choiceLabel.label
-          : formatValue(node.value, node.type))
-      : nothing
+    const displayValue = !isExpandable ? this._renderNodeValue(node, schema, choiceLabel) : nothing
 
     return html`
       <div
@@ -700,24 +1115,22 @@ export class AutostoreViewer extends LitElement {
               <span class="child-count">${node.childCount}</span>
             ` : nothing}
           </span>
-          ${isEditing ? this._editable.renderEditor(node) : html`
+          ${isEditing ? this._renderEditingValue(node, schema) : html`
             <span
               class="node-value"
               @dblclick=${canEdit ? () => this._editable.start(node) : nothing}
             >${displayValue}</span>
           `}
           <span class="node-tools">
-            ${isEditing ? html`
-              <span class="node-tool" title="取消 (Esc)" @click=${(e: Event) => { e.stopPropagation(); this._editable.cancel() }}>${iconHtml('no')}</span>
-              <span class="node-tool" title="确认 (Enter)" @pointerdown=${(e: Event) => { e.stopPropagation(); this._editable.confirm() }}>${iconHtml('yes')}</span>
-            ` : html`
-              ${canEdit ? html`
+            ${!isEditing ? html`
+              <span class="node-tool" title="复制" @click=${(e: Event) => { e.stopPropagation(); this._copyNode(node) }}>${iconHtml('copy')}</span>
+              ${canEdit && this.mode === 'click-edit' ? html`
                 <span class="node-tool" title="编辑" @click=${(e: Event) => { e.stopPropagation(); this._editable.start(node) }}>${iconHtml('edit')}</span>
               ` : nothing}
               ${this.allowDelete && node.path.length > 0 ? html`
                 <span class="node-tool" title="删除" @click=${(e: Event) => this._deleteNode(e, node)}>${iconHtml('trash')}</span>
               ` : nothing}
-            `}
+            ` : nothing}
           </span>
         </div>
       </div>
@@ -736,11 +1149,17 @@ export class AutostoreViewer extends LitElement {
     }
 
     return html`
-      <!-- 图标 sprite：<symbol> 定义只此一份，节点处的 iconHtml() 通过 <use> 引用 -->
+      <!-- 动态图标 sprite：置于内置 sprite 之前，同 id 时 <use> 按文档序命中前者（自定义覆盖内置，ADR-0024） -->
+      <svg class="dynamic-sprite" xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
+      <!-- 内置图标 sprite：<symbol> 定义只此一份，节点处的 iconHtml() 通过 <use> 引用 -->
       ${iconSprite}
+      <slot name="icons" @slotchange=${this._onSlotChange} style="display: none;"></slot>
       <div class="tree-container">
         ${this._treeNodes.map(node => this._renderNode(node))}
       </div>
+      ${this._toastText ? html`
+        <div class="toast ${this._toastFading ? 'fading' : ''}">${this._toastText}</div>
+      ` : nothing}
       <!-- 离屏宽度探针：复用真实样式类测量文本自然宽，见 _measureLabelWidth -->
       <div class="measure-probe" aria-hidden="true"></div>
     `

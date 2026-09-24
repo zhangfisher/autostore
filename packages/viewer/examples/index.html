@@ -111,14 +111,32 @@
       <label><input type="checkbox" id="ctl-count" checked /> 子节点数量</label>
       <label><input type="checkbox" id="ctl-hint" checked /> {...} / [...] 标识</label>
       <label><input type="checkbox" id="ctl-computed" /> 计算属性</label>
-      <label><input type="checkbox" id="ctl-editable" /> 启用编辑</label>
+      <label>
+        编辑模式：
+        <select id="ctl-mode">
+          <option value="view" selected>view（只读）</option>
+          <option value="click-edit">click-edit（点击编辑）</option>
+          <option value="edit">edit（常驻编辑）</option>
+        </select>
+      </label>
       <label><input type="checkbox" id="ctl-allow-delete" /> 允许删除</label>
-      <label><input type="checkbox" id="ctl-show-schema" /> Schema 元数据</label>
+      <label><input type="checkbox" id="ctl-disable-schema" /> 禁用 Schema 显示</label>
+      <label>
+        icon-modify：
+        <select id="ctl-icon-modify">
+          <option value="" selected>默认（无）</option>
+          <option value="rounded">rounded</option>
+          <option value="sharp">sharp</option>
+          <option value="outline">outline</option>
+          <option value="outline-rounded">outline-rounded</option>
+          <option value="outline-sharp">outline-sharp</option>
+        </select>
+      </label>
       <label>
         value 对齐：
         <select id="ctl-value-align">
-          <option value="left" selected>left（标签区统一列宽）</option>
-          <option value="right">right（value 右对齐）</option>
+          <option value="left" selected>Left</option>
+          <option value="right">Right</option>
         </select>
       </label>
       <label>key 列宽上限：<input type="number" id="ctl-max-key-width" value="240" min="40" step="10" style="width: 5em" /> px</label>
@@ -131,6 +149,8 @@
       <button class="tab" role="tab" aria-selected="false" data-panel="panel-store-id">store-id 绑定</button>
       <button class="tab" role="tab" aria-selected="false" data-panel="panel-store">store 属性绑定</button>
       <button class="tab" role="tab" aria-selected="false" data-panel="panel-docker">Docker 命令行参数</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="panel-widgets">Widget 控件一览</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="panel-icons">Icons 图标</button>
     </div>
 
     <section class="tab-panel active" id="panel-basic">
@@ -159,8 +179,27 @@
     </section>
 
     <section class="tab-panel" id="panel-docker">
-      <p class="info">state 为 docker run 命令行参数，按功能分组；每个配置项均使用 configurable() 声明 schema（label / group / widget / choices / 校验等）</p>
-      <autostore-viewer id="viewer6"></autostore-viewer>
+      <p class="info">state 为 docker run 命令行参数，按功能分组；每个配置项均使用 configurable() 声明 schema（label / group / widget / choices / 校验 / icon 等），全部 31 个图标经 icon-url 从 iconify 批量拉取（仅一次合并请求）；本 viewer 设置 icon-modify="outline"，请求名自动追加 -outline 后缀（schema.icon 引用名不变），可用控制面板切换风格对比</p>
+      <autostore-viewer id="viewer6" icon-modify="outline"></autostore-viewer>
+    </section>
+
+    <section class="tab-panel" id="panel-widgets">
+      <p class="info">各 widget 的编辑控件演示（需将控制面板「编辑模式」切到 click-edit 或 edit；Schema 显示默认生效，可勾选「禁用 Schema 显示」对比）：click-edit 下双击值进入编辑，编辑即时生效写入状态（无确认/取消）；值无效时控件下方实时显示红色错误且暂不写入，修正后自动写入并隐藏；Enter 前进到下一个可编辑节点；编辑在所有节点上生效——所有对象/数组容器（plainObject、withConfigurable、collapsedContainer、各分组）双击即进入 JSON 整体编辑，configurable 容器同样正常渲染子节点；edit 模式下叶子成员常驻编辑控件，Enter 在控件间转移焦点</p>
+      <autostore-viewer id="viewer7"></autostore-viewer>
+    </section>
+
+    <section class="tab-panel" id="panel-icons">
+      <p class="info">图标注册链演示（slot 自定义 &gt; 内置 &gt; icon-url 拉取）：① user/box 引用 slot 自定义图标 custom-user/custom-box；② 本 viewer 覆盖内置 object/array 图标（同心圆/圆角方块），树中所有对象与数组节点即刻换装；③ home/star/settings/lock 四个未知名渲染时攒批合并为一次 iconify 批量请求；④ this-icon-does-not-exist 命中 not_found 负缓存，回落类型图标。本 viewer 同时设置 icon-modify="outline"：远程请求名自动追加风格后缀（home → home-outline），schema.icon 引用名不变</p>
+      <autostore-viewer id="viewer8" icon-modify="outline">
+        <template slot="icons">
+          <!-- slot 新增：schema.icon 可直接引用的自定义图标 -->
+          <symbol id="custom-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
+          <symbol id="custom-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12h16"/><path d="M12 4v16"/></symbol>
+          <!-- 同名覆盖内置图标 -->
+          <symbol id="asv-object" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/></symbol>
+          <symbol id="asv-array" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 3v18"/><path d="M13 8h5"/><path d="M13 12h5"/></symbol>
+        </template>
+      </autostore-viewer>
     </section>
 
     <script>
@@ -181,9 +220,10 @@
       const ctlCount = document.getElementById('ctl-count')
       const ctlHint = document.getElementById('ctl-hint')
       const ctlComputed = document.getElementById('ctl-computed')
-      const ctlEditable = document.getElementById('ctl-editable')
+      const ctlMode = document.getElementById('ctl-mode')
       const ctlAllowDelete = document.getElementById('ctl-allow-delete')
-      const ctlShowSchema = document.getElementById('ctl-show-schema')
+      const ctlDisableSchema = document.getElementById('ctl-disable-schema')
+      const ctlIconModify = document.getElementById('ctl-icon-modify')
       const ctlValueAlign = document.getElementById('ctl-value-align')
       const ctlMaxKeyWidth = document.getElementById('ctl-max-key-width')
       const applyControls = () => {
@@ -191,19 +231,22 @@
           viewer.showCount = ctlCount.checked
           viewer.showHint = ctlHint.checked
           viewer.showComputed = ctlComputed.checked
-          viewer.editable = ctlEditable.checked
+          viewer.mode = ctlMode.value
           viewer.allowDelete = ctlAllowDelete.checked
-          viewer.showSchema = ctlShowSchema.checked
+          viewer.disableSchema = ctlDisableSchema.checked
+          // 仅影响后续新拉取的图标（已注册/负缓存不变，ADR-0024）
+          viewer.iconModify = ctlIconModify.value
           viewer.valueAlign = ctlValueAlign.value
           viewer.maxKeyWidth = Number(ctlMaxKeyWidth.value) || 240
         })
       }
-      ;[ctlCount, ctlHint, ctlComputed, ctlEditable, ctlAllowDelete, ctlShowSchema, ctlValueAlign, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
+      ;[ctlCount, ctlHint, ctlComputed, ctlMode, ctlAllowDelete, ctlDisableSchema, ctlIconModify, ctlValueAlign, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
     </script>
 
     <script type="module" src="../src/autostore-viewer.ts"></script>
     <script type="module">
       import { AutoStore, computed, configurable, markRaw } from 'autostore'
+      import { html } from 'lit'
 
       // 创建示例 1：基础对象
       const store1 = new AutoStore({
@@ -299,6 +342,7 @@
         basic: configurable({
           name: configurable('my-container', {
             label: '容器名称',
+            icon: "badge",
             group: '基础',
             widget: 'text',
             help: 'docker run --name，为容器指定一个名称',
@@ -310,6 +354,7 @@
           }),
           hostname: configurable('', {
             label: '主机名',
+            icon: "dns",
             group: '基础',
             widget: 'text',
             help: 'docker run --hostname，设置容器内主机名',
@@ -318,6 +363,7 @@
           }),
           workdir: configurable('/app', {
             label: '工作目录',
+            icon: "folder",
             group: '基础',
             widget: 'text',
             help: 'docker run -w，设置容器内工作目录',
@@ -326,6 +372,7 @@
           }),
           image: configurable('nginx:latest', {
             label: '镜像',
+            icon: "inventory_2",
             group: '基础',
             widget: 'text',
             help: 'docker run 最后指定的镜像名:标签',
@@ -336,20 +383,30 @@
           }),
           command: configurable('', {
             label: '启动命令',
+            icon: "terminal",
             group: '基础',
             widget: 'text',
             help: 'docker run 覆盖镜像默认 CMD 的命令',
             placeholder: 'docker-entrypoint.sh',
             order: 4
+          }),
+          envColor: configurable('#3b82f6', {
+            label: '环境标识色',
+            icon: "palette",
+            group: '基础',
+            widget: 'color',
+            help: 'widget=color：查看态渲染为条形色块，编辑态为颜色选择器',
+            order: 5
           })
         },{
-            label:"基础"
+            icon:"tune", label:"基础"
         }),
 
         // —— 网络参数 ——
-        network: {
+        network: configurable({
           mode: configurable('bridge', {
             label: '网络模式',
+            icon: "settings_ethernet",
             group: '网络',
             widget: 'select',
             help: 'docker run --network',
@@ -363,6 +420,7 @@
           }),
           publish: configurable('8080:80', {
             label: '端口映射',
+            icon: "swap_horiz",
             group: '网络',
             widget: 'text',
             help: 'docker run -p，宿主机端口:容器端口',
@@ -373,6 +431,7 @@
           }),
           expose: configurable([80, 443], {
             label: '暴露端口',
+            icon: "export",
             group: '网络',
             widget: 'text',
             help: 'docker run --expose，仅声明不映射的端口',
@@ -380,17 +439,19 @@
           }),
           dns: configurable(['8.8.8.8', '114.114.114.114'], {
             label: 'DNS 服务器',
+            icon: "dns",
             group: '网络',
             widget: 'text',
             help: 'docker run --dns',
             order: 13
           })
-        },
+        },{icon:"lan", label:"网络"}),
 
         // —— 存储参数 ——
-        storage: {
+        storage: configurable({
           volumes: configurable(['/host/data:/container/data'], {
             label: '数据卷挂载',
+            icon: "save",
             group: '存储',
             widget: 'text',
             help: 'docker run -v，宿主机路径:容器路径[:ro|rw]',
@@ -399,6 +460,7 @@
           }),
           readOnlyRoot: configurable(false, {
             label: '根文件系统只读',
+            icon: "lock",
             group: '存储',
             widget: 'checkbox',
             help: 'docker run --read-only，容器根目录挂载为只读',
@@ -407,6 +469,7 @@
           }),
           tmpfs: configurable(['/tmp'], {
             label: 'tmpfs 挂载',
+            icon: "memory",
             group: '存储',
             widget: 'text',
             help: 'docker run --tmpfs，内存临时文件系统',
@@ -414,6 +477,7 @@
           }),
           volumeDriver: configurable('local', {
             label: '卷驱动',
+            icon: "database",
             group: '存储',
             widget: 'select',
             help: 'docker run --volume-driver',
@@ -424,12 +488,13 @@
             ],
             order: 23
           })
-        },
+        },{icon:"storage", label:"存储"}),
 
         // —— 环境变量 ——
-        env: {
+        env: configurable({
           vars: configurable(['NODE_ENV=production', 'TZ=Asia/Shanghai'], {
             label: '环境变量',
+            icon: "data_object",
             group: '环境',
             widget: 'text',
             help: 'docker run -e KEY=VALUE',
@@ -440,18 +505,22 @@
           }),
           envFile: configurable('', {
             label: '环境变量文件',
+            icon: "description",
             group: '环境',
             widget: 'text',
             help: 'docker run --env-file，从文件批量读取变量',
             placeholder: '.env',
             order: 31
           })
-        },
+        },{
+            icon:"list_alt", label:"环境变量"
+        }),
 
         // —— 资源限制 ——
-        resource: {
+        resource: configurable({
           memory: configurable(512, {
             label: '内存限制 (MB)',
+            icon: "memory",
             group: '资源',
             widget: 'number',
             help: 'docker run -m，容器可用内存上限（MB）',
@@ -464,6 +533,7 @@
           }),
           cpus: configurable(1, {
             label: 'CPU 限额',
+            icon: "developer_board",
             group: '资源',
             widget: 'number',
             help: 'docker run --cpus，允许使用的 CPU 核数',
@@ -476,6 +546,7 @@
           }),
           shmSize: configurable(64, {
             label: '/dev/shm 大小 (MB)',
+            icon: "sd_card",
             group: '资源',
             widget: 'number',
             help: 'docker run --shm-size',
@@ -486,6 +557,7 @@
           }),
           cpuShares: configurable(1024, {
             label: 'CPU 权重',
+            icon: "equalizer",
             group: '资源',
             widget: 'number',
             help: 'docker run --cpu-shares，相对权重（默认 1024）',
@@ -494,12 +566,15 @@
             step: 2,
             order: 43
           })
-        },
+        },{
+            icon:"speed", label:"资源限制"
+        }),
 
         // —— 运行行为 ——
-        runtime: {
+        runtime: configurable({
           detach: configurable(true, {
             label: '后台运行',
+            icon: "visibility_off",
             group: '运行',
             widget: 'checkbox',
             help: 'docker run -d，以守护进程方式运行',
@@ -508,6 +583,7 @@
           }),
           interactive: configurable(false, {
             label: '交互模式',
+            icon: "keyboard",
             group: '运行',
             widget: 'checkbox',
             help: 'docker run -i，保持标准输入打开',
@@ -516,6 +592,7 @@
           }),
           tty: configurable(false, {
             label: '伪终端',
+            icon: "terminal",
             group: '运行',
             widget: 'checkbox',
             help: 'docker run -t，分配伪 TTY',
@@ -524,6 +601,7 @@
           }),
           rm: configurable(true, {
             label: '退出后自动删除',
+            icon: "delete_sweep",
             group: '运行',
             widget: 'checkbox',
             help: 'docker run --rm，容器退出后自动删除',
@@ -532,6 +610,7 @@
           }),
           restartPolicy: configurable('no', {
             label: '重启策略',
+            icon: "restart_alt",
             group: '运行',
             widget: 'select',
             help: 'docker run --restart',
@@ -543,12 +622,13 @@
             ],
             order: 54
           })
-        },
+        },{icon:"play_circle", label:"运行时"}),
 
         // —— 安全与日志 ——
-        security: {
+        security: configurable({
           privileged: configurable(false, {
             label: '特权模式',
+            icon: "admin_panel_settings",
             group: '安全',
             widget: 'checkbox',
             help: 'docker run --privileged，授予全部 Linux 能力（慎用）',
@@ -557,6 +637,7 @@
           }),
           user: configurable('', {
             label: '运行用户',
+            icon: "person",
             group: '安全',
             widget: 'text',
             help: 'docker run -u，如 root、1000:1000、appuser',
@@ -565,6 +646,7 @@
           }),
           capAdd: configurable(['NET_ADMIN'], {
             label: '新增能力',
+            icon: "add_moderator",
             group: '安全',
             widget: 'text',
             help: 'docker run --cap-add，如 NET_ADMIN、SYS_TIME',
@@ -572,6 +654,7 @@
           }),
           capDrop: configurable(['ALL'], {
             label: '移除能力',
+            icon: "remove_moderator",
             group: '安全',
             widget: 'text',
             help: 'docker run --cap-drop，如 ALL',
@@ -579,6 +662,7 @@
           }),
           logDriver: configurable('json-file', {
             label: '日志驱动',
+            icon: "receipt_long",
             group: '日志',
             widget: 'select',
             help: 'docker run --log-driver',
@@ -593,6 +677,7 @@
           }),
           logMaxSize: configurable('10m', {
             label: '日志文件上限',
+            icon: "straighten",
             group: '日志',
             widget: 'text',
             help: 'docker run --log-opt max-size',
@@ -603,6 +688,7 @@
           }),
           logMaxFile: configurable(3, {
             label: '日志文件数量',
+            icon: "format_list_numbered",
             group: '日志',
             widget: 'number',
             help: 'docker run --log-opt max-file',
@@ -611,7 +697,205 @@
             step: 1,
             order: 72
           })
-        }
+        },{icon:"security", label:"安全与日志"})
+      })
+
+      // 创建示例 7：widget 控件一览（编辑控件由 schema.widget 决定，ADR-0023）
+      const store7 = new AutoStore({
+        // —— 文本家族 ——
+        text: {
+          plain: configurable('AutoStore', {
+            label: '文本',
+            widget: 'text',
+            help: '标准单行输入框（required：清空后控件下方实时显示红色错误）',
+            placeholder: '请输入文本',
+            required: true,
+          }),
+          email: configurable('user@example.com', {
+            label: '邮箱',
+            widget: 'email',
+            help: '邮箱输入框 + validate 校验',
+            validate: (val) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val),
+            errorMessage: '{label}格式无效',
+          }),
+          password: configurable('secret', { label: '密码', widget: 'password', help: '密码输入框' }),
+          url: configurable('https://autostore.run', { label: '网址', widget: 'url', help: 'URL 输入框' }),
+          multiline: configurable('第一行\n第二行', {
+            label: '多行文本',
+            widget: 'textarea',
+            help: '多行文本域：Enter 换行，输入合法 JSON 即生效（本组为普通文本即时写入）',
+            rows: 4,
+            maxLength: 200,
+          }),
+        },
+
+        // —— 数值与日期家族 ——
+        value: {
+          count: configurable(8, {
+            label: '数量',
+            widget: 'number',
+            help: '数字输入框（min/max/step 原生透传）',
+            min: 1,
+            max: 100,
+            step: 1,
+          }),
+          volume: configurable(0.6, { label: '音量', widget: 'range', help: '滑块', min: 0, max: 1, step: 0.1 }),
+          theme: configurable('#3b82f6', { label: '主题色', widget: 'color', help: '颜色选择器' }),
+          birthday: configurable('2000-01-01', { label: '生日', widget: 'date', help: '日期选择器' }),
+          alarm: configurable('08:30', { label: '闹钟', widget: 'time', help: '时间选择器' }),
+          meeting: configurable('2026-01-01T09:00', { label: '会议', widget: 'datetime-local', help: '日期时间选择器' }),
+          month: configurable('2026-01', { label: '月份', widget: 'month', help: '月份选择器' }),
+          week: configurable('2026-W01', { label: '周数', widget: 'week', help: '周选择器' }),
+        },
+
+        // —— 选项家族 ——
+        choice: {
+          lang: configurable('ts', {
+            label: '语言',
+            widget: 'select',
+            help: '下拉单选（候选项来自 choices，写回保留 value 原类型）',
+            choices: [
+              { label: 'TypeScript', value: 'ts' },
+              { label: 'JavaScript', value: 'js' },
+              { label: 'Python', value: 'py' },
+            ],
+          }),
+          tags: configurable(['ts', 'go'], {
+            label: '技术栈',
+            widget: 'select',
+            help: '下拉多选（multiple，值为所选 value 数组）',
+            multiple: true,
+            choices: [
+              { label: 'TypeScript', value: 'ts' },
+              { label: 'JavaScript', value: 'js' },
+              { label: 'Go', value: 'go' },
+              { label: 'Rust', value: 'rust' },
+            ],
+          }),
+          level: configurable('mid', {
+            label: '级别',
+            widget: 'radio',
+            help: '单选按钮组',
+            choices: [
+              { label: '初级', value: 'junior' },
+              { label: '中级', value: 'mid' },
+              { label: '高级', value: 'senior' },
+            ],
+          }),
+          shell: configurable('zsh', {
+            label: '默认 Shell',
+            widget: 'combobox',
+            help: '输入框 + datalist 候选项（可自由输入亦可选择）',
+            choices: ['bash', 'zsh', 'fish', 'pwsh'],
+          }),
+          mode: configurable('on', {
+            label: '开关',
+            widget: 'checkbox',
+            help: '带双值选项对的复选框（勾选=on / 取消=off）',
+            choices: [
+              { label: '开', value: 'on' },
+              { label: '关', value: 'off' },
+            ],
+          }),
+          agree: configurable(false, { label: '同意条款', widget: 'checkbox', help: '普通 boolean 复选框' }),
+        },
+
+        // —— 校验演示 ——
+        valid: {
+          requiredField: configurable('', {
+            label: '必填字段',
+            widget: 'text',
+            help: 'required：确认为空值时控件下方显示红色错误，修正后错误隐藏',
+            required: true,
+          }),
+          rangeField: configurable(5, {
+            label: '范围字段',
+            widget: 'number',
+            help: 'validate：1~10 之外实时显示红色错误且暂不写入',
+            validate: (val) => val >= 1 && val <= 10,
+            errorMessage: '{label}须在 1 ~ 10 之间',
+          }),
+        },
+
+        // —— 回落演示 ——
+        fallback: {
+          unknown: configurable('x', {
+            label: '未知 widget',
+            widget: 'cron',
+            help: '未注册的 widget 一律回落为标准文本输入框',
+          }),
+          hidden: configurable('y', { label: 'hidden', widget: 'hidden', help: 'hidden 无编辑意义，回落文本输入框' }),
+        },
+
+        // —— 对象整体编辑 ——
+        plainObject: configurable({
+          note: '本对象无 configurable 成员',
+          tips: '双击本行即进入 JSON 整体编辑（textarea）',
+          ok: true,
+        },{label:"简单对象"}),
+        withConfigurable: {
+          note: configurable('对象含 configurable 成员', { label: '说明' }),
+          extra: 'configurable 容器同样渲染子节点，整容器与各成员均可编辑',
+        },
+        collapsedContainer: configurable(
+          { host: 'localhost', port: 8080, debug: false },
+          {
+            label: '服务器配置',
+            help: 'configurable 容器：子节点正常渲染，整容器双击进入 JSON 整体编辑',
+          }
+        ),
+        iconDemo: configurable('home', {
+          label: '自定义图标',
+          widget: 'text',
+          icon: 'home',
+          help: 'schema.icon=home 不在内置库：自动经 icon-url 从 iconify 批量拉取（图标演示详见 Icons 图标 tab）',
+        }),
+        // —— 值渲染钩子（toView / toRender，ADR-0025）——
+        toViewDemo: configurable('重要', {
+          label: '自定义查看',
+          widget: 'text',
+          help: 'toView 返回 HTML 字符串：查看态渲染为红色加粗，双击仍进入标准编辑器',
+          toView: (val) => `<b style="color:#dc2626">${val}</b>`,
+        }),
+        toRenderDemo: configurable('hello', {
+          label: '自定义编辑',
+          help: 'toRender 替代默认编辑器：自定义控件自理写回（直接改 store，即时生效）',
+          toRender: (value) => html`<input
+            class="edit-input"
+            .value=${value}
+            @input=${(e) => {
+              store7.state.toRenderDemo = e.target.value
+            }}
+          />`,
+        }),
+      })
+
+      // 创建示例 8：图标注册链演示（slot 自定义 > 内置 > icon-url 拉取，ADR-0024）
+      const store8 = new AutoStore({
+        // ① slot 自定义图标引用（custom-user/custom-box 由 viewer8 的 template slot=icons 提供）
+        user: configurable('张三', {
+          label: '用户',
+          icon: 'custom-user',
+          help: 'schema.icon 引用 slot 自定义图标',
+        }),
+        box: configurable(['a', 'b'], {
+          label: '容器',
+          icon: 'custom-box',
+          help: '容器节点同样支持 schema.icon',
+        }),
+        // ③ iconify 批量拉取：四个未知名渲染时攒批合并为一次请求
+        home: configurable('首页', { label: '首页', icon: 'home', help: 'iconify 拉取' }),
+        star: configurable('收藏', { label: '收藏', icon: 'star', help: 'iconify 拉取（与相邻未知名合并为一次批量请求）' }),
+        settings: configurable('偏好', { label: '设置', icon: 'settings', help: 'iconify 拉取' }),
+        lock: configurable('锁定', { label: '安全', icon: 'lock', help: 'iconify 拉取' }),
+        // ④ not_found 负缓存：回落类型图标显示
+        ghost: configurable('幽灵项', {
+          label: '不存在图标',
+          icon: 'this-icon-does-not-exist',
+          help: 'iconify 无此图标：负缓存，回落类型图标显示',
+        }),
+        // ② 覆盖内置：object/array 图标被 viewer8 的 slot 同名覆盖（同心圆/圆角方块）
+        plain: { a: 1, b: [true, false] },
       })
 
       // 绑定到各个 viewer
@@ -620,6 +904,8 @@
       document.getElementById('viewer3').store = store3
       document.getElementById('viewer5').store = store5
       document.getElementById('viewer6').store = store6
+      document.getElementById('viewer7').store = store7
+      document.getElementById('viewer8').store = store8
 
       // store-id 绑定依赖全局注册表（WeakRef 不阻止 GC），挂到全局保持 store4 存活
       globalThis.__DEMO_STORE__ = store4
