@@ -1,6 +1,6 @@
 import type { TemplateResult } from 'lit'
 import type { TreeNode } from '../types'
-import type { EditorPlan } from '../edit-plan'
+import type { EditorPlan } from '../features/edit-plan'
 
 // 受控编辑接口：widgets 与自定义 toRender 经此读写编辑状态机的对外面，
 // 不可绕过状态机直改内部字段（ADR-0026）
@@ -26,6 +26,9 @@ export interface WidgetRenderContext {
   schema: Record<string, any>
   plan: EditorPlan
   node: TreeNode
+  // 编辑控件原生 name（schema.name 非空串优先，否则完整 store 路径）；
+  // radio 不消费此值（原生 name 承载互斥组名）；查看态构造点不提供
+  name?: string
   setValue(v: any): void
   onKeydown(e: KeyboardEvent): void
   editor?: WidgetEditorControl

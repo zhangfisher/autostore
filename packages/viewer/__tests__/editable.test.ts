@@ -1,6 +1,6 @@
 import { test, expect } from 'bun:test'
 import { AutoStore } from 'autostore'
-import { Editable } from '../src/editable'
+import { Editable } from '../src/features/editable'
 import { joinPath } from '../src/utils/joinPath'
 import type { TreeNode } from '../src/types'
 
@@ -55,15 +55,16 @@ const makeEditable = (tree: TreeNode[], schemas: Record<string, any> = {}, st: a
     for (const p of path) obj = obj?.[p]
     return obj
   }
-  return new Editable(
-    { requestUpdate: () => {} },
+  return new Editable({
+    requestUpdate: () => {},
     getStateByPath,
-    () => st,
-    findNext,
-    getNode,
-    (path) => schemas[joinPath(path)],
-    (path) => synced.push([...path]),
-  )
+    getStore: () => st,
+    findNextEditable: findNext,
+    findNodeByPath: getNode,
+    getSchemaByPath: (path) => schemas[joinPath(path)],
+    syncNode: (path) => synced.push([...path]),
+    getEditInput: () => null,
+  })
 }
 
 // 叶子编辑测试工厂：每个测试独立 store，避免即时写入互相污染

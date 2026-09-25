@@ -128,6 +128,7 @@ export type SchemaChoices = SchemaChoiceItem[] | (() => SchemaChoiceItem[] | Pro
  * AutoStateSchema 基础接口（不包含 widget 特定配置）
  */
 export interface AutoStateSchemaBase<Value = any> {
+    
     value: Value;
     /**
      * 配置项控件类型
@@ -143,7 +144,7 @@ export interface AutoStateSchemaBase<Value = any> {
     /**
      * 配置项名称
      * 一般是英文名称，用于渲染表单名称
-     * 如果没有指定，默认等于路径的最后一个节点，如path=["order","price"],则name=price
+     * 如果没有指定，缺省形态由消费方决定（如 viewer 编辑控件用完整路径，form 用路径最后一个节点）
      */
     name?: string;
     /**
@@ -152,6 +153,15 @@ export interface AutoStateSchemaBase<Value = any> {
      * 默认值等于name
      */
     label?: string;
+    /**
+     * 值前缀装饰：展示在值文本前（如 "$"、"¥"），不属于值本身——状态值与写回值均为裸值
+     * （viewer 消费为纯展示拼接；form 文本系的同名键是拼接实现，语义分野见各消费方）
+     */
+    prefix?: string;
+    /**
+     * 值后缀装饰：展示在值文本后（如 "ms"、"MB"、"%"），不属于值本身——状态值与写回值均为裸值
+     */
+    suffix?: string;
     /**
      * 配置项帮助信息
      */
@@ -221,7 +231,7 @@ export interface AutoStateSchemaBase<Value = any> {
     /**
      * 分组名称
      */
-    group?: string;
+    group?: string | SchemaGroup
     /**
      * 是否是高级选项
      */
@@ -411,3 +421,7 @@ export type ConfigurableState<Store extends AutoStore<any>, Prefix extends strin
         ExtractWidgetFromBuilder<GetTypeByPath<StoreRawStateType<Store>, Key>>
     >;
 };
+
+
+
+export type SchemaGroup={name:string,title?:string,icon?:string,order?:number};

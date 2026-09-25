@@ -59,13 +59,29 @@ _Avoid_: JSON 编辑（那是形态不是规则）、批量编辑（那是跨节
 查看器节点图标的解析顺序：**slot 自定义 > 内置 > icon-url 拉取**。同名时自定义覆盖内置；未知名经 icon-url 模板批量拉取（一次请求多个，`not_found` 与请求失败均负缓存——会话内不重试，节点回落类型图标）。`schema.icon` 是节点身份视觉，不受 disable-schema 开关影响。icon-modify 仅给远程请求名追加风格后缀（home → home-outline），引用名不变。
 _Avoid_: 图标下载、图标热替换（拉取结果注册后即与内置同权，非运行时替换机制）
 
+**特性（Feature）**:
+viewer 组件内一个可独立命名的关注点（图标链、store 绑定、树、列宽测量、编辑交互、toast、菜单开合……），一特性一文件一控制器，生命周期（挂载/卸载/更新）自治。特性经窄宿主接口（XxxHost）消费宿主与兄弟能力，不知晓彼此实现。渲染不是特性——它是组件本体的表意层，留在壳。
+_Avoid_: 模块（太泛）、插件（widgets/ 的可注册扩展点才是插件形态）、服务（无依赖注入语义）
+
 **编辑模式（Edit Modes）**:
-查看器的三态编辑模式：**view**（只读）/ **click-edit**（双击值或点编辑按钮进入，单状态机管理）/ **edit**（叶子成员常驻编辑控件）。edit 常驻的值写回走**根事件委托**（控件不绑节点级监听），校验链与 click-edit 状态机共用；容器保持双击 JSON 整体编辑；常驻叶子的值类更新冻结树刷新，blur 不退出。
+查看器的三态编辑模式：**view**（只读）/ **click-edit**（双击值或点编辑按钮进入，单状态机管理）/ **edit**（叶子成员常驻编辑控件）。edit 常驻的值写回走**根事件委托**（控件不绑节点级监听），校验链与 click-edit 状态机共用；容器保持双击 JSON 整体编辑；常驻叶子的值类更新冻结树刷新，blur 不退出。编辑态的内置表单控件自动携带原生 `name`：`schema.name`（非空字符串）优先，否则用与行 data-path 同源的完整 store 路径；radio 以互斥组名优先（豁免）；编辑链路整体不受 disable-schema 门控（同 schema.icon 待遇），schema.toRender 自定义控件自理。
 _Avoid_: 行内编辑（click-edit 与 edit 都是行内形态，模式名不描述形态）
+
+**渲染模式（Render Modes）**:
+查看器子树的两态渲染策略：**full**（默认）——全部节点常驻 DOM，折叠仅以 grid 行高收起（`1fr→0fr` 过渡）并 `inert` 封锁交互，编辑中输入/焦点随折叠保留；**lazy**——优化开关，维持「展开渲染、折叠自 DOM 移除」，**折叠与 full→lazy 切换丢弃未提交编辑**是其固有契约而非缺陷。`mode=edit` 恒为 full（显声明 lazy 被忽略并警告）；动画时长经 CSS 变量控制（设 0 即关闭）。
+_Avoid_: 虚拟渲染、按需渲染（是 lazy 的机制描述而非模式名）
 
 **值渲染钩子（Value Renderers）**:
 查看器对 schema.toView/toRender 的渲染契约：**toView 管看、toRender 管改**——查看态 toView(value) 替代默认文本（优先于 choices 标签与格式化），编辑态 toRender(value) 替代默认编辑控件，值写回由自定义控件自理。返回三态（lit 模板 / HTML 字符串 / Node），受 disable-schema 门控，抛错回落默认渲染。widget=color/checkbox 有内置默认查看渲染（色块 / 只读勾选框）。
 _Avoid_: 自定义组件（toRender 是值级渲染钩子，非组件注册机制）
+
+**值装饰（Value Affix）**:
+`schema.prefix`/`schema.suffix` 声明的值文本前后展示装饰（`¥5000`、`512 MB`），**不属于值本身**——状态值与编辑写回均为裸值。查看态只拼裸值层（toView 自定义渲染、choices 标签、range 迷你滑轨/color 色块等既有视图不拼）；编辑态在编辑外壳与控件并排显示；值为空不拼；受 disable-schema 门控（展示词汇家族，同 label/help）。form 文本系的同名键是拼接实现（状态值拼含前后缀、显示时剥离）——同名分野，语义以各消费方注释为准。
+_Avoid_: 单位字段（单位进值）、form 前后缀拼接（那是 form 的值转换语义，值含装饰）
+
+**Action（动作）**:
+schema 声明的、附着在字段/节点上的**用户可触发操作**，三形态：button（按钮）/ dropdown（下拉菜单，items 含 "-" 分割线）/ image（图片按钮）。是「action 保留给上层概念」的那个正名——区别于 Operate（状态原子变更的事件载荷）：action 是交互入口，点击后经 `ctx.update` 产生 Operate。`onClick(value, ctx)` 的 value 是节点当前**状态值**（非输入值、非显示值）；`visible` 控制渲染、`enable` 控制可点（顶层与菜单项同语义）；悬停提示正名是 **tooltip**。点击同时派发 **`action` DOM 事件**（先于 onClick、cancelable 可拦截，detail={path, value, action}——path 与行 data-path 同源的完整 store 路径）。
+_Avoid_: 操作（那是 Operate）、事件 handler（那是回调机制）
 
 **Cron 方言（Cron Dialect）**:
 `@autostorejs/form` cron widget 编辑的定制 cron 表达式：默认 **6 字段 `分 时 日 月 周 年`**，秒字段由配置属性启用（启用后为 7 字段 `秒 分 时 日 月 周 年`），表达式格式恒定，不因秒/年是否启用而增删字段。

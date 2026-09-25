@@ -12,14 +12,33 @@
       }
       body {
         font-family: system-ui, -apple-system, sans-serif;
-        padding: 24px;
+        min-height: 100vh;
         background: #f5f5f5;
         color: #333;
       }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 220px;
+        padding: 24px 16px;
+        overflow-y: auto;
+        background: white;
+        border-right: 1px solid #e5e7eb;
+      }
+      .sidebar h1 { margin-bottom: 24px; font-size: 1.2em; }
+      .content {
+        min-width: 0;
+        margin-left: 220px;
+        padding: 24px;
+      }
+      @media (max-width: 760px) {
+        .sidebar { width: 180px; padding: 20px 10px; }
+        .content { margin-left: 180px; padding: 16px; }
+      }
       @media (prefers-color-scheme: dark) {
         body { background: #1a1a1a; color: #e5e5e5; }
+        .sidebar { background: #2a2a2a; border-right-color: #374151; }
       }
-      h1 { margin-bottom: 20px; }
 
       /* 显示选项控制面板 */
       .controls {
@@ -48,21 +67,20 @@
       /* TABS 导航 */
       .tabs {
         display: flex;
+        flex-direction: column;
         gap: 4px;
-        border-bottom: 1px solid #e5e7eb;
-        margin-bottom: 0;
-        flex-wrap: wrap;
       }
       .tab {
+        width: 100%;
         appearance: none;
         border: 1px solid transparent;
-        border-bottom: none;
         background: transparent;
         color: inherit;
         font: inherit;
         font-size: 0.95em;
-        padding: 10px 18px;
-        border-radius: 8px 8px 0 0;
+        padding: 10px 12px;
+        border-radius: 8px;
+        text-align: left;
         cursor: pointer;
         opacity: 0.7;
       }
@@ -70,23 +88,19 @@
       .tab.active {
         opacity: 1;
         font-weight: 600;
-        background: white;
+        background: #f3f4f6;
         border-color: #e5e7eb;
-        /* 用白色背景盖住容器上边框，形成选中态 */
-        position: relative;
-        top: 1px;
       }
       @media (prefers-color-scheme: dark) {
-        .tabs { border-bottom-color: #374151; }
         .tab:hover { background: rgba(255, 255, 255, 0.06); }
-        .tab.active { background: #2a2a2a; border-color: #374151; }
+        .tab.active { background: #374151; border-color: #4b5563; }
       }
 
       /* TABS 面板 */
       .tab-panel {
         display: none;
         background: white;
-        border-radius: 0 12px 12px 12px;
+        border-radius: 12px;
         padding: 20px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
@@ -103,68 +117,80 @@
     </style>
   </head>
   <body>
-    <h1>AutoStore Viewer 演示</h1>
+    <aside class="sidebar">
+      <h1>AutoStore Viewer 演示</h1>
+      <nav class="tabs" role="tablist" aria-orientation="vertical">
+        <button class="tab active" role="tab" aria-selected="true" data-panel="panel-basic">基础对象</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-computed">计算属性</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-func">函数与 markRaw</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-store-id">store-id 绑定</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-store">store 属性绑定</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-docker">Docker 命令行参数</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-widgets">Widget 控件一览</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-icons">Icons 图标</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-actions">Actions 节点动作</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-entry">Entry 子树</button>
+      </nav>
+    </aside>
 
-    <!-- 显示选项控制面板 -->
-    <div class="controls">
-      <span class="controls-label">显示选项：</span>
-      <label><input type="checkbox" id="ctl-count" checked /> 子节点数量</label>
-      <label><input type="checkbox" id="ctl-hint" checked /> {...} / [...] 标识</label>
-      <label><input type="checkbox" id="ctl-computed" /> 计算属性</label>
-      <label>
-        编辑模式：
-        <select id="ctl-mode">
-          <option value="view" selected>view（只读）</option>
-          <option value="click-edit">click-edit（点击编辑）</option>
-          <option value="edit">edit（常驻编辑）</option>
-        </select>
-      </label>
-      <label><input type="checkbox" id="ctl-allow-delete" /> 允许删除</label>
-      <label><input type="checkbox" id="ctl-disable-schema" /> 禁用 Schema 显示</label>
-      <label>
-        icon-modify：
-        <select id="ctl-icon-modify">
-          <option value="" selected>默认（无）</option>
-          <option value="rounded">rounded</option>
-          <option value="sharp">sharp</option>
-          <option value="outline">outline</option>
-          <option value="outline-rounded">outline-rounded</option>
-          <option value="outline-sharp">outline-sharp</option>
-        </select>
-      </label>
-      <label>
-        value 对齐：
-        <select id="ctl-value-align">
-          <option value="left" selected>Left</option>
-          <option value="right">Right</option>
-        </select>
-      </label>
-      <label>
-        网格线：
-        <select id="ctl-grid">
-          <option value="0" selected>无</option>
-          <option value="1">水平线</option>
-          <option value="2">垂直线</option>
-          <option value="3">水平+垂直</option>
-        </select>
-      </label>
-      <label><input type="checkbox" id="ctl-grid-band" /> key 列背景带</label>
-      <label><input type="checkbox" id="ctl-root-bg" /> 根级分组背景</label>
-      <label>key 列宽上限：<input type="number" id="ctl-max-key-width" value="240" min="40" step="10" style="width: 5em" /> px</label>
-    </div>
+    <main class="content">
+      <!-- 显示选项控制面板 -->
+      <div class="controls">
+        <span class="controls-label">显示选项：</span>
+        <label><input type="checkbox" id="ctl-count" checked /> 子节点数量</label>
+        <label><input type="checkbox" id="ctl-hint" checked /> {...} / [...] 标识</label>
+        <label><input type="checkbox" id="ctl-computed" /> 计算属性</label>
+        <label>
+          编辑模式：
+          <select id="ctl-mode">
+            <option value="view" selected>view（只读）</option>
+            <option value="click-edit">click-edit（点击编辑）</option>
+            <option value="edit">edit（常驻编辑）</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="ctl-allow-delete" /> 允许删除</label>
+        <label><input type="checkbox" id="ctl-disable-schema" /> 禁用 Schema 显示</label>
+        <label>
+          节点动作：
+          <select id="ctl-show-actions">
+            <option value="0">0（隐藏）</option>
+            <option value="1" selected>1（悬停显示）</option>
+            <option value="2">2（始终显示）</option>
+          </select>
+        </label>
+        <label>
+          icon-modify：
+          <select id="ctl-icon-modify">
+            <option value="" selected>默认（无）</option>
+            <option value="rounded">rounded</option>
+            <option value="sharp">sharp</option>
+            <option value="outline">outline</option>
+            <option value="outline-rounded">outline-rounded</option>
+            <option value="outline-sharp">outline-sharp</option>
+          </select>
+        </label>
+        <label>
+          value 对齐：
+          <select id="ctl-value-align">
+            <option value="left" selected>Left</option>
+            <option value="right">Right</option>
+          </select>
+        </label>
+        <label>
+          网格线：
+          <select id="ctl-grid">
+            <option value="0" selected>无</option>
+            <option value="1">水平线</option>
+            <option value="2">垂直线</option>
+            <option value="3">水平+垂直</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="ctl-grid-band" /> key 列背景带</label>
+        <label><input type="checkbox" id="ctl-root-bg" /> 根级分组背景</label>
+        <label>key 列宽上限：<input type="number" id="ctl-max-key-width" value="240" min="40" step="10" style="width: 5em" /> px</label>
+      </div>
 
-    <div class="tabs" role="tablist">
-      <button class="tab active" role="tab" aria-selected="true" data-panel="panel-basic">基础对象</button>
-      <button class="tab" role="tab" aria-selected="false" data-panel="panel-computed">计算属性</button>
-      <button class="tab" role="tab" aria-selected="false" data-panel="panel-func">函数与 markRaw</button>
-      <button class="tab" role="tab" aria-selected="false" data-panel="panel-store-id">store-id 绑定</button>
-      <button class="tab" role="tab" aria-selected="false" data-panel="panel-store">store 属性绑定</button>
-      <button class="tab" role="tab" aria-selected="false" data-panel="panel-docker">Docker 命令行参数</button>
-      <button class="tab" role="tab" aria-selected="false" data-panel="panel-widgets">Widget 控件一览</button>
-      <button class="tab" role="tab" aria-selected="false" data-panel="panel-icons">Icons 图标</button>
-    </div>
-
-    <section class="tab-panel active" id="panel-basic">
+      <section class="tab-panel active" id="panel-basic">
       <p class="info">展示嵌套对象、数组、字符串、数字、布尔等基本类型</p>
       <autostore-viewer id="viewer1"></autostore-viewer>
     </section>
@@ -190,12 +216,12 @@
     </section>
 
     <section class="tab-panel" id="panel-docker">
-      <p class="info">state 为 docker run 命令行参数，按功能分组；每个配置项均使用 configurable() 声明 schema（label / group / widget / choices / 校验 / icon 等），全部 31 个图标经 icon-url 从 iconify 批量拉取（仅一次合并请求）；本 viewer 设置 icon-modify="outline"，请求名自动追加 -outline 后缀（schema.icon 引用名不变），可用控制面板切换风格对比</p>
+      <p class="info">state 为 docker run 命令行参数，按功能分组；每个配置项均使用 configurable() 声明 schema（label / group / widget / choices / 校验 / icon / 值装饰 prefix·suffix 等），全部 31 个图标经 icon-url 从 iconify 批量拉取（仅一次合并请求）；本 viewer 设置 icon-modify="outline"，请求名自动追加 -outline 后缀（schema.icon 引用名不变），可用控制面板切换风格对比</p>
       <autostore-viewer id="viewer6" icon-modify="outline"></autostore-viewer>
     </section>
 
     <section class="tab-panel" id="panel-widgets">
-      <p class="info">各 widget 的编辑控件演示（需将控制面板「编辑模式」切到 click-edit 或 edit；Schema 显示默认生效，可勾选「禁用 Schema 显示」对比）：click-edit 下双击值进入编辑，编辑即时生效写入状态（无确认/取消）；值无效时控件下方实时显示红色错误且暂不写入，修正后自动写入并隐藏；Enter 前进到下一个可编辑节点；编辑在所有节点上生效——所有对象/数组容器（plainObject、withConfigurable、collapsedContainer、各分组）双击即进入 JSON 整体编辑，configurable 容器同样正常渲染子节点；edit 模式下叶子成员常驻编辑控件，Enter 在控件间转移焦点</p>
+      <p class="info">各 widget 的编辑控件演示（需将控制面板「编辑模式」切到 click-edit 或 edit；Schema 显示默认生效，可勾选「禁用 Schema 显示」对比）：click-edit 下双击值或按住 1 秒进入编辑（按住期间松开/移开/再按下即取消），编辑即时生效写入状态（无确认/取消）；值无效时控件下方实时显示红色错误且暂不写入，修正后自动写入并隐藏；Enter 前进到下一个可编辑节点；编辑在所有节点上生效——所有对象/数组容器（plainObject、withConfigurable、collapsedContainer、各分组）双击或按住 1 秒即进入 JSON 整体编辑，configurable 容器同样正常渲染子节点；edit 模式下叶子成员常驻编辑控件，Enter 在控件间转移焦点</p>
       <autostore-viewer id="viewer7"></autostore-viewer>
     </section>
 
@@ -212,6 +238,40 @@
         </template>
       </autostore-viewer>
     </section>
+
+    <section class="tab-panel" id="panel-actions">
+      <p class="info">schema.actions 节点动作演示（悬停行显示按钮组；动作渲染在 node-tools 内、位于内置删除工具之前，两组并存且有删除工具渲染时有细分隔线；动作不受「禁用 Schema 显示」门控，「节点动作」下拉（show-actions：0=隐藏 / 1=悬停显示（默认）/ 2=始终显示）是其唯一显隐开关）：① 计数器 —— 仅 label 的动作渲染为小文字按钮，仅 icon 的动作（restart_alt 经 icon-url 从 iconify 拉取）渲染为图标按钮；onClick 收到 value=当前状态值，ctx.update(v) 写回该路径，树即时刷新；② enable=false 渲染但置灰不可点，visible=false 完全不渲染，icon 与 label 都无的动作跳过渲染（console 有 warn）；③ 主题 —— dropdown 形态（items 含 "-" 分割线、菜单项带图标、caret 显示下拉箭头、syncMenu 选中后把该项回写到触发按钮），菜单项 onClick 以该项为 ctx.action；④ 状态 —— image 形态（url 渲染为图片按钮，点击写回）；⑤ 服务器 —— 容器节点同样支持 actions（重置整个对象）。每次点击同时派发 'action' 自定义事件（bubbles+composed 穿透 shadow、cancelable）：detail = { path, value, action }，path 与行 data-path 同源；勾选「拦截事件」后 preventDefault 拦截，onClick 不再执行</p>
+      <div style="margin-bottom: 8px; display: flex; gap: 16px; align-items: center; font-size: 0.9em">
+        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
+          <input type="checkbox" id="ctl-intercept-action" /> 拦截事件（preventDefault，onClick 不执行）
+        </label>
+        <span style="color: #6b7280">最近事件 detail：</span>
+      </div>
+      <autostore-viewer id="viewer9"></autostore-viewer>
+      <pre id="action-events" style="margin-top: 8px; padding: 8px 12px; background: rgba(127,127,127,0.08); border-radius: 6px; font-size: 0.8em; white-space: pre-wrap; min-height: 1.2em">（点击任一动作按钮，此处显示最近派发的 action 事件 detail）</pre>
+    </section>
+
+    <section class="tab-panel" id="panel-entry">
+      <p class="info">entrys 子树入口（与示例 1 同一 store 实例）：默认空 = 渲染整个 state；逗号分割多个状态路径（单路径 splitPath 语法：点分隔、支持数组下标与 a\.b 转义），如 entrys="orders.1,user.name"——各入口子树按声明序平铺在顶层：容器为隐式根（入口行不出现，expand-depth 各自重计），叶子渲染单行，行 data-path 恒为绝对路径；任一入口路径无效则整体显示提示态且不回落全树；位于其它入口子树内的入口被自动吞并（同路径行不重复）；root-bg 根级分组判定随入口移动（入口顶层分组行生效）；全部入口之外的 store 变更不重渲染，入口路径被删除或整体替换时自动重建（入口消亡落入提示态）</p>
+      <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px; font-size: 0.9em; flex-wrap: wrap;">
+        <label>entrys：
+          <select id="ctl-entry-preset">
+            <option value="" selected>（空 = 整个 state）</option>
+            <option value="user">user（单入口：容器）</option>
+            <option value="user.address">user.address（单入口：嵌套容器）</option>
+            <option value="user.firstName">user.firstName（单入口：叶子）</option>
+            <option value="user.address,meta.tags">user.address,meta.tags（多容器）</option>
+            <option value="user.firstName,user.age,meta.version">user.firstName,user.age,meta.version（多叶子）</option>
+            <option value="user.address,user.hobbies.1">user.address,user.hobbies.1（容器+数组下标叶子）</option>
+            <option value="user,user.address">user,user.address（嵌套入口被吞并 = 仅 user）</option>
+            <option value="meta.tags.0,no.such.path">meta.tags.0,no.such.path（部分无效）</option>
+          </select>
+        </label>
+        <label>自定义：<input type="text" id="ctl-entry-input" placeholder="逗号分割路径，如 user.address,meta.tags" style="width: 20em; padding: 4px 8px; border: 1px solid #e5e7eb; border-radius: 4px;" /></label>
+      </div>
+      <autostore-viewer id="viewer10"></autostore-viewer>
+    </section>
+    </main>
 
     <script>
       // TABS 切换
@@ -234,6 +294,7 @@
       const ctlMode = document.getElementById('ctl-mode')
       const ctlAllowDelete = document.getElementById('ctl-allow-delete')
       const ctlDisableSchema = document.getElementById('ctl-disable-schema')
+      const ctlShowActions = document.getElementById('ctl-show-actions')
       const ctlIconModify = document.getElementById('ctl-icon-modify')
       const ctlValueAlign = document.getElementById('ctl-value-align')
       const ctlGrid = document.getElementById('ctl-grid')
@@ -248,6 +309,7 @@
           viewer.mode = ctlMode.value
           viewer.allowDelete = ctlAllowDelete.checked
           viewer.disableSchema = ctlDisableSchema.checked
+          viewer.showActions = ctlShowActions.value
           // 仅影响后续新拉取的图标（已注册/负缓存不变，ADR-0024）
           viewer.iconModify = ctlIconModify.value
           viewer.valueAlign = ctlValueAlign.value
@@ -257,7 +319,7 @@
           viewer.maxKeyWidth = Number(ctlMaxKeyWidth.value) || 240
         })
       }
-      ;[ctlCount, ctlHint, ctlComputed, ctlMode, ctlAllowDelete, ctlDisableSchema, ctlIconModify, ctlValueAlign, ctlGrid, ctlGridBand, ctlRootBg, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
+      ;[ctlCount, ctlHint, ctlComputed, ctlMode, ctlAllowDelete, ctlDisableSchema, ctlShowActions, ctlIconModify, ctlValueAlign, ctlGrid, ctlGridBand, ctlRootBg, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
     </script>
 
     <script type="module" src="../src/autostore-viewer.ts"></script>
@@ -546,11 +608,12 @@
         // —— 资源限制 ——
         resource: configurable({
           memory: configurable(512, {
-            label: '内存限制 (MB)',
+            label: '内存限制',
             icon: "memory",
             group: '资源',
             widget: 'number',
-            help: 'docker run -m，容器可用内存上限（MB）',
+            suffix: ' MB',
+            help: 'docker run -m，容器可用内存上限——suffix 为值装饰：拼在值文本后，不属于值本身',
             min: 64,
             max: 16384,
             step: 64,
@@ -563,6 +626,7 @@
             icon: "developer_board",
             group: '资源',
             widget: 'number',
+            suffix: ' 核',
             help: 'docker run --cpus，允许使用的 CPU 核数',
             min: 0.1,
             max: 64,
@@ -572,11 +636,12 @@
             order: 41
           }),
           shmSize: configurable(64, {
-            label: '/dev/shm 大小 (MB)',
+            label: '/dev/shm 大小',
             icon: "sd_card",
             group: '资源',
             widget: 'number',
-            help: 'docker run --shm-size',
+            suffix: ' MB',
+            help: 'docker run --shm-size——同 memory：单位由 suffix 值装饰呈现',
             min: 16,
             max: 2048,
             step: 16,
@@ -718,7 +783,8 @@
             icon: "format_list_numbered",
             group: '日志',
             widget: 'number',
-            help: 'docker run --log-opt max-file',
+            suffix: ' 个',
+            help: 'docker run --log-opt max-file——suffix 量词装饰',
             min: 1,
             max: 100,
             step: 1,
@@ -765,6 +831,14 @@
             min: 1,
             max: 100,
             step: 1,
+          }),
+          budget: configurable(5000, {
+            label: '预算',
+            widget: 'number',
+            prefix: '¥',
+            help: '值装饰 prefix/suffix：纯展示拼接在值文本前后，不属于值本身（编辑写回裸值）',
+            min: 0,
+            step: 100,
           }),
           volume: configurable(0.6, { label: '音量', widget: 'range', help: '滑块', min: 0, max: 1, step: 0.1 }),
           theme: configurable('#3b82f6', { label: '主题色', widget: 'color', help: '颜色选择器' }),
@@ -937,14 +1011,117 @@
         plain: { a: 1, b: [true, false] },
       })
 
+      // 创建示例 9：schema.actions 节点动作（ADR-0030）
+      // onClick 契约：value = 节点当前状态值，ctx.update(v) 经 Proxy 写回该路径（树自动刷新）
+      const store9 = new AutoStore({
+        // ① button 形态空回落四档：icon+label（翻倍，label 只作悬停兜底）/ 仅 label（加一减一，小文字按钮）/
+        //    仅 icon（重置，restart_alt 经 iconify 拉取）/ 都无（空动作跳过 + console warn）
+        counter: configurable(42, {
+          label: '计数器',
+          suffix: ' 次',
+          help: '悬停本行：node-tools 内渲染 schema.actions 声明的动作；suffix 值装饰与节点动作并存互不干扰',
+          actions: [
+            { label: '加一', tooltip: 'value 加一：onClick 收到当前状态值，ctx.update 写回', onClick: (value, ctx) => ctx.update(value + 1) },
+            { label: '减一', onClick: (value, ctx) => ctx.update(value - 1) },
+            { icon: 'restart-alt', tooltip: '重置为 0（仅 icon：图标经 icon-url 拉取）', onClick: (_value, ctx) => ctx.update(0) },
+            { icon: 'bolt', label: '翻倍', tooltip: 'icon+label：渲染为图标按钮，label 仅作悬停兜底', onClick: (value, ctx) => ctx.update(value * 2) },
+            { label: '禁用操作', enable: false, tooltip: 'enable=false：渲染但置灰不可点' },
+            { label: '隐藏操作', visible: false },
+            { tooltip: 'icon 与 label 都无：跳过渲染（见 console warn）' },
+          ],
+        }),
+
+        // ③ dropdown 形态：items 含 "-" 分割线与菜单项图标、caret 下拉箭头、
+        //    syncMenu 选中后把该项 label/icon 回写触发按钮；菜单项 onClick 以该项为 ctx.action
+        theme: configurable('深色', {
+          label: '主题',
+          widget: 'text',
+          actions: [
+            {
+              type: 'dropdown',
+              label: '切换主题',
+              tooltip: 'dropdown 形态：菜单项点击以该项为 ctx.action',
+              caret: true,
+              syncMenu: true,
+              items: [
+                { label: '浅色', icon: 'light_mode', onClick: (_v, ctx) => ctx.update('浅色') },
+                { label: '深色', icon: 'dark_mode', onClick: (_v, ctx) => ctx.update('深色') },
+                '-',
+                { label: '跟随系统', icon: 'auto_mode', enable: false, tooltip: '菜单项 enable=false 同语义置灰' },
+              ],
+            },
+          ],
+        }),
+
+        // ④ image 形态：url 渲染为图片按钮（尺寸与图标一致），点击写回
+        status: configurable('运行中', {
+          label: '状态',
+          actions: [
+            {
+              type: 'image',
+              url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23dc2626" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>',
+              label: '停止',
+              tooltip: 'image 形态：点击停止运行',
+              onClick: (_value, ctx) => ctx.update('已停止'),
+            },
+          ],
+        }),
+
+        // ⑤ 容器节点同样支持 actions：重置整个对象
+        server: configurable(
+          { host: '192.168.1.10', port: 8080, debug: true },
+          {
+            label: '服务器',
+            help: '容器节点的 actions：update 写回整个对象',
+            actions: [
+              {
+                label: '重置配置',
+                tooltip: '重置为默认值（对象整体写回）',
+                onClick: (_value, ctx) => ctx.update({ host: 'localhost', port: 8080, debug: false }),
+              },
+            ],
+          }
+        ),
+      })
+
       // 绑定到各个 viewer
       document.getElementById('viewer1').store = store1
+      // entrys 子树入口演示（ADR-0029）：与 viewer1 同一 store 实例，仅入口不同；
+      // 预设下拉与自定义输入双通道，取值互相同步（自定义值不在预设中时下拉回落空选项）
+      const viewer10 = document.getElementById('viewer10')
+      viewer10.store = store1
+      const ctlEntryPreset = document.getElementById('ctl-entry-preset')
+      const ctlEntryInput = document.getElementById('ctl-entry-input')
+      const applyEntry = (value) => {
+        viewer10.entrys = value
+        ctlEntryPreset.value = ctlEntryPreset.querySelector(`option[value="${value}"]`) ? value : ''
+        ctlEntryInput.value = value
+      }
+      ctlEntryPreset.addEventListener('change', () => applyEntry(ctlEntryPreset.value))
+      ctlEntryInput.addEventListener('change', () => applyEntry(ctlEntryInput.value.trim()))
       document.getElementById('viewer2').store = store2
       document.getElementById('viewer3').store = store3
       document.getElementById('viewer5').store = store5
       document.getElementById('viewer6').store = store6
       document.getElementById('viewer7').store = store7
       document.getElementById('viewer8').store = store8
+      document.getElementById('viewer9').store = store9
+
+      // 'action' 自定义事件监听演示（ADR-0030）：bubbles+composed 穿透 shadow，
+      // 外部（light DOM 层）直接 addEventListener 即可收到；
+      // detail = { path, value, action }，path 与行 data-path 同源；
+      // 勾选「拦截事件」后 preventDefault，onClick 不再执行（cancelable）
+      const actionEvents = document.getElementById('action-events')
+      const ctlIntercept = document.getElementById('ctl-intercept-action')
+      document.getElementById('viewer9').addEventListener('action', (e) => {
+        const { path, value, action } = e.detail
+        actionEvents.textContent = JSON.stringify(
+          { path, value, action: { label: action.label, type: action.type ?? 'button' } },
+          null,
+          2,
+        )
+        if (ctlIntercept.checked) e.preventDefault()
+      })
 
       // store-id 绑定依赖全局注册表（WeakRef 不阻止 GC），挂到全局保持 store4 存活
       globalThis.__DEMO_STORE__ = store4

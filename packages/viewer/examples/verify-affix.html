@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>value affix probe</title></head>
+  <body>
+    <pre id="result">PENDING</pre>
+    <script type="module">
+      window.addEventListener('error', (e) => {
+        document.getElementById('result').textContent = 'FAIL window: ' + e.message
+      })
+      const { AutoStore, schema } = await import('autostore')
+      await import('../src/autostore-viewer.ts')
+      const out = []
+      const check = (name, cond) => out.push((cond ? 'PASS ' : 'FAIL ') + name)
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      const valueText = (root, path) =>
+        root.shadowRoot.querySelector(`.tree-node[data-path="${path}"] .node-value`)?.textContent ?? ''
+      const affixText = (root, path) =>
+        Array.from(root.shadowRoot.querySelectorAll(`.tree-node[data-path="${path}"] .asv-affix`))
+          .map((el) => el.textContent).join('|')
+      try {
+        const store = new AutoStore({
+          price: schema(9.9, { prefix: '¥' }),
+          timeout: schema(500, { suffix: 'ms' }),
+          empty: schema('', { prefix: '¥', suffix: 'ms' }),
+          mode: schema('fast', { choices: [{ label: '快速', value: 'fast' }, { label: '慢速', value: 'slow' }], suffix: 'ms' }),
+          ratio: schema(0.6, { widget: 'range', min: 0, max: 1, step: 0.1, suffix: '%' }),
+        }, { configManager: true })
+        // 查看态：formatValue 裸值层拼装
+        const v = document.createElement('autostore-viewer')
+        v.expandDepth = 5
+        v.mode = 'click-edit'
+        v.store = store
+        document.body.appendChild(v)
+        await wait(500)
+        check('查看态 prefix → ¥ 9.9', valueText(v, 'price').includes('¥') && valueText(v, 'price').includes('9.9'))
+        check('查看态 suffix → 500ms', valueText(v, 'timeout').includes('500') && valueText(v, 'timeout').includes('ms'))
+        check('choices 标签替换后不拼（快速，无 ms）', valueText(v, 'mode') === '快速')
+        check('空值不拼（empty 行无 ¥）', !valueText(v, 'empty').includes('¥'))
+        check('range 查看态迷你滑轨不拼（无 %）', !valueText(v, 'ratio').includes('%'))
+        // click-edit 编辑态：shell 层包裹（装饰与控件并排）
+        let row = v.shadowRoot.querySelector('.tree-node[data-path="price"] .node-value')
+        row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(200)
+        check('click-edit 编辑态 → shell 包裹 ¥', affixText(v, 'price') === '¥')
+        const input = v.shadowRoot.querySelector('.tree-node[data-path="price"] input')
+        check('click-edit 编辑态 → 控件值保持裸值', input?.value === '9.9')
+        input.dispatchEvent(new Event('blur'))
+        await wait(100)
+        // edit 常驻链：双字段 + 空值不进装饰
+        const v2 = document.createElement('autostore-viewer')
+        v2.mode = 'edit'
+        v2.expandDepth = 5
+        v2.store = store
+        document.body.appendChild(v2)
+        await wait(500)
+        check('edit 常驻 prefix → ¥', affixText(v2, 'price') === '¥')
+        check('edit 常驻 suffix → ms', affixText(v2, 'timeout') === 'ms')
+        check('edit 常驻空值不拼', affixText(v2, 'empty') === '')
+        // disable-schema 门控：查看态与编辑态装饰均消失（展示词汇家族）
+        const v3 = document.createElement('autostore-viewer')
+        v3.mode = 'edit'
+        v3.expandDepth = 5
+        v3.disableSchema = true
+        v3.store = store
+        document.body.appendChild(v3)
+        await wait(500)
+        check('disable-schema 查看态不拼', !valueText(v3, 'price').includes('¥'))
+        check('disable-schema 编辑态不拼', affixText(v3, 'price') === '')
+      } catch (e) {
+        out.push('FAIL 异常: ' + e.message)
+      }
+      document.getElementById('result').textContent = out.join('\n')
+    </script>
+  </body>
+</html>

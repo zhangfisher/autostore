@@ -23,6 +23,8 @@ viewer 引入 `grid` 属性（`'0' | '1' | '2' | '3'`，默认 `'0'`）为树提
 
 定位不采用 JS 测量（曾议：渲染后读首行 `node-value.getBoundingClientRect().left`——需挂接列宽测量时序并在 `maxKeyWidth`/数据变化时重测），而用 `calc` 直接拼出线位（`20px 缩进 + 展开图标 + 4 + 类型图标 + 6 + var(--viewer-key-width) - 2`——线画在 label 右缘左 2px 处，与 value 文本保持 8px 间距），随列宽 CSS 变量自动更新，零测量零时序。测量经 rAF 于首次 paint 前完成，无初始闪现。代价：calc 中的布局常量与 `.tree-node`/`.node-label` 样式联动（样式处已加注释互指）。
 
+> **决策三修订（value 全局对齐，2026-09-25）**：上段「深层行 value 左缘逐层右移、接受偏差」被推翻——需求变更为**所有 node-value 全局对齐**。缩进几何演进第四版：`.node-label` 宽度随深度反向补偿（`width: calc(var(--viewer-key-width) - var(--row-depth) × (indent-size - 8px))`），「缩进 + 标签」总宽恒定 = 全局列宽，value/edit 控件起点不随行深漂移；列宽测量需求同步按「缩进 + 标签」总宽计（`_measureLabelWidth` 收集 depth、累加 depth×步进），最深行不截断。垂直线 calc 锚定随之修正为**恒定 value 起点**（行 padding 8 + 图标们 + 列宽 + 标签右间距 6 − 1em），与各行 value 一致对齐，不再锚定「一级子行」近似。未测量时 `--viewer-key-width` 未定义，calc 声明 IACVE 回落前一条 `width: auto`。right 模式的高特异性覆盖声明不变。
+
 ## 决策四：伪元素 underlay，不覆盖内容
 
 垂直线载体为 `.tree-container::before`（不加真实 DOM）：`top:0; left:0; height:100%`，宽度铺至 value 左缘，`border-right` 画线。`.tree-container` 建立 `position:relative; z-index:0` 层叠上下文，伪元素 `z-index:-1`——线画在行内容（文字/控件/hover 高亮）之下，永不遮挡。
@@ -33,9 +35,9 @@ viewer 引入 `grid` 属性（`'0' | '1' | '2' | '3'`，默认 `'0'`）为树提
 
 ## 决策六：grid-band key 列背景带
 
-布尔属性 `grid-band` 启用后为垂直线伪元素追加 `background-color: var(--viewer-grid-band-bg)`（默认 `color-mix(in srgb, var(--viewer-hover-bg) 90%, transparent)`），key 列区域呈 hover 色淡底高亮带。约束：
+布尔属性 `grid-band` 启用后 key 列区域呈淡底高亮带（`background-color: var(--viewer-grid-band-bg)`，默认 `color-mix(in srgb, var(--viewer-hover-bg) 90%, transparent)`）。约束：
 
-- **载体复用**：背景铺在垂直线伪元素上（同 underlay 层叠，不覆盖行内容）；`grid=0/1` 无伪元素载体，属性天然失效，无需额外门控。
+- **与垂直线解耦**：背景带在**任意 grid 值**（含 0/1 无垂直线）下均显示——初版把背景挂在垂直线伪元素上（仅 grid=2/3 有载体），后按需求重构为三规则各司其职：载体几何（grid-band 或 grid=2/3 任一启用即渲染 underlay 伪元素）、背景（仅 grid-band）、右缘描边（仅 grid=2/3），条件组合天然正交。
 - **变量化**：底色经 `--viewer-grid-band-bg` 暴露，暗色模式 `--viewer-hover-bg` 被覆盖时 color-mix 结果自动跟随，无需暗色分支。
 - Boolean 属性走 CSS attr 门控（`:host([grid-band])`），故 `reflect: true`（JS 属性赋值须同步到 attribute 才能驱动样式）。
 

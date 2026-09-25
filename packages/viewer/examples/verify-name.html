@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>name injection probe</title></head>
+  <body>
+    <pre id="result">PENDING</pre>
+    <script type="module">
+      const { AutoStore, schema } = await import('autostore')
+      await import('../src/autostore-viewer.ts')
+      const out = []
+      const check = (name, cond) => out.push((cond ? 'PASS ' : 'FAIL ') + name)
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      const inputName = (root, path, sel = 'input') =>
+        root.shadowRoot.querySelector(`.tree-node[data-path="${path}"] ${sel}`)?.getAttribute('name')
+      try {
+        const store = new AutoStore({
+          network: {
+            dhcp: schema('on', { name: 'dhcp-mode' }),
+            note: schema('x', { widget: 'textarea' }),
+            proto: schema('a', { widget: 'radio', choices: ['a', 'b'] }),
+            host: 'plain',
+          },
+          list: ['x'],
+        }, { configManager: true })
+        // click-edit 链：无 schema 路径兜底 / schema.name 优先
+        const v = document.createElement('autostore-viewer')
+        v.expandDepth = 5
+        v.mode = 'click-edit'
+        v.store = store
+        document.body.appendChild(v)
+        await wait(500)
+        let row = v.shadowRoot.querySelector('.tree-node[data-path="network.host"] .node-value')
+        row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(200)
+        check('click-edit 无 schema → name=完整路径', inputName(v, 'network.host') === 'network.host')
+        const hostInput = v.shadowRoot.querySelector('.tree-node[data-path="network.host"] input')
+        hostInput.dispatchEvent(new Event('blur'))
+        await wait(100)
+        row = v.shadowRoot.querySelector('.tree-node[data-path="network.dhcp"] .node-value')
+        row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(200)
+        check('click-edit schema.name → name=dhcp-mode', inputName(v, 'network.dhcp') === 'dhcp-mode')
+        // edit 常驻链：schema.name / 路径兜底 / 数组下标 / radio 豁免
+        const v2 = document.createElement('autostore-viewer')
+        v2.mode = 'edit'
+        v2.expandDepth = 5
+        v2.store = store
+        document.body.appendChild(v2)
+        await wait(500)
+        check('edit 常驻 schema.name → name=dhcp-mode', inputName(v2, 'network.dhcp') === 'dhcp-mode')
+        check('edit 常驻无 schema → name=network.host', inputName(v2, 'network.host') === 'network.host')
+        check('数组下标 → name=list.0', inputName(v2, 'list.0') === 'list.0')
+        const radioName = inputName(v2, 'network.proto')
+        check('radio 豁免 → name 为分组名（非空且不写字段路径）', (radioName ?? '') !== '' && radioName !== 'network.proto')
+        // Q5B：disable-schema 下 name 与 widget 决策旁路（toRender 门控不在此测）
+        const v3 = document.createElement('autostore-viewer')
+        v3.mode = 'edit'
+        v3.expandDepth = 5
+        v3.disableSchema = true
+        v3.store = store
+        document.body.appendChild(v3)
+        await wait(500)
+        check('disable-schema 下 name 仍取 schema.name', inputName(v3, 'network.dhcp') === 'dhcp-mode')
+        check('disable-schema 下 widget 决策旁路（textarea 渲染）',
+          v3.shadowRoot.querySelector('.tree-node[data-path="network.note"] textarea') != null)
+        // entrys 入口前缀：name 与 data-path 同源（完整 store 路径）
+        const v4 = document.createElement('autostore-viewer')
+        v4.mode = 'edit'
+        v4.entrys = 'network'
+        v4.store = store
+        document.body.appendChild(v4)
+        await wait(500)
+        check('entrys 前缀 → name=network.host', inputName(v4, 'network.host') === 'network.host')
+      } catch (e) {
+        out.push('FAIL 异常: ' + e.message)
+      }
+      document.getElementById('result').textContent = out.join('\n')
+    </script>
+  </body>
+</html>

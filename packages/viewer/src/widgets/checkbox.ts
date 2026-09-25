@@ -1,7 +1,7 @@
 // checkbox widget：查看态只读勾选框（disabled 不灰化）+ 编辑态双值档位勾选
 // 勾选框旁文案（checkLabel/choices 当前项/switchValues 当前值）两态同源，均经 resolveCheckLabel 决策
 import { html, nothing, type TemplateResult } from 'lit'
-import { resolvePair, resolveCheckLabel } from '../edit-plan'
+import { resolvePair, resolveCheckLabel } from '../features/edit-plan'
 import type { WidgetModule, WidgetRenderContext } from './types'
 
 // 勾选态判定：双值档位（choices/switchValues 恰两项）时勾选 ≡ 值等于第一项 value，
@@ -25,7 +25,7 @@ export function toView(ctx: WidgetRenderContext): TemplateResult {
 
 // 编辑态：双值档位（勾选≡第一项 value）；无档位则 boolean 开关
 export function toRender(ctx: WidgetRenderContext): TemplateResult {
-  const { plan, setValue, onKeydown } = ctx
+  const { plan, setValue, onKeydown, name } = ctx
   const onValue = plan.pair ? plan.pair[0].value : true
   const label = resolveCheckLabel(ctx.value, ctx.schema)
   // label 包裹：编辑容器为纵向 flex，勾选框与文案需横排成行（点文案亦可切换勾选）
@@ -33,6 +33,7 @@ export function toRender(ctx: WidgetRenderContext): TemplateResult {
     <input
       class="edit-input"
       type="checkbox"
+      name=${name ?? nothing}
       ?disabled=${plan.props.disabled}
       tabindex=${plan.props.tabIndex ?? nothing}
       ?checked=${ctx.value === onValue}

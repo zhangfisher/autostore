@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>refactor probe</title></head>
+  <body>
+    <pre id="result">PENDING</pre>
+    <script type="module">
+      const { AutoStore } = await import('autostore')
+      await import('../src/autostore-viewer.ts')
+      const store = new AutoStore({ nested: { level1: { level2: { deep: 'x' } }, other: 1 } })
+      const out = []
+      const check = (name, cond) => out.push((cond ? 'PASS ' : 'FAIL ') + name)
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      try {
+        const v = document.createElement('autostore-viewer')
+        v.expandDepth = 5
+        v.store = store
+        document.body.appendChild(v)
+        await wait(500)
+        const kw = getComputedStyle(v).getPropertyValue('--viewer-key-width').trim()
+        out.push('DEBUG key-width=' + kw)
+        check('列宽测量已执行（key-width 为具体 px）', /^\d+(\.\d+)?px$/.test(kw))
+        // grid=2 环境同场对照
+        v.setAttribute('grid', '2')
+        await wait(200)
+        const kw2 = getComputedStyle(v).getPropertyValue('--viewer-key-width').trim()
+        out.push('DEBUG key-width(grid2)=' + kw2)
+        // rAF 是否在本环境触发
+        let rafFired = false
+        requestAnimationFrame(() => { rafFired = true })
+        await wait(300)
+        check('requestAnimationFrame 已触发', rafFired)
+        // store 写入 → 树增量更新链路
+        store.state.nested.other = 2
+        await wait(300)
+        const row = v.shadowRoot.querySelector('.tree-node[data-path="nested.other"] .node-value')
+        check('watch 增量更新渲染（other=2）', row?.textContent === '2')
+        // 双击进入编辑（click-edit 链路：editable 控制器 + 树定位）
+        v.mode = 'click-edit'
+        await wait(100)
+        row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(200)
+        const input = v.shadowRoot.querySelector('.tree-node[data-path="nested.other"] input')
+        check('双击进入编辑（编辑器渲染）', input != null)
+        input.value = '42'
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        await wait(200)
+        check('编辑写回 store（other=42）', store.state.nested.other === 42)
+        // edit 常驻模式委托链路
+        const v2 = document.createElement('autostore-viewer')
+        v2.mode = 'edit'
+        v2.expandDepth = 5
+        v2.store = new AutoStore({ a: { b: 'x', n: 1, flag: true } })
+        document.body.appendChild(v2)
+        await wait(400)
+        const nInput = v2.shadowRoot.querySelector('.tree-node[data-path="a.n"] input')
+        nInput.value = '99'
+        nInput.dispatchEvent(new Event('input', { bubbles: true }))
+        await wait(200)
+        check('edit 常驻委托写回（a.n=99）', v2.store.state.a.n === 99)
+        // entrys 子树
+        const v3 = document.createElement('autostore-viewer')
+        v3.entrys = 'nested.level1'
+        v3.store = store
+        document.body.appendChild(v3)
+        await wait(400)
+        const sub = v3.shadowRoot.querySelector('.tree-node[data-path="nested.level1.level2.deep"]')
+        check('entrys 子树渲染（绝对路径行存在）', sub != null)
+        const v4 = document.createElement('autostore-viewer')
+        v4.entrys = 'not.exists'
+        v4.store = store
+        document.body.appendChild(v4)
+        await wait(300)
+        check('entrys 无效整体提示态', v4.shadowRoot.querySelector('.loading')?.textContent?.includes('not.exists') === true)
+      } catch (e) {
+        out.push('FAIL 异常: ' + e.message)
+      }
+      document.getElementById('result').textContent = out.join('\n')
+    </script>
+  </body>
+</html>

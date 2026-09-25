@@ -1,5 +1,5 @@
 import { test, expect } from 'bun:test'
-import { buildIconsUrl, parseIconsResponse, IconsRegistry } from '../src/icons-registry'
+import { buildIconsUrl, parseIconsResponse, IconsRegistry } from '../src/features/icons-registry'
 
 // 等待攒批定时器与异步 flush 完成
 const tick = () => new Promise((resolve) => setTimeout(resolve, 20))

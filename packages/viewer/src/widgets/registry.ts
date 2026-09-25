@@ -3,6 +3,7 @@
 import type { WidgetModule } from './types'
 import { inputModule } from './input'
 import { colorModule } from './color'
+import { rangeModule } from './range'
 import { checkboxModule } from './checkbox'
 import { textareaModule } from './textarea'
 import { selectModule } from './select'
@@ -22,7 +23,7 @@ const MODULES: Record<string, WidgetModule> = {
   time: inputModule,
   week: inputModule,
   color: colorModule,
-  range: inputModule,
+  range: rangeModule,
   file: inputModule,
   combobox: inputModule,
   hidden: inputModule,

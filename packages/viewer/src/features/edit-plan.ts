@@ -1,4 +1,4 @@
-import type { TreeNode } from './types'
+import type { TreeNode } from '../types'
 
 // widget→控件决策与候选项规范化（纯函数，无渲染依赖）
 // 决策链见 ADR-0023：schema.widget 显式声明优先；容器未声明 widget 时为 JSON 整体编辑；

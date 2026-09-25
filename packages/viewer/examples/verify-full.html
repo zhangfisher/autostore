@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>render-mode probe (ADR-0032)</title></head>
+  <body>
+    <pre id="result">PENDING</pre>
+    <script type="module">
+      const { AutoStore } = await import('autostore')
+      await import('../src/autostore-viewer.ts')
+      const out = []
+      const check = (name, cond) => out.push((cond ? 'PASS ' : 'FAIL ') + name)
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      const clickRow = (v, path) =>
+        v.shadowRoot.querySelector(`.tree-node[data-path="${path}"]`).dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      try {
+        // ---- 场景一：full 默认（全折叠态子树常驻 DOM + inert + 塌缩） ----
+        const v = document.createElement('autostore-viewer')
+        v.expandDepth = 0
+        v.store = new AutoStore({ a: { b: { c: 1 } } })
+        document.body.appendChild(v)
+        await wait(400)
+        check('full 默认：折叠深层行常驻 DOM', v.shadowRoot.querySelector('.tree-node[data-path="a.b.c"]') != null)
+        const box = v.shadowRoot.querySelector('.tree-node[data-path="a"] + .node-children')
+        check('折叠容器 collapsed class', box?.classList.contains('collapsed') === true)
+        check('折叠容器 inert 封锁', box.hasAttribute('inert') === true)
+        check('折叠容器塌缩（高度 0）', box.offsetHeight === 0)
+        check('折叠容器内层包裹存在', box.querySelector('.node-children-inner') != null)
+        check('动画时长变量默认 200ms', getComputedStyle(v).getPropertyValue('--viewer-collapse-duration').trim() === '200ms')
+
+        // ---- 场景二：展开（class/inert/高度翻转） ----
+        clickRow(v, 'a')
+        await wait(500)
+        const box2 = v.shadowRoot.querySelector('.tree-node[data-path="a"] + .node-children')
+        check('展开后 class 翻转 expanded', box2.classList.contains('expanded') === true)
+        check('展开后 inert 移除', box2.hasAttribute('inert') === false)
+        check('展开后高度 > 0', box2.offsetHeight > 0)
+        check('展开不动画污染嵌套折叠子容器', v.shadowRoot.querySelector('.tree-node[data-path="a.b"] + .node-children')?.classList.contains('collapsed') === true)
+
+        // ---- 场景三：运行时切换 full→lazy→full ----
+        v.renderMode = 'lazy'
+        await wait(300)
+        check('full→lazy：折叠子树自 DOM 移除', v.shadowRoot.querySelector('.tree-node[data-path="a.b.c"]') == null)
+        check('full→lazy：展开子树保留', v.shadowRoot.querySelector('.tree-node[data-path="a.b"]') != null)
+        v.renderMode = 'full'
+        await wait(400)
+        check('lazy→full：折叠子树补渲染', v.shadowRoot.querySelector('.tree-node[data-path="a.b.c"]') != null)
+
+        // ---- 场景四：lazy 模式（折叠不渲染 + 展开补建） ----
+        const v2 = document.createElement('autostore-viewer')
+        v2.renderMode = 'lazy'
+        v2.expandDepth = 0
+        v2.store = new AutoStore({ a: { b: { c: 1 } } })
+        document.body.appendChild(v2)
+        await wait(400)
+        check('lazy：折叠子树不在 DOM', v2.shadowRoot.querySelector('.tree-node[data-path="a.b"]') == null)
+        check('lazy：无折叠容器（维持移除策略）', v2.shadowRoot.querySelector('.node-children') == null)
+        clickRow(v2, 'a')
+        await wait(400)
+        check('lazy：展开后子树出现', v2.shadowRoot.querySelector('.tree-node[data-path="a.b"]') != null)
+        check('lazy：展开容器无 inert', v2.shadowRoot.querySelector('.tree-node[data-path="a"] + .node-children')?.hasAttribute('inert') === false)
+
+        // ---- 场景五：edit 强制 full（禁止组合警告 + 折叠常驻） ----
+        let warned = 0
+        const origWarn = console.warn
+        console.warn = (...args) => { if (String(args[0]).includes('render-mode')) warned++; origWarn(...args) }
+        const v3 = document.createElement('autostore-viewer')
+        v3.mode = 'edit'
+        v3.renderMode = 'lazy'
+        v3.expandDepth = 0
+        v3.store = new AutoStore({ a: { n: 1 } })
+        document.body.appendChild(v3)
+        await wait(400)
+        console.warn = origWarn
+        check('edit+lazy 禁止组合警告已发出', warned >= 1)
+        check('edit 强制 full：折叠子树常驻 DOM', v3.shadowRoot.querySelector('.tree-node[data-path="a.n"]') != null)
+
+        // ---- 场景六：inert 焦点封锁 ----
+        const hiddenInput = v3.shadowRoot.querySelector('.tree-node[data-path="a.n"] input')
+        check('edit 强制 full：折叠区常驻编辑控件', hiddenInput != null)
+        hiddenInput.focus()
+        await wait(100)
+        check('inert 封锁焦点（不可聚焦）', !hiddenInput.matches(':focus'))
+
+        // ---- 场景七：click-edit 折叠重展开不回显旧快照（缺陷 1 修复） ----
+        const v4 = document.createElement('autostore-viewer')
+        v4.mode = 'click-edit'
+        v4.expandDepth = 0
+        v4.store = new AutoStore({ a: { n: 1 } })
+        document.body.appendChild(v4)
+        await wait(400)
+        clickRow(v4, 'a')
+        await wait(400)
+        v4.shadowRoot.querySelector('.tree-node[data-path="a.n"] .node-value').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(200)
+        const inp = v4.shadowRoot.querySelector('.tree-node[data-path="a.n"] input')
+        check('click-edit 编辑器渲染', inp != null)
+        inp.value = '42'
+        inp.dispatchEvent(new Event('input', { bubbles: true }))
+        await wait(100)
+        clickRow(v4, 'a')
+        await wait(500)
+        // inert 的焦点逃逸不派发 focusout，编辑会话不退出：编辑器随折叠完整保留（ADR-0032 契约）
+        const foldedInput = v4.shadowRoot.querySelector('.tree-node[data-path="a.n"] input')
+        check('click-edit 折叠中编辑器保留', foldedInput != null)
+        clickRow(v4, 'a')
+        await wait(500)
+        const reopenedInput = v4.shadowRoot.querySelector('.tree-node[data-path="a.n"] input')
+        check('click-edit 重展开编辑会话保留（不回显旧快照）', reopenedInput === foldedInput && reopenedInput?.value === '42')
+
+        // ---- 场景八：edit 常驻折叠保留编辑控件与输入（缺陷 2 修复） ----
+        const v5 = document.createElement('autostore-viewer')
+        v5.mode = 'edit'
+        v5.expandDepth = 1
+        v5.store = new AutoStore({ grp: { x: 1, y: 2 } })
+        document.body.appendChild(v5)
+        await wait(400)
+        const editInput = v5.shadowRoot.querySelector('.tree-node[data-path="grp.x"] input')
+        check('edit 常驻控件渲染', editInput != null)
+        editInput.value = '99'
+        editInput.dispatchEvent(new Event('input', { bubbles: true }))
+        await wait(100)
+        check('edit 常驻写回 store', v5.store.state.grp.x === 99)
+        clickRow(v5, 'grp')
+        await wait(500)
+        const hiddenEdit = v5.shadowRoot.querySelector('.tree-node[data-path="grp.x"] input')
+        check('折叠中常驻编辑控件仍在 DOM', hiddenEdit != null)
+        out.push('DEBUG 折叠中控件值=' + (hiddenEdit?.value ?? 'null'))
+        clickRow(v5, 'grp')
+        await wait(500)
+        const reopenedEdit = v5.shadowRoot.querySelector('.tree-node[data-path="grp.x"] input')
+        check('重展开控件保留（DOM 未销毁）', reopenedEdit === hiddenEdit)
+        check('重展开输入保留（不回显编辑前旧值）', reopenedEdit?.value === '99')
+
+        // ---- 场景九：expandDepth 默认 2（ADR-0032：full 下仅控视觉首屏展开态） ----
+        const v6 = document.createElement('autostore-viewer')
+        v6.store = new AutoStore({ a: { b: { c: { d: 1 } } } })
+        document.body.appendChild(v6)
+        await wait(400)
+        check('默认展开 2 级（深度 0/1 展开）', v6.shadowRoot.querySelector('.tree-node[data-path="a"] + .node-children')?.classList.contains('expanded') === true)
+        check('默认第 3 级折叠（容器 collapsed）', v6.shadowRoot.querySelector('.tree-node[data-path="a.b.c"] + .node-children')?.classList.contains('collapsed') === true)
+        check('折叠深层行仍常驻（full 默认渲染范围）', v6.shadowRoot.querySelector('.tree-node[data-path="a.b.c.d"]') != null)
+      } catch (e) {
+        out.push('FAIL 异常: ' + e.message)
+      }
+      document.getElementById('result').textContent = out.join('\n')
+    </script>
+  </body>
+</html>

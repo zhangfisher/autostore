@@ -1,4 +1,4 @@
-import type { IconKey } from '../icons'
+import type { IconKey } from '../features/builtin-icons'
 import type { TreeNode } from '../types'
 
 // 根据节点类型获取图标键（考虑computed和markRaw）

@@ -1,15 +1,37 @@
 import { html, nothing } from 'lit'
-import type { TreeNode } from './types'
+import type { ReactiveController } from 'lit'
+import type { TreeNode } from '../types'
 import type { AutoStore } from 'autostore'
 import { resolveEditorPlan } from './edit-plan'
 import type { EditorPlan } from './edit-plan'
-import { computeValueError, convertValue, findItemRule, type ItemRule } from './utils/value-io'
-import type { WidgetRenderContext } from './widgets/types'
-import { getWidgetModule, getModuleByPlanKind } from './widgets/registry'
+import { computeValueError, convertValue, findItemRule, type ItemRule } from '../utils/value-io'
+import { joinPath } from '../utils/joinPath'
+import { resolveControlName } from '../utils/control-name'
+import { resolveAffix, renderAffixed } from '../utils/affix'
+import type { WidgetRenderContext } from '../widgets/types'
+import { getWidgetModule, getModuleByPlanKind } from '../widgets/registry'
 
-// 行内编辑器宿主接口：编辑状态变化时通知重渲染
+// 行内编辑器宿主接口（ADR-0031 特性控制器形态）：编辑状态变化时通知重渲染，
+// 并提供编辑会话所需的环境访问面（状态/树/schema 查询与聚焦控件查询）
 export interface EditableHost {
+  // 编辑状态变化时通知重渲染
   requestUpdate(): void
+  // 按路径读取 state 值
+  getStateByPath(path: string[]): any
+  // 获取当前绑定的 store
+  getStore(): AutoStore<any> | null
+  // 查找同级中当前节点之后的第一个可编辑节点（Enter 链式编辑用）
+  findNextEditable(node: TreeNode): TreeNode | null
+  // 按路径从树中查找节点（Enter 链式编辑时按编辑路径重新定位当前节点）
+  findNodeByPath(path: string[]): TreeNode | null
+  // 按路径读取 schema 元数据（widget 决策与校验规则来源）
+  getSchemaByPath(path: string[]): Record<string, any> | undefined
+  // 展示词汇门控源（值装饰等展示性读取用；禁用 schema 展示时恒为 undefined）
+  getDisplaySchemaByPath(path: string[]): Record<string, any> | undefined
+  // 退出编辑的路径回填（编辑期间树更新被冻结，退出时从 state 同步树节点）
+  syncNode(path: string[]): void
+  // 编辑器输入控件查询（进入编辑时聚焦/全选；宿主从渲染根查询，ADR-0031）
+  getEditInput(): HTMLInputElement | null
 }
 
 /**
@@ -29,10 +51,13 @@ export interface EditableHost {
  *   Esc 不拦截（无取消语义）
  * - 失焦：退出编辑（值已即时写入，退出仅回填树显示）
  *
- * 编辑期间该节点的树更新被宿主冻结（见 autostore-viewer 的 watch 回调），
- * 退出/链式切换时经 _syncNode 回填树，避免 store 自写入触发重渲染重置输入光标。
+ * 编辑期间该节点的树更新被宿主冻结（见宿主的 watch 回调），
+ * 退出/链式切换时经 syncNode 回填树，避免 store 自写入触发重渲染重置输入光标。
+ *
+ * 控制器化（ADR-0031）：经宿主接口注入环境访问面；hostUpdated 承接编辑聚焦管理
+ * （原宿主 updated() 内的 _focusedEditPath 块原样迁入）。
  */
-export class Editable {
+export class Editable implements ReactiveController {
   // 当前正在编辑的节点路径（null 表示非编辑状态）
   editingPath: string[] | null = null
 
@@ -61,35 +86,28 @@ export class Editable {
   private _editSeq = 0
 
   private _host: EditableHost
-  // 按路径读取 state 值
-  private _getStateByPath: (path: string[]) => any
-  // 获取当前绑定的 store
-  private _getStore: () => AutoStore<any> | null
-  // 查找同级中当前节点之后的第一个可编辑节点（Enter 链式编辑用）
-  private _findNextEditable: (node: TreeNode) => TreeNode | null
-  // 按路径从树中查找节点（Enter 链式编辑时按编辑路径重新定位当前节点）
-  private _findNodeByPath: (path: string[]) => TreeNode | null
-  // 按路径读取 schema 元数据（widget 决策与校验规则来源）
-  private _getSchemaByPath: (path: string[]) => Record<string, any> | undefined
-  // 退出编辑的路径回填（编辑期间树更新被冻结，退出时从 state 同步树节点）
-  private _syncNode: (path: string[]) => void
 
-  constructor(
-    host: EditableHost,
-    getStateByPath: (path: string[]) => any,
-    getStore: () => AutoStore<any> | null,
-    findNextEditable: (node: TreeNode) => TreeNode | null,
-    findNodeByPath: (path: string[]) => TreeNode | null,
-    getSchemaByPath: (path: string[]) => Record<string, any> | undefined,
-    syncNode: (path: string[]) => void,
-  ) {
+  // 已聚焦的编辑路径（仅路径变化时聚焦/全选，错误条等重渲染不得抢焦点）
+  private _focusedPath: string | null = null
+
+  constructor(host: EditableHost) {
     this._host = host
-    this._getStateByPath = getStateByPath
-    this._getStore = getStore
-    this._findNextEditable = findNextEditable
-    this._findNodeByPath = findNodeByPath
-    this._getSchemaByPath = getSchemaByPath
-    this._syncNode = syncNode
+  }
+
+  // 进入编辑状态时聚焦输入框并全选（仅路径变化时执行：
+  // 校验错误条渲染等重渲染不得抢焦点，也不得触发全选导致输入内容被整体替换）
+  hostUpdated(): void {
+    if (this.editingPath) {
+      const pathKey = joinPath(this.editingPath)
+      if (this._focusedPath !== pathKey) {
+        this._focusedPath = pathKey
+        const input = this._host.getEditInput()
+        input?.focus()
+        if (input && (input.type === 'text' || input.type === 'number')) input.select()
+      }
+    } else {
+      this._focusedPath = null
+    }
   }
 
   // 判断节点是否处于编辑状态
@@ -101,14 +119,14 @@ export class Editable {
   // 进入编辑状态：快照原值/原值类型/schema 并解析渲染方案
   // 链式切换（已有编辑路径）时先回填上一节点的树
   start(node: TreeNode): void {
-    if (this.editingPath) this._syncNode(this.editingPath)
+    if (this.editingPath) this._host.syncNode(this.editingPath)
     this.editValue = node.value
     this.editType = node.type
     this.editingPath = [...node.path]
     this.editOldValue = node.value
-    this.editSchema = this._getSchemaByPath(node.path)
+    this.editSchema = this._host.getSchemaByPath(node.path)
     this.editItemRule =
-      typeof this.editSchema?.validate === 'function' ? null : findItemRule(node.path, this._getSchemaByPath)
+      typeof this.editSchema?.validate === 'function' ? null : findItemRule(node.path, (p) => this._host.getSchemaByPath(p))
     this.editError = null
     this._editSeq++
     const groupId = `asv-edit-${this._editSeq}-${Math.random().toString(36).slice(2, 7)}`
@@ -128,7 +146,7 @@ export class Editable {
     this.editItemRule = null
     this.editPlan = null
     this.editError = null
-    this._syncNode(path)
+    this._host.syncNode(path)
     this._host.requestUpdate()
   }
 
@@ -160,8 +178,8 @@ export class Editable {
       // 当前值无效：不前进（错误保持显示）
       if (this.editError !== null) return
       const path = this.editingPath
-      const current = path ? this._findNodeByPath(path) : null
-      const next = current ? this._findNextEditable(current) : null
+      const current = path ? this._host.findNodeByPath(path) : null
+      const next = current ? this._host.findNextEditable(current) : null
       if (next) this.start(next)
     }
     // Esc 不拦截：即时生效模式无取消语义
@@ -174,9 +192,12 @@ export class Editable {
     const ctx = this._buildRenderContext(node)
     const module = getWidgetModule(this.editSchema?.widget) ?? getModuleByPlanKind(this.editPlan!.kind)
     const content = module.toRender!(ctx)
+    // 值装饰在 shell 层统一包裹（不侵入 widget 模块）；读门控源——与 widget 决策/name
+    // 走 editSchema（编辑旁路）分野，装饰属展示词汇家族（受 disable-schema 门控）
+    const affix = resolveAffix(this._host.getDisplaySchemaByPath(node.path), this.editOldValue)
     return html`
       <div class="edit-editor" @focusout=${(e: FocusEvent) => this._onFocusOut(e, node)}>
-        ${content}
+        ${renderAffixed(affix, content)}
         ${this.editError ? html`<div class="edit-error">${this.editError}</div>` : nothing}
       </div>
     `
@@ -191,6 +212,7 @@ export class Editable {
       schema: this.editSchema ?? {},
       plan: this.editPlan!,
       node,
+      name: resolveControlName(this.editSchema, node.path),
       setValue: (v) => this.setValue(v),
       onKeydown: (e) => this.onEditorKeydown(e),
       editor: {
@@ -235,10 +257,10 @@ export class Editable {
 
   // 写入 store：值已通过校验
   private _write(raw: any): void {
-    const store = this._getStore()
+    const store = this._host.getStore()
     const path = this.editingPath
     if (!store || !path) return
-    const parent = this._getStateByPath(path.slice(0, -1))
+    const parent = this._host.getStateByPath(path.slice(0, -1))
     const key = path[path.length - 1]
     if (!parent) return
     parent[key] = this._convert(raw)

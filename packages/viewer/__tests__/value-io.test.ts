@@ -1,6 +1,6 @@
 import { test, expect } from 'bun:test'
 import { computeValueError, convertValue, interpolateError, findItemRule } from '../src/utils/value-io'
-import { resolveEditorPlan } from '../src/edit-plan'
+import { resolveEditorPlan } from '../src/features/edit-plan'
 import type { TreeNode } from '../src/types'
 
 const mkNode = (value: any, type: TreeNode['type']): TreeNode => ({

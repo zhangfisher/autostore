@@ -2,7 +2,7 @@ import { PATH_DELIMITER, GLOBAL_CONFIG_MANAGER } from "../consts";
 import { AutoStore } from "../store/store";
 import { isRaw, isSchemaDescriptorBuilder, markRaw, setVal, withSchema } from "../utils";
 import { getVal } from "../utils/getVal";
-import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures } from "./types";
+import type { SchemaDescriptor, SchemaDescriptorBuilder, AutoStoreConfigures, SchemaGroup } from "./types";
 import { isFunction } from "../utils/isFunction";
 import type { AutoStoreOptions } from "../store/types";
 import type { Dict } from "../types";
@@ -56,7 +56,7 @@ export class ConfigManager extends AutoStore<
     dirtyValues: Record<string, any> = {};
     source:ConfigSource
     private _reseting: boolean = false;
-
+    private _groups?:Record<string,SchemaGroup>
     /**
      * load 进行中计数器（支持并发 load）
      * load 主动写入配置值期间 >0，此时 onUpdate 应抑制 save，
@@ -102,6 +102,9 @@ export class ConfigManager extends AutoStore<
     }
     get size() {
         return Object.keys(this.fields).length;
+    }
+    get group(){
+        return this._groups
     }
     /**
      * 加载数据到当前实例
@@ -285,7 +288,7 @@ export class ConfigManager extends AutoStore<
                     (descriptor.options as any)[key] = defaultValue;
                 }
             });
-        }
+        }       
 
         // 如果没有设置 onInvalid，则使用默认值 'throw'
         if ((descriptor.options as any).onInvalid === undefined) {
@@ -308,8 +311,16 @@ export class ConfigManager extends AutoStore<
         // 创建代理用于从原始的Store值读写状态值
         this._createValueProxy(descriptor, store, pathKey);
 
+        if(descriptor.options.group){
+            this._updateGroup(descriptor.options.group)
+        }
+
         // 返回初始值，避免读取代理导致循环依赖
         return loadedValue || initialValue;
+    }
+
+    private _updateGroup(group:string | SchemaGroup){
+        
     }
 
     private _handleRefState(schema: object, store: AutoStore<any>) {

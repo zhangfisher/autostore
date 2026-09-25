@@ -1,6 +1,6 @@
 // color widget：查看态条形色块（ADR-0025）+ 编辑态原生色板与 hex 文本
 // 自 input.ts 拆出（color 的查看特例不再寄居 input 家族，单一职责）
-import { html, type TemplateResult } from 'lit'
+import { html, nothing, type TemplateResult } from 'lit'
 import { createRef, ref } from 'lit/directives/ref.js'
 import type { WidgetModule, WidgetRenderContext } from './types'
 
@@ -22,12 +22,13 @@ export function toView(ctx: WidgetRenderContext): TemplateResult | null {
 // hex 文本是派生显示：编辑过程不重渲染（ctx.value 为进入编辑快照，ADR-0027），
 // input 事件里经 ref 命令式同步（input/checkbox 等原生控件自维护状态无此问题）
 export function toRender(ctx: WidgetRenderContext): TemplateResult {
-  const { plan, setValue, onKeydown } = ctx
+  const { plan, setValue, onKeydown, name } = ctx
   const hexRef = createRef<HTMLSpanElement>()
   return html`<label class="edit-color">
     <input
       class="edit-input"
       type="color"
+      name=${name ?? nothing}
       .value=${typeof ctx.value === 'string' && ctx.value.startsWith('#') ? ctx.value : '#000000'}
       ?disabled=${plan.props.disabled}
       tabindex=${plan.props.tabIndex ?? undefined}

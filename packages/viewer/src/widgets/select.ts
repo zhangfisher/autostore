@@ -3,12 +3,13 @@ import { html, nothing, type TemplateResult } from 'lit'
 import type { WidgetModule, WidgetRenderContext } from './types'
 
 export function toRender(ctx: WidgetRenderContext): TemplateResult {
-  const { plan, setValue, onKeydown, value } = ctx
+  const { plan, setValue, onKeydown, value, name } = ctx
   const props = plan.props
   const isSelected = (cv: any) =>
     plan.multiple ? Array.isArray(value) && value.some((v: any) => v === cv) : value === cv
   return html`<select
     class="edit-input"
+    name=${name ?? nothing}
     ?multiple=${plan.multiple}
     ?disabled=${props.disabled}
     tabindex=${props.tabIndex ?? nothing}

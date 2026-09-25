@@ -63,11 +63,13 @@ export interface AutoWidgetInputExtras {
      */
     pattern?: string;
     /**
-     * 值前缀：字符串值自动拼接（form 的 toState/toInput 双向剥离）
+     * 值前缀（form 文本系特有拼接语义：字符串状态值自动拼含前缀，显示时剥离——
+     * 与 base.prefix 的纯展示装饰语义同名分野，后者不进值）
      */
     prefix?: string;
     /**
-     * 值后缀：字符串值自动拼接（form 的 toState/toInput 双向剥离）
+     * 值后缀（form 文本系特有拼接语义：字符串状态值自动拼含后缀，显示时剥离——
+     * 与 base.suffix 的纯展示装饰语义同名分野）
      */
     suffix?: string;
     /**
@@ -169,11 +171,13 @@ export interface AutoWidgetDate extends BaseInputAttributes {
     min?: string;
     step?: number;
     /**
-     * 值前缀：日期字符串值自动拼接（form 的 toState/toInput 双向剥离）
+     * 值前缀（form 日期系特有拼接语义：日期字符串值自动拼含前缀，显示时剥离——
+     * 与 base.prefix 的纯展示装饰语义同名分野）
      */
     prefix?: string;
     /**
-     * 值后缀：日期字符串值自动拼接（form 的 toState/toInput 双向剥离）
+     * 值后缀（form 日期系特有拼接语义：日期字符串值自动拼含后缀，显示时剥离——
+     * 与 base.suffix 的纯展示装饰语义同名分野）
      */
     suffix?: string;
     /**

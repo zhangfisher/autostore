@@ -28,10 +28,11 @@ function initialText(ctx: WidgetRenderContext): string {
 // 编辑态：初始文本为快照值的序列化（静态绑定基准，输入过程不重渲染）；
 // Enter 是换行不确认（状态机对 textarea 的 Enter 不拦截）
 export function toRender(ctx: WidgetRenderContext): TemplateResult {
-  const { plan, setValue, onKeydown } = ctx
+  const { plan, setValue, onKeydown, name } = ctx
   const props = plan.props
   return html`<textarea
     class="edit-input edit-textarea"
+    name=${name ?? nothing}
     .value=${plan.jsonMode ? initialText(ctx) : String(ctx.value ?? '')}
     ?disabled=${props.disabled}
     ?readonly=${props.readOnly}

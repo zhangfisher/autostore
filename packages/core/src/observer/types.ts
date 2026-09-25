@@ -4,6 +4,7 @@ import type {
     ComputedDescriptorBuilder,
     ComputedGetter,
 } from "../computed/types";
+import type { SchemaGroup } from "../schema/types";
 import type { AnyAutoStore, Dict } from "../types";
 import type { ObserverObject } from "./observer";
 
@@ -158,7 +159,7 @@ export interface ObserverOptions<Value = any, Schema extends Dict = Dict> {
      * store.computedObjects.enableGroup("b"])
      *
      */
-    group?: string;
+    group?: string | SchemaGroup;
     /**
      * 当执行计算函数时，如果出错时，是否抛出错误，
      * 默认为true，即抛出错误

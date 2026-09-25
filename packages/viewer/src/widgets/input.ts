@@ -6,11 +6,12 @@ import type { WidgetModule, WidgetRenderContext } from './types'
 
 // 编辑态：标准 input（原生属性透传 + combobox datalist）
 export function toRender(ctx: WidgetRenderContext): TemplateResult {
-  const { plan, setValue, onKeydown } = ctx
+  const { plan, setValue, onKeydown, name } = ctx
   const props = plan.props
   return html`<input
     class="edit-input"
     type=${plan.inputType}
+    name=${name ?? nothing}
     .value=${String(ctx.value ?? '')}
     ?disabled=${props.disabled}
     ?readonly=${props.readOnly}

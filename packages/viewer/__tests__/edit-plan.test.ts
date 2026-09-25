@@ -1,5 +1,5 @@
 import { test, expect } from 'bun:test'
-import { resolveEditorPlan, normalizeChoices, resolveCheckLabel } from '../src/edit-plan'
+import { resolveEditorPlan, normalizeChoices, resolveCheckLabel } from '../src/features/edit-plan'
 import type { TreeNode } from '../src/types'
 
 const mkNode = (value: any, type: TreeNode['type']): TreeNode => ({

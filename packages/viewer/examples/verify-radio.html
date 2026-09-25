@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>radio group probe</title></head>
+  <body>
+    <pre id="result">PENDING</pre>
+    <script type="module">
+      const { AutoStore, schema } = await import('autostore')
+      await import('../src/autostore-viewer.ts')
+      const out = []
+      const check = (name, cond) => out.push((cond ? 'PASS ' : 'FAIL ') + name)
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      const radios = (v, path) =>
+        Array.from(v.shadowRoot.querySelectorAll(`.tree-node[data-path="${path}"] input[type="radio"]`))
+      try {
+        // 与示例 7 同构：label/value 对 choices，另一组不同路径的 radio 验证跨组串扰
+        const store = new AutoStore({
+          choice: {
+            level: schema('mid', {
+              label: '级别',
+              widget: 'radio',
+              choices: [
+                { label: '初级', value: 'junior' },
+                { label: '中级', value: 'mid' },
+                { label: '高级', value: 'senior' },
+              ],
+            }),
+            grade: schema('b', {
+              label: '等级',
+              widget: 'radio',
+              choices: [
+                { label: 'B', value: 'b' },
+                { label: 'A', value: 'a' },
+              ],
+            }),
+          },
+        }, { configManager: true })
+
+        // —— edit 常驻链 ——
+        const v = document.createElement('autostore-viewer')
+        v.mode = 'edit'
+        v.expandDepth = 5
+        v.store = store
+        document.body.appendChild(v)
+        await wait(500)
+        const levelRadios = radios(v, 'choice.level')
+        check('edit 常驻 radio 渲染 3 项', levelRadios.length === 3)
+        check('edit 常驻 radio name 非空', levelRadios.every((r) => (r.getAttribute('name') ?? '') !== ''))
+        const midChecked = levelRadios.findIndex((r) => r.checked)
+        // 点击第 0 项（初级）：程序点击触发原生 change
+        levelRadios[0].click()
+        await wait(300)
+        check('edit 常驻点击后 state 写回 junior', store.state.choice.level === 'junior')
+        const after = radios(v, 'choice.level')
+        check('edit 常驻点击后重渲染选中初级', after[0].checked === true && after[1].checked === false)
+        // 另一组未被串扰
+        const gradeAfter = radios(v, 'choice.grade')
+        check('edit 常驻另一组选中态未串扰', gradeAfter[0].checked === true)
+
+        // —— click-edit 链 ——
+        const v2 = document.createElement('autostore-viewer')
+        v2.mode = 'click-edit'
+        v2.expandDepth = 5
+        v2.store = store
+        document.body.appendChild(v2)
+        await wait(500)
+        const row = v2.shadowRoot.querySelector('.tree-node[data-path="choice.grade"] .node-value')
+        row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(200)
+        const ceRadios = radios(v2, 'choice.grade')
+        check('click-edit radio name 非空', ceRadios.every((r) => (r.getAttribute('name') ?? '') !== ''))
+        ceRadios[1].click()
+        await wait(300)
+        check('click-edit 点击后 state 写回 a', store.state.choice.grade === 'a')
+        const ceAfter = radios(v2, 'choice.grade')
+        check('click-edit 点击后重渲染选中 A', ceAfter[1].checked === true)
+      } catch (e) {
+        out.push('FAIL 异常: ' + e.message)
+      }
+      document.getElementById('result').textContent = out.join('\n')
+    </script>
+  </body>
+</html>

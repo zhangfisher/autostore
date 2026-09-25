@@ -1,5 +1,5 @@
 // 值写入的校验与转换（ADR-0025/0027）：click-edit 状态机与 edit 常驻委托共用（DRY）
-import type { EditorPlan } from '../edit-plan'
+import type { EditorPlan } from '../features/edit-plan'
 import type { TreeNodeType } from '../types'
 
 // errorMessage 插值：{label}/{value}/{path}
