@@ -135,9 +135,11 @@ export class AutostoreViewer extends LitElement
   showActions: '0' | '1' | '2' = '1'
 
   // 动态图标批量拉取 URL 模板：{names} 占位符替换为逗号分隔的图标名；
-  // 置空禁用拉取（未知名恒回落类型图标）；变更仅影响后续新批次
+  // 置空禁用拉取（未知名恒回落类型图标）；变更仅影响后续新批次。
+  // 默认 lucide：线型系与内置图标同画风（拉取注册时统一重写线宽，ADR-0033）；
+  // 覆写为填充系源（如 material-symbols）时画风自担（不重写）
   @property({ type: String, attribute: 'icon-url' })
-  iconUrl: string = 'https://api.iconify.design/material-symbols-light.json?icons={names}'
+  iconUrl: string = 'https://api.iconify.design/lucide.json?icons={names}'
 
   // 远程拉取的风格后缀（rounded/sharp/outline/outline-rounded/outline-sharp）：
   // 仅追加到远程请求名（home → home-outline），schema.icon 引用名不变；空 = 不处理

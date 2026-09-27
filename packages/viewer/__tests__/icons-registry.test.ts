@@ -32,14 +32,30 @@ test('parseIconsResponse 解析命中图标与尺寸链（per-icon 覆盖包级�
   expect(fallback.icons[0].width).toBe(24)
 })
 
-test('parseIconsResponse 忽略 aliases 与非法条目', () => {
+test('parseIconsResponse 解析 aliases 别名展开（lucide home → house 形态，ADR-0033）', () => {
   const { icons, notFound } = parseIconsResponse({
-    icons: { a: { body: 'ok' }, bad: {} },
-    aliases: { aliasA: { parent: 'a' } },
+    icons: { a: { body: 'ok' }, bad: {}, house: { body: '<path/>' } },
+    aliases: {
+      aliasA: { parent: 'a' },
+      // parent 不在 icons 中（链式别名指向另一别名）：不展开
+      dangling: { parent: 'aliasA' },
+    },
     not_found: ['ghost'],
   })
-  expect(icons.map((i) => i.name)).toEqual(['a'])
+  expect(icons).toEqual([
+    { name: 'a', body: 'ok', width: 24, height: 24 },
+    { name: 'house', body: '<path/>', width: 24, height: 24 },
+    { name: 'aliasA', body: 'ok', width: 24, height: 24 },
+  ])
   expect(notFound).toEqual(['ghost'])
+})
+
+test('parseIconsResponse 别名条目可覆盖 body 与尺寸', () => {
+  const { icons } = parseIconsResponse({
+    icons: { a: { body: 'parent-body', width: 24, height: 24 } },
+    aliases: { big: { parent: 'a', body: 'own-body', width: 32 } },
+  })
+  expect(icons[1]).toEqual({ name: 'big', body: 'own-body', width: 32, height: 24 })
 })
 
 test('request 攒批合并：同帧多个缺失 key 合并为一次请求', async () => {

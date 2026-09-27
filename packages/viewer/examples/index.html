@@ -159,7 +159,7 @@
           </select>
         </label>
         <label>
-          icon-modify：
+          icon-modify（material 系源）：
           <select id="ctl-icon-modify">
             <option value="" selected>默认（无）</option>
             <option value="rounded">rounded</option>
@@ -216,8 +216,8 @@
     </section>
 
     <section class="tab-panel" id="panel-docker">
-      <p class="info">state 为 docker run 命令行参数，按功能分组；每个配置项均使用 configurable() 声明 schema（label / group / widget / choices / 校验 / icon / 值装饰 prefix·suffix 等），全部 31 个图标经 icon-url 从 iconify 批量拉取（仅一次合并请求）；本 viewer 设置 icon-modify="outline"，请求名自动追加 -outline 后缀（schema.icon 引用名不变），可用控制面板切换风格对比</p>
-      <autostore-viewer id="viewer6" icon-modify="outline"></autostore-viewer>
+      <p class="info">state 为 docker run 命令行参数，按功能分组；每个配置项均使用 configurable() 声明 schema（label / group / widget / choices / 校验 / icon / 值装饰 prefix·suffix 等），全部 31 个图标经 icon-url 从 iconify 批量拉取（仅一次合并请求）；本 viewer 显式覆写 icon-url 为 material-symbols-light（material 命名图标 + 填充系画风，与内置线型系不同——覆写拉取源者自担风格差，ADR-0033）并设置 icon-modify="outline"：请求名自动追加 -outline 后缀（schema.icon 引用名不变），可用控制面板切换风格对比</p>
+      <autostore-viewer id="viewer6" icon-url="https://api.iconify.design/material-symbols-light.json?icons={names}" icon-modify="outline"></autostore-viewer>
     </section>
 
     <section class="tab-panel" id="panel-widgets">
@@ -226,8 +226,8 @@
     </section>
 
     <section class="tab-panel" id="panel-icons">
-      <p class="info">图标注册链演示（slot 自定义 &gt; 内置 &gt; icon-url 拉取）：① user/box 引用 slot 自定义图标 custom-user/custom-box；② 本 viewer 覆盖内置 object/array 图标（同心圆/圆角方块），树中所有对象与数组节点即刻换装；③ home/star/settings/lock 四个未知名渲染时攒批合并为一次 iconify 批量请求；④ this-icon-does-not-exist 命中 not_found 负缓存，回落类型图标。本 viewer 同时设置 icon-modify="outline"：远程请求名自动追加风格后缀（home → home-outline），schema.icon 引用名不变</p>
-      <autostore-viewer id="viewer8" icon-modify="outline">
+      <p class="info">图标注册链演示（slot 自定义 &gt; 内置 &gt; icon-url 拉取）：① user/box 引用 slot 自定义图标 custom-user/custom-box；② 本 viewer 覆盖内置 object/array 图标（同心圆/圆角方块），树中所有对象与数组节点即刻换装；③ home/star/settings/lock 四个未知名渲染时攒批合并为一次 iconify 批量请求——默认源 lucide 与内置图标同属线型系，拉取注册时统一重写线宽，与相邻内置类型图标画风一致（ADR-0033）；④ this-icon-does-not-exist 命中 not_found 负缓存，回落类型图标。icon-modify 风格后缀（material 系变体名）演示见 Docker tab</p>
+      <autostore-viewer id="viewer8">
         <template slot="icons">
           <!-- slot 新增：schema.icon 可直接引用的自定义图标 -->
           <symbol id="custom-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
@@ -1015,7 +1015,7 @@
       // onClick 契约：value = 节点当前状态值，ctx.update(v) 经 Proxy 写回该路径（树自动刷新）
       const store9 = new AutoStore({
         // ① button 形态空回落四档：icon+label（翻倍，label 只作悬停兜底）/ 仅 label（加一减一，小文字按钮）/
-        //    仅 icon（重置，restart_alt 经 iconify 拉取）/ 都无（空动作跳过 + console warn）
+        //    仅 icon（重置，rotate-ccw 经 iconify 拉取）/ 都无（空动作跳过 + console warn）
         counter: configurable(42, {
           label: '计数器',
           suffix: ' 次',
@@ -1023,7 +1023,7 @@
           actions: [
             { label: '加一', tooltip: 'value 加一：onClick 收到当前状态值，ctx.update 写回', onClick: (value, ctx) => ctx.update(value + 1) },
             { label: '减一', onClick: (value, ctx) => ctx.update(value - 1) },
-            { icon: 'restart-alt', tooltip: '重置为 0（仅 icon：图标经 icon-url 拉取）', onClick: (_value, ctx) => ctx.update(0) },
+            { icon: 'rotate-ccw', tooltip: '重置为 0（仅 icon：图标经 icon-url 拉取）', onClick: (_value, ctx) => ctx.update(0) },
             { icon: 'bolt', label: '翻倍', tooltip: 'icon+label：渲染为图标按钮，label 仅作悬停兜底', onClick: (value, ctx) => ctx.update(value * 2) },
             { label: '禁用操作', enable: false, tooltip: 'enable=false：渲染但置灰不可点' },
             { label: '隐藏操作', visible: false },
@@ -1044,10 +1044,10 @@
               caret: true,
               syncMenu: true,
               items: [
-                { label: '浅色', icon: 'light_mode', onClick: (_v, ctx) => ctx.update('浅色') },
-                { label: '深色', icon: 'dark_mode', onClick: (_v, ctx) => ctx.update('深色') },
+                { label: '浅色', icon: 'sun', onClick: (_v, ctx) => ctx.update('浅色') },
+                { label: '深色', icon: 'moon', onClick: (_v, ctx) => ctx.update('深色') },
                 '-',
-                { label: '跟随系统', icon: 'auto_mode', enable: false, tooltip: '菜单项 enable=false 同语义置灰' },
+                { label: '跟随系统', icon: 'monitor', enable: false, tooltip: '菜单项 enable=false 同语义置灰' },
               ],
             },
           ],

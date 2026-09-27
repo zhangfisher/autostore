@@ -320,7 +320,13 @@ export class ConfigManager extends AutoStore<
     }
 
     private _updateGroup(group:string | SchemaGroup){
-        
+        if(!this._groups) this._groups={}
+        const groupName = typeof(group)==='string' ? group :  group.name
+        if(!groupName || groupName.trim().length===0)   return 
+        if(!(groupName in this._groups)) this._groups[groupName]={name:groupName}         
+        if(typeof group ==='object'){
+            Object.assign(this._groups[groupName],group)
+        }        
     }
 
     private _handleRefState(schema: object, store: AutoStore<any>) {

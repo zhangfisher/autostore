@@ -172,7 +172,7 @@ function renderDropdownAction(host: ActionsHost, node: TreeNode, schema: Record<
       e.stopPropagation()
       if (!disabled) host.setMenuOpen(menuKey, !host.isMenuOpen(menuKey))
     }}
-  >${iconView}${showText ? action.label : nothing}${action.caret === true ? html`<span class="action-caret">${iconHtml('chevron')}</span>` : nothing}</span>`
+  >${iconView}${showText ? action.label : nothing}${action.caret === true ? html`<span class="action-caret">${iconHtml('chevron-sm')}</span>` : nothing}</span>`
   if (!open) return html`<span class="node-action-menu">${trigger}</span>`
   return html`<span class="node-action-menu">
     ${trigger}

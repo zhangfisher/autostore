@@ -56,7 +56,7 @@ _Avoid_: 候选项、多选项（那是 select/radio 的 choices 语义；checkb
 _Avoid_: JSON 编辑（那是形态不是规则）、批量编辑（那是跨节点操作）
 
 **图标注册链（Icon Resolution Chain）**:
-查看器节点图标的解析顺序：**slot 自定义 > 内置 > icon-url 拉取**。同名时自定义覆盖内置；未知名经 icon-url 模板批量拉取（一次请求多个，`not_found` 与请求失败均负缓存——会话内不重试，节点回落类型图标）。`schema.icon` 是节点身份视觉，不受 disable-schema 开关影响。icon-modify 仅给远程请求名追加风格后缀（home → home-outline），引用名不变。
+查看器节点图标的解析顺序：**slot 自定义 > 内置 > icon-url 拉取**。同名时自定义覆盖内置；未知名经 icon-url 模板批量拉取（一次请求多个，`not_found` 与请求失败均负缓存——会话内不重试，节点回落类型图标）。`schema.icon` 是节点身份视觉，不受 disable-schema 开关影响。icon-modify 仅给远程请求名追加风格后缀（home → home-outline），引用名不变。拉取注册是**视觉同权**：线型（stroke 系）图标注册时统一重写线宽与内置无画风差（默认拉取源即线型系）；slot 自定义与填充型图标**不重写**——自定义是表达自由，显式覆写拉取源拉回填充型者自担风格差。
 _Avoid_: 图标下载、图标热替换（拉取结果注册后即与内置同权，非运行时替换机制）
 
 **特性（Feature）**:

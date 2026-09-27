@@ -3,7 +3,7 @@ import { css } from 'lit'
 // autostore-viewer 组件样式
 export const viewerStyles = css`
   :host {
-    --viewer-icon-size: 24px;
+    --viewer-icon-size: 18px;
     --viewer-font-size: 1em;
     --viewer-bg: #ffffff;
     --viewer-text: #333333;
@@ -337,9 +337,11 @@ export const viewerStyles = css`
     pointer-events: none;
   }
 
+  /* 菜单项图标 16px（ADR-0033）：24 viewBox 等比缩小，尺寸越大线宽漂移越小；
+     任意名图标无法逐名做粗线变体，取尺寸微调 + 接受剩余轻微变细 */
   .action-menu-item svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
   }
 

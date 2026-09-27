@@ -8,11 +8,20 @@ export interface IconifyIconEntry {
   height?: number
 }
 
-// iconify 批量 JSON 响应（仅本功能消费的字段；aliases 忽略）
+// iconify JSON 响应的别名录目条目（parent 指向本体名，可覆盖 body/尺寸）
+export interface IconifyAliasEntry {
+  parent?: string
+  body?: string
+  width?: number
+  height?: number
+}
+
+// iconify 批量 JSON 响应（仅本功能消费的字段）
 export interface IconifyResponse {
   width?: number
   height?: number
   icons?: Record<string, IconifyIconEntry>
+  aliases?: Record<string, IconifyAliasEntry>
   not_found?: string[]
 }
 
@@ -29,8 +38,10 @@ export interface ParsedIcon {
   height: number
 }
 
-// 解析 iconify JSON：命中图标与未命中名单
-// aliases 忽略——别名名不在 icons 中，随"响应未出现"一并负缓存（ADR-0024）
+// 解析 iconify JSON：命中图标（本体 + 别名展开）与未命中名单。
+// 别名解析（ADR-0033）：iconify 集合的常用名多为别名（lucide 的 home → house），
+// 响应 icons 里只有本体——别名不展开则请求名与注册名对不上，恒负缓存；
+// 仅解析一层（parent 指向另一别名的链式引用不递归），别名条目可覆盖 body/尺寸
 export function parseIconsResponse(json: any): { icons: ParsedIcon[]; notFound: string[] } {
   const pkgWidth = typeof json?.width === 'number' ? json.width : 24
   const pkgHeight = typeof json?.height === 'number' ? json.height : 24
@@ -43,6 +54,18 @@ export function parseIconsResponse(json: any): { icons: ParsedIcon[]; notFound: 
       body,
       width: typeof entry.width === 'number' ? entry.width : pkgWidth,
       height: typeof entry.height === 'number' ? entry.height : pkgHeight,
+    })
+  }
+  const byName = new Map(icons.map((i) => [i.name, i]))
+  for (const [alias, entry] of Object.entries(json?.aliases ?? {})) {
+    const parent = byName.get((entry as IconifyAliasEntry)?.parent ?? '')
+    if (!parent) continue
+    const e = entry as IconifyAliasEntry
+    icons.push({
+      name: alias,
+      body: typeof e.body === 'string' && e.body !== '' ? e.body : parent.body,
+      width: typeof e.width === 'number' ? e.width : parent.width,
+      height: typeof e.height === 'number' ? e.height : parent.height,
     })
   }
   const found = new Set(icons.map((i) => i.name))

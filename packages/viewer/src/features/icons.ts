@@ -90,13 +90,35 @@ export class IconsController implements ReactiveController {
     this._host.requestUpdate()
   }
 
-  // 由解析数据构造 <symbol id="asv-{name}" viewBox="0 0 {w} {h}">{body}</symbol>
+  // 由解析数据构造 <symbol id="asv-{name}" viewBox="0 0 {w} {h}">{body}</symbol>。
+  // 视觉同权（ADR-0033）：线型（stroke 系）图标注入内置同款公共属性，并删 body 内联
+  // stroke-width——iconify 各集 body 自带线宽（lucide 为 2），元素自身属性压过
+  // symbol 级继承，不删无从统一为内置线宽；填充型（fill 系）不重写，
+  // 覆写拉取源拉回填充型者自担风格差。slot 自定义同理不重写（表达自由）
   private _buildSymbol(icon: ParsedIcon): SVGSymbolElement {
     const symbol = document.createElementNS(IconsController.SVG_NS, 'symbol') as SVGSymbolElement
     symbol.setAttribute('id', `asv-${icon.name}`)
     symbol.setAttribute('viewBox', `0 0 ${icon.width} ${icon.height}`)
     symbol.innerHTML = icon.body
+    // [stroke] 属性选择器不匹配 stroke-width（属性名不同），仅命中真 stroke 系
+    if (symbol.querySelector('[stroke]')) {
+      symbol.setAttribute('fill', 'none')
+      symbol.setAttribute('stroke', 'currentColor')
+      symbol.setAttribute('stroke-width', '1.5')
+      symbol.setAttribute('stroke-linecap', 'round')
+      symbol.setAttribute('stroke-linejoin', 'round')
+      for (const el of symbol.querySelectorAll('[stroke-width]')) el.removeAttribute('stroke-width')
+    }
     return symbol
+  }
+
+  // HTML 解析器把属性名小写化（template content 与 light DOM 均是，symbol 不在
+  // svg 外内容内、无 camelCase 调整表兜底），viewBox 会被写成 viewbox——SVG 渲染
+  // 不认，symbol 无有效 viewBox 时 use 视口与内容坐标系 1:1，容器尺寸 ≠ viewBox
+  // 时内容被裁（图标显示不全）。仅修正 symbol 上有意义的 camelCase 属性
+  private static SVG_CAMEL_ATTRS: Record<string, string> = {
+    viewbox: 'viewBox',
+    preserveaspectratio: 'preserveAspectRatio',
   }
 
   // 由 slot 提取的 symbol 重建为 SVG 命名空间元素：
@@ -106,7 +128,8 @@ export class IconsController implements ReactiveController {
   private _rebuildSymbol(name: string, source: SVGSymbolElement): SVGSymbolElement {
     const symbol = document.createElementNS(IconsController.SVG_NS, 'symbol') as SVGSymbolElement
     for (const attr of Array.from(source.attributes)) {
-      if (attr.name !== 'id') symbol.setAttribute(attr.name, attr.value)
+      const attrName = IconsController.SVG_CAMEL_ATTRS[attr.name] ?? attr.name
+      if (attrName !== 'id') symbol.setAttribute(attrName, attr.value)
     }
     symbol.setAttribute('id', `asv-${name}`)
     symbol.innerHTML = source.innerHTML
