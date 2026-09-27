@@ -19,6 +19,8 @@ export interface LabelWidthHost {
   getStore(): AutoStore<any> | null
   // 状态树节点（测量基于全量树数据，含折叠子树）
   getTreeNodes(): TreeNode[]
+  // 标签深度基准（ADR-0034）：配置面板组模式项行自 depth=1 起（组内缩进一级），其余 0
+  getLabelDepthBase(): number
   // 节点对应 schema 元数据
   getSchema(node: TreeNode): AutoStoreStateSchema | undefined
   // 可展开类型判定（hint 组成条件）
@@ -129,7 +131,7 @@ export class LabelWidthController implements ReactiveController {
         if (node.children.length > 0) collect(node.children, depth + 1)
       }
     }
-    collect(this._host.getTreeNodes(), 0)
+    collect(this._host.getTreeNodes(), this._host.getLabelDepthBase())
 
     // 唯一（类别, 文本）建探针 span，一次 fragment 写入后批量读宽
     const kindClass = { key: 'node-key', required: 'required-mark', hint: 'collapsed-hint', count: 'child-count' } as const

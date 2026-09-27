@@ -11,6 +11,8 @@ export interface StoreHost {
   readonly disableSchema: boolean
   // 编辑模式（cm-ready 轮询条件组成）
   readonly mode: 'view' | 'edit' | 'click-edit'
+  // 配置面板模式（ADR-0034）：cm-ready 轮询条件组成（无条件参与）+ configManager 键集合订阅开关
+  readonly onlyConfigurable: boolean
   // value 对齐方式（cm-ready 就绪后的列宽重测门控）
   readonly valueAlign: 'left' | 'right'
   // 绑定/变更后重建树（树特性入口）
@@ -43,6 +45,12 @@ export class StoreController implements ReactiveController {
   private _cmReadyTimer: any = null
   private _cmReadyRetries = 0
 
+  // configManager 键集合订阅（ADR-0034）：新配置项注册/注销触发整树重建
+  private _configWatcher: any = null
+
+  // configManager 缺失警告已发标志（ADR-0034 决策十四：仅调试通道，一次为限）
+  private _cmMissingWarned = false
+
   private _host: StoreHost
 
   constructor(host: StoreHost) {
@@ -66,10 +74,11 @@ export class StoreController implements ReactiveController {
 
   // 默认 configManager:true 经异步 import 创建并注册 schema，晚于同步首渲染，
   // 须限时轮询就绪后处理：label 替换经重渲染生效（render 期读取）；
-  // 折叠/整体编辑判定在 build 期读取 schema，须重建树；列宽一并重测
+  // 折叠/整体编辑判定在 build 期读取 schema，须重建树；列宽一并重测。
+  // 配置面板模式（ADR-0034）无条件参与轮询——configurabled/分组信息全在其上
   hostUpdated(): void {
     if (
-      (!this._host.disableSchema || this._host.mode !== 'view') &&
+      (!this._host.disableSchema || this._host.mode !== 'view' || this._host.onlyConfigurable) &&
       this.store &&
       !(this.store as any).configManager &&
       this._cmReadyRetries < 20
@@ -82,6 +91,10 @@ export class StoreController implements ReactiveController {
           this._cmReadyRetries = 0
           this._host.rebuildTree()
           if (this._host.valueAlign !== 'right') this._host.scheduleLabelWidthMeasure()
+        } else if (this._cmReadyRetries >= 20 && this._host.onlyConfigurable && !this._cmMissingWarned) {
+          // 轮询耗尽仍未就绪（ADR-0034 决策十四）：空白无视觉提示，仅留调试通道一条
+          this._cmMissingWarned = true
+          console.warn('[autostore-viewer] only-configurable 依赖 store 的配置管理（configManager），当前 Store 未启用')
         }
       }, 100)
     }
@@ -157,6 +170,19 @@ export class StoreController implements ReactiveController {
     this._observerWatcher = (this.store as any).on?.('observer/*/done', (args: any) => {
       this._host.onComputedDone(args?.observer ?? args)
     })
+
+    // 配置面板模式（ADR-0034 决策六）：订阅 configManager 键集合——state 直接子键
+    // （key 是带 configKey 前缀的点分单段字符串）出现/消失（新配置项注册/注销）触发
+    // 整树重建；schema 内部字段与值变化（path ≥ 2 段）不触发——值变化走上方主 store
+    // watch 增量链路，与此分层。开关切换时宿主重调 watch()（内部先解订）
+    if (this._host.onlyConfigurable && (this.store as any).configManager) {
+      this._configWatcher = (this.store as any).configManager.watch('*', (operate: any) => {
+        if (Array.isArray(operate?.path) && operate.path.length === 1) {
+          this._host.rebuildTree()
+          this._host.scheduleLabelWidthMeasure()
+        }
+      })
+    }
   }
 
   // 解绑store watcher
@@ -168,6 +194,10 @@ export class StoreController implements ReactiveController {
     if (this._observerWatcher) {
       this._observerWatcher.off?.()
       this._observerWatcher = null
+    }
+    if (this._configWatcher) {
+      this._configWatcher.off?.()
+      this._configWatcher = null
     }
   }
 

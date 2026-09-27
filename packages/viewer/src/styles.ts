@@ -572,23 +572,57 @@ export const viewerStyles = css`
     z-index: 1;
   }
 
+  /* —— 配置面板分组（ADR-0034）—— */
+
+  /* 组标题条：横跨整行的区块头——不参与两列网格/列宽测量/grid 线（决策十二），
+     点击折叠/展开整组（决策二）；hover 反馈与树行同机制 */
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    min-height: 32px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+  }
+
+  .group-header:hover {
+    background: color-mix(in srgb, var(--viewer-hover-bg) 50%, transparent);
+  }
+
+  .group-title {
+    font-weight: 600;
+    font-size: 0.85em;
+    color: var(--viewer-badge-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  /* 组内容容器：与 .node-children 共用折叠机制（grid 0fr + inert，ADR-0032/0034 拟定一） */
+
   /* 子树容器（ADR-0032 full 渲染）：单行轨道 grid，折叠 = 行高 1fr→0fr 过渡收起——
      高度真实线性、无魔数（display:none 不可过渡，max-height 有展开态魔数与速度失真，
      均弃）。行内容经 .node-children-inner 单一内层包裹（grid 轨道动画要求一轨道一项）。
      lazy 模式折叠即移除 DOM 不经此规则；整树重建产出新 DOM 无前值，天然不动画 */
-  .node-children {
+  .node-children,
+  .group-body {
     display: grid;
     grid-template-rows: 1fr;
     transition: grid-template-rows var(--viewer-collapse-duration) var(--viewer-collapse-easing);
   }
 
-  .node-children.collapsed {
+  .node-children.collapsed,
+  .group-body.collapsed {
     grid-template-rows: 0fr;
   }
 
   /* 行轨道内层：overflow + min-height 归零是 0fr 收起的裁切前提
      （min-height:auto 会顶住内容高度不塌缩） */
-  .node-children-inner {
+  .node-children-inner,
+  .group-body-inner {
     overflow: hidden;
     min-height: 0;
   }
@@ -704,7 +738,8 @@ export const viewerStyles = css`
     .expand-icon {
       transition: none;
     }
-    .node-children {
+    .node-children,
+    .group-body {
       transition: none;
     }
   }

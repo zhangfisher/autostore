@@ -122,3 +122,23 @@ _Avoid_: 基础包、框架包
 **widget 产物（Widget Bundle）**:
 单个 widget 的独立产物，前提是 core 已被引入（IIFE 场景还要求 core 先行加载）。引入即完成该 widget 的元素注册，与全量产物混用安全（注册有防重复守卫），但 IIFE 形态的全量与按需不可混引同一页（两份 lit）。
 _Avoid_: 组件包、插件包
+
+**配置项（Configurable Item）**:
+经 schema builder 注册进 ConfigManager 的状态路径，是「可被外部持久化定制的设置」。数据双面：`store.configurabled`（路径集合，无前缀）与 `configManager.state`（key 带 configKey 前缀，value 为该路径的 schema 元数据）。
+_Avoid_: 配置字段、settings（前者混淆 schema 概念，后者是消费方形态）
+
+**配置分组（Config Group）**:
+配置项的分组归属体系：schema 的 `group`（组名或组对象）声明归属，聚合记录于 `configManager.group`（单数 getter）——global 模式下**跨 store 混合**。viewer 的组清单 = 聚合记录全部（跨 store 空组照渲染），组内成员 = 本 store 中 group 命中项。组排序 `order` 升序、缺省沉底按注册序。
+_Avoid_: 分区、分类（组是配置项专属的归属概念）
+
+**默认区（Default Section）**:
+配置面板中无 group 声明的配置项的置顶裸排区——无标题条，直接铺行；有组时位于全部真实组之前。
+_Avoid_: 未分组组、常规组（它不是组，是没有归属标记的自然铺排）
+
+**高级虚拟组（Advanced Group）**:
+viewer 配置面板置尾发明的收纳组：`advanced:true` 的配置项一律归此（**优先于 group 声明**，该项上 group 失效）、默认折叠、空则整个不渲染。与 form 的 advanced 同名分野：form 是**过滤隐藏**，viewer 是**折叠收纳**。
+_Avoid_: 高级选项组名（它是 viewer 内建虚拟组，非用户声明的 Config Group）
+
+**配置树嵌套（Config Nesting）**:
+配置面板中 configurabled 项间父子关系的呈现规则：子项不平铺顶层，出现于容器项展开的子级（data-path 恒绝对路径）；顶层集合 = 无 configurabled 祖先的项。容器项的子级显示其全部值结构（子级不论是否 configurable——它们是该配置项的值成分）。
+_Avoid_: 吞并（entrys 的入口吞并是丢弃子入口行；嵌套是子项归位父项之下，两者渲染结果同构但语义不同）

@@ -32,7 +32,7 @@ import { resolveRenderMode } from './utils/render-mode'
 import { deleteNodeValue } from './utils/deleteNodeValue'
 import { filterVisibleActions, invokeAction, renderNodeActions } from './features/actions'
 import type { ActionsHost } from './features/actions'
-import type { TreeNode, TreeNodeType } from './types'
+import type { ConfigSection, TreeNode, TreeNodeType } from './types'
 import type { AutoStore, AutoStoreAction, AutoStoreStateSchema } from 'autostore'
 
 // 组件壳（ADR-0031）：属性声明 + 渲染 + 生命周期编排 + 特性控制器宿主面。
@@ -110,6 +110,15 @@ export class AutostoreViewer extends LitElement
   @property({ type: Boolean, attribute: 'root-bg', reflect: true })
   rootBg: boolean = false
 
+  // 配置面板模式（ADR-0034）：启用后只渲染 store 的 configurable 项（store.configurabled），
+  // configManager.group 有值时按组呈现——默认区（无 group 非 advanced，置顶裸排）→
+  // 真实组（order 升序/缺省沉底，可折叠，跨 store 空组照渲染）→ 高级虚拟组（advanced:true
+  // 一律归此、优先于 group，默认折叠，空则不产出）。项间父子保留嵌套（容器项渲染自身行），
+  // data-path 恒绝对路径；entrys 在此模式为过滤器（交集）；空态渲染空白无提示。
+  // 详见 docs/adr/0034-viewer-only-configurable.md
+  @property({ type: Boolean, attribute: 'only-configurable' })
+  onlyConfigurable: boolean = false
+
   // 状态子树入口（ADR-0029）：空 = 渲染整个 state；逗号分割多个入口（splitPath 语法：
   // 点分隔、a\.b 转义、数组下标），如 entrys="orders.1,user.name"，各入口子树按声明序
   // 平铺在顶层——容器为隐式根（入口行不渲染、expandDepth 各自重计），叶子渲染单行；
@@ -183,6 +192,10 @@ export class AutostoreViewer extends LitElement
   // entrys 无效标记：任一入口路径不存在即整体提示态，不回落全树（ADR-0029）
   @state()
   private _entryInvalid: boolean = false
+
+  // 配置分组视图（ADR-0034）：组模式时非 null（默认区+真实组+高级虚拟组），平铺模式为 null
+  @state()
+  private _configSections: ConfigSection[] | null = null
 
   // 无效入口清单（与 _entryInvalid 同步赋值；render 提示态显示归一化路径）
   private _entryInvalidPaths: string[] = []
@@ -260,12 +273,18 @@ export class AutostoreViewer extends LitElement
     if (changedProperties.has('storeId')) {
       this._store.tryBind()
     }
+    // 配置面板开关切换（ADR-0034）：configManager 键集合订阅随开关重订（watch 内部先解订）
+    if (changedProperties.has('onlyConfigurable') && this._store.store) {
+      this._store.watch()
+    }
     // 影响树结构的属性须重建（showCount/showHint 仅影响渲染，无需重建）；
-    // entrys 变更同理重建（入口子树整体更换，展开状态不保留，ADR-0029）
+    // entrys 变更同理重建（入口子树整体更换，展开状态不保留，ADR-0029）；
+    // onlyConfigurable 变更重建（渲染集合整体切换，ADR-0034）
     if (
       (changedProperties.has('expandDepth') ||
         changedProperties.has('showComputed') ||
-        changedProperties.has('entrys')) &&
+        changedProperties.has('entrys') ||
+        changedProperties.has('onlyConfigurable')) &&
       this._store.store
     ) {
       this._tree.buildTree()
@@ -315,6 +334,11 @@ export class AutostoreViewer extends LitElement
   setEntryInvalid(invalid: boolean, paths: string[]): void {
     this._entryInvalidPaths = paths
     this._entryInvalid = invalid
+  }
+
+  // 配置分组视图写入（树特性构建，ADR-0034；null = 平铺模式）
+  setConfigSections(sections: ConfigSection[] | null): void {
+    this._configSections = sections
   }
 
   // 长按编辑触发后的展开 click 抑制（消费即复位，ADR-0027 修订）
@@ -418,6 +442,11 @@ export class AutostoreViewer extends LitElement
   // 宿主元素（--viewer-indent-size 读取 + ResizeObserver 观察目标）
   getHostElement(): HTMLElement {
     return this
+  }
+
+  // 标签深度基准（ADR-0034）：配置面板组模式项行自 depth=1 起（组内缩进一级），其余 0
+  getLabelDepthBase(): number {
+    return this._configSections ? 1 : 0
   }
 
   // 列宽写回（宿主级 CSS 变量 --viewer-key-width）
@@ -771,6 +800,43 @@ export class AutostoreViewer extends LitElement
     `
   }
 
+  // 配置分组渲染（ADR-0034）：标题条横跨整行（不参与两列网格/列宽测量/grid 线，决策十二），
+  // 可点击折叠整组（决策二/Q2=B）；默认区（title 空串）无标题条裸排（决策三）；
+  // 组内项行 depth=1 起——缩进一级建立从属视觉（决策十一）；组折叠 DOM 策略遵循
+  // render-mode：full = grid 0fr 收起 + inert 封锁（组内编辑焦点随折叠保留）、
+  // lazy = DOM 移除、mode=edit 恒 full（拟定一）
+  private _renderSection(section: ConfigSection): any {
+    const isFullRender = this._effectiveRenderMode === 'full'
+    const collapsed = this._tree.isGroupCollapsed(section)
+    // 组图标走图标链（未加载攒批拉取，注册后经 onLoaded 重渲染替换）
+    let groupIconKey: string | undefined
+    if (section.icon) {
+      if (this._icons.has(section.icon)) groupIconKey = section.icon
+      else this._icons.request([section.icon])
+    }
+    const header = section.title
+      ? html`
+        <div class="group-header" data-group=${section.name} @click=${() => this._tree.toggleGroup(section)}>
+          <span class="expand-icon ${collapsed ? '' : 'expanded'}">${iconHtml('chevron')}</span>
+          ${groupIconKey ? html`<span class="type-icon">${iconHtml(groupIconKey)}</span>` : nothing}
+          <span class="group-title">${section.title}</span>
+          ${this.showCount && section.nodes.length > 0
+            ? html`<span class="child-count">${section.nodes.length}</span>`
+            : nothing}
+        </div>`
+      : nothing
+    const body =
+      section.nodes.length > 0 && (!collapsed || isFullRender)
+        ? html`
+        <div class="group-body ${collapsed ? 'collapsed' : ''}" ?inert=${collapsed}>
+          <div class="group-body-inner">
+            ${section.nodes.map((node) => this._renderNode(node, 1))}
+          </div>
+        </div>`
+        : nothing
+    return html`${header}${body}`
+  }
+
   // 主渲染
   render(): any {
     if (!this._store.store) {
@@ -779,6 +845,33 @@ export class AutostoreViewer extends LitElement
     // entrys 无效提示态（ADR-0029 决策三）：列出归一化后的无效入口清单
     if (this._entryInvalid) {
       return html`<div class="loading">entrys 路径不存在: ${this._entryInvalidPaths.join(', ')}</div>`
+    }
+    // 配置面板分组渲染（ADR-0034）：sections 序列 = 默认区 → 真实组 → 高级虚拟组；
+    // 全局最后可见行穿透组层（grid=1 末行无线，拟定二）——沿未折叠组末项下钻，
+    // 全组折叠时无数据行（组标题条恒不画线，不参与标记）
+    if (this._configSections) {
+      let lastNode: TreeNode | null = null
+      for (const section of this._configSections) {
+        if (section.nodes.length > 0 && !this._tree.isGroupCollapsed(section)) {
+          lastNode = this._tree.findLastVisible(section.nodes)
+        }
+      }
+      this._lastVisibleNode = lastNode
+      return html`
+        <!-- 动态图标 sprite：置于内置 sprite 之前，同 id 时 <use> 按文档序命中前者（自定义覆盖内置，ADR-0024） -->
+        <svg class="dynamic-sprite" xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
+        <!-- 内置图标 sprite：<symbol> 定义只此一份，节点处的 iconHtml() 通过 <use> 引用 -->
+        ${iconSprite}
+        <slot name="icons" @slotchange=${(e: Event) => this._icons.onSlotChange(e)} style="display: none;"></slot>
+        <div class="tree-container">
+          ${this._configSections.map((section) => this._renderSection(section))}
+        </div>
+        ${this._toast.text ? html`
+          <div class="toast ${this._toast.fading ? 'fading' : ''}">${this._toast.text}</div>
+        ` : nothing}
+        <!-- 离屏宽度探针：复用真实样式类测量文本自然宽，见 features/label-width.ts -->
+        <div class="measure-probe" aria-hidden="true"></div>
+      `
     }
     this._lastVisibleNode = this._treeNodes.length > 0 ? this._tree.findLastVisible(this._treeNodes) : null
 

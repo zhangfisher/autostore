@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>only-configurable probe (ADR-0034)</title></head>
+  <body>
+    <pre id="result">PENDING</pre>
+    <script type="module">
+      const { AutoStore, configurable, ConfigManager } = await import('autostore')
+      await import('../src/autostore-viewer.ts')
+      const out = []
+      const check = (name, cond) => out.push((cond ? 'PASS ' : 'FAIL ') + name)
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+      const $ = (v, sel) => v.shadowRoot.querySelector(sel)
+      const $$ = (v, sel) => [...v.shadowRoot.querySelectorAll(sel)]
+      try {
+        // 跨 store 空组（决策十五）：两 store 显式共享同一 ConfigManager 实例
+        // （默认 configManager:true 创建的是各 store 私有实例，组记录不互通）
+        const sharedCm = new ConfigManager({ load: () => ({}) })
+        const store2 = new AutoStore(
+          { x: configurable(1, { group: { name: 'remote', title: '远程', order: 5 } }) },
+          { configManager: sharedCm },
+        )
+        // 主 store：默认区 + 两组 + advanced + 容器嵌套 + 非 configurable 混入
+        const store = new AutoStore({
+          lang: configurable('zh', { label: '语言' }),
+          theme: configurable('light', { label: '主题', group: { name: 'appearance', title: '外观', order: 1 } }),
+          fontSize: configurable(14, { label: '字号', group: 'appearance' }),
+          autoSave: configurable(true, { label: '自动保存', advanced: true, group: 'appearance' }),
+          debug: configurable(false, { label: '调试模式', advanced: true }),
+          user: configurable({ name: configurable('zhang'), vip: true }, { label: '用户', group: { name: 'account', title: '账户', order: 0 } }),
+          plain: 'not-configurable',
+        }, { configManager: sharedCm })
+        await wait(100)
+
+        const v = document.createElement('autostore-viewer')
+        v.onlyConfigurable = true
+        v.store = store
+        document.body.appendChild(v)
+        await wait(600)
+
+        // ---- 场景一：集合（Q1）——只渲染 configurable 项 ----
+        check('S1 configurable 项渲染', $(v, '.tree-node[data-path="theme"]') != null)
+        check('S1 非 configurable 项不渲染', $(v, '.tree-node[data-path="plain"]') == null)
+
+        // ---- 场景二：嵌套非吞并（Q7）——user 容器行 + user.name 为其子行 ----
+        check('S2 容器配置项渲染自身行', $(v, '.tree-node[data-path="user"]') != null)
+        check('S2 嵌套子项为其子节点', $(v, '.tree-node[data-path="user"] ~ .node-children .tree-node[data-path="user.name"]') != null)
+        check('S2 嵌套子项不平铺顶层', $$(v, '.group-body-inner > .tree-node[data-path="user.name"]').length === 0)
+        check('S2 容器值结构全显（vip 非 configurable 也在子级）', $(v, '.tree-node[data-path="user"] ~ .node-children .tree-node[data-path="user.vip"]') != null)
+
+        // ---- 场景三：分组结构（Q3/Q5/Q13/Q15/Q16）----
+        const headers = $$(v, '.group-header .group-title').map((el) => el.textContent)
+        check('S3 组序 = 账户(0)→外观(1)→远程(5)→高级（默认区无标题）', JSON.stringify(headers) === JSON.stringify(['账户', '外观', '远程', '高级选项']))
+        check('S3 默认区置顶裸排（首个 body 无 header 前置）', $(v, '.tree-container > .group-header') === null || v.shadowRoot.querySelector('.group-body').previousElementSibling?.classList?.contains('group-header') !== true)
+        check('S3 默认区含 lang', $$(v, '.group-body')[0].querySelector('.tree-node[data-path="lang"]') != null)
+        check('S3 advanced 优先于 group（autoSave 在高级组不在外观组）', $(v, '.group-header[data-group="appearance"] + .group-body .tree-node[data-path="autoSave"]') == null && $(v, '.group-header[data-group="__advanced__"] + .group-body .tree-node[data-path="autoSave"]') != null)
+        check('S3 跨 store 空组照渲染（remote 标题在、他 store 项不混入）', $(v, '.group-header[data-group="remote"]') != null && $(v, '.tree-node[data-path="x"]') == null)
+
+        // ---- 场景四：组默认态与折叠交互（Q2/Q9/Q10/Q17）----
+        const groupBody = (name) => $(v, `.group-header[data-group="${name}"] + .group-body`)
+        check('S4 真实组默认展开', groupBody('account').classList.contains('collapsed') === false)
+        check('S4 高级虚拟组默认折叠（唯一例外）', groupBody('__advanced__').classList.contains('collapsed') === true && groupBody('__advanced__').hasAttribute('inert') === true)
+        $(v, '.group-header[data-group="appearance"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await wait(100)
+        check('S4 点击组标题折叠（grid 0fr）', groupBody('appearance').classList.contains('collapsed') === true && groupBody('appearance').hasAttribute('inert') === true)
+        // 折叠态跨重建保留（Q9）：开关切换触发整树重建
+        v.onlyConfigurable = false
+        await wait(200)
+        v.onlyConfigurable = true
+        await wait(200)
+        check('S4 折叠态跨重建保留（Map 记忆）', groupBody('appearance').classList.contains('collapsed') === true)
+        $(v, '.group-header[data-group="appearance"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await wait(100)
+
+        // ---- 场景五：entrys 交集（Q4/Q8）----
+        const v2 = document.createElement('autostore-viewer')
+        v2.onlyConfigurable = true
+        v2.entrys = 'theme'
+        v2.store = store
+        document.body.appendChild(v2)
+        await wait(600)
+        check('S5 交集：仅保留入口子树内配置项', $(v2, '.tree-node[data-path="theme"]') != null && $(v2, '.tree-node[data-path="lang"]') == null)
+        const v3 = document.createElement('autostore-viewer')
+        v3.onlyConfigurable = true
+        v3.entrys = 'user.name'
+        v3.store = store
+        document.body.appendChild(v3)
+        await wait(600)
+        const manualEp = ['user', 'name']
+        check('S5 交集先于嵌套排除（深层项不因父在集合而丢失）', $(v3, '.tree-node[data-path="user.name"]') != null && $(v3, '.tree-node[data-path="user"]') == null)
+        let warned = 0
+        const origWarn = console.warn
+        console.warn = () => warned++
+        const v4 = document.createElement('autostore-viewer')
+        v4.onlyConfigurable = true
+        v4.entrys = 'nothing.here'
+        v4.store = store
+        document.body.appendChild(v4)
+        await wait(600)
+        console.warn = origWarn
+        check('S5 交集空渲染空白（无提示条）', $(v4, '.loading') == null && $$(v4, '.tree-node').length === 0)
+        check('S5 entrys 路径无效降级 warn', warned >= 1)
+
+        // ---- 场景六：编辑正交（拟定四：getNodeByPath 不剥前缀）----
+        const v5 = document.createElement('autostore-viewer')
+        v5.mode = 'click-edit'
+        v5.onlyConfigurable = true
+        v5.store = store
+        document.body.appendChild(v5)
+        await wait(600)
+        $(v5, '.tree-node[data-path="theme"] .node-value').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        await wait(200)
+        const inp = $(v5, '.tree-node[data-path="theme"] input')
+        check('S6 顶层配置项可进入编辑（路径命中不剥前缀）', inp != null)
+        if (inp) {
+          inp.value = 'dark'
+          inp.dispatchEvent(new Event('input', { bubbles: true }))
+          await wait(200)
+          check('S6 编辑写回 store', store.state.theme === 'dark')
+        }
+
+        // ---- 场景七：无 configManager（Q14）——空白 + warn ----
+        let warned2 = 0
+        console.warn = () => warned2++
+        const storeNoCm = new AutoStore({ a: 1 }, { configManager: false })
+        const v6 = document.createElement('autostore-viewer')
+        v6.onlyConfigurable = true
+        v6.store = storeNoCm
+        document.body.appendChild(v6)
+        await wait(2500)
+        console.warn = origWarn
+        check('S7 无 configManager 渲染空白（无提示条）', $(v6, '.loading') == null && $$(v6, '.tree-node').length === 0)
+        check('S7 无 configManager 保留 console.warn', warned2 >= 1)
+
+        store2.destroy()
+      } catch (e) {
+        out.push('FAIL 异常: ' + (e && e.message ? e.message : String(e)))
+      }
+      document.getElementById('result').textContent = out.join('\n')
+    </script>
+  </body>
+</html>

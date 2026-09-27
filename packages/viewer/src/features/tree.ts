@@ -1,6 +1,6 @@
 import { isComputed } from 'autostore'
 import type { AutoStore } from 'autostore'
-import type { TreeNode, TreeNodeType } from '../types'
+import type { ConfigSection, TreeNode, TreeNodeType } from '../types'
 import { getObjectKeyCount } from '../utils/getObjectKeyCount'
 import { isInternalKey } from '../utils/isInternalKey'
 import { joinPath } from '../utils/joinPath'
@@ -26,6 +26,12 @@ export interface TreeHost {
   readonly expandDepth: number
   // 是否显示计算属性节点
   readonly showComputed: boolean
+  // 配置面板模式（ADR-0034）：只渲染 configurabled 项并按组呈现
+  readonly onlyConfigurable: boolean
+  // 按路径读取 schema 元数据（未门控：分组归属/advanced 是结构信息，非展示词汇）
+  getSchemaByPath(path: string[]): Record<string, any> | undefined
+  // 配置分组视图写入（null = 平铺模式；组模式含默认区/真实组/高级虚拟组）
+  setConfigSections(sections: ConfigSection[] | null): void
 }
 
 // 树特性控制器：树构建/增量更新/路径定位/类型检测/entrys 入口吞并与前缀剥离
@@ -47,6 +53,26 @@ export class TreeController {
     return this._entryPaths
   }
 
+  // 配置面板模式标记（ADR-0034 拟定四）：项行渲染自身（非 entrys 隐式根），
+  // getNodeByPath 不做入口前缀剥离
+  private _configMode = false
+
+  // 组折叠态（ADR-0034 决策九）：独立 Map 按组名记忆，跨树重建自然保留
+  // （组无 store 路径，不 TreeNode 化——组节点混入 getNodeByPath 的逐段 key 匹配会拦截命中）
+  private _groupCollapsed = new Map<string, boolean>()
+
+  // 组折叠态查询：未记录时取组默认态——真实组展开（决策十）、
+  // 高级虚拟组折叠（唯一例外，决策十七）
+  isGroupCollapsed(section: ConfigSection): boolean {
+    return this._groupCollapsed.get(section.name) ?? section.advanced === true
+  }
+
+  // 组折叠切换（组标题条点击；组名作键，重建后折叠态不丢）
+  toggleGroup(section: ConfigSection): void {
+    this._groupCollapsed.set(section.name, !this.isGroupCollapsed(section))
+    this._host.requestUpdate()
+  }
+
   // 构建树结构；entrys 非空时构建各入口子树并按声明序平铺（ADR-0029）：
   // 容器 = 隐式根（渲染其子节点、入口行不出现，depth 自 0 重计即 expandDepth 各自重计）；
   // 叶子 = 单行；任一入口路径无效 = 整体提示态。子树节点 path 保持绝对路径
@@ -54,8 +80,16 @@ export class TreeController {
   buildTree(): void {
     if (!this._host.getStore()) {
       this._host.setTreeNodes([])
+      this._host.setConfigSections(null)
       return
     }
+    // 配置面板模式（ADR-0034）：独立构建线——集合=configurabled∩entrys、嵌套非吞并、分组呈现
+    if (this._host.onlyConfigurable) {
+      this._buildConfigTree()
+      return
+    }
+    this._configMode = false
+    this._host.setConfigSections(null)
     // 单点解析刷新缓存（entrys 属性变更与首次绑定均经此收敛）：
     // 逗号分割、空白段忽略；位于其它入口子树内（或相等）的入口被吞并，
     // 防同路径行重复渲染（两份同 data-path 会让 updateTreeNode/removeTreeNode
@@ -104,6 +138,132 @@ export class TreeController {
     }
     this._host.setEntryInvalid(false, [])
     this._host.setTreeNodes(this._buildNodes(this._host.getStore()!.state, [], 0))
+  }
+
+  // 配置面板树构建（ADR-0034）：
+  // 集合 = configurabled 全集经 entrys 交集（入口从数据源降级为过滤器，决策四/八——
+  // 路径不存在仅警告不整体提示态，交集空是正常业务态）再经嵌套排除（决策七：子项归位
+  // 父项之下，顶层 = 无 configurabled 祖先的项；交集在前——entrys 选中的深层项不因其
+  // 父也在 configurabled 而丢失）；
+  // 分组 = 默认区（无 group 非 advanced，置顶裸排，决策三）→ 真实组（聚合记录全部，
+  // 跨 store 空组照渲染标题条，决策十五；order 升序/缺省沉底/注册序，决策五）→
+  // 高级虚拟组（advanced:true 一律归此、优先于 group 声明（决策十六），空则不产出，决策十八）
+  private _buildConfigTree(): void {
+    this._configMode = true
+    const store = this._host.getStore()!
+    const configManager = (store as any).configManager
+    // 全集路径数组化：configurabled 存 core joinPath 的点分转义格式（无 configKey 前缀），
+    // 读回用 splitPath 精确还原（与 core joinPath/escapePath 是 round-trip 闭环）。
+    // 不可用 options.delimiter——那是 watch 路径语法的分隔符（默认 '/'），与存储格式无关
+    const allPaths: string[][] = [...((store as any).configurabled ?? [])]
+      .map((p: string) => splitPath(p))
+      .filter((p: string[]) => p.length > 0)
+    // entrys 交集：保留位于任一入口子树内（含相等）的项
+    let selectedPaths = allPaths
+    if (this._host.entrys) {
+      const entryPaths = this._host.entrys
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => splitPath(s))
+      for (const ep of entryPaths) {
+        if (this._host.getStateByPath(ep) === undefined) {
+          console.warn(`[autostore-viewer] entrys 路径不存在: ${joinPath(ep)}`)
+        }
+      }
+      selectedPaths = allPaths.filter((p) =>
+        entryPaths.some((ep) => ep.length <= p.length && ep.every((s, i) => s === p[i])),
+      )
+    }
+    // 嵌套排除：父项也在集合内的子项不作顶层平铺（渲染于父项展开的子级，值结构全显）
+    const topLevel = selectedPaths.filter(
+      (p) => !selectedPaths.some((q) => q.length < p.length && q.every((s, i) => s === p[i])),
+    )
+    // 项节点构建（undefined 跳过 = 删除防御不复活幽灵行；computed 受 show-computed 正交门控）
+    const nodes: TreeNode[] = []
+    for (const path of topLevel) {
+      const node = this._buildConfigNode(path)
+      if (node) nodes.push(node)
+    }
+    // watch 分流复用（ADR-0034 拟定四）：_entryPaths = 顶层项路径
+    // （自身/祖先变更重建收敛、子树内增量、子树外跳过）
+    this._entryPaths = topLevel
+    this._host.setEntryInvalid(false, [])
+    // 分组归属：schema.group / schema.advanced（未门控读取——结构信息非展示词汇）
+    const groupsMeta: Record<string, any> = configManager?.group ?? {}
+    const groupNames = Object.keys(groupsMeta)
+    if (groupNames.length === 0) {
+      // 无组信息：整体平铺（无默认区概念），组视图关闭
+      this._host.setConfigSections(null)
+      this._host.setTreeNodes(nodes)
+      return
+    }
+    const byName = new Map<string, TreeNode[]>()
+    const defaultNodes: TreeNode[] = []
+    const advancedNodes: TreeNode[] = []
+    for (const node of nodes) {
+      const schema = this._host.getSchemaByPath(node.path)
+      if (schema?.advanced === true) {
+        // advanced 优先于 group 声明（决策十六）：该项上 group 失效
+        advancedNodes.push(node)
+        continue
+      }
+      const group = schema?.group
+      const name = typeof group === 'string' ? group : group?.name
+      if (name && groupsMeta[name]) {
+        let list = byName.get(name)
+        if (!list) byName.set(name, (list = []))
+        list.push(node)
+      } else {
+        defaultNodes.push(node)
+      }
+    }
+    // 真实组：聚合记录全部（跨 store 空组 nodes 为空数组，标题条照渲染），
+    // order 升序/缺省沉底、同值保注册序（sort 稳定性保证）
+    const groupSections: ConfigSection[] = groupNames.map((name) => {
+      const meta = groupsMeta[name] ?? {}
+      return {
+        name,
+        title: typeof meta.title === 'string' && meta.title ? meta.title : name,
+        icon: typeof meta.icon === 'string' && meta.icon ? meta.icon : undefined,
+        order: typeof meta.order === 'number' ? meta.order : undefined,
+        nodes: byName.get(name) ?? [],
+      }
+    })
+    groupSections.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity))
+    const sections: ConfigSection[] = [
+      // 默认区置顶裸排（title 空串 = 无标题条），空则不产出
+      ...(defaultNodes.length > 0 ? [{ name: '', title: '', nodes: defaultNodes }] : []),
+      ...groupSections,
+      // 高级虚拟组置尾，空则不产出（决策十八）
+      ...(advancedNodes.length > 0
+        ? [{ name: '__advanced__', title: '高级选项', nodes: advancedNodes, advanced: true }]
+        : []),
+    ]
+    this._host.setConfigSections(sections)
+    // 组模式树节点 = 全部项节点扁平序列（节点引用与 sections 共享：
+    // watch 增量更新/编辑判定/getNodeByPath 照常工作）
+    this._host.setTreeNodes(nodes)
+  }
+
+  // 配置项节点（ADR-0034 决策七）：容器项渲染自身行 + 全部值结构子级
+  // （子级不论是否 configurable——它们是该配置项的值成分）；
+  // 项行 depth=0（组不参与 expandDepth 计数，决策十），子级自 depth=1 构建（渲染层缩进一级，决策十一）
+  private _buildConfigNode(path: string[]): TreeNode | null {
+    const value = this._host.getStateByPath(path)
+    if (value === undefined) return null
+    const type = this.detectType(value, path)
+    if (!this._host.showComputed && type === 'computed') return null
+    const expandable = this.isExpandableType(type)
+    return {
+      key: path[path.length - 1],
+      value,
+      type,
+      expanded: 0 < this._host.expandDepth,
+      childCount: expandable ? getObjectKeyCount(value) : 0,
+      path,
+      children: expandable ? this._buildNodes(value, path, 1) : [],
+    }
   }
 
   // 树节点值自 store 回填（结构与展开态不动）——edit 常驻期间叶子 set 被冻结
@@ -188,10 +348,11 @@ export class TreeController {
 
   // 按路径在树中查找节点；入口隐式根下树内节点不含入口段（顶层从各入口子级起），
   // 命中某入口前缀则剥离后下钻——否则委托编辑/click-edit/watch 冻结判定在子树内
-  // 均落空（ADR-0029）。path 恰为入口路径时空段查找返回 null（入口行本身不渲染）
+  // 均落空（ADR-0029）。path 恰为入口路径时空段查找返回 null（入口行本身不渲染）。
+  // 配置面板模式不剥前缀（ADR-0034 拟定四）：项行渲染自身（非隐式根），顶层节点 path 即完整路径
   getNodeByPath(path: string[]): TreeNode | null {
     let segments = path
-    if (this._entryPaths.length > 0) {
+    if (!this._configMode && this._entryPaths.length > 0) {
       for (const ep of this._entryPaths) {
         if (path.length >= ep.length && ep.every((p, i) => p === path[i])) {
           segments = path.slice(ep.length)

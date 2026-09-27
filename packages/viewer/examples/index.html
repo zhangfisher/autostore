@@ -130,6 +130,7 @@
         <button class="tab" role="tab" aria-selected="false" data-panel="panel-icons">Icons 图标</button>
         <button class="tab" role="tab" aria-selected="false" data-panel="panel-actions">Actions 节点动作</button>
         <button class="tab" role="tab" aria-selected="false" data-panel="panel-entry">Entry 子树</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-only-config">配置面板 only-configurable</button>
       </nav>
     </aside>
 
@@ -271,6 +272,21 @@
       </div>
       <autostore-viewer id="viewer10"></autostore-viewer>
     </section>
+
+    <section class="tab-panel" id="panel-only-config">
+      <p class="info">only-configurable 配置面板（ADR-0034）：启用后只渲染 store 的 configurable 项（store.configurabled），configManager.group 有值时按组呈现。渲染顺序 = 默认区（未声明 group 的项，置顶裸排无标题条）→ 真实组（SchemaGroup 的 order 升序、缺省沉底按注册序；组标题条可点击折叠/展开，title ?? name + 组图标 + 项数徽章，横跨整行不参与两列网格与列宽测量）→ 高级选项虚拟组（置尾）。advanced:true 的项一律归入「高级选项」默认折叠——优先于 group 声明（遥测上报声明了 editor 组仍被收进高级组），空则不产出。容器配置项渲染自身行（网络代理），其嵌套的 configurable 子项归位其子级不平铺（bypass 非 configurable 子级作为值结构成员照常显示）；internalCache 非 configurable 不渲染。「云端同步」为另一个 store 在共享 ConfigManager 上注册的跨 store 空组——标题条照常渲染、他 store 项不混入。组折叠态跨树重建保留；编辑/删除/图标等既有能力照常生效（控制面板可切换编辑模式）；关闭开关回落整树渲染；下方输入框可叠加 entrys 交集过滤（入口为过滤器：路径无效仅 console.warn、交集空渲染空白）</p>
+      <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px; font-size: 0.9em; flex-wrap: wrap;">
+        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
+          <input type="checkbox" id="ctl-only-config" checked /> only-configurable（关闭回落整树）
+        </label>
+        <label>entrys 交集过滤：<input type="text" id="ctl-config-entry" placeholder="逗号分割路径，如 theme,proxy.port（空 = 全部配置项）" style="width: 26em; padding: 4px 8px; border: 1px solid #e5e7eb; border-radius: 4px;" /></label>
+      </div>
+      <autostore-viewer id="viewer11" only-configurable></autostore-viewer>
+
+      <p class="info" style="margin-top: 20px">多 store 配置面板：下方 viewer 绑定另一个 store（同一共享 ConfigManager）——组清单对两个 viewer 相同（组聚合跨 store 可见），但组内项各归各 store：「云端同步」组在此有实际配置项（上方渲染为空组），「网络/外观/编辑器」组在此为空组；两个面板各自编辑互不干扰，configManager 统一持久化（load/save 由 ConfigManager source 决定）</p>
+      <p class="info" style="color: #6b7280; font-size: 0.85em">store：云端账户配置（sharedCm11）</p>
+      <autostore-viewer id="viewer12" only-configurable></autostore-viewer>
+    </section>
     </main>
 
     <script>
@@ -324,7 +340,7 @@
 
     <script type="module" src="../src/autostore-viewer.ts"></script>
     <script type="module">
-      import { AutoStore, computed, configurable, markRaw } from 'autostore'
+      import { AutoStore, ConfigManager, computed, configurable, markRaw } from 'autostore'
       import { html } from 'lit'
 
       // 创建示例 1：基础对象
@@ -1084,6 +1100,85 @@
         ),
       })
 
+      // 创建示例 11：only-configurable 配置面板（ADR-0034）
+      // 跨 store 空组：两 store 显式共享同一 ConfigManager（默认 configManager:true 创建的是
+      // 各 store 私有实例，组记录不互通）；store11b 注册的组在 viewer11 照渲染空标题条
+      const sharedCm11 = new ConfigManager({ load: () => ({}) })
+      const store11b = new AutoStore(
+        {
+          // —— 云端同步组（本 store 的主场：在 viewer12 有项，在 viewer11 渲染为跨 store 空组）——
+          cloudSync: configurable(true, {
+            label: '启用同步',
+            group: { name: 'remote', title: '云端同步', icon: 'cloud', order: 5 },
+            widget: 'checkbox',
+          }),
+          syncInterval: configurable(15, { label: '同步间隔', group: 'remote', suffix: ' 分钟', widget: 'number', min: 1 }),
+          // —— 默认区 ——
+          deviceName: configurable('WORKSTATION-01', { label: '设备名称', widget: 'text' }),
+          conflictStrategy: configurable('ask', {
+            label: '冲突策略',
+            choices: [
+              { label: '每次询问', value: 'ask' },
+              { label: '以云端为准', value: 'remote-wins' },
+              { label: '以本地为准', value: 'local-wins' },
+            ],
+          }),
+        },
+        { configManager: sharedCm11 },
+      )
+      const store11 = new AutoStore(
+        {
+          // —— 默认区（未声明 group：置顶裸排无标题条）——
+          lang: configurable('zh-CN', { label: '界面语言', help: '未声明 group 的配置项归入置顶默认区（无标题条裸排）' }),
+          autoCheckUpdate: configurable(true, { label: '自动检查更新', widget: 'checkbox' }),
+
+          // —— 网络组（对象形式 group：title/icon/order 元数据齐全，order=0 置首）——
+          proxy: configurable(
+            {
+              // 嵌套 configurable 子项：归位容器子级不平铺（顶层只有 proxy 容器行）
+              enable: configurable(false, { label: '启用代理', group: { name: 'network', title: '网络', icon: 'globe', order: 0 }, widget: 'checkbox' }),
+              host: configurable('127.0.0.1', { label: '地址', group: 'network', widget: 'text' }),
+              port: configurable(7890, { label: '端口', group: 'network', widget: 'number', min: 1, max: 65535 }),
+              // 非 configurable 子级：作为容器值结构成员照常显示
+              bypass: 'localhost,127.0.0.1',
+            },
+            { label: '网络代理', group: 'network' },
+          ),
+
+          // —— 外观组（order=1；字符串形式 group 声明）——
+          theme: configurable('dark', {
+            label: '主题',
+            group: { name: 'appearance', title: '外观', icon: 'palette', order: 1 },
+            widget: 'select',
+            choices: [
+              { label: '浅色', value: 'light' },
+              { label: '深色', value: 'dark' },
+              { label: '自动', value: 'auto' },
+            ],
+          }),
+          fontSize: configurable(14, { label: '字号', group: 'appearance', suffix: ' px', widget: 'number', min: 10, max: 32 }),
+          editorFont: configurable('ui-monospace', { label: '等宽字体', group: 'appearance', widget: 'text' }),
+
+          // —— 编辑器组（order 缺省：沉底按注册序排在有 order 的组之后）——
+          tabSize: configurable(2, { label: '缩进空格', group: { name: 'editor', title: '编辑器' }, widget: 'number', min: 1, max: 8 }),
+          wordWrap: configurable(true, { label: '自动换行', group: 'editor', widget: 'checkbox' }),
+
+          // —— advanced：优先于 group（声明了 editor 组仍被收进「高级选项」虚拟组，置尾默认折叠）——
+          telemetry: configurable(true, {
+            label: '遥测上报',
+            advanced: true,
+            group: 'editor',
+            widget: 'checkbox',
+            help: 'advanced:true 一律归入「高级选项」（优先于 group 声明），该组默认折叠、空则不渲染',
+          }),
+          experimentalApi: configurable(false, { label: '实验性 API', advanced: true, widget: 'checkbox' }),
+
+          // —— 非 configurable：配置面板模式下不渲染 ——
+          internalCache: '不应出现在配置面板',
+        },
+        { configManager: sharedCm11 },
+      )
+
       // 绑定到各个 viewer
       document.getElementById('viewer1').store = store1
       // entrys 子树入口演示（ADR-0029）：与 viewer1 同一 store 实例，仅入口不同；
@@ -1106,6 +1201,20 @@
       document.getElementById('viewer7').store = store7
       document.getElementById('viewer8').store = store8
       document.getElementById('viewer9').store = store9
+
+      // 示例 11 绑定：only-configurable 开关 + entrys 交集过滤双通道（ADR-0034）
+      const viewer11 = document.getElementById('viewer11')
+      viewer11.store = store11
+      // 多 store：viewer12 绑定共享同一 ConfigManager 的另一 store（组清单相同、组内项各归各 store）
+      document.getElementById('viewer12').store = store11b
+      const ctlOnlyConfig = document.getElementById('ctl-only-config')
+      const ctlConfigEntry = document.getElementById('ctl-config-entry')
+      ctlOnlyConfig.addEventListener('change', () => {
+        viewer11.onlyConfigurable = ctlOnlyConfig.checked
+      })
+      ctlConfigEntry.addEventListener('change', () => {
+        viewer11.entrys = ctlConfigEntry.value.trim()
+      })
 
       // 'action' 自定义事件监听演示（ADR-0030）：bubbles+composed 穿透 shadow，
       // 外部（light DOM 层）直接 addEventListener 即可收到；
