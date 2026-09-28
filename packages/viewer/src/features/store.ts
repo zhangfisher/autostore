@@ -48,6 +48,10 @@ export class StoreController implements ReactiveController {
   // configManager 键集合订阅（ADR-0034）：新配置项注册/注销触发整树重建
   private _configWatcher: any = null
 
+  // 他 store 归属订阅（ADR-0034 扩展）：配置面板渲染跨 store 的配置项，其值变更
+  // 不流经绑定 store 的 watch，须逐归属 store 补订一份（unbind 时一并解订）
+  private _ownerWatchers: any[] = []
+
   // configManager 缺失警告已发标志（ADR-0034 决策十四：仅调试通道，一次为限）
   private _cmMissingWarned = false
 
@@ -183,6 +187,26 @@ export class StoreController implements ReactiveController {
         }
       })
     }
+
+    // 配置面板模式（ADR-0034 扩展）：渲染源含他 store 的配置项，其值变更只触发 owning
+    // store 的 watch，不会流经绑定 store——逐归属 store 补订一份。回调给到的 operate.path
+    // 就是 owning store 的原生未前缀路径，与本树路径同形，直接复用同一条增量编排。
+    // 同一 store 只订一次；绑定 store 自己的项已在上方订阅，此处跳过。
+    this._ownerWatchers = []
+    if (this._host.onlyConfigurable) {
+      const owners = (this.store as any).configManager?.owners
+      if (owners) {
+        const seen = new Set<any>()
+        for (const key in owners) {
+          const owner = owners[key]
+          if (!owner || owner === this.store || seen.has(owner)) continue
+          seen.add(owner)
+          this._ownerWatchers.push(
+            owner.watch('*', (operate: any) => this._host.onStateOperate(operate)),
+          )
+        }
+      }
+    }
   }
 
   // 解绑store watcher
@@ -199,21 +223,56 @@ export class StoreController implements ReactiveController {
       this._configWatcher.off?.()
       this._configWatcher = null
     }
+    if (this._ownerWatchers.length) {
+      for (const w of this._ownerWatchers) w?.off?.()
+      this._ownerWatchers = []
+    }
   }
 
-  // 按路径读取 state 值
+  // 跨 store 归属解析（ADR-0034 扩展：配置面板的渲染源是共享 ConfigManager 的全部
+  // 配置项，而非绑定 store 自己的 configurabled）。从整路径向根收缩做最长前缀匹配——
+  // 顶层配置项命中自身；其值结构子级（如 dns.0 / proxy.bypass，自身非 configurable）
+  // 命中最近的已注册祖先容器。非配置面板模式/无归属信息时恒回落绑定 store，
+  // 整树渲染语义不变。
+  resolveStore(path: string[]): AutoStore<any> | null {
+    const store = this.store
+    if (!store || !this._host.onlyConfigurable || path.length === 0) return store
+    const owners = (store as any).configManager?.owners
+    if (!owners) return store
+    for (let i = path.length; i >= 1; i--) {
+      const owner = owners[joinPath(path.slice(0, i))]
+      if (owner) return owner
+    }
+    return store
+  }
+
+  // 按路径取父容器（写回/删除/动作 update 的统一入口）：先按整路径解析归属 store 再
+  // 走到父级——顶层项的父即归属 store 的 state 根（跨 store 项不得写回绑定 store，
+  // 否则取到 undefined 被 if(!parent) 静默丢弃）
+  getParent(path: string[]): any {
+    const store = this.resolveStore(path)
+    if (!store) return undefined
+    let obj: any = store.state
+    for (let i = 0; i < path.length - 1; i++) obj = obj?.[path[i]]
+    return obj
+  }
+
+  // 按路径读取 state 值（归属解析同 resolveStore：配置面板下可读到他 store 的项）
   getStateByPath(path: string[]): any {
-    let obj: any = this.store?.state
+    const store = this.resolveStore(path)
+    let obj: any = store?.state
     for (const p of path) obj = obj?.[p]
     return obj
   }
 
   // 按路径读取 schema 元数据（对齐 ConfigManager.add 的 key 拼法：仅显式 options.configKey 参与前缀，不回落 id）
   // 独立于 disable-schema 显示开关：编辑（widget 决策/校验）与整体编辑判定始终读取
+  // 配置面板下 configKey 须取归属 store 的——各 store 的 configKey 不同，沿用绑定 store 的会查空
   getSchemaByPath(path: string[]): AutoStoreStateSchema | undefined {
     const configManager = (this.store as any)?.configManager
     if (!configManager) return undefined
-    const configKey = this.store!.options?.configKey
+    const owner = this.resolveStore(path)
+    const configKey = owner?.options?.configKey
     const fullKey = (configKey ? `${configKey}.` : '') + joinPath(path)
     return configManager.state[fullKey] as AutoStoreStateSchema | undefined
   }

@@ -155,9 +155,15 @@ export class TreeController {
     // 全集路径数组化：configurabled 存 core joinPath 的点分转义格式（无 configKey 前缀），
     // 读回用 splitPath 精确还原（与 core joinPath/escapePath 是 round-trip 闭环）。
     // 不可用 options.delimiter——那是 watch 路径语法的分隔符（默认 '/'），与存储格式无关
-    const allPaths: string[][] = [...((store as any).configurabled ?? [])]
-      .map((p: string) => splitPath(p))
-      .filter((p: string[]) => p.length > 0)
+    // 渲染源 = 共享 ConfigManager 的全部配置项（跨 store 聚合，ADR-0034 扩展）：
+    // owners 的键即未加 configKey 前缀的项路径（与 store.configurabled 同形），多个
+    // store 注册同一路径时天然收敛为一条（同键覆盖、注册序稳定 → 各 viewer 推导一致）。
+    // 未启用 configManager（owners 缺失/为空）时回落绑定 store 自己的 configurabled。
+    const owners = configManager?.owners as Record<string, unknown> | undefined
+    const ownerKeys = owners ? Object.keys(owners) : []
+    const pathIds: string[] =
+      ownerKeys.length > 0 ? ownerKeys : [...((store as any).configurabled ?? [])]
+    const allPaths: string[][] = pathIds.map((p: string) => splitPath(p)).filter((p: string[]) => p.length > 0)
     // entrys 交集：保留位于任一入口子树内（含相等）的项
     let selectedPaths = allPaths
     if (this._host.entrys) {

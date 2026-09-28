@@ -58,6 +58,17 @@ export class ConfigManager extends AutoStore<
     private _reseting: boolean = false;
     private _groups?:Record<string,SchemaGroup>
     /**
+     * 配置项归属表（多 store 共享同一 ConfigManager 时供外部跨 store 反查）
+     *
+     * - key：未加 configKey 前缀的项路径，joinPath 形式（与 store.configurabled 同形）
+     * - value：owning store（schema.value 的读写本就经 _createValueProxy 闭包直达它）
+     *
+     * 同一路径被多个 store 注册时后者覆盖前者（注册序稳定，读取方推导结果一致）；
+     * 销毁注销时仅当归属尚未被他 store 覆盖才移除。用于（ADR-0034 扩展）：
+     * 配置面板以本表为渲染源枚举跨 store 的配置项集合，并按整路径解析 owning store。
+     */
+    private _owners:Record<string,AutoStore<any>> = {}
+    /**
      * load 进行中计数器（支持并发 load）
      * load 主动写入配置值期间 >0，此时 onUpdate 应抑制 save，
      * 避免刚从外部存储加载的值又立即触发 save（load↔save 循环）。
@@ -105,6 +116,13 @@ export class ConfigManager extends AutoStore<
     }
     get group(){
         return this._groups
+    }
+    /**
+     * 配置项归属（跨 store 聚合）：未加 configKey 前缀的项路径 → owning store
+     * @returns
+     */
+    get owners(){
+        return this._owners
     }
     /**
      * 加载数据到当前实例
@@ -254,6 +272,8 @@ export class ConfigManager extends AutoStore<
             delete this.state[fullKey];
             // 清理可能残留的脏数据
             delete this.dirtyValues[fullKey];
+            // 归属注销：仅当该项归属仍是本 store（未被他 store 同路径覆盖）才移除
+            if (this._owners[strPath] === store) delete this._owners[strPath];
         });
     }
     add(
@@ -305,6 +325,9 @@ export class ConfigManager extends AutoStore<
         // 动态添加
         // @ts-ignore
         this.state[joinPath(configKey)] = descriptor.options;
+        // 记录归属：key 用未加 configKey 前缀的项路径（与 store.configurabled 同形），
+        // 多 store 共享本实例时供外部跨 store 枚举项与解析 owning store
+        this._owners[joinPath(pathKey)] = store;
         if (loadedValue !== undefined) {
             descriptor.options.value = loadedValue;
         }

@@ -61,8 +61,9 @@ test('invokeAction：ctx.update 经 Proxy 写节点路径，store 状态随之�
     onClick: (_v: any, ctx: any) => ctx.update(26),
   }
   invokeAction(node, undefined, action, mkEvent(), (p) => {
+    const parentPath = p.slice(0, -1)
     let obj: any = store.state
-    for (const k of p) obj = obj?.[k]
+    for (const k of parentPath) obj = obj?.[k]
     return obj
   })
   expect(store.state.user.age).toBe(26)

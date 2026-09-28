@@ -63,6 +63,7 @@ const makeEditable = (tree: TreeNode[], schemas: Record<string, any> = {}, st: a
     findNodeByPath: getNode,
     getSchemaByPath: (path) => schemas[joinPath(path)],
     syncNode: (path) => synced.push([...path]),
+    getParent: (path) => getStateByPath(path.slice(0, -1)),
     getEditInput: () => null,
   })
 }

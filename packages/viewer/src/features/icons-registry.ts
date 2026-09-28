@@ -46,8 +46,8 @@ export function parseIconsResponse(json: any): { icons: ParsedIcon[]; notFound: 
   const pkgWidth = typeof json?.width === 'number' ? json.width : 24
   const pkgHeight = typeof json?.height === 'number' ? json.height : 24
   const icons: ParsedIcon[] = []
-  for (const [name, entry] of Object.entries(json?.icons ?? {})) {
-    const body = (entry as IconifyIconEntry)?.body
+  for (const [name, entry] of Object.entries((json?.icons ?? {}) as Record<string, IconifyIconEntry>)) {
+    const body = entry?.body
     if (typeof body !== 'string' || body === '') continue
     icons.push({
       name,
@@ -57,15 +57,14 @@ export function parseIconsResponse(json: any): { icons: ParsedIcon[]; notFound: 
     })
   }
   const byName = new Map(icons.map((i) => [i.name, i]))
-  for (const [alias, entry] of Object.entries(json?.aliases ?? {})) {
-    const parent = byName.get((entry as IconifyAliasEntry)?.parent ?? '')
+  for (const [alias, entry] of Object.entries((json?.aliases ?? {}) as Record<string, IconifyAliasEntry>)) {
+    const parent = byName.get(entry?.parent ?? '')
     if (!parent) continue
-    const e = entry as IconifyAliasEntry
     icons.push({
       name: alias,
-      body: typeof e.body === 'string' && e.body !== '' ? e.body : parent.body,
-      width: typeof e.width === 'number' ? e.width : parent.width,
-      height: typeof e.height === 'number' ? e.height : parent.height,
+      body: typeof entry.body === 'string' && entry.body !== '' ? entry.body : parent.body,
+      width: typeof entry.width === 'number' ? entry.width : parent.width,
+      height: typeof entry.height === 'number' ? entry.height : parent.height,
     })
   }
   const found = new Set(icons.map((i) => i.name))
@@ -87,16 +86,27 @@ export class IconsRegistry {
   private inflight = new Set<string>()
   private timer: ReturnType<typeof setTimeout> | null = null
 
+  // 惰性读取：icon-url 属性变更仅影响后续新批次（ADR-0024）
+  private getUrlTemplate: () => string | null
+  // 传解析后的图标数据，宿主负责构造 <symbol>（DOM 归宿主，本模块保持纯逻辑）
+  private onLoaded: (icons: ParsedIcon[]) => void
+  // 风格后缀（icon-modify：rounded/sharp/outline/outline-rounded/outline-sharp）：
+  // 仅影响远程请求名（home → home-outline），注册/负缓存/引用一律用原名
+  private getModify: () => string
+  private fetchImpl: (url: string) => Promise<Response>
+
+  // 参数属性被 erasableSyntaxOnly 禁用，显式声明字段并赋值
   constructor(
-    // 惰性读取：icon-url 属性变更仅影响后续新批次（ADR-0024）
-    private getUrlTemplate: () => string | null,
-    // 传解析后的图标数据，宿主负责构造 <symbol>（DOM 归宿主，本模块保持纯逻辑）
-    private onLoaded: (icons: ParsedIcon[]) => void,
-    // 风格后缀（icon-modify：rounded/sharp/outline/outline-rounded/outline-sharp）：
-    // 仅影响远程请求名（home → home-outline），注册/负缓存/引用一律用原名
-    private getModify: () => string = () => '',
-    private fetchImpl: (url: string) => Promise<Response> = (url) => fetch(url),
-  ) {}
+    getUrlTemplate: () => string | null,
+    onLoaded: (icons: ParsedIcon[]) => void,
+    getModify: () => string = () => '',
+    fetchImpl: (url: string) => Promise<Response> = (url) => fetch(url),
+  ) {
+    this.getUrlTemplate = getUrlTemplate
+    this.onLoaded = onLoaded
+    this.getModify = getModify
+    this.fetchImpl = fetchImpl
+  }
 
   // 是否已注册
   has(name: string): boolean {

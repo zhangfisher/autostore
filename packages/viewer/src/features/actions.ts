@@ -35,7 +35,7 @@ export function invokeAction(
   schema: Record<string, any> | undefined,
   action: AutoStoreAction,
   event: Event,
-  getStateByPath: (path: string[]) => any,
+  getParent: (path: string[]) => any,
 ): void {
   if (typeof action.onClick !== 'function') return
   try {
@@ -44,7 +44,7 @@ export function invokeAction(
       options: schema,
       event,
       update: (v: any) => {
-        const parent = getStateByPath(node.path.slice(0, -1))
+        const parent = getParent(node.path)
         if (parent) parent[node.path[node.path.length - 1]] = v
       },
     })

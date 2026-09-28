@@ -13,6 +13,8 @@ export interface EditDelegateHost {
   getNodeByPath(path: string[]): TreeNode | null
   getSchemaByPath(path: string[]): Record<string, any> | undefined
   getStateByPath(path: string[]): any
+  // 按路径取父容器（跨 store 归属解析后写回，配置面板模式下不可用 getStateByPath 前缀代替）
+  getParent(path: string[]): any
   isExpandableType(type: TreeNodeType): boolean
   isEditableNode(node: TreeNode): boolean
   // 树序全部可用编辑控件（Enter 焦点转移）
@@ -63,16 +65,19 @@ export class EditDelegateController implements ReactiveController {
       this._inlineErrors.delete(key)
       this._host.requestUpdate()
     }
-    const parent = this._host.getStateByPath(node.path.slice(0, -1))
+    const parent = this._host.getParent(node.path)
     if (parent) parent[node.path[node.path.length - 1]] = convertValue(raw, node.type, plan, schema)
   }
 
-  // edit 常驻：Enter = 焦点转移到树序下一个可编辑控件（textarea 的 Enter 为换行）
-  private _onKeydown = (e: KeyboardEvent) => {
+  // edit 常驻：Enter = 焦点转移到树序下一个可编辑控件（textarea 的 Enter 为换行）；
+  // 签名对齐 _onInput 用 Event——EventListener 形参逆变，KeyboardEvent 处理器不能直接挂载
+  private _onKeydown = (e: Event) => {
+    if (!(e instanceof KeyboardEvent)) return
     if (this._host.mode !== 'edit') return
     if (e.isComposing || e.keyCode === 229) return
     if (e.key !== 'Enter') return
-    const target = e.target as HTMLElement
+    // 能走到此处 target 必为 .edit-input 的 input（TEXTAREA 已排除），与 getEditControls 元素同型
+    const target = e.target as HTMLInputElement
     if (target.tagName === 'TEXTAREA' || !target.classList.contains('edit-input')) return
     const controls = this._host.getEditControls()
     const next = controls[controls.indexOf(target) + 1]

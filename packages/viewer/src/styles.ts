@@ -1,5 +1,29 @@
 import { css } from 'lit'
 
+// 暗色调色板片段：纯变量声明，供下方「dark 属性强制」与「系统媒体查询跟随」两处门控共用（DRY）。
+// border/hover-bg 取比底色略亮的同级灰 #374151——旧值近白（#f3f3f3/#f8f8f8）在暗底形成亮圈、
+// hover 白闪且与白字对比不足；grid-band/root-bg 经 color-mix 派生自动跟随
+const darkVars = css`
+  color-scheme: dark;
+  --viewer-bg: #1f2937;
+  --viewer-text: #f9fafb;
+  --viewer-border: #374151;
+  --viewer-hover-bg: #374151;
+  --viewer-badge-bg: #4b5563;
+  --viewer-badge-text: #d1d5db;
+  --viewer-muted-text: #9ca3af;
+  --viewer-hint-text: #6b7280;
+  --viewer-toast-bg: #e5e7eb;
+  --viewer-toast-text: #1f2937;
+  --viewer-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+`
+
+// 色块相框（ADR-0025）暗色衬底：深灰托色块，扮演亮色白底的中性衬底角色，不随主题变量
+const darkMatte = css`
+  background: #111827;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+`
+
 // autostore-viewer 组件样式
 export const viewerStyles = css`
   :host {
@@ -13,6 +37,12 @@ export const viewerStyles = css`
     --viewer-badge-text: #6b7280;
     --viewer-indent-size: 20px;
     --viewer-required-color: #dc2626;
+    /* 语义变量（暗色值见上方 darkVars 片段）：原硬编码色收敛于此，明暗成对翻转 */
+    --viewer-muted-text: #6b7280;
+    --viewer-hint-text: #9ca3af;
+    --viewer-toast-bg: #1f2937;
+    --viewer-toast-text: #f9fafb;
+    --viewer-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     /* grid-band key 列背景带底色（暗色模式 hover-bg 覆盖时 color-mix 结果自动跟随） */
     --viewer-grid-band-bg: color-mix(in srgb, var(--viewer-hover-bg) 20%, transparent);
     /* root-bg 根级分组行常驻底色（暗色模式同上自动跟随） */
@@ -21,6 +51,8 @@ export const viewerStyles = css`
     --viewer-collapse-duration: 200ms;
     --viewer-collapse-easing: ease-out;
 
+    /* 原生控件（checkbox/radio/range/color/input）与滚动条配色跟随组件自身主题而非宿主页面 */
+    color-scheme: light;
     display: block;
     position: relative;
     font-family: system-ui, -apple-system, sans-serif;
@@ -29,17 +61,33 @@ export const viewerStyles = css`
     background: var(--viewer-bg);
     border: 1px solid var(--viewer-border);
     border-radius: 8px;
-    overflow: hidden;
+    /* 内容超出高度时出现垂直滚动条（高度由使用方 CSS 约束）；水平维持隐藏（长值有 ellipsis） */
+    overflow: hidden auto;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :host {
-      --viewer-bg: #1f2937;
-      --viewer-text: #f9fafb;
-      --viewer-border: #f3f3f3;
-      --viewer-hover-bg: #f8f8f8;
-      --viewer-badge-bg: #4b5563;
-      --viewer-badge-text: #d1d5db;
+  /* 滚动条：8px 现代风格，配色走主题变量（明暗模式自动跟随）；Firefox 以 thin 近似 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--viewer-badge-text) 40%, transparent);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--viewer-badge-text) 60%, transparent);
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--viewer-badge-text) 40%, transparent) transparent;
     }
   }
 
@@ -155,21 +203,15 @@ export const viewerStyles = css`
   }
 
   .collapsed-hint {
-    color: #9ca3af;
+    color: var(--viewer-hint-text);
     font-family: ui-monospace, monospace;
     font-size: 0.9em;
     margin-right: 6px;
     white-space: nowrap;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .collapsed-hint {
-      color: #6b7280;
-    }
-  }
-
   .node-value {
-    color: #6b7280;
+    color: var(--viewer-muted-text);
     font-family: ui-monospace, monospace;
     font-size: 0.9em;
     white-space: nowrap;
@@ -179,12 +221,6 @@ export const viewerStyles = css`
     min-width: 0;
     /* 空值时保留可交互高度：node-value 是双击进入编辑的触发区，高度为 0 将无法响应 */
     min-height: 1em;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .node-value {
-      color: #9ca3af;
-    }
   }
 
   /* 节点工具区：hover 时显示，编辑时常驻 */
@@ -310,7 +346,7 @@ export const viewerStyles = css`
     border: 1px solid var(--viewer-border);
     border-radius: 6px;
     padding: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--viewer-menu-shadow);
     z-index: 10;
   }
 
@@ -680,6 +716,12 @@ export const viewerStyles = css`
     background-color: var(--viewer-root-bg);
   }
 
+  /* only-configurable（ADR-0034）：组标题条即此模式下的根级分组行，
+     root-bg 同样生效；:not(:hover) 让出 hover 态（与 .root-group 同策略） */
+  :host([root-bg]) .group-header:not(:hover) {
+    background-color: var(--viewer-root-bg);
+  }
+
   /* 离屏宽度探针：复用真实样式类测文本自然宽，inline-block 才有布局盒 */
   .measure-probe {
     position: absolute;
@@ -709,8 +751,8 @@ export const viewerStyles = css`
     z-index: 10;
     padding: 4px 12px;
     border-radius: 6px;
-    background: #1f2937;
-    color: #f9fafb;
+    background: var(--viewer-toast-bg);
+    color: var(--viewer-toast-text);
     font-size: 0.85em;
     pointer-events: none;
     opacity: 1;
@@ -719,13 +761,6 @@ export const viewerStyles = css`
 
   .toast.fading {
     opacity: 0;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .toast {
-      background: #e5e7eb;
-      color: #1f2937;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -741,6 +776,29 @@ export const viewerStyles = css`
     .node-children,
     .group-body {
       transition: none;
+    }
+  }
+
+  /* ---- 暗色主题：dark 属性强制 / 系统媒体查询跟随，共用文件头调色板片段（DRY）----
+     置于文件末尾是级联要求：媒体查询无特异性加成，须以源序压过 :host 亮色默认与
+     .to-view-color 白底相框（同特异性下后者源序在前）；:host([dark]) 特异性 (0,2,0)
+     天然高于 :host 与 .to-view-color（各 0,1,0），系统亮色下强制生效；
+     两处门控同时命中时变量值相同，先后无谓 */
+  :host([dark]) {
+    ${darkVars}
+  }
+
+  :host([dark]) .to-view-color {
+    ${darkMatte}
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :host {
+      ${darkVars}
+    }
+
+    .to-view-color {
+      ${darkMatte}
     }
   }
 `

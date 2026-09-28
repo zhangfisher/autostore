@@ -7,7 +7,20 @@ export default defineConfig({
   server: {
     open: '/examples/index.html',
   },
-  plugins: [dts()],
+  // dts 用专用构建 tsconfig：autostore 映射到 core/dist 类型，避免把 core 源码
+  // 拉进编译程序产生 45 处严格标志噪音（见 tsconfig.build.json 注释）；
+  // 本插件 1.x 的选项名是 tsconfigPath（老版 vite-plugin-dts 的 tsconfig 已更名）。
+  // paths 的解析路径（../../core/dist[...]) 会被写进声明产物——beforeWriteFile 把它
+  // 还原为 'autostore' 包名引用，否则发布后相对路径失效
+  plugins: [
+    dts({
+      tsconfigPath: 'tsconfig.build.json',
+      beforeWriteFile: (_filePath, content) => ({
+        filePath: _filePath,
+        content: content.replace(/'(?:\.\.\/)+core\/dist(?:\/index\.d\.ts)?'/g, "'autostore'"),
+      }),
+    }),
+  ],
   build: {
     lib: {
       entry: 'src/index.ts',

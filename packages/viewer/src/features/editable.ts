@@ -18,6 +18,8 @@ export interface EditableHost {
   requestUpdate(): void
   // 按路径读取 state 值
   getStateByPath(path: string[]): any
+  // 按路径取父容器（跨 store 归属解析后写回，配置面板模式下不可用 getStateByPath 前缀代替）
+  getParent(path: string[]): any
   // 获取当前绑定的 store
   getStore(): AutoStore<any> | null
   // 查找同级中当前节点之后的第一个可编辑节点（Enter 链式编辑用）
@@ -260,7 +262,8 @@ export class Editable implements ReactiveController {
     const store = this._host.getStore()
     const path = this.editingPath
     if (!store || !path) return
-    const parent = this._host.getStateByPath(path.slice(0, -1))
+    // 父容器按整路径解析归属 store（配置面板下跨 store 项须写回原 store，非绑定 store）
+    const parent = this._host.getParent(path)
     const key = path[path.length - 1]
     if (!parent) return
     parent[key] = this._convert(raw)

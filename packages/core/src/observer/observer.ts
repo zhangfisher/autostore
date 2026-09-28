@@ -17,6 +17,7 @@ import { calcDependPaths } from "../utils/calcDependPaths";
 import { isFunction } from "../utils/isFunction";
 import { emitStoreEvent } from "../utils/emitStoreEvent";
 import { RefStateContext } from "../plugins/refState";
+import { SchemaGroup } from "../schema/types";
 
 export class ObserverObject<
     Value = any,
@@ -103,7 +104,7 @@ export class ObserverObject<
     set enable(value: boolean) {
         this._options.enable = value;
     }
-    set group(value: string) {
+    set group(value: string | SchemaGroup) {
         this._options.group = value;
     }
     get group() {

@@ -110,6 +110,11 @@ export class AutostoreViewer extends LitElement
   @property({ type: Boolean, attribute: 'root-bg', reflect: true })
   rootBg: boolean = false
 
+  // 强制暗色主题（缺省跟随系统 prefers-color-scheme，调色板见 styles.ts 暗色片段）；
+  // reflect 用于 :host([dark]) 样式门控
+  @property({ type: Boolean, attribute: 'dark', reflect: true })
+  dark: boolean = false
+
   // 配置面板模式（ADR-0034）：启用后只渲染 store 的 configurable 项（store.configurabled），
   // configManager.group 有值时按组呈现——默认区（无 group 非 advanced，置顶裸排）→
   // 真实组（order 升序/缺省沉底，可折叠，跨 store 空组照渲染）→ 高级虚拟组（advanced:true
@@ -461,6 +466,11 @@ export class AutostoreViewer extends LitElement
     return this._store.getStateByPath(path)
   }
 
+  // 按路径取父容器（写回/删除入口，跨 store 归属解析）
+  getParent(path: string[]): any {
+    return this._store.getParent(path)
+  }
+
   // 获取当前绑定的 store
   getStore(): AutoStore<any> | null {
     return this._store.store
@@ -554,7 +564,14 @@ export class AutostoreViewer extends LitElement
         cancelable: true,
       }),
     )
-    if (notPrevented) invokeAction(node, schema, action, event, (path) => this._store.getStateByPath(path))
+    if (notPrevented)
+      invokeAction(
+        node,
+        schema,
+        action,
+        event,
+        (path) => this._store.getParent(path),
+      )
   }
 
   // dropdown 开合态读写（menuKey = 路径#声明序号）：委托菜单开合态控制器（ADR-0031）
@@ -569,7 +586,7 @@ export class AutostoreViewer extends LitElement
   // 删除节点对应的键
   private _deleteNode(e: Event, node: TreeNode) {
     e.stopPropagation()
-    const parent = this._store.getStateByPath(node.path.slice(0, -1))
+    const parent = this._store.getParent(node.path)
     if (parent) deleteNodeValue(parent, node.path[node.path.length - 1])
   }
 
@@ -725,7 +742,8 @@ export class AutostoreViewer extends LitElement
     // schema.icon 命中链：slot 自定义 > 内置 > icon-url 拉取（ADR-0024）；
     // 未加载/负缓存回落类型图标，缺失时攒批拉取，注册完成后经 onLoaded 重渲染替换
     const schemaIcon = typeof rawSchema?.icon === 'string' && rawSchema.icon !== '' ? rawSchema.icon : undefined
-    let iconKey = getNodeIconKey(node)
+    // schema.icon 可为任意名（含远程拉取名），故放宽为 string（iconHtml 接受 string）
+    let iconKey: string = getNodeIconKey(node)
     if (schemaIcon) {
       if (this._icons.has(schemaIcon)) iconKey = schemaIcon
       else this._icons.request([schemaIcon])

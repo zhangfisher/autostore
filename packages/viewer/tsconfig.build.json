@@ -1,0 +1,14 @@
+{
+  // dts 构建专用（vite.config.ts 经 dts({ tsconfig }) 引用）：
+  // autostore 经 workspace 链接解析到 core 源码（package.json main: src/index.ts），
+  // 其源码从未满足本包严格 tsconfig 标志（core 由 tsup 构建），诊断产生 45 处噪音。
+  // 此处将 autostore 映射到 core 的 dist 产物类型，使构建 program 不再编译 core 源码；
+  // 仅影响构建检查——IDE/dev 仍走根 tsconfig 解析源码，类型即时性保留。
+  // 代价：core 接口变更后需先构建 core 再构建本包（类型取自 dist）
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "autostore": ["../core/dist/index.d.ts"]
+    }
+  }
+}
