@@ -196,7 +196,7 @@ export class TreeController {
     this._entryPaths = topLevel
     this._host.setEntryInvalid(false, [])
     // 分组归属：schema.group / schema.advanced（未门控读取——结构信息非展示词汇）
-    const groupsMeta: Record<string, any> = configManager?.group ?? {}
+    const groupsMeta: Record<string, any> = configManager?.groups ?? {}
     const groupNames = Object.keys(groupsMeta)
     if (groupNames.length === 0) {
       // 无组信息：整体平铺（无默认区概念），组视图关闭

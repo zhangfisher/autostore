@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>图标：slot 自定义 / 内置 / 远程拉取</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 200px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      图标解析链：slot 自定义 &gt; 内置 &gt; icon-url 拉取。slot 里 id="custom-user" 的 symbol 可被
+      schema.icon="custom-user" 引用；id="asv-object" 同名覆盖内置对象图标；未知名（home/star）渲染时
+      攒批合并为一次 iconify 请求
+    </p>
+    <autostore-viewer id="a">
+      <template slot="icons">
+        <symbol id="custom-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
+        <symbol id="asv-object" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/></symbol>
+      </template>
+    </autostore-viewer>
+
+    <p>icon-url 覆写为 material-symbols-light 并设置 icon-modify="outline"：请求名自动追加 -outline 后缀（schema.icon 引用名不变）</p>
+    <autostore-viewer id="b" icon-url="https://api.iconify.design/material-symbols-light.json?icons={names}" icon-modify="outline"></autostore-viewer>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        user: configurable('张三', { label: '自定义图标', icon: 'custom-user' }),
+        box: { a: 1 }, // 对象图标被 slot 同名覆盖（同心圆）
+        home: configurable('首页', { label: '远程拉取', icon: 'home' }),
+        star: configurable('收藏', { label: '远程拉取（合并请求）', icon: 'star' }),
+        ghost: configurable('幽灵', { label: '不存在的图标', icon: 'this-icon-does-not-exist', help: '负缓存后回落类型图标' }),
+      })
+
+      document.getElementById('a').store = store
+      document.getElementById('b').store = store
+    </script>
+  </body>
+</html>

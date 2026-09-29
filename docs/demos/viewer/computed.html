@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>计算属性</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 170px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+      button { margin-top: 8px; padding: 6px 12px; }
+    </style>
+  </head>
+  <body>
+    <p>默认不显示计算属性（show-computed 缺省 false）：树中只有原始状态</p>
+    <autostore-viewer id="a"></autostore-viewer>
+
+    <p>show-computed：显示函数成员与 computed() 计算属性（含异步计算结果）</p>
+    <autostore-viewer id="b" show-computed></autostore-viewer>
+    <button id="inc">quantity +1（依赖变化，计算属性重算）</button>
+
+    <script>
+      const { AutoStore, computed } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        price: 100,
+        quantity: 3,
+        // 同步计算：函数即计算属性
+        total: (scope) => scope.price * scope.quantity,
+        // computed() 包装：结果为字符串
+        formatted: computed((scope) => '¥' + scope.total.toFixed(2)),
+        // 异步计算：结果原地写入（无依赖，仅执行一次）
+        remote: computed(
+          async () => {
+            await new Promise((resolve) => setTimeout(resolve, 300))
+            return '异步计算结果'
+          },
+          [],
+        ),
+      })
+
+      document.getElementById('a').store = store
+      document.getElementById('b').store = store
+      document.getElementById('inc').addEventListener('click', () => {
+        store.state.quantity += 1
+      })
+    </script>
+  </body>
+</html>

@@ -19,7 +19,7 @@ export interface AutoFieldCaptchaOptions {
     /**
      * 刷新按钮提示文字，默认 "单击刷新验证码"
      */
-    tips?: string;
+    tooltip?: string;
 }
 @tag('auto-field-captcha')
 export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
@@ -48,7 +48,7 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
     getInitialOptions() {
         return {
             url: '',
-            tips: '单击刷新验证码',
+            tooltip: '单击刷新验证码',
         };
     }
     connectedCallback() {
@@ -100,7 +100,7 @@ export class AutoFieldCaptcha extends AutoFieldInput<AutoFieldCaptchaOptions> {
             ${this._renderImageAction({
                 type: 'image',
                 url: this.captchaUrl,
-                tips: this.options.tips,
+                tooltip: this.options.tooltip,
                 onClick: this.refreshCaptchaImage.bind(this),
             })}
             ${repeat(this.afterActions, (action) => {

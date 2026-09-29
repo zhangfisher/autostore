@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget 控件与校验</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 420px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      mode="click-edit"：双击值或按住 1 秒进入编辑。编辑控件由 schema.widget 决定，
+      未声明时按值类型回落；值非法（required / validate 不通过）时控件下方实时显示红色错误且暂不写入
+    </p>
+    <autostore-viewer id="viewer" mode="click-edit"></autostore-viewer>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        text: {
+          plain: configurable('AutoStore', { label: '文本', widget: 'text', placeholder: '请输入' }),
+          email: configurable('user@example.com', {
+            label: '邮箱',
+            widget: 'email',
+            validate: (val) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val),
+            errorMessage: '{label}格式无效',
+          }),
+          multi: configurable('第一行\n第二行', { label: '多行文本', widget: 'textarea', rows: 3 }),
+        },
+        value: {
+          count: configurable(8, { label: '数量', widget: 'number', min: 1, max: 100 }),
+          volume: configurable(0.6, { label: '音量', widget: 'range', min: 0, max: 1, step: 0.1 }),
+          color: configurable('#3b82f6', { label: '主题色', widget: 'color' }),
+          date: configurable('2000-01-01', { label: '生日', widget: 'date' }),
+          time: configurable('08:30', { label: '闹钟', widget: 'time' }),
+        },
+        choice: {
+          lang: configurable('ts', {
+            label: '下拉单 select',
+            widget: 'select',
+            choices: [
+              { label: 'TypeScript', value: 'ts' },
+              { label: 'JavaScript', value: 'js' },
+            ],
+          }),
+          level: configurable('mid', {
+            label: '单选组 radio',
+            widget: 'radio',
+            choices: [
+              { label: '初级', value: 'junior' },
+              { label: '中级', value: 'mid' },
+              { label: '高级', value: 'senior' },
+            ],
+          }),
+          shell: configurable('zsh', {
+            label: 'combobox',
+            widget: 'combobox',
+            choices: ['bash', 'zsh', 'fish'],
+          }),
+          switch: configurable('on', {
+            label: '双值复选框',
+            widget: 'checkbox',
+            choices: [
+              { label: '开', value: 'on' },
+              { label: '关', value: 'off' },
+            ],
+          }),
+          agree: configurable(false, { label: '普通复选框', widget: 'checkbox', checkLabel: '同意条款' }),
+          unknown: configurable('x', { label: '未注册 widget', widget: 'cron', help: '未知 widget 回落文本输入框' }),
+        },
+        valid: {
+          requiredField: configurable('', { label: '必填字段', widget: 'text', required: true }),
+          rangeField: configurable(5, {
+            label: '范围字段',
+            widget: 'number',
+            validate: (val) => val >= 1 && val <= 10,
+            errorMessage: '{label}须在 1 ~ 10 之间',
+          }),
+        },
+      })
+
+      document.getElementById('viewer').store = store
+    </script>
+  </body>
+</html>

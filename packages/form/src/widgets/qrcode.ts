@@ -30,7 +30,7 @@ export interface AutoFieldQRCodeOptions {
     /**
      * 悬停提示文字
      */
-    tips?: string;
+    tooltip?: string;
 }
 @tag('auto-field-qrcode')
 export class AutoFieldQRCode extends AutoField<AutoFieldQRCodeOptions> {
@@ -51,7 +51,7 @@ export class AutoFieldQRCode extends AutoField<AutoFieldQRCodeOptions> {
                 data-path=${this.path}
                 value=${this.value}
                 .placeholder=${this.options.placeholder}
-                title="${ifDefined(this.options.tips)}"
+                title="${ifDefined(this.options.tooltip)}"
                 fill=${this.options.fill}
                 background=${this.options.background}
                 radius=${this.options.radius}

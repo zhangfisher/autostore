@@ -184,6 +184,9 @@ export class AutoStore<
     }
     get id() {
         return this.options.id;
+    }    
+    get title() {
+        return this.options.title || this.id;
     }
     get state() {
         return this._data;

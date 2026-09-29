@@ -64,6 +64,16 @@ export interface AutoStoreAction {
      */
     pos?: "before" | "after";
     /**
+     * 模式显隐门控（ADR-0035）：逗号分隔的查看器模式子集（view/click-edit/edit），
+     * 空/未声明 = 全模式显示，未命中当前模式即不渲染。与 enable 分野：mode 管显隐、enable 管可点
+     */
+    mode?: string;
+    /**
+     * 侧别归属（ADR-0035）：区头/区尾中归左/右侧——按侧分组、组内保持声明序，默认侧随容器
+     * （区头默认 right、区尾默认 left）；节点动作忽略（同 pos 待遇）
+     */
+    align?: "left" | "right";
+    /**
      * 渲染形态：button 按钮（默认）/ dropdown 下拉菜单 / image 图片
      */
     type?: "button" | "dropdown" | "image";
@@ -90,11 +100,7 @@ export interface AutoStoreAction {
     /**
      * image 形态的图片地址
      */
-    url?: string;
-    /**
-     * 悬停提示（form 的字段按钮以 tips 作为 title 渲染）
-     */
-    tips?: string;
+    url?: string; 
     /**
      * 点击回调：参数为当前字段输入值与上下文（含 update 快捷更新字段值）
      */
@@ -229,9 +235,11 @@ export interface AutoStateSchemaBase<Value = any> {
      */
     placeholder?: string;
     /**
-     * 分组名称
+     * 配置组
+     * - 字符串：组名，多个组用 `,` 分隔，如 "network,advanced"
+     * - SchemaGroup：组名 + 渲染元数据（title/icon/order）
      */
-    group?: string | SchemaGroup
+    group?: string | SchemaGroup;
     /**
      * 是否是高级选项
      */

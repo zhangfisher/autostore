@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>子树入口：entrys</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 160px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>entrys 缺省（空）：渲染整个 state</p>
+    <autostore-viewer id="a"></autostore-viewer>
+
+    <p>entrys="user.address,meta.tags"：多个容器入口按声明序平铺在顶层（入口行本身不渲染）</p>
+    <autostore-viewer id="b" entrys="user.address,meta.tags"></autostore-viewer>
+
+    <p>entrys="user.firstName,user.age,hobbies.1"：叶子入口渲染单行（含数组下标）</p>
+    <autostore-viewer id="c" entrys="user.firstName,user.age,hobbies.1"></autostore-viewer>
+
+    <p>entrys="user,user.address"：嵌套入口被自动吞并（同路径行不重复）</p>
+    <autostore-viewer id="d" entrys="user,user.address"></autostore-viewer>
+
+    <p>entrys="no.such.path"：任一入口路径无效则整体提示态，不回落全树</p>
+    <autostore-viewer id="e" entrys="no.such.path"></autostore-viewer>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        user: {
+          firstName: configurable('张', { label: '姓' }),
+          age: configurable(25, { label: '年龄' }),
+          address: { city: '北京', zip: '100000' },
+        },
+        meta: { version: '1.0.0', tags: ['demo', 'test'] },
+        hobbies: ['阅读', '编程', '游泳'],
+      })
+
+      for (const id of ['a', 'b', 'c', 'd', 'e']) document.getElementById(id).store = store
+    </script>
+  </body>
+</html>

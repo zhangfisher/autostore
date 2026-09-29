@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>autostore-viewer 快速入门</title>
+    <!-- ① core 的 IIFE（全局名 AutoStoreSpaces） -->
+    <script src="/autostore/autostore.js"></script>
+    <!-- ② viewer 的 IIFE：仅注册 <autostore-viewer> 自定义元素 -->
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      autostore-viewer {
+        display: block;
+        height: 300px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+      button { margin-top: 8px; padding: 6px 12px; }
+    </style>
+  </head>
+  <body>
+    <autostore-viewer id="viewer"></autostore-viewer>
+    <button id="inc">price +10（状态驱动，视图自动刷新）</button>
+
+    <script>
+      // configurable()：为状态项声明 schema 元数据（label / widget / choices / help），
+      // viewer 读取后按元数据渲染（无 schema 时纯按值类型渲染）
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        user: {
+          name: configurable('张三', { label: '姓名', widget: 'text' }),
+          role: configurable('admin', {
+            label: '角色',
+            widget: 'select',
+            choices: [
+              { label: '管理员', value: 'admin' },
+              { label: '访客', value: 'guest' },
+            ],
+          }),
+        },
+        price: configurable(100, { label: '单价', widget: 'number', suffix: ' 元' }),
+        count: 2,
+        // 状态树中的函数即同步计算属性，viewer 默认不显示（见「计算属性」章节）
+        total: (scope) => scope.price * scope.count,
+      })
+
+      // 绑定：把 store 实例赋给 viewer 的 store 属性（另一种是通过 store-id 属性按全局注册表查找）
+      document.getElementById('viewer').store = store
+
+      document.getElementById('inc').addEventListener('click', () => {
+        store.state.price += 10
+      })
+    </script>
+  </body>
+</html>

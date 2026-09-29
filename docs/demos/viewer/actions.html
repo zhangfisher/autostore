@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>节点动作：schema.actions</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      pre { margin-top: 8px; padding: 8px 12px; background: rgba(127, 127, 127, 0.08); border-radius: 6px; font-size: 12px; white-space: pre-wrap; }
+      label { font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+      autostore-viewer {
+        display: block;
+        height: 260px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      悬停行显示 node-tools 内的动作按钮组：onClick 收到当前状态值，ctx.update(v) 经 Proxy 写回该路径；
+      每次点击同时派发 'action' 自定义事件（cancelable：preventDefault 后 onClick 不再执行）。
+      使用 show-actions 属性可切换 0=隐藏 / 1=悬停显示（默认）/ 2=常驻显示
+    </p>
+    <p>
+      <label><input type="checkbox" id="intercept" /> 勾选后 preventDefault 拦截，onClick 不再执行</label>
+    </p>
+    <autostore-viewer id="viewer"></autostore-viewer>
+    <pre id="events">（点击任一动作，这里显示最近派发的 action 事件 detail）</pre>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        counter: configurable(42, {
+          label: '计数器',
+          suffix: ' 次',
+          actions: [
+            { label: '加一', tooltip: 'value 加一', onClick: (value, ctx) => ctx.update(value + 1) },
+            { label: '减一', onClick: (value, ctx) => ctx.update(value - 1) },
+            { icon: 'rotate-ccw', tooltip: '重置为 0', onClick: (_value, ctx) => ctx.update(0) },
+            { icon: 'bolt', label: '翻倍', tooltip: 'icon + label：渲染为图标按钮', onClick: (value, ctx) => ctx.update(value * 2) },
+            { label: '禁用操作', enable: false, tooltip: 'enable:false 渲染但置灰' },
+            { label: '隐藏操作', visible: false },
+          ],
+        }),
+        theme: configurable('深色', {
+          label: '主题',
+          actions: [
+            {
+              type: 'dropdown',
+              label: '切换主题',
+              caret: true,
+              syncMenu: true,
+              tooltip: 'dropdown 形态：菜单项点击以该项为 ctx.action',
+              items: [
+                { label: '浅色', icon: 'sun', onClick: (_v, ctx) => ctx.update('浅色') },
+                { label: '深色', icon: 'moon', onClick: (_v, ctx) => ctx.update('深色') },
+                '-',
+                { label: '跟随系统', enable: false },
+              ],
+            },
+          ],
+        }),
+        server: configurable(
+          { host: '192.168.1.10', port: 8080 },
+          {
+            label: '服务器',
+            help: '容器节点同样支持 actions：update 写回整个对象',
+            actions: [
+              { label: '重置', onClick: (_v, ctx) => ctx.update({ host: 'localhost', port: 8080 }) },
+            ],
+          },
+        ),
+      })
+
+      const viewer = document.getElementById('viewer')
+      viewer.store = store
+
+      const events = document.getElementById('events')
+      const intercept = document.getElementById('intercept')
+      viewer.addEventListener('action', (e) => {
+        const { path, value, action } = e.detail
+        events.textContent = JSON.stringify(
+          { path, value, action: { label: action.label, type: action.type ?? 'button' } },
+          null,
+          2,
+        )
+        if (intercept.checked) e.preventDefault()
+      })
+    </script>
+  </body>
+</html>

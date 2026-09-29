@@ -28,7 +28,7 @@ var __af_ns17 = __core.AutoStoreNS;
                 data-value="${e[this.valueKey]}"
                 .value="${e[this.valueKey]}"
                 .checked=${this.value.includes(e[this.valueKey])}
-                help-text="${e.tips}"
+                help-text="${e.tooltip}"
                 @sl-change=${this._onCheckChange.bind(this)}
             >
                 ${e.label}</sl-checkbox

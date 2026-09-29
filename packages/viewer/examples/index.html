@@ -135,6 +135,8 @@
         <button class="tab" role="tab" aria-selected="false" data-panel="panel-only-config">配置面板 only-configurable</button>
         <button class="tab" role="tab" aria-selected="false" data-panel="panel-multi-config">多 Store 配置面板</button>
         <button class="tab" role="tab" aria-selected="false" data-panel="panel-dark">暗色主题</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-multiline">多行文本</button>
+        <button class="tab" role="tab" aria-selected="false" data-panel="panel-form-submit">表单提交</button>
       </nav>
     </aside>
 
@@ -190,10 +192,10 @@
             <option value="3">水平+垂直</option>
           </select>
         </label>
-        <label><input type="checkbox" id="ctl-grid-band" /> key 列背景带</label>
+        <label><input type="checkbox" id="ctl-hide-key-bg" /> 隐藏 key 列背景带</label>
         <label><input type="checkbox" id="ctl-root-bg" /> 根级分组背景</label>
         <label><input type="checkbox" id="ctl-dark" /> 暗色主题</label>
-        <label>key 列宽上限：<input type="number" id="ctl-max-key-width" value="240" min="40" step="10" style="width: 5em" /> px</label>
+        <label>key 列宽上限：<input type="number" id="ctl-max-key-width" value="240" min="40" step="10" style="width: 5em" /> px <small title="拖拽标签区与值区的分界可手动调宽，双击复位（上限只约束自动测量）">（分界可拖拽调宽）</small></label>
       </div>
 
       <section class="tab-panel active" id="panel-basic">
@@ -279,7 +281,7 @@
     </section>
 
     <section class="tab-panel" id="panel-only-config">
-      <p class="info">only-configurable 配置面板（ADR-0034）：启用后只渲染 store 的 configurable 项（store.configurabled），configManager.group 有值时按组呈现。渲染顺序 = 默认区（未声明 group 的项，置顶裸排无标题条）→ 真实组（SchemaGroup 的 order 升序、缺省沉底按注册序；组标题条可点击折叠/展开，title ?? name + 组图标 + 项数徽章，横跨整行不参与两列网格与列宽测量）→ 高级选项虚拟组（置尾）。advanced:true 的项一律归入「高级选项」默认折叠——优先于 group 声明（遥测上报声明了 editor 组仍被收进高级组），空则不产出。容器配置项渲染自身行（网络代理），其嵌套的 configurable 子项归位其子级不平铺（bypass 非 configurable 子级作为值结构成员照常显示）；internalCache 非 configurable 不渲染。「云端同步」为另一个 store 在共享 ConfigManager 上注册的跨 store 空组——标题条照常渲染、他 store 项不混入。组折叠态跨树重建保留；编辑/删除/图标等既有能力照常生效（控制面板可切换编辑模式）；关闭开关回落整树渲染；下方输入框可叠加 entrys 交集过滤（入口为过滤器：路径无效仅 console.warn、交集空渲染空白）</p>
+      <p class="info">only-configurable 配置面板（ADR-0034）：启用后只渲染 store 的 configurable 项（store.configurabled），configManager.groups 有值时按组呈现。渲染顺序 = 默认区（未声明 group 的项，置顶裸排无标题条）→ 真实组（SchemaGroup 的 order 升序、缺省沉底按注册序；组标题条可点击折叠/展开，title ?? name + 组图标 + 项数徽章，横跨整行不参与两列网格与列宽测量）→ 高级选项虚拟组（置尾）。advanced:true 的项一律归入「高级选项」默认折叠——优先于 group 声明（遥测上报声明了 editor 组仍被收进高级组），空则不产出。容器配置项渲染自身行（网络代理），其嵌套的 configurable 子项归位其子级不平铺（bypass 非 configurable 子级作为值结构成员照常显示）；internalCache 非 configurable 不渲染。「云端同步」为另一个 store 在共享 ConfigManager 上注册的跨 store 空组——标题条照常渲染、他 store 项不混入。组折叠态跨树重建保留；编辑/删除/图标等既有能力照常生效（控制面板可切换编辑模式）；关闭开关回落整树渲染；下方输入框可叠加 entrys 交集过滤（入口为过滤器：路径无效仅 console.warn、交集空渲染空白）</p>
       <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px; font-size: 0.9em; flex-wrap: wrap;">
         <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
           <input type="checkbox" id="ctl-only-config" checked /> only-configurable（关闭回落整树）
@@ -294,7 +296,7 @@
     </section>
 
     <section class="tab-panel" id="panel-multi-config">
-      <p class="info">独立的多 store 配置面板（ADR-0034）：两个 viewer 都以 only-configurable 属性常驻启用配置面板模式（无开关、无回落整树），绑定共享同一 ConfigManager（独立实例 sharedCm12，global:false 不接管全局键）的两个 store。组清单由 configManager.group 跨 store 聚合，对两个面板完全相同；组内项各归各 store 的 configurabled，互不混入：「网络」组在两侧都有项但内容不同（store A 是代理/DNS，store B 是 STUN），「外观/编辑器/高级选项」只在 viewerA 有项，「云端同步」只在 viewerB 有项、在 viewerA 渲染为空标题条（默认区置顶裸排 → 真实组按 order 升序（网络 0 → 外观 1 → 云端同步 5，编辑器缺省沉底）→ 高级选项虚拟组置尾）。两面板各自编辑互不干扰，非 configurable 项（internalCache）不渲染</p>
+      <p class="info">独立的多 store 配置面板（ADR-0034）：两个 viewer 都以 only-configurable 属性常驻启用配置面板模式（无开关、无回落整树），绑定共享同一 ConfigManager（独立实例 sharedCm12，global:false 不接管全局键）的两个 store。组清单由 configManager.groups 跨 store 聚合，对两个面板完全相同；组内项各归各 store 的 configurabled，互不混入：「网络」组在两侧都有项但内容不同（store A 是代理/DNS，store B 是 STUN），「外观/编辑器/高级选项」只在 viewerA 有项，「云端同步」只在 viewerB 有项、在 viewerA 渲染为空标题条（默认区置顶裸排 → 真实组按 order 升序（网络 0 → 外观 1 → 云端同步 5，编辑器缺省沉底）→ 高级选项虚拟组置尾）。两面板各自编辑互不干扰，非 configurable 项（internalCache）不渲染</p>
       <p class="info" style="color: #6b7280; font-size: 0.85em">store A：客户端配置（storeA / sharedCm12）</p>
       <autostore-viewer id="viewer13" only-configurable></autostore-viewer>
 
@@ -308,6 +310,25 @@
       <autostore-viewer id="viewer15" dark></autostore-viewer>
       <p class="info" style="margin-top: 20px; color: #6b7280; font-size: 0.85em">默认（跟随系统 prefers-color-scheme）</p>
       <autostore-viewer id="viewer16"></autostore-viewer>
+    </section>
+
+    <section class="tab-panel" id="panel-multiline">
+      <p class="info">含换行的字符串值保持多行渲染（换行符原样保留），高度截断至内容可见区 40%，超出部分裁剪且无滚动条。doc.intro 为少量换行（完整可见），doc.changelog 为 40 行长文本（触达 40% 上限被裁剪）；单行值仍是 nowrap + 省略号。组件高度 320px，40% 即 128px</p>
+      <autostore-viewer id="viewer17"></autostore-viewer>
+    </section>
+
+    <section class="tab-panel" id="panel-form-submit">
+      <p class="info">表单提交管理演示（ADR-0035）：整个组件由 form 包裹（action/method 透传），默认区头含「重置/保存」（仅编辑模式显示；本 store 已开启 resetable，重置恢复初始状态）。保存 → 受管提交：行内错误校验（把「配置名称」清空后保存，演示校验拦截 toast）→ 全局半透明遮罩「正在提交...」（spinner，拦截交互）→ fetch POST /api/submit-settings（本页 mock：延迟 800ms 回显成功，勾选「模拟失败」返回 500）→ 成功/失败 toast + submit-result 事件（detail={ok,status,response}）显示于下方日志。区头标题为 &lt;store.title&gt; 占位符求值；number 输入缺省 step="any"，小数「告警阈值 0.75」可正常提交。需保持控制面板「编辑模式」为 edit（全局切换会覆盖本 viewer 的声明值）</p>
+      <div style="margin-bottom: 8px; display: flex; gap: 16px; align-items: center; font-size: 0.9em">
+        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer">
+          <input type="checkbox" id="ctl-submit-fail" /> 模拟失败（服务端返回 500）
+        </label>
+        <span style="color: #6b7280">最近 submit-result detail：</span>
+      </div>
+      <autostore-viewer id="viewer18" mode="edit" action="/api/submit-settings" method="POST"></autostore-viewer>
+      <p class="info" style="margin-top: 12px; color: #6b7280; font-size: 0.85em">提交的数据（FormData，编辑控件 name 即完整状态路径）：</p>
+      <pre id="submit-payload" style="padding: 8px 12px; background: rgba(127,127,127,0.08); border-radius: 6px; font-size: 0.8em; white-space: pre-wrap; min-height: 1.2em">（点击保存后此处显示提交的 FormData）</pre>
+      <pre id="submit-events" style="margin-top: 8px; padding: 8px 12px; background: rgba(127,127,127,0.08); border-radius: 6px; font-size: 0.8em; white-space: pre-wrap; min-height: 1.2em">（点击保存后此处显示最近派发的 submit-result detail）</pre>
     </section>
     </main>
 
@@ -336,7 +357,7 @@
       const ctlIconModify = document.getElementById('ctl-icon-modify')
       const ctlValueAlign = document.getElementById('ctl-value-align')
       const ctlGrid = document.getElementById('ctl-grid')
-      const ctlGridBand = document.getElementById('ctl-grid-band')
+      const ctlHideKeyBg = document.getElementById('ctl-hide-key-bg')
       const ctlRootBg = document.getElementById('ctl-root-bg')
       const ctlDark = document.getElementById('ctl-dark')
       const ctlMaxKeyWidth = document.getElementById('ctl-max-key-width')
@@ -353,13 +374,13 @@
           viewer.iconModify = ctlIconModify.value
           viewer.valueAlign = ctlValueAlign.value
           viewer.grid = ctlGrid.value
-          viewer.gridBand = ctlGridBand.checked
+          viewer.hideKeyBg = ctlHideKeyBg.checked
           viewer.rootBg = ctlRootBg.checked
           viewer.dark = ctlDark.checked
           viewer.maxKeyWidth = Number(ctlMaxKeyWidth.value) || 240
         })
       }
-      ;[ctlCount, ctlHint, ctlComputed, ctlMode, ctlAllowDelete, ctlDisableSchema, ctlShowActions, ctlIconModify, ctlValueAlign, ctlGrid, ctlGridBand, ctlRootBg, ctlDark, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
+      ;[ctlCount, ctlHint, ctlComputed, ctlMode, ctlAllowDelete, ctlDisableSchema, ctlShowActions, ctlIconModify, ctlValueAlign, ctlGrid, ctlHideKeyBg, ctlRootBg, ctlDark, ctlMaxKeyWidth].forEach((c) => c.addEventListener('change', applyControls))
     </script>
 
     <script type="module" src="../src/autostore-viewer.ts"></script>
@@ -376,5 +397,7 @@
     <script type="module" src="./demos/only-config.ts"></script>
     <script type="module" src="./demos/multi-store-config.ts"></script>
     <script type="module" src="./demos/dark.ts"></script>
+    <script type="module" src="./demos/multiline.ts"></script>
+    <script type="module" src="./demos/form-submit.ts"></script>
   </body>
 </html>

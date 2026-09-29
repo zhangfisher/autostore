@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>外观与主题</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 200px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>默认：value 左对齐、标签列统一列宽（max-key-width 截断显示 ...）</p>
+    <autostore-viewer id="a"></autostore-viewer>
+
+    <p>grid="3"（水平 + 垂直网格线）+ root-bg（根级分组行常驻底色）；key 列背景带默认显示</p>
+    <autostore-viewer id="b" grid="3" root-bg></autostore-viewer>
+
+    <p>value-align="right" + dark（强制暗色主题，缺省跟随系统 prefers-color-scheme）</p>
+    <autostore-viewer id="c" value-align="right" dark></autostore-viewer>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        'a-very-long-config-key-name': configurable('值', { label: '超长标签会按 max-key-width 截断显示省略号' }),
+        network: { host: '127.0.0.1', port: 7890 },
+        appearance: { theme: 'dark', fontSize: 14 },
+      })
+
+      for (const id of ['a', 'b', 'c']) document.getElementById(id).store = store
+    </script>
+  </body>
+</html>

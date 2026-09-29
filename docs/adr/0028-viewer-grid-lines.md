@@ -33,13 +33,14 @@ viewer 引入 `grid` 属性（`'0' | '1' | '2' | '3'`，默认 `'0'`）为树提
 
 `grid` 与 `value-align` 无联动分支。`value-align=right` 模式不测量列宽（`--viewer-key-width` 缺失），垂直线不适用——grilling 共识原表述为「calc 失效 → 线自然不可见」，实施发现技术偏差：`width` 声明失效后绝对定位伪元素 shrink-to-fit，`border-right` 仍会残留 1px 贴左显示。故修正为选择器显式排除 `:host([grid='2']:not([value-align='right']))`——仍是零 JS 分支，视觉结果与共识一致（right 模式无垂直线，水平线不受影响）。
 
-## 决策六：grid-band key 列背景带
+## 决策六：key 列背景带（默认显示）
 
-布尔属性 `grid-band` 启用后 key 列区域呈淡底高亮带（`background-color: var(--viewer-grid-band-bg)`，默认 `color-mix(in srgb, var(--viewer-hover-bg) 90%, transparent)`）。约束：
+key 列区域**默认**呈淡底高亮带（`background-color: var(--viewer-grid-band-bg)`，默认 `color-mix(in srgb, var(--viewer-hover-bg) 90%, transparent)`），布尔属性 `hide-key-bg` 启用后隐藏。该属性前身为 `grid-band`（默认关闭、启用后显示），后按需求反转为默认显示并更名，CSS 变量名 `--viewer-grid-band-bg` 保持不变。约束：
 
-- **与垂直线解耦**：背景带在**任意 grid 值**（含 0/1 无垂直线）下均显示——初版把背景挂在垂直线伪元素上（仅 grid=2/3 有载体），后按需求重构为三规则各司其职：载体几何（grid-band 或 grid=2/3 任一启用即渲染 underlay 伪元素）、背景（仅 grid-band）、右缘描边（仅 grid=2/3），条件组合天然正交。
+- **与垂直线解耦**：背景带在**任意 grid 值**（含 0/1 无垂直线）下均显示——初版把背景挂在垂直线伪元素上（仅 grid=2/3 有载体），后按需求重构为三规则各司其职：载体几何（背景未隐藏或 grid=2/3 任一成立即渲染 underlay 伪元素）、背景（仅背景未隐藏）、右缘描边（仅 grid=2/3），条件组合天然正交。
 - **变量化**：底色经 `--viewer-grid-band-bg` 暴露，暗色模式 `--viewer-hover-bg` 被覆盖时 color-mix 结果自动跟随，无需暗色分支。
-- Boolean 属性走 CSS attr 门控（`:host([grid-band])`），故 `reflect: true`（JS 属性赋值须同步到 attribute 才能驱动样式）。
+- Boolean 属性走 CSS attr 门控（`:host(:not([hide-key-bg]))`），故 `reflect: true`（JS 属性赋值须同步到 attribute 才能驱动样式）。
+- `value-align="right"` 模式不测量列宽（`--viewer-key-width` 缺失），载体与背景带一并不渲染（与决策五同因）。
 
 ## 决策七：root-bg 根级分组背景
 

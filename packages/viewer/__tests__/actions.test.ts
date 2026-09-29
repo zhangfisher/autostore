@@ -2,7 +2,7 @@ import { test, expect } from 'bun:test'
 import { AutoStore } from 'autostore'
 import { nothing } from 'lit'
 import { filterVisibleActions, invokeAction, renderNodeActions } from '../src/features/actions'
-import type { ActionsHost } from '../src/features/actions'
+import type { ActionTarget, ActionsHost } from '../src/features/actions'
 import type { AutoStoreAction } from 'autostore'
 import type { TreeNode } from '../src/types'
 
@@ -15,6 +15,13 @@ const mkNode = (key: string, path: string[], value: any): TreeNode => ({
   childCount: 0,
   path,
   children: [],
+})
+
+// 节点 → 动作触发目标（ADR-0035 ActionTarget 契约，renderNodeActions 内部同构）
+const mkTarget = (node: TreeNode): ActionTarget => ({
+  path: node.path,
+  value: node.value,
+  menuKeyPrefix: node.path.join('.'),
 })
 
 const mkEvent = (): Event => ({ stopPropagation: () => {} } as unknown as Event)
@@ -34,6 +41,21 @@ test('filterVisibleActions：visible=undefined/true 保留，false 过滤，非�
   expect(filterVisibleActions([a, b, c, null as any, 'x' as any])).toEqual([a, b])
 })
 
+test('filterVisibleActions：mode 门控（ADR-0035）——逗号分隔子集命中保留、未命中剔除、空串全显示', () => {
+  const editOnly: AutoStoreAction = { label: 'a', mode: 'edit' }
+  const multi: AutoStoreAction = { label: 'b', mode: 'view, click-edit' }
+  const all: AutoStoreAction = { label: 'c' }
+  expect(filterVisibleActions([editOnly, multi, all], 'edit')).toEqual([editOnly, all])
+  expect(filterVisibleActions([editOnly, multi, all], 'view')).toEqual([multi, all])
+  expect(filterVisibleActions([editOnly, multi, all], 'click-edit')).toEqual([multi, all])
+  // 未声明 mode = 全模式显示
+  // 缺省当前模式跳过模式过滤（组件恒传真实模式，单测便利）
+  expect(filterVisibleActions([editOnly, multi, all])).toEqual([editOnly, multi, all])
+  // mode 空串/纯空白视为全模式
+  const blank: AutoStoreAction = { label: 'd', mode: ' , ' }
+  expect(filterVisibleActions([blank], 'view')).toEqual([blank])
+})
+
 // ---- invokeAction（onClick 契约，ADR-0030）----
 
 test('invokeAction：value 传节点当前状态值（原始值而非显示值），ctx 携带 action/options/event', () => {
@@ -46,7 +68,7 @@ test('invokeAction：value 传节点当前状态值（原始值而非显示值�
   action.onClick = (value: any, ctx: any) => {
     received = { value, ctx }
   }
-  invokeAction(node, schema, action, event, (p) => store.state[p as any])
+  invokeAction(mkTarget(node), schema, action, event, (p) => store.state[p as any])
   expect(received.value).toBe(5)
   expect(received.ctx.action).toBe(action)
   expect(received.ctx.options).toBe(schema)
@@ -60,7 +82,7 @@ test('invokeAction：ctx.update 经 Proxy 写节点路径，store 状态随之�
   const action: AutoStoreAction = {
     onClick: (_v: any, ctx: any) => ctx.update(26),
   }
-  invokeAction(node, undefined, action, mkEvent(), (p) => {
+  invokeAction(mkTarget(node), undefined, action, mkEvent(), (p) => {
     const parentPath = p.slice(0, -1)
     let obj: any = store.state
     for (const k of parentPath) obj = obj?.[k]
@@ -72,14 +94,27 @@ test('invokeAction：ctx.update 经 Proxy 写节点路径，store 状态随之�
 test('invokeAction：无 onClick 静默跳过；onClick 抛错容错 warn 不上抛', () => {
   const node = mkNode('x', ['x'], 1)
   // 无 onClick：不炸
-  invokeAction(node, undefined, { label: 'x' }, mkEvent(), () => ({}))
+  invokeAction(mkTarget(node), undefined, { label: 'x' }, mkEvent(), () => ({}))
   // 抛错：被捕获不上抛（console.warn 输出到测试日志可接受）
   const action: AutoStoreAction = {
     onClick: () => {
       throw new Error('boom')
     },
   }
-  expect(() => invokeAction(node, undefined, action, mkEvent(), () => ({}))).not.toThrow()
+  expect(() => invokeAction(mkTarget(node), undefined, action, mkEvent(), () => ({}))).not.toThrow()
+})
+
+test('invokeAction：区域动作无节点（ADR-0035）——value=undefined，update 为 noop 不炸', () => {
+  let received: any = null
+  const action: AutoStoreAction = {
+    label: '保存',
+    onClick: (value: any, ctx: any) => {
+      received = { value }
+      ctx.update(999)
+    },
+  }
+  invokeAction({ menuKeyPrefix: 'header' }, undefined, action, mkEvent())
+  expect(received.value).toBeUndefined()
 })
 
 // ---- renderNodeActions（TemplateResult 结构级断言，无 DOM）----
@@ -97,7 +132,7 @@ const makeHost = (overrides: Partial<ActionsHost> = {}) => {
     requestIcons: (names: string[]) => {
       requested.push(...names)
     },
-    clickAction: (_node: TreeNode, _schema: any, action: AutoStoreAction, event: Event) => {
+    clickAction: (_target: ActionTarget, _schema: any, action: AutoStoreAction, event: Event) => {
       clicks.push({ action, event })
     },
     isMenuOpen: (key: string) => open.has(key),

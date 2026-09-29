@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>值渲染钩子：toView / toRender</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 220px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      toView（看）：查看态自定义值的渲染，返回 HTML 字符串；toRender（改）：编辑态返回自定义控件，替代默认编辑器，
+      值写回由控件自理（直接改 store，即时生效）。双击值即可看到 toRender 效果
+    </p>
+    <autostore-viewer id="viewer" mode="click-edit"></autostore-viewer>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        level: configurable('重要', {
+          label: '自定义查看（toView）',
+          toView: (val) =>
+            `<b style="color:#dc2626">${val}</b><span style="color:#6b7280">（toView 渲染）</span>`,
+        }),
+        amount: configurable(50, {
+          label: '自定义编辑（toRender）',
+          toRender: (value) => {
+            // 可返回 lit 模板 / HTML 字符串 / DOM 节点；这里返回 DOM 节点，返回值经写回自理
+            const wrap = document.createElement('span')
+            wrap.style.display = 'inline-flex'
+            wrap.style.gap = '6px'
+            const input = document.createElement('input')
+            input.className = 'edit-input'
+            input.type = 'range'
+            input.min = '0'
+            input.max = '100'
+            input.value = String(value)
+            const label = document.createElement('b')
+            label.textContent = String(value)
+            input.addEventListener('input', () => {
+              store.state.amount = Number(input.value)
+              label.textContent = input.value
+            })
+            wrap.append(input, label)
+            return wrap
+          },
+        }),
+      })
+
+      document.getElementById('viewer').store = store
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 // 示例 12：独立的 only-configurable 多 store 配置面板（index.html → panel-multi-config）
 // 与示例 11 的区别：不复用 sharedCm11、不挂任何控制开关——两个 viewer 都以
 // only-configurable 属性常驻启用配置面板模式，专门演示共享 ConfigManager 下的多 store 形态：
-// 组清单（configManager.group）跨 store 聚合对两个面板相同，组内项各归各 store 的 configurabled。
+// 组清单（configManager.groups）跨 store 聚合对两个面板相同，组内项各归各 store 的 configurabled。
 import { AutoStore, ConfigManager, configurable } from 'autostore'
 import type { AutostoreViewer } from '../../src/autostore-viewer'
 

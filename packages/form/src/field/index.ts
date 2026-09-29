@@ -197,7 +197,7 @@ export class AutoField<Options = unknown> extends LitElement {
             <sl-dropdown
                 class="action-widget"
                 hoist
-                title=${ifDefined(action.tips)}
+                title=${ifDefined(action.tooltip)}
                 placement=${(action as any).pos === "before" ? "bottom-start" : "bottom-end"}
             >
                 <sl-button slot="trigger" ?caret=${action.caret}>
@@ -218,7 +218,7 @@ export class AutoField<Options = unknown> extends LitElement {
                                 if (action.syncMenu) {
                                     action.label = item.label;
                                     action.icon = item.icon;
-                                    action.tips = item.tips;
+                                    action.tooltip = item.tooltip;
                                     this.requestUpdate();
                                 }
                             })}
@@ -242,7 +242,7 @@ export class AutoField<Options = unknown> extends LitElement {
         return html`
             <sl-button
                 class="action-widget"
-                title=${ifDefined(action.tips)}
+                title=${ifDefined(action.tooltip)}
                 variant=${ifDefined(action.variant)}
                 size=${action.size || this.context.size}
                 @click=${this._onClickAction.call(this, action)}
@@ -255,7 +255,7 @@ export class AutoField<Options = unknown> extends LitElement {
     _renderImageAction(action: any) {
         return html`
             <sl-button
-                title="${ifDefined(action.tips)}"
+                title="${ifDefined(action.tooltip)}"
                 variant="text"
                 class="action-widget image"
                 @click=${this._onClickAction.call(this, action)}

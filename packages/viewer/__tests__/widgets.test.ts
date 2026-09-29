@@ -87,6 +87,28 @@ test('color 渲染门控由 registry 分发承担：input 家族模块无 toView
   expect(inputModule.toView).toBeUndefined()
 })
 
+test('input 编辑态：number 输入缺省 step="any"（消除浏览器 step=1 隐式假约束），schema 声明 step 优先', () => {
+  // number 节点（mkNode 硬编码 string 类型，自构 number 型节点）：模板 step 插值为 'any'
+  const numberNode: TreeNode = { ...mkNode(30.5), type: 'number' }
+  const numberCtx: Ctx = {
+    ...makeCtx(undefined, 30.5),
+    plan: resolveEditorPlan(numberNode, {}, 'g'),
+    node: numberNode,
+  }
+  expect((numberCtx.plan as any).inputType).toBe('number')
+  const numberValues = (inputModule.toRender(numberCtx).values as any[]).map(String)
+  expect(numberValues).toContain('any')
+  // schema 显式声明 step：按声明，不注入 'any'
+  const declaredCtx = makeCtx(undefined, 30.5, { step: 0.5 })
+  const declaredValues = (inputModule.toRender(declaredCtx).values as any[]).map(String)
+  expect(declaredValues).toContain('0.5')
+  expect(declaredValues).not.toContain('any')
+  // text 输入：不注入 step
+  const textCtx = makeCtx(undefined, 'x')
+  const textValues = (inputModule.toRender(textCtx).values as any[]).map(String)
+  expect(textValues).not.toContain('any')
+})
+
 test('widget=range 查看态：数值渲染迷你滑轨，非数值回落 null', () => {
   expect(rangeToView(makeCtx('range', 0.6, { min: 0, max: 1, step: 0.1 }))).not.toBeNull()
   expect(rangeToView(makeCtx('range', 'not-a-number'))).toBeNull()

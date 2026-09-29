@@ -12,6 +12,7 @@
 - **灵活的存储抽象** - 通过 `load/save` 函数抽象配置源，支持 localStorage、API、文件等任意存储后端
 - **完整的校验系统** - 内置校验函数、错误信息模板、多种失败处理策略（`throw`/`ignore`/`pass`）
 - **跨 Store 引用** - `ref()` 函数支持在配置元数据中引用所在 Store 的状态值，实现复杂联动逻辑
+- **配置组** - `configurable` 声明的 `group` 自动聚合到 `configManager.groups`，支持组名字符串与 `SchemaGroup` 元数据，便于按组渲染配置界面
 - **UI 友好** - 元数据可包含渲染参数（如 `widget`），便于自动生成配置界面
 
 ## 快速入门
@@ -327,6 +328,91 @@ expect(configManager.state["network.network.dhcp"].value).toBe(true);
 - **循环引用**：初始值对象存在循环引用时会自动终止扫描，不会死循环
 - 同一个`configurable`只会注册一次，重复访问不会重复注册
 - 嵌套可配置项的值读写、校验、自动保存、`destroy`注销与普通可配置项完全一致
+
+### 配置组
+
+可配置项可以通过`group`归属到一个或多个**配置组**，`ConfigManager`会自动聚合出全部配置组清单，供渲染层按组呈现配置界面（如标签页、折叠面板、树形分组）。
+
+#### 声明配置组
+
+`configurable`的`group`参数用于指定配置项所属的组，组名为字符串，多个组之间用`,`分隔：
+
+```ts {4-5,7}
+const store = new AutoStore(
+    {
+        order: {
+            price: configurable(99.9, { label: "订单价格", group: "price" }),
+            quantity: configurable(10, { label: "订单数量", group: "price" }),
+        },
+        enable: configurable(true, { label: "启用调试", group: "basic,advanced" }),
+        // 未声明group的配置项不归属任何组
+        name: configurable("", { label: "名称" }),
+    },
+    { configManager, configKey: "order" },
+);
+```
+
+- 未声明`group`（或`group=""`）的配置项不归属任何组，渲染层一般将其作为**默认区**置顶展示。
+- 一个配置项可以同时属于多个组（如`group: "basic,advanced"`），渲染时会在每个组中各出现一次。
+
+如果组除组名外还需要提供渲染元数据（标题、图标、排序），可以传入`SchemaGroup`对象：
+
+```ts
+// SchemaGroup 由 autostore 导出
+type SchemaGroup = {
+    name: string; // 组名，同样支持`,`分隔多个组
+    title?: string; // 组标题，缺省显示组名
+    icon?: string; // 组图标
+    order?: number; // 组排序号，升序排列，缺省沉底
+};
+```
+
+```ts {6,10}
+const store = new AutoStore(
+    {
+        proxy: configurable(false, {
+            label: "启用代理",
+            // 对象形态：组名 + 渲染元数据
+            group: { name: "network", title: "网络", icon: "globe", order: 0 },
+        }),
+        tabSize: configurable(2, {
+            label: "缩进空格",
+            group: { name: "editor", title: "编辑器" },
+        }),
+    },
+    { configManager, configKey: "app" },
+);
+```
+
+#### 配置组清单
+
+配置项注册到`ConfigManager`时会自动登记其所属的组，所有配置组聚合保存在`configManager.groups`中：
+
+```ts
+configManager.groups;
+// {
+//     network: { name: "network", title: "网络", icon: "globe", order: 0 },
+//     editor:  { name: "editor", title: "编辑器" },
+// }
+```
+
+`configManager.groups`的类型为`Record<string, SchemaGroup>`，具有以下特性：
+
+- **注册时自动登记** - 无需额外配置，`configurable`声明的`group`在配置项注册时即被记录；尚未登记任何配置组时为`undefined`。
+- **跨 Store 聚合** - 多个`AutoStore`共享同一个`configManager`时，组清单与`configManager.state`一样是跨 Store 合并的。
+- **同名组合并** - 同名组只登记一次；后登记的`SchemaGroup`对象会将`title`/`icon`/`order`合并到已有记录上（仅覆盖提供了的字段），因此可以先用字符串声明组名，后续再补充组元数据。
+- **只增不减** - `store.destroy()`注销的是配置项，不会移除组。因此跨 Store 场景下可能出现本 Store 没有任何项的**空组**，渲染层可照常显示组标题。
+
+#### 按组渲染
+
+配置组清单与每一项的`group`元数据均属于配置数据的一部分，渲染层据此进行分组呈现：
+
+- [Viewer](./viewer#配置面板-only-configurable)启用`only-configurable`后，按`configManager.groups`分组渲染配置面板：默认区置顶、真实组按`order`升序排列、`advanced: true`的项收进「高级选项」虚拟组。
+- `auto-form`等表单组件可以通过`group`属性只渲染指定组的字段，多个组之间用`,`分隔。
+
+:::warning 提示
+`group`只负责配置项的分组归属与登记，不影响配置项的读写、校验、加载与保存。
+:::
 
 ### 绑定配置管理器
 

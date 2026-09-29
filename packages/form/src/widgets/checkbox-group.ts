@@ -180,7 +180,7 @@ export class AutoFieldCheckboxGroup extends AutoField<AutoFieldCheckboxGroupOpti
                 data-value="${item[this.valueKey]}"
                 .value="${item[this.valueKey]}"
                 .checked=${this.value.includes(item[this.valueKey])}
-                help-text="${item.tips}"
+                help-text="${item.tooltip}"
                 @sl-change=${this._onCheckChange.bind(this)}
             >
                 ${item.label}</sl-checkbox

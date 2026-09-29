@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>树与类型</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 240px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>expand-depth="1"：仅展开一级；show-count / show-hint 默认开启（折叠占位 {...} / [...] 与子节点数徽章）</p>
+    <autostore-viewer id="a" expand-depth="1"></autostore-viewer>
+
+    <p>expand-depth="4" + show-computed：更深展开并显示计算属性节点（σ 图标）</p>
+    <autostore-viewer id="b" expand-depth="4" show-computed></autostore-viewer>
+
+    <script>
+      const { AutoStore, computed, markRaw } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        // 对象 / 数组：可展开容器，类型图标区分
+        user: {
+          name: '张三',
+          age: 25,
+          active: true,
+          address: {
+            city: '北京',
+            geo: { lat: 39.9042, lng: 116.4074 },
+          },
+          hobbies: ['阅读', '编程'],
+        },
+        tags: ['Reactive', 'Proxy'],
+        // 函数：即同步计算属性
+        getSummary: () => '这是一个函数成员',
+        // computed() 包装：同步/异步计算结果原地写入
+        total: computed((scope) => scope.user.age * 2),
+        // markRaw：不被代理，使用特殊图标并完整展开
+        raw: markRaw({ note: 'markRaw 对象不会被代理', deep: { value: 1 } }),
+      })
+
+      document.getElementById('a').store = store
+      document.getElementById('b').store = store
+    </script>
+  </body>
+</html>

@@ -90,6 +90,10 @@ export default defineConfig({
                     ]                     
                 },
                 {
+                    text:"Viewer",
+                    link:"/zh/store/guide/store/viewer"
+                },
+                {
                     text: "API",                    
                     collapsed: false,
                     items:[

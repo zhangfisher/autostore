@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>编辑模式：view / click-edit / edit</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 10px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 180px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>mode="view"（默认）：只读，双击不进入编辑</p>
+    <autostore-viewer id="a" mode="view"></autostore-viewer>
+
+    <p>mode="click-edit"：双击值或按住 1 秒进入编辑，输入即时写入状态（Enter 前进到下一个可编辑节点，失焦退出）</p>
+    <autostore-viewer id="b" mode="click-edit"></autostore-viewer>
+
+    <p>mode="edit"：叶子成员常驻编辑控件（对象/数组容器仍双击进入 JSON 整体编辑）</p>
+    <autostore-viewer id="c" mode="edit"></autostore-viewer>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        name: configurable('张三', { label: '姓名', widget: 'text' }),
+        age: configurable(25, { label: '年龄', widget: 'number', min: 0, max: 120 }),
+        active: configurable(true, { label: '启用', widget: 'checkbox' }),
+        editor: { fontSize: 14, tabSize: 2 },
+      })
+
+      for (const id of ['a', 'b', 'c']) document.getElementById(id).store = store
+
+      // 编辑写入是即时的：这里监听状态变化，验证改动实时进入 store
+      store.watch('*', (operate) => console.log('[edit demo]', operate.type, operate.path, operate.value))
+    </script>
+  </body>
+</html>

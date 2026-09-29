@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>渲染模式：full / lazy</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      label { font-size: 13px; }
+      autostore-viewer {
+        display: block;
+        height: 260px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      渲染模式可运行时切换：full（默认）= 折叠子树常驻 DOM（仅以 grid 行高收起 + inert 封锁，
+      折叠期间的编辑输入/焦点保留）；lazy = 展开渲染、折叠即从 DOM 移除
+    </p>
+    <label>
+      render-mode：
+      <select id="mode">
+        <option value="full" selected>full</option>
+        <option value="lazy">lazy</option>
+      </select>
+    </label>
+    <autostore-viewer id="viewer" mode="click-edit"></autostore-viewer>
+
+    <script>
+      const { AutoStore } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        a: { b: { c: { d: { text: '深层嵌套' } } } },
+        list: [1, 2, 3],
+      })
+
+      const viewer = document.getElementById('viewer')
+      viewer.store = store
+
+      document.getElementById('mode').addEventListener('change', (e) => {
+        viewer.renderMode = e.target.value
+        // 提示：mode=edit 时恒为 full，显式声明 lazy 会被忽略并在控制台告警
+        console.log('当前生效渲染模式：', viewer.renderMode)
+      })
+    </script>
+  </body>
+</html>

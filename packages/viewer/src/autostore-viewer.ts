@@ -12,6 +12,8 @@ import { TreeController } from './features/tree'
 import type { TreeHost } from './features/tree'
 import { LabelWidthController } from './features/label-width'
 import type { LabelWidthHost } from './features/label-width'
+import { KeyResizeController } from './features/key-resize'
+import type { KeyResizeHost } from './features/key-resize'
 import { Editable } from './features/editable'
 import type { EditableHost } from './features/editable'
 import { EditDelegateController } from './features/edit-delegate'
@@ -30,13 +32,15 @@ import { resolveControlName } from './utils/control-name'
 import { resolveAffix, renderAffixed } from './utils/affix'
 import { resolveRenderMode } from './utils/render-mode'
 import { deleteNodeValue } from './utils/deleteNodeValue'
-import { filterVisibleActions, invokeAction, renderNodeActions } from './features/actions'
-import type { ActionsHost } from './features/actions'
-import type { ConfigSection, TreeNode, TreeNodeType } from './types'
+import { filterVisibleActions, invokeAction, renderAreaActions, renderNodeActions, splitActionsByAlign } from './features/actions'
+import type { ActionTarget, ActionsHost } from './features/actions'
+import { parseChromeConfig, resolveStorePlaceholders } from './utils/chrome-config'
+import { buildSubmitRequest } from './utils/submit-request'
+import type { ConfigSection, TreeNode, TreeNodeType, ViewerChromeHeader } from './types'
 import type { AutoStore, AutoStoreAction, AutoStoreStateSchema } from 'autostore'
 
 // 组件壳（ADR-0031）：属性声明 + 渲染 + 生命周期编排 + 特性控制器宿主面。
-// 特性机制（图标链/store 绑定/树/列宽测量/编辑器/常驻委托/长按/toast/菜单开合）
+// 特性机制（图标链/store 绑定/树/列宽测量/列宽拖拽/编辑器/常驻委托/长按/toast/菜单开合）
 // 均在 features/ 一特性一文件一控制器；渲染是组件本体的表意层，留在壳
 @customElement('autostore-viewer')
 export class AutostoreViewer extends LitElement
@@ -47,6 +51,7 @@ export class AutostoreViewer extends LitElement
     TreeHost,
     StoreHost,
     LabelWidthHost,
+    KeyResizeHost,
     PressEditHost,
     EditDelegateHost {
   // 属性声明
@@ -100,10 +105,10 @@ export class AutostoreViewer extends LitElement
   @property({ type: String, reflect: true })
   grid: '0' | '1' | '2' | '3' = '0'
 
-  // key 列背景带（grid=2/3 时生效）：垂直线伪元素铺 hover 色淡底，形成 key 列高亮带（ADR-0028 决策六）
-  // reflect 用于 :host([grid-band]) 样式门控
-  @property({ type: Boolean, attribute: 'grid-band', reflect: true })
-  gridBand: boolean = false
+  // key 列背景带（默认显示，ADR-0028 决策六）：hide-key-bg 启用后隐藏
+  // reflect 用于 :host(:not([hide-key-bg])) 样式门控
+  @property({ type: Boolean, attribute: 'hide-key-bg', reflect: true })
+  hideKeyBg: boolean = false
 
   // 根级分组背景（ADR-0028 决策七）：顶层含子节点的行（分组行）常驻固定背景色；
   // reflect 用于 :host([root-bg]) 样式门控
@@ -116,7 +121,7 @@ export class AutostoreViewer extends LitElement
   dark: boolean = false
 
   // 配置面板模式（ADR-0034）：启用后只渲染 store 的 configurable 项（store.configurabled），
-  // configManager.group 有值时按组呈现——默认区（无 group 非 advanced，置顶裸排）→
+  // configManager.groups 有值时按组呈现——默认区（无 group 非 advanced，置顶裸排）→
   // 真实组（order 升序/缺省沉底，可折叠，跨 store 空组照渲染）→ 高级虚拟组（advanced:true
   // 一律归此、优先于 group，默认折叠，空则不产出）。项间父子保留嵌套（容器项渲染自身行），
   // data-path 恒绝对路径；entrys 在此模式为过滤器（交集）；空态渲染空白无提示。
@@ -133,7 +138,7 @@ export class AutostoreViewer extends LitElement
 
   // 标签区（key+hint+count）统一列宽上限（px），超出部分截断显示 ...
   @property({ type: Number, attribute: 'max-key-width' })
-  maxKeyWidth: number = 300
+  maxKeyWidth: number = 500
 
   // 是否禁用 schema 元数据显示（label 替换 key、required 红星、help 提示、choices 标签）
   // schema 默认生效；禁用仅关闭显示，编辑（widget 决策/校验/整体编辑判定）与 schema.icon 仍读取 schema
@@ -160,6 +165,30 @@ export class AutostoreViewer extends LitElement
   @property({ type: String, attribute: 'icon-modify' })
   iconModify: string = ''
 
+  // ---- 区头/区尾与表单（ADR-0035）----
+
+  // 区头配置：attribute 字符串经 relaxedToJson+JSON.parse 解析，property 直接接受对象。
+  // 未声明 → 默认值（<store.title> 标题 + 重置/保存，均 mode:'edit' 仅编辑模式显示）；
+  // 显式置空/解析失败/内容全空（过滤后无标题无动作）→ 不渲染。
+  // slot="header" 有分发内容即整区替换渲染（优先于属性值）；slot="title" 仅替换标题区
+  @property({ attribute: 'header' })
+  header: string | ViewerChromeHeader | undefined
+
+  // 区尾动作数组（attribute 走 relaxedToJson 解析，property 直接接受数组）：
+  // 默认左对齐，align:'right' 归右（按侧分组、组内保持声明序）；无默认值，
+  // 仅有值且过滤后非空时渲染；slot="footer" 有分发内容即整区替换渲染
+  @property({ attribute: 'footer' })
+  footer: string | AutoStoreAction[] | undefined
+
+  // 表单提交地址/方式（ADR-0035）：透传给 shadow 内包裹全组件的 <form>；
+  // 保存 = form.requestSubmit()（不拦截 submit、保留原生校验——标准表单提交的字面义）；
+  // 未声明 action 时保存不提交（原生提交会刷新当前页），仅派发 action 事件 + warn
+  @property({ type: String, attribute: 'action' })
+  action: string = ''
+
+  @property({ type: String, attribute: 'method' })
+  method: string = ''
+
   // ---- 特性控制器（ADR-0031）：一特性一文件，生命周期自治 ----
 
   // 图标链：注册链持有/symbol 构造与注入/slot 提取（features/icons.ts）
@@ -173,6 +202,9 @@ export class AutostoreViewer extends LitElement
 
   // 列宽测量：探针批量测宽/rAF 合并/隐藏重试/ResizeObserver（features/label-width.ts）
   private _labelWidth = new LabelWidthController(this)
+
+  // 列宽拖拽：手柄根委托/位移 rAF 合并/锁存协作（features/key-resize.ts，ADR-0036）
+  private _keyResize = new KeyResizeController(this)
 
   // 行内编辑器（即时生效模式，features/editable.ts）
   private _editable = new Editable(this)
@@ -212,6 +244,17 @@ export class AutostoreViewer extends LitElement
   // 全局最后可见行（.last-row，grid=1 仅末行不画底线，ADR-0028 决策二修订）
   private _lastVisibleNode: TreeNode | null = null
 
+  // 区头/区尾/标题 slot 分发内容追踪（ADR-0035）：DOM 存在性即渲染信号——
+  // slot 有元素即渲染容器（整区替换属性值）。slotchange 异步于首帧，有 slot 内容时
+  // 首帧可能短暂缺失容器，slotchange 触发 @state 写入补渲染
+  @state()
+  private _chromeSlots: Record<'header' | 'footer' | 'title', boolean> = { header: false, footer: false, title: false }
+
+  // 受管提交进行中（ADR-0035 提交管理）：驱动全局遮罩渲染；遮罩拦截指针交互，
+  // 处理器入口的 _submitting 守卫兜底防重复提交
+  @state()
+  private _submitting: boolean = false
+
   // CSS样式（提取自 styles.ts）
   static styles = viewerStyles;
 
@@ -222,6 +265,7 @@ export class AutostoreViewer extends LitElement
     this.addController(this._icons)
     this.addController(this._store)
     this.addController(this._labelWidth)
+    this.addController(this._keyResize)
     this.addController(this._editable)
     this.addController(this._editDelegate)
     this.addController(this._pressEdit)
@@ -229,10 +273,11 @@ export class AutostoreViewer extends LitElement
     this.addController(this._toast)
   }
 
-  // 根事件委托挂载（edit 常驻写回/键盘 + click-edit 长按，控件不绑 per-node 监听）
+  // 根事件委托挂载（edit 常驻写回/键盘 + click-edit 长按 + 列宽拖拽，控件不绑 per-node 监听）
   firstUpdated() {
     this._editDelegate.attach(this.renderRoot)
     this._pressEdit.attach(this.renderRoot)
+    this._keyResize.attach(this.renderRoot)
   }
 
   // 连接到DOM时：store 绑定（尺寸监听由列宽控制器 hostConnected 挂载，ADR-0031）
@@ -391,11 +436,14 @@ export class AutostoreViewer extends LitElement
     ) {
       return
     }
-    // edit 常驻：叶子值类写入同样冻结树更新（控件即真相），防委托写回重置光标；
-    // 结构类 operate（insert/remove/delete）照常处理
+    // edit 常驻：叶子值类写入仅在本组件委托写回的回声上冻结树更新（控件即真相，
+    // 防委托写回重置光标）；外部写入（其他 viewer 实例/程序化 setState）无自写回
+    // 标记，照常同步。结构类 operate（insert/remove/delete）照常处理
     if (this.mode === 'edit' && operate?.type === 'set' && Array.isArray(operate.path)) {
       const node = this._tree.getNodeByPath(operate.path)
-      if (node && !this._tree.isExpandableType(node.type) && this._tree.isEditableNode(node)) return
+      if (node && !this._tree.isExpandableType(node.type) && this._tree.isEditableNode(node)) {
+        if (this._editDelegate.consumeSelfWrite(operate.path)) return
+      }
     }
     if (operate.type === 'delete') {
       // 删除操作：从树中移除对应节点
@@ -457,6 +505,32 @@ export class AutostoreViewer extends LitElement
   // 列宽写回（宿主级 CSS 变量 --viewer-key-width）
   setKeyWidth(width: string): void {
     this.style.setProperty('--viewer-key-width', width)
+  }
+
+  // ---- KeyResizeHost 实现（列宽拖拽特性的宿主回调面，ADR-0036）----
+
+  // 锁存置位/复位/查询（标志由列宽测量特性持有，宿主转发——特性互不知晓实现）
+  latchKeyWidth(): void {
+    this._labelWidth.latch()
+  }
+
+  unlatchKeyWidth(): void {
+    this._labelWidth.unlatch()
+  }
+
+  isKeyWidthLatched(): boolean {
+    return this._labelWidth.latched
+  }
+
+  // 拖拽结束/复位通知（bubbles+composed 穿透 shadow，与 action 事件同风格）
+  notifyKeyWidthChange(width: number | null, manual: boolean): void {
+    this.dispatchEvent(
+      new CustomEvent('key-width-change', {
+        detail: { width, manual },
+        bubbles: true,
+        composed: true,
+      }),
+    )
   }
 
   // ---- EditableHost 实现（编辑器控制器的宿主回调面，ADR-0031）----
@@ -553,12 +627,13 @@ export class AutostoreViewer extends LitElement
 
   // 动作点击：先派发 'action' 自定义事件（cancelable——监听方 preventDefault 拦截则 onClick
   // 不执行；bubbles+composed 穿透 shadow 供外部直接监听；无 onClick 的动作同样派发，
-  // 事件是独立通知通道），未被拦截再委托 invokeAction 纯函数（onClick 契约见 actions.ts）
-  // detail.path = joinPath(node.path)：与行 data-path 同源（entrys 下含入口前缀即完整 store 路径）
-  clickAction(node: TreeNode, schema: Record<string, any> | undefined, action: AutoStoreAction, event: Event): void {
+  // 事件是独立通知通道），未被拦截再委托 invokeAction 纯函数（onClick 契约见 actions.ts）。
+  // detail.path = 目标完整 store 路径（节点动作与行 data-path 同源，entrys 下含入口前缀；
+  // 区头/区尾动作无节点，path/value 为 undefined，ADR-0035）
+  clickAction(target: ActionTarget, schema: Record<string, any> | undefined, action: AutoStoreAction, event: Event): void {
     const notPrevented = this.dispatchEvent(
       new CustomEvent('action', {
-        detail: { path: joinPath(node.path), value: node.value, action },
+        detail: { path: target.path ? joinPath(target.path) : undefined, value: target.value, action },
         bubbles: true,
         composed: true,
         cancelable: true,
@@ -566,7 +641,7 @@ export class AutostoreViewer extends LitElement
     )
     if (notPrevented)
       invokeAction(
-        node,
+        target,
         schema,
         action,
         event,
@@ -733,8 +808,9 @@ export class AutostoreViewer extends LitElement
     // schema.actions 不受 disable-schema 门控（功能性附着物，与 schema.icon 同待遇，ADR-0030）；
     // showActions 三档：'0' 隐藏 / '1' 悬停显示（默认，随 node-tools 的 hover 机制）/
     // '2' 常驻显示（CSS 门控 .node-actions 覆盖父级 visibility:hidden）；
-    // 编辑中照常显示（与内置工具的 isEditing 隐藏分叉）
-    const actions = this.showActions !== '0' ? filterVisibleActions(rawSchema?.actions) : []
+    // 编辑中照常显示（与内置工具的 isEditing 隐藏分叉）；
+    // action.mode 模式显隐门控（ADR-0035）：与区头/区尾动作同一过滤规则
+    const actions = this.showActions !== '0' ? filterVisibleActions(rawSchema?.actions, this.mode) : []
     // 包 .node-actions 容器：常驻档的 visibility 覆盖目标 + 组内紧凑间距
     const actionsPart = actions.length > 0
       ? html`<span class="node-actions">${renderNodeActions(this, node, actions, (rawSchema ?? undefined) as Record<string, any> | undefined)}</span>`
@@ -792,7 +868,7 @@ export class AutostoreViewer extends LitElement
           </span>
           ${isEditing ? this._renderEditingValue(node, schema) : html`
             <span
-              class="node-value"
+              class="node-value ${typeof node.value === 'string' && node.value.includes('\n') ? 'multiline' : ''}"
               @dblclick=${canEdit ? () => this._editable.start(node) : nothing}
             >${displayValue}</span>
           `}
@@ -855,8 +931,93 @@ export class AutostoreViewer extends LitElement
     return html`${header}${body}`
   }
 
-  // 主渲染
-  render(): any {
+  // ---- 区头/区尾与表单（ADR-0035）----
+
+  // 默认区头动作：预置内置 onClick 的普通 action 对象，不引入第二套触发通道——
+  // 点击先派发 'action' 事件（clickAction 统一入口），preventDefault 拦截则内置行为不执行，
+  // 自定义 onClick 存在即替换内置。重置 → store.reset()（未开启 resetable 渲染禁用 +
+  // tooltip 提示，不隐藏——store 异步绑定下隐藏会抖动）；保存 → 声明了 action 属性则
+  // requestSubmit()（原生校验照跑），否则仅事件 + warn（原生提交会刷新当前页）。
+  // 均 mode:'edit'，仅在编辑模式显示
+  private _defaultHeaderActions(): AutoStoreAction[] {
+    const store = this._store.store
+    const resetable = store?.resetable === true
+    return [
+      {
+        label: '重置',
+        mode: 'edit',
+        enable: resetable ? undefined : false,
+        tooltip: resetable ? undefined : 'store 未启用 resetable，无法重置',
+        onClick: () => store?.reset(),
+      },
+      {
+        label: '保存',
+        mode: 'edit',
+        // 保存 = 触发表单 submit（requestSubmit 内置原生约束校验，失败不派发 submit
+        // 仅弹原生气泡）；提交编排统一走 _onFormSubmit（含无 action 的 warn）
+        onClick: () => {
+          this.renderRoot.querySelector<HTMLFormElement>('.viewer-form')?.requestSubmit()
+        },
+      },
+    ]
+  }
+
+  // slot 分发内容变化：记录有无元素并经 @state 写入补渲染（DOM 存在性即渲染信号）
+  private _onChromeSlotChange(area: 'header' | 'footer' | 'title', e: Event) {
+    const filled = (e.currentTarget as HTMLSlotElement).assignedElements().length > 0
+    if (this._chromeSlots[area] !== filled) {
+      this._chromeSlots = { ...this._chromeSlots, [area]: filled }
+    }
+  }
+
+  // 区头渲染：slot 整区替换 > 属性声明（未声明走默认值，显式置空/解析失败不渲染）。
+  // 标题经 <store.<prop>> 占位符求值；动作经 visible/mode 过滤；标题与动作皆无内容视同无值
+  private _renderHeader(): any {
+    if (this._chromeSlots.header) {
+      return html`<div class="viewer-header">
+        <slot name="header" @slotchange=${(e: Event) => this._onChromeSlotChange('header', e)}></slot>
+      </div>`
+    }
+    const declared: ViewerChromeHeader | undefined = this.header === undefined
+      ? { title: '<store.title>', actions: this._defaultHeaderActions() }
+      : parseChromeConfig<ViewerChromeHeader>(this.header, 'header')
+    if (!declared) return nothing
+    const title = resolveStorePlaceholders(declared.title, this._store.store)?.trim() || undefined
+    const actions = filterVisibleActions(declared.actions, this.mode)
+    if (!title && actions.length === 0) return nothing
+    return html`<div class="viewer-header">
+      ${title || this._chromeSlots.title
+        ? html`<div class="chrome-title"><slot name="title" @slotchange=${(e: Event) => this._onChromeSlotChange('title', e)}>${title ?? nothing}</slot></div>`
+        : nothing}
+      ${actions.length > 0 ? this._renderChromeActions(actions, 'header') : nothing}
+    </div>`
+  }
+
+  // 区尾渲染：slot 整区替换 > 属性声明（无默认值）；过滤后无动作不渲染
+  private _renderFooter(): any {
+    if (this._chromeSlots.footer) {
+      return html`<div class="viewer-footer">
+        <slot name="footer" @slotchange=${(e: Event) => this._onChromeSlotChange('footer', e)}></slot>
+      </div>`
+    }
+    const actions = filterVisibleActions(parseChromeConfig<AutoStoreAction[]>(this.footer, 'footer'), this.mode)
+    if (!actions || actions.length === 0) return nothing
+    return html`<div class="viewer-footer">${this._renderChromeActions(actions, 'footer')}</div>`
+  }
+
+  // 区域动作行：按侧分组（align 缺省随容器默认侧——区头 right、区尾 left），左组在前、
+  // 右组 margin-left:auto 推远；indexOffset 保持原始声明序号作 menuKey（组间不碰撞）
+  private _renderChromeActions(actions: AutoStoreAction[], area: 'header' | 'footer'): any {
+    const { left, right } = splitActionsByAlign(actions, area === 'header' ? 'right' : 'left')
+    return html`<div class="chrome-actions">
+      ${left.length > 0 ? html`<span class="chrome-actions-group">${renderAreaActions(this, left, undefined, area)}</span>` : nothing}
+      ${right.length > 0 ? html`<span class="chrome-actions-group right">${renderAreaActions(this, right, undefined, area, left.length)}</span>` : nothing}
+    </div>`
+  }
+
+  // 内容区主体：未绑定 store / entrys 无效提示态 / 配置面板分组 / 常规树。
+  // 全局最后可见行穿透组层（grid=1 末行无线）——判定与原实现一致，仅迁入统一壳
+  private _renderBody(): any {
     if (!this._store.store) {
       return html`<div class="loading">未绑定 Store</div>`
     }
@@ -864,9 +1025,7 @@ export class AutostoreViewer extends LitElement
     if (this._entryInvalid) {
       return html`<div class="loading">entrys 路径不存在: ${this._entryInvalidPaths.join(', ')}</div>`
     }
-    // 配置面板分组渲染（ADR-0034）：sections 序列 = 默认区 → 真实组 → 高级虚拟组；
-    // 全局最后可见行穿透组层（grid=1 末行无线，拟定二）——沿未折叠组末项下钻，
-    // 全组折叠时无数据行（组标题条恒不画线，不参与标记）
+    // 配置面板分组渲染（ADR-0034）：sections 序列 = 默认区 → 真实组 → 高级虚拟组
     if (this._configSections) {
       let lastNode: TreeNode | null = null
       for (const section of this._configSections) {
@@ -875,38 +1034,111 @@ export class AutostoreViewer extends LitElement
         }
       }
       this._lastVisibleNode = lastNode
-      return html`
-        <!-- 动态图标 sprite：置于内置 sprite 之前，同 id 时 <use> 按文档序命中前者（自定义覆盖内置，ADR-0024） -->
-        <svg class="dynamic-sprite" xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
-        <!-- 内置图标 sprite：<symbol> 定义只此一份，节点处的 iconHtml() 通过 <use> 引用 -->
-        ${iconSprite}
-        <slot name="icons" @slotchange=${(e: Event) => this._icons.onSlotChange(e)} style="display: none;"></slot>
-        <div class="tree-container">
+      return html`<div class="tree-container">
+        <div class="tree-scroll">
           ${this._configSections.map((section) => this._renderSection(section))}
         </div>
-        ${this._toast.text ? html`
-          <div class="toast ${this._toast.fading ? 'fading' : ''}">${this._toast.text}</div>
-        ` : nothing}
-        <!-- 离屏宽度探针：复用真实样式类测量文本自然宽，见 features/label-width.ts -->
-        <div class="measure-probe" aria-hidden="true"></div>
-      `
+        <!-- 列宽拖拽手柄（ADR-0036）：宿主级覆盖层，行为见 features/key-resize.ts；
+             置于滚动包裹层之外——锚定不滚动的 .tree-container，滚动时钉住（ADR-0035 修订） -->
+        <div class="key-resizer" title="拖拽调节列宽，双击复位"></div>
+      </div>`
     }
     this._lastVisibleNode = this._treeNodes.length > 0 ? this._tree.findLastVisible(this._treeNodes) : null
+    return html`<div class="tree-container">
+      <div class="tree-scroll">
+        ${this._treeNodes.map((node) => this._renderNode(node))}
+      </div>
+      <!-- 列宽拖拽手柄（ADR-0036）：宿主级覆盖层，行为见 features/key-resize.ts；
+           置于滚动包裹层之外——锚定不滚动的 .tree-container，滚动时钉住（ADR-0035 修订） -->
+      <div class="key-resizer" title="拖拽调节列宽，双击复位"></div>
+    </div>`
+  }
 
+  // ---- 表单提交管理（ADR-0035）：受管 fetch 提交 + 提交前校验 + 全局遮罩 + 结果 toast ----
+
+  // submit 统一入口（保存按钮 requestSubmit 与 Enter 隐式提交都汇入）：恒 preventDefault
+  // （受管提交不导航）；无 action 仅 warn（与保存契约一致）；提交前校验 = edit 常驻
+  // 行内错误表唯一判定（非法值滞留控件未进 store 的登记，form novalidate 见下），失败
+  // toast 不遮罩；通过后遮罩 + fetch(action,{method,FormData})，response.ok 判定成败，
+  // toast + 'submit-result' 事件（detail={ok,status,response}，通知性不可拦截）
+  private async _onFormSubmit(e: Event) {
+    e.preventDefault()
+    if (this._submitting) return
+    if (!this.action) {
+      console.warn('[autostore-viewer] 未声明 action 属性，保存仅派发 action 事件，不执行表单提交')
+      return
+    }
+    const form = e.currentTarget as HTMLFormElement
+    // 提交前校验 = edit 常驻行内错误表唯一判定（viewer 的校验真相即编辑写回链）。
+    // 不用原生约束校验（form 已 novalidate）：控件约束多为浏览器隐式缺省（如 number 默认
+    // step=1 把合法小数判 stepMismatch）而非 schema 声明，且折叠子树控件 inert 不可聚焦，
+    // reportValidity 静默失败会造成「校验未通过」却无处查看的死局（真实踩坑）
+    if (this._editDelegate.hasInlineErrors()) {
+      this._showToast('表单校验未通过，请检查标红项')
+      return
+    }
+    this._submitting = true
+    try {
+      const { url, init } = buildSubmitRequest(this.action, this.method, new FormData(form))
+      const response = await fetch(url, init)
+      if (response.ok) this._showToast('提交成功')
+      else this._showToast(`提交失败（${response.status}）`)
+      this._dispatchSubmitResult(response.ok, response.status, response)
+    } catch {
+      this._showToast('提交失败（网络异常）')
+      this._dispatchSubmitResult(false, 0, null)
+    } finally {
+      this._submitting = false
+    }
+  }
+
+  // 提交结果事件（外部据此接管后续：跳转/更新重置基线），bubbles+composed 与 action 事件同风格
+  private _dispatchSubmitResult(ok: boolean, status: number, response: Response | null) {
+    this.dispatchEvent(
+      new CustomEvent('submit-result', {
+        detail: { ok, status, response },
+        bubbles: true,
+        composed: true,
+      }),
+    )
+  }
+
+  // 主渲染（ADR-0035）：整体由原生 <form> 包裹（action/method 透传；未声明时省略属性——
+  // 置空字符串会因 form.action 规范默认回退当前页 URL）；submit 恒交由 _onFormSubmit
+  // 受管编排（不导航；未声明 action 仅 warn——含编辑态单输入的 Enter 隐式提交）。
+  // 区头 + 内容区 + 区尾 + 遮罩 + toast + 探针；sprite/slot icons 为非视觉基础设施，置于 form 之前。
+  // 滚动收敛到内容区：.tree-scroll flex:1 + overflow:auto（:host 不再滚动），区头/区尾钉住
+  render(): any {
     return html`
       <!-- 动态图标 sprite：置于内置 sprite 之前，同 id 时 <use> 按文档序命中前者（自定义覆盖内置，ADR-0024） -->
       <svg class="dynamic-sprite" xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
       <!-- 内置图标 sprite：<symbol> 定义只此一份，节点处的 iconHtml() 通过 <use> 引用 -->
       ${iconSprite}
       <slot name="icons" @slotchange=${(e: Event) => this._icons.onSlotChange(e)} style="display: none;"></slot>
-      <div class="tree-container">
-        ${this._treeNodes.map((node) => this._renderNode(node))}
-      </div>
-      ${this._toast.text ? html`
-        <div class="toast ${this._toast.fading ? 'fading' : ''}">${this._toast.text}</div>
-      ` : nothing}
-      <!-- 离屏宽度探针：复用真实样式类测量文本自然宽，见 features/label-width.ts -->
-      <div class="measure-probe" aria-hidden="true"></div>
+      <form
+        class="viewer-form"
+        action=${this.action || nothing}
+        method=${this.method || nothing}
+        novalidate
+        @submit=${this._onFormSubmit}
+      >
+        ${this._renderHeader()}
+        ${this._renderBody()}
+        ${this._renderFooter()}
+        ${this._submitting ? html`
+          <!-- 提交遮罩（ADR-0035 提交管理）：校验通过后覆盖全局（含区头/区尾），
+               半透明底 + spinner，拦截指针交互天然防重复提交 -->
+          <div class="submit-overlay">
+            <span class="submit-spinner"></span>
+            <span>正在提交...</span>
+          </div>
+        ` : nothing}
+        ${this._toast.text ? html`
+          <div class="toast ${this._toast.fading ? 'fading' : ''}">${this._toast.text}</div>
+        ` : nothing}
+        <!-- 离屏宽度探针：复用真实样式类测量文本自然宽，见 features/label-width.ts -->
+        <div class="measure-probe" aria-hidden="true"></div>
+      </form>
     `
   }
 }

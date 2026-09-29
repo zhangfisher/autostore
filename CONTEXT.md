@@ -63,6 +63,14 @@ _Avoid_: 图标下载、图标热替换（拉取结果注册后即与内置同�
 viewer 组件内一个可独立命名的关注点（图标链、store 绑定、树、列宽测量、编辑交互、toast、菜单开合……），一特性一文件一控制器，生命周期（挂载/卸载/更新）自治。特性经窄宿主接口（XxxHost）消费宿主与兄弟能力，不知晓彼此实现。渲染不是特性——它是组件本体的表意层，留在壳。
 _Avoid_: 模块（太泛）、插件（widgets/ 的可注册扩展点才是插件形态）、服务（无依赖注入语义）
 
+**标签区列宽（Key Width）**:
+viewer 树 key 列（key+折叠提示+数量徽章）的统一宽度，value 起点恒定对齐、不随行深漂移。来源二分：自动测量（基于全量树、与展开态解耦）或手动锁存；`max-key-width` 上限只约束自动测量。
+_Avoid_: 列宽（裸称，易与 form 的字段布局宽度同名混淆）
+
+**列宽锁存（Width Latch）**:
+鼠标拖拽标签区分界后，手动列宽对自动测量的接管态：期间任何树/属性变化都不重测，手动值不受 `max-key-width` 约束，唯一出口是双击分界复位。它是一种状态，不是列宽值本身。
+_Avoid_: 手动列宽（那是值）、列宽覆盖（那是机制描述）
+
 **编辑模式（Edit Modes）**:
 查看器的三态编辑模式：**view**（只读）/ **click-edit**（双击值或点编辑按钮进入，单状态机管理）/ **edit**（叶子成员常驻编辑控件）。edit 常驻的值写回走**根事件委托**（控件不绑节点级监听），校验链与 click-edit 状态机共用；容器保持双击 JSON 整体编辑；常驻叶子的值类更新冻结树刷新，blur 不退出。编辑态的内置表单控件自动携带原生 `name`：`schema.name`（非空字符串）优先，否则用与行 data-path 同源的完整 store 路径；radio 以互斥组名优先（豁免）；编辑链路整体不受 disable-schema 门控（同 schema.icon 待遇），schema.toRender 自定义控件自理。
 _Avoid_: 行内编辑（click-edit 与 edit 都是行内形态，模式名不描述形态）
@@ -80,7 +88,7 @@ _Avoid_: 自定义组件（toRender 是值级渲染钩子，非组件注册机�
 _Avoid_: 单位字段（单位进值）、form 前后缀拼接（那是 form 的值转换语义，值含装饰）
 
 **Action（动作）**:
-schema 声明的、附着在字段/节点上的**用户可触发操作**，三形态：button（按钮）/ dropdown（下拉菜单，items 含 "-" 分割线）/ image（图片按钮）。是「action 保留给上层概念」的那个正名——区别于 Operate（状态原子变更的事件载荷）：action 是交互入口，点击后经 `ctx.update` 产生 Operate。`onClick(value, ctx)` 的 value 是节点当前**状态值**（非输入值、非显示值）；`visible` 控制渲染、`enable` 控制可点（顶层与菜单项同语义）；悬停提示正名是 **tooltip**。点击同时派发 **`action` DOM 事件**（先于 onClick、cancelable 可拦截，detail={path, value, action}——path 与行 data-path 同源的完整 store 路径）。
+schema 声明的、附着在字段/节点上的**用户可触发操作**，三形态：button（按钮）/ dropdown（下拉菜单，items 含 "-" 分割线）/ image（图片按钮）。是「action 保留给上层概念」的那个正名——区别于 Operate（状态原子变更的事件载荷）：action 是交互入口，点击后经 `ctx.update` 产生 Operate。`onClick(value, ctx)` 的 value 是节点当前**状态值**（非输入值、非显示值）；`visible` 控制渲染、`mode` 按查看器模式显隐、`align` 声明在区头/区尾中的侧别（节点上忽略）、`enable` 控制可点（顶层与菜单项同语义）；悬停提示正名是 **tooltip**。点击同时派发 **`action` DOM 事件**（先于 onClick、cancelable 可拦截，detail={path, value, action}——path 与行 data-path 同源的完整 store 路径；区头/区尾动作共用同一契约，无节点时 path/value 为空）。
 _Avoid_: 操作（那是 Operate）、事件 handler（那是回调机制）
 
 **Cron 方言（Cron Dialect）**:
@@ -128,7 +136,7 @@ _Avoid_: 组件包、插件包
 _Avoid_: 配置字段、settings（前者混淆 schema 概念，后者是消费方形态）
 
 **配置分组（Config Group）**:
-配置项的分组归属体系：schema 的 `group`（组名或组对象）声明归属，聚合记录于 `configManager.group`（单数 getter）——global 模式下**跨 store 混合**。viewer 的组清单 = 聚合记录全部（跨 store 空组照渲染），组内成员 = 本 store 中 group 命中项。组排序 `order` 升序、缺省沉底按注册序。
+配置项的分组归属体系：schema 的 `group`（组名或组对象）声明归属，聚合记录于 `configManager.groups`（复数 getter）——global 模式下**跨 store 混合**。viewer 的组清单 = 聚合记录全部（跨 store 空组照渲染），组内成员 = 本 store 中 group 命中项。组排序 `order` 升序、缺省沉底按注册序。
 _Avoid_: 分区、分类（组是配置项专属的归属概念）
 
 **默认区（Default Section）**:
@@ -142,3 +150,23 @@ _Avoid_: 高级选项组名（它是 viewer 内建虚拟组，非用户声明的
 **配置树嵌套（Config Nesting）**:
 配置面板中 configurabled 项间父子关系的呈现规则：子项不平铺顶层，出现于容器项展开的子级（data-path 恒绝对路径）；顶层集合 = 无 configurabled 祖先的项。容器项的子级显示其全部值结构（子级不论是否 configurable——它们是该配置项的值成分）。
 _Avoid_: 吞并（entrys 的入口吞并是丢弃子入口行；嵌套是子项归位父项之下，两者渲染结果同构但语义不同）
+
+**区头/区尾（Header / Footer）**:
+viewer 内容区上/下的修饰区：区头 = 标题（左）+ 动作（右），区尾 = 动作（默认左对齐）。仅有值或 slot 内容时渲染；区头未声明时使用默认值（store 标题 + 重置/保存）。自带背景色（分组背景同源）并以 1px 分割线与内容区分隔；整个 viewer 由 form 包裹，保存即标准表单提交；滚动仅发生在内容区。详见 ADR-0035。
+_Avoid_: 工具栏（不区分头尾）、顶栏/底栏（口语）
+
+**动作模式门控（Action Mode）**:
+action.mode 声明的显隐档：逗号分隔的查看器模式子集（view/click-edit/edit），空 = 全模式显示。节点动作、区头、区尾一视同仁。与 enable 分野——mode 管显隐、enable 管可点。
+_Avoid_: 权限（无角色语义）、visible（visible 是布尔开关，mode 是按模式显隐）
+
+**动作对齐（Action Align）**:
+action.align 声明的侧别归属（left/right）：按侧分组、组内保持声明序，默认侧随容器（区头右、区尾左）。节点动作忽略（同 pos 待遇）。
+_Avoid_: 排序（align 不改变组内顺序）
+
+**Store 占位符（Store Placeholder）**:
+区头标题等字符串中 `<store.<prop>>` 形式的求值占位：渲染时替换为 store 实例公开属性（title/id 等），未命中替换为空串。非表达式、非状态路径。
+_Avoid_: 插值表达式、状态路径引用
+
+**提交管理（Managed Submit）**:
+viewer 表单保存的受管提交编排：submit 恒拦截、fetch 承接（不导航）——提交前经原生校验与 edit 常驻行内错误表双重把关，通过后全局遮罩（spinner「正在提交...」，拦截交互防重复）直至返回，成败各 toast 并派发 `submit-result` 事件供外部接管。
+_Avoid_: 原生表单提交（已修订为受管）、表单校验（校验是提交管理的前置环节，非其本体）

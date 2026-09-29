@@ -95,7 +95,10 @@ export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<Sta
      * 提供一个id，用于标识当前store
      */
     id?: string;
-
+    /**
+     * 友好标题
+     */
+    title?: string;
     /**
      * 是否启用调试模式
      * @description

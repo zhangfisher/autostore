@@ -29,6 +29,12 @@ export class EditDelegateController implements ReactiveController {
   // edit 常驻模式的 per-path 校验错误（非响应式，变更处手动 requestUpdate）
   private _inlineErrors = new Map<string, string>()
 
+  // 自写回标记（path key → 待回声次数）：委托写回会同步触发 store watch 回声，
+  // 宿主据此将回声判定为"自己写的"以冻结树更新（防委托写回重置光标）；外部写入
+  // （其他 viewer 实例/程序化 setState）无标记，照常同步。微任务兜底清除——
+  // 同值写入不派发 operate 时残留标记会误吞下一次外部更新
+  private _selfWrites = new Map<string, number>()
+
   // 根事件委托目标（firstUpdated 挂载，断开时摘除）
   private _root: HTMLElement | DocumentFragment | null = null
 
@@ -66,7 +72,11 @@ export class EditDelegateController implements ReactiveController {
       this._host.requestUpdate()
     }
     const parent = this._host.getParent(node.path)
-    if (parent) parent[node.path[node.path.length - 1]] = convertValue(raw, node.type, plan, schema)
+    if (!parent) return
+    // 先打自写回标记再写：store 的 watch 回声（同步派发，含批量回放）据此被宿主冻结
+    this._selfWrites.set(key, (this._selfWrites.get(key) ?? 0) + 1)
+    queueMicrotask(() => this._selfWrites.delete(key))
+    parent[node.path[node.path.length - 1]] = convertValue(raw, node.type, plan, schema)
   }
 
   // edit 常驻：Enter = 焦点转移到树序下一个可编辑控件（textarea 的 Enter 为换行）；
@@ -107,9 +117,27 @@ export class EditDelegateController implements ReactiveController {
     return this._inlineErrors.get(joinPath(path)) ?? null
   }
 
-  // 切离 edit 模式时清空常驻错误（宿主 willUpdate 编排调用）
+  // 是否存在任一常驻校验错误（表单提交前校验的判定源，ADR-0035 提交管理）：
+  // 非法值滞留控件未进 store，登记于此
+  hasInlineErrors(): boolean {
+    return this._inlineErrors.size > 0
+  }
+
+  // 命中并消费一次自写回标记（宿主 onStateOperate 冻结判定入口）：
+  // 计数消费——同一控件对同 path 的连续多次写回对应多次回声
+  consumeSelfWrite(path: string[]): boolean {
+    const key = joinPath(path)
+    const count = this._selfWrites.get(key) ?? 0
+    if (count === 0) return false
+    if (count === 1) this._selfWrites.delete(key)
+    else this._selfWrites.set(key, count - 1)
+    return true
+  }
+
+  // 切离 edit 模式时清空常驻错误与自写回标记（宿主 willUpdate 编排调用）
   clearErrors(): void {
     this._inlineErrors.clear()
+    this._selfWrites.clear()
   }
 
   // per-kind 从控件提取待写值（checkbox 双值档位/select 下标取原值/radio/文本原样）

@@ -85,7 +85,7 @@ export interface AutoFieldUploadOptions {
 	/**
 	 * 上传区域提示文字
 	 */
-	tips?: string;
+	tooltip?: string;
 	/**
 	 * 上传结果解析：从响应中解析出文件列表
 	 */
@@ -276,7 +276,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
 			multiple: true,
 			fileFieldName: "files",
 			preview: true,
-			tips: "拖动文件到此处或点击选择文件上传",
+			tooltip: "拖动文件到此处或点击选择文件上传",
 			onResolve: this._defaultFileResolver.bind(this),
 			onFileLabel: this._getDefaultFileLabel.bind(this),
 			selector: "auto",
@@ -698,7 +698,7 @@ export class AutoFieldUpload extends AutoField<AutoFieldUploadOptions> {
                         @dragleave=${this.handleDragLeave}
                         @drop=${this.handleDrop}
                     >
-                        ${this.options.tips}
+                        ${this.options.tooltip}
                     </div>`;
 					},
 				)}

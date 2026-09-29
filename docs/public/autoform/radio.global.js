@@ -30,7 +30,7 @@ var __af_ns17 = __core.AutoStoreNS;
             value="${e}"
             style=${(0,b.styleMap)({width:this.options.card===void 0?this.options.itemWidth:void 0})}
             ?disabled=${!this.options.enable}
-            >${o.label}<br /><span class="memo">${o.tips}</span></sl-radio
+            >${o.label}<br /><span class="memo">${o.tooltip}</span></sl-radio
         >`}renderInput(){let o=this.options.choices.map(e=>{let i={};return typeof e=="object"?Object.assign(i,e):Object.assign(i,{label:e}),i});return s.html`
             <sl-radio-group class="value" name=${this.name} value="${this.value}" size="${this.context.size}" @sl-change=${this.onRadioChange.bind(this)}>
                 ${o.map(e=>this.renderOptionItemWithCard(this.renderOptionItem(e),e))}

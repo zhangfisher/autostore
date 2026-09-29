@@ -2,7 +2,7 @@ import { css } from 'lit'
 
 // 暗色调色板片段：纯变量声明，供下方「dark 属性强制」与「系统媒体查询跟随」两处门控共用（DRY）。
 // border/hover-bg 取比底色略亮的同级灰 #374151——旧值近白（#f3f3f3/#f8f8f8）在暗底形成亮圈、
-// hover 白闪且与白字对比不足；grid-band/root-bg 经 color-mix 派生自动跟随
+// hover 白闪且与白字对比不足；key 列背景带/root-bg 经 color-mix 派生自动跟随
 const darkVars = css`
   color-scheme: dark;
   --viewer-bg: #1f2937;
@@ -43,17 +43,22 @@ export const viewerStyles = css`
     --viewer-toast-bg: #1f2937;
     --viewer-toast-text: #f9fafb;
     --viewer-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    /* grid-band key 列背景带底色（暗色模式 hover-bg 覆盖时 color-mix 结果自动跟随） */
+    /* key 列背景带底色（暗色模式 hover-bg 覆盖时 color-mix 结果自动跟随） */
     --viewer-grid-band-bg: color-mix(in srgb, var(--viewer-hover-bg) 20%, transparent);
     /* root-bg 根级分组行常驻底色（暗色模式同上自动跟随） */
     --viewer-root-bg: color-mix(in srgb, var(--viewer-hover-bg) 60%, transparent);
+    /* 区头/区尾背景（ADR-0035）：与 root-bg 同源（hover-bg 60% 混合，接入既有背景带
+       视觉语言，暗色自动跟随）；交界分割线复用 --viewer-border */
+    --viewer-header-bg: color-mix(in srgb, var(--viewer-hover-bg) 60%, transparent);
+    --viewer-footer-bg: color-mix(in srgb, var(--viewer-hover-bg) 60%, transparent);
     /* 折叠/展开过渡时长与缓动（ADR-0032）：设 0 即关闭动画 */
     --viewer-collapse-duration: 200ms;
     --viewer-collapse-easing: ease-out;
 
     /* 原生控件（checkbox/radio/range/color/input）与滚动条配色跟随组件自身主题而非宿主页面 */
     color-scheme: light;
-    display: block;
+    display: flex;
+    flex-direction: column;
     position: relative;
     font-family: system-ui, -apple-system, sans-serif;
     font-size: var(--viewer-font-size);
@@ -61,8 +66,107 @@ export const viewerStyles = css`
     background: var(--viewer-bg);
     border: 1px solid var(--viewer-border);
     border-radius: 8px;
-    /* 内容超出高度时出现垂直滚动条（高度由使用方 CSS 约束）；水平维持隐藏（长值有 ellipsis） */
-    overflow: hidden auto;
+    /* 滚动收敛到内容区（ADR-0035）：:host 不再滚动，.tree-container 承担垂直滚动；
+       :host 仅裁切圆角（高度由使用方 CSS 约束） */
+    overflow: hidden;
+  }
+
+  /* ---- 区头/区尾（ADR-0035）：钉住的工具条——背景区分内容区，交界 1px 分割线 ---- */
+
+  /* form 纵向铺满：区头/区尾 flex-shrink:0，内容区 flex:1（滚动容器） */
+  .viewer-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .viewer-header,
+  .viewer-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 1em 12px;
+  }
+
+  .viewer-header {
+    background: var(--viewer-header-bg);
+    border-bottom: 1px solid var(--viewer-border);
+  }
+
+  .viewer-footer {
+    background: var(--viewer-footer-bg);
+    border-top: 1px solid var(--viewer-border);
+  }
+
+  /* 标题区：截断防撑破（长标题 ellipsis）；slot="title" 内容同容器承载 */
+  .chrome-title {
+    font-weight: 600;
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 动作行：吃满剩余宽度（左组贴标题/起点，右组 margin-left:auto 推远） */
+  .chrome-actions {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .chrome-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .chrome-actions-group.right {
+    margin-left: auto;
+  }
+
+  /* ---- 提交管理（ADR-0035）：受管提交的全局遮罩 + spinner ---- */
+
+  /* 覆盖整个组件（含区头/区尾）：半透明底（viewer-bg 60% 混合）+ 拦截指针交互
+     （天然防重复提交）；z-index 压过 toast（10） */
+  .submit-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: color-mix(in srgb, var(--viewer-bg) 60%, transparent);
+    color: var(--viewer-text);
+    font-weight: 500;
+    cursor: progress;
+  }
+
+  .submit-spinner {
+    width: 1em;
+    height: 1em;
+    border: 2px solid color-mix(in srgb, var(--viewer-badge-text) 30%, transparent);
+    border-top-color: var(--viewer-badge-text);
+    border-radius: 50%;
+    animation: asv-submit-spin 0.8s linear infinite;
+  }
+
+  @keyframes asv-submit-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .submit-spinner {
+      animation: none;
+    }
   }
 
   /* 滚动条：8px 现代风格，配色走主题变量（明暗模式自动跟随）；Firefox 以 thin 近似 */
@@ -221,6 +325,16 @@ export const viewerStyles = css`
     min-width: 0;
     /* 空值时保留可交互高度：node-value 是双击进入编辑的触发区，高度为 0 将无法响应 */
     min-height: 1em;
+  }
+
+  /* 多行文本值（值含换行的字符串）：保留换行按自然段落折行；高度截断至内容可见区
+     40%（--viewer-height 由列宽控制器的宿主 ResizeObserver 写入，未测量回退 200px），
+     超出部分裁剪且无滚动条 */
+  .node-value.multiline {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: calc(var(--viewer-height, 200px) * 0.4);
+    text-overflow: clip;
   }
 
   /* 节点工具区：hover 时显示，编辑时常驻 */
@@ -666,10 +780,25 @@ export const viewerStyles = css`
   /* —— 网格线（ADR-0028）：grid 属性经 :host attr 门控，非法值无选择器匹配天然等效 0 —— */
 
   /* grid=2 垂直线的层叠宿主：建立层叠上下文，使 z-index:-1 的伪元素线
-     画在行内容（文字/控件/hover 高亮）之下——underlay 不覆盖 */
+     画在行内容（文字/控件/hover 高亮）之下——underlay 不覆盖。
+     flex:1 吃满 form 剩余高度；自身不滚动——key 背景带（::before）与列宽拖拽手柄
+     （.key-resizer）的绝对定位以它为包含块，滚动时恒钉住（ADR-0035 修订：
+     滚动曾直接置于本元素致二者随内容滚走） */
   .tree-container {
     position: relative;
     z-index: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* 滚动包裹层：内容区唯一滚动容器（ADR-0035）——垂直滚动承接原 :host，
+     水平维持隐藏（长值有 ellipsis）；underlay/手柄在此之外，不受滚动影响 */
+  .tree-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden auto;
   }
 
   /* grid=1/3 水平线：仅整棵树最后可见行（.last-row，渲染期沿展开链下钻判定）无线，
@@ -679,14 +808,17 @@ export const viewerStyles = css`
     border-bottom: 1px solid var(--viewer-border);
   }
 
-  /* 伪元素载体几何（grid-band 背景带与 grid=2/3 垂直线共用的 underlay 载体）：
-     任一启用即渲染；宽度自行左缘铺至全局 value 起点左移 1em（锚定恒定：
+  /* 伪元素载体几何（key 列背景带与 grid=2/3 垂直线共用的 underlay 载体）：
+     背景带默认显示，故背景未隐藏或 grid=2/3 任一成立即渲染；宽度自行左缘铺至全局
+     value 起点左移 1em（锚定恒定：
      行 padding 8 + 展开图标+4 + 类型图标+6 + 全局列宽+标签右间距 6 − 1em。
      value 全局对齐后起点不随行深漂移，垂直线与各行 value 一致对齐；
      布局常量与 .tree-node/.node-content/.node-label 联动，改动须同步）；
      排除 right 对齐：该模式不测量列宽，calc 无长度可用，且 width 失效后
      shrink-to-fit 的 1px 边框会贴左残留（ADR-0028 决策五的技术修正） */
-  :host(:is([grid-band], [grid='2'], [grid='3']):not([value-align='right'])) .tree-container::before {
+  :host(
+    :not([value-align='right']):is(:not([hide-key-bg]), [grid='2'], [grid='3'])
+  ) .tree-container::before {
     content: '';
     position: absolute;
     top: 0;
@@ -699,15 +831,54 @@ export const viewerStyles = css`
     z-index: -1;
   }
 
-  /* grid-band：key 列背景带——任意 grid 值（含 0/1 无垂直线）均显示；
-     underlay 同层叠，不覆盖行内容 */
-  :host([grid-band]:not([value-align='right'])) .tree-container::before {
+  /* key 列背景带：默认显示（任意 grid 值含 0/1 无垂直线均显示），
+     hide-key-bg 启用后隐藏；underlay 同层叠，不覆盖行内容 */
+  :host(:not([hide-key-bg]):not([value-align='right'])) .tree-container::before {
     background-color: var(--viewer-grid-band-bg);
   }
 
   /* grid=2/3 key/value 垂直分隔线：与 value 文本保持 1em 间距（载体右缘描边） */
   :host(:is([grid='2'], [grid='3']):not([value-align='right'])) .tree-container::before {
     border-right: 1px solid var(--viewer-border);
+  }
+
+  /* 列宽拖拽手柄（ADR-0036）：宿主级单一覆盖层，锚定与背景带载体同源（同一 calc，
+     布局常量与 .tree-node/.node-content/.node-label 联动，改动须同步）；7px 热区骑在
+     分界线上，常态透明不遮文字（穿透可见）；right 模式无分界不渲染
+     （与 ADR-0028 决策五同因）；z-index 置于行内容之上以接收指针事件 */
+  .key-resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(
+      8px + var(--viewer-icon-size) + 4px + var(--viewer-icon-size) + 6px +
+      var(--viewer-key-width, 0px) + 6px - 1em - 3px
+    );
+    width: 7px;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 1;
+  }
+
+  /* 拖动指示线：2px 居中细线，悬停/按压显现（热区仍为 7px，好抓取） */
+  .key-resizer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    border-radius: 1px;
+  }
+
+  .key-resizer:hover::before,
+  .key-resizer:active::before {
+    background-color: color-mix(in srgb, var(--viewer-border) 55%, transparent);
+  }
+
+  :host([value-align='right']) .key-resizer {
+    display: none;
   }
 
   /* root-bg：根级分组行常驻底色（.root-group 渲染期标注，顶层且含子节点）；

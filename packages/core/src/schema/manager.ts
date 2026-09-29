@@ -114,8 +114,8 @@ export class ConfigManager extends AutoStore<
     get size() {
         return Object.keys(this.fields).length;
     }
-    get group(){
-        return this._groups
+    get groups() {
+        return this._groups;
     }
     /**
      * 配置项归属（跨 store 聚合）：未加 configKey 前缀的项路径 → owning store
@@ -342,14 +342,30 @@ export class ConfigManager extends AutoStore<
         return loadedValue || initialValue;
     }
 
-    private _updateGroup(group:string | SchemaGroup){
-        if(!this._groups) this._groups={}
-        const groupName = typeof(group)==='string' ? group :  group.name
-        if(!groupName || groupName.trim().length===0)   return 
-        if(!(groupName in this._groups)) this._groups[groupName]={name:groupName}         
-        if(typeof group ==='object'){
-            Object.assign(this._groups[groupName],group)
-        }        
+    /**
+     * 登记配置组
+     * - 字符串：支持逗号分隔声明多个组，如 "network,advanced"
+     * - SchemaGroup 对象：以 name 为组名（同样支持逗号分隔），title/icon/order 随组一并登记
+     * 同名组重复登记时保留先登记的记录，对象形态的元数据可后补（覆盖已提供的字段）
+     */
+    private _updateGroup(group?: string | SchemaGroup) {
+        if (!this._groups) this._groups = {};
+        // 仅当对象形态且带字符串 name 时才视为 SchemaGroup（否则可能是计算属性描述对象）
+        const meta =
+            typeof group === "object" && group !== null && typeof group.name === "string"
+                ? group
+                : undefined;
+        const raw = typeof group === "string" ? group : meta?.name;
+        if (!raw || raw.trim().length === 0) return;
+        raw.split(",").forEach((name) => {
+            if (name.length === 0) return;
+            const current = (this._groups![name] ??= { name });
+            if (meta) {
+                if (meta.title !== undefined) current.title = meta.title;
+                if (meta.icon !== undefined) current.icon = meta.icon;
+                if (meta.order !== undefined) current.order = meta.order;
+            }
+        });
     }
 
     private _handleRefState(schema: object, store: AutoStore<any>) {

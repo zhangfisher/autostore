@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>区头与区尾：header / footer</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      pre { margin-top: 8px; padding: 8px 12px; background: rgba(127, 127, 127, 0.08); border-radius: 6px; font-size: 12px; white-space: pre-wrap; }
+      label { font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+      autostore-viewer {
+        display: block;
+        height: 300px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      未声明 header 时使用默认区头：<code>&lt;store.title&gt;</code> 占位符标题 + 「重置/保存」按钮
+      （均声明 mode:"edit"，仅在编辑模式显示；store 已开启 resetable，重置恢复初始状态）。
+      区尾由 footer 属性以宽松 JSON 声明，「清理缓存」align:"right" 归右侧；动作未声明 onClick 时
+      点击仅派发 action 事件（区头/区尾动作无节点：detail 的 path/value 为 undefined）。
+      滚动仅发生在内容区，区头/区尾自带背景并以 1px 分割线与内容区分隔
+    </p>
+    <p>
+      <label><input type="checkbox" id="edit-mode" checked /> 编辑模式（mode=edit，区头默认动作仅此模式显示）</label>
+    </p>
+    <autostore-viewer
+      id="viewer"
+      mode="edit"
+      footer="[{label:'帮助'},{label:'清理缓存', align:'right'}]"
+    ></autostore-viewer>
+    <pre id="events">（点击区尾「帮助 / 清理缓存」，这里显示最近派发的 action 事件 detail）</pre>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      // resetable 开启：默认区头「重置」可恢复初始状态（未开启时渲染禁用 + tooltip 提示）
+      const store = new AutoStore(
+        {
+          name: configurable('线上服务', { label: '服务名' }),
+          replicas: configurable(3, { label: '副本数', suffix: ' 个' }),
+          debug: configurable(false, { label: '调试模式' }),
+        },
+        { title: '服务配置', resetable: true },
+      )
+
+      const viewer = document.getElementById('viewer')
+      viewer.store = store
+
+      // action.mode 门控：默认重置/保存仅 mode=edit 显示，切到 view 即隐藏
+      const ctlEdit = document.getElementById('edit-mode')
+      ctlEdit.addEventListener('change', () => {
+        viewer.mode = ctlEdit.checked ? 'edit' : 'view'
+      })
+
+      // 区尾动作未声明 onClick：点击只派发 action 事件（可取消、不可拦截默认行为——没有默认行为）
+      viewer.addEventListener('action', (e) => {
+        const { path, value, action } = e.detail
+        document.getElementById('events').textContent = JSON.stringify(
+          { path, value, action: action.label },
+          null,
+          2,
+        )
+      })
+    </script>
+  </body>
+</html>

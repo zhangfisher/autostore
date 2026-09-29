@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>绑定 Store：store 属性 / store-id 属性</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      autostore-viewer {
+        display: block;
+        height: 150px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>store 属性：直接传入 AutoStore 实例</p>
+    <autostore-viewer id="by-prop"></autostore-viewer>
+
+    <p>store-id 属性：按 id 从全局注册表（WeakRef）查找，store 可晚于组件创建</p>
+    <autostore-viewer store-id="demo-store"></autostore-viewer>
+
+    <p>未绑定（未设置 store / store-id）：渲染空态</p>
+    <autostore-viewer></autostore-viewer>
+
+    <script>
+      const { AutoStore } = AutoStoreSpaces
+
+      // ① store 属性：实例直接赋值
+      const storeA = new AutoStore({ message: '通过 store 属性绑定' })
+      document.getElementById('by-prop').store = storeA
+
+      // ② store-id：创建时声明 id，viewer 挂载后按 id 查找（最多重试 10 次 × 500ms）
+      const storeB = new AutoStore(
+        { message: '通过 store-id 绑定', count: 100 },
+        { id: 'demo-store' },
+      )
+      // 全局注册表用 WeakRef 持有实例，这里挂到全局避免被 GC 回收
+      globalThis.__DEMO_STORE__ = storeB
+    </script>
+  </body>
+</html>

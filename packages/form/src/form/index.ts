@@ -467,9 +467,9 @@ export class AutoForm extends LitElement {
         const groups = this.group.split(",");
         // * 是通配符，匹配所有字段
         if (groups.includes("*")) return true;
-
-        const fieldGroups = (schema.group || "").split(",");
-        return fieldGroups.some((g) => groups.includes(g));
+        const groupName = (typeof(schema.group)==='object' ? schema.group.name : schema.group) || ''
+        const fieldGroups =  groupName.split(",");
+        return fieldGroups.some((g => groups.includes(g)));
     }
 
     private _matchesAdvanced(schema: AutoStoreStateSchema): boolean {

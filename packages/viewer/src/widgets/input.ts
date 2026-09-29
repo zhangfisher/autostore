@@ -8,6 +8,9 @@ import type { WidgetModule, WidgetRenderContext } from './types'
 export function toRender(ctx: WidgetRenderContext): TemplateResult {
   const { plan, setValue, onKeydown, name } = ctx
   const props = plan.props
+  // number 输入缺省 step="any"：浏览器默认 step=1 会把小数值判 stepMismatch（隐式假约束，
+  // 表单校验/提交被无提示阻断）；schema 显式声明 step 时按声明（真语义优先）
+  const step = props.step ?? (plan.inputType === 'number' ? 'any' : nothing)
   return html`<input
     class="edit-input"
     type=${plan.inputType}
@@ -24,7 +27,7 @@ export function toRender(ctx: WidgetRenderContext): TemplateResult {
     maxlength=${props.maxLength ?? nothing}
     min=${props.min ?? nothing}
     max=${props.max ?? nothing}
-    step=${props.step ?? nothing}
+    step=${step}
     accept=${props.accept ?? nothing}
     capture=${props.capture ?? nothing}
     spellcheck=${props.spellcheck === true ? 'true' : props.spellcheck === false ? 'false' : nothing}

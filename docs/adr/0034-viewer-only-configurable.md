@@ -1,6 +1,6 @@
 # viewer only-configurable：配置面板渲染与分组
 
-viewer 至此渲染整棵 state 树。ADR-0032 已为「viewer 作为配置表单组件」铺路（全渲染常驻 DOM），本决策补上第一步实装形态：`only-configurable` 布尔属性启用后只渲染 store 的 **configurable 项**（数据双面：`store.configurabled` 路径集合 / `configManager.state` 的 key 带 configKey 前缀、value 为 schema 元数据），并在 `configManager.group` 有值时按组呈现。组聚合记录在 global ConfigManager 下是**跨 store 混合**的，viewer 绑定单 store——组清单取聚合记录全部、组内成员取本 store 命中项是刻意的可见性选择（跨 store 空组照渲染标题条）。
+viewer 至此渲染整棵 state 树。ADR-0032 已为「viewer 作为配置表单组件」铺路（全渲染常驻 DOM），本决策补上第一步实装形态：`only-configurable` 布尔属性启用后只渲染 store 的 **configurable 项**（数据双面：`store.configurabled` 路径集合 / `configManager.state` 的 key 带 configKey 前缀、value 为 schema 元数据），并在 `configManager.groups` 有值时按组呈现。组聚合记录在 global ConfigManager 下是**跨 store 混合**的，viewer 绑定单 store——组清单取聚合记录全部、组内成员取本 store 命中项是刻意的可见性选择（跨 store 空组照渲染标题条）。
 
 ## 集合与嵌套（区别于 entrys 的两处）
 
@@ -12,7 +12,7 @@ viewer 至此渲染整棵 state 树。ADR-0032 已为「viewer 作为配置表�
 ## 分组结构（三层：默认区 → 真实组 → 高级虚拟组）
 
 - **默认区**：无 group 声明的项置顶裸排（无标题条）。
-- **真实组**：`configManager.group` 全部记录按 `order` 升序、缺省沉底按注册序；组内项恒注册序。组标题条 `title ?? name` + `icon`（走图标链）+ 项数徽章（show-count 门控），**横跨整行**——不参与两列网格/label 列宽测量/grid 垂直线（防长组名撑宽全树 label 列）。组内项缩进一级（depth 从 1 起）。
+- **真实组**：`configManager.groups` 全部记录按 `order` 升序、缺省沉底按注册序；组内项恒注册序。组标题条 `title ?? name` + `icon`（走图标链）+ 项数徽章（show-count 门控），**横跨整行**——不参与两列网格/label 列宽测量/grid 垂直线（防长组名撑宽全树 label 列）。组内项缩进一级（depth 从 1 起）。
 - **高级虚拟组**：置尾，收拢 `advanced:true` 的项。**advanced 优先于 group 声明**（声明了 group 的 advanced 项也被抽进虚拟组，group 在该项上失效）；默认折叠（组默认展开规则的唯一例外，呼应 form 侧 advanced 默认隐藏的精神——viewer 折叠是更温和的等价物）；空则整个不渲染（虚拟收纳区与真实组的性质不同，不与跨 store 空组强求一致）。与 form 的 advanced 同名分野：form 是**过滤隐藏**，viewer 是**折叠收纳**。
 - **组可折叠**：组标题条点击折叠/展开整组；折叠态承载于独立 `Map<组名, boolean>`（组无 store 路径，不 TreeNode 化——组节点混入 getNodeByPath 的逐段 key 匹配会拦截命中），跨树重建自然保留。组折叠 DOM 策略遵循 render-mode（full = grid 0fr + inert、lazy = DOM 移除、mode=edit 恒 full）；组不参与 expandDepth 深度计数。
 - `findLastVisible` 穿透组层（组折叠时最后可见行 = 该组标题条）；组标题条恒不画水平线。

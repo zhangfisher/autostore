@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>配置面板：only-configurable</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      label { font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+      autostore-viewer {
+        display: block;
+        height: 460px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      only-configurable：只渲染 store 的 configurable 项，并按 configManager 的组呈现 —— 默认区（未声明 group，置顶裸排）
+      → 真实组（order 升序、缺省沉底，标题条可折叠）→ 「高级选项」虚拟组（advanced:true 一律归此，置尾默认折叠）。
+      非 configurable 项（internalCache）不渲染；关闭开关即回落整树渲染
+    </p>
+    <p><label><input type="checkbox" id="toggle" checked /> only-configurable</label></p>
+    <autostore-viewer id="viewer" mode="edit" only-configurable></autostore-viewer>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        // —— 默认区 ——
+        language: configurable('zh-CN', {
+          label: '界面语言',
+          widget: 'select',
+          choices: [
+            { label: '简体中文', value: 'zh-CN' },
+            { label: 'English', value: 'en-US' },
+          ],
+        }),
+        autoStart: configurable(true, { label: '开机自启', widget: 'checkbox' }),
+
+        // —— 网络组（对象形式 group：title/icon/order 齐全）——
+        proxy: configurable(
+          {
+            enable: configurable(false, {
+              label: '启用代理',
+              group: { name: 'network', title: '网络', icon: 'globe', order: 0 },
+              widget: 'checkbox',
+            }),
+            host: configurable('127.0.0.1', { label: '代理地址', group: 'network', widget: 'text' }),
+            port: configurable(7890, { label: '代理端口', group: 'network', widget: 'number', min: 1, max: 65535 }),
+            bypass: 'localhost,127.0.0.1', // 非 configurable 子级：作为容器值结构成员照常显示
+          },
+          { label: '网络代理', group: 'network' },
+        ),
+
+        // —— 外观组（order=1）——
+        theme: configurable('dark', {
+          label: '主题',
+          group: { name: 'appearance', title: '外观', icon: 'palette', order: 1 },
+          widget: 'select',
+          choices: [
+            { label: '浅色', value: 'light' },
+            { label: '深色', value: 'dark' },
+            { label: '自动', value: 'auto' },
+          ],
+        }),
+        fontSize: configurable(14, { label: '字号', group: 'appearance', suffix: ' px', widget: 'number', min: 10, max: 32 }),
+
+        // —— 编辑器组（order 缺省：沉底排在有 order 的组之后）——
+        tabSize: configurable(2, { label: '缩进空格', group: { name: 'editor', title: '编辑器' }, widget: 'number', min: 1, max: 8 }),
+
+        // —— advanced：优先于 group 声明，一律收进「高级选项」虚拟组 ——
+        telemetry: configurable(true, { label: '遥测上报', advanced: true, group: 'editor', widget: 'checkbox' }),
+
+        // —— 非 configurable：配置面板模式下不渲染 ——
+        internalCache: '不应出现在配置面板',
+      })
+
+      const viewer = document.getElementById('viewer')
+      viewer.store = store
+
+      document.getElementById('toggle').addEventListener('change', (e) => {
+        viewer.onlyConfigurable = e.target.checked
+      })
+    </script>
+  </body>
+</html>

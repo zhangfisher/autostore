@@ -1,4 +1,6 @@
 import { defineConfig } from 'vite'
+import fs from 'node:fs'
+import path from 'node:path'
 
 // IIFE 单文件构建：不走 lib 模式（其默认 external 掉 dependencies），改为普通构建 + rollup iife 输出，
 // 将 lit/autostore 全量捆绑进产物，供浏览器 <script> 直引。
@@ -20,4 +22,15 @@ export default defineConfig({
       },
     },
   },
+  plugins: [
+    {
+      // 产物同步到文档站点：docs 的 HTML demo 经 /autostore/viewer.js 直引（对齐 core/syncer 的复制链路）
+      name: 'copy-iife-to-docs',
+      closeBundle() {
+        const src = path.resolve(import.meta.dirname, 'dist/index.global.js')
+        if (!fs.existsSync(src)) return
+        fs.copyFileSync(src, path.resolve(import.meta.dirname, '../../docs/public/viewer.js'))
+      },
+    },
+  ],
 })

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>表单提交管理：受管提交</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      pre { margin-top: 4px; padding: 8px 12px; background: rgba(127, 127, 127, 0.08); border-radius: 6px; font-size: 12px; white-space: pre-wrap; }
+      label { font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+      autostore-viewer {
+        display: block;
+        height: 300px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      受管提交：保存 → 行内错误校验（清空「配置名称」后保存，toast 拦截且不遮罩）→ 全局半透明遮罩
+      「正在提交...」（spinner，拦截交互防重复提交）→ fetch POST /api/submit-settings
+      （本页 mock：延迟 800ms 回显成功；勾选「模拟失败」返回 500）→ 成败 toast + submit-result 事件。
+      区头标题来自 &lt;store.title&gt; 占位符；number 输入缺省 step="any"，小数「告警阈值 0.75」可正常提交
+    </p>
+    <p>
+      <label><input type="checkbox" id="fail" /> 模拟失败（服务端返回 500）</label>
+    </p>
+    <autostore-viewer
+      id="viewer"
+      mode="edit"
+      action="/api/submit-settings"
+      method="POST"
+    ></autostore-viewer>
+    <p>提交的数据（FormData，编辑控件 name 即完整状态路径）：</p>
+    <pre id="payload">（点击保存后显示）</pre>
+    <p>submit-result detail：</p>
+    <pre id="events">（点击保存后显示）</pre>
+
+    <script>
+      const { AutoStore, configurable } = AutoStoreSpaces
+
+      const store = new AutoStore(
+        {
+          name: configurable('生产环境配置', { label: '配置名称', required: true }),
+          endpoint: configurable('https://api.example.com/v1', { label: '服务地址', widget: 'url' }),
+          threshold: configurable(0.75, { label: '告警阈值' }),
+          replicas: configurable(3, { label: '副本数', suffix: ' 个' }),
+          debug: configurable(false, { label: '调试模式' }),
+          database: configurable({ host: '127.0.0.1', port: 5432, ssl: true }, { label: '数据库' }),
+        },
+        { title: '服务配置', resetable: true },
+      )
+
+      const viewer = document.getElementById('viewer')
+      viewer.store = store
+
+      // mock 服务端：仅拦截 /api/submit-settings（延迟 800ms 让遮罩可见），其余请求透传
+      const realFetch = window.fetch.bind(window)
+      window.fetch = async (input, init) => {
+        const url = typeof input === 'string' ? input : input.url
+        if (!url.startsWith('/api/submit-settings')) return realFetch(input, init)
+        await new Promise((resolve) => setTimeout(resolve, 800))
+        if (document.getElementById('fail').checked) {
+          return new Response(JSON.stringify({ error: 'internal server error' }), { status: 500 })
+        }
+        const saved = {}
+        if (init && init.body instanceof FormData) {
+          init.body.forEach((value, key) => {
+            saved[key] = typeof value === 'string' ? value : value.name
+          })
+        }
+        document.getElementById('payload').textContent = JSON.stringify(saved, null, 2)
+        return new Response(JSON.stringify({ ok: true }), { status: 200 })
+      }
+
+      // submit-result：detail = { ok, status, response }，通知性事件（不可拦截），
+      // 外部据此接管后续（跳转/更新重置基线）
+      viewer.addEventListener('submit-result', (e) => {
+        const { ok, status } = e.detail
+        document.getElementById('events').textContent = JSON.stringify({ ok, status }, null, 2)
+      })
+    </script>
+  </body>
+</html>

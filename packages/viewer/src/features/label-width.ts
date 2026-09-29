@@ -51,8 +51,29 @@ export class LabelWidthController implements ReactiveController {
   // 宿主尺寸监听（隐藏容器如 tab 面板内测量无效，变可见后须重测）
   private _resizeObserver: ResizeObserver | null = null
 
+  // 手动锁存（ADR-0036）：拖拽接管期间测量整体让位（锁存只被双击复位清除）。
+  // 置位同时失效脏检查缓存——手动值经宿主直写，缓存仍持旧测量值会吞掉复位后的重写
+  private _latched = false
+
   constructor(host: LabelWidthHost) {
     this._host = host
+  }
+
+  // 是否处于手动锁存（拖拽特性经宿主查询）
+  get latched(): boolean {
+    return this._latched
+  }
+
+  // 置位锁存（拖拽特性首次实际移动时经宿主转发）
+  latch(): void {
+    this._latched = true
+    this._labelWidth = ''
+  }
+
+  // 解除锁存并调度重测（双击手柄复位，锁存唯一出口）
+  unlatch(): void {
+    this._latched = false
+    this.scheduleMeasure()
   }
 
   // 连接到DOM时挂宿主尺寸监听：
@@ -61,6 +82,14 @@ export class LabelWidthController implements ReactiveController {
   // 回调发生在 layout 之后，同步测量即可取到有效布局，rAF 再兜底一次
   hostConnected(): void {
     this._resizeObserver = new ResizeObserver((entries) => {
+      // 顺带同步内容可见区高度变量（.node-value.multiline 截断 40% 消费）：与列宽测量
+      // 共用同一宿主观察，尺寸变化时一并刷新；隐藏期 contentRect 为 0 不写入（保留旧值）
+      const host = this._host.getHostElement()
+      for (const entry of entries) {
+        if (entry.contentRect.height > 0) {
+          host.style.setProperty('--viewer-height', `${entry.contentRect.height}px`)
+        }
+      }
       if (entries.some((entry) => entry.contentRect.width > 0 || entry.contentRect.height > 0)) {
         this.measure()
         this.scheduleMeasure()
@@ -93,8 +122,9 @@ export class LabelWidthController implements ReactiveController {
     return this._host.valueAlign === 'right'
   }
 
-  // 调度标签区列宽测量（rAF 合并同一帧内的多次更新）
+  // 调度标签区列宽测量（rAF 合并同一帧内的多次更新）；锁存期间不排帧
   scheduleMeasure(): void {
+    if (this._latched) return
     if (this._measureHandle !== null) return
     this._measureHandle = requestAnimationFrame(() => {
       this._measureHandle = null
@@ -108,6 +138,9 @@ export class LabelWidthController implements ReactiveController {
   // 与展开态解耦以保证列宽稳定不跳动。文本宽度用离屏探针（复用真实样式类）批量测量，
   // 一次写入、一次批量读取，避免逐节点强制回流
   measure(): void {
+    // 锁存让位（ADR-0036）：覆盖宿主 updated 门控之外的一切入口（ResizeObserver 直调、
+    // 隐藏重试轮询）——手动接管期间不重算不写入；高度变量同步在观察回调内，不受此门影响
+    if (this._latched) return
     if (this._isRightAlign() || !this._host.getStore()) return
     const probe = this._host.getMeasureProbe()
     if (!probe) return

@@ -1,3 +1,5 @@
+import type { AutoStoreAction } from 'autostore'
+
 // 树节点值类型
 export type TreeNodeType =
   | 'object'
@@ -36,4 +38,11 @@ export interface ConfigSection {
   advanced?: boolean
   // 组内项节点（恒注册序；跨 store 空组为空数组——标题条照渲染）
   nodes: TreeNode[]
+}
+
+// 区头配置（ADR-0035）：title 支持 <store.<prop>> 占位符；title 与 actions 均可省略，
+// 二者皆无内容视同无值不渲染。attribute 字符串经 relaxedToJson+JSON.parse 解析
+export interface ViewerChromeHeader {
+  title?: string
+  actions?: AutoStoreAction[]
 }

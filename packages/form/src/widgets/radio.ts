@@ -163,7 +163,7 @@ export class AutoFieldRadio extends AutoField<AutoFieldRadioOptions> {
 				width: this.options.card === undefined ? this.options.itemWidth : undefined,
 			})}
             ?disabled=${!this.options.enable}
-            >${item.label}<br /><span class="memo">${item.tips}</span></sl-radio
+            >${item.label}<br /><span class="memo">${item.tooltip}</span></sl-radio
         >`;
 	}
 	renderInput() {

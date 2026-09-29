@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>删除节点：allow-delete</title>
+    <script src="/autostore/autostore.js"></script>
+    <script src="/autostore/viewer.js"></script>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; }
+      p { margin: 8px 0 4px; font-size: 13px; color: #6b7280; }
+      pre { margin-top: 8px; padding: 8px 12px; background: rgba(127, 127, 127, 0.08); border-radius: 6px; font-size: 12px; }
+      autostore-viewer {
+        display: block;
+        height: 200px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>allow-delete：悬停行显示删除按钮，点击后删除该键（数组元素删除后下标重排）；根节点不可删除</p>
+    <autostore-viewer id="viewer" allow-delete></autostore-viewer>
+    <pre id="state"></pre>
+
+    <script>
+      const { AutoStore } = AutoStoreSpaces
+
+      const store = new AutoStore({
+        keep: '保留项',
+        removable: '可删除项',
+        list: ['a', 'b', 'c'],
+      })
+
+      const viewer = document.getElementById('viewer')
+      viewer.store = store
+
+      const state = document.getElementById('state')
+      const render = () => (state.textContent = '当前状态：' + JSON.stringify(store.state))
+      render()
+      store.watch('*', render)
+    </script>
+  </body>
+</html>

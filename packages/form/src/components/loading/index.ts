@@ -22,7 +22,7 @@ export class AutoLoading extends LitElement {
     `;
 
     @property({type:String})
-    tips:string = 'Loading'    
+    tooltip:string = 'Loading'    
 
     @property({type:Boolean})
     hide:boolean = false
@@ -35,7 +35,7 @@ export class AutoLoading extends LitElement {
         if(this.hide) return html``
         return html`  
             <sl-spinner style="font-size:${this.size};"></sl-spinner>
-            <div>${this.tips}</div>
+            <div>${this.tooltip}</div>
         `
     }
 }
