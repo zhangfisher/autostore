@@ -257,7 +257,7 @@ viewer 支持两种绑定方式，二者互斥（已设置 `store` 时优先使�
 - **Store 占位符**：标题中 `<store.<prop>>` 形式在渲染时求值 store 实例公开属性（`<store.title>`、`<store.id>` 等），未命中替换为空串——非表达式、不读状态路径。
 - **动作复用**：区头/区尾动作与 `schema.actions` 完全同构（三形态、图标链、`visible` / `enable` / `tooltip` / `mode` / `align`），但无节点——`onClick` 的 `value` 为 `undefined`、`ctx.update` 为空操作，`action` 事件的 `detail.path` / `detail.value` 为 `undefined`。
 - **slot 替换**：`slot="header"` / `slot="footer"` 有分发内容即整区替换渲染（优先于属性值）；`slot="title"` 仅替换标题区。
-- **内置行为**：重置 → `store.reset()`（store 未开启 `resetable` 时按钮禁用并提示）；保存 → 触发表单提交（见下一节）。
+- **内置行为**：重置 → `store.reset()`（store 的 `resetable` 为 `false` 或空规则集 `[]` 时按钮禁用并提示；非空路径规则同样可重置）；保存 → 触发表单提交（见下一节）。
 
 <demo html="viewer/chrome.html" />
 

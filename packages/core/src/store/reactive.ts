@@ -24,9 +24,23 @@ export type ReactiveNotifyParams<T = any> = {
     operates?: StateOperateType[];
 };
 
-type CreateReactiveObjectOptions = {
+export type CreateReactiveObjectOptions = {
     notify: (params: ReactiveNotifyParams) => void;
     createObserverObject: (path: string[], value: any, parentPath: string[], parent: any) => any;
+    /**
+     * reset 基线采集：键写入/删除**之前**调用。
+     *
+     * 在此接管是为了拿到变更前的原始容器——一旦写入完成，容器可能已被就地改写。
+     * 两个回调由 store 在 resetable 启用时装卸，禁用时为 undefined，代理零额外开销。
+     */
+    captureKeyPreimage?: (
+        path: string[],
+        existed: boolean,
+        oldValue: any,
+        newValue?: any,
+    ) => void;
+    /** reset 基线采集：数组被结构/下标/length 改写**之前**调用，传入原始数组 */
+    captureArrayPreimage?: (path: string[], array: any[]) => void;
 };
 
 /**
@@ -187,6 +201,7 @@ function createProxy(
                             key as string,
                             value,
                             parentPath,
+                            options.captureArrayPreimage,
                         );
                     }
                         if (!isRaw(value) && Object.hasOwn(obj, key)) {
@@ -256,6 +271,19 @@ function createProxy(
             const [val, schema] = isObj ? getSchemaValue(value) : [value, undefined];
             const isValid = isValidPass.call(this, proxyObj, path, val, oldValue, schema);
             if (isValid) {
+                // 基线采集：必须在写入之前，否则数组已被就地改写、旧引用也已失效
+                if (key !== __NOTIFY__) {
+                    if (Array.isArray(obj)) {
+                        options.captureArrayPreimage?.(parentPath, obj);
+                    } else {
+                        options.captureKeyPreimage?.(
+                            path,
+                            Object.hasOwn(obj, key),
+                            oldValue,
+                            val,
+                        );
+                    }
+                }
                 const success = Reflect.set(obj, key, val, receiver);
                 if (key === __NOTIFY__) return true;
 
@@ -291,6 +319,14 @@ function createProxy(
         deleteProperty: (obj, prop) => {
             const value = obj[prop];
             const path = [...parentPath, String(prop)];
+            // 基线采集：删除前记录存在性（键不存在与值为 undefined 必须可区分）
+            if (prop !== __NOTIFY__) {
+                if (Array.isArray(obj)) {
+                    options.captureArrayPreimage?.(parentPath, obj);
+                } else {
+                    options.captureKeyPreimage?.(path, Object.hasOwn(obj, prop), value);
+                }
+            }
             const success = Reflect.deleteProperty(obj, prop);
             if (success && prop !== __NOTIFY__) {
                 options.notify({

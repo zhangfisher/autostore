@@ -941,7 +941,10 @@ export class AutostoreViewer extends LitElement
   // 均 mode:'edit'，仅在编辑模式显示
   private _defaultHeaderActions(): AutoStoreAction[] {
     const store = this._store.store
-    const resetable = store?.resetable === true
+    // resetable 既可能是 boolean 也可能是路径规则：仅 false 与空规则集算禁用，
+    // 非空 string[] 同样可重置（不能写成 `=== true`）
+    const cfg = store?.resetable
+    const resetable = cfg === true || (Array.isArray(cfg) && cfg.length > 0)
     return [
       {
         label: '重置',

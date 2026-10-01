@@ -11,7 +11,17 @@ export function hookArrayMethods(
     name: string,
     method: (...args: any[]) => any,
     parentPath: string[],
+    /**
+     * reset 基线采集：在 `method.apply` **之前**交出原始数组。
+     *
+     * 数组是就地改写的，方法返回后旧内容已不可得，故前像只能在调用前取。
+     * 不扩展 reactive 的公开 Operate 契约（ADR-0037）。
+     */
+    captureArrayPreimage?: (path: string[], array: any[]) => void,
 ) {
+    /** 方法执行前采集基线 */
+    const capture = () => captureArrayPreimage?.(parentPath, array);
+
     /** 通知 insert 事件 */
     const notifyInsert = (indexs: number[], value: any) => {
         notifyChange({
@@ -42,6 +52,7 @@ export function hookArrayMethods(
     if (name === "push" || name === "unshift" || name === "concat") {
         return (...args: any[]) => {
             const oldLength = array.length;
+            capture();
             const result = method.apply(array, args);
             if (array.length > oldLength) {
                 // push/concat: 索引从 oldLength 开始; unshift: 索引从 0 开始
@@ -56,6 +67,7 @@ export function hookArrayMethods(
     if (name === "pop" || name === "shift") {
         return () => {
             const oldLength = array.length;
+            capture();
             const result = method.apply(array);
             if (array.length === oldLength - 1) {
                 // pop: 移除最后一个; shift: 移除第一个
@@ -67,7 +79,8 @@ export function hookArrayMethods(
 
     // splice: 同时涉及 insert + remove
     if (name === "splice") {
-        return (start: number, deleteCount: number, ...items: any[]) => {
+        return (start: number, deleteCount?: number, ...items: any[]) => {
+            capture();
             const deletedItems =
                 deleteCount === undefined && items.length === 0
                     ? method.apply(array, [start])
@@ -88,6 +101,7 @@ export function hookArrayMethods(
     // fill: 更新指定区间的值
     if (name === "fill") {
         return (value: any, start?: number, end?: number) => {
+            capture();
             const result = method.apply(array, [value, start, end]);
             const startIndex = start ?? 0;
             const endIndex = end ?? array.length;

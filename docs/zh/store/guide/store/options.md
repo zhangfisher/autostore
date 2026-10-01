@@ -291,10 +291,10 @@ const store = new AutoStore(state, {
 
 #### resetable
 
-- **类型**: `boolean`
-- **默认值**: `false`
+- **类型**: `boolean | string[]`
+- **默认值**: `true`
 
-启用重置功能。当启用 `resetable=true` 时,会记录状态的首次变化,然后在 `store.reset()` 方法调用时,将数据恢复到初始状态。
+启用重置功能。启用后,会记录每条状态路径**首次变化前的基线**,然后在 `store.reset()` 方法调用时,将数据还原到基线。
 
 ```ts
 const store = new AutoStore(
@@ -311,11 +311,45 @@ const store = new AutoStore(
 store.state.count = 10;
 store.state.name = "updated";
 
-// 重置到初始状态
+// 重置到基线
 store.reset();
 console.log(store.state.count); // 0
 console.log(store.state.name); // 'test'
 ```
+
+还原的是**基线**,不是逆放操作序列:
+
+```ts
+store.state.list.push(4);
+store.state.list.pop();
+
+store.reset();
+// list 回到首次变脏前的 [1,2,3],而非空数组
+```
+
+##### 路径规则
+
+传入 `string[]` 可将重置范围限定到指定路径。规则**首匹配即止**——按书写顺序依次匹配,命中即决定该路径是否可重置,不再检查后续规则。
+
+```ts
+// 纳入规则(无前缀): 命中即判定可重置,范围为整棵子树(含自身)
+resetable: ["orders.items"];
+
+// 排除规则(`!` 前缀): 命中即判定不可重置
+resetable: ["!orders.items"];
+
+// 顺序重要: 更靠前的规则遮蔽更靠后的规则
+resetable: ["!orders.items", "orders"];
+//   orders.items → 命中规则 1 → 不可重置
+//   orders.price → 规则 1 不命中 → 规则 2 命中 → 可重置
+```
+
+- 通配符 `*` 匹配恰好一层,`**` 匹配任意层(含零层,故 `["!**"]` 排除整棵树)。
+- 零命中兜底: **存在纳入规则时**默认不可重置(规则集是收窄);**只有排除规则时**默认可重置,即 `["!x"]` 表示「除 x 外都记」。
+- 容器基线会吸收其后代;若某容器在其子树内已有脏路径之后才被整体替换,则不捕获该容器基线,还原降级为逐个脏路径。
+- 计算属性的路径不参与还原——它们在依赖变化时自动重算。
+
+`false` 与 `[]` 均表示禁用,不捕获任何基线。设计取舍见 `docs/adr/0037-reset-baseline-model.md`。
 
 ### 校验配置
 
@@ -653,13 +687,21 @@ if (store.batching) {
 
 ### resetable
 
-- **类型**: `boolean`
+- **类型**: `boolean | string[]`
 
-是否启用重置功能。
+是否启用重置功能,或限定可重置的路径规则。默认为 `true`。详见上文[状态重置](#状态重置)一节。
 
 ```ts
 if (store.resetable) {
     store.reset();
+}
+```
+
+规则模式下 `store.resetable` 返回数组:
+
+```ts
+if (Array.isArray(store.resetable)) {
+    // 规则模式：重置范围由路径规则限定
 }
 ```
 
@@ -786,15 +828,17 @@ const value = store.get("nonexistent.path", {
 
 ### reset()
 
-重置 store 恢复到初始状态(需要启用 `resetable` 选项)。
+将 store 还原到基线——即每条路径**首次变化前的快照**,而非逆放变更操作(`resetable` 默认已启用)。
 
 ```ts
-const store = new AutoStore(state, { resetable: true });
+const store = new AutoStore(state);
 
 // 修改状态后
 store.reset(); // 重置全部
-store.reset("user"); // 只重置 user 路径下的状态
+store.reset("user"); // 只重置 user 路径及其后代
 ```
+
+`entry` 精确匹配该路径及其后代,不会误伤同前缀的兄弟路径——`reset("user")` 不影响 `username`。
 
 ### shadow()
 
@@ -922,5 +966,5 @@ const store = new AutoStore({
 1. **配置管理**: 使用 `id` 和 `debug` 选项便于开发和调试
 2. **性能优化**: 对于大型状态树,考虑使用 `lazy: true` 延迟计算
 3. **类型安全**: 充分利用 TypeScript 的类型推导功能
-4. **状态重置**: 开发阶段启用 `resetable` 便于测试和重置
+4. **状态重置**: `resetable` 默认为 `true`。生产环境若不需要回滚到基线，显式传 `resetable: false` 可完全关闭基线采集（不挂载任何监听，开销与改造前持平）
 5. **校验**: 使用 `validators` 确保状态数据的完整性

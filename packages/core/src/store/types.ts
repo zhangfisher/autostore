@@ -10,6 +10,7 @@ import type { ObserverDescriptor } from "../observer/types";
 import type { CreateSandboxOptions } from "../utils/createSandbox";
 import type { ILogger } from "flex-tools";
 import { IAutoStorePlugin } from "../plugins";
+import type { ResetableConfig } from "./resetable";
 export type BatchChangeEvent = "__batch_update__";
 export type StateChangeEvents = TransformedEvents<Record<string, StateOperate>>;
 export interface StateValidatorFunction<State extends Dict> {
@@ -192,10 +193,25 @@ export interface AutoStoreOptions<State extends Dict> extends AutoStoreHooks<Sta
      *
      * @description
      *
-     * 当启用resetable=true时，会记录数据的首次变化，然后在store.reset()方法调用时，将数据恢复到初始状态
+     * 当启用 resetable 时，会记录路径**首次变化前的基线**，在 store.reset() 时还原到基线。
      *
+     * - `true`：全记（默认），零匹配开销
+     * - `false` / `[]`：禁用，不捕获任何基线
+     * - `string[]`：重置范围规则，**首匹配即止**，更靠前的规则遮蔽更靠后的规则
+     *   - 纳入规则（无前缀）：命中即判定该路径可重置，范围为整棵子树（含自身）
+     *   - 排除规则（`!` 前缀）：命中即判定该路径不可重置
+     *   - `*` 匹配一层，`**` 匹配任意层（**含零层**）
+     *   - 零命中兜底：存在纳入规则时默认不可重置；只有排除规则时默认可重置
+     *
+     * @example
+     * // 只有 orders.items 整棵子树可重置
+     * resetable: ["orders.items"]
+     * // 除 orders.items 外都记（顺序重要：更靠前的规则先判定）
+     * resetable: ["!orders.items"]
+     * // orders 记，但 orders.items 排除
+     * resetable: ["!orders.items", "orders"]
      */
-    resetable?: boolean;
+    resetable?: ResetableConfig;
     /**
      * 计算函数是否允许重入
      */

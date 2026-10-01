@@ -30,7 +30,7 @@ constructor(state?: State, options?: AutoStoreOptions<State>)
 | `enableComputed` | `boolean` | `true` | 是否启用计算属性（全局开关） |
 | `enableValueExpr` | `boolean` | `true` | 是否启用字符串表达式解析 |
 | `reentry` | `boolean` | `true` | 计算函数是否允许重入 |
-| `resetable` | `boolean` | `false` | 是否启用重置功能 |
+| `resetable` | `boolean \| string[]` | `true` | 是否启用重置功能，或限定可重置的路径规则 |
 | `cascadeDestroy` | `boolean` | `true` | 依赖删除时是否级联销毁 |
 | `plugins` | `IAutoStorePlugin[]` | `[]` | 功能插件列表 |
 | `logger` | `ILogger` | - | 自定义日志器 |
@@ -213,22 +213,65 @@ get configKey(): string
 ### resetable
 
 ```ts
-get resetable(): boolean
-set resetable(value: boolean)
+get resetable(): boolean | string[]
+set resetable(value: boolean | string[])
 ```
 
-获取或设置是否启用重置功能。启用后，状态的首次变化会被记录，可通过 `reset()` 恢复。
+获取或设置重置范围。启用后，路径**首次变化前的基线**会被记录，可通过 `reset()` 还原。**默认值为 `true`**（全部路径可重置）。
 
 ```ts
-// 启用重置功能
-store.resetable = true;
+// 默认即为全部路径可重置
+store.reset();
 
 // 修改状态
 store.state.user.name = "李四";
 
-// 重置到初始状态
+// 重置到基线
 store.reset();
 ```
+
+#### 取值
+
+| 值 | 含义 |
+|---|---|
+| `true` | 全部路径可重置（零匹配开销的快路径） |
+| `false` / `[]` | 禁用，不捕获任何基线 |
+| `string[]` | 按路径规则限定重置范围 |
+
+#### 路径规则
+
+规则**首匹配即止**——按书写顺序依次匹配，命中即决定该路径是否可重置，不再检查后续规则。
+
+```ts
+// 纳入规则（无前缀）：命中即判定该路径可重置，范围为整棵子树（含自身）
+resetable: ["orders.items"];
+
+// 排除规则（`!` 前缀）：命中即判定该路径不可重置
+resetable: ["!orders.items"];
+
+// 顺序重要：更靠前的规则遮蔽更靠后的规则
+resetable: ["!orders.items", "orders"];
+//   orders.items → 命中规则 1 → 不可重置
+//   orders.price → 规则 1 不命中 → 规则 2 命中 → 可重置
+
+// 反过来写，排除规则就成了死代码（orders 整棵子树都先被规则 1 命中）
+resetable: ["orders", "!orders.items"];
+//   orders.items → 命中规则 1 → 可重置
+```
+
+通配符：`*` 匹配恰好一层，`**` 匹配任意层（**含零层**，故 `["!**"]` 排除整棵树）。
+
+零命中兜底：**存在纳入规则时**默认不可重置（规则集是收窄）；**只有排除规则时**默认可重置（`["!x"]` 即"除 x 外都记"）。
+
+> 规则在**捕获时**判定一次，并在 `reset()` 时复算一次——捕获之后修改规则，已捕获的基线也按新规则处理。
+
+#### 行为约束
+
+- 容器基线会吸收其后代：`state.user = {...}` 只产生一条基线，其后对 `state.user.x` 的修改不再单独记录。
+- 若某容器在**其子树内已有脏路径之后**才被整体替换，则不捕获该容器基线（否则会吞掉后代的还原），此时还原降级为逐个脏路径。
+- 计算属性的路径不捕获基线。
+- 每次赋值 `store.resetable = ...` 都会清空已有基线——适用集已变，旧基线不再可靠。
+- `store.resetable` 返回规则数组的**副本**，外部改动不会影响已生效的规则。
 
 ### plugins
 
@@ -241,10 +284,12 @@ get plugins(): IAutoStorePlugin[]
 ### updatedState
 
 ```ts
-updatedState: Record<string, any> | undefined
+get updatedState(): Record<string, any>
 ```
 
-记录状态变化的字典（仅在 `resetable=true` 时有效），键为路径，值为首次变化前的旧值。
+已捕获基线的**只读调试视图**：键为路径，值为该路径首次变化前的基线值（数组为元素表副本）。
+
+> 该视图仅为兼容旧调试代码而保留，**不是还原依据**。键在基线时刻不存在时值为 `undefined`。
 
 ---
 
@@ -506,12 +551,9 @@ const asyncVal = await store.get("user.asyncData", {
 reset(entry?: string): void
 ```
 
-将状态重置到初始值。需要先启用 `resetable` 选项。
+将状态还原到**基线**——即路径首次变化前的快照，而非逆放变更操作。`resetable` 默认已启用。
 
 ```ts
-// 启用重置功能
-store.resetable = true;
-
 // 修改状态
 store.state.user.name = "李四";
 store.state.order.price = 200;
@@ -519,9 +561,25 @@ store.state.order.price = 200;
 // 重置所有状态
 store.reset();
 
-// 重置指定路径下的状态
+// 重置指定路径及其后代
 store.reset("user");
 ```
+
+#### 语义要点
+
+- **还原的是基线，不是逆放操作**：`list.push(4)` 后再 `pop()`，`reset()` 回到的是变脏前的 `[1,2,3]`，而非空数组。
+- `entry` 精确匹配该路径**及其后代**，不会误伤同前缀的兄弟路径（`reset("user")` 不影响 `username`）。未命中任何基线时静默无操作。
+- 数组的 `push`/`pop`/`splice`/`shift`/`unshift`/`fill`/`length`/单下标赋值/`delete` 下标均可精确还原。
+- 新增的键还原为**消失**，删除的键还原为**恢复**；键原本存在但值为 `undefined` 时还原为 `undefined`。
+- 键名含 `.` 时可正确还原（内部按转义路径编码，不产生多余层级）。
+- 还原一个容器只产生**一次节点级写回**，其后代不单独还原。
+- **永不抛出异常**：逐条 `try/catch`，失败项告警且保留其基线以便重试；仅清除成功还原的条目。
+- 计算属性的路径不参与还原——它们在依赖变化时自动重算。
+- 已被判定为不可重置的路径不会被还原；容器的整体还原也不会顺带还原它们。
+
+::: warning 已知限制
+`@autostorejs/plugins/watch` 与 `@autostorejs/plugins/shadow` 在 `reset()` 期间不会刷新——它们的 `onAny` 订阅收不到广播派生事件。设计取舍见仓库 `docs/adr/0037-reset-baseline-model.md`。
+:::
 
 ### destroy
 

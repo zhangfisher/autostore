@@ -57,6 +57,9 @@ import { getId } from "../utils/getId";
 import type { AutoStoreEvents, Watcher, WatchListener, WatchListenerOptions } from "./types";
 import { BATCH_UPDATE_EVENT } from "../consts";
 import { createReactiveObject } from "./reactive";
+import type { CreateReactiveObjectOptions } from "./reactive";
+import { ResetTracker } from "./resetable";
+import type { ResetableConfig } from "./resetable";
 import type { ComputedState } from "../types";
 import { noRepeat } from "../utils/noRepeat";
 import { isPromise } from "../utils/isPromise";
@@ -129,12 +132,23 @@ export class AutoStore<
     private _configurabled?: Set<string>; // 缓存可配置的路径名称
     private _logger?: ILogger;
     private _subscribers: FastEventSubscriber[] = [];
-    private _resetWatcher: Watcher | undefined;    
+    /** 基线追踪器（resetable） */
+    private _reset: ResetTracker;
+    /** 传给 reactive 的选项对象：采集回调在 resetable 启用/禁用时动态装卸 */
+    private _reactiveOptions: CreateReactiveObjectOptions;
 
     static observers: Record<string, ObserverObjectBuilder> = observers;
     static sandboxVars:Record<string,any>=sandboxVars
-    updatedState: Record<string, any> | undefined;
-    
+
+    /**
+     * 已捕获基线的只读调试视图：路径 -> 基线值。
+     *
+     * 仅为兼容旧调试代码而保留，**不是还原依据**（还原读的是内部 Map）。
+     */
+    get updatedState(): Record<string, any> {
+        return this._reset.toDebugRecord();
+    }
+
     constructor(state?: State, options?: AutoStoreOptions<State>) {
         super(
             Object.assign(
@@ -162,14 +176,17 @@ export class AutoStore<
         this._createSandbox();
         this._createConfigManager();
         this.computedObjects = new ComputedObjects<State>(this);
-        this._subscribeHooks();
-        this._installPlugins();
-        this._data = createReactiveObject.call(this as any, state || {}, {
+        this._reset = new ResetTracker(this);
+        this._reactiveOptions = {
             notify: this._notify.bind(this),
             createObserverObject: this.handleReactiveObject.bind(this),
-        }) as ComputedState<State>;
-        this._enableReset();
+        };
+        this._subscribeHooks();
+        this._installPlugins();
+        this._data = createReactiveObject.call(this as any, state || {}, this._reactiveOptions) as ComputedState<State>;
         if (!this.options.lazy) forEachObject(this._data as any, this._onFirstEachState.bind(this));
+        // 初始求值完成后再装载基线采集：初始化写回不是用户变更，不应成为基线
+        this._setupReset(this.options.resetable);
         // @ts-expect-error
         if (this._options.debug && typeof globalThis.__AUTOSTORE_DEVTOOLS__ === "object") {
             // @ts-expect-error
@@ -236,42 +253,32 @@ export class AutoStore<
         }
         return this._logger!;
     }
-    get resetable() {
-        return this.options.resetable ?? false;
+    get resetable(): ResetableConfig {
+        const value = this.options.resetable ?? false;
+        // 返回副本，避免外部改动绕过 configure() 的重置语义
+        return Array.isArray(value) ? [...value] : value;
     }
-    set resetable(value: boolean) {
-        if (value) {
-            // 已启用则直接返回，避免重复创建侦听器
-            if (this._resetWatcher) return;
-            this._enableReset();
-        } else {
-            // 关闭侦听器并清空记录
-            if (this._resetWatcher) {
-                this._resetWatcher.off();
-                this._resetWatcher = undefined;
-            }
-            this.updatedState = {};
-        }
-
-        // options 在 AutoStore 构造后必然存在，直接写入
-        this.options.resetable = value;
+    set resetable(value: ResetableConfig) {
+        this._setupReset(value);
     }
-    private _enableReset() {
-        // 初始化记录容器：路径 -> 首次变化前的旧值
-        this.updatedState = {};
-
-        // 创建侦听器并保存到实例
-        this._resetWatcher = this.watch(({ path, oldValue, type }) => {
-            if (path.length === 0) return;
-            if (type === "batch") return;
-
-            const pathKey = path.join(this.delimiter || ".");
-
-            // 只记录非计算属性（不以 # 开头）且未记录过的路径
-            if (!pathKey.startsWith("#") && this.updatedState && !(pathKey in this.updatedState)) {
-                this.updatedState[pathKey] = oldValue;
-            }
-        });
+    /**
+     * 装载/卸载基线采集。
+     *
+     * 配置变化即清空已有基线——适用集已变，旧基线不再可靠。
+     * 采集回调装在 reactive 的 options 上（而非 Proxy 陷阱内联），
+     * 使 `resetable: false` / `[]` 时完全无额外开销。
+     */
+    private _setupReset(config?: ResetableConfig) {
+        this.options.resetable = config;
+        this._reset.configure(config);
+        const enabled = this._reset.enabled;
+        this._reactiveOptions.captureKeyPreimage = enabled
+            ? (path, existed, oldValue, newValue) =>
+                  this._reset.captureKey(path, existed, oldValue, newValue)
+            : undefined;
+        this._reactiveOptions.captureArrayPreimage = enabled
+            ? (path, array) => this._reset.captureArray(path, array)
+            : undefined;
     }
     private _createSandbox() {
         if (this.options.enableValueExpr) {
@@ -641,25 +648,16 @@ export class AutoStore<
         }
     }
     reset(entry?: string): void {
-        if (!this.resetable || !this.updatedState) {
+        if (!this._reset.enabled) {
             this.logger.warn("Resetable 未启用，请先执行 store.resetable = true");
             return;
         }
 
-        const updatedState = this.updatedState;
-        const delimiter = this.delimiter || ".";
-        const prefix = entry ? `${entry}${delimiter}` : "";
-
-        // 在批量更新内直接写状态树，避免逐次触发更新
-        // 说明：恢复写回会触发上面的侦听器，但路径已存在于 updatedState 中、不会被重复记录，
-        // 因此 reset 保持幂等，无需清空 updatedState。
+        // 在批量更新内直接写状态树，避免逐次触发更新。
+        // 采集在 _silenting/_batching 期间自动停摆，故 reset 自身不会产生新基线。
         this.batchUpdate((state: any) => {
-            for (const [pathKey, oldValue] of Object.entries(updatedState)) {
-                if (entry && !pathKey.startsWith(prefix)) continue;
-                setVal(state, splitPath(pathKey, delimiter), oldValue);
-            }
+            this._reset.restore(state, entry);
         });
-        this.updatedState = {};
         this.emit("reset", entry);
     }
     createObserverObject(descriptor: AnyObserverDescriptor, context?: ObserverContext) {
@@ -910,8 +908,9 @@ export class AutoStore<
         this._operates.offAll();
         // this.watchObjects.clear();
         this.computedObjects.clear();
-        this._resetWatcher?.off();
-        this._resetWatcher = undefined;
+        this._reset.clear();
+        this._reactiveOptions.captureKeyPreimage = undefined;
+        this._reactiveOptions.captureArrayPreimage = undefined;
         this._subscribers.forEach((subscriber) => subscriber.off());
         // 通知 ConfigManager 注销当前 store 注册的配置项，
         // 打破 schema 对本 store 的强引用，使其可被 GC

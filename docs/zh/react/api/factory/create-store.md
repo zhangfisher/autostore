@@ -28,7 +28,7 @@ function createStore<State extends Dict>(
 | --- | --- | --- |
 | `id` | `string` | store 标识，用于 devtools 显示 |
 | `debug` | `boolean` | 开启 Redux DevTools 调试 |
-| `resetable` | `boolean` | 是否支持`reset()`，React 包默认`true` |
+| `resetable` | `boolean \| string[]` | 是否支持`reset()`，或限定可重置的路径规则。核心库默认即为`true` |
 | `signalErrorBoundary` | `ComponentType` | 信号组件的默认错误边界，React 包默认渲染`ERROR` |
 
 （完整选项参见[核心库选项](/zh/store/guide/store/options)。）
@@ -48,7 +48,7 @@ function createStore<State extends Dict>(
 
 - `createStore`通常在**组件外部**（模块作用域）调用，创建全局或模块级共享的 store。
 - 在组件内部创建私有 store 时使用[useStore](../hooks/use-store)。
-- React 包的`createStore`在核心库`AutoStore`基础上预设了`resetable: true`与默认信号错误边界。
+- React 包的`createStore`在核心库`AutoStore`基础上预设了默认信号错误边界；`resetable` 与核心库一致，默认即为`true`，亦可传`string[]`路径规则限定重置范围。
 
 ## 示例
 
