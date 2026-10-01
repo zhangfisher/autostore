@@ -1,5 +1,13 @@
 # @autostorejs/form
 
+## 4.7.0
+
+### Patch Changes
+
+-   Updated dependencies [14e95ee]
+    -   autostore@4.7.0
+    -   @autostorejs/plugins@4.7.0
+
 ## 4.6.2
 
 ### Patch Changes
