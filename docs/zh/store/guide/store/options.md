@@ -349,7 +349,7 @@ resetable: ["!orders.items", "orders"];
 - 容器基线会吸收其后代;若某容器在其子树内已有脏路径之后才被整体替换,则不捕获该容器基线,还原降级为逐个脏路径。
 - 计算属性的路径不参与还原——它们在依赖变化时自动重算。
 
-`false` 与 `[]` 均表示禁用,不捕获任何基线。设计取舍见 `docs/adr/0037-reset-baseline-model.md`。
+`false` 与 `[]` 均表示禁用,不捕获任何基线。完整说明与更多示例见[重置状态](/zh/store/guide/store/resetable)。设计取舍见 `docs/adr/0037-reset-baseline-model.md`。
 
 ### 校验配置
 

@@ -217,7 +217,7 @@ get resetable(): boolean | string[]
 set resetable(value: boolean | string[])
 ```
 
-获取或设置重置范围。启用后，路径**首次变化前的基线**会被记录，可通过 `reset()` 还原。**默认值为 `true`**（全部路径可重置）。
+获取或设置重置范围。启用后，路径**首次变化前的基线**会被记录，可通过 `reset()` 还原。**默认值为 `true`**（全部路径可重置）。详见[重置状态](/zh/store/guide/store/resetable)。
 
 ```ts
 // 默认即为全部路径可重置

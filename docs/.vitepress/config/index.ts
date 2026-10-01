@@ -41,6 +41,7 @@ export default defineConfig({
                         { text: "监听变化", link: "/zh/store/guide/store/watch" },
                         { text: "事件", link: "/zh/store/guide/store/events" },
                         { text: "批量更新", link: "/zh/store/guide/store/batchUpdate" },
+                        { text: "重置状态", link: "/zh/store/guide/store/resetable" },
                         {
                             text: "计算属性",
                             collapsed: true,
@@ -69,6 +70,7 @@ export default defineConfig({
                     text: "插件",                    
                     collapsed: false,
                     items:[
+                        { text: "关于",link:"/zh/store/plugins/about"},
                         { text: "watch",
                         collapsed: true,
                         items: [
@@ -78,7 +80,6 @@ export default defineConfig({
                             { text: "useWatch", link: "/zh/store/plugins/watch/use-watch" },
                             { text: "监视对象", link: "/zh/store/plugins/watch/objects" },
                         ]},
-                        { text: "关于",link:"/zh/store/plugins/about"},
                         { text: "asyncpro",link:"/zh/store/plugins/asyncpro"},
                         { text: "createComputed",link:"/zh/store/plugins/createComputed"},
                         { text: "manualComputed",link:"/zh/store/plugins/manualComputed"},
