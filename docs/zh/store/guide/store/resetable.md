@@ -9,7 +9,7 @@
 需要先明确一点，它还原的是**基线快照**，而不是"把操作倒着做一遍"。这两者在多数时候结果相同，但一旦状态被反复改动就会分道扬镳：
 
 ```ts
-const store = new AutoStore({ list: [1, 2, 3] });
+const store = new AutoStore({ list: [1, 2, 3] }, { resetable: true });
 
 store.state.list.push(4);
 store.state.list.pop();
@@ -20,17 +20,24 @@ store.reset();
 store.state.list; // [1, 2, 3]   —— 基线是"首次变脏前"，即最初那个数组
 ```
 
-`resetable` 默认为 `true`。生产环境若不需要回滚，显式传 `resetable: false` 即可完全关闭基线采集。
+`resetable` **默认为 `false`**——不启用时完全不会挂载采集回调，零开销。需要回滚能力的场景（表单回退、开发调试、测试隔离）显式开启：
+
+```ts
+const store = new AutoStore(state, { resetable: true }); // 或 store.resetable = true
+```
 
 ## 指南
 
 ### 基本用法
 
 ```ts
-const store = new AutoStore({
-    count: 0,
-    user: { name: "张三", tags: ["a"] },
-});
+const store = new AutoStore(
+    {
+        count: 0,
+        user: { name: "张三", tags: ["a"] },
+    },
+    { resetable: true },
+);
 
 store.state.count = 10;
 store.state.user.name = "李四";
@@ -48,7 +55,10 @@ store.reset("user"); // 只还原 user，count 保持不变
 `entry` 是**精确路径**匹配，不会误伤同前缀的兄弟路径：
 
 ```ts
-const store = new AutoStore({ user: { n: 1 }, username: "abc" });
+const store = new AutoStore(
+    { user: { n: 1 }, username: "abc" },
+    { resetable: true },
+);
 
 store.state.user.n = 99;
 store.state.username = "xyz";
@@ -61,7 +71,7 @@ store.reset("user"); // user.n 回到 1，username 仍是 "xyz"
 基线记录的是"这一刻这条路径长什么样"，而不只是"它的值是多少"。因此键的**出现与消失**也能被正确还原：
 
 ```ts
-const store = new AutoStore({ a: 1, u: undefined });
+const store = new AutoStore({ a: 1, u: undefined }, { resetable: true });
 
 store.state.added = 5;   // 新增键
 delete store.state.a;    // 删除键
@@ -92,7 +102,7 @@ store.reset();
 | `delete arr[0]` | ✅ |
 
 ```ts
-const store = new AutoStore({ list: [3, 1, 2] });
+const store = new AutoStore({ list: [3, 1, 2] }, { resetable: true });
 
 store.state.list.sort((a, b) => a - b);
 store.state.list.length = 1;
@@ -148,7 +158,7 @@ new AutoStore(state, { resetable: ["!**"] });      // 全不记（等价于 fals
 整体替换一个容器时，只产生**一条**基线，其后代不再单独记录：
 
 ```ts
-const store = new AutoStore({ u: { x: 1 } });
+const store = new AutoStore({ u: { x: 1 } }, { resetable: true });
 
 store.state.u = { x: 2, fresh: 3 };
 store.state.u.x = 9;
@@ -161,7 +171,7 @@ store.reset(); // { x: 1 } —— fresh 也一并消失
 代价是它**不能与更早的脏后代共存**。如果子树里已经有脏路径，之后才整体替换该容器，那么该容器不会被捕获（否则会把后代的还原一起吞掉），还原降级为逐个脏路径：
 
 ```ts
-const store = new AutoStore({ u: { x: 1 } });
+const store = new AutoStore({ u: { x: 1 } }, { resetable: true });
 
 store.state.u.x = 9;              // u.x 先变脏
 store.state.u = { x: 5, fresh: 3 }; // 之后才整体替换 u
@@ -177,11 +187,14 @@ store.reset();
 计算属性的路径不捕获基线。它们不承载用户输入，值由依赖重算得出，重置后会自动重新计算：
 
 ```ts
-const store = new AutoStore({
-    price: 10,
-    count: 2,
-    total: computed((scope) => scope.price * scope.count),
-});
+const store = new AutoStore(
+    {
+        price: 10,
+        count: 2,
+        total: computed((scope) => scope.price * scope.count),
+    },
+    { resetable: true },
+);
 
 store.state.price = 20;
 store.reset();
@@ -195,7 +208,7 @@ store.reset();
 `updatedState` 提供一个只读调试视图：
 
 ```ts
-const store = new AutoStore({ a: 1, list: [1, 2] });
+const store = new AutoStore({ a: 1, list: [1, 2] }, { resetable: true });
 store.state.a = 9;
 store.state.list.push(3);
 

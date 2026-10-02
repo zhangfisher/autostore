@@ -49,6 +49,13 @@ resetable: ["!orders.items", "orders"] // orders.items 不可重置，orders.pri
 ## 破坏性变更
 
 - **`updatedState` 由可写字段降级为只读 getter**，且不再作为还原依据，仅保留为调试视图。直接赋值不再生效。
+- **`resetable` 默认值由 `true` 改为 `false`**。基线采集会在每次写入时检查"子树内是否已有脏路径"，默认关闭可让绝大多数 store 回到零开销。需要回滚能力的场景（表单回退、开发调试、测试隔离）必须显式开启：
+
+  ```ts
+  new AutoStore(state, { resetable: true }); // 或 store.resetable = true
+  ```
+
+  受影响的下游：`AutoForm` 内部 store 已显式传 `resetable: true`，不受影响；但用外部 store（`.store` 属性）时若该 store 未开启 `resetable`，`form.reset()` 会失效。`ConfigManager` 有自己的 `reset()` 覆写，不依赖此选项。
 - **`reset(entry)` 不再误伤同前缀兄弟路径**：`reset("user")` 精确匹配该路径及其后代，不影响 `username`。
 - **还原单个容器只产生一次节点级写回**，其后代的重置事件不再逐条触发。若有代码依赖「每个脏叶子各触发一次」来更新自身，此行为需调整。
 - **计算属性路径不参与还原**（在依赖变化时自动重算），不再被记录。

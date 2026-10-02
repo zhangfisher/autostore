@@ -292,7 +292,7 @@ const store = new AutoStore(state, {
 #### resetable
 
 - **类型**: `boolean | string[]`
-- **默认值**: `true`
+- **默认值**: `false`
 
 启用重置功能。启用后,会记录每条状态路径**首次变化前的基线**,然后在 `store.reset()` 方法调用时,将数据还原到基线。
 
@@ -689,7 +689,7 @@ if (store.batching) {
 
 - **类型**: `boolean | string[]`
 
-是否启用重置功能,或限定可重置的路径规则。默认为 `true`。详见上文[状态重置](#状态重置)一节。
+是否启用重置功能,或限定可重置的路径规则。默认为 `false`。详见上文[状态重置](#状态重置)一节。
 
 ```ts
 if (store.resetable) {
@@ -828,10 +828,10 @@ const value = store.get("nonexistent.path", {
 
 ### reset()
 
-将 store 还原到基线——即每条路径**首次变化前的快照**,而非逆放变更操作(`resetable` 默认已启用)。
+将 store 还原到基线——即每条路径**首次变化前的快照**,而非逆放变更操作。
 
 ```ts
-const store = new AutoStore(state);
+const store = new AutoStore(state, { resetable: true }); // 需显式开启
 
 // 修改状态后
 store.reset(); // 重置全部
@@ -966,5 +966,5 @@ const store = new AutoStore({
 1. **配置管理**: 使用 `id` 和 `debug` 选项便于开发和调试
 2. **性能优化**: 对于大型状态树,考虑使用 `lazy: true` 延迟计算
 3. **类型安全**: 充分利用 TypeScript 的类型推导功能
-4. **状态重置**: `resetable` 默认为 `true`。生产环境若不需要回滚到基线，显式传 `resetable: false` 可完全关闭基线采集（不挂载任何监听，开销与改造前持平）
+4. **状态重置**: `resetable` 默认为 `false`,不启用时零开销。需要回滚到基线的场景（表单回退、开发调试、测试隔离）显式传 `resetable: true`
 5. **校验**: 使用 `validators` 确保状态数据的完整性

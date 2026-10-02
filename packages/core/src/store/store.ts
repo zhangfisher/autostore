@@ -161,7 +161,7 @@ export class AutoStore<
                     enableValueExpr: true,
                     shadow: false,
                     configManager:true,
-                    resetable: true,
+                    resetable: false,
                     plugins: [],
                 },
                 options,

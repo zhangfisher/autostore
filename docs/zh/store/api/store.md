@@ -30,7 +30,7 @@ constructor(state?: State, options?: AutoStoreOptions<State>)
 | `enableComputed` | `boolean` | `true` | 是否启用计算属性（全局开关） |
 | `enableValueExpr` | `boolean` | `true` | 是否启用字符串表达式解析 |
 | `reentry` | `boolean` | `true` | 计算函数是否允许重入 |
-| `resetable` | `boolean \| string[]` | `true` | 是否启用重置功能，或限定可重置的路径规则 |
+| `resetable` | `boolean \| string[]` | `false` | 是否启用重置功能，或限定可重置的路径规则 |
 | `cascadeDestroy` | `boolean` | `true` | 依赖删除时是否级联销毁 |
 | `plugins` | `IAutoStorePlugin[]` | `[]` | 功能插件列表 |
 | `logger` | `ILogger` | - | 自定义日志器 |
@@ -217,11 +217,13 @@ get resetable(): boolean | string[]
 set resetable(value: boolean | string[])
 ```
 
-获取或设置重置范围。启用后，路径**首次变化前的基线**会被记录，可通过 `reset()` 还原。**默认值为 `true`**（全部路径可重置）。详见[重置状态](/zh/store/guide/store/resetable)。
+获取或设置重置范围。启用后，路径**首次变化前的基线**会被记录，可通过 `reset()` 还原。**默认值为 `false`**（需显式开启）。详见[重置状态](/zh/store/guide/store/resetable)。
 
 ```ts
-// 默认即为全部路径可重置
-store.reset();
+// 显式开启
+const store = new AutoStore(state, { resetable: true });
+// 或
+store.resetable = true;
 
 // 修改状态
 store.state.user.name = "李四";
@@ -551,9 +553,12 @@ const asyncVal = await store.get("user.asyncData", {
 reset(entry?: string): void
 ```
 
-将状态还原到**基线**——即路径首次变化前的快照，而非逆放变更操作。`resetable` 默认已启用。
+将状态还原到**基线**——即路径首次变化前的快照，而非逆放变更操作。需要先启用 `resetable`（默认为 `false`）。
 
 ```ts
+// 先启用
+store.resetable = true;
+
 // 修改状态
 store.state.user.name = "李四";
 store.state.order.price = 200;
