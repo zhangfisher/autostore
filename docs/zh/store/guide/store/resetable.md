@@ -236,3 +236,21 @@ store.resetable = false;                    // 随时关闭并清空
 - **开发调试**：改乱状态后一键回到干净起点，比刷新页面更快（且不会丢失其他状态）
 - **测试隔离**：每个用例开头 `reset()`，无需重建 store
 - **Viewer 的重置按钮**：`@autostorejs/viewer` 内置区头的「重置」按钮即调用 `store.reset()`
+
+## 让消费方代为开启
+
+封装 `AutoStore` 的库往往比自己更需要 `reset`——比如表单提供 `reset()` 按钮，就要求底层 store 有基线可还原。此时库可以：
+
+1. 读只读的 [`resetableExplicit`](/zh/store/api/store#resetableexplicit) 判断用户是否**显式配置**过。构造器已把默认值合并进 `options`，光看 `store.resetable` 无法区分「没配」与「显式配了 `false`」，两者读数都是 `false`
+2. 未配置时补开启，保证自身能力可用
+3. 显式 `false` 视为用户的拒绝，不覆盖
+
+```ts
+if (!store.resetableExplicit) store.resetable = true;
+```
+
+`AutoForm` 绑定外部 store 时就是这么做的。
+
+::: warning 补开启的时机
+基线自**开启那一刻**起算。库若在用户已经开始编辑之后才补开启，那之前的修改就还原不回来了。因此这一步必须发生在**绑定/接管 store 的那一刻**，且越早越好——`form.reset()` 里再开是错的，那时抓到的基线已经是脏数据。
+:::

@@ -275,6 +275,38 @@ resetable: ["orders", "!orders.items"];
 - 每次赋值 `store.resetable = ...` 都会清空已有基线——适用集已变，旧基线不再可靠。
 - `store.resetable` 返回规则数组的**副本**，外部改动不会影响已生效的规则。
 
+### resetableExplicit
+
+```ts
+get resetableExplicit(): boolean
+```
+
+`resetable` 是否由用户**显式配置**。只读，无 setter。
+
+与 `resetable` 读数的区别：`resetable` 永远是「生效值」——构造器已把默认值合并进 `options`，未配置时读出 `false`；本属性回答的是「这个值是用户给的，还是落到默认值的」。
+
+```ts
+new AutoStore(state).resetableExplicit;                            // false，落到默认值
+new AutoStore(state, { resetable: false }).resetableExplicit;       // true，显式拒绝
+new AutoStore(state, { resetable: true }).resetableExplicit;        // true
+new AutoStore(state, { resetable: ["a"] }).resetableExplicit;       // true
+```
+
+构造参数与 setter 赋值都会将其置为 `true`：
+
+```ts
+const store = new AutoStore(state);
+store.resetableExplicit; // false
+store.resetable = false;  // 之后
+store.resetableExplicit; // true
+```
+
+典型用法是让消费方在**未配置时补开启**，同时尊重用户显式的 `false`。`AutoForm` 绑定外部 store 时即依此处理：`form.reset()` 依赖基线捕获，若外部 store 落到默认值会让 `reset()` 静默失效，因此 form 会自动开启；但用户显式传了 `resetable: false` 表示拒绝，form 不覆盖。
+
+::: warning 补开启的时机
+基线自**开启那一刻**起算。若 store 在被 form 接管之前已被修改，那部分变更不在可还原范围内。需要完整回滚时，请在首次修改前开启。
+:::
+
 ### plugins
 
 ```ts

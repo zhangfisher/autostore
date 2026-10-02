@@ -55,7 +55,15 @@ resetable: ["!orders.items", "orders"] // orders.items 不可重置，orders.pri
   new AutoStore(state, { resetable: true }); // 或 store.resetable = true
   ```
 
-  受影响的下游：`AutoForm` 内部 store 已显式传 `resetable: true`，不受影响；但用外部 store（`.store` 属性）时若该 store 未开启 `resetable`，`form.reset()` 会失效。`ConfigManager` 有自己的 `reset()` 覆写，不依赖此选项。
+  受影响的下游：`AutoForm` 内部 store 已显式传 `resetable: true`，不受影响；外部 store（`.store` 属性）由 `AutoForm` 在绑定时补开启（见下）。`ConfigManager` 有自己的 `reset()` 覆写，不依赖此选项。
+- **新增只读属性 `store.resetableExplicit`**，用于区分「用户没配 `resetable`」与「用户显式配了 `resetable: false`」。构造器会把默认值合并进 `options`，因此 `store.resetable` 在两种情况下读数都是 `false`，消费方无从分辨。`AutoForm` 依此在绑定外部 store 时：未显式配置则自动开启 `resetable`（打一条 info 日志）以保证 `form.reset()` 可用；显式传 `false` 则尊重，不覆盖。
+
+  ```ts
+  new AutoStore(state).resetableExplicit;                        // false
+  new AutoStore(state, { resetable: false }).resetableExplicit; // true
+  ```
+
+  此前依赖「`resetable` 默认 `true`」在外部 store 上调用 `form.reset()` 的代码无需改动。
 - **`reset(entry)` 不再误伤同前缀兄弟路径**：`reset("user")` 精确匹配该路径及其后代，不影响 `username`。
 - **还原单个容器只产生一次节点级写回**，其后代的重置事件不再逐条触发。若有代码依赖「每个脏叶子各触发一次」来更新自身，此行为需调整。
 - **计算属性路径不参与还原**（在依赖变化时自动重算），不再被记录。

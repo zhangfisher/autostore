@@ -396,6 +396,54 @@ describe("reset：计算属性不入表", () => {
     });
 });
 
+describe("resetableExplicit：区分「未配置」与「显式 false」", () => {
+    test("未传 resetable 时为 false（尽管生效值也是 false）", () => {
+        const store = new AutoStore({ count: 1 });
+
+        expect(store.resetable).toBe(false);
+        expect(store.resetableExplicit).toBe(false);
+    });
+
+    test("显式传 false 时为 true", () => {
+        const store = new AutoStore({ count: 1 }, { resetable: false });
+
+        expect(store.resetable).toBe(false);
+        expect(store.resetableExplicit).toBe(true);
+    });
+
+    test("显式传 true 或规则数组时为 true", () => {
+        expect(new AutoStore({}, { resetable: true }).resetableExplicit).toBe(true);
+        expect(new AutoStore({}, { resetable: ["a"] }).resetableExplicit).toBe(true);
+        expect(new AutoStore({}, { resetable: [] }).resetableExplicit).toBe(true);
+    });
+
+    test("setter 赋值后转为 true", () => {
+        const store = new AutoStore({ count: 1 });
+        expect(store.resetableExplicit).toBe(false);
+
+        store.resetable = false;
+        expect(store.resetableExplicit).toBe(true);
+    });
+
+    test("消费方可据此区分：未配置则补开启，显式 false 则尊重", () => {
+        // 模拟 AutoForm 对外部 store 的处理
+        const adopt = (store: AutoStore<any>) => {
+            if (!store.resetableExplicit) store.resetable = true;
+        };
+
+        const implicit = new AutoStore({ count: 1 });
+        adopt(implicit);
+        expect(implicit.resetable).toBe(true);
+        implicit.state.count = 100;
+        implicit.reset();
+        expect(implicit.state.count).toBe(1); // 补开启后 reset 真正可用
+
+        const explicit = new AutoStore({ count: 1 }, { resetable: false });
+        adopt(explicit);
+        expect(explicit.resetable).toBe(false); // 尊重显式拒绝
+    });
+});
+
 describe("resetable 生命周期", () => {
     test("resetable=false 完全不记录", () => {
         const store = new AutoStore({ count: 1 }, { resetable: false });
@@ -448,8 +496,7 @@ describe("resetable 生命周期", () => {
         expect(Object.keys(store.updatedState)).toEqual(["b"]);
     });
 
-    test("resetable getter 返回规则副本，外部改动不绕过 configure", () => {
-        const rules = ["!a"];
+    test("resetable getter 返回规则副本，外部改动不绕过 configure", () => {        const rules = ["!a"];
         const store = new AutoStore({ a: 1, b: 2 }, { resetable: rules });
 
         const got = store.resetable as string[];

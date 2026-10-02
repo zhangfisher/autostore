@@ -351,6 +351,15 @@ resetable: ["!orders.items", "orders"];
 
 `false` 与 `[]` 均表示禁用,不捕获任何基线。完整说明与更多示例见[重置状态](/zh/store/guide/store/resetable)。设计取舍见 `docs/adr/0037-reset-baseline-model.md`。
 
+需要区分「用户没配」与「用户显式配了 `false`」时,读只读的 `store.resetableExplicit`:
+
+```ts
+new AutoStore(state).resetableExplicit;                      // false,落到默认值
+new AutoStore(state, { resetable: false }).resetableExplicit; // true,显式拒绝
+```
+
+`AutoForm` 绑定外部 store 时即依此处理——`form.reset()` 依赖基线捕获,落到默认值会让 `reset()` 静默失效,故自动开启;显式 `false` 则尊重。详见 [`resetableExplicit`](/zh/store/api/store#resetableexplicit)。
+
 ### 校验配置
 
 #### onValidate

@@ -136,6 +136,8 @@ export class AutoStore<
     private _reset: ResetTracker;
     /** 传给 reactive 的选项对象：采集回调在 resetable 启用/禁用时动态装卸 */
     private _reactiveOptions: CreateReactiveObjectOptions;
+    /** resetable 是否由用户显式配置（构造参数或 setter），区别于"落到了默认值" */
+    private _resetableExplicit = false;
 
     static observers: Record<string, ObserverObjectBuilder> = observers;
     static sandboxVars:Record<string,any>=sandboxVars
@@ -177,6 +179,10 @@ export class AutoStore<
         this._createConfigManager();
         this.computedObjects = new ComputedObjects<State>(this);
         this._reset = new ResetTracker(this);
+        // 构造器已把默认值合并进 options，事后读 options.resetable 无法区分
+        // "用户没配" 与 "用户显式配了 false"。此处显式记下，用于让消费方
+        // （如 AutoForm）在未配置时补开启，同时尊重显式的 false。
+        this._resetableExplicit = options?.resetable !== undefined;
         this._reactiveOptions = {
             notify: this._notify.bind(this),
             createObserverObject: this.handleReactiveObject.bind(this),
@@ -259,7 +265,18 @@ export class AutoStore<
         return Array.isArray(value) ? [...value] : value;
     }
     set resetable(value: ResetableConfig) {
+        this._resetableExplicit = true;
         this._setupReset(value);
+    }
+    /**
+     * `resetable` 是否由用户显式配置。
+     *
+     * 与 `resetable` 读数的区别：`resetable` 永远是"生效值"（构造器已把默认值
+     * 合并进 options，缺省时读出 `false`），本属性回答的是"这个值是用户给的还是
+     * 落到默认值的"。消费方据此在未配置时补开启，同时尊重显式的 `false`。
+     */
+    get resetableExplicit(): boolean {
+        return this._resetableExplicit;
     }
     /**
      * 装载/卸载基线采集。

@@ -413,6 +413,27 @@ form.state = {...};
 form.reset();
 ```
 
+#### 外部 store 与 resetable
+
+`reset` 的实现是「还原 store 基线 + 清除 `dirty` / `invalid` 标记」。基线捕获依赖 `AutoStore` 的 `resetable` 选项，而它**默认为 `false`**——若外部 store 未开启，`reset()` 会静默失效（值不变，标记却已清除，UI 显示为「干净」）。
+
+因此 `AutoForm` 在绑定外部 store（`.store` 属性）时：
+
+- 外部 store **未显式配置** `resetable` → 自动开启并打一条 info 日志，保证 `form.reset()` 可用
+- 外部 store **显式传了** `resetable: false` → 尊重该选择，不覆盖；但此时 `form.reset()` 无法还原字段值
+
+推荐直接显式声明，避免依赖自动行为：
+
+```javascript
+form.store = new AutoStore(state, { configManager, resetable: true });
+```
+
+::: warning 基线起点
+基线自**开启那一刻**起算。store 在被 form 接管之前的修改不在可还原范围内，需要完整回滚请在首次修改前开启。
+:::
+
+内部 store（`.state` 属性）由 `AutoForm` 自己创建，已固定传入 `resetable: true`，不受默认值影响。
+
 ### 提交表单
 
 可以通过`submit`方法提交表单，该方法会触发回调，返回表单数据和错误信息：

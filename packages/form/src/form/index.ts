@@ -294,6 +294,19 @@ export class AutoForm extends LitElement {
                 "AutoForm requires store to have a configManager when using .store property",
             );
         }
+
+        // form 的 reset() 依赖基线捕获。resetable 默认关闭，若外部 store 未显式配置，
+        // reset() 会打 warn 后静默 no-op——而 form.reset() 后续的 _initialContext 与
+        // 清 dirty/invalid 类照常执行，表单会声称"干净"但值还在，UI 说谎。
+        // 故未配置时补开启；用户显式传 resetable: false 视为拒绝，尊重之。
+        if (!this.store.resetableExplicit) {
+            this.store.resetable = true;
+            console.info(
+                "[AutoForm] 已为外部 store 自动开启 resetable 以支持 form.reset()；" +
+                    "如需关闭请显式配置 new AutoStore(state, { resetable: false })，" +
+                    "但此时 form.reset() 将无法还原字段值。",
+            );
+        }
     }
 
     /**
