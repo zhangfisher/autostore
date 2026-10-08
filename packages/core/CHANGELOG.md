@@ -1,5 +1,11 @@
 # autostore
 
+## 4.7.1
+
+### Patch Changes
+
+-   c1d7191: upgrade fastevent
+
 ## 4.7.0
 
 ### Minor Changes
